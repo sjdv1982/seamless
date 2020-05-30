@@ -69,7 +69,7 @@
         <span class="k">if</span> <span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span> <span class="o">!=</span> <span class="n">threading</span><span class="o">.</span><span class="n">main_thread</span><span class="p">():</span>
             <span class="n">manager</span><span class="o">.</span><span class="n">taskmanager</span><span class="o">.</span><span class="n">add_synctask</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">with_event</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>    
+            <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="n">functools</span><span class="o">.</span><span class="n">update_wrapper</span><span class="p">(</span><span class="n">func2</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">func2</span>
 
@@ -85,10 +85,10 @@
         <span class="n">lp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="n">all_children</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">children</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
     <span class="k">for</span> <span class="n">childname0</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">all_children</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>            
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">childname0</span><span class="p">[:</span><span class="n">lp</span><span class="p">]</span> <span class="o">!=</span> <span class="n">path</span><span class="p">:</span>
                 <span class="k">continue</span>
-            <span class="n">childname0</span> <span class="o">=</span> <span class="n">childname0</span><span class="p">[</span><span class="n">lp</span><span class="p">:]</span>        
+            <span class="n">childname0</span> <span class="o">=</span> <span class="n">childname0</span><span class="p">[</span><span class="n">lp</span><span class="p">:]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">childname0</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">continue</span>
         <span class="n">childname</span> <span class="o">=</span> <span class="n">childname0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -119,7 +119,7 @@
     <span class="p">}</span>
     <span class="n">_mount</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">_translating</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="n">_translate_count</span> <span class="o">=</span> <span class="mi">0</span> 
+    <span class="n">_translate_count</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">_auto_translate</span> <span class="o">=</span> <span class="n">DEFAULT_AUTO_TRANSLATE</span>
     <span class="n">_gen_context</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">_libmacro_graph</span> <span class="o">=</span> <span class="kc">None</span>
@@ -131,14 +131,14 @@
 <div class="viewcode-block" id="Context.from_graph"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.from_graph">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_graph</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">manager</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mounts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shares</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">share_namespace</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">zip</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Constructs a Context from a graph</span>
-<span class="sd">        </span>
+
 <span class="sd">        &quot;graph&quot; can be a file name or a JSON dict</span>
 <span class="sd">        Normally, it has been generated with Context.save_graph / Context.get_graph</span>
 
 <span class="sd">        &quot;zip&quot; can be a file name, zip-compressed bytes or a Python ZipFile object.</span>
 <span class="sd">        Normally, it has been generated with Context.save_zip / Context.get_zip</span>
 
-<span class="sd">        &quot;manager&quot;: re-use the manager of a previous context. </span>
+<span class="sd">        &quot;manager&quot;: re-use the manager of a previous context.</span>
 <span class="sd">        The manager controls caching and execution.</span>
 
 <span class="sd">        &quot;mounts&quot;: mount cells and pins to the file system, as specified in the graph.</span>
@@ -159,7 +159,7 @@
 
 <div class="viewcode-block" id="Context.set_graph"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.set_graph">[docs]</a>    <span class="k">def</span> <span class="nf">set_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mounts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shares</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Sets the graph of the Context</span>
-<span class="sd">        </span>
+
 <span class="sd">        &quot;graph&quot; can be a file name or a JSON dict</span>
 <span class="sd">        Normally, it has been generated with Context.save_graph / Context.get_graph</span>
 
@@ -168,8 +168,8 @@
 <span class="sd">        &quot;shares&quot;: share cells over HTTP, as specified in the graph</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">graph</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>        
-        <span class="n">nodes</span> <span class="o">=</span> <span class="p">{}</span>        
+        <span class="n">graph</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">[</span><span class="s2">&quot;nodes&quot;</span><span class="p">]:</span>
             <span class="n">p</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">node</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">])</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">mounts</span><span class="p">:</span>
@@ -205,13 +205,13 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">manager</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Creates a new Seamless context</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;manager&quot;: re-use the manager of a previous context. </span>
+
+<span class="sd">        &quot;manager&quot;: re-use the manager of a previous context.</span>
 <span class="sd">        The manager controls caching and execution.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">())</span>
         <span class="kn">from</span> <span class="nn">seamless.core.manager</span> <span class="kn">import</span> <span class="n">Manager</span>
-        <span class="k">if</span> <span class="n">manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>            
+        <span class="k">if</span> <span class="n">manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="n">Manager</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">manager</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_manager</span> <span class="o">=</span> <span class="n">manager</span>
         <span class="k">else</span><span class="p">:</span>
@@ -223,7 +223,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_traitlets</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        
+
         <span class="k">async</span> <span class="k">def</span> <span class="nf">auto_trans</span><span class="p">():</span>
             <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_destroyed</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_auto_translate</span><span class="p">:</span>
@@ -233,15 +233,15 @@
                         <span class="n">DEFAULT_AUTO_TRANSLATE</span> <span class="o">=</span> <span class="kc">False</span>
                         <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
                         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;ctx.auto_translate is currently unstable and has been disabled</span>
-<span class="s2">You must run regularly &quot;ctx.translate()&quot; (IPython) </span>
-<span class="s2">or &quot;await ctx.translation()&quot; (Jupyter) after modifying the graph. </span>
+<span class="s2">You must run regularly &quot;ctx.translate()&quot; (IPython)</span>
+<span class="s2">or &quot;await ctx.translation()&quot; (Jupyter) after modifying the graph.</span>
 <span class="s2">Translation is not required after modifying only cell values&quot;&quot;&quot;</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_auto_translate</span> <span class="o">=</span> <span class="kc">False</span>
                     <span class="k">break</span>
                     <span class="c1">###</span>
                     <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translating</span><span class="p">:</span>
                         <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
-                    <span class="k">try</span><span class="p">:</span>                    
+                    <span class="k">try</span><span class="p">:</span>
                         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                         <span class="kn">import</span> <span class="nn">traceback</span>
@@ -342,13 +342,13 @@
             <span class="s2">&quot;persistent&quot;</span><span class="p">:</span> <span class="n">persistent</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
-    
+
 <div class="viewcode-block" id="Context.compute"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.compute">[docs]</a>    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">report</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Block until no more computation is required.</span>
 
 <span class="sd">        This means that all cells and transformers have either been computed,</span>
 <span class="sd">        or they have an error, or they have unsatisfied upstream dependencies.</span>
-<span class="sd">        </span>
+
 <span class="sd">        The graph is first (re-)translated, if necessary.</span>
 
 <span class="sd">        This function can only be invoked if no event loop is running,</span>
@@ -359,7 +359,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">timeout</span><span class="p">,</span> <span class="n">report</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Context.computation"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.computation">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">computation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">report</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>     
+<div class="viewcode-block" id="Context.computation"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.computation">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">computation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">report</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Block until no more computation is required.</span>
 
 <span class="sd">        This means that all cells and transformers have either been computed,</span>
@@ -382,7 +382,7 @@
 <span class="sd">        The graph is translated to a low-level, computable form</span>
 <span class="sd">        (seamless.core). After translation, return immediately,</span>
 <span class="sd">        although computation will start automatically.</span>
-<span class="sd">        </span>
+
 <span class="sd">        If force=True, translation will happen even though no</span>
 <span class="sd">        change in topology or celltype was detected.</span>
 
@@ -404,7 +404,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate_async</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">,</span> <span class="n">explicit</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
-    <span class="nd">@property</span> 
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">auto_translate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_auto_translate</span>
 
@@ -422,7 +422,7 @@
 <span class="sd">         http://&lt;shareserver URL&gt;/&lt;live_share_namespace&gt;/&lt;cell path&gt;</span>
 
 <span class="sd">        The live share namespace is in principle equal to the share namespace,</span>
-<span class="sd">        but if it is already taken, a number will be added to it (ctx1, ctx2, etc.) </span>
+<span class="sd">        but if it is already taken, a number will be added to it (ctx1, ctx2, etc.)</span>
 
 <span class="sd">        Default: &quot;ctx&quot;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -434,7 +434,7 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;share_namespace&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_live_share_namespace</span> <span class="o">=</span> <span class="kc">None</span>
-    
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">live_share_namespace</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The actual namespace for sharing cells by the HTTP server</span>
@@ -443,7 +443,7 @@
 <span class="sd">         http://&lt;shareserver URL&gt;/&lt;live_share_namespace&gt;/&lt;cell path&gt;</span>
 
 <span class="sd">        The live share namespace is in principle equal to the share namespace,</span>
-<span class="sd">        but if it is already taken, a number will be added to it (ctx1, ctx2, etc.) </span>
+<span class="sd">        but if it is already taken, a number will be added to it (ctx1, ctx2, etc.)</span>
 
 <span class="sd">        Default: &quot;ctx&quot;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -465,14 +465,14 @@
                         <span class="n">tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">tasks</span>
             <span class="n">remaining</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">taskmanager</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span>
-                <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">report</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
+                <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">report</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
                 <span class="n">get_tasks_func</span><span class="o">=</span><span class="n">get_join_tasks</span>
             <span class="p">)</span>
             <span class="k">assert</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining</span><span class="p">),</span> <span class="n">remaining</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_translating</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_manager</span>
-            <span class="n">copying</span><span class="o">.</span><span class="n">fill_checksums</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>            
+            <span class="n">copying</span><span class="o">.</span><span class="n">fill_checksums</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_translating</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">nodes</span><span class="p">,</span> <span class="n">connections</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">lib</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span>
@@ -484,8 +484,8 @@
             <span class="n">params</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
             <span class="n">lib</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span>
         <span class="n">graph</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;nodes&quot;</span><span class="p">:</span> <span class="n">nodes</span><span class="p">,</span> 
-            <span class="s2">&quot;connections&quot;</span><span class="p">:</span> <span class="n">connections</span><span class="p">,</span> 
+            <span class="s2">&quot;nodes&quot;</span><span class="p">:</span> <span class="n">nodes</span><span class="p">,</span>
+            <span class="s2">&quot;connections&quot;</span><span class="p">:</span> <span class="n">connections</span><span class="p">,</span>
             <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">,</span>
             <span class="s2">&quot;lib&quot;</span><span class="p">:</span> <span class="n">lib</span><span class="p">,</span>
         <span class="p">}</span>
@@ -508,15 +508,15 @@
                         <span class="n">tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">tasks</span>
             <span class="n">remaining</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="k">await</span> <span class="n">taskmanager</span><span class="o">.</span><span class="n">computation</span><span class="p">(</span>
-                <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">report</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
+                <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">report</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
                 <span class="n">get_tasks_func</span><span class="o">=</span><span class="n">get_join_tasks</span>
             <span class="p">)</span>
             <span class="k">assert</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining</span><span class="p">),</span> <span class="n">remaining</span>
-        
+
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_translating</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_manager</span>
-            <span class="n">copying</span><span class="o">.</span><span class="n">fill_checksums</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>            
+            <span class="n">copying</span><span class="o">.</span><span class="n">fill_checksums</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_translating</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">nodes</span><span class="p">,</span> <span class="n">connections</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">lib</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span>
@@ -528,8 +528,8 @@
             <span class="n">params</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
             <span class="n">lib</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span>
         <span class="n">graph</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;nodes&quot;</span><span class="p">:</span> <span class="n">nodes</span><span class="p">,</span> 
-            <span class="s2">&quot;connections&quot;</span><span class="p">:</span> <span class="n">connections</span><span class="p">,</span> 
+            <span class="s2">&quot;nodes&quot;</span><span class="p">:</span> <span class="n">nodes</span><span class="p">,</span>
+            <span class="s2">&quot;connections&quot;</span><span class="p">:</span> <span class="n">connections</span><span class="p">,</span>
             <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">,</span>
             <span class="s2">&quot;lib&quot;</span><span class="p">:</span> <span class="n">lib</span><span class="p">,</span>
         <span class="p">}</span>
@@ -538,11 +538,11 @@
 
 <div class="viewcode-block" id="Context.get_graph"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_graph">[docs]</a>    <span class="k">def</span> <span class="nf">get_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">runtime</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the graph in JSON format</span>
-<span class="sd">        </span>
+
 <span class="sd">        &quot;cache&quot;: A memoized result of the last invocation</span>
 <span class="sd">        of get_graph is returned, until the graph changes.</span>
 
-<span class="sd">        &quot;runtime&quot;: The graph is returned after </span>
+<span class="sd">        &quot;runtime&quot;: The graph is returned after</span>
 <span class="sd">        Library/LibMacro transformations of the graph</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">..midlevel.pretranslate</span> <span class="kn">import</span> <span class="n">pretranslate</span>
@@ -550,7 +550,7 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_cached_graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_graph</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_graph</span>
-        <span class="k">else</span><span class="p">:</span>        
+        <span class="k">else</span><span class="p">:</span>
             <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_graph</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">runtime</span><span class="p">:</span>
             <span class="n">graph</span> <span class="o">=</span> <span class="n">pretranslate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">)</span>
@@ -564,7 +564,7 @@
 
 <div class="viewcode-block" id="Context.get_zip"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_zip">[docs]</a>    <span class="k">def</span> <span class="nf">get_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Obtain the checksum-to-buffer cache for the current graph</span>
-<span class="sd">        </span>
+
 <span class="sd">        The cache is returned as zipped bytes</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># TODO: option to follow deep cell checksums</span>
@@ -586,7 +586,7 @@
 
 <div class="viewcode-block" id="Context.get_zip_async"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_zip_async">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_zip_async</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Obtain the checksum-to-buffer cache for the current graph</span>
-<span class="sd">        </span>
+
 <span class="sd">        The cache is returned as zipped bytes</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># TODO: option to follow deep cell checksums</span>
@@ -608,7 +608,7 @@
 
 <div class="viewcode-block" id="Context.save_zip"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_zip">[docs]</a>    <span class="k">def</span> <span class="nf">save_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Save the checksum-to-buffer cache for the current graph</span>
-<span class="sd">        </span>
+
 <span class="sd">        The cache is saved to &quot;filename&quot;, which should be a .zip file</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">zip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_zip</span><span class="p">()</span>
@@ -617,7 +617,7 @@
 
 <div class="viewcode-block" id="Context.save_zip_async"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_zip_async">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">save_zip_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Save the checksum-to-buffer cache for the current graph</span>
-<span class="sd">        </span>
+
 <span class="sd">        The cache is saved to &quot;filename&quot;, which should be a .zip file</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">zip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_zip_async</span><span class="p">()</span>
@@ -625,7 +625,7 @@
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">zip</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Context.add_zip"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.add_zip">[docs]</a>    <span class="k">def</span> <span class="nf">add_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">zip</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Adds entries from &quot;zip&quot; to the checksum-to-buffer cache </span>
+        <span class="sd">&quot;&quot;&quot;Adds entries from &quot;zip&quot; to the checksum-to-buffer cache</span>
 
 <span class="sd">        &quot;zip&quot; can be a file name, zip-compressed bytes or a Python ZipFile object.</span>
 <span class="sd">        Normally, it has been generated with Context.save_zip / Context.get_zip</span>
@@ -643,7 +643,7 @@
         <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="nb">zip</span><span class="p">,</span> <span class="s2">&quot;read&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">callable</span><span class="p">(</span><span class="nb">zip</span><span class="o">.</span><span class="n">read</span><span class="p">):</span>
             <span class="n">zipfile</span> <span class="o">=</span> <span class="n">ZipFile</span><span class="p">(</span><span class="nb">zip</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="nb">zip</span><span class="p">))</span>        
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="nb">zip</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">copying</span><span class="o">.</span><span class="n">add_zip</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="n">zipfile</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Context.include"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.include">[docs]</a>    <span class="k">def</span> <span class="nf">include</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lib</span><span class="p">,</span> <span class="n">only_zip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">full_path</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -663,7 +663,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span></div>
 
     <span class="nd">@run_in_mainthread</span>
-    <span class="k">def</span> <span class="nf">_do_translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">explicit</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>        
+    <span class="k">def</span> <span class="nf">_do_translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">explicit</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="n">graph0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_graph</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate2</span><span class="p">(</span><span class="n">graph0</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">,</span> <span class="n">explicit</span><span class="o">=</span><span class="n">explicit</span><span class="p">)</span>
 
@@ -696,11 +696,11 @@
                 <span class="n">graph</span><span class="p">[</span><span class="s2">&quot;lib&quot;</span><span class="p">]</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_translate_count</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">try</span><span class="p">:</span>            
+        <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_translating</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">ctx</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>            
+                <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
             <span class="n">import_before_translate</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
             <span class="k">with</span> <span class="n">macro_mode_on</span><span class="p">():</span>
                 <span class="n">ub_ctx</span> <span class="o">=</span> <span class="n">context</span><span class="p">(</span>
@@ -709,7 +709,7 @@
                 <span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mount</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">ub_ctx</span><span class="o">.</span><span class="n">_mount</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mount</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_unbound_context</span> <span class="o">=</span> <span class="n">ub_ctx</span>                
+                <span class="bp">self</span><span class="o">.</span><span class="n">_unbound_context</span> <span class="o">=</span> <span class="n">ub_ctx</span>
                 <span class="n">translate</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">ub_ctx</span><span class="p">)</span>
                 <span class="n">nodedict</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">]:</span> <span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">[</span><span class="s2">&quot;nodes&quot;</span><span class="p">]}</span>
                 <span class="n">nodedict0</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">]:</span> <span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph0</span><span class="p">[</span><span class="s2">&quot;nodes&quot;</span><span class="p">]}</span>
@@ -730,11 +730,14 @@
                     <span class="n">needs_translation</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="k">break</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_needs_translation</span> <span class="o">=</span> <span class="n">needs_translation</span>
-        
+
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_translating</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">for</span> <span class="n">traitlet</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_traitlets</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                <span class="n">traitlet</span><span class="o">.</span><span class="n">_connect_seamless</span><span class="p">()</span>        
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">traitlet</span><span class="o">.</span><span class="n">_connect_seamless</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
 
             <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="p">(</span><span class="n">Cell</span><span class="p">,</span> <span class="n">Transformer</span><span class="p">,</span> <span class="n">Reactor</span><span class="p">,</span> <span class="n">Macro</span><span class="p">)):</span>
@@ -748,7 +751,7 @@
                     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_translating</span> <span class="o">=</span> <span class="kc">False</span>
-    
+
     <span class="k">def</span> <span class="nf">_get_shares</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">shares</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -773,9 +776,9 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_live_share_namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_live_share_namespace</span> <span class="o">=</span> <span class="n">sharemanager</span><span class="o">.</span><span class="n">new_namespace</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_manager</span><span class="p">,</span>
-                <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">share_namespace</span><span class="p">,</span> 
+                <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">share_namespace</span><span class="p">,</span>
                 <span class="n">share_evaluate</span><span class="o">=</span><span class="kc">False</span>
-            <span class="p">)</span>        
+            <span class="p">)</span>
         <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">shareparams</span> <span class="ow">in</span> <span class="n">shares</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;/&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="c1">#TODO: split in subpaths by inspecting and traversing ctx._children (recursively for subcontext children)</span>
             <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="p">[</span><span class="n">path</span><span class="p">]</span>
@@ -790,7 +793,7 @@
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
             <span class="n">sharepath</span> <span class="o">=</span> <span class="n">shareparams</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">]</span>
             <span class="n">readonly</span> <span class="o">=</span> <span class="n">shareparams</span><span class="p">[</span><span class="s2">&quot;readonly&quot;</span><span class="p">]</span>
-            <span class="n">mimetype</span> <span class="o">=</span> <span class="n">hcell</span><span class="o">.</span><span class="n">mimetype</span>            
+            <span class="n">mimetype</span> <span class="o">=</span> <span class="n">hcell</span><span class="o">.</span><span class="n">mimetype</span>
             <span class="n">cell</span><span class="o">.</span><span class="n">share</span><span class="p">(</span><span class="n">sharepath</span><span class="p">,</span> <span class="n">readonly</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="n">mimetype</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_destroy_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
@@ -850,7 +853,7 @@
 
 <div class="viewcode-block" id="Context.unobserve"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.unobserve">[docs]</a>    <span class="k">def</span> <span class="nf">unobserve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="p">()):</span>
         <span class="sd">&quot;&quot;&quot;Analogous to Cell.unobserve&quot;&quot;&quot;</span>
-        <span class="n">lp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> 
+        <span class="n">lp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">obs</span><span class="o">.</span><span class="n">path</span><span class="p">[:</span><span class="n">lp</span><span class="p">]</span> <span class="o">==</span> <span class="n">path</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span></div>
@@ -885,13 +888,13 @@
                 <span class="k">return</span> <span class="n">ctarget</span><span class="p">[:</span><span class="n">lp</span><span class="p">]</span> <span class="o">!=</span> <span class="n">path</span>
         <span class="n">connections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">new_connections</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="n">keep_con</span><span class="p">,</span> <span class="n">connections</span><span class="p">))</span>
-        <span class="n">any_removed</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_connections</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">connections</span><span class="p">))</span>            
+        <span class="n">any_removed</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_connections</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">connections</span><span class="p">))</span>
         <span class="n">connections</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">new_connections</span>
         <span class="k">return</span> <span class="n">any_removed</span>
 
 <div class="viewcode-block" id="Context.link"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.link">[docs]</a>    <span class="k">def</span> <span class="nf">link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Creates a bidirectional link between the first and second cell</span>
-<span class="sd">        </span>
+
 <span class="sd">        Both cells must be authoritative</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">link</span> <span class="o">=</span> <span class="n">Link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="o">=</span><span class="n">second</span><span class="p">)</span>
@@ -949,7 +952,7 @@
             <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_top_parent</span><span class="p">()</span>
         <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">+</span> <span class="p">(</span><span class="n">attr</span><span class="p">,)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Reactor</span><span class="p">):</span>            
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Reactor</span><span class="p">):</span>
             <span class="n">value</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
             <span class="n">parent</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Transformer</span><span class="p">):</span>
@@ -976,7 +979,7 @@
         <span class="n">nodes</span><span class="p">,</span> <span class="n">connections</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">_graph</span>
         <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span>
         <span class="n">lp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-        <span class="n">newnodes</span> <span class="o">=</span> <span class="p">[]</span>        
+        <span class="n">newnodes</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">nodepath</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">kv</span><span class="p">:</span> <span class="n">kv</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodepath</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">lp</span> <span class="ow">and</span> <span class="n">nodepath</span><span class="p">[:</span><span class="n">lp</span><span class="p">]</span> <span class="o">==</span> <span class="n">path</span><span class="p">:</span>
                 <span class="n">newnode</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
@@ -1001,8 +1004,8 @@
         <span class="k">if</span> <span class="n">copy</span><span class="p">:</span>
             <span class="n">params</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="n">graph</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;nodes&quot;</span><span class="p">:</span> <span class="n">newnodes</span><span class="p">,</span> 
-            <span class="s2">&quot;connections&quot;</span><span class="p">:</span> <span class="n">new_connections</span><span class="p">,</span> 
+            <span class="s2">&quot;nodes&quot;</span><span class="p">:</span> <span class="n">newnodes</span><span class="p">,</span>
+            <span class="s2">&quot;connections&quot;</span><span class="p">:</span> <span class="n">new_connections</span><span class="p">,</span>
             <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="n">params</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">graph</span>
@@ -1013,7 +1016,7 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_cached_graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_graph</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_graph</span>
-        <span class="k">else</span><span class="p">:</span>        
+        <span class="k">else</span><span class="p">:</span>
             <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_graph</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">runtime</span><span class="p">:</span>
             <span class="n">graph</span> <span class="o">=</span> <span class="n">pretranslate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">)</span>

@@ -59,7 +59,7 @@ A transformation may wrap a single bash command that invokes a single command li
 
 There are two strategies to define a transformation.
 
-1. The best way is use a bash transformer and include the source code of every command line tool. This will make the transformation reproducible. The command line tool must not have any hard-coded "magic files" where it depends on. Also, if it is written in a compiled language, things become quite difficult. Seamless has compiled transformers, but they assume that data is exchanged as function arguments, and not via the file system.
+1. The best way is use a bash transformer and include the source code of every command line tool (except standard UNIX commands). This will make the transformation reproducible. The command line tool must not have any hard-coded "magic files" where it depends on. Also, if it is written in a compiled language, things become quite difficult. Seamless has compiled transformers, but they assume that data is exchanged as function arguments, and not via the file system.
 
 2. The alternative is to treat a command line tool as part of the environment. In that case, use a Docker transformer, where the command line tool must be installed in the Docker container. This is appropriate if the command line tool is immutable over the course of the project. You may also be forced to go this route if the assumptions above are violated. Any magic files must be installed in the Docker container.
 
@@ -79,17 +79,21 @@ To debug your code, you can use either print statements, or a debugging session 
 
 #### Debugging with print statements
 
-Seamless transformations can be executed anywhere. Therefore, they do not print their stdout or stderr to any terminal. Also, stdout is ignored, and is are only captured when the transformation has finished.
+Seamless transformations can be executed anywhere. Therefore, they do not print their stdout or stderr to any terminal. Stdout and stderr are only captured when the transformation has finished.
 
 For Python transformers, the transformation is aborted if an exception is raised. `Transformation.exception` will then contain the exception traceback and stderr. Else, stderr will be discarded. If you want to debug with print statements, you should raise an exception at the end.
 
-For bash/Docker transformers, if any launched process returns with a non-zero error code, the transformation is aborted. `Transformation.exception` will then contain the bash error message and stderr. Else, stderr will be discarded. If you want to debug with print statements, write to `/dev/stderr`, and exit with a non-zero exit code (`exit 1`).
+For bash/Docker transformers, if any launched process returns with a non-zero error code, the transformation is aborted. `Transformation.exception` will then contain the bash error message, stdout and stderr. Else, stdout/stderr will be discarded. Therefore, if you want to debug with print statements, exit with a non-zero exit code (`exit 1`).
+
+For compiled transformers (i.e. written in C/C++/Fortran/...), you should *not* do `exit(...)` with a non-zero exit code: this kills the transformation process immediately, including the machinery to capture stdout and stderr. Instead, make the main `int transform(...)` function return a non-zero value.
 
 #### Debugging sessions
 
-IDEs do not yet support Seamless transformers.
+Visual Studio Code and other IDEs do not yet support Seamless transformers.
 
-***NOTE: As of Seamless 0.2, the section below does not work properly***
+***Python transformers***
+
+***NOTE: As of Seamless 0.3, the section below does not work properly***
 
 To debug a Python transformer, you can use a slightly modified version of the pdb debugger. Add the following to your transformation code:
 ```python
@@ -97,6 +101,32 @@ from seamless.pdb import set_trace
 set_trace()
 ```
 ***/NOTE***
+
+***Compiled transformers***
+
+Compiled transformers can be debugged with a debugger such as gdb.
+
+For this, set `Transformer.debug` to `True` and re-translate the graph.
+(You may have to make a minimal change in the source code or input. Remind that Seamless does not re-execute transformations that have already been performed,
+debug or not).
+
+Once the transformer executes, you will see a Process ID printed.
+
+Find out the name of your running Seamless Docker container with `docker ps`, e.g. `jolly_einstein`.
+
+Start up gdbgui or gdb in the same Docker container, using `docker exec -it jolly_einstein gdbgui`.
+
+In the gdb terminal, type the following (where XXX is the process ID):
+```
+(gdb) attach XXX
+(gdb) break main.cpp:transform
+(gdb) signal SIGUSR1
+```
+and gdb/gdbgui will break when your main `transform` function starts.
+
+If your transformer is written in C, the main file will be "main.c" instead of "main.cpp".
+
+Whenever the transformer re-executes (due to changed source code or inputs), you will have to re-attach, but your breakpoints normally remain active.
 
 ## Visualization phase
 
