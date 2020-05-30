@@ -4,10 +4,10 @@ from ..midlevel.StaticContext import StaticContext
 
 import seamless
 seamless_dir = os.path.dirname(seamless.__file__)
-graphfile = os.path.join(seamless_dir, 
+graphfile = os.path.join(seamless_dir,
     "graphs", "compiled_transformer.seamless"
 )
-zipfile = os.path.join(seamless_dir, 
+zipfile = os.path.join(seamless_dir,
     "graphs", "compiled_transformer.zip"
 )
 graph = json.load(open(graphfile))
@@ -26,28 +26,28 @@ def _init_from_graph(ctf, debug):
     ctf.integrator.debug_.cell().set(debug)
     ctf.integrator_code.connect(ctf.integrator.code)
 
-    ctf.translator_code = sctx.translator.code.cell()
-    ctf.translator_params = sctx.translator_params.cell()
-    ctf.translator = transformer(sctx.translator_params.value)
+    ctf.executor_code = sctx.executor.code.cell()
+    ctf.executor_params = sctx.executor_params.cell()
+    ctf.executor = transformer(sctx.executor_params.value)
     if debug:
-        ctf.translator.debug = True
-    ctf.translator_code.connect(ctf.translator.code)
+        ctf.executor.debug = True
+    ctf.executor_code.connect(ctf.executor.code)
 
 def _finalize(
-        ctx, ctf, inp, c_inp, result, c_result, 
+        ctx, ctf, inp, c_inp, result, c_result,
         input_name, result_name, inchannels, node):
     result_cell_name1 = result_name + "_CELL1"
     result_cell_name2 = result_name + "_CELL2"
     input_cell_name = input_name + "_CELL"
     main_module_cell_name = input_name + "_MAIN_MODULE_CELL"
     forbidden = (
-        result_name, result_cell_name1, 
+        result_name, result_cell_name1,
         result_cell_name2, input_cell_name,
         main_module_cell_name
     )
     for c in inchannels:
-        assert (not len(c)) or c[0] not in forbidden #should have been checked by highlevel    
-    
+        assert (not len(c)) or c[0] not in forbidden #should have been checked by highlevel
+
     result_cell1 = cell("mixed")
     cell_setattr(node, ctx, result_cell_name1, result_cell1)
     result_cell2 = cell("mixed")
@@ -60,20 +60,20 @@ def _finalize(
     #1: between transformer and library
 
     ctx.inputpins.connect(ctf.gen_header.inputpins)
-    ctx.pins.connect(ctf.translator.pins)
-    ctf.translator.result.connect(result_cell1)
+    ctx.pins.connect(ctf.executor.pins)
+    ctf.executor.result.connect(result_cell1)
     result_cell1.connect(result.inchannels[()])
     inp.outchannels[()].connect(input_cell)
-    input_cell.connect(ctf.translator.kwargs)
+    input_cell.connect(ctf.executor.kwargs)
     c_inp.schema.connect(ctf.gen_header.input_schema)
     c_result.schema.connect(ctf.gen_header.result_schema)
-    c_inp.schema.connect(ctf.translator.input_schema)
-    c_result.schema.connect(ctf.translator.result_schema)
+    c_inp.schema.connect(ctf.executor.input_schema)
+    c_result.schema.connect(ctf.executor.result_schema)
 
     ctf.gen_header.input_name.cell().set(input_name)
     ctf.gen_header.result_name.cell().set(result_name)
-    ctf.translator.input_name.cell().set(input_name)
-    ctf.translator.result_name.cell().set(result_name)
+    ctf.executor.input_name.cell().set(input_name)
+    ctf.executor.result_name.cell().set(result_name)
 
     #2: among library cells
     ctx.header = cell("text")
@@ -88,7 +88,7 @@ def _finalize(
     ctx.module = cell("mixed")
     ctf.integrator.result.connect(ctx.module)
 
-    ctx.module.connect(ctf.translator.module)
+    ctx.module.connect(ctf.executor.module)
 
 def translate_compiled_transformer(node, root, namespace, inchannels, outchannels):
     from .translate import set_structured_cell_from_checksum
@@ -134,7 +134,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         namespace[path, True] = inp.inchannels[inchannel], node
 
     assert result_name not in node["pins"] #should have been checked by highlevel
-    assert "translator_result_" not in node["pins"] #should have been checked by highlevel
+    assert "executor_result_" not in node["pins"] #should have been checked by highlevel
     all_pins = {}
     inputpins = []
     for pinname, pin in node["pins"].items():
@@ -147,7 +147,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         all_pins[node["SCHEMA"]] = {
             "io": "input", "celltype": "mixed"
         }
-    
+
     # Compiler
     ctx.language = cell("str").set(node["language"])
 
@@ -178,7 +178,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     main_module_checksum = checksum.get("main_module",
       'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c' # {}
     )
-    ctx.main_module.auth._set_checksum(main_module_checksum, initial=True)    
+    ctx.main_module.auth._set_checksum(main_module_checksum, initial=True)
     inp_checksum = {}
     for k in checksum:
         if k == "schema":
@@ -206,7 +206,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     setattr(ctx, result_name, result)
     assert not node["SCHEMA"]
 
-    result_checksum = {}        
+    result_checksum = {}
     for k in checksum:
         if not k.startswith("result"):
             continue
@@ -219,7 +219,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     c_inp = getattr(ctx, input_name + STRUC_ID)
     c_result = getattr(ctx, result_name + STRUC_ID)
     _finalize(
-        ctx, ctf, inp, c_inp, result, c_result, 
+        ctx, ctf, inp, c_inp, result, c_result,
         input_name, result_name,
         inchannels, node
     )

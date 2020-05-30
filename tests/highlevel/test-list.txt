@@ -39,6 +39,7 @@ subcontext.py
 reassign-transformer.py
 transformer-compiled.py
 transformer-redefine.py
+transformer-compiled-error.py
 transformer-compiled-module.py
 twopi-graph-redis.sh: run with redis; delete job results (e.g. redis-cli flushall)
                       run as i=twopi-graph-redis; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1

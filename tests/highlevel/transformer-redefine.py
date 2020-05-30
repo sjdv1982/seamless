@@ -22,13 +22,14 @@ print(ctx.transform.header.value)
 print("*" * 80)
 ctx.code >> ctx.transform.code
 ctx.code = """
-extern "C" double transform(int a, int b) {
-    return a + b;
+extern "C" int transform(int a, int b, *double result) {
+    *result = a + b;
+    return 0;
 }"""
 ctx.compute()
 print(ctx.result.value)
 
-del ctx.transform  # required! 
+del ctx.transform  # required!
                    # else, the following line
                    # will try to re-use the existing transformer
 ctx.transform = lambda a,b: a + b
@@ -37,4 +38,3 @@ ctx.transform.b = 13
 ctx.result = ctx.transform
 ctx.compute()
 print(ctx.result.value)
-

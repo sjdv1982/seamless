@@ -1,0 +1,30 @@
+5
+
+ERROR 1:
+
+
+g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+
+
+*** executor ***
+
+*************************************************
+* Standard output
+*************************************************
+transform 2 3
+
+*************************************************
+Compiled transformer returned non-zero value: 1
+*** /executor ***
+
+
+ERROR 2:
+
+
+g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+
+
+*** executor ***
+Transformation exited with code 1
+*** /executor ***
+

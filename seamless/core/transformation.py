@@ -17,6 +17,9 @@ DEBUG = False
 class SeamlessTransformationError(Exception):
     pass
 
+class SeamlessStreamTransformationError(Exception):
+    pass
+
 ###############################################################################
 # Local jobs
 ###############################################################################
@@ -33,11 +36,11 @@ def set_ncores(ncores):
 async def acquire_lock(tf_checksum):
     if not len(_locks):
         raise SeamlessTransformationError("Local computation has been disabled for this Seamless instance")
-    while 1:        
+    while 1:
         for locknr, lock in enumerate(_locks):
             if lock is None:
                 _locks[locknr] = tf_checksum
-                return locknr                
+                return locknr
         await asyncio.sleep(0.01)
 
 def release_lock(locknr):
@@ -48,7 +51,7 @@ def release_lock(locknr):
 # Remote jobs
 ###############################################################################
 
-REMOTE_TIMEOUT = 5.0 
+REMOTE_TIMEOUT = 5.0
 
 class RemoteJobError(SeamlessTransformationError):
     pass
@@ -63,18 +66,18 @@ class TransformationJob:
     start = None
     def __init__(self,
         checksum, codename,
-        buffer_cache, transformation, 
+        buffer_cache, transformation,
         semantic_cache, debug
     ):
         self.checksum = checksum
         assert codename is not None
-        self.codename = codename        
+        self.codename = codename
         assert "code" in transformation, transformation.keys()
         for pinname in transformation:
             if pinname != "__output__":
                 assert transformation[pinname][2] is not None, pinname
         outputpin = transformation["__output__"]
-        outputname, celltype, subcelltype = outputpin        
+        outputname, celltype, subcelltype = outputpin
         self.outputpin = outputpin
         self.buffer_cache = weakref.ref(buffer_cache)
         self.job_id = TransformationJob._job_id_counter + 1
@@ -86,12 +89,12 @@ class TransformationJob:
         self.future = None
         self.remote = False
         self.restart = False
-    
+
 
     async def _probe_remote(self, clients):
         if not len(clients):
             return
-        coros = []            
+        coros = []
         for client in clients:
             coro = client.status(self.checksum)
             coros.append(coro)
@@ -103,8 +106,8 @@ class TransformationJob:
         self.remote_result = None
         while 1:
             done, pending = await asyncio.wait(
-                futures, 
-                timeout=REMOTE_TIMEOUT, 
+                futures,
+                timeout=REMOTE_TIMEOUT,
                 return_when=asyncio.FIRST_COMPLETED
             )
             for fut in done:
@@ -127,7 +130,7 @@ class TransformationJob:
                     if DEBUG:
                         print("STATUS RESULT", result)
                         traceback.print_exc()
-                    continue                    
+                    continue
                 if not isinstance(status, int):
                     continue
                 if status < 0:
@@ -163,7 +166,7 @@ class TransformationJob:
                     try:
                         status = fut.result()[0]
                     except:
-                        continue                    
+                        continue
                     if status == best_status:
                         best_clients.append(clients[n])
                 assert len(best_clients)
@@ -172,7 +175,7 @@ class TransformationJob:
                 break
         #print("PROBE DONE", self.remote_status)
 
-    
+
     def execute(self, prelim_callback, progress_callback):
         coro = self._execute(prelim_callback, progress_callback)
         self.future = asyncio.ensure_future(coro)
@@ -188,7 +191,7 @@ class TransformationJob:
             await asyncio.sleep(0.05)
         clients = list(communion_client_manager.clients["transformation"])
         await self._probe_remote(clients)
-        if self.remote: 
+        if self.remote:
             self.remote_futures = None
             try:
                 result = await self._execute_remote(
@@ -207,12 +210,12 @@ class TransformationJob:
             )
         return result
 
-    async def _execute_remote(self, 
+    async def _execute_remote(self,
         prelim_callback, progress_callback
     ):
 
         async def get_result1(client):
-            try:            
+            try:
                 await client.submit(self.checksum)
                 result = await client.status(self.checksum)
                 return result
@@ -222,7 +225,7 @@ class TransformationJob:
                 raise
 
         async def get_result2(client):
-            try:            
+            try:
                 await client.wait(self.checksum)
                 return await client.status(self.checksum)
             except asyncio.CancelledError:
@@ -259,8 +262,8 @@ class TransformationJob:
         has_negative_status = False
         while 1:
             done, pending = await asyncio.wait(
-                futures, 
-                timeout=REMOTE_TIMEOUT, 
+                futures,
+                timeout=REMOTE_TIMEOUT,
                 return_when=asyncio.FIRST_COMPLETED
             )
             go_on = (len(pending) > 0)
@@ -299,7 +302,7 @@ class TransformationJob:
                     new_future = asyncio.ensure_future(get_result(client))
                     rev[new_future] = n
                     futures.append(new_future)
-                    go_on = True                    
+                    go_on = True
                     continue
                 else: # status == 3
                     _, response = result
@@ -314,10 +317,10 @@ class TransformationJob:
             self.remote = False
         elif has_exceptions:
             raise RemoteJobError(exc_str)
-        else:            
+        else:
             raise RemoteJobError()
 
-    async def _execute_local(self, 
+    async def _execute_local(self,
         prelim_callback, progress_callback
     ):
         buffer_cache = self.buffer_cache()
@@ -340,7 +343,7 @@ class TransformationJob:
                 values[pinname] = None
                 continue
             # fingertipping must have happened before
-            buffer = get_buffer(checksum, buffer_cache)            
+            buffer = get_buffer(checksum, buffer_cache)
             assert buffer is not None
             try:
                 value = await deserialize(buffer, checksum, celltype, False)
@@ -366,7 +369,7 @@ class TransformationJob:
                 continue
             schema_pinname = pinname + "_SCHEMA"
             schema_pin = self.transformation.get(schema_pinname)
-            schema = None            
+            schema = None
             if schema_pin is not None:
                 schema_celltype, _, _ = schema_pin
                 assert schema_celltype == "plain", schema_pinname
@@ -376,7 +379,7 @@ class TransformationJob:
             if schema is None:
                 schema = {}
             v = Silk(
-                data=namespace[pinname], 
+                data=namespace[pinname],
                 schema=schema
             )
             namespace[pinname] = v
@@ -388,7 +391,7 @@ class TransformationJob:
                 return None
             try:
                 await validate_subcelltype(
-                    result, celltype, subcelltype, 
+                    result, celltype, subcelltype,
                     self.codename, buffer_cache
                 )
                 result_checksum = await calculate_checksum(result)
@@ -398,8 +401,8 @@ class TransformationJob:
 
         lock = await acquire_lock(self.checksum)
         self.start = time.time()
-        running = False        
-        try:                        
+        running = False
+        try:
             queue = Queue()
             outputname, celltype, subcelltype = self.outputpin
             args = (
@@ -407,8 +410,8 @@ class TransformationJob:
                 injector, module_workspace,
                 self.codename,
                 namespace, inputs, outputname, celltype, queue
-            )            
-            execute_command = execute_debug if self.debug else execute 
+            )
+            execute_command = execute_debug if self.debug else execute
             self.executor = Executor(target=execute_command,args=args, daemon=True)
             self.executor.start()
             running = True
@@ -430,12 +433,14 @@ class TransformationJob:
                         prelim_checksum = await get_result_checksum(prelim)
                         prelim_callback(self, prelim_checksum)
                     elif status == 3:
-                        progress = msg                        
+                        progress = msg
                         progress_callback(self, progress)
+                    else:
+                        raise Exception("Unknown return status {}".format(status))
                 if not self.executor.is_alive():
                     if self.executor.exitcode != 0:
                         raise SeamlessTransformationError(
-                          "Transformation exited with code %s" % self.executor.exitcode
+                          "Transformation exited with code %s\n" % self.executor.exitcode
                         )
                     done = True
                 if done:
@@ -446,11 +451,11 @@ class TransformationJob:
         except asyncio.CancelledError:
             if running:
                 self.executor.terminate()
-        finally:            
+        finally:
             release_lock(lock)
         result_checksum = await get_result_checksum(result)
         return result_checksum
-                
+
 
 
 from .protocol.get_buffer import get_buffer

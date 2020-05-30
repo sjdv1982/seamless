@@ -247,8 +247,9 @@ elif return_jtype == "array":
     header += struct_header
     input_args.append(output_ctype + " *" + result_name)
 else:
-    return_ctype = gen_basic_type(result_name, result_schema, verify_integer_bytesize=False)
+    output_ctype = gen_basic_type(result_name, result_schema, verify_integer_bytesize=False)
+    input_args.append(output_ctype + " *" + result_name)
 
 input_args = ", ".join(input_args)
 result = header
-result += "{0} transform({1});".format(return_ctype, input_args)
+result += "int transform({});".format(input_args)

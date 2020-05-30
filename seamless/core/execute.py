@@ -70,7 +70,7 @@ def _execute(name, code,
       identifier, namespace,
       inputs, output_name, celltype, result_queue
     ):
-        from .transformation import SeamlessTransformationError
+        from .transformation import SeamlessTransformationError, SeamlessStreamTransformationError
         assert identifier is not None
         namespace["return_preliminary"] = functools.partial(
             return_preliminary, result_queue, celltype
@@ -86,8 +86,11 @@ def _execute(name, code,
             else:
                 exec_code(code, identifier, namespace, inputs, output_name)
         except SeamlessTransformationError as exc:
-            exc = str(exc)
+            exc = str(exc) + "\n"
             return (2, exc)
+        except SeamlessStreamTransformationError as exc:
+            exc = str(exc) + "\n"
+            return (10, exc)
         except Exception:
             exc = traceback.format_exc()
             return (1, exc)
@@ -139,38 +142,38 @@ def execute(name, code,
                 inputs, output_name, celltype, result_queue
             )
 
-        code, msg = result
-        if code == 2: # SeamlessTransformationException, propagate
+        msg_code, msg = result
+        if msg_code == 2: # SeamlessTransformationError, propagate
             result_queue.put((1, msg))
-        elif code == 1:
+        elif msg_code in (1, 10):
             std = ""
             sout = stdout.read() + stdout2.read()
             sys.stdout, sys.stderr = old_stdio
             if len(sout):
                 if not len(std):
                     std = "\n"
-                std += "*" * 50 + "\n"
-                std += "* STDOUT:" + " " * 40 + "*\n"
-                std += "*" * 50 + "\n"
-                std += sout
-                std += "*" * 50 + "\n"
-                std += "\n"
+                std += """*************************************************
+* Standard output
+*************************************************
+{}
+*************************************************
+""".format(sout)
             serr = stderr.read() + stderr2.read()
             if len(serr):
                 if not len(std):
                     std += "\n"
-                std += "*" * 50 + "\n"
-                std += "* STDERR:" + " " * 40 + "*\n"
-                std += "*" * 50 + "\n"
-                std += serr
-                std += "*" * 50 + "\n"
-                std += "\n"
+                std +="""*************************************************
+* Standard error
+*************************************************
+{}
+*************************************************
+""".format(serr)
             if len(std):
                 msg = std + msg
-            result_queue.put((code, msg))
+            result_queue.put((1, msg))
         else:
-            sys.stdout.write(stdout.read())
-            sys.stderr.write(stderr.read())
+            sys.stdout.write(stdout.read() + stdout2.read())
+            sys.stderr.write(stderr.read() + stderr2.read())
             result_queue.put(result)
     finally:
         sys.stdout, sys.stderr = old_stdio

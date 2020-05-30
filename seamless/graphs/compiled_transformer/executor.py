@@ -1,3 +1,4 @@
+from seamless.core.transformation import SeamlessStreamTransformationError
 from seamless.silk import Silk
 import numpy as np
 import operator, functools
@@ -28,6 +29,42 @@ def get_dtype(type, unsigned, bytesize): #adapted from _form_to_dtype_scalar
     else:
         raise TypeError(type)
     return np.dtype(result)
+
+json_to_c = {
+    "integer": "int",
+    ("integer", 1): "int8_t",
+    ("integer", 2): "int16_t",
+    ("integer", 4): "int32_t",
+    ("integer", 8): "int64_t",
+    "number": "double",
+    ("number", 4): "float",
+    ("number", 8): "double",
+    "boolean": "bool",
+    "string": "char",
+}
+
+def gen_basic_type(schema):
+    warnings = []
+    has_form = "form" in schema
+    if has_form:
+        form = schema["form"]
+    else:
+        form = {}
+    type = schema["type"]
+    ctype = json_to_c[type]
+    result = ctype
+    if type in ("integer", "number"):
+        if not has_form or "bytesize" not in form:
+            result = ctype
+        else:
+            result = json_to_c[type, form["bytesize"]]
+    if type == "integer":
+        if form.get("unsigned"):
+            if result.endswith("_t"):
+                result = "u" + result
+            else:
+                result = "unsigned " +  result
+    return result
 
 #TODO: share with gen-header code
 def gen_struct_name(name):
@@ -180,28 +217,31 @@ for propnr, prop in enumerate(order):
     else:
         args.append(value)
 
-simple_result = True
 if result_schema["type"] == "object":
-    simple_result = False
     result_arg = build_result_struct(result_schema)
-    args.append(result_arg)
 elif result_schema["type"] == "array":
-    simple_result = False
     result_arg = build_result_array(result_schema)
-    args.append(result_arg)
+else:
+    result_arg_name = gen_basic_type(result_schema)
+    result_arg = ffi.new(result_arg_name+" *")
+args.append(result_arg)
 
 def run():
-    if simple_result:
-        return module.lib.transform(*args)
+    error_code = module.lib.transform(*args)
+    if error_code != 0:
+        return error_code, None
+    if result_schema["type"] == "object":
+        result = unpack_result_struct(args[-1], result_schema)
+    elif result_schema["type"] == "array":
+        result = unpack_result_array_struct(args[-1], result_schema)
     else:
-        module.lib.transform(*args)
-        if result_schema["type"] == "object":
-            return unpack_result_struct(args[-1], result_schema)
-        else: # array
-            return unpack_result_array_struct(args[-1], result_schema)
+        result = args[-1][0]
+    return 0, result
 
 with wurlitzer.pipes() as (stdout, stderr):
-    result = run()
+    error_code, result = run()
 sys.stderr.write(stderr.read())
 sys.stdout.write(stdout.read())
 ARRAYS.clear()
+if error_code != 0:
+    raise SeamlessStreamTransformationError("Compiled transformer returned non-zero value: {}".format(error_code))

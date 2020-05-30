@@ -3,12 +3,12 @@ Status: {
   "tf": "error"
 }
 
-**************************************************
-* STDOUT:                                        *
-**************************************************
+*************************************************
+* Standard output
+*************************************************
 TEST
-**************************************************
 
+*************************************************
 Traceback (most recent call last):
   File "/seamless/seamless/core/execute.py", line 87, in _execute
     exec_code(code, identifier, namespace, inputs, output_name)

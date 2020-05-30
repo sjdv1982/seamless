@@ -43,7 +43,7 @@ typedef struct ResultStruct {
   int nhits;
 } ResultStruct;
 
-void transform(const Atoms1Struct* atoms1, const Atoms2Struct* atoms2, const DbcaStruct* dbca, int looplength, int maxR, int maxloopgap, double minBC, int minloopmatch, bool mirror, const PdbIndexStruct* pdb_index, const SegIndexStruct* seg_index, ResultStruct *result);
+int transform(const Atoms1Struct* atoms1, const Atoms2Struct* atoms2, const DbcaStruct* dbca, int looplength, int maxR, int maxloopgap, double minBC, int minloopmatch, bool mirror, const PdbIndexStruct* pdb_index, const SegIndexStruct* seg_index, ResultStruct *result);
 
 typedef double Real;
 typedef Real Coord[3];
@@ -65,7 +65,7 @@ typedef int PdbIndex[2];
 typedef int HitIndex[3];
 typedef float HitStatIndex[2];
 
-void transform(const Atoms1Struct* atoms1, const Atoms2Struct* atoms2, const DbcaStruct* dbca, int looplength, int maxR, int maxloopgap, double minBC, int minloopmatch, bool mirror, const PdbIndexStruct* pdb_index, const SegIndexStruct* seg_index, ResultStruct *result) {
+int transform(const Atoms1Struct* atoms1, const Atoms2Struct* atoms2, const DbcaStruct* dbca, int looplength, int maxR, int maxloopgap, double minBC, int minloopmatch, bool mirror, const PdbIndexStruct* pdb_index, const SegIndexStruct* seg_index, ResultStruct *result) {
     fprintf(stderr, "BCLoopSearch C function runs!!\n");
     int nhits = BCLoopSearch (
         (const Coord *) atoms1->data, atoms1->shape[0],
@@ -78,8 +78,8 @@ void transform(const Atoms1Struct* atoms1, const Atoms2Struct* atoms2, const Dbc
         (HitIndex *) result->hits->data,
         (HitStatIndex *) result->hitstats->data
     );
-    
+
     fprintf(stderr, "NHITS %d\n", nhits);
-    result->nhits = nhits;  
-    return; 
+    result->nhits = nhits;
+    return 0;
 }

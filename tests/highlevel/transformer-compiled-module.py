@@ -26,15 +26,16 @@ def build_transformer():
     ctx.code >> ctx.transform.code
     ctx.code = """
     extern "C" double add(int a, int b);
-    extern "C" double transform(int a, int b) {
-        return add(a,b);
+    extern "C" int transform(int a, int b, double *result) {
+        *result = add(a,b);
+        return 0;
     }"""
     ctx.translate()
-    ctx.transform.result.example = 0.0 #example, just to fill the schema    
+    ctx.transform.result.example = 0.0 #example, just to fill the schema
 
     ctx.transform.main_module.add.language = "c"
     code = """
-    double add(int a, int b) {return a+b;};
+    int add(int a, int b, double *result) {*result = a+b;};
     """
     ctx.add_code >> ctx.transform.main_module.add.code
     ctx.add_code.set(code)

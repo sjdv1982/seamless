@@ -525,7 +525,7 @@ class Transformer(Base):
         if htf["compiled"]:
             attrs = (
                 htf["INPUT"], "code",
-                "gen_header", "integrator", "translator",
+                "gen_header", "integrator", "executor",
                 htf["RESULT"]
             )
         else:
@@ -578,7 +578,7 @@ class Transformer(Base):
         if htf["compiled"]:
             attrs = (
                 htf["INPUT"], "code",
-                "gen_header", "integrator", "translator",
+                "gen_header", "integrator", "executor",
                 htf["RESULT"]
             )
         else:

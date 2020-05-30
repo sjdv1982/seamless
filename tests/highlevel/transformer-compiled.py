@@ -16,11 +16,9 @@ print(ctx.result.value)
 ctx.transform.language = "cpp"
 ctx.code >> ctx.transform.code
 ctx.code = """
-#include <iostream>
-using namespace std;
-extern "C" double transform(int a, int b) {
-    cout << "transform " << a << " " << b << endl;
-    return a + b;
+extern "C" int transform(int a, int b, double *result) {
+    *result = a + b;
+    return 0;
 }"""
 ctx.translate()
 ctx.transform.result.example = 0.0 #example, just to fill the schema
@@ -45,10 +43,13 @@ print(ctx.transform.status)
 exc = ctx.transform.exception
 if exc is not None:
     print(exc)
-import sys; sys.exit()
 
 ctx.a.mount("/tmp/a.txt")
 ctx.b.mount("/tmp/b.txt")
 ctx.result.mount("/tmp/result.txt", mode="w")
 ctx.code.mount("/tmp/code.cpp")
 ctx.compute()
+
+# ctx.transform.debug = True
+# ctx.translate()
+# => fire up ipython

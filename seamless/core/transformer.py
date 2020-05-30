@@ -146,7 +146,7 @@ class Transformer(Worker):
 
     @property
     def exception(self):
-        from .transformation import RemoteJobError, SeamlessTransformationError
+        from .transformation import RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError
         if not self._void:
             return None
         if self._status_reason == StatusReasonEnum.UPSTREAM:
@@ -173,7 +173,7 @@ class Transformer(Worker):
         exc = transformation_cache.transformation_exceptions.get(transformation)
         if exc is None:
             return None
-        if isinstance(exc, (RemoteJobError, SeamlessTransformationError)):
+        if isinstance(exc, (RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError)):
             return exc.args[0]
         s = traceback.format_exception(
             value=exc,
