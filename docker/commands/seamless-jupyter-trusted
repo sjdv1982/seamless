@@ -3,8 +3,9 @@
 #    NOTE: THIS IS A BIG SECURITY HOLE, IT CAN GIVE ROOT ACCESS TO YOUR SYSTEM
 
 # add --ip='0.0.0.0' to allow connections from outside
-docker run \
-  --rm \
+gdbflags='--cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined'
+docker run --rm \
+  $gdbflags \
   --network=host \
   -v `pwd`:/home/jovyan/cwd \
   -v /var/run/docker.sock:/var/run/docker.sock \

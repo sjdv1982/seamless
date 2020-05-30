@@ -4,7 +4,9 @@ set -u -e
 # - Current directory is mounted to /cwd, and the command is executed there
 # - /tmp is mounted as well
 
+gdbflags='--cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined'
 docker run --rm -it \
+  $gdbflags \
   --network=host \
   -v `pwd`:/cwd \
   -v /tmp:/tmp \

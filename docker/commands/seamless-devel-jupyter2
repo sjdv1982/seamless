@@ -1,7 +1,9 @@
 # version of jupyter-seamless-devel with full manual Jupyter configuration
 seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
 
+gdbflags='--cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined'
 docker run --rm \
+  $gdbflags \
   -v `pwd`:/home/jovyan/cwd -v $seamlessdir:/seamless \
   -e "PYTHONPATH=/seamless" \
   --network=host \

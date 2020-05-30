@@ -7,12 +7,13 @@ set -u -e
 #    containers via the Docker transformer. This works only under Linux.
 #    NOTE: THIS IS A BIG SECURITY HOLE, IT CAN GIVE ROOT ACCESS TO YOUR SYSTEM
 
-# NOTE: it is recommended to run python scripts with 'python -u#
 
 seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
 
 firstarg=$1 #there must be at least one argument
+gdbflags='--cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined'
 docker run --rm \
+  $gdbflags \
   -v $seamlessdir:/seamless \
   -e "PYTHONPATH=/seamless" \
   --network=host \
