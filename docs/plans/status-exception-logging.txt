@@ -1,25 +1,15 @@
 Status/exception/logging
 ========================
 
-UPDATE: 
-For transformation, stdout/stderr are not printed at all (esp bash transformers)
-Now, a VERBOSE flag shows at least when a transformer is executed.
-To be decided!
-
-UPDATE:
-
-Transformers will have status, exception, stdout and stderr. 
-Bash/docker transformers will only have stderr, as stdout captures the result.
-For now, logging stdout/stderr is not yet implemented, they are simply dumped into the
- terminal.
+UPDATE 0.3
 Status and exception are computed properties, that can be interrogated using polling observers.
-In the future, they (and cell.status/cell.exception, and get_graph?) will be "second-rate cells", in the sense that they can be connected only to (normal) cells in *other* contexts.
+In the future, secondary outputs (stdout/stderr and cell.status/cell.exception, and get_graph?) will be "second-rate cells", in the sense that they can be connected only to (normal) cells in *other* contexts.
 
 On the longer term, do the same for progress, and for execution time
  as well.
 
 In addition, there should be an easy util to monitor the stdout/stderr/exception,
- dumping them into the terminal printing function. 
+ dumping them into the terminal printing function.
 This monitor should take into account the last printed value.
 If there is a cache hit, it should print out the corresponding last printed value.
 If that value cannot be found, a monitored transformer should then be fingertipped
@@ -39,22 +29,3 @@ Finalize exception logging. There are still the core aux systems
 
 Exceptions and state should never be real cells, as they are not deterministic.
 But in the future, perhaps support connecting them to a cell from a *different* graph...
-
-Older plan
-==========
-
-D. Logging and graph visualization, initial prototype
-(see Status-of-seamless.txt)
-NOTES:
-- status mostly gets reconstituted (except reason for void)
-- metainfo:
-    - store exception and stdout/stderr of a transformation, include in status report
-        also store if result was obtained from cache, or remotely
-    - same for macro and reactor (easier, because 1:1)
-    - same for cell:
-        - structuredcell validation error
-        - error in obtaining value from checksum (also if provenance fails)
-    - implement storage for metainfo in graph
-- logging system, based on event loop (in parallel to metainfo)
-- progress bar system (connect to progress)
-

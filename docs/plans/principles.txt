@@ -1,4 +1,4 @@
-(Contains random remarks/insights about the workings of Seamless. 
+(Contains random remarks/insights about the workings of Seamless.
 that should be converted into documentation/examples/theory documents at some point)
 
 - Only authoritative (or sovereign) cells should be changed from code at runtime.
@@ -9,11 +9,11 @@ that should be converted into documentation/examples/theory documents at some po
 - A low-level context may only ever grow. Explicit removal of cells/constructs/subcontexts
   is not supported. Only low-level macro re-execution will replace a subcontext.
   All low-level macros will be cached, and always generate a context.
-  
+
 - Any type checking is via Silk schemas attached to high-level cells and workers.
 
 - Cells are dumb constructs. They are always to be interrogated by managers. There is one manager per root context
-(or less, as managers may have multiple root context). Every manager has a task manager, a live graph, 
+(or less, as managers may have multiple root context). Every manager has a task manager, a live graph,
 a buffer/value cache, etc.
 
 High-level syntax
@@ -50,7 +50,7 @@ This loose formulation of purity gives the following liberties:
    For example, a transformer may open a GUI showing a progress bar (although a preliminary output would be cleaner)
    Or, a reactor may compute the checksum of its inputs, store this in a database, and later retrieve the checksum and use it
     to produce the output.
- - They are allowed to send arbitrary status/progress reports and logging   
+ - They are allowed to send arbitrary status/progress reports and logging
  - C) They are allowed to change cells via edit pins. This is considered an "act of authority", as if the programmer himself had
     changed this cell.
 
@@ -65,13 +65,13 @@ Strategies to model them:
    Works well now using libmacros
 2. Nested macros (for recursion)
    Example: collatz.py in low-level tests. Works well now
-3. Explicit transformation/cache API within a single worker.
+3. Explicit transformation/cache API within a single worker. Not yet implemented.
 Solutions can be combined, of course.
 
 Registering commands with domain-specific languages
 ===================================================
 (UPDATE: borderline YAGNI, since slash-0 is deprecated, and topview
-and its GPU array tiles is unlikely to make it anytime soon into Seamless, 
+and its GPU array tiles is unlikely to make it anytime soon into Seamless,
 if at all)
 
 Some domain-specific languages, such as slash-0 and topview, rely on a vocabulary
@@ -99,16 +99,16 @@ of registered commands. This is done as follows:
 
 Why Seamless is not dataflow or Functional Reactive Programming
 ===============================================================
-- "History doesn't matter". Dataflow and all flavors of RP react to 
+- "History doesn't matter". Dataflow and all flavors of RP react to
    event streams that produce and consume in real time.
   In this sense, Seamless is most akin to a spreadsheet.
 - "Code is just another kind of data". Dataflow and FRP all assume the code as a given.
-- Unlike dataflow (but like FRP), Seamless is really strict about determinism 
+- Unlike dataflow (but like FRP), Seamless is really strict about determinism
   (purity, referential transparency etc.)
 - "Always resubmit your entire computation."
-  Seamless is very fanatical about caching. If you really want to react to event streams, 
-   just give it an initial value, e.g. [E1, E2, E3], and feed it into a Seamless cell. 
-  When a new event E4 comes, just replace the cell value with [E1, E2, E3, E4]. 
+  Seamless is very fanatical about caching. If you really want to react to event streams,
+   just give it an initial value, e.g. [E1, E2, E3], and feed it into a Seamless cell.
+  When a new event E4 comes, just replace the cell value with [E1, E2, E3, E4].
   Seamless will model it just as if it was [E1, E2, E3, E4] all along (history doesn't matter).
   But in most of the cases, it will re-use the computations that were done before,
    instead of recomputing from scratch.

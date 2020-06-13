@@ -4,7 +4,7 @@
 
 - Meta-schema for schema editing (jsonschema has it)
 
-- An extra "table" celltype, for text (like awk or org-mode) or binary (like Pandas)
+- An extra "table" celltype, for text (like awk or org-mode) or binary (like Pandas). Probably YAGNI.
 
 - Support more foreign languages: Julia, R, JavaScript. IPython magics, also have a look at python-bond
 
@@ -25,10 +25,11 @@
 
 - Specialized client implementations for special constructs
 
-- Other *host* implementations? JavaScript? Erlang? Elixir? Go?
+- Other *host* implementations than Python... JavaScript? Erlang? Elixir? Go?
 
 - Re-implement all high level classes as Silk classes with methods in their schema.
 
 - Serialize the topology of low-level contexts, including checksums.
   May help with faster caching of low-level macros.
 
+- "Fallback". During development: A value for a cell that is used if upstream-None, i.e. if someone else is working upstream.

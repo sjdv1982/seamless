@@ -1,3 +1,4 @@
+UPDATE: move this to the Cloudless project
 
 1. Spin off seamless-tools into a package that does not depend on Seamless.
 It will contain:
@@ -14,6 +15,6 @@ Upon instantiation, a Docker container is fired up, the Seamless REST and websoc
  future requests to the proxy channels will re-instantate it.
  On the Seamless side, this requires a context graph snoop. This should probably be read from an env var.
  Secondary contexts such as the graph visualization context should have snooping disabled.
-The seamless graph server will store both the template graph (and their names) and the override dict (and 
+The seamless graph server will store both the template graph (and their names) and the override dict (and
 the graph ID) in Redis.
 - Future tools related to provenance (see the cloudless document)
