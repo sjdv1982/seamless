@@ -1,8 +1,8 @@
-# Conversions. Note that they operate at a checksum/buffer level, and only used for no-path write accessors. 
-#   In contrast, write accessors with a path operate at a value level. 
+# Conversions. Note that they operate at a checksum/buffer level, and only used for no-path write accessors.
+#   In contrast, write accessors with a path operate at a value level.
 #   Both source and target object are deserialized, and target_object[path] = source.
 
-# text (with no double quotes around *the buffer*), 
+# text (with no double quotes around *the buffer*),
 # python, ipython, cson, yaml, plain, binary, mixed
 # str (with double quotes around *the buffer*), bytes, int, float, bool
 
@@ -14,7 +14,7 @@ conversion_trivial = set([ # conversions that do not change checksum and are gua
     ("python", "ipython"),
     ("ipython", "text"),
     ("cson", "text"),
-    ("yaml", "text"),    
+    ("yaml", "text"),
     ("plain", "cson"),
     ("plain", "yaml"),
     ("plain", "mixed"),
@@ -31,11 +31,11 @@ conversion_reinterpret = set([ # conversions that do not change checksum, but ar
     ("text", "cson"),
     ("text", "yaml"),
     ("text", "int"), ("text", "float"), ("text", "bool"),
-    ("plain", "str"), ("plain", "int"), ("plain", "float"), ("plain", "bool"),    
+    ("plain", "str"), ("plain", "int"), ("plain", "float"), ("plain", "bool"),
     ("mixed", "plain"), ("mixed", "binary"),
     ("mixed", "str"), ("mixed", "int"), ("mixed", "float"), ("mixed", "bool"),
     ("int", "text"), ("float", "text"), ("bool", "text"),
-    ("int", "plain"), ("float", "plain"), ("bool", "plain"),    
+    ("int", "plain"), ("float", "plain"), ("bool", "plain"),
 ])
 
 # buffer-to-buffer
@@ -61,12 +61,12 @@ conversion_possible = set([ # conversions that (may) change checksum and are not
     ("bytes", "text"), # Assume UTF-8 (being a subset of UTF-8, ASCII is fine too)
                        # If this is not so, an error is typically raised (UTF-8 is not a charmap!)
     ("str", "int"), ("str", "float"), ("str", "bool"),
-    ("int", "binary"), ("float", "binary"), ("bool", "binary"),   
+    ("int", "binary"), ("float", "binary"), ("bool", "binary"),
     ("mixed", "text"),
-    ("plain", "python"), ("plain", "ipython"), 
-    ("binary", "bytes"), ("mixed", "bytes"),# mixed must be pure-binary 
-                                            # This will dump the binary buffer in numpy format 
-                                            # np.dtype(S..) is a special case: 
+    ("plain", "python"), ("plain", "ipython"),
+    ("binary", "bytes"), ("mixed", "bytes"),# mixed must be pure-binary
+                                            # This will dump the binary buffer in numpy format
+                                            # np.dtype(S..) is a special case:
                                             #   it dumps a pure buffer, not numpy format
     ("bytes", "binary"),  ("bytes", "mixed"),  # inverse of the above
 ])
@@ -82,28 +82,28 @@ conversion_equivalent = { #equivalent conversions
     ("ipython", "mixed"): ("text", "plain"),
     ("cson", "mixed"): ("cson", "plain"),
     ("yaml", "mixed"): ("yaml", "plain"),
-    ("int", "mixed"): ("int", "plain"), 
-    ("float", "mixed"): ("float", "plain"), 
-    ("bool", "mixed"): ("bool", "plain"),    
+    ("int", "mixed"): ("int", "plain"),
+    ("float", "mixed"): ("float", "plain"),
+    ("bool", "mixed"): ("bool", "plain"),
 }
 
-conversion_forbidden = set([ # forbidden conversions. 
+conversion_forbidden = set([ # forbidden conversions.
     ("text", "binary"),
     ("python", "cson"), ("python", "yaml"), ("python", "plain"), ("python", "binary"),
     ("python", "bytes"), ("python", "int"), ("python", "float"), ("python", "bool"),
     ("ipython", "cson"), ("ipython", "yaml"), ("ipython", "plain"), ("ipython", "binary"),
     ("ipython", "bytes"), ("ipython", "int"), ("ipython", "float"), ("ipython", "bool"),
-    ("cson", "python"), ("cson", "ipython"), ("cson", "yaml"), ("cson", "binary"), 
+    ("cson", "python"), ("cson", "ipython"), ("cson", "yaml"), ("cson", "binary"),
     ("cson", "bytes"), ("cson", "str"), ("cson", "int"), ("cson", "float"), ("cson", "bool"),
-    ("yaml", "python"), ("yaml", "ipython"), ("yaml", "cson"), ("yaml", "binary"), 
+    ("yaml", "python"), ("yaml", "ipython"), ("yaml", "cson"), ("yaml", "binary"),
     ("yaml", "bytes"), ("yaml", "str"), ("yaml", "int"), ("yaml", "float"), ("yaml", "bool"),
     ("plain", "binary"), ("plain", "bytes"),
-    ("binary", "text"), ("binary", "python"), ("binary", "ipython"), 
+    ("binary", "text"), ("binary", "python"), ("binary", "ipython"),
     ("binary", "cson"), ("binary", "yaml"), ("binary", "plain"),
     ("mixed", "cson"), ("mixed", "yaml"),
-    ("str", "cson"), ("str", "yaml"), 
+    ("str", "cson"), ("str", "yaml"),
     ("str", "binary"),
-    ("bytes", "python"), ("bytes", "ipython"), ("bytes", "cson"), ("bytes", "yaml"), ("bytes", "plain"), 
+    ("bytes", "python"), ("bytes", "ipython"), ("bytes", "cson"), ("bytes", "yaml"), ("bytes", "plain"),
     ("bytes", "float"), ("bytes", "int"), ("bytes", "bool"),
     ("int", "python"), ("float", "python"), ("bool", "python"),
     ("int", "ipython"), ("float", "ipython"), ("bool", "ipython"),
@@ -115,7 +115,7 @@ conversion_forbidden = set([ # forbidden conversions.
 
 def check_conversions():
     categories = (
-        conversion_trivial, 
+        conversion_trivial,
         conversion_reformat,
         conversion_reinterpret,
         conversion_possible,
@@ -145,20 +145,20 @@ def check_conversions():
                 done.append(conv)
 
 async def reinterpret(checksum, buffer, celltype, target_celltype):
-    
+
     try:
         if len(buffer) > 1000 and celltype in ("plain", "mixed") \
             and target_celltype in ("int", "float", "bool"):
-                raise ValueError        
+                raise ValueError
 
-        # Special cases                
+        # Special cases
         key = (celltype, target_celltype)
         if key == ("mixed", "plain"):
             assert not buffer.startswith(MAGIC_NUMPY)
             assert not buffer.startswith(MAGIC_SEAMLESS_MIXED)
         elif key == ("mixed", "binary"):
             assert buffer.startswith(MAGIC_NUMPY)
-        else:            
+        else:
             value = await deserialize(buffer, checksum, celltype, copy=False)
             if key == ("plain", "str"):
                 assert isinstance(value, str)
@@ -177,14 +177,14 @@ async def reformat(checksum, buffer, celltype, target_celltype):
         if isinstance(value, str):
             new_buffer = await serialize(value, target_celltype)
         else:
-            return checksum        
-    else:        
+            return checksum
+    else:
         new_buffer = await serialize(value, target_celltype)
     result = await calculate_checksum(new_buffer)
     return result
 
 async def convert(checksum, buffer, celltype, target_celltype):
-    key = (celltype, target_celltype)        
+    key = (celltype, target_celltype)
     try:
         if key == ("cson", "plain"):
             value = cson2json(buffer.decode())
@@ -207,10 +207,12 @@ async def convert(checksum, buffer, celltype, target_celltype):
             if not isinstance(value, (np.ndarray, np.void)):
                 raise TypeError
             if isinstance(value, np.ndarray) and value.dtype.char == "S":
-                return checksum
+                new_buffer = value.tobytes()
+                result = await calculate_checksum(new_buffer)
+                return result
         else:
             value = await deserialize(buffer, checksum, celltype, copy=False)
-        
+
         if key == ("ipython", "python"):
             from nbconvert.filters import ipython2python
             value00 = ipython2python(buffer.decode()) # TODO: needs to bind get_ipython() to the user namespace!
