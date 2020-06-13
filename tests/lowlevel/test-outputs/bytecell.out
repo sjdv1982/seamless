@@ -1,17 +1,19 @@
-Seamless buffer cache cleanup is currently disabled.
-This prevents data loss from bugs in Seamless's buffer caching.
-If you have memory issues, restart Python periodically,
- and/or use Redis to store buffers
 b'this is a bytes value'
+b'this is a bytes value' <class 'bytes'>
+
 Exception: None
 b"\x93NUMPY\x01\x00v\x00{'descr': '|S21', 'fortran_order': False, 'shape': (), }                                                             \nthis is a bytes value"
 b'this is a bytes value' <class 'numpy.ndarray'>
+
 Exception: None
-b"\x93NUMPY\x01\x00v\x00{'descr': '|S21', 'fortran_order': False, 'shape': (), }                                                             \nthis is a bytes value"
-b"\x93NUMPY\x01\x00v\x00{'descr': '|S21', 'fortran_order': False, 'shape': (), }                                                             \nthis is a bytes value" <class 'bytes'>
+b'this is a bytes value'
+b'this is a bytes value' <class 'bytes'>
+
 Exception: None
 b"\x93NUMPY\x01\x00v\x00{'descr': '|S21', 'fortran_order': False, 'shape': (), }                                                             \nthis is a bytes value"
 b'this is a bytes value' <class 'numpy.ndarray'>
+
 Exception: None
-b"\x93NUMPY\x01\x00v\x00{'descr': '|S21', 'fortran_order': False, 'shape': (), }                                                             \nthis is a bytes value"
-b"\x93NUMPY\x01\x00v\x00{'descr': '|S21', 'fortran_order': False, 'shape': (), }                                                             \nthis is a bytes value" <class 'bytes'>
+b'this is a bytes value'
+b'this is a bytes value' <class 'bytes'>
+

@@ -2,11 +2,11 @@ Seamless graphs as containers of computation results
 ====================================================
 
 Seamless graphs contain the checksum of the computation results. However,
- currently they are not supported enough in this regard. 
+ currently they are not supported enough in this regard.
 In particular, if you load a graph and do ctx.compute(), Seamless will pull in all inputs,
 erase all results, and recompute them, unless Redis provides:
 - all the transformation result checksums
-(which it already does, if is was previously used as a sink in the computation.
+(which it already does, if it was previously used as a sink in the computation.
 Therefore, no computation is re-done if Redis is present)
 - all the expression result checksums
 (which are not stored at all. Therefore, even if Redis is present,
@@ -14,12 +14,12 @@ all buffer input values will be pulled in!).
 
 An important goal is to make the Seamless graph a self-consistent descriptor of
 a computation result, i.e. if you load and do ctx.compute(), this is a no-op as
-Seamless considers that no work nor value pull-in needs to be done. 
+Seamless considers that no work nor value pull-in needs to be done.
 
 There are three solutions to this:
-1. straightforward cases. 
+1. straightforward cases.
 For expressions, this is inchannels/input pins without celltype morphing.
-For transformers, this is Python transformers. 
+For transformers, this is Python transformers.
 In these cases, the graph loading must be smarter. In that case, result checksums
  can be distilled from the graph and added to the cache, right before ctx.set_graph.
 Of course, this must only be done if the graph is trusted.
@@ -29,7 +29,7 @@ join is the checksum of the buffer cell (the data cell is either the same, or No
 depending on the checksum of the schema; this must also be cached!).
 2. Intermediate cases. This is expressions that involve celltype morphing, and
 non-Python transformers. In this case, more checksums must be monitored/recorded
-of the internal part. In addition, the graph must contain an explicit expression 
+of the internal part. In addition, the graph must contain an explicit expression
 cache section.
 3. Hard cases. This is Macros that have a non-empty internal low-level context
 (as opposed to Macros that just connect incoming/outgoing paths dynamically).
@@ -39,5 +39,3 @@ It will be very difficult to store this into a self-contained graph, since the o
 monitoring of standard cells and transformers is absent. This monitoring must be added
 manually by the macro, and facilities must be added to pass this into the high-level for
 storage!
-
-
