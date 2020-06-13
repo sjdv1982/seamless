@@ -1,0 +1,3 @@
+The Seamless Docker images mount as user "jovyan". This is necessary to get the correct setup for Jupyter, conda etc.
+However, mounting the current directory is problematic if user "jovyan" (uid/guid 1000) is not the same as the current user.
+In that case, creating and accessing files may require changing user permissions (with chmod and/or umask)
