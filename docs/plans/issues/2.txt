@@ -53,3 +53,30 @@ TODO: verify that this is still the case...
 TODO?:
   - Set virtual filenames for (non-compiled) transformers. See tests/highlevel/python-debugging.py
     Maybe integrate with gdbgui
+
+UPDATE: gdbgui works properly (see guide)
+
+UPDATE: ptvsd / VSCode works properly, if 'Seamless transformer: .tf.tf' is soft-linked to the mounted file.
+Use "Python: Remote attach" in the debug icon.
+
+ptvsd must be installed in the Docker image.
+
+The following code needs to be run somewhere:
+
+```python
+import ptvsd
+try:
+    ptvsd.enable_attach()
+    ok = True
+except OSError:
+    ok = False
+if not ok:
+    import time
+    time.sleep(2)
+    ptvsd.enable_attach()
+ptvsd.wait_for_attach()
+```
+
+The mounted file is opened a second time, in read-only mode, which is annoying.
+I hope it will be better when the proper filename is set. Need tf.code-to-mount notification during translation!
+For modules, there should be a .mount for individual filenames, resulting to a similar module-to-mount notification.
