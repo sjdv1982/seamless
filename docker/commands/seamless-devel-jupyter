@@ -1,5 +1,7 @@
 seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
 
+[ $(id -u) != 1000 ] && echo 'WARNING: The Seamless container will run as user jovyan (ID 1000), which is not the same as your current user ID '$(id -u)'. When reading/writing fails for /cwd, check that '$(pwd) 'gives enough file permissions.' >> /dev/stderr
+
 gdbflags='--cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined'
 docker run --rm \
   $gdbflags \

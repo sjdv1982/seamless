@@ -7,6 +7,7 @@ set -u -e
 #    containers via the Docker transformer. This works only under Linux.
 #    NOTE: THIS IS A BIG SECURITY HOLE, IT CAN GIVE ROOT ACCESS TO YOUR SYSTEM
 
+[ $(id -u) != 1000 ] && echo 'WARNING: The Seamless container will run as user jovyan (ID 1000), which is not the same as your current user ID '$(id -u)'. When reading/writing fails for /cwd, check that '$(pwd) 'gives enough file permissions.' >> /dev/stderr
 
 seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
 

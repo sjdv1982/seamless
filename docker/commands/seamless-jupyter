@@ -1,4 +1,5 @@
-# add --ip='0.0.0.0' to allow connections from outside
+[ $(id -u) != 1000 ] && echo 'WARNING: The Seamless container will run as user jovyan (ID 1000), which is not the same as your current user ID '$(id -u)'. When reading/writing fails for /cwd, check that '$(pwd) 'gives enough file permissions.' >> /dev/stderr# add --ip='0.0.0.0' to allow connections from outside
+
 gdbflags='--cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined'
 docker run --rm \
   $gdbflags \
