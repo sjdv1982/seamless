@@ -8,5 +8,5 @@ docker run \
   -p 6379:6379 \
   --name redis-container \
   -v ~/.seamless/redis:/data \
-  --user $(id -u):$(id -g) \
+  -u jovyan \
   redis redis-server --appendonly yes

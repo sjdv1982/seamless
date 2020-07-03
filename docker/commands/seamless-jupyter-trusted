@@ -13,7 +13,7 @@ docker run --rm \
   -v /tmp:/tmp \
   --hostname localhost \
   --workdir /home/jovyan \
-  --user $(id -u):$(id -g) \
+  -u jovyan \
   rpbs/seamless start-notebook.sh  \
   --NotebookApp.token='' --NotebookApp.password='' \
   $*

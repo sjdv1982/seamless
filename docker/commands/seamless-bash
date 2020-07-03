@@ -8,5 +8,5 @@ docker run --rm \
   -v /tmp:/tmp \
   --workdir /cwd \
   -it \
-  --user $(id -u):$(id -g) \
+  -u jovyan \
   rpbs/seamless bash

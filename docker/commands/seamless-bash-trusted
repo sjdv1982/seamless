@@ -14,5 +14,5 @@ docker run --rm \
   --group-add $(getent group docker | cut -d: -f3) \
   --workdir /cwd \
   -it \
-  --user $(id -u):$(id -g) \
+  -u jovyan \
   rpbs/seamless bash

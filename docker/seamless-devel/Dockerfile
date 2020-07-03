@@ -10,4 +10,4 @@ RUN mkdir /home/jovyan/software && \
     ln -s /seamless/examples /home/jovyan/seamless-examples && \
     ln -s /seamless/docker/commands /home/jovyan/seamless-docker && \
     ln -s /seamless/scripts /home/jovyan/seamless-scripts
-RUN chown -R jovyan /home/jovyan  && chmod -R a+rw /home/jovyan
+RUN chown -R jovyan /home/jovyan
