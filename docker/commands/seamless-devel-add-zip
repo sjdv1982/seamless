@@ -14,5 +14,5 @@ docker run --rm \
   --network=host \
   -v `pwd`:/cwd \
   --workdir /cwd \
-  -u jovyan \
+  --user $(id -u):$(id -g) \
   seamless-devel python3 /home/jovyan/seamless-scripts/add-zip.py ${zipfile_name}

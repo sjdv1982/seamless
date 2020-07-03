@@ -1,7 +1,8 @@
 #!/bin/bash
 set -u -e
 
-[ ! -d ~/.seamless ] && mkdir ~/.seamless
+[ ! -d ~/.seamless/redis ] && mkdir -p ~/.seamless/redis
+
 docker run \
   --rm \
   -p 6379:6379 \
