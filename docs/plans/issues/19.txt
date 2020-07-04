@@ -1,0 +1,7 @@
+Graph loading gives some trouble:
+
+'checksum': {'result': '1dcc1267779e223407280ce8c861caab274d10bc69761f6c7501072ab73dec82',
+  'input_auth': '2504e9bb07e32cbb11e59d83c7e6d5111c04b43588cfdb1d520e7801b5c948a5',
+  'code': '50fbfef69e80c8fcab028c716a76212f13b989c3bf28fa2afd5e0508f1998c2e'
+}
+=> undefined!  (clustering project on abarvier)
