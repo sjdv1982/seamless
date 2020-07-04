@@ -4,6 +4,7 @@ set -u -e
 # - Seamless has access to the Docker daemon, so it can launch its own Docker
 #    containers via the Docker transformer. This works only under Linux.
 #    NOTE: THIS IS A BIG SECURITY HOLE, IT CAN GIVE ROOT ACCESS TO YOUR SYSTEM
+# /tmp is also mounted, this is needed by Docker transformers (as they run on the host)
 
 [ $(id -u) != 1000 ] && echo 'WARNING: The Seamless container will run as user jovyan (ID 1000), which is not the same as your current user ID '$(id -u)'. When reading/writing fails for /cwd, check that '$(pwd) 'gives enough file permissions.' >> /dev/stderr
 
@@ -15,6 +16,7 @@ docker run --rm \
   -e "PYTHONPATH=/seamless" \
   --network=host \
   -v `pwd`:/cwd \
+  -v /tmp:/tmp \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --group-add $(getent group docker | cut -d: -f3) \
   --workdir /cwd \
