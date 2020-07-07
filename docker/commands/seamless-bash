@@ -11,4 +11,5 @@ docker run --rm \
   --workdir /cwd \
   -it \
   -u jovyan \
+  $* \
   rpbs/seamless bash

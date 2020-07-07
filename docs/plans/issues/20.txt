@@ -1,0 +1,1 @@
+In the new Seamless project guide, setting load() as the first cell is over-eager; make it conditional upon ctx existing
