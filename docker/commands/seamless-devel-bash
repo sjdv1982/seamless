@@ -21,4 +21,5 @@ docker run --rm \
   --workdir /cwd \
   -it \
   -u jovyan \
+  $* \
   seamless-devel bash
