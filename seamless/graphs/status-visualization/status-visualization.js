@@ -4,8 +4,8 @@
 // set up SVG for D3
 //let width = parseFloat($("#graph").attr("width"));
 //let height = parseFloat($("#graph").attr("height"));
-let width = 700;
-let height = 500; 
+let width = 1800;
+let height = 1000; 
 
 const svg = d3.select('body') 
   .select('svg')
@@ -28,8 +28,8 @@ let links = [
 
 // init D3 force layout
 const force = d3.forceSimulation()
-  .force('link', d3.forceLink().id((d) => d.id).distance(50))
-  .force('charge', d3.forceManyBody().strength(-500))
+  .force('link', d3.forceLink().id((d) => d.id).distance(35))
+  .force('charge', d3.forceManyBody().strength(-350))
   .force('x', d3.forceX(width / 2))
   .force('y', d3.forceY(height / 2))
   .on('tick', tick);
