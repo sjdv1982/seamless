@@ -16,7 +16,7 @@ def status_callback(ctx, ctx2, path, status):
 
 def observe_graph(ctx, ctx2, graph):
     ctx2.graph.value # To wait for previous settings
-    ctx2.graph.set(graph)    
+    ctx2.graph.set(graph)
     paths_to_delete = set(status_callbacks.keys())
     for node in graph["nodes"]:
         path = tuple(node["path"])
@@ -28,8 +28,8 @@ def observe_graph(ctx, ctx2, graph):
                 path + (node["INPUT"],),
             ]
         else: # TODO: libmacro, macro, reactor
-            continue        
-        for path in paths:            
+            continue
+        for path in paths:
             if path in status_callbacks:
                 paths_to_delete.discard(path)
                 continue
@@ -55,15 +55,15 @@ def bind_status_graph(ctx, status_graph, *, zips=None, mounts=False, shares=True
 
 The context is loaded from status_graph, which must be a graph in JSON format.
 It uses the same manager as ctx.
-The status graph's underlying buffers must be available already 
+The status graph's underlying buffers must be available already
 (from add_zip or via Redis)
-The status graph must have a cell called "graph", 
+The status graph must have a cell called "graph",
  and normally, also a cell shared as "index.html"
 The status graph will receive the share namespace "status"
 
 mounts and shares have the same meaning as in from_graph
 
-Additional zips can be provided. 
+Additional zips can be provided.
 They will be passed to ctx.add_zip before the graph is loaded
 """
     from seamless.highlevel import Context
@@ -73,7 +73,7 @@ They will be passed to ctx.add_zip before the graph is loaded
             ctx2.add_zip(zipf)
     ctx2.share_namespace="status"
     ctx2.set_graph(
-        status_graph, 
+        status_graph,
         mounts=mounts,
         shares=shares
     )
@@ -91,15 +91,15 @@ async def bind_status_graph_async(ctx, status_graph, *, zips=None, mounts=False,
 
 The context is loaded from status_graph, which must be a graph in JSON format.
 It uses the same manager as ctx.
-The status graph's underlying buffers must be available already 
+The status graph's underlying buffers must be available already
 (from add_zip or via Redis)
-The status graph must have a cell called "graph", 
+The status graph must have a cell called "graph",
  and normally, also a cell shared as "index.html"
 The status graph will receive the share namespace "status"
 
 mounts and shares have the same meaning as in from_graph
 
-Additional zips can be provided. 
+Additional zips can be provided.
 They will be passed to ctx.add_zip before the graph is loaded
 """
     from seamless.highlevel import Context
@@ -109,7 +109,7 @@ They will be passed to ctx.add_zip before the graph is loaded
             ctx2.add_zip(zipf)
     ctx2.share_namespace="status"
     ctx2.set_graph(
-        status_graph, 
+        status_graph,
         mounts=mounts,
         shares=shares
     )
@@ -120,4 +120,4 @@ They will be passed to ctx.add_zip before the graph is loaded
     await ctx2.translation()
     params = {"runtime": True}
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
-    return ctx2    
+    return ctx2

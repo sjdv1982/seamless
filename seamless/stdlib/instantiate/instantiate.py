@@ -1,19 +1,19 @@
 """Instantiates a static number of copies of a given context
 template: The context to instantiate
-pattern: the instanced contexts are created under the name:  
+pattern: the instanced contexts are created under the name:
  ctx.pattern1, ctx.pattern2, etc., up to ncopies
 ncopies: the number of copies
 imports: dict of cells that are connected to each context
 exports: dict of cells that each context connects to
-entries: dict where the keys are keys in "imports", and values 
+entries: dict where the keys are keys in "imports", and values
   are paths in each context. A path can be a string or a tuple:
-  the path "mycell" is instance.mycell; 
+  the path "mycell" is instance.mycell;
   the path ("mycontext", "spam") is instance.mycontext.spam
   In the first example, connection is made from:
   - imports[key].pattern1 to pattern1.mycell
   - imports[key].pattern2 to pattern2.mycell
   - ...
-exits: same as "entries", but the keys are in "exports", 
+exits: same as "entries", but the keys are in "exports",
   and the connection is made from value to exports[key]
   Thus, connection is made from:
     - pattern1.mycell to exports[key].pattern1
@@ -29,7 +29,7 @@ import sys
 ctx = Context()
 
 def constructor(
-    ctx, libctx, 
+    ctx, libctx,
     template, pattern, ncopies,
     imports, exports,
     entries, exits
@@ -161,7 +161,7 @@ ctx.instances = ctx.lib.instantiate (
 ctx.compute()
 print(ctx.result.value)
 print(ctx.result2.value)
-inst1 = ctx.instances.ctx.instance1 
+inst1 = ctx.instances.ctx.instance1
 print(inst1.fa.value)
 print(inst1.fb.value)
 print(inst1.mul.status)
@@ -180,9 +180,3 @@ zip_filename=os.path.join(currdir,"../instantiate.zip")
 with open(zip_filename, "bw") as f:
     f.write(zip)
 print("Graph saved")
-
-f = "/home/sjoerd/seamless/seamless/graphs/status-visualization"  
-from seamless.metalevel.bind_status_graph import bind_status_graph
-ctx2 = bind_status_graph(ctx, json.load(open(f+".seamless")),zips=[f+".zip"])
-import asyncio; asyncio.get_event_loop().run_until_complete(asyncio.sleep(2))
-ctx2.compute()

@@ -2,13 +2,13 @@ import sys, os, json, subprocess, argparse
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "graph",
-    help="Seamless graph file to serve", 
+    help="Seamless graph file to serve",
     type=argparse.FileType('r')
 )
 parser.add_argument(
     "zipfile",
-    help="Zip file that contains the buffers of the graph checksum", 
-    nargs='?', 
+    help="Zip file that contains the buffers of the graph checksum",
+    nargs='?',
     type=argparse.FileType('rb')
 )
 parser.add_argument(
@@ -45,15 +45,15 @@ parser.add_argument("--ncores",type=int,default=None)
 
 parser.add_argument(
     "--shares",
-    help="Share cells over the network as specified in the graph file(s)", 
-    default=True, 
+    help="Share cells over the network as specified in the graph file(s)",
+    default=True,
     type=bool
 )
 
 parser.add_argument(
     "--mounts",
-    help="Mount cells on the file system as specified in the graph file(s)", 
-    default=False, 
+    help="Mount cells on the file system as specified in the graph file(s)",
+    default=False,
     type=bool
 )
 
@@ -111,7 +111,7 @@ if shareserver_address is not None:
         shareserver_address = subprocess.getoutput("hostname -I | awk '{print $1}'")
     seamless.shareserver.DEFAULT_ADDRESS = shareserver_address
     print("Setting shareserver address to: {}".format(shareserver_address))
-    
+
 import seamless.stdlib
 
 from seamless.highlevel import load_graph, Context
@@ -126,7 +126,7 @@ else:
         ctx.add_zip(zipf)
     ctx.set_graph(graph, mounts=args.mounts, shares=args.shares)
 if args.redis:
-    params = {}    
+    params = {}
     redis_host = env.get("REDIS_HOST")
     if redis_host is not None:
         params["host"] = redis_host
@@ -141,9 +141,9 @@ if args.status_graph:
     from seamless.metalevel.bind_status_graph import bind_status_graph
     status_graph = json.load(args.status_graph)
     ctx2 = bind_status_graph(
-        ctx, status_graph, 
-        mounts=args.mounts,
-        shares=args.shares,
+        ctx, status_graph,
+        mounts=False,
+        shares=True,
         zips=args.add_zip,
     )
 
