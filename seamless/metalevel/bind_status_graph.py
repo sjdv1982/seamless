@@ -15,8 +15,8 @@ def status_callback(ctx, ctx2, path, status):
     handle[path2] = status
 
 def observe_graph(ctx, ctx2, graph):
-    ctx2.graph.value # To wait for previous settings
-    ctx2.graph.set(graph)
+    from copy import deepcopy
+    ctx2.graph.set(deepcopy(graph))
     paths_to_delete = set(status_callbacks.keys())
     for node in graph["nodes"]:
         path = tuple(node["path"])
