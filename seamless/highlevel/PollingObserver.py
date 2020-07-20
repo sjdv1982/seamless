@@ -15,7 +15,7 @@ class PollingObserver:
         self.params = params
         self.value = None
         self.loop = asyncio.ensure_future(self._run())
-    
+
     async def _run(self):
         while self._active:
             await asyncio.sleep(self.polling_interval)
@@ -28,7 +28,7 @@ class PollingObserver:
         value = ctx
         try:
             for p in self.path:
-                if isinstance(p, int):                    
+                if isinstance(p, int):
                     value = value[p]
                 else:
                     value = getattr(value, p)
@@ -40,6 +40,8 @@ class PollingObserver:
                         else:
                             value = value(**params)
         except Exception:
+            print("PollingObserver error:")
+            traceback.print_exc()
             return
 
         if value is None and not self.observe_none:
@@ -47,13 +49,13 @@ class PollingObserver:
         if value == self.value:
             return
         self.value = deepcopy(value)
-        
+
         try:
             self.callback(value)
         except Exception:
             print("PollingObserver error:")
             traceback.print_exc()
-    
+
     def destroy(self):
         self._active = False
         ctx = self.ctx

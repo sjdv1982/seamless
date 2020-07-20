@@ -16,7 +16,14 @@ def status_callback(ctx, ctx2, path, status):
 
 def observe_graph(ctx, ctx2, graph):
     from copy import deepcopy
-    ctx2.graph.set(deepcopy(graph))
+    # Workaround
+    from seamless.core.protocol.calculate_checksum import calculate_checksum_sync
+    from seamless.core.protocol.serialize import _serialize
+    buffer = _serialize(deepcopy(graph), ctx2.graph.celltype)
+    checksum = calculate_checksum_sync(buffer).hex()
+    ###ctx2.graph.set(deepcopy(graph))
+    # /workaround
+    ctx2.graph.set_checksum(checksum)
     paths_to_delete = set(status_callbacks.keys())
     for node in graph["nodes"]:
         path = tuple(node["path"])
