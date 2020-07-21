@@ -5,7 +5,7 @@ class TempRefManager:
     def __init__(self):
         self.refs = []
         self.running = False
-    
+
     def add_ref(self, ref, lifetime):
         expiry_time = time.time() + lifetime
         self.refs.append((ref, expiry_time))
@@ -27,7 +27,7 @@ class TempRefManager:
             ref, expiry_time = item
             if expiry_time < t:
                 self.refs.remove(item)
-                ref() 
+                ref()
 
     async def loop(self):
         if self.running:
@@ -39,7 +39,7 @@ class TempRefManager:
             except Exception:
                 import traceback
                 traceback.print_exc()
-            await asyncio.sleep(0.001)
+            await asyncio.sleep(0.05)
         self.running = False
 
 temprefmanager = TempRefManager()
