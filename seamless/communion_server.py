@@ -16,7 +16,7 @@ For this, there is a buffer status API, which can return:
     0: buffer available remotely
     1: buffer available locally
 
-- Checksum to bufferlength 
+- Checksum to bufferlength
 - Semantic-to-syntactic checksum
 - transformation jobs
 - build module jobs
@@ -34,7 +34,7 @@ Finally, the job API has an (async) wait method, that blocks until the job updat
 (final result, preliminary result, or new progress)
 
 Submitting a job is quick. After submission, the wait method is called.
-Finally, the results are retrieved, resulting in a code 0, a code 3, or 
+Finally, the results are retrieved, resulting in a code 0, a code 3, or
  occasionally a negative code (leading to re-evaluation).
 
 The server may allow hard cancel/clear exception of a job (by checksum).
@@ -52,25 +52,37 @@ Meta-data for a job may be stored in a provenance server.
 A supervisor might accept job requests and forward them to registered
  Seamless servants, based on the meta-data that it retrieves from this server.
 Likewise, the job status API never return an exception value or checksum.
- A provenance server might store these exceptions based on the job checksum 
+ A provenance server might store these exceptions based on the job checksum
  and meta-data. These may be managed by a supervisor, which may decide its
- 
+
  """
+
+import time
+
+MAX_STARTUP = 5
 
 class CommunionError(Exception):
     pass
 
-DEBUG = False
-
-import sys
-def pr(*args, **kwargs):
-    if DEBUG:
-        print(*args, **kwargs, file=sys.stderr)
 
 import logging
-logger = logging.getLogger('websockets.server')
-logger.setLevel(logging.ERROR)
-logger.addHandler(logging.StreamHandler())
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
 
 def is_port_in_use(address, port): # KLUDGE: For some reason, websockets does not test this??
     import socket
@@ -91,15 +103,15 @@ if _incoming:
             # TODO: validate URL
             incoming.append(url)
         except TypeError:
-            print("SEAMLESS_COMMUNION_INCOMING: invalid URL '%s'" % url)
+            print_error("SEAMLESS_COMMUNION_INCOMING: invalid URL '%s'" % url)
 
 outgoing = None
 _outgoing = os.environ.get("SEAMLESS_COMMUNION_OUTGOING")
-if _outgoing:        
+if _outgoing:
     try:
         outgoing = int(_outgoing)
     except TypeError:
-        print("SEAMLESS_COMMUNION_OUTGOING: invalid port '%s'" % outgoing)
+        print_error("SEAMLESS_COMMUNION_OUTGOING: invalid port '%s'" % outgoing)
     outgoing_address = os.environ.get("SEAMLESS_COMMUNION_OUTGOING_ADDRESS")
     if outgoing_address is None:
         outgoing_address = "localhost"
@@ -137,7 +149,7 @@ def communion_encode(msg):
     remainder = msg.copy()
     remainder.pop("mode")
     remainder.pop("id")
-    remainder.pop("content")    
+    remainder.pop("content")
     if len(remainder.keys()):
         rem = json.dumps(remainder).encode()
         nrem = np.uint32(len(rem)).tobytes()
@@ -167,7 +179,7 @@ def communion_encode(msg):
     assert communion_decode(m) == msg, (communion_decode(m), msg)
     return m
 
-def communion_decode(m):    
+def communion_decode(m):
     assert isinstance(m, bytes)
     message = {}
     head = 'SEAMLESS'.encode()
@@ -180,7 +192,7 @@ def communion_decode(m):
     l1, l2 = m[:4], m[4:8]
     m = m[8:]
     message["id"] = np.frombuffer(l1,np.uint32)[0]
-    nrem = np.frombuffer(l2,np.uint32)[0] 
+    nrem = np.frombuffer(l2,np.uint32)[0]
     if nrem:
         rem = m[:nrem]
         rem = rem.decode()
@@ -198,12 +210,12 @@ def communion_decode(m):
             content = tuple(content)
     else:
         assert is_str == b'\x03' or is_str == b'\x02'
-        content = m[1:]    
+        content = m[1:]
         if is_str == b'\x03':
             content = content.decode()
     message["content"] = content
     return message
-    
+
 class CommunionServer:
     future = None
     PROTOCOL = ("seamless", "communion", "0.2.1")
@@ -221,10 +233,10 @@ class CommunionServer:
         self.message_count = {}
         self.futures = {}
         self.ready = WeakSet()
-            
+
     def configure_master(self, config=None, **update):
         if self._started_outgoing and any(list(update.values())):
-            print("Warning: CommunionServer has already started, added functionality will not be taken into account for existing peers", file=sys.stderr)
+            print_warning("CommunionServer has already started, added functionality will not be taken into account for existing peers", file=sys.stderr)
         if config is not None:
             for key in config:
                 assert key in default_master_config, key
@@ -232,7 +244,7 @@ class CommunionServer:
         for key in update:
             assert key in default_master_config, key
         self.config_master.update(update)
-        
+
     def configure_servant(self, config=None, **update):
         if self.future is not None:
             raise Exception("Cannot configure CommunionServer, it has already started")
@@ -241,13 +253,13 @@ class CommunionServer:
                 assert key in default_servant_config, key
             self.config_servant = config.copy()
         self.config_servant.update(update)
-            
+
     async def _listen_peer(self, websocket, peer_config, incoming=False):
         all_peer_ids = [peer["id"] for peer in self.peers.values()]
         if peer_config["id"] in all_peer_ids:
             return
         if peer_config["protocol"] != list(self.PROTOCOL):
-            print("Protocol mismatch, peer '%s': %s, our protocol: %s" % (peer_config["id"], peer_config["protocol"], self.PROTOCOL))
+            print_warning("Protocol mismatch, peer '%s': %s, our protocol: %s" % (peer_config["id"], peer_config["protocol"], self.PROTOCOL))
             await websocket.send("Protocol mismatch: %s" % str(self.PROTOCOL))
             websocket.close()
             return
@@ -256,7 +268,7 @@ class CommunionServer:
         protocol_message = await websocket.recv()
         if protocol_message != "Protocol OK":
             return
-        #print("LISTEN")
+        print_debug("listen_peer", peer_config)
         self.peers[websocket] = peer_config
         self.message_count[websocket] = 1000 if incoming else 0
         self.futures[websocket] = {}
@@ -264,7 +276,7 @@ class CommunionServer:
             websocket,
             peer_config["id"],
             config_servant=peer_config["servant"],
-            config_master=self.config_master 
+            config_master=self.config_master
         )
 
         try:
@@ -274,7 +286,7 @@ class CommunionServer:
         except (websockets.exceptions.ConnectionClosed, ConnectionResetError):
             pass
         except Exception:
-            traceback.print_exc()
+            print_error(traceback.format_exc())
         finally:
             self.peers.pop(websocket)
             self.message_count.pop(websocket)
@@ -294,7 +306,7 @@ class CommunionServer:
                 await websocket.send(json.dumps(config))
                 peer_config = await websocket.recv()
                 peer_config = json.loads(peer_config)
-                print("INCOMING", self.id, peer_config["id"])
+                print_warning("INCOMING", self.id, peer_config["id"])
                 start_incoming()
                 ok = True
                 await self._listen_peer(websocket, peer_config, incoming=True)
@@ -304,51 +316,67 @@ class CommunionServer:
     async def _serve_outgoing(self, config, websocket, path):
         peer_config = await websocket.recv()
         peer_config = json.loads(peer_config)
-        print("OUTGOING", self.id, peer_config["id"])
+        print_warning("OUTGOING", self.id, peer_config["id"])
         await websocket.send(json.dumps(config))
-        await self._listen_peer(websocket, peer_config)        
+        await self._listen_peer(websocket, peer_config)
 
     async def _start(self):
-        if self._started:
-            return
-        config = {
-            "protocol": self.PROTOCOL,
-            "id": self.id,
-            "master": self.config_master,
-            "servant": self.config_servant
-        }
-        import websockets
+        try:
+            if self._started:
+                return
+            config = {
+                "protocol": self.PROTOCOL,
+                "id": self.id,
+                "master": self.config_master,
+                "servant": self.config_servant
+            }
+            import websockets
 
-        coros = []  
-        if outgoing is not None:
-            if is_port_in_use(outgoing_address, outgoing): # KLUDGE
-                print("ERROR: outgoing port %d already in use" % outgoing)
-                raise Exception
-            server = functools.partial(self._serve_outgoing, config)
-            coro_server = websockets.serve(server, outgoing_address, outgoing)            
-            print("Set up a communion outgoing port %d" % outgoing)
-        if len(incoming):
-            self._to_start_incoming = incoming.copy()
-        for url in incoming:
-            url0 = url
-            if not url.startswith("ws://") and not url.startswith("wss://"):
-                url = "ws://" + url
-            coro = self._connect_incoming(config, url, url0)
-            coros.append(coro)
+            coros = []
+            if outgoing is not None:
+                if is_port_in_use(outgoing_address, outgoing): # KLUDGE
+                    print_error("outgoing port %d already in use" % outgoing)
+                    raise Exception
+                server = functools.partial(self._serve_outgoing, config)
+                coro_server = websockets.serve(server, outgoing_address, outgoing)
+                print_info("Set up a communion outgoing port %d" % outgoing)
+            if len(incoming):
+                self._to_start_incoming = incoming.copy()
+            for url in incoming:
+                url0 = url
+                if not url.startswith("ws://") and not url.startswith("wss://"):
+                    url = "ws://" + url
+                coro = self._connect_incoming(config, url, url0)
+                coros.append(coro)
 
-        if outgoing is not None:
-            await coro_server
-        self._started_outgoing = True
-        if len(coros):
-            await asyncio.gather(*coros)
-        self._started = True
+            if outgoing is not None:
+                await coro_server
+            self._started_outgoing = True
+            if len(coros):
+                await asyncio.gather(*coros)
+        finally:
+            self._started_outgoing = True
+            self._started = True
 
     async def _startup(self):
-        while 1:
-            if communion_server._started_outgoing:
-                if not communion_server._to_start_incoming:
+        print_debug("Communion server startup commencing")
+        try:
+            t = time.time()
+            while 1:
+                if communion_server._started_outgoing:
+                    if communion_server._to_start_incoming is None or not len(communion_server._to_start_incoming):
+                        break
+                await asyncio.sleep(0.05)
+                print_debug("Communion server startup waiting")
+                if time.time() - t > MAX_STARTUP:
+                    print_error("Communion server startup timed out")
                     break
-            await asyncio.sleep(0.05)
+        except:
+            import traceback
+            print_error("Communion server startup exception")
+            print_error(traceback.format_exc())
+        finally:
+            print_info("Communion server startup complete")
 
     def start(self):
         if self.future is not None:
@@ -357,7 +385,7 @@ class CommunionServer:
         self.future = asyncio.ensure_future(coro)
         self.startup = asyncio.ensure_future(self._startup())
 
-    
+
     async def _process_transformation_request(self, transformation, transformer, peer):
         tcache = transformation_cache
         coros = []
@@ -375,7 +403,7 @@ class CommunionServer:
             if buffer is not None:
                 continue
             coro = get_buffer_remote(
-                checksum2, 
+                checksum2,
                 buffer_cache,
                 peer
             )
@@ -399,20 +427,20 @@ class CommunionServer:
                 checksum = bytes.fromhex(content)
                 transformation_cache.hard_cancel(tf_checksum=checksum)
                 result = "OK"
-            
+
             elif type == "transformation_clear_exception":
                 assert self.config_servant["clear_exception"]
                 checksum = bytes.fromhex(content)
                 transformation_cache.clear_exception(tf_checksum=checksum)
                 result = "OK"
-            
+
             elif type == "buffer_status":
                 assert self.config_servant[type]
                 checksum = bytes.fromhex(content)
                 async def func():
                     buffer = buffer_cache.get_buffer(checksum)
                     # TODO: use buffer_check instead, and obtain buffer length
-                    #print("STATUS SERVE BUFFER", buffer, checksum.hex())
+                    print_debug("STATUS SERVE BUFFER", buffer, checksum.hex())
                     if buffer is not None:
                         if len(buffer) < 10000: # vs 1000 for buffer_cache small buffers
                             return 1
@@ -428,8 +456,8 @@ class CommunionServer:
                     else:
                         return -2
                 result = await func()
-                pr("BUFFER STATUS", checksum.hex(), result)
-            
+                print_info("BUFFER STATUS", checksum.hex(), result)
+
             elif type == "buffer":
                 assert self.config_servant[type]
                 checksum = bytes.fromhex(content)
@@ -440,11 +468,11 @@ class CommunionServer:
                     peer_id = self.peers[peer]["id"]
                     result = await get_buffer_remote(
                         checksum,
-                        buffer_cache, 
+                        buffer_cache,
                         remote_peer_id=peer_id
                     )
-                ###pr("BUFFER", checksum.hex(), result)
-            
+                print_debug("BUFFER", checksum.hex(), result)
+
             elif type == "buffer_length":
                 assert self.config_servant[type]
                 checksum = bytes.fromhex(content)
@@ -453,12 +481,12 @@ class CommunionServer:
                     peer_id = self.peers[peer]["id"]
                     result = await get_buffer_length_remote(
                         checksum,
-                        buffer_cache, 
+                        buffer_cache,
                         remote_peer_id=peer_id
                     )
-                pr("BUFFERLENGTH", checksum.hex(), result)
+                print_info("BUFFERLENGTH", checksum.hex(), result)
 
-            
+
             elif type == "semantic_to_syntactic":
                 assert self.config_servant["semantic_to_syntactic"]
                 checksum, celltype, subcelltype = content
@@ -468,10 +496,10 @@ class CommunionServer:
                 result = await tcache.serve_semantic_to_syntactic(
                     checksum, celltype, subcelltype,
                     peer_id
-                )                
+                )
                 if isinstance(result, list):
                     result = tuple([r.hex() for r in result])
-            
+
             elif type == "transformation_status":
                 assert self.config_servant[type]
                 checksum = bytes.fromhex(content)
@@ -482,7 +510,7 @@ class CommunionServer:
                 )
                 if isinstance(result[-1], bytes):
                     result = (*result[:-1], result[-1].hex())
-            
+
             elif type == "transformation_job":
                 assert self.config_servant[type]
                 checksum = bytes.fromhex(content)
@@ -491,13 +519,13 @@ class CommunionServer:
                     checksum, peer_id
                 )
                 tcache = transformation_cache
-                transformation = await tcache.serve_get_transformation(checksum, peer_id)                
+                transformation = await tcache.serve_get_transformation(checksum, peer_id)
                 coro = self._process_transformation_request(
                     transformation, transformer, peer
                 )
                 asyncio.ensure_future(coro)
                 result = "OK"
-            
+
             elif type == "transformation_wait":
                 checksum = bytes.fromhex(content)
                 peer_id = self.peers[peer]["id"]
@@ -517,12 +545,11 @@ class CommunionServer:
                     tcache.decref_transformation(transformation, rem_transformer)
 
         except Exception as exc:
-            if DEBUG:
-                traceback.print_exc()
+            print_error(traceback.format_exc())
             error = True
             result = repr(exc)
         finally:
-            #print("REQUEST", message_id)
+            print_debug("REQUEST", message_id)
             response = {
                 "mode": "response",
                 "id": message_id,
@@ -534,30 +561,30 @@ class CommunionServer:
             assert isinstance(msg, bytes)
             try:
                 peer_id = self.peers[peer]["id"]
-                pr("  Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
-                ###pr("  RESPONSE:", msg, "/RESPONSE")
+                print_info("  Communion response: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, response["id"]))
+                print_debug("  RESPONSE:", msg, "/RESPONSE")
             except KeyError:
                 pass
             else:
                 await peer.send(msg)
-        
+
     def _process_response_from_peer(self, peer, message):
         message_id = message["id"]
         content = message["content"]
-        #print("RESPONSE", message_id)
+        print_debug("RESPONSE", message_id)
         future = self.futures[peer][message_id]
         if message.get("error"):
             future.set_exception(CommunionError(content))
         else:
             if not future.cancelled():
                 future.set_result(content)
-        
-    async def _process_message_from_peer(self, peer, msg):        
+
+    async def _process_message_from_peer(self, peer, msg):
         message = communion_decode(msg)
         peer_id = self.peers[peer]["id"]
-        report = "  Communion %s: receive %d bytes from peer '%s' (#%d)"                
-        pr(report  % (message["mode"], len(msg), peer_id, message["id"]), message.get("type"))
-        #print("message from peer", self.peers[peer]["id"], ": ", message)
+        report = "  Communion %s: receive %d bytes from peer '%s' (#%d)"
+        print_info(report  % (message["mode"], len(msg), peer_id, message["id"]), message.get("type"))
+        print_debug("message from peer", self.peers[peer]["id"], ": ", message)
         mode = message["mode"]
         assert mode in ("request", "response"), mode
         if mode == "request":
@@ -578,9 +605,9 @@ class CommunionServer:
         })
         msg = communion_encode(message)
         peer_id = self.peers[peer]["id"]
-        pr("  Communion request: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, message["id"]), message["type"])
+        print_info("  Communion request: send %d bytes to peer '%s' (#%d)" % (len(msg), peer_id, message["id"]), message["type"])
         await peer.send(msg)
-        result = await future        
+        result = await future
         self.futures[peer].pop(message_id)
         return result
 

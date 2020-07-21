@@ -7,9 +7,24 @@ import time
 
 from .. import destroyer
 
-import sys
-def log(*args, **kwargs):
-    print(*args, **kwargs, file=sys.stderr)
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
 
 class TaskManager:
     _destroyed = False
@@ -94,7 +109,7 @@ class TaskManager:
             except Exception:
                 result = None
                 import traceback
-                traceback.print_exc()
+                print_error(traceback.format_exc())
             if event is not None:
                 event.custom_result_value = result # hackish
                 event.set()
@@ -105,8 +120,8 @@ class TaskManager:
                 self.run_synctasks()
             except Exception:
                 import traceback
-                traceback.print_exc()
-            await asyncio.sleep(0.0001)
+                print_error(traceback.format_exc())
+            await asyncio.sleep(0.001)
 
     def add_synctask(self, callback, args, kwargs, with_event):
         event = None
@@ -193,8 +208,8 @@ class TaskManager:
                 if not isinstance(exc, CancelledError):
                     if task._awaiting:
                         continue
-                    ###import traceback
-                    ###traceback.print_exc()
+                    import traceback
+                    print_debug(traceback.format_exc())
                 task._awaiting = True
                 # If anything goes wrong in another task, consider this a cancel
                 ok = False
@@ -249,7 +264,7 @@ class TaskManager:
             pass
 
     def compute(self, timeout, report, get_tasks_func=None):
-        assert nest_asyncio is not None or not asyncio.get_event_loop().is_running()
+        assert not asyncio.get_event_loop().is_running()
         manager = self.manager()
         manager.temprefmanager.purge()
 
@@ -421,8 +436,9 @@ class TaskManager:
                     pass
                 finally:
                     task._awaiting = True
-        for refholder in task.refholders:
-            refholder.cancel()
+        if task.future is None or not task.future.done():
+            for refholder in task.refholders:
+                refholder.cancel()
         refkey = self.rev_reftasks.pop(task, None)
         if refkey is not None:
             self.reftasks.pop(refkey)
@@ -550,7 +566,7 @@ If origin_task is provided, that task is not cancelled."""
         for attrib in attribs:
             a = getattr(self, attrib)
             if len(a):
-                log(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                print_error(name + ", " + attrib + ": %d undestroyed"  % len(a))
 
     def destroy(self):
         # just to stop the loop...
@@ -567,4 +583,3 @@ from .accessor import ReadAccessor
 from .expression import Expression
 from .tasks.upon_connection import UponConnectionTask
 from ...communion_server import communion_server
-from ... import nest_asyncio

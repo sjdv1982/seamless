@@ -96,7 +96,7 @@ class Transformer(Worker):
 
     def get_transformation(self):
         import asyncio
-        assert nest_asyncio is not None or not asyncio.get_event_loop().is_running()
+        assert not asyncio.get_event_loop().is_running()
         from .manager.tasks.transformer_update import TransformerUpdateTask
         manager = self._get_manager()
         taskmanager = manager.taskmanager
@@ -271,5 +271,3 @@ class Transformer(Worker):
 def transformer(params, *, stream_params=None):
     """TODO: port documentation from 0.1"""
     return Transformer(params, stream_params=stream_params)
-
-from .. import nest_asyncio

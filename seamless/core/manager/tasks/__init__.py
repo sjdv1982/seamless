@@ -1,7 +1,26 @@
 import weakref
 import asyncio
 from asyncio import CancelledError
-import atexit
+import traceback
+
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
 
 def is_equal(old, new):
     if new is None:
@@ -16,15 +35,16 @@ def is_equal(old, new):
 class Task:
     _realtask = None
     _awaiting = False
+    _canceled = False
     future = None
-    
+
     def __init__(self, manager, *args, **kwargs):
         if isinstance(manager, weakref.ref):
-            manager = manager()        
+            manager = manager()
         assert isinstance(manager, Manager)
         self._dependencies = []
         taskmanager = manager.taskmanager
-        if self.refkey is not None:            
+        if self.refkey is not None:
             reftask = taskmanager.reftasks.get(self.refkey)
             if reftask is not None:
                 self.set_realtask(reftask)
@@ -32,10 +52,10 @@ class Task:
             else:
                 taskmanager.reftasks[self.refkey] = self
                 taskmanager.rev_reftasks[self] = self.refkey
-        self.manager = weakref.ref(manager)                
-        self.refholders = [self] # tasks that are value-identical to this one, 
+        self.manager = weakref.ref(manager)
+        self.refholders = [self] # tasks that are value-identical to this one,
                                 # of which this one is the realtask
-        
+
         taskmanager._task_id_counter += 1
         self.taskid = taskmanager._task_id_counter
 
@@ -65,8 +85,8 @@ class Task:
         realtask.refholders.append(self)
 
     async def run(self):
-        #if self.future is not None:
-        #    print("RUN", self)
+        if self.future is not None:
+            print_debug("RUN", self.__class__.__name__, hex(id(self)))
         realtask = self._realtask
         if realtask is not None:
             result = await realtask.run()
@@ -74,20 +94,19 @@ class Task:
         self._launch()
         assert self.future is not None
         self._awaiting = True
-        #print("LAUNCHED", self)
-        #if self.__class__.__name__ != "CellChecksumTask": await asyncio.sleep(2) ###
+        print_debug("LAUNCHED", self.__class__.__name__, hex(id(self)))
         try:
             await asyncio.shield(self.future)
-            ###await self.future
-        except CancelledError:                        
+        except CancelledError:
+            print_debug("CANCELING", self.__class__.__name__, hex(id(self)))
             self.cancel()
             raise
-        #print("HAS RUN", self)
+        print_debug("HAS RUN", self.__class__.__name__, hex(id(self)))
         return self.future.result()
-    
+
     async def _run0(self, taskmanager):
-        await taskmanager.await_active()
-        await communion_server.startup
+        await asyncio.shield(taskmanager.await_active())
+        await asyncio.shield(communion_server.startup)
         return await self._run()
 
     def _launch(self):
@@ -98,7 +117,7 @@ class Task:
         if self.future is not None:
             return taskmanager
         taskmanager.run_synctasks()
-        #print("LAUNCH", self)     
+        print_debug("LAUNCH", self.__class__.__name__, hex(id(self)))
         awaitable = self._run0(taskmanager)
         self.future = asyncio.ensure_future(awaitable)
         taskmanager.add_task(self)
@@ -111,7 +130,7 @@ class Task:
         self._launch()
 
     def launch_and_await(self):
-        assert nest_asyncio is not None or not asyncio.get_event_loop().is_running()
+        assert not asyncio.get_event_loop().is_running()
         realtask = self._realtask
         if realtask is not None:
             return realtask.launch_and_await()
@@ -126,10 +145,16 @@ class Task:
     def cancel_refholder(self, refholder):
         assert self._realtask is None
         self.refholders.remove(refholder)
-        if not len(self.refholders):            
+        if not len(self.refholders):
             self.cancel()
 
     def cancel(self):
+        if self._canceled:
+            return
+        self._canceled = True
+        print_debug("CANCEL", self.__class__.__name__, hex(id(self)))
+        stack = "\n".join(traceback.format_stack())
+        print_debug("CANCEL-STACK", stack)
         realtask = self._realtask
         if realtask is not None:
             return realtask.cancel_refholder(self)
@@ -137,7 +162,7 @@ class Task:
         if self.future is not None:
             if self.future.cancelled():
                 return
-            self.future.cancel()        
+            self.future.cancel()
         if manager is None or manager._destroyed:
             return
         taskmanager = manager.taskmanager
@@ -154,4 +179,3 @@ from .get_buffer import GetBufferTask
 from .upon_connection import UponConnectionTask, UponBiLinkTask
 from ..manager import Manager
 from ....communion_server import communion_server
-from .... import nest_asyncio

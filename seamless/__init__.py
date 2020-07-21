@@ -12,16 +12,8 @@ import traceback
 
 import asyncio
 
-nest_asyncio = None
-
-
-"""
-# Jupyter notebook; DISABLED, as it does not work properly!
-
-if asyncio.get_event_loop().is_running(): 
-    import nest_asyncio
-    nest_asyncio.apply()
-"""
+import logging
+logger = logging.getLogger("seamless")
 
 from abc import abstractmethod
 class Wrapper:
@@ -69,8 +61,6 @@ if "get_ipython" in sys.modules["__main__"].__dict__:
                 ipython_instance.enable_gui("asyncio")
             elif asyncio.get_event_loop().is_running(): # Jupyter notebook
                 running_in_jupyter = True
-                if nest_asyncio is not None: 
-                    ipython_instance.magic("autoawait False")
 
 def verify_sync_translate():
     if running_in_jupyter:

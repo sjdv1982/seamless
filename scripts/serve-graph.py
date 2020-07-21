@@ -25,8 +25,10 @@ parser.add_argument(
 )
 parser.add_argument(
     "--debug",
+    help="Serve graph in debugging mode. Turns on asyncio debugging, and sets the Seamless logger to DEBUG",
     action="store_true"
 )
+
 parser.add_argument(
     "--status-graph",
     help="Bind a graph that reports the status of the main graph",
@@ -66,6 +68,9 @@ if args.zipfile is None and not args.redis:
 if args.debug:
     import asyncio
     asyncio.get_event_loop().set_debug(True)
+    import logging
+    logging.basicConfig()
+    logging.getLogger("seamless").setLevel(logging.DEBUG)
 
 env = os.environ
 
@@ -75,7 +80,6 @@ if args.communion_incoming is not None:
 
 
 import seamless, seamless.shareserver
-
 from seamless import communion_server
 
 communion_server.configure_master({
