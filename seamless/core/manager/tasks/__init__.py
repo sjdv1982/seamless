@@ -153,8 +153,6 @@ class Task:
             return
         self._canceled = True
         print_debug("CANCEL", self.__class__.__name__, hex(id(self)))
-        stack = "\n".join(traceback.format_stack())
-        print_debug("CANCEL-STACK", stack)
         realtask = self._realtask
         if realtask is not None:
             return realtask.cancel_refholder(self)
