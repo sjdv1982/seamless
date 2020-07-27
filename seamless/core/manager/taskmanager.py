@@ -63,7 +63,7 @@ class TaskManager:
 
     async def await_active(self):
         while not self._active:
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.05)
 
     def register_cell(self, cell):
         assert cell not in self.cell_to_task
@@ -121,7 +121,7 @@ class TaskManager:
             except Exception:
                 import traceback
                 print_error(traceback.format_exc())
-            await asyncio.sleep(0.001)
+            await asyncio.sleep(0.05)
 
     def add_synctask(self, callback, args, kwargs, with_event):
         event = None
@@ -226,7 +226,7 @@ class TaskManager:
             id = locks[-1] + 1
         locks.append(id)
         while locks[0] != id:
-            await asyncio.sleep(0.0001)   # 0.1 ms
+            await asyncio.sleep(0.001)   # 1 ms
         return id
 
     def release_cell_lock(self, cell, id):
