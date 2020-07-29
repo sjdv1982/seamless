@@ -18,7 +18,7 @@ def serialize(data, *, storage=None, form=None):
     h2 = json.dumps(form).encode()
     result += np.uint32(len(h2)).tobytes()
     result += h2
-    result += content    
+    result += content
     return result
 
 def deserialize(data):
@@ -26,14 +26,14 @@ def deserialize(data):
     from ..get_form import get_form, dt_builtins, is_np_str
     pure_plain, pure_binary = False, False
     if isinstance(data, str):
-        pure_plain = True            
+        pure_plain = True
     else:
         assert isinstance(data, bytes)
         if data.startswith(MAGIC_NUMPY):
             pure_binary = True
         elif not data.startswith(MAGIC_SEAMLESS_MIXED):
             pure_plain = True
-    if pure_plain or pure_binary:        
+    if pure_plain or pure_binary:
         mode = "pure-plain" if pure_plain else "pure-binary"
         if pure_plain and not isinstance(data, str):
             assert not data.startswith(MAGIC_SEAMLESS)
@@ -50,7 +50,7 @@ def deserialize(data):
             dt = value.dtype
             if dt.base.isbuiltin or is_np_str(dt) or dt in dt_builtins:
                 pass
-            elif not dt.isalignedstruct:                
+            elif not dt.isalignedstruct:
                 descr = [e for e in dt.descr if len(e[0])]
                 dt2 = np.dtype(descr, align=True)
                 value = value.astype(dt2)
