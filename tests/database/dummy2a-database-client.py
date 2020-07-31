@@ -29,7 +29,7 @@ async def main():
             "subtype": "buffer",
             "checksum": checksum,
             "value": np.frombuffer(buffer, dtype=np.uint8),
-            "authoritative": False,
+            "authoritative": True,
         }
         await websocket.send(serialize(request))
         response = await websocket.recv()

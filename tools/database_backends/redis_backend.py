@@ -20,7 +20,7 @@ class RedisSink:
     async def set(self, key, value, authoritative=True, importance=None):
         r = self.connection
         if self.cache and not authoritative:
-            expiry = 1e9 + 1000 * importance # in seconds
+            expiry = int(1e9 + 1000 * importance) # in seconds
             r.set(key, value, ex=expiry)
         else:
             r.set(key, value)
