@@ -5,6 +5,10 @@ redis:
     host: localhost
     port: 6379
 
+flatfile:
+    directory: /tmp/seamless-db
+
+
 backends: # backends are queried sequentially, in order; you probably want to define cache sources before non-cache sources
 -
     type: source    # can be source or sink
@@ -14,3 +18,12 @@ backends: # backends are queried sequentially, in order; you probably want to de
     type: sink
     backend: redis
     cache: True     # if True, values retrieved from (other) sources are written in here
+
+-
+    type: source
+    backend: flatfile
+
+-
+    type: sink
+    backend: flatfile
+    cache: False

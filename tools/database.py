@@ -1,5 +1,5 @@
 import os, sys, asyncio, functools, json, traceback, socket, websockets
-from database_backends import redis_backend
+import database_backends
 from seamless.mixed.io.serialization import deserialize
 
 buffercodes = (
@@ -257,6 +257,8 @@ class DatabaseServer:
 
     async def backend_set(self, subtype, checksum, value, request):
         if subtype == "buffer":
+            if not isinstance(value, bytes):
+                raise DatabaseError("Malformed SET buffer request: value must be bytes")
             key1 = "buf:" + checksum
             key2 = "nbf:" + checksum
             authoritative = request.get("authoritative", False)
@@ -286,11 +288,11 @@ class DatabaseServer:
                     await sink.set(key, length)
         elif subtype == "semantic-to-syntactic":
             if not isinstance(value, list):
-                raise DatabaseError("Malformed semantic-to-syntactic request")
+                raise DatabaseError("Malformed SET semantic-to-syntactic request")
             try:
                 celltype, subcelltype = request["celltype"], request["subcelltype"]
             except KeyError:
-                raise DatabaseError("Malformed semantic-to-syntactic request")
+                raise DatabaseError("Malformed SET semantic-to-syntactic request")
             key = "s2s:{},{},{}".format(checksum, celltype, subcelltype)
             for sink, sink_config in self.db_sinks:
                 await sink.add_sem2syn(key, value)
@@ -334,29 +336,25 @@ if __name__ == "__main__":
     database_server = DatabaseServer(config["host"], int(config["port"]))
     database_server.start()
 
-    redis_config = config.get("redis", {})
     for backend in config["backends"]:
-        a = {}
-        if backend["backend"] == "redis":
-            for key in ("host", "port"):
-                a[key] = redis_config.get(key)
-                a[key] = backend.get(key, a[key])
+        try:
+            backend_module = getattr(database_backends, backend["backend"])
+        except AttributeError:
+            raise ValueError(backend["backend"]) from None
+
+        global_backend = config.get(backend["backend"], {})
+        a = global_backend.copy()
+        a.update(backend)
+        del a["backend"]
+
         if backend["type"] == "source":
-            if backend["backend"] == "redis":
-                source_config = backend.copy()
-                source_config.update(a)
-                source = redis_backend.get_source(source_config)
-                database_server.db_sources.append((source, source_config))
-            else:
-                raise ValueError(backend["backend"])
+            source_config = a
+            source = backend_module.get_source(source_config)
+            database_server.db_sources.append((source, source_config))
         elif backend["type"] == "sink":
-            if backend["backend"] == "redis":
-                sink_config = backend.copy()
-                sink_config.update(a)
-                sink = redis_backend.get_sink(sink_config)
-                database_server.db_sinks.append((sink, sink_config))
-            else:
-                raise ValueError(backend["backend"])
+            sink_config = a
+            sink = backend_module.get_sink(sink_config)
+            database_server.db_sinks.append((sink, sink_config))
         else:
             raise ValueError(backend["type"])
     try:

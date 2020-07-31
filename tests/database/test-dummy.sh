@@ -1,4 +1,3 @@
-set +bm
 docker run --rm -d --name redis-dummy1 -p 6380:6379  -u `id -u`:`id -g` redis redis-server --save "" --maxmemory 1gb --maxmemory-policy volatile-ttl \
  > redis-dummy1.log 2>&1 &
 docker run --rm -d --name redis-dummy2 -p 6381:6379  -u `id -u`:`id -g` redis redis-server --save "" --maxmemory 1gb --maxmemory-policy volatile-ttl \
@@ -58,3 +57,4 @@ cat test-dummy1-server.log
 echo
 
 docker stop redis-dummy1 redis-dummy2
+rm -f *.log
