@@ -18,7 +18,7 @@ nest_asyncio = None
 """
 # Jupyter notebook; DISABLED, as it does not work properly!
 
-if asyncio.get_event_loop().is_running(): 
+if asyncio.get_event_loop().is_running():
     import nest_asyncio
     nest_asyncio.apply()
 """
@@ -69,7 +69,7 @@ if "get_ipython" in sys.modules["__main__"].__dict__:
                 ipython_instance.enable_gui("asyncio")
             elif asyncio.get_event_loop().is_running(): # Jupyter notebook
                 running_in_jupyter = True
-                if nest_asyncio is not None: 
+                if nest_asyncio is not None:
                     ipython_instance.magic("autoawait False")
 
 def verify_sync_translate():
@@ -118,7 +118,7 @@ from .shareserver import shareserver
 from .communion_server import communion_server
 from .core.transformation import set_ncores
 from .get_hash import get_hash, get_dict_hash
-from .core.cache.redis_client import RedisSink, RedisCache
+from .core.cache.database_client import database_sink, database_cache
 from . import debugger
 """
 from . import pandeval

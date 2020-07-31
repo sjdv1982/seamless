@@ -1,0 +1,30 @@
+#!/bin/bash
+set -u -e
+
+[ ! -d ~/.seamless/database ] && mkdir -p ~/.seamless/database
+[ ! -d ~/.seamless/redis ] && mkdir -p ~/.seamless/redis
+
+seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
+
+
+docker run \
+  --rm \
+  -d \
+  -p 6379:6379 \
+  --name seamless-redis-container \
+  -v ~/.seamless/redis:/data \
+  -u `id -u`:`id -g` \
+  redis redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy volatile-ttl
+
+docker run \
+  --rm \
+  -d \
+  -p 5522:5522 \
+  --name seamless-database-container \
+  -v ~/.seamless/database:/data \
+  -v $seamlessdir:/seamless \
+  -e "PYTHONPATH=/seamless" \
+  -u jovyan \
+  seamless-devel \
+  python3 -u /home/jovyan/seamless-tools/database.py \
+  /home/jovyan/seamless-tools/default-config.yaml

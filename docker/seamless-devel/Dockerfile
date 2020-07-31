@@ -9,5 +9,6 @@ RUN mkdir /home/jovyan/software && \
     ln -s /seamless/tests /home/jovyan/seamless-tests && \
     ln -s /seamless/examples /home/jovyan/seamless-examples && \
     ln -s /seamless/docker/commands /home/jovyan/seamless-docker && \
-    ln -s /seamless/scripts /home/jovyan/seamless-scripts
+    ln -s /seamless/scripts /home/jovyan/seamless-scripts && \
+    ln -s /seamless/tools /home/jovyan/seamless-tools
 RUN chown -R jovyan /home/jovyan && echo 'umask 000' >> /home/jovyan/.bashrc

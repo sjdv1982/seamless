@@ -12,6 +12,7 @@ RUN rm -rf /usr/local/src/seamless/.git && \
     cp -Lr /usr/local/src/seamless/tests /home/jovyan/seamless-tests && \
     cp -Lr /usr/local/src/seamless/examples /home/jovyan/seamless-examples && \
     cp -Lr /usr/local/src/seamless/docker/commands /home/jovyan/seamless-docker && \
-    cp -Lr /usr/local/src/seamless/scripts /home/jovyan/seamless-scripts
+    cp -Lr /usr/local/src/seamless/scripts /home/jovyan/seamless-scripts && \
+    cp -Lr /usr/local/src/seamless/tools /home/jovyan/seamless-tools && \
 RUN chown -R jovyan /home/jovyan && echo 'umask 000' >> /home/jovyan/.bashrc
 ENV PYTHONPATH /home/jovyan/software:$PYTHONPATH

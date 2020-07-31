@@ -5,8 +5,8 @@ import sys, json
 infile, outfile = sys.argv[1:]
 graph = json.load(open(infile))
 
-redis_cache = seamless.RedisCache()
-redis_sink = seamless.RedisSink()
+seamless.database_sink.connect()
+seamless.database_cache.connect()
 
 ctx = load_graph(graph)
 ctx.compute()

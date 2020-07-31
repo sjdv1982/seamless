@@ -63,7 +63,7 @@ def bind_status_graph(ctx, status_graph, *, zips=None, mounts=False, shares=True
 The context is loaded from status_graph, which must be a graph in JSON format.
 It uses the same manager as ctx.
 The status graph's underlying buffers must be available already
-(from add_zip or via Redis)
+(from add_zip or via Seamless database)
 The status graph must have a cell called "graph",
  and normally, also a cell shared as "index.html"
 The status graph will receive the share namespace "status"
@@ -99,7 +99,7 @@ async def bind_status_graph_async(ctx, status_graph, *, zips=None, mounts=False,
 The context is loaded from status_graph, which must be a graph in JSON format.
 It uses the same manager as ctx.
 The status graph's underlying buffers must be available already
-(from add_zip or via Redis)
+(from add_zip or via database)
 The status graph must have a cell called "graph",
  and normally, also a cell shared as "index.html"
 The status graph will receive the share namespace "status"

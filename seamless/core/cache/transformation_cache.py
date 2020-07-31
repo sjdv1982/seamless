@@ -21,7 +21,7 @@ import traceback
 
 from ...get_hash import get_dict_hash
 """
-TODO: offload exceptions (as text) to Redis (also allow them to be cleared in Redis?)
+TODO: offload exceptions (as text) to database (also allow them to be cleared in database?)
 TODO: do the same with stdout, stderr
 TODO: add some metadata to the above? (when and where it was executed)
 """
@@ -170,12 +170,12 @@ class TransformationCache:
                         if semkey in self.semantic_to_syntactic_checksums:
                             semsyn = self.semantic_to_syntactic_checksums[semkey]
                         else:
-                            semsyn = redis_caches.sem2syn(semkey)
+                            semsyn = database_cache.sem2syn(semkey)
                             if semsyn is None:
                                 semsyn = []
                             self.semantic_to_syntactic_checksums[semkey] = semsyn
                         semsyn.append(checksum)
-                        redis_sinks.sem2syn(semkey, semsyn)
+                        database_sink.sem2syn(semkey, semsyn)
                     else:
                         sem_checksum = checksum
             transformation[pinname] = celltype, subcelltype, sem_checksum
@@ -499,7 +499,7 @@ class TransformationCache:
         )
         self.transformation_results[tf_checksum] = result_checksum, prelim
         if not prelim:
-            redis_sinks.set_transformation_result(tf_checksum, result_checksum)
+            database_sink.set_transformation_result(tf_checksum, result_checksum)
         transformers = self.transformations_to_transformers[tf_checksum]
         for transformer in transformers:
             if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
@@ -525,7 +525,7 @@ class TransformationCache:
             tf_checksum, (None, None)
         )
         if result_checksum is None:
-            result_checksum = redis_caches.get_transform_result(tf_checksum)
+            result_checksum = database_cache.get_transform_result(tf_checksum)
             prelim = False
         return result_checksum, prelim
 
@@ -541,7 +541,7 @@ class TransformationCache:
         semsyn = self.semantic_to_syntactic_checksums.get(semkey)
         if semsyn is not None:
             return ret(semsyn)
-        semsyn = redis_caches.sem2syn(semkey)
+        semsyn = database_cache.sem2syn(semkey)
         if semsyn is not None:
             self.semantic_to_syntactic_checksums[semkey] = semsyn
             return ret(semsyn)
@@ -549,7 +549,7 @@ class TransformationCache:
         semsyn = await remote(sem_checksum, celltype, subcelltype, peer_id)
         if semsyn is not None:
             self.semantic_to_syntactic_checksums[semkey] = semsyn
-            redis_sinks.sem2syn(semkey, semsyn)
+            database_sink.sem2syn(semkey, semsyn)
             return ret(semsyn)
         return None
 
@@ -756,7 +756,7 @@ from ..protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
 from ..protocol.conversion import convert
 from ..protocol.deserialize import deserialize
 from ..protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
-from .redis_client import redis_caches, redis_sinks
+from .database_client import database_cache, database_sink
 from ..transformation import TransformationJob, SeamlessTransformationError
 from ..status import SeamlessInvalidValueError, SeamlessUndefinedError, StatusReasonEnum
 from ..transformer import Transformer

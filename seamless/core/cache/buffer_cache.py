@@ -5,7 +5,7 @@ from weakref import WeakValueDictionary
 import functools
 from collections import namedtuple
 
-from .redis_client import redis_sinks, redis_caches
+from .database_client import database_sink, database_cache
 
 """
 TEMP_KEEP_ALIVE = 20.0 # Keep buffer values alive for 20 secs after the last ref has expired
@@ -18,7 +18,7 @@ WARNING_HAS_PRINTED = False
 WARNING = """Seamless buffer cache cleanup is currently disabled.
 This prevents data loss from bugs in Seamless's buffer caching.
 If you have memory issues, restart Python periodically,
- and/or use Redis to store buffers"""
+ and/or use a database to store buffers"""
 
 class BufferCache:
     """Checksum-to-buffer cache.
@@ -26,16 +26,16 @@ class BufferCache:
 
     Memory intensive. Like any other cache, does not persist unless offloaded.
     Cache items are directly serializable, and can be shared over the
-    network, or offloaded to Redis.
+    network, or offloaded to a database.
     Keys are straightforward buffer checksums.
 
-    NOTE: if there are any Redis sinks, buffers are not maintained in local cache.
-    Refcounts are still maintained; in the future, Redis garbage may use them.
+    NOTE: if there is a database sink, buffers are not maintained in local cache.
+    Refcounts are still maintained.
     """
     def __init__(self):
         self.buffer_cache = {} #local cache, checksum-to-buffer
         self.buffer_refcount = {} #buffer-checksum-to-refcount
-        # Buffer length caches (never expire)
+        # Buffer length cache (never expire)
         self.small_buffers = set()
         self.buffer_length = {} #checksum-to-bufferlength (large buffers)
 
@@ -48,17 +48,17 @@ class BufferCache:
         if l < 1000:
             if checksum not in self.small_buffers:
                 self.small_buffers.add(checksum)
-                redis_sinks.add_small_buffer(checksum)
+                database_sink.add_small_buffer(checksum)
         else:
             if checksum not in self.buffer_length:
                 self.buffer_length[checksum] = l
-                redis_sinks.set_buffer_length(checksum, l)
+                database_sink.set_buffer_length(checksum, l)
         if checksum not in self.buffer_refcount:
             self.incref_temp(checksum)
         no_local = False
-        if redis_sinks.size:
-            redis_sinks.set_buffer(checksum, buffer)
-            if redis_caches.size:
+        if database_sink.size:
+            database_sink.set_buffer(checksum, buffer)
+            if database_cache.size:
                 no_local = True
         if not no_local:
             if checksum in self.buffer_cache:
@@ -123,7 +123,7 @@ class BufferCache:
         buffer = self.buffer_cache.get(checksum)
         if buffer is not None:
             return buffer
-        return redis_caches.get_buffer(checksum)
+        return database_cache.get_buffer(checksum)
 
     def get_buffer_length(self, checksum):
         if checksum is None:
@@ -133,7 +133,7 @@ class BufferCache:
         length = self.buffer_length.get(checksum)
         if length is not None:
             return length
-        length = redis_caches.get_buffer_length(checksum)
+        length = database_cache.get_buffer_length(checksum)
         if length is not None:
             return length
         buf = self.get_buffer(checksum)
@@ -145,11 +145,11 @@ class BufferCache:
         assert checksum is not None
         if checksum in self.buffer_cache:
             return True
-        return redis_caches.has_buffer(checksum)
+        return database_cache.has_buffer(checksum)
 
 buffer_cache = BufferCache()
-buffer_cache.redis_caches = redis_caches
-buffer_cache.redis_sinks = redis_sinks
+buffer_cache.database_cache = database_cache
+buffer_cache.database_sink = database_sink
 
 from ..protocol.calculate_checksum import checksum_cache
 from .tempref import temprefmanager

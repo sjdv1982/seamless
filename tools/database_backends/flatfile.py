@@ -138,6 +138,7 @@ class FlatFileSource(FlatFileBase):
 
 def get_source(config):
     directory = config["directory"]
+    directory = os.path.abspath(os.path.expanduser(directory))
     return FlatFileSource(directory, config)
 
 def get_sink(config):

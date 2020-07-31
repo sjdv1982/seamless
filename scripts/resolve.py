@@ -1,9 +1,9 @@
 import sys
 import seamless
 from seamless.core.protocol.deserialize import _deserialize as deserialize_sync
-cache = seamless.RedisCache()
+seamless.database_cache.connect()
 checksum = bytes.fromhex(sys.argv[1])
-buffer = cache.get_buffer(checksum)
+buffer = seamless.database_cache.get_buffer(checksum)
 if buffer is None:
     print(None)
     sys.exit()

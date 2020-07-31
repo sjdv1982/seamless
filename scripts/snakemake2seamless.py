@@ -215,7 +215,6 @@ if dag == False:
 import seamless
 from seamless.highlevel import Context, Transformer, Cell
 ctx = Context()
-#sink = seamless.RedisSink()
 ctx.fs = Context()
 fs = ctx.fs
 ctx.rules = Context()

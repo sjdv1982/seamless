@@ -34,7 +34,7 @@ async def get_buffer_dict(manager, checksums):
     async def get_buf(checksum):
         return await cachemanager.fingertip(checksum)
         return get_buffer(bytes.fromhex(checksum), buffer_cache)
-    for checksum in checksums:    
+    for checksum in checksums:
         coro = get_buf(checksum)
         coros.append(coro)
     buffers = await asyncio.gather(*coros, return_exceptions=True)
@@ -54,9 +54,9 @@ def get_buffer_dict_sync(manager, checksums):
         fut = asyncio.ensure_future(coro)
         asyncio.get_event_loop().run_until_complete(fut)
         return fut.result()
-    
+
     result = {}
-    buffer_cache = manager.cachemanager.buffer_cache    
+    buffer_cache = manager.cachemanager.buffer_cache
     checksums = list(checksums)
     for checksum in checksums:
         buffer = get_buffer(bytes.fromhex(checksum), buffer_cache)
@@ -67,7 +67,7 @@ def add_zip(manager, zipfile):
     """
     Caches all checksum-to-buffer entries in zipfile
     All "file names" in the zipfile must be checksum hexes
-    Note that caching without Redis only lasts 20 seconds 
+    Note that caching without database only lasts 20 seconds
     """
     buffer_cache = manager.cachemanager.buffer_cache
     for checksum in zipfile.namelist():
@@ -125,21 +125,21 @@ def fill_checksum(manager, node, temp_path, composite=True):
     temp_value = node.get("TEMP")
     if composite:
         if isinstance(temp_value, dict):
-            temp_value = temp_value.get(temp_path)            
+            temp_value = temp_value.get(temp_path)
         elif temp_value is None:
             pass
         else:
             raise TypeError(temp_value)
     if temp_value is None:
         return
-        
+
     if datatype == "python":
         if inspect.isfunction(temp_value):
             code = inspect.getsource(temp_value)
             code = strip_source(code)
             temp_value = code
     buf = serialize(temp_value, datatype, use_cache=False)
-    checksum = calculate_checksum(buf)    
+    checksum = calculate_checksum(buf)
 
     if checksum is None:
         return
@@ -153,11 +153,11 @@ def fill_checksum(manager, node, temp_path, composite=True):
         temp_path = "value"
     if "checksum" not in node:
         node["checksum"] = {}
-    temp_path = temp_path.lstrip("_")  
+    temp_path = temp_path.lstrip("_")
     node["checksum"][temp_path] = checksum
-        
+
 def fill_checksums(mgr, nodes, *, path=None):
-    """Fills checksums in the nodes from TEMP, if untranslated 
+    """Fills checksums in the nodes from TEMP, if untranslated
     """
     from ..core.structured_cell import StructuredCell
     first_exc = None

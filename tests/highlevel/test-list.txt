@@ -32,17 +32,17 @@ simple.py
 simple-deepcell.py
 simple-pi.py: Also creates twopi.seamless, twopi-result.seamless, twopi-result.zip
 simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-result.seamless, twopi-deepcell-result.zip
-simple-pi-redis.py: requires redis to run as a Sink
-simple-pi-remote.py: run with jobslave-noredis
-simple-pi-remote-redis.py: run with jobslave; makes no assumptions about them Redis contents
+simple-pi-database.py: requires Seamless database to run as a Sink
+simple-pi-remote.py: run with jobslave-nodatabase
+simple-pi-remote-database.py: run with jobslave; makes no assumptions about the database contents
 subcontext.py
 reassign-transformer.py
 transformer-compiled.py
 transformer-redefine.py
 transformer-compiled-error.py
 transformer-compiled-module.py
-twopi-graph-redis.sh: run with redis; delete job results (e.g. redis-cli flushall)
-                      run as i=twopi-graph-redis; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
+twopi-graph-database.sh: run with Seamless database; delete job results (e.g. redis-cli flushall)
+                      run as i=twopi-graph-database; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
 twopi-graph-service.sh: same as above; run as i=twopi-graph-service
 load-graph.py

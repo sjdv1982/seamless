@@ -27,16 +27,15 @@ if args.communion_incoming is not None:
 
 import seamless
 
-params = {}    
-redis_host = env.get("REDIS_HOST")
-if redis_host is not None:
-    params["host"] = redis_host
-redis_port = env.get("REDIS_PORT")
-if redis_port is not None:
-    params["port"] = redis_port
-redis_sink = seamless.RedisSink(**params)
-redis_cache = seamless.RedisCache(**params)
-
+params = {}
+db_host = env.get("SEAMLESS_DATABASE_HOST")
+if db_host is not None:
+    params["host"] = db_host
+db_port = env.get("SEAMLESS_DATABASE_PORT")
+if db_port is not None:
+    params["port"] = db_port
+seamless.database_sink.connect()
+seamless.database_cache.connect()
 
 from seamless import communion_server
 

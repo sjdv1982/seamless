@@ -21,7 +21,7 @@ import sys, json
 from aiohttp import web
 import aiohttp_cors
 
-redis_cache = seamless.RedisCache()
+seamless.database_cache.connect()
 
 async def handler(request):
     text = await request.text()
@@ -29,12 +29,12 @@ async def handler(request):
     ctx = load_graph(graph)
     await ctx.computation()
     colored_graph = ctx.get_graph()
-    body = json.dumps(colored_graph, indent=2, sort_keys=True) 
+    body = json.dumps(colored_graph, indent=2, sort_keys=True)
     return web.Response(
         status=200,
         body=body,
         content_type='application/json',
-    )            
+    )
 
 async def start():
     await communion_server._start()
@@ -66,9 +66,7 @@ import asyncio
 asyncio.ensure_future(start())
 
 loop = asyncio.get_event_loop()
-if len(sys.argv) > 1:    
+if len(sys.argv) > 1:
     run_time = float(sys.argv[1])
     loop.call_later(run_time, sys.exit)
 loop.run_forever()
-
-

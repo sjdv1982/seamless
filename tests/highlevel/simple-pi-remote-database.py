@@ -8,8 +8,8 @@ import seamless
 seamless.set_ncores(0)
 from seamless import communion_server
 
-redis_sink = seamless.RedisSink()
-redis_cache = seamless.RedisCache()
+seamless.database_sink.connect()
+seamless.database_cache.connect()
 
 communion_server.configure_master(
     transformation_job=True,
@@ -45,4 +45,3 @@ ctx.doubleit.code = lambda a: 2 * a
 ctx.compute()
 print(ctx.pi.value)
 print(ctx.twopi.value)
-

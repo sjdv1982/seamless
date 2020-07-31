@@ -2,11 +2,11 @@ import asyncio
 import traceback
 
 DEBUG = True
-REMOTE_TIMEOUT = 5.0 
+REMOTE_TIMEOUT = 5.0
 
 async def get_buffer_length_remote(checksum, buffer_cache, remote_peer_id):
     clients = communion_client_manager.clients["buffer_length"]
-    coros = []            
+    coros = []
     for client in clients:
         client_peer_id = client.get_peer_id()
         if client_peer_id != remote_peer_id:
@@ -17,8 +17,8 @@ async def get_buffer_length_remote(checksum, buffer_cache, remote_peer_id):
     futures = [asyncio.ensure_future(coro) for coro in coros]
     while 1:
         done, pending = await asyncio.wait(
-            futures, 
-            timeout=REMOTE_TIMEOUT, 
+            futures,
+            timeout=REMOTE_TIMEOUT,
             return_when=asyncio.FIRST_COMPLETED
         )
         if len(done):
@@ -37,10 +37,10 @@ async def get_buffer_length_remote(checksum, buffer_cache, remote_peer_id):
         if not len(pending):
             break
     return None
-    
+
 async def get_buffer_remote(checksum, buffer_cache, remote_peer_id):
     clients = communion_client_manager.clients["buffer"]
-    coros = []            
+    coros = []
     for client in clients:
         client_peer_id = client.get_peer_id()
         if client_peer_id != remote_peer_id:
@@ -54,8 +54,8 @@ async def get_buffer_remote(checksum, buffer_cache, remote_peer_id):
     best_status = None
     while 1:
         done, pending = await asyncio.wait(
-            futures, 
-            timeout=REMOTE_TIMEOUT, 
+            futures,
+            timeout=REMOTE_TIMEOUT,
             return_when=asyncio.FIRST_COMPLETED
         )
         if len(done):
@@ -93,13 +93,13 @@ async def get_buffer_remote(checksum, buffer_cache, remote_peer_id):
 def get_buffer(checksum, buffer_cache):
     """  Gets the buffer from its checksum
 - Check for a local checksum-to-buffer cache hit (synchronous)
-- Else, check Redis cache (currently synchronous; make it async in a future version)
+- Else, check database cache
 - Else, check transformation cache (if it hits, make buffer of it)
 - Else, await remote checksum-to-buffer cache
 - Else, the checksum will be fingertipped (if enabled)
-- If successful, add the buffer to local and/or Redis cache (with a tempref or a permanent ref).
+- If successful, add the buffer to local and/or database cache (with a tempref or a permanent ref).
 - If all fails, raise CacheMissError
-"""     
+"""
     if checksum is None:
         return None
     buffer = checksum_cache.get(checksum)

@@ -10,11 +10,6 @@ communion_server.configure_servant(
     transformation_status=True,
 )
 
-import seamless
-#redis_sink = seamless.RedisSink()
-#redis_cache = seamless.RedisCache()
-
-
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.cell1 = cell().set(2)

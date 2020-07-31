@@ -79,18 +79,18 @@ def build_compiled_module_remote(full_module_name, checksum, module_definition):
     asyncio.get_event_loop().run_until_complete(future)
 
 def build_compiled_module(full_module_name, checksum, module_definition):
-    from .cache.redis_client import redis_caches, redis_sinks
+    from .cache.database_client import database_cache, database_sink
     mchecksum = b"python-ext-" + checksum
-    module_code = redis_caches.get_compile_result(mchecksum)
+    module_code = database_cache.get_compile_result(mchecksum)
     source_files = {}
     debug = (module_definition.get("target") == "debug")
     if module_code is None:
         build_compiled_module_remote(
           full_module_name, checksum, module_definition
         )
-        module_code = redis_caches.get_compile_result(mchecksum)
+        module_code = database_cache.get_compile_result(mchecksum)
         if module_code is not None:
-            redis_sinks.set_compile_result(mchecksum, module_code)
+            database_sink.set_compile_result(mchecksum, module_code)
     if module_code is None:
         objects = module_definition["objects"]
         binary_objects = {}
@@ -98,16 +98,16 @@ def build_compiled_module(full_module_name, checksum, module_definition):
         object_checksums = {}
         for objectname, object_ in objects.items():
             object_checksum = get_dict_hash(object_)
-            binary_code = redis_caches.get_compile_result(object_checksum)
+            binary_code = database_cache.get_compile_result(object_checksum)
             if binary_code is not None:
-                binary_objects[objectname] = binary_code                
+                binary_objects[objectname] = binary_code
             else:
                 remaining_objects[objectname] = object_
             object_checksums[objectname] = object_checksum
         if len(remaining_objects):
             build_dir = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name)
             success, new_binary_objects, source_files, stderr = compile(
-              remaining_objects, build_dir, 
+              remaining_objects, build_dir,
               compiler_verbose=module_definition.get(
                 "compiler_verbose", COMPILE_VERBOSE
               ),
@@ -118,33 +118,33 @@ def build_compiled_module(full_module_name, checksum, module_definition):
             else:
                 if len(stderr):
                     print(stderr)  # TODO: log this, but it is not obvious where
-            for objectname, binary_code in new_binary_objects.items():                
+            for objectname, binary_code in new_binary_objects.items():
                 binary_objects[objectname] = binary_code
                 object_checksum = object_checksums[objectname]
-                redis_sinks.set_compile_result(object_checksum, binary_code)
+                database_sink.set_compile_result(object_checksum, binary_code)
         link_options = module_definition["link_options"]
         target = module_definition["target"]
         header = module_definition["public_header"]
         assert header["language"] == "c", header["language"]
-        c_header = header["code"]        
+        c_header = header["code"]
         module_code = build_extension_cffi(
           full_module_name,
-          binary_objects, 
-          target, 
-          c_header, 
-          link_options, 
+          binary_objects,
+          target,
+          c_header,
+          link_options,
           compiler_verbose=module_definition.get(
             "compiler_verbose", CFFI_VERBOSE
           )
-        )        
-        redis_sinks.set_compile_result(mchecksum, module_code)        
+        )
+        database_sink.set_compile_result(mchecksum, module_code)
     mod = import_extension_module(full_module_name, module_code, debug, source_files)
     return mod
 
 def build_module(module_definition):
     mtype = module_definition["type"]
     assert mtype in ("interpreted", "compiled"), mtype
-    json.dumps(module_definition)    
+    json.dumps(module_definition)
     checksum = get_dict_hash(module_definition)
     full_module_name = "seamless_module_" + checksum.hex()
     if full_module_name not in module_cache:
@@ -161,7 +161,7 @@ def build_module(module_definition):
         mod = module_cache[full_module_name]
     return full_module_name, mod
 
-async def build_module_async(module_definition):    
+async def build_module_async(module_definition):
     """
     loop = asyncio.get_event_loop()
     with ProcessPoolExecutor() as executor:

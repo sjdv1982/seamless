@@ -1,5 +1,5 @@
 import seamless
-redis_cache = seamless.RedisCache()
+seamless.database_cache.connect()
 
 import json
 graph = json.load(open("twopi.seamless"))

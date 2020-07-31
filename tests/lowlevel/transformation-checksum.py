@@ -5,8 +5,7 @@ from seamless import communion_server
 
 from seamless.core import context, cell, transformer
 
-from seamless import RedisSink
-sink = RedisSink()
+seamless.database_sink.connect()
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)

@@ -1,14 +1,14 @@
 #/!/bin/bash
 
 set -u -e
-# first run redis and jobslave.sh
+# first run Seamless-database and jobslave.sh
 seamless-devel-add-zip share-pdb.zip
 
 seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
 
 bridge_ip=$(docker network inspect bridge \
   | python3 -c '''
-import json, sys 
+import json, sys
 bridge = json.load(sys.stdin)
 print(bridge[0]["IPAM"]["Config"][0]["Gateway"])
 ''')
@@ -19,7 +19,7 @@ docker run --rm \
   --name $name \
   -v $seamlessdir:/seamless \
   -e "PYTHONPATH=/seamless" \
-  -e "REDIS_HOST="$bridge_ip \
+  -e "SEAMLESS_DATABASE_HOST="$bridge_ip \
   -e "SHARESERVER_ADDRESS=0.0.0.0" \
   -e "SEAMLESS_COMMUNION_ID="$name \
   -e "SEAMLESS_COMMUNION_INCOMING="$communion_incoming \
@@ -28,6 +28,6 @@ docker run --rm \
   -u jovyan \
   -it \
   seamless-devel ipython3 -i /home/jovyan/seamless-scripts/serve-graph.py -- \
-    share-pdb.seamless --redis --ncores 0 \
+    share-pdb.seamless --database --ncores 0 \
     --communion_id $name \
     --interactive

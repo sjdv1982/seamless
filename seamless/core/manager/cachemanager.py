@@ -29,16 +29,16 @@ class CacheManager:
 
         # Quick local expression cache
         # Hang onto this indefinitely
-        # No expression cache at the level of communion_server or redis
+        # No expression cache at the level of communion_server or database
         #  (if expressions are really long to compute, use deepcells)
-        self.expression_to_checksum = {} 
-        
+        self.expression_to_checksum = {}
+
         # for now, just a single global transformation cache
         from ..cache.transformation_cache import transformation_cache
         self.transformation_cache = transformation_cache
 
         self._destroying = set()
-        
+
     def register_cell(self, cell):
         assert cell not in self.cell_to_ref
         self.cell_to_ref[cell] = None
@@ -69,7 +69,7 @@ class CacheManager:
         self.reactor_to_refs[reactor] = refs
         self.reactor_exceptions[reactor] = None
 
-    def incref_checksum(self, checksum, refholder, authority):        
+    def incref_checksum(self, checksum, refholder, authority):
         if checksum is None:
             return
         #print("INCREF CHECKSUM", checksum, refholder)
@@ -78,7 +78,7 @@ class CacheManager:
             self.checksum_refs[checksum] = []
         if isinstance(refholder, Cell):
             assert self.cell_to_ref[refholder] is None
-            self.cell_to_ref[refholder] = (checksum, authority) 
+            self.cell_to_ref[refholder] = (checksum, authority)
             cell = refholder
             if cell._hash_pattern is not None:
                 deep_buffer = self.buffer_cache.get_buffer(checksum)
@@ -91,7 +91,7 @@ class CacheManager:
                     self.buffer_cache.incref(bytes.fromhex(sub_checksum))
         elif isinstance(refholder, Expression):
             assert self.expression_to_ref[refholder] is None
-            self.expression_to_ref[refholder] = (checksum, authority) 
+            self.expression_to_ref[refholder] = (checksum, authority)
         elif isinstance(refholder, Transformer):
             assert not authority
             assert self.transformer_to_ref[refholder] is None
@@ -120,7 +120,7 @@ class CacheManager:
 
         from ..cache import CacheMissError
         from ..cache.transformation_cache import calculate_checksum
-        from .tasks.evaluate_expression import EvaluateExpressionTask        
+        from .tasks.evaluate_expression import EvaluateExpressionTask
         if checksum is None:
             return
         if isinstance(checksum, str):
@@ -133,20 +133,20 @@ class CacheManager:
         coros = []
         manager = self.manager()
         tf_cache = self.transformation_cache
-        
-        async def fingertip_transformation(transformation, tf_checksum):            
+
+        async def fingertip_transformation(transformation, tf_checksum):
             coros = []
             for pinname in transformation:
                 if pinname.startswith("__"):
                     continue
-                celltype, subcelltype, sem_checksum = transformation[pinname]                
+                celltype, subcelltype, sem_checksum = transformation[pinname]
                 sem2syn = tf_cache.semantic_to_syntactic_checksums
                 semkey = (sem_checksum, celltype, subcelltype)
                 checksum2 = sem2syn.get(semkey, [sem_checksum])[0]
                 coros.append(self.fingertip(checksum2))
             await asyncio.gather(*coros)
             job = tf_cache.run_job(transformation, tf_checksum)
-            if job is not None:                
+            if job is not None:
                 await asyncio.shield(job.future)
 
         async def fingertip_expression(expression):
@@ -176,7 +176,7 @@ class CacheManager:
             if buffer_length is None:
                 buffer_length = await get_buffer_length_remote(
                     checksum,
-                    buffer_cache, 
+                    buffer_cache,
                     remote_peer_id=None
                 )
             if buffer_length is not None:
@@ -186,7 +186,7 @@ class CacheManager:
         if remote > recompute:
             try:
                 buffer = await get_buffer_remote(
-                    checksum, 
+                    checksum,
                     buffer_cache,
                     None
                 )
@@ -194,11 +194,11 @@ class CacheManager:
                     return buffer
             except CacheMissError:
                 pass
-        
+
         for refholder, auth in self.checksum_refs.get(checksum, []):
             if isinstance(refholder, Expression):
                 if refholder.checksum != checksum:
-                    if self.expression_to_checksum[refholder] == checksum:                    
+                    if self.expression_to_checksum[refholder] == checksum:
                         coros.append(fingertip_expression(refholder))
             elif isinstance(refholder, Transformer) and recompute:
                 tf_checksum = tf_cache.transformer_to_transformations[refholder]
@@ -206,7 +206,7 @@ class CacheManager:
                 cs = tf_cache.transformation_results.get(tf_checksum, (None, None))[0]
                 if cs == checksum:
                     coros.append(fingertip_transformation(transformation, tf_checksum))
-            
+
         tasks = [asyncio.ensure_future(c) for c in coros]
         while len(tasks):
             _, tasks  = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
@@ -214,12 +214,12 @@ class CacheManager:
             if buffer is not None:
                 for task in tasks:
                     task.cancel()
-                return buffer       
+                return buffer
 
         if remote > 0 and remote <= recompute:
             try:
                 buffer = await get_buffer_remote(
-                    checksum, 
+                    checksum,
                     buffer_cache,
                     None
                 )
@@ -229,7 +229,7 @@ class CacheManager:
                 pass
 
         raise CacheMissError(checksum.hex())
-        
+
 
     def decref_checksum(self, checksum, refholder, authority, *, destroying=False):
         if checksum is None:
@@ -266,13 +266,13 @@ class CacheManager:
             raise TypeError(type(refholder))
         #print("cachemanager DECREF", checksum.hex())
         try:
-            self.checksum_refs[checksum].remove((refholder, authority))        
+            self.checksum_refs[checksum].remove((refholder, authority))
         except ValueError:
             self.checksum_refs[checksum][:] = \
               [l for l in self.checksum_refs[checksum] if l[0] is not refholder]
         if len(self.checksum_refs[checksum]) == 0:
             self.buffer_cache.decref(checksum)
-            self.checksum_refs.pop(checksum)        
+            self.checksum_refs.pop(checksum)
 
     @destroyer
     def destroy_cell(self, cell):
@@ -321,20 +321,20 @@ class CacheManager:
                 self.decref_checksum(checksum, reactor, False)
         self.reactor_exceptions.pop(reactor)
 
-    def check_destroyed(self):        
+    def check_destroyed(self):
         attribs = (
-            "checksum_refs", 
-            "cell_to_ref", 
+            "checksum_refs",
+            "cell_to_ref",
             "expression_to_ref",
             "transformer_to_ref",
             "reactor_to_refs"
         )
-        name = self.__class__.__name__        
+        name = self.__class__.__name__
         for attrib in attribs:
             a = getattr(self, attrib)
             if attrib == "checksum_refs":
                 a = [aa for aa in a.values() if aa != []]
-            if len(a):                
+            if len(a):
                 log(name + ", " + attrib + ": %d undestroyed"  % len(a))
 
 from ..cell import Cell
