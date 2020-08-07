@@ -16,10 +16,6 @@ class FlatFileBase:
         if not os.path.exists(lock_dir):
             os.mkdir(lock_dir)
         self.lock_dir = lock_dir
-        smallbuffer_dir = d + os.sep + "smallbuffers"
-        if not os.path.exists(smallbuffer_dir):
-            os.mkdir(smallbuffer_dir)
-        self.smallbuffer_dir = smallbuffer_dir
 
     @property
     def id(self):
@@ -27,18 +23,12 @@ class FlatFileBase:
 
     def _filename(self, key):
         d = self.directory
-        filename = d + os.sep + key.replace(":", "-")
+        filename = d + os.sep + key
         return filename
-
-    async def has_key(self, key):
-        filename = self._filename(key)
-        return os.path.exists(filename)
-
-class FlatFileSink(FlatFileBase):
 
     async def acquire_lock(self, key):
         d = self.directory
-        lock_file = self.lock_dir + os.sep + key.replace(":", "-")
+        lock_file = self.lock_dir + os.sep + key
         if not os.path.exists(lock_file):
             with open(lock_file, "w"):
                 pass
@@ -53,8 +43,29 @@ class FlatFileSink(FlatFileBase):
             if not os.path.exists(lock_file):
                 return None
 
+    async def has_key(self, key):
+        if isinstance(key, bytes):
+            key = key.decode()
+        filename = self._filename(key)
+        return os.path.exists(filename)
+
+    async def delete_key(self, key):
+        if isinstance(key, bytes):
+            key = key.decode()
+        lock_file = await self.acquire_lock(key)
+        try:
+            filename = self._filename(key)
+            os.unlink(filename)
+        finally:
+            if lock_file is not None:
+                os.unlink(lock_file)
+
+class FlatFileSink(FlatFileBase):
 
     async def set(self, key, value, authoritative=True, importance=None):
+        if isinstance(key, bytes):
+            key = key.decode()
+        assert isinstance(value, bytes)
         lock_file = await self.acquire_lock(key)
         try:
             filename = self._filename(key)
@@ -66,6 +77,10 @@ class FlatFileSink(FlatFileBase):
 
     async def rename(self, key1, key2):
         """Renames a buffer, assumes that key2 is authoritative"""
+        if isinstance(key1, bytes):
+            key1 = key1.decode()
+        if isinstance(key2, bytes):
+            key2 = key2.decode()
         lock_file1 = await self.acquire_lock(key1)
         lock_file2 = await self.acquire_lock(key2)
         try:
@@ -78,42 +93,33 @@ class FlatFileSink(FlatFileBase):
             if lock_file2 is not None:
                 os.unlink(lock_file2)
 
-    async def delete(self, key):
-        lock_file = await self.acquire_lock(key)
-        try:
-            filename = self._filename(key)
-            os.unlink(filename)
-        finally:
-            if lock_file is not None:
-                os.unlink(lock_file)
-
     async def add_sem2syn(self, key, syn_checksums):
+        if isinstance(key, bytes):
+            key = key.decode()
         lock_file = await self.acquire_lock(key)
         try:
             filename = self._filename(key)
             if os.path.exists(filename):
                 with open(filename, "r") as f:
-                    curr_syn_checksums = set(filename.readlines())
+                    curr_syn_checksums = set(f.readlines())
             else:
                 curr_syn_checksums = set()
             with open(filename, "at") as f:
                 for syn_checksum in syn_checksums:
+                    assert isinstance(syn_checksum, bytes)
                     if syn_checksum not in curr_syn_checksums:
-                        print(syn_checksum, file=f)
+                        print(syn_checksum.decode(), file=f)
                         curr_syn_checksums.add(syn_checksum)
         finally:
             if lock_file is not None:
                 os.unlink(lock_file)
 
-    async def add_small_buffer(self, checksum):
-        filename = self.smallbuffer_dir + os.sep + checksum
-        with open(filename, "w") as f:
-            pass
-
 
 class FlatFileSource(FlatFileBase):
 
     async def get(self, key):
+        if isinstance(key, bytes):
+            key = key.decode()
         filename = self._filename(key)
         try:
             with open(filename, "br") as f:
@@ -122,17 +128,15 @@ class FlatFileSource(FlatFileBase):
             return None
 
     async def get_sem2syn(self, key):
+        if isinstance(key, bytes):
+            key = key.decode()
         filename = self._filename(key)
         if os.path.exists(filename):
-            with open(filename, "r") as f:
-                syn_checksums = set(filename.readlines())
+            with open(filename, "rt") as f:
+                syn_checksums = {line.strip("\n").encode() for line in f.readlines()}
         else:
             syn_checksums = set()
         return syn_checksums
-
-    async def is_small_buffer(self, checksum):
-        filename = self.smallbuffer_dir + os.sep + checksum
-        return os.path.exists(filename)
 
 
 

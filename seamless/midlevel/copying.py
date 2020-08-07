@@ -67,13 +67,15 @@ def add_zip(manager, zipfile):
     """
     Caches all checksum-to-buffer entries in zipfile
     All "file names" in the zipfile must be checksum hexes
+
     Note that caching without database only lasts 20 seconds
     """
     buffer_cache = manager.cachemanager.buffer_cache
     for checksum in zipfile.namelist():
         checksum2 = bytes.fromhex(checksum)
         buffer = zipfile.read(checksum)
-        buffer_cache.cache_buffer(checksum2, buffer)
+        authoritative = True ### TODO: see issue 21
+        buffer_cache.cache_buffer(checksum2, buffer, authoritative)
 
 def fill_checksum(manager, node, temp_path, composite=True):
     from ..core.utils import strip_source

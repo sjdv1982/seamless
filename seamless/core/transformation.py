@@ -454,6 +454,13 @@ class TransformationJob:
         finally:
             release_lock(lock)
         result_checksum = await get_result_checksum(result)
+        # cache buffer with temporary reference.
+        # For RemoteTransformers (if we are a jobslave)
+        #  or DummyTransformers (if run_transformation was activated)
+        #  this will last for 20 secs, but it is also written into any database sinks,
+        #  which may hold it for much longer
+        buffer_cache.cache_buffer(result_checksum, result, False)
+
         return result_checksum
 
 

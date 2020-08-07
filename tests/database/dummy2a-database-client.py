@@ -13,7 +13,7 @@ def main():
     checksum = "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3"
     buffer = b'42\n'
     request = {
-        "subtype": "buffer",
+        "type": "buffer",
         "checksum": checksum,
         "value": np.frombuffer(buffer, dtype=np.uint8),
         "authoritative": True,
@@ -23,7 +23,7 @@ def main():
     print(response.text)
 
     request = {
-        "subtype": "buffer",
+        "type": "buffer",
         "checksum": checksum,
     }
     response = s.get(url, data=serialize(request))

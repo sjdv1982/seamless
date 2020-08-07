@@ -138,7 +138,7 @@ class Share:
         if self.bound is not None:
             self.bound.update(checksum)
         if self._checksum is not None:
-            buffer_cache.incref(self._checksum)
+            buffer_cache.incref(self._checksum, True)
         self._marker = marker
         send_checksum_task = self._send_checksum()
         send_checksum_task = asyncio.ensure_future(send_checksum_task)
@@ -163,13 +163,13 @@ class Share:
         if not isinstance(buffer, bytes):
             raise TypeError(type(buffer))
         buffer = buffer.rstrip(b'\n') + b'\n'
-        task = self._calc_checksum(buffer)
+        task = self._calc_checksum(buffer, True)
         task = asyncio.ensure_future(task)
         self._calc_checksum_task = task
         await task
 
         checksum = task.result()
-        buffer_cache.cache_buffer(checksum, buffer)
+        buffer_cache.cache_buffer(checksum, buffer, True)
         return self.set_checksum(checksum, marker)
 
     async def _calc_checksum(self, buffer):

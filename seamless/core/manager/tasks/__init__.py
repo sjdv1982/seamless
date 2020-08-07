@@ -17,14 +17,14 @@ class Task:
     _realtask = None
     _awaiting = False
     future = None
-    
+
     def __init__(self, manager, *args, **kwargs):
         if isinstance(manager, weakref.ref):
-            manager = manager()        
+            manager = manager()
         assert isinstance(manager, Manager)
         self._dependencies = []
         taskmanager = manager.taskmanager
-        if self.refkey is not None:            
+        if self.refkey is not None:
             reftask = taskmanager.reftasks.get(self.refkey)
             if reftask is not None:
                 self.set_realtask(reftask)
@@ -32,10 +32,10 @@ class Task:
             else:
                 taskmanager.reftasks[self.refkey] = self
                 taskmanager.rev_reftasks[self] = self.refkey
-        self.manager = weakref.ref(manager)                
-        self.refholders = [self] # tasks that are value-identical to this one, 
+        self.manager = weakref.ref(manager)
+        self.refholders = [self] # tasks that are value-identical to this one,
                                 # of which this one is the realtask
-        
+
         taskmanager._task_id_counter += 1
         self.taskid = taskmanager._task_id_counter
 
@@ -79,12 +79,12 @@ class Task:
         try:
             await asyncio.shield(self.future)
             ###await self.future
-        except CancelledError:                        
+        except CancelledError:
             self.cancel()
             raise
         #print("HAS RUN", self)
         return self.future.result()
-    
+
     async def _run0(self, taskmanager):
         await taskmanager.await_active()
         await communion_server.startup
@@ -98,7 +98,7 @@ class Task:
         if self.future is not None:
             return taskmanager
         taskmanager.run_synctasks()
-        #print("LAUNCH", self)     
+        #print("LAUNCH", self)
         awaitable = self._run0(taskmanager)
         self.future = asyncio.ensure_future(awaitable)
         taskmanager.add_task(self)
@@ -126,7 +126,7 @@ class Task:
     def cancel_refholder(self, refholder):
         assert self._realtask is None
         self.refholders.remove(refholder)
-        if not len(self.refholders):            
+        if not len(self.refholders):
             self.cancel()
 
     def cancel(self):
@@ -137,7 +137,7 @@ class Task:
         if self.future is not None:
             if self.future.cancelled():
                 return
-            self.future.cancel()        
+            self.future.cancel()
         if manager is None or manager._destroyed:
             return
         taskmanager = manager.taskmanager

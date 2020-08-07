@@ -7,7 +7,7 @@ class SetCellBufferTask(Task):
         assert isinstance(buffer, bytes)
         super().__init__(manager)
         self.cell = cell
-        self.buffer = buffer      
+        self.buffer = buffer
         self.checksum = checksum
         self.dependencies.append(cell)
 
@@ -37,11 +37,12 @@ class SetCellBufferTask(Task):
                         checksum, cell._celltype, copy=False
                     ).run()
                 await validate_subcelltype(
-                    checksum, cell._celltype, cell._subcelltype, 
+                    checksum, cell._celltype, cell._subcelltype,
                     str(cell), buffer_cache
                 )
                 checksum_cache[checksum] = buffer
-                buffer_cache.incref(checksum)
+                authoritative = self.cell.has_authority()
+                buffer_cache.incref(checksum, authoritative)
                 propagate_simple_cell(manager.livegraph, self.cell)
                 manager._set_cell_checksum(self.cell, checksum, False)
                 livegraph.cell_parsing_exceptions.pop(cell, None)

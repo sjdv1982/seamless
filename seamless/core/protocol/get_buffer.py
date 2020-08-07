@@ -38,7 +38,7 @@ async def get_buffer_length_remote(checksum, buffer_cache, remote_peer_id):
             break
     return None
 
-async def get_buffer_remote(checksum, buffer_cache, remote_peer_id):
+async def get_buffer_remote(checksum, remote_peer_id):
     clients = communion_client_manager.clients["buffer"]
     coros = []
     for client in clients:
@@ -84,9 +84,6 @@ async def get_buffer_remote(checksum, buffer_cache, remote_peer_id):
         if buffer is None:
             raise CacheMissError(checksum.hex())
         assert isinstance(buffer, bytes), buffer
-        if checksum in buffer_cache.missing_buffers:
-            buffer_cache.missing_buffers.discard(checksum)
-        buffer_cache.cache_buffer(checksum, buffer)
         return buffer
 
 

@@ -7,7 +7,7 @@ class SetCellValueTask(Task):
     def __init__(self, manager, cell, value):
         super().__init__(manager)
         self.cell = cell
-        self.value = value        
+        self.value = value
         self.dependencies.append(cell)
 
     async def _run(self):
@@ -30,14 +30,14 @@ class SetCellValueTask(Task):
                 ).run()
                 new_deep_value, _ = await value_to_deep_structure(
                     value, hash_pattern
-                )                
+                )
                 value = new_deep_value
-            
+
             task = SerializeToBufferTask(
                 manager, value, cell._celltype,
                 use_cache=False
             ).run()
-            try:            
+            try:
                 buffer = await task
             except ValueError as exc:
                 raise ValueError(exc) from None
@@ -47,21 +47,22 @@ class SetCellValueTask(Task):
             checksum = await CalculateChecksumTask(manager, buffer).run()
             if checksum is not None:
                 await validate_subcelltype(
-                    checksum, cell._celltype, cell._subcelltype, 
+                    checksum, cell._celltype, cell._subcelltype,
                     str(cell), buffer_cache
                 )
                 checksum_cache[checksum] = buffer
-                propagate_simple_cell(manager.livegraph, self.cell)                
+                propagate_simple_cell(manager.livegraph, self.cell)
                 manager._set_cell_checksum(self.cell, checksum, False)
                 livegraph.cell_parsing_exceptions.pop(cell, None)
                 CellUpdateTask(manager, self.cell).launch()
             else:
-                manager.cancel_cell(self.cell, True, StatusReasonEnum.UNDEFINED)
+                manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.UNDEFINED)
         except CancelledError:
             pass
         except Exception as exc:
             exc = traceback.format_exc()
-            livegraph.cell_parsing_exceptions[cell] = exc
+            livegraph.cell_parsing_exceptions[self.cell] = exc
+            manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.INVALID)
         finally:
             taskmanager.release_cell_lock(cell, lock)
             taskmanager.cell_to_value.pop(cell, None)

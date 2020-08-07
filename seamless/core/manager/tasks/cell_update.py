@@ -14,7 +14,7 @@ class CellUpdateTask(Task):
         - If the checksum is None, for each output accessor:
             - do a void cancellation
           Else, for each output read accessor:
-            - construct (not compute!) their expression using the cell checksum 
+            - construct (not compute!) their expression using the cell checksum
             Constructing a downstream expression increfs the cell checksum
             - launch an accessor update task
         """
@@ -27,14 +27,14 @@ class CellUpdateTask(Task):
         cell = self.cell
         await CellChecksumTask(manager, cell).run()
         checksum = cell._checksum
-        assert not cell._structured_cell # cell update is not for StructuredCell cells        
+        assert not cell._structured_cell # cell update is not for StructuredCell cells
         livegraph = manager.livegraph
         accessors = livegraph.cell_to_downstream[cell]
-        for path in cell._paths:            
+        for path in cell._paths:
             path_accessors = livegraph.macropath_to_downstream[path]
             accessors = accessors + path_accessors
         for accessor in accessors:
-            #- construct (not compute!) their expression using the cell checksum 
+            #- construct (not compute!) their expression using the cell checksum
             #  Constructing a downstream expression increfs the cell checksum
             changed = accessor.build_expression(livegraph, checksum)
             if cell._prelim != accessor._prelim:
@@ -46,7 +46,7 @@ class CellUpdateTask(Task):
                 task.launch()
         for editpin in livegraph.cell_to_editpins[cell]:
             reactor = editpin.worker_ref()
-            ReactorUpdateTask(manager, reactor).launch()        
+            ReactorUpdateTask(manager, reactor).launch()
         sc = cell._structured_cell
         if sc is not None:
             if sc.schema is not cell:

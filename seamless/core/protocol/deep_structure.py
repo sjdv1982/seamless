@@ -42,7 +42,7 @@ def validate_deep_structure(deep_structure, hash_pattern):
             except:
                 raise AssertionError from None
             return
-        assert isinstance(hash_pattern, dict)    
+        assert isinstance(hash_pattern, dict)
         single_key = len(hash_pattern)
         has_star = "*" in hash_pattern
         if not single_key:
@@ -81,13 +81,13 @@ def validate_deep_structure(deep_structure, hash_pattern):
                 raise AssertionError(key)
     except AssertionError:
         raise DeepStructureError(hash_pattern, deep_structure) from None
-    
+
 def access_deep_structure(deep_structure, hash_pattern, path):
-    """Access a deep structure using path, returning result and remaining path    
+    """Access a deep structure using path, returning result and remaining path
 
     If path and deep structure are equally deep, the result is a checksum,
      and the remaining path is None
-    If the structure is deeper than path, the result is a tuple of 
+    If the structure is deeper than path, the result is a tuple of
     deep sub-structure and sub-hashpattern,
      and the remaining path is None
     If the path is deeper than the structure, the result is a checksum,
@@ -97,7 +97,7 @@ def access_deep_structure(deep_structure, hash_pattern, path):
     validate_deep_structure(deep_structure, hash_pattern)
     if deep_structure is None:
         return None, None
-    
+
     if path is not None and not len(path):
         path = None
     if hash_pattern == "#":
@@ -153,7 +153,7 @@ def access_deep_structure(deep_structure, hash_pattern, path):
 def _deep_structure_to_checksums(deep_structure, hash_pattern, checksums):
     if deep_structure is None:
         return
-    if hash_pattern == "#":        
+    if hash_pattern == "#":
         checksum = deep_structure
         checksums.add(checksum)
         return
@@ -196,7 +196,7 @@ def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):
     """
     assert deep_structure is not None
 
-    if hash_pattern == "#":        
+    if hash_pattern == "#":
         checksum = deep_structure
         value = value_dict[checksum]
         if copy:
@@ -210,10 +210,10 @@ def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):
             if key in hash_pattern:
                 sub_hash_pattern = hash_pattern[key]
             else:
-                sub_hash_pattern = hash_pattern["*"]                
+                sub_hash_pattern = hash_pattern["*"]
             sub_result = _deep_structure_to_value(
                 deep_structure[key], sub_hash_pattern,
-                value_dict, copy=copy 
+                value_dict, copy=copy
             )
             result[key] = sub_result
     else:
@@ -223,16 +223,16 @@ def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):
             for sub_deep_structure in deep_structure:
                 sub_result = _deep_structure_to_value(
                     sub_deep_structure, sub_hash_pattern,
-                    value_dict, copy=copy 
-                )   
+                    value_dict, copy=copy
+                )
                 result.append(sub_result)
         elif key.isalnum():
             assert list(deep_structure.keys()) == [key]
             sub_result = _deep_structure_to_value(
                 deep_structure[key], sub_hash_pattern,
-                value_dict, copy=copy 
+                value_dict, copy=copy
             )
-            result = {key: sub_result}   
+            result = {key: sub_result}
         else:
             raise AssertionError(key)
     return result
@@ -251,15 +251,15 @@ async def deep_structure_to_value(deep_structure, hash_pattern, buffer_dict, cop
     await asyncio.gather(*futures.values())
     value_dict = {checksum:futures[checksum].result() for checksum in checksums}
     return _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy)
-    
+
 
 def deep_structure_to_value_sync(deep_structure, hash_pattern, buffer_dict, copy):
     """Converts deep structure to a mixed value
     Requires buffer_dict, a checksum-to-buffer cache for all checksums in the deep structure
     Use copy=True for a value that will be modified
-    
+
     This function can be executed if the asyncio event loop is already running"""
-    if not asyncio.get_event_loop().is_running():    
+    if not asyncio.get_event_loop().is_running():
         coro = deep_structure_to_value(
             deep_structure, hash_pattern, buffer_dict, copy
         )
@@ -276,7 +276,7 @@ def deep_structure_to_value_sync(deep_structure, hash_pattern, buffer_dict, copy
     return _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy)
 
 def _build_deep_structure(hash_pattern, d, c):
-    if hash_pattern == "#":        
+    if hash_pattern == "#":
         obj_id = d
         checksum = c[obj_id]
         return checksum
@@ -288,7 +288,7 @@ def _build_deep_structure(hash_pattern, d, c):
             if key in hash_pattern:
                 sub_hash_pattern = hash_pattern[key]
             else:
-                sub_hash_pattern = hash_pattern["*"]                
+                sub_hash_pattern = hash_pattern["*"]
             sub_result = _build_deep_structure(
                 sub_hash_pattern, d[key],
                 c
@@ -302,7 +302,7 @@ def _build_deep_structure(hash_pattern, d, c):
                 sub_result = _build_deep_structure(
                     sub_hash_pattern, sub_d,
                     c
-                )   
+                )
                 result.append(sub_result)
         elif key.isalnum():
             assert list(d.keys()) == [key]
@@ -310,7 +310,7 @@ def _build_deep_structure(hash_pattern, d, c):
                 d[key], sub_hash_pattern,
                 c
             )
-            result = {key: sub_result}   
+            result = {key: sub_result}
         else:
             raise AssertionError(key)
     return result
@@ -318,7 +318,7 @@ def _build_deep_structure(hash_pattern, d, c):
 def _value_to_objects(value, hash_pattern, objects):
     if value is None:
         return
-    if hash_pattern == "#":        
+    if hash_pattern == "#":
         obj_id = id(value)
         objects[obj_id] = value
         return obj_id
@@ -361,7 +361,7 @@ def _value_to_objects(value, hash_pattern, objects):
 async def value_to_deep_structure(value, hash_pattern):
     """build deep structure from value"""
     try:
-        objects = {}    
+        objects = {}
         deep_structure0 = _value_to_objects(
             value, hash_pattern, objects
         )
@@ -399,7 +399,7 @@ def value_to_deep_structure_sync(value, hash_pattern):
         return fut.result()
 
     try:
-        objects = {}    
+        objects = {}
         deep_structure0 = _value_to_objects(
             value, hash_pattern, objects
         )
@@ -414,7 +414,7 @@ def value_to_deep_structure_sync(value, hash_pattern):
         new_checksums.add(obj_checksum.hex())
         buffer_cache.cache_buffer(obj_checksum, obj_buffer)
         obj_id_to_checksum[obj_id] = obj_checksum.hex()
-    
+
     for obj_id in objects:
         conv_obj_id_to_checksum(obj_id)
     deep_structure = _build_deep_structure(
@@ -425,8 +425,8 @@ def value_to_deep_structure_sync(value, hash_pattern):
 
 def set_deep_structure(substructure, deep_structure, hash_pattern, path):
     """Writes substructure into deep structure, at the given path
-    
-    Returns the old substructure: the caller is supposed to decref 
+
+    Returns the old substructure: the caller is supposed to decref
     all checksums in it"""
     assert len(path)
     attribute = path[0]
@@ -472,7 +472,7 @@ def set_deep_structure(substructure, deep_structure, hash_pattern, path):
             old_substructure = deep_structure[attribute]
             deep_structure[attribute] = substructure
         return old_substructure
-    
+
     return set_deep_structure(
         substructure, sub_deep_structure, sub_hash_pattern, path[1:]
     )
@@ -480,14 +480,14 @@ def set_deep_structure(substructure, deep_structure, hash_pattern, path):
 def write_deep_structure(checksum, deep_structure, hash_pattern, path,
     *, create=False):
     """Writes checksum into deep structure, at the given path.
-    If the deep structure has the same depth as path, 
+    If the deep structure has the same depth as path,
       the checksum is written directly, and (0, x) is returned
        where x is the old checksum.
       The caller is supposed to incref the new checksum and decref the old one
     If the structure is deeper than the path:
         (1, x) is returned, where x is the sub-hash-pattern
         The caller is supposed to convert the checksum into a substructure
-         using this sub-hash-pattern (checksum => buffer => value 
+         using this sub-hash-pattern (checksum => buffer => value
           => value_to_deep_structure(value, sub_hash_pattern)
         and then invoke set_deep_structure
     If the path is deeper than the structure:
@@ -497,7 +497,7 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path,
         x is the checksum at p1
         p2 is the sub-path that remains (p1 + p2 = path)
         The caller is supposed to invoke expression_target(checksum, p2, x) => c
-         and then invoke write_deep_structure(c, deep_structure, hash_pattern, p1) 
+         and then invoke write_deep_structure(c, deep_structure, hash_pattern, p1)
 
     If the deep structure has missing values, they are treated as None
     However, if "create" is True, they will be inserted into the deep structure
@@ -506,18 +506,18 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path,
     assert hash_pattern is not None
     if checksum is not None:
         assert isinstance(checksum, str)
-        bytes.fromhex(checksum)    
-          
+        bytes.fromhex(checksum)
+
     if hash_pattern == "#":
         assert len(path)
         old_checksum = deep_structure
         assert isinstance(old_checksum, str)
-        bytes.fromhex(old_checksum)    
+        bytes.fromhex(old_checksum)
         return 2, (), old_checksum, path
-    
+
     validate_deep_structure(deep_structure, hash_pattern)
     assert isinstance(deep_structure, (list, dict)), deep_structure
-    
+
     if not len(path):
         return 1, hash_pattern
 
@@ -539,7 +539,7 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path,
             sub_hash_pattern = hash_pattern["*"]
         elif key.startswith("!"):
             assert isinstance(attribute, int)
-            if key == "!":            
+            if key == "!":
                 step = 1
             else:
                 step = int(key[1:])
@@ -557,7 +557,8 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path,
 
     if sub_deep_structure is None:
         if create:
-            set_subpath_sync(deep_structure, None, path, checksum)
+            authoritative = True ### TODO: see issue 21
+            set_subpath_sync(deep_structure, None, path, checksum, authoritative=authoritative)
             return write_deep_structure(
                 checksum, deep_structure, hash_pattern,
                 path, create=False
@@ -596,10 +597,10 @@ async def apply_hash_pattern(checksum, hash_pattern):
 
 def apply_hash_pattern_sync(checksum, hash_pattern):
     """Converts a checksum to a checksum that represents a deep structure
-    
+
     This function can be executed if the asyncio event loop is already running"""
 
-    if not asyncio.get_event_loop().is_running():    
+    if not asyncio.get_event_loop().is_running():
         coro = apply_hash_pattern(checksum, hash_pattern)
         fut = asyncio.ensure_future(coro)
         asyncio.get_event_loop().run_until_complete(fut)

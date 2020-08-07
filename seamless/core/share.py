@@ -23,7 +23,7 @@ class ShareItem:
     _initialized = False
     _initializing = False
     share = None
-    def __init__(self, cell, path, readonly, mimetype=None):        
+    def __init__(self, cell, path, readonly, mimetype=None):
         self.path = path
         self.celltype = cell._celltype
         self.cell = ref(cell)
@@ -42,7 +42,7 @@ class ShareItem:
         if cell is None:
             return
         if cell._destroyed:
-            return        
+            return
         if not self.readonly:
             assert cell.has_authority(), cell # mount read mode only for authoritative cells
         self._initializing = True
@@ -82,7 +82,7 @@ class ShareItem:
         finally:
             self._initialized = True
             self._initializing = False
-                    
+
     async def write(self):
         cell = self.cell()
         if cell is None:
@@ -94,18 +94,18 @@ class ShareItem:
         if self.share is not None:
             self.share.set_checksum(cell._checksum)
 
-    def update(self, checksum):        
+    def update(self, checksum):
         # called by shareserver, or from init
-        assert checksum is None or isinstance(checksum, bytes)        
+        assert checksum is None or isinstance(checksum, bytes)
         if not self.readonly:
             sharemanager.share_value_updates[self] = checksum
 
     def destroy(self):
         if self._destroyed:
-            return        
+            return
         self._destroyed = True
         if self.share is not None:
-            self.share.unbind()            
+            self.share.unbind()
             now = time.time()
             sharemanager.cached_shares[self._namespace, self.path] = (now, self.share)
 
@@ -151,7 +151,7 @@ class ShareManager:
         if not share_item._destroyed:
             paths = self.paths[manager]
             path = share_item.path
-            paths.discard(path)            
+            paths.discard(path)
             share_item.destroy()
 
     def update_share(self, cell):
@@ -166,7 +166,7 @@ class ShareManager:
 
     async def run_once(self):
 
-        for cell in self.share_updates:            
+        for cell in self.share_updates:
             if cell._destroyed:
                 continue
             share_params = cell._share
@@ -222,11 +222,10 @@ class ShareManager:
                     buffer = get_buffer(checksum, buffer_cache)
                 except CacheMissError:
                     buffer = await get_buffer_remote(
-                        checksum, 
-                        buffer_cache,
+                        checksum,
                         None
                     )
-                if buffer is not None:                    
+                if buffer is not None:
                     try:
                         checksum = await convert(checksum, buffer, "cson", "plain")
                     except ValueError:
@@ -238,17 +237,17 @@ class ShareManager:
                     checksum = checksum.hex()
                 cell.set_checksum(checksum)
         self.share_value_updates.clear()
-        
+
         for cell, checksum in cell_updates.items():
             if cell._destroyed:
                 continue
-            try:                
+            try:
                 share_item = self.shares[cell]
                 share_item.init()
                 await share_item.write()
             except:
                 traceback.print_exc()
-            
+
         now = time.time()
         to_destroy = []
         for npath, value in self.cached_shares.items():

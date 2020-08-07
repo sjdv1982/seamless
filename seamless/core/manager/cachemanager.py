@@ -69,16 +69,13 @@ class CacheManager:
         self.reactor_to_refs[reactor] = refs
         self.reactor_exceptions[reactor] = None
 
-    def incref_checksum(self, checksum, refholder, authority):
+    def incref_checksum(self, checksum, refholder, authoritative):
         if checksum is None:
             return
         #print("INCREF CHECKSUM", checksum, refholder)
-        if checksum not in self.checksum_refs:
-            self.buffer_cache.incref(checksum)
-            self.checksum_refs[checksum] = []
         if isinstance(refholder, Cell):
             assert self.cell_to_ref[refholder] is None
-            self.cell_to_ref[refholder] = (checksum, authority)
+            self.cell_to_ref[refholder] = (checksum, authoritative)
             cell = refholder
             if cell._hash_pattern is not None:
                 deep_buffer = self.buffer_cache.get_buffer(checksum)
@@ -88,23 +85,31 @@ class CacheManager:
                 )
                 for sub_checksum in sub_checksums:
                     #print("INCREF SUB-CHECKSUM", sub_checksum, cell)
-                    self.buffer_cache.incref(bytes.fromhex(sub_checksum))
+                    self.buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)
         elif isinstance(refholder, Expression):
             assert self.expression_to_ref[refholder] is None
-            self.expression_to_ref[refholder] = (checksum, authority)
+            self.expression_to_ref[refholder] = (checksum, authoritative)
         elif isinstance(refholder, Transformer):
-            assert not authority
+            assert not authoritative
             assert self.transformer_to_ref[refholder] is None
             self.transformer_to_ref[refholder] = checksum
         elif isinstance(refholder, Inchannel):
-            assert not authority
+            assert not authoritative
             assert self.inchannel_to_ref[refholder] is None
             self.inchannel_to_ref[refholder] = checksum
         elif isinstance(refholder, Library):
             pass
         else:
             raise TypeError(type(refholder))
-        self.checksum_refs[checksum].append((refholder, authority))
+
+        if checksum not in self.checksum_refs:
+            self.checksum_refs[checksum] = []
+            try:
+                self.buffer_cache.incref(checksum, authoritative)
+            finally:
+                self.checksum_refs[checksum].append((refholder, authoritative))
+        else:
+            self.checksum_refs[checksum].append((refholder, authoritative))
         #print(self, "INCREF", checksum.hex(), self.checksum_refs[checksum])
 
     async def fingertip(self, checksum, *, must_have_cell=False):
@@ -187,7 +192,6 @@ class CacheManager:
             try:
                 buffer = await get_buffer_remote(
                     checksum,
-                    buffer_cache,
                     None
                 )
                 if buffer is not None:
@@ -216,11 +220,14 @@ class CacheManager:
                     task.cancel()
                 return buffer
 
+        buffer = self.buffer_cache.get_buffer(checksum)
+        if buffer is not None:
+            return buffer
+
         if remote > 0 and remote <= recompute:
             try:
                 buffer = await get_buffer_remote(
                     checksum,
-                    buffer_cache,
                     None
                 )
                 if buffer is not None:
@@ -231,7 +238,7 @@ class CacheManager:
         raise CacheMissError(checksum.hex())
 
 
-    def decref_checksum(self, checksum, refholder, authority, *, destroying=False):
+    def decref_checksum(self, checksum, refholder, authoritative, *, destroying=False):
         if checksum is None:
             if isinstance(refholder, Expression):
                 if refholder in self.expression_to_ref:
@@ -239,7 +246,7 @@ class CacheManager:
                     self.expression_to_ref.pop(refholder)
             return
         if isinstance(refholder, Cell):
-            assert self.cell_to_ref[refholder] is not None
+            assert self.cell_to_ref[refholder] is not None, refholder
             self.cell_to_ref[refholder] = None
             cell = refholder
             if not destroying and cell._hash_pattern is not None:
@@ -266,7 +273,7 @@ class CacheManager:
             raise TypeError(type(refholder))
         #print("cachemanager DECREF", checksum.hex())
         try:
-            self.checksum_refs[checksum].remove((refholder, authority))
+            self.checksum_refs[checksum].remove((refholder, authoritative))
         except ValueError:
             self.checksum_refs[checksum][:] = \
               [l for l in self.checksum_refs[checksum] if l[0] is not refholder]
@@ -278,7 +285,7 @@ class CacheManager:
     def destroy_cell(self, cell):
         ref = self.cell_to_ref[cell]
         if ref is not None:
-            checksum, authority = ref
+            checksum, authoritative = ref
             if checksum is not None and cell._hash_pattern is not None:
                 buffer = self.buffer_cache.get_buffer(checksum)
                 if buffer is not None:
@@ -286,7 +293,7 @@ class CacheManager:
                     sub_checksums = deep_structure_to_checksums(deep_structure, cell._hash_pattern)
                     for sub_checksum in sub_checksums:
                         self.buffer_cache.decref(bytes.fromhex(sub_checksum))
-            self.decref_checksum(checksum, cell, authority, destroying=True)
+            self.decref_checksum(checksum, cell, authoritative, destroying=True)
         self.cell_to_ref.pop(cell)
 
     @destroyer

@@ -360,7 +360,7 @@ class CommunionServer:
 
     async def _process_transformation_request(self, transformation, transformer, peer):
         tcache = transformation_cache
-        coros = []
+        remote_pins = []
         for pinname in transformation:
             if pinname.startswith("__"):
                 continue
@@ -376,12 +376,16 @@ class CommunionServer:
                 continue
             coro = get_buffer_remote(
                 checksum2,
-                buffer_cache,
                 peer
             )
-            coros.append(coro)
-        if len(coros):
-            await asyncio.gather(*coros)
+            remote_pins.append((checksum2, coro))
+        if len(remote_pins):
+            buffers = await asyncio.gather(*[rp[1] for rp in remote_pins])
+            for n in range(len(buffers)):
+                buffer = buffers[n]
+                if buffer is not None:
+                    buffer_cache.cache_buffer(remote_pins[n][0], buffer, False)
+
         await tcache.incref_transformation(
             transformation, transformer
         )
@@ -414,7 +418,7 @@ class CommunionServer:
                     # TODO: use buffer_check instead, and obtain buffer length
                     #print("STATUS SERVE BUFFER", buffer, checksum.hex())
                     if buffer is not None:
-                        if len(buffer) < 10000: # vs 1000 for buffer_cache small buffers
+                        if len(buffer) < 10000:
                             return 1
                         status = self.config_servant["buffer_status"]
                         if status == "small":
@@ -440,7 +444,6 @@ class CommunionServer:
                     peer_id = self.peers[peer]["id"]
                     result = await get_buffer_remote(
                         checksum,
-                        buffer_cache,
                         remote_peer_id=peer_id
                     )
                 ###pr("BUFFER", checksum.hex(), result)

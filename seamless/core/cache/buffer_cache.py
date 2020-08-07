@@ -7,18 +7,9 @@ from collections import namedtuple
 
 from .database_client import database_sink, database_cache
 
-"""
-TEMP_KEEP_ALIVE = 20.0 # Keep buffer values alive for 20 secs after the last ref has expired
-TEMP_KEEP_ALIVE_SMALL = 3600.0 # Keep small buffer values alive for an hour
-"""
 
-TEMP_KEEP_ALIVE = 999999999.9
-TEMP_KEEP_ALIVE_SMALL = 999999999.9
-WARNING_HAS_PRINTED = False
-WARNING = """Seamless buffer cache cleanup is currently disabled.
-This prevents data loss from bugs in Seamless's buffer caching.
-If you have memory issues, restart Python periodically,
- and/or use a database to store buffers"""
+TEMP_KEEP_ALIVE = 20.0 # Keep buffer values alive for 20 secs after the last ref has expired
+TEMP_KEEP_ALIVE_SMALL = 3600.0 # Keep small buffer values (< 10 000 bytes) alive for an hour
 
 class BufferCache:
     """Checksum-to-buffer cache.
@@ -36,40 +27,28 @@ class BufferCache:
         self.buffer_cache = {} #local cache, checksum-to-buffer
         self.buffer_refcount = {} #buffer-checksum-to-refcount
         # Buffer length cache (never expire)
-        self.small_buffers = set()
-        self.buffer_length = {} #checksum-to-bufferlength (large buffers)
+        self.buffer_length = {} #checksum-to-bufferlength
 
         self.missing_buffers = set()
 
-    def cache_buffer(self, checksum, buffer):
+    def cache_buffer(self, checksum, buffer, authoritative):
         assert checksum is not None
         assert isinstance(buffer, bytes)
         l = len(buffer)
-        if l < 1000:
-            if checksum not in self.small_buffers:
-                self.small_buffers.add(checksum)
-                database_sink.add_small_buffer(checksum)
-        else:
-            if checksum not in self.buffer_length:
-                self.buffer_length[checksum] = l
-                database_sink.set_buffer_length(checksum, l)
+        if checksum not in self.buffer_length:
+            self.buffer_length[checksum] = l
+        database_sink.set_buffer_length(checksum, l)
         if checksum not in self.buffer_refcount:
             self.incref_temp(checksum)
         no_local = False
-        if database_sink.size:
-            database_sink.set_buffer(checksum, buffer)
-            if database_cache.size:
+        if database_sink.active:
+            if not database_sink.has_buffer(checksum):
+                database_sink.set_buffer(checksum, buffer, authoritative)
+            if database_cache.active:
                 no_local = True
         if not no_local:
             if checksum in self.buffer_cache:
                 return
-            ###
-            global WARNING_HAS_PRINTED
-            if not WARNING_HAS_PRINTED:
-                import sys
-                print(WARNING, file=sys.stderr)
-                WARNING_HAS_PRINTED = True
-            ###
             self.buffer_cache[checksum] = buffer
             self.missing_buffers.discard(checksum)
 
@@ -80,12 +59,12 @@ class BufferCache:
         self.buffer_refcount[checksum] += 1
         tempref = functools.partial(self.decref, checksum, from_temp=True)
         keep_alive = TEMP_KEEP_ALIVE_SMALL\
-            if checksum in self.small_buffers \
+            if self.buffer_length.get(checksum, 10000) < 10000 \
             else TEMP_KEEP_ALIVE
         temprefmanager.add_ref(tempref, keep_alive)
 
 
-    def incref(self, checksum):
+    def incref(self, checksum, authoritative):
         #print("INCREF", checksum.hex())
         if checksum in self.buffer_refcount:
             self.buffer_refcount[checksum] += 1
@@ -95,7 +74,7 @@ class BufferCache:
             self.buffer_refcount[checksum] = 1
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
-            self.cache_buffer(checksum, buffer)
+            self.cache_buffer(checksum, buffer, authoritative)
         else:
             if self.get_buffer(checksum) is None:
                 self.missing_buffers.add(checksum)
@@ -128,8 +107,6 @@ class BufferCache:
     def get_buffer_length(self, checksum):
         if checksum is None:
             return None
-        if checksum in self.small_buffers:
-            return 1
         length = self.buffer_length.get(checksum)
         if length is not None:
             return length

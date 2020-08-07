@@ -37,6 +37,8 @@ def report():
     print("RESULT       ", v1, ctx.result.status)
     print()
 
+import asyncio
+asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.1))
 print(ctx.tf.get_transformation())
 
 """

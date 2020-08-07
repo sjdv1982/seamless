@@ -64,33 +64,12 @@ def import_extension_module(full_module_name, module_code, debug, source_files):
             if not debug:
                 os.remove(module_file)
 
-def build_compiled_module_remote(full_module_name, checksum, module_definition):
-    return None ###
-    raise NotImplementedError
-    from ..core.run_multi_remote import run_multi_remote
-    d_content = {
-        "full_module_name": full_module_name,
-        "checksum": checksum.hex(),
-        "module_definition": module_definition,
-    }
-    content = json.dumps(d_content)
-    future = run_multi_remote(remote_build_model_servers, content, origin=None)
-    import asyncio
-    asyncio.get_event_loop().run_until_complete(future)
-
 def build_compiled_module(full_module_name, checksum, module_definition):
     from .cache.database_client import database_cache, database_sink
     mchecksum = b"python-ext-" + checksum
     module_code = database_cache.get_compile_result(mchecksum)
     source_files = {}
     debug = (module_definition.get("target") == "debug")
-    if module_code is None:
-        build_compiled_module_remote(
-          full_module_name, checksum, module_definition
-        )
-        module_code = database_cache.get_compile_result(mchecksum)
-        if module_code is not None:
-            database_sink.set_compile_result(mchecksum, module_code)
     if module_code is None:
         objects = module_definition["objects"]
         binary_objects = {}

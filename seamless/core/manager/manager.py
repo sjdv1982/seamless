@@ -216,21 +216,21 @@ class Manager:
             assert status_reason is not None
             assert checksum is None
         if cell._structured_cell:
-            authority = True
+            authoritative = True
         elif len(self.livegraph.schemacells[cell]):
-            authority = True
+            authoritative = True
         else:
-            authority = cell.has_authority()
+            authoritative = cell.has_authority()
         cachemanager = self.cachemanager
         old_checksum = cell._checksum
         if old_checksum is not None and old_checksum != checksum:
-            cachemanager.decref_checksum(old_checksum, cell, authority)
+            cachemanager.decref_checksum(old_checksum, cell, authoritative)
         cell._checksum = checksum
         cell._void = void
         cell._status_reason = status_reason
         cell._prelim = prelim
         if checksum != old_checksum:
-            cachemanager.incref_checksum(checksum, cell, authority)
+            cachemanager.incref_checksum(checksum, cell, authoritative)
             observer = cell._observer
             if observer is not None:
                 cs = checksum.hex() if checksum is not None else None

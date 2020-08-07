@@ -82,9 +82,11 @@ async def syntactic_to_semantic(
     except CacheMissError:
         buffer = await get_buffer_remote(
             checksum,
-            buffer_cache,
             None
         )
+        if buffer is None:
+            raise CacheMissError(checksum.hex()) from None
+        buffer_cache.cache_buffer(checksum, buffer, False) # temp cache for 20 secs, but also written into sinks
     if celltype in ("cson", "yaml"):
         semantic_checksum = await convert(
             checksum, buffer, celltype, "plain"
@@ -204,7 +206,7 @@ class TransformationCache:
         from ..manager.tasks.transformer_update import TransformerResultUpdateTask
         tf_buffer = tf_get_buffer(transformation)
         tf_checksum = await calculate_checksum(tf_buffer)
-        buffer_cache.incref(tf_checksum) # transformation will be permanently in buffer cache
+        buffer_cache.incref(tf_checksum, False) # transformation will be permanently in buffer cache
 
         if transformer.debug:
             if tf_checksum not in self.debug:
@@ -228,16 +230,17 @@ class TransformationCache:
                 old_transformation = self.transformations[old_tf_checksum]
                 self.decref_transformation(old_transformation, transformer)
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
-        if result_checksum is not None and isinstance(transformer, Transformer):
-            #print("CACHE HIT", transformer, result_checksum.hex())
-            manager = transformer._get_manager()
-            manager._set_transformer_checksum(
-                transformer,
-                result_checksum,
-                False,
-                prelim=prelim
-            )
-            TransformerResultUpdateTask(manager, transformer).launch()
+        if result_checksum is not None:
+            if isinstance(transformer, Transformer):
+                #print("CACHE HIT", transformer, result_checksum.hex())
+                manager = transformer._get_manager()
+                manager._set_transformer_checksum(
+                    transformer,
+                    result_checksum,
+                    False,
+                    prelim=prelim
+                )
+                TransformerResultUpdateTask(manager, transformer).launch()
         if result_checksum is None or prelim:
             job = self.run_job(transformation, tf_checksum)
             if job is not None:
@@ -525,7 +528,7 @@ class TransformationCache:
             tf_checksum, (None, None)
         )
         if result_checksum is None:
-            result_checksum = database_cache.get_transform_result(tf_checksum)
+            result_checksum = database_cache.get_transformation_result(tf_checksum)
             prelim = False
         return result_checksum, prelim
 
@@ -564,7 +567,6 @@ class TransformationCache:
             except CacheMissError:
                 transformation_buffer = await get_buffer_remote(
                     tf_checksum,
-                    buffer_cache,
                     None # NOT remote_peer_id! The submitting peer may hold a buffer we need!
                 )
             if transformation_buffer is not None:

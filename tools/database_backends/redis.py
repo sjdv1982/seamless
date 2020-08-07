@@ -18,6 +18,9 @@ class RedisSink:
         return id(self.connection)
 
     async def set(self, key, value, authoritative=True, importance=None):
+        if isinstance(key, bytes):
+            key = key.decode()
+        assert isinstance(value, bytes)
         r = self.connection
         if self.cache and not authoritative:
             expiry = int(1e9 + 1000 * importance) # in seconds
@@ -27,6 +30,10 @@ class RedisSink:
 
     async def rename(self, key1, key2):
         """Renames a buffer, assumes that key2 is authoritative"""
+        if isinstance(key2, bytes):
+            key1 = key1.decode()
+        if isinstance(key2, bytes):
+            key2 = key2.decode()
         r = self.connection
         try:
             r.rename(key1, key2)
@@ -35,23 +42,25 @@ class RedisSink:
             r.set(key2, value)
             r.delete(key1)
 
-    async def delete(self, key):
+    async def delete_key(self, key):
+        if isinstance(key, bytes):
+            key = key.decode()
         r = self.connection
         r.delete(key)
 
     async def has_key(self, key):
+        if isinstance(key, bytes):
+            key = key.decode()
         r = self.connection
         return r.exists(key)
 
     async def add_sem2syn(self, key, syn_checksums):
+        if isinstance(key, bytes):
+            key = key.decode()
         r = self.connection
         for syn_checksum in syn_checksums:
+            assert isinstance(syn_checksum, bytes)
             r.sadd(key, syn_checksum)
-
-    async def add_small_buffer(self, checksum):
-        r = self.connection
-        key = "smallbuffers"
-        r.sadd(key, checksum)
 
 
 class RedisSource:
@@ -63,23 +72,29 @@ class RedisSource:
         return id(self.connection)
 
     async def get(self, key):
+        if isinstance(key, bytes):
+            key = key.decode()
         r = self.connection
         return r.get(key)
 
+    async def delete_key(self, key):
+        if isinstance(key, bytes):
+            key = key.decode()
+        r = self.connection
+        r.delete(key)
+
     async def has_key(self, key):
+        if isinstance(key, bytes):
+            key = key.decode()
         r = self.connection
         return r.exists(key)
 
     async def get_sem2syn(self, key):
+        if isinstance(key, bytes):
+            key = key.decode()
         r = self.connection
         members = r.smembers(key)
         return members
-
-    async def is_small_buffer(self, checksum):
-        r = self.connection
-        key = "smallbuffers"
-        if r.sismember(key, checksum):
-            return 1
 
 _connections = {}
 

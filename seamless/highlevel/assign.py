@@ -72,7 +72,7 @@ def assign_constant(ctx, path, value):
         cell = old._get_hcell()
     if callable(value):
         code, _, _ = parse_function_code(value)
-        if old is None: 
+        if old is None:
             cell.celltype = "python"
             value = code
         elif old.celltype in ("python", "ipython"):
@@ -110,7 +110,7 @@ def assign_transformer(ctx, path, func):
     if existing_transformer is not None:
         old_pins = list(existing_transformer.pins)
         for old_pin in old_pins:
-            if old_pin not in parameters:                
+            if old_pin not in parameters:
                 existing_transformer.pins[old_pin] = None
                 ctx._translate()
         for pname in parameters:
@@ -120,9 +120,9 @@ def assign_transformer(ctx, path, func):
         existing_transformer.code = code
     else:
         tf = Transformer(
-            parent=ctx, 
-            path=path, 
-            code=code, 
+            parent=ctx,
+            path=path,
+            code=code,
             pins=parameters
         ) #inserts itself as child
         assert ctx._children[path] is tf
@@ -160,7 +160,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
             second = con["second"]
             if second[:lt] == target:
                 return False
-            return True            
+            return True
         ctarget = con["target"]
         if ctarget[:lt] != target:
             return True
@@ -205,7 +205,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
               and attr == source_parent.RESULT:
                 source = source_parent_path
                 s = None
-            elif attr in source_parent.pins:                
+            elif attr in source_parent.pins:
                 pin = source_parent.pins[attr]
                 if isinstance(source_parent, Macro):
                     assert pin["io"] == "output", (source, pin["io"])
@@ -239,15 +239,16 @@ def copy_checksums(node, old_ctx, new_ctx):
     else:
         checksums = nchecksum.items()
     old_mgr, new_mgr = old_ctx._get_manager(), new_ctx._get_manager()
-    old_vcache, new_vcache = old_mgr.buffer_cache, new_mgr.buffer_cache 
+    old_bcache, new_bcache = old_mgr.buffer_cache, new_mgr.buffer_cache
     for k,checksum0 in checksums:
         checksum = bytes.fromhex(checksum0)
         buffer = old_vcache._buffer_cache.get(checksum)
         if buffer is not None:
             buffer = buffer[2]
         if buffer is not None:
-            new_vcache.incref(checksum, buffer, has_auth=True)
-        
+            authoritative = True ### TODO: see issue 21
+            new_vcache.incref(checksum, buffer, authoritative)
+
 
 def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
     from .Context import Context
@@ -293,7 +294,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
                 remove_checksum.append("value")
                 remove_checksum.append("buffer")
             else: # simple cell, can be targeted at most once
-                if old_path in targets: 
+                if old_path in targets:
                     remove_checksum.append("value")
         elif nodetype == "transformer":
             Transformer(parent=ctx, path=pp)
@@ -344,7 +345,7 @@ def assign_to_subcell(cell, path, value):
     if hcell["celltype"] != "structured":
         raise TypeError("Can only assign directly to properties of structured cells")
     ctx = cell._parent()
-    if isinstance(value, Cell):        
+    if isinstance(value, Cell):
         assert value._parent() is ctx #no connections between different (toplevel) contexts
         assign_connection(ctx, value._path, cell._path + path, False)
         ctx._translate()
