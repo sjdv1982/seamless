@@ -1,4 +1,6 @@
-import os, sys, asyncio, functools, json, traceback, socket, websockets
+from aiohttp import web
+
+import os, sys, asyncio, functools, json, traceback, socket
 import database_backends
 from seamless.mixed.io.serialization import deserialize
 
@@ -29,62 +31,26 @@ def is_port_in_use(address, port): # KLUDGE: For some reason, websockets does no
 
 class DatabaseServer:
     future = None
-    PROTOCOL = ("seamless", "database", "0.0.1")
-    _started = False
     def __init__(self, host, port):
         self.host = host
         self.port = port
-        self.clients = set()
         self.db_sources = []
         self.db_sinks = []
 
-
-    async def _listen_client(self, websocket, client_config):
-        if client_config["protocol"] != list(self.PROTOCOL):
-            print("Protocol mismatch, client '%s': %s, our protocol: %s" % (client_config["id"], client_config["protocol"], self.PROTOCOL))
-            await websocket.send("Protocol mismatch: %s" % str(self.PROTOCOL))
-            websocket.close()
-            return
-        else:
-            await websocket.send("Protocol OK")
-        protocol_message = await websocket.recv()
-        if protocol_message != "Protocol OK":
-            return
-        self.clients.add(websocket)
-
-        try:
-            while 1:
-                request = await websocket.recv()
-                await self._process_request_from_client(websocket, request)
-        except (websockets.exceptions.ConnectionClosed, ConnectionResetError):
-            pass
-        except Exception:
-            traceback.print_exc()
-        finally:
-            self.clients.remove(websocket)
-
-
-    async def _serve(self, config, websocket, path):
-        client_config = await websocket.recv()
-        client_config = json.loads(client_config)
-        await websocket.send(json.dumps(config))
-        await self._listen_client(websocket, client_config)
-
     async def _start(self):
-        if self._started:
-            return
-        config = {
-            "protocol": self.PROTOCOL,
-        }
-
         if is_port_in_use(self.host, self.port): # KLUDGE
             print("ERROR: %s port %d already in use" % (self.host, self.port))
             raise Exception
-        server = functools.partial(self._serve, config)
-        coro_server = websockets.serve(server, self.host, self.port)
-        print("Set up a database server on port %d" % self.port)
-        await coro_server
-        self._started = True
+
+        app = web.Application()
+        app.add_routes([
+            web.get('/{tail:.*}', self._handle_get),
+            web.put('/{tail:.*}', self._handle_put),
+        ])
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, self.host, self.port)
+        await site.start()
 
     def start(self):
         if self.future is not None:
@@ -92,42 +58,61 @@ class DatabaseServer:
         coro = self._start()
         self.future = asyncio.ensure_future(coro)
 
-
-    async def _process_request_from_client(self, client, request):
+    async def _handle_get(self, request):
+        data = await request.read()
+        status = 200
         try:
-            response = None
             try:
-                rq, _ = deserialize(request)
+                rq, _ = deserialize(data)
             except:
                 raise DatabaseError("Malformed request") from None
-            rqtype = rq["type"]
-            if rqtype == "get":
-                try:
-                    checksum = rq["checksum"]
-                    subtype = rq["subtype"]
-                    if subtype not in subtypes:
-                        raise KeyError
-                except KeyError:
-                    raise DatabaseError("Malformed request") from None
-                response = await self.backend_get(subtype, checksum, rq)
-            elif rqtype == "set":
-                try:
-                    checksum = rq["checksum"]
-                    subtype = rq["subtype"]
-                    if subtype not in subtypes:
-                        raise KeyError
-                    value = rq["value"].tobytes()
-                except KeyError:
-                    raise DatabaseError("Malformed request") from None
-                response = await self.backend_set(subtype, checksum, value, rq)
-            else:
-                raise DatabaseError("Unknown request type %s" % rqtype)
-
+            try:
+                checksum = rq["checksum"]
+                subtype = rq["subtype"]
+                if subtype not in subtypes:
+                    raise KeyError
+            except KeyError:
+                raise DatabaseError("Malformed request") from None
+            response = await self.backend_get(subtype, checksum, rq)
         except DatabaseError as exc:
+            status = 400
             response = "ERROR:" + exc.args[0]
         if response is None:
+            status = 400
             response = "ERROR: No response"
-        await client.send(response)
+        return web.Response(
+            status=status,
+            body=response
+        )
+
+    async def _handle_put(self, request):
+        data = await request.read()
+        status = 200
+        try:
+            try:
+                rq, _ = deserialize(data)
+            except:
+                raise DatabaseError("Malformed request") from None
+            try:
+                checksum = rq["checksum"]
+                subtype = rq["subtype"]
+                if subtype not in subtypes:
+                    raise KeyError
+                value = rq["value"].tobytes()
+            except KeyError:
+                raise DatabaseError("Malformed request") from None
+            response = await self.backend_set(subtype, checksum, value, rq)
+        except DatabaseError as exc:
+            status = 400
+            response = "ERROR:" + exc.args[0]
+        if response is None:
+            status = 400
+            response = "ERROR: No response"
+        return web.Response(
+            status=status,
+            body=response
+        )
+
 
     async def backend_get(self, subtype, checksum, request):
         if subtype == "buffer":
@@ -307,26 +292,6 @@ class DatabaseServer:
         else:
             raise DatabaseError("Unknown request subtype")
         return "OK"
-
-"""
-subtypes = (
-    "buffer",
-    "buffer length",
-    "semantic-to-syntactic",
-    "compile result",
-    "transformation result"
-)
-
-buffercodes = (
-    "buf", # authoritative buffer
-    "nbf", # non-authoritative buffer (may be evicted; should be stored in Redis with an expiry)
-    "bfl", # buffer length (for large buffers; 1 for small buffers)
-    "s2s", # semantic-to-syntactic
-    "cpl", # compile result (for compiled modules and objects)
-    "tfr", # transformation result
-)
-
-"""
 
 if __name__ == "__main__":
     import ruamel.yaml
