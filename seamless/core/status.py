@@ -47,7 +47,7 @@ class WorkerStatus:
         self.pins = pins
         self.preliminary = preliminary
         self.progress = progress
-    
+
     def __getitem__(self, index):
         if index == 0:
             return self.status
@@ -76,7 +76,7 @@ def status_accessor(accessor):
     if not accessor._void:
         return StatusEnum.PENDING, None, None
     return StatusEnum.VOID, accessor._status_reason, None
-    
+
 def status_transformer(transformer):
     prelim = transformer.preliminary
     checksum = transformer._checksum
@@ -100,24 +100,28 @@ def status_transformer(transformer):
     else:
         status = StatusEnum.VOID
         reason = transformer._status_reason
-        upstreams = livegraph.transformer_to_upstream[transformer]
-        downstreams = livegraph.transformer_to_downstream[transformer] 
+        upstreams = livegraph.transformer_to_upstream.get(transformer)
+        downstreams = livegraph.transformer_to_downstream.get(transformer)
+        pins = []
         if reason == StatusReasonEnum.UNCONNECTED:
             pins = []
-            for pinname, accessor in upstreams.items():
-                if accessor is None:
-                    pins.append(pinname)
-            if not len(downstreams):
-                outp = transformer._output_name
-                assert outp is not None
-                pins.append(outp)
+            if upstreams is not None:
+                for pinname, accessor in upstreams.items():
+                    if accessor is None:
+                        pins.append(pinname)
+            if downstreams is not None:
+                if not len(downstreams):
+                    outp = transformer._output_name
+                    assert outp is not None
+                    pins.append(outp)
         elif reason == StatusReasonEnum.UPSTREAM:
             pins = {}
-            for pinname, accessor in upstreams.items():
-                astatus = status_accessor(accessor)
-                if astatus[0] == StatusEnum.OK:
-                    continue
-                pins[pinname] = astatus
+            if upstreams is not None:
+                for pinname, accessor in upstreams.items():
+                    astatus = status_accessor(accessor)
+                    if astatus[0] == StatusEnum.OK:
+                        continue
+                    pins[pinname] = astatus
     return WorkerStatus(
         status, reason, pins,
         preliminary = transformer.preliminary,
@@ -239,7 +243,7 @@ def format_worker_status(stat, as_child=False):
             result = reason.name.lower() + " => "
             pinresult = []
             for pinname, pstatus in pins.items():
-                if as_child:                                
+                if as_child:
                     pinresult.append(pinname)
                 else:
                     pinresult.append(pinname + " " + format_status(pstatus))
@@ -262,17 +266,17 @@ def format_context_status(stat):
             if childstat[0] == StatusEnum.PENDING:
                 if isinstance(child, Worker):
                     if childstat.reason != StatusReasonEnum.EXECUTING:
-                        continue  
+                        continue
                 else:
                     continue
         if isinstance(child, Worker):
             childresult = format_worker_status(childstat, as_child=True)
         elif isinstance(child, Cell):
-            childresult = format_status(childstat)            
+            childresult = format_status(childstat)
         elif isinstance(child, Context):
             childresult = format_context_status(childstat)
         else:
-            continue        
+            continue
         if childresult == "OK":
             continue
         result[childname] = childresult

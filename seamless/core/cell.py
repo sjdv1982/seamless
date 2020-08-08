@@ -183,7 +183,7 @@ class Cell(SeamlessBase):
         exc = livegraph.cell_parsing_exceptions.get(self)
         if exc is not None:
             return exc
-        accessor = livegraph.cell_to_upstream[self]
+        accessor = livegraph.cell_to_upstream.get(self)
         if accessor is None:
             return None
         expression = accessor.expression

@@ -89,9 +89,11 @@ class Transformer(Worker):
             return True
         manager = self._get_manager()
         livegraph = manager.livegraph
-        for accessor in livegraph.transformer_to_upstream[self].values():
-            if accessor.preliminary:
-                return True
+        upstreams = livegraph.transformer_to_upstream.get(self)
+        if upstreams is not None:
+            for accessor in upstreams.values():
+                if accessor.preliminary:
+                    return True
         return False
 
     def get_transformation(self):
@@ -151,17 +153,18 @@ class Transformer(Worker):
             return None
         if self._status_reason == StatusReasonEnum.UPSTREAM:
             livegraph = self._get_manager().livegraph
-            upstreams = livegraph.transformer_to_upstream[self]
+            upstreams = livegraph.transformer_to_upstream.get(self)
             exceptions = {}
-            for pinname, accessor in upstreams.items():
-                if accessor is None: #unconnected
-                    continue
-                expression = accessor.expression
-                if expression is None:
-                    continue
-                exc = expression.exception
-                if exc is not None:
-                    exceptions[pinname] = exc
+            if upstreams is not None:
+                for pinname, accessor in upstreams.items():
+                    if accessor is None: #unconnected
+                        continue
+                    expression = accessor.expression
+                    if expression is None:
+                        continue
+                    exc = expression.exception
+                    if exc is not None:
+                        exceptions[pinname] = exc
             if not len(exceptions):
                 return None
             return exceptions
@@ -169,7 +172,9 @@ class Transformer(Worker):
             return None
         manager = self._get_manager()
         transformation_cache = manager.cachemanager.transformation_cache
-        transformation = transformation_cache.transformer_to_transformations[self]
+        transformation = transformation_cache.transformer_to_transformations.get(self)
+        if transformation is None:
+            return None
         exc = transformation_cache.transformation_exceptions.get(transformation)
         if exc is None:
             return None
