@@ -53,7 +53,7 @@ class BufferCache:
             self.missing_buffers.discard(checksum)
 
     def incref_temp(self, checksum):
-        #print("INCREF TEMP", checksum.hex())
+        print("INCREF TEMP", checksum.hex())
         if checksum not in self.buffer_refcount:
             self.buffer_refcount[checksum] = 0
         self.buffer_refcount[checksum] += 1
@@ -65,7 +65,7 @@ class BufferCache:
 
 
     def incref(self, checksum, authoritative):
-        #print("INCREF", checksum.hex())
+        print("INCREF     ", checksum.hex())
         if checksum in self.buffer_refcount:
             self.buffer_refcount[checksum] += 1
             if checksum not in self.missing_buffers:
@@ -80,7 +80,10 @@ class BufferCache:
                 self.missing_buffers.add(checksum)
 
     def decref(self, checksum, from_temp=False):
-        #print("DECREF", checksum.hex(), from_temp)
+        if not from_temp:
+            print("DECREF     ", checksum.hex())
+        else:
+            print("DECREF TEMP", checksum.hex())
         if checksum not in self.buffer_refcount:
             print("WARNING: double decref, %s" % checksum.hex())
             return

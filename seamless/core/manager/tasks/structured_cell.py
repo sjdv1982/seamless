@@ -90,7 +90,7 @@ class StructuredCellJoinTask(Task):
                             subvalue = await DeserializeBufferTask(
                                 manager, buffer, subchecksum, "mixed", False
                             ).run()
-                            await set_subpath(value, sc.hash_pattern, path, subvalue, authoritative=False)
+                            await set_subpath(value, sc.hash_pattern, path, subvalue)
                         except CancelledError:
                             ok = False
                             canceled = True

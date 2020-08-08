@@ -557,8 +557,7 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path,
 
     if sub_deep_structure is None:
         if create:
-            authoritative = True ### TODO: see issue 21
-            set_subpath_sync(deep_structure, None, path, checksum, authoritative=authoritative)
+            set_subpath_sync(deep_structure, None, path, checksum)
             return write_deep_structure(
                 checksum, deep_structure, hash_pattern,
                 path, create=False
