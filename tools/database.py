@@ -48,7 +48,7 @@ class DatabaseServer:
             print("ERROR: %s port %d already in use" % (self.host, self.port))
             raise Exception
 
-        app = web.Application()
+        app = web.Application(client_max_size=10e9)
         app.add_routes([
             web.get('/{tail:.*}', self._handle_get),
             web.put('/{tail:.*}', self._handle_put),

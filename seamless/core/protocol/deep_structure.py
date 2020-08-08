@@ -374,7 +374,7 @@ async def value_to_deep_structure(value, hash_pattern):
         obj_buffer = await serialize(obj, "mixed")
         obj_checksum = await calculate_checksum(obj_buffer)
         new_checksums.add(obj_checksum.hex())
-        buffer_cache.cache_buffer(obj_checksum, obj_buffer)
+        buffer_cache.cache_buffer(obj_checksum, obj_buffer, False) # temporary
         obj_id_to_checksum[obj_id] = obj_checksum.hex()
 
     coros = []
@@ -412,7 +412,7 @@ def value_to_deep_structure_sync(value, hash_pattern):
         obj_buffer = serialize_sync(obj, "mixed")
         obj_checksum = calculate_checksum_sync(obj_buffer)
         new_checksums.add(obj_checksum.hex())
-        buffer_cache.cache_buffer(obj_checksum, obj_buffer)
+        buffer_cache.cache_buffer(obj_checksum, obj_buffer, False) # temporary
         obj_id_to_checksum[obj_id] = obj_checksum.hex()
 
     for obj_id in objects:

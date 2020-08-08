@@ -122,8 +122,9 @@ class LiveGraph:
             self.expression_to_accessors[expression] = []
             manager = self.manager()
             manager.taskmanager.register_expression(expression)
-            manager.cachemanager.register_expression(expression)
-            manager.cachemanager.incref_checksum(expression.checksum, expression, False)
+            exists = manager.cachemanager.register_expression(expression)
+            if not exists:
+                manager.cachemanager.incref_checksum(expression.checksum, expression, False, False)
         #print("INCREF", expression.celltype, expression.target_celltype)
         self.expression_to_accessors[expression].append(accessor)
 
@@ -134,7 +135,7 @@ class LiveGraph:
         if not len(accessors):
             self.expression_to_accessors.pop(expression)
             manager = self.manager()
-            manager.cachemanager.decref_checksum(expression.checksum, expression, False)
+            manager.cachemanager.destroy_expression(expression)
             manager.taskmanager.destroy_expression(expression)
 
     def _get_bilink_targets(self, source, targets):

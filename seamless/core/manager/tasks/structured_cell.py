@@ -166,9 +166,10 @@ class StructuredCellJoinTask(Task):
 
             if len(sc.outchannels):
                 livegraph = manager.livegraph
+                cachemanager = manager.cachemanager
                 downstreams = livegraph.paths_to_downstream[sc._data]
                 cs = bytes.fromhex(checksum) if checksum is not None else None
-                expression_to_checksum = manager.cachemanager.expression_to_checksum
+                expression_to_result_checksum = cachemanager.expression_to_result_checksum
                 for out_path in sc.outchannels:
                     changed = False
                     if sc._exception is not None or sc._new_outgoing_connections:
@@ -192,13 +193,14 @@ class StructuredCellJoinTask(Task):
                     elif cs is not None: # morph
                         for accessor in downstreams[out_path]:
                             old_expression = accessor.expression
+                            if old_expression is not None:
+                                livegraph.decref_expression(old_expression, accessor)
                             expression_result_checksum = \
-                                expression_to_checksum.get(old_expression)
+                                expression_to_result_checksum.get(old_expression)
                             if expression_result_checksum is not None:
                                 accessor.build_expression(livegraph, cs)
                                 new_expression = accessor.expression
-                                expression_to_checksum[new_expression] = \
-                                    expression_result_checksum
+                                livegraph.incref_expression(new_expression, accessor)
 
 
             sc.modified.clear()

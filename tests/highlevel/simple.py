@@ -8,12 +8,12 @@ ctx = Context()
 # 1
 ctx.a = 10
 ctx.a.celltype = "int"
-ctx.translate()
+ctx.compute()
 print("1", ctx.a.value)
 
 # 1a
 ctx.a = 12
-ctx.translate()
+ctx.compute()
 print("1a", ctx.a.value)
 
 # 2
@@ -22,9 +22,9 @@ def double_it(a):
 
 ctx.transform = double_it
 ###ctx.transform.hash_pattern = {"*": "#"}
-ctx.transform.a = ctx.a
-ctx.myresult = ctx.transform
-ctx.myresult.celltype = "int"
+ctx.transform.a = ctx.a ###
+ctx.myresult = ctx.transform ###
+ctx.myresult.celltype = "int" ###
 ctx.compute()
 print("2", ctx.myresult.value)
 

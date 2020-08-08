@@ -31,7 +31,7 @@ def _deserialize(buffer, checksum, celltype):
         assert s.endswith("\n")
         try:
             value = json.loads(s)
-        except json.JSONDecodeError:            
+        except json.JSONDecodeError:
             raise ValueError(s) from None
         if not isinstance(value, str):
             raise ValueError(value)
@@ -48,21 +48,21 @@ def _deserialize(buffer, checksum, celltype):
         assert s.endswith("\n")
         value = literal_eval(s)
         if isinstance(value, (int, bool)):
-            value = float(value)        
+            value = float(value)
         if not isinstance(value, float):
             raise ValueError(value)
     elif celltype == "bool":
         s = buffer.decode()
         assert s.endswith("\n")
         try:
-            value = literal_eval(s.replace("true", "True").replace("false", "False"))        
+            value = literal_eval(s.replace("true", "True").replace("false", "False"))
         except ValueError:
             raise ValueError(s) from None
         if not isinstance(value, bool):
             raise ValueError(value)
     else:
         raise TypeError(celltype)
-    
+
     return value
 
 
@@ -83,7 +83,7 @@ async def deserialize(buffer, checksum, celltype, copy):
             return newvalue
         else:
             return value
-            
+
     # ProcessPool is too slow, but ThreadPool works
     if len(buffer) > 1000000:
         loop = asyncio.get_event_loop()
@@ -106,10 +106,10 @@ def deserialize_sync(buffer, checksum, celltype, copy):
     """Deserializes a buffer into a value
     First, it is attempted to retrieve the value from cache.
     In case of a cache hit, a copy is returned only if copy=True
-    In case of a cache miss, deserialization is performed 
+    In case of a cache miss, deserialization is performed
     (and copy is irrelevant).
-    
-    
+
+
     This function can be executed if the asyncio event loop is already running"""
     if buffer is None:
         return None

@@ -224,13 +224,13 @@ class Manager:
         cachemanager = self.cachemanager
         old_checksum = cell._checksum
         if old_checksum is not None and old_checksum != checksum:
-            cachemanager.decref_checksum(old_checksum, cell, authoritative)
+            cachemanager.decref_checksum(old_checksum, cell, authoritative, False)
         cell._checksum = checksum
         cell._void = void
         cell._status_reason = status_reason
         cell._prelim = prelim
         if checksum != old_checksum:
-            cachemanager.incref_checksum(checksum, cell, authoritative)
+            cachemanager.incref_checksum(checksum, cell, authoritative, False)
             observer = cell._observer
             if observer is not None:
                 cs = checksum.hex() if checksum is not None else None
@@ -261,13 +261,13 @@ class Manager:
         cachemanager = self.cachemanager
         old_checksum = inchannel._checksum
         if old_checksum is not None and old_checksum != checksum:
-            cachemanager.decref_checksum(old_checksum, inchannel, False)
+            cachemanager.decref_checksum(old_checksum, inchannel, False, False)
         inchannel._checksum = checksum
         inchannel._void = void
         inchannel._status_reason = status_reason
         inchannel._prelim = prelim
         if checksum != old_checksum:
-            cachemanager.incref_checksum(checksum, inchannel, False)
+            cachemanager.incref_checksum(checksum, inchannel, False, False)
             sc.modified.add_inchannel(inchannel.subpath)
             self.structured_cell_join(sc)
 
@@ -285,7 +285,7 @@ class Manager:
         cachemanager = self.cachemanager
         old_checksum = transformer._checksum
         if old_checksum is not None and old_checksum != checksum:
-            cachemanager.decref_checksum(old_checksum, transformer, False)
+            cachemanager.decref_checksum(old_checksum, transformer, False, True)
         transformer._prelim_result = prelim
         transformer._checksum = checksum
         transformer._void = void
@@ -293,7 +293,7 @@ class Manager:
         if not prelim:
             transformer._progress = 0.0
         if checksum != old_checksum:
-            cachemanager.incref_checksum(checksum, transformer, False)
+            cachemanager.incref_checksum(checksum, transformer, False, True)
 
     def _set_transformer_progress(self, transformer, progress):
         transformer._progress = progress

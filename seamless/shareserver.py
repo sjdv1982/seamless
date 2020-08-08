@@ -163,13 +163,13 @@ class Share:
         if not isinstance(buffer, bytes):
             raise TypeError(type(buffer))
         buffer = buffer.rstrip(b'\n') + b'\n'
-        task = self._calc_checksum(buffer, True)
+        task = self._calc_checksum(buffer)
         task = asyncio.ensure_future(task)
         self._calc_checksum_task = task
         await task
 
         checksum = task.result()
-        buffer_cache.cache_buffer(checksum, buffer, True)
+        buffer_cache.cache_buffer(checksum, buffer, False) # temporary
         return self.set_checksum(checksum, marker)
 
     async def _calc_checksum(self, buffer):

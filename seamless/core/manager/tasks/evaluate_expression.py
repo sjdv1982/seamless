@@ -19,20 +19,19 @@ class EvaluateExpressionTask(Task):
         self.dependencies.append(expression)
 
     async def _run(self):
-        expression = self.expression        
+        expression = self.expression
         if expression.checksum is None:
             return None
-        
+
         manager = self.manager()
         cachemanager = self.manager().cachemanager
         buffer_cache = cachemanager.buffer_cache
 
         # Get the expression result checksum from cache.
-        expression = expression
         expression_result_checksum = None
         if not self.fingertip_mode:
             expression_result_checksum = \
-                cachemanager.expression_to_checksum.get(expression)
+                cachemanager.expression_to_result_checksum.get(expression)
         if expression_result_checksum is None:
             try:
                 # If the expression is trivial, obtain its result checksum directly
@@ -40,11 +39,11 @@ class EvaluateExpressionTask(Task):
                 expression.hash_pattern is None and \
                 not needs_buffer_evaluation(
                     expression.checksum,
-                    expression.celltype, 
-                    expression.target_celltype, 
-                ) :    
+                    expression.celltype,
+                    expression.target_celltype,
+                ) :
                     expression_result_checksum = await evaluate_from_checksum(
-                        expression.checksum, expression.celltype, 
+                        expression.checksum, expression.celltype,
                         expression.target_celltype
                     )
                 else:
@@ -54,7 +53,7 @@ class EvaluateExpressionTask(Task):
                         and expression.hash_pattern is None \
                     ):
                         expression_result_checksum = await evaluate_from_buffer(
-                            expression.checksum, buffer, 
+                            expression.checksum, buffer,
                             expression.celltype, expression.target_celltype,
                             buffer_cache
                         )
@@ -65,13 +64,13 @@ class EvaluateExpressionTask(Task):
                             expression.celltype, copy=False
                         ).run()
                         mode, result = await get_subpath(value, expression.hash_pattern, expression.path)
-                        if mode == "value":                        
+                        if mode == "value":
                             if result is None:
                                 return None
                             else:
-                                result_value = result                        
+                                result_value = result
                                 result_buffer = await SerializeToBufferTask(
-                                    manager, result_value, 
+                                    manager, result_value,
                                     expression.target_celltype,
                                     use_cache=True
                                 ).run()
@@ -84,9 +83,9 @@ class EvaluateExpressionTask(Task):
                             raise ValueError(mode)
 
                     await validate_subcelltype(
-                        expression_result_checksum, 
-                        expression.target_celltype, 
-                        expression.target_subcelltype, 
+                        expression_result_checksum,
+                        expression.target_celltype,
+                        expression.target_subcelltype,
                         codename="expression",
                         buffer_cache=buffer_cache
                     )
@@ -94,12 +93,15 @@ class EvaluateExpressionTask(Task):
                 raise exc from None
             except Exception as exc:
                 exc = traceback.format_exc()
-                expression.exception = exc                                   
-        
+                expression.exception = exc
+
             if expression_result_checksum is not None:
-                cachemanager.expression_to_checksum[expression] = \
-                    expression_result_checksum
-        
+                cachemanager.incref_checksum(
+                    expression_result_checksum,
+                    expression,
+                    False,
+                    True
+                )
         return expression_result_checksum
 
 from .get_buffer import GetBufferTask
