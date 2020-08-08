@@ -237,7 +237,7 @@ class StructuredCell(SeamlessBase):
                     elif isinstance(path[0], list):
                         self._auth_value = []
                 if len(path):
-                    set_subpath(self._auth_value, None, path, value)
+                    set_subpath(self._auth_value, None, path, value, authoritative=True)
             else:
                 if not isinstance(self._auth_value, (list, dict)):
                     if not len(path):
@@ -250,7 +250,7 @@ class StructuredCell(SeamlessBase):
                             self._auth_value = {}
                         elif isinstance(path[0], list):
                             self._auth_value = []
-                set_subpath(self._auth_value, self.hash_pattern, path, value)
+                set_subpath(self._auth_value, self.hash_pattern, path, value, authoritative=True)
             cancel = True
             for inchannel in self.inchannels:
                 if overlap_path(inchannel, path):
@@ -290,7 +290,7 @@ class StructuredCell(SeamlessBase):
             assert isinstance(path[0], str), path
             if self._schema_value is None:
                 self._schema_value = {}
-            set_subpath(self._schema_value, None, path, value)
+            set_subpath(self._schema_value, None, path, value, authoritative=True)
 
     def _join_schema(self):
         if self.schema._destroyed:
