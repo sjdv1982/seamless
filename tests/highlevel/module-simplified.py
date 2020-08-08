@@ -12,7 +12,7 @@ from .testmodule import q
 print(q)
 import sys
 print([m for m in sys.modules if m.find("testmodule") > -1])
-c = a + b
+result = a + b
 '''
 
 from seamless.highlevel import Transformer, Cell, Context
