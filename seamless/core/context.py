@@ -380,5 +380,4 @@ from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .structured_cell import StructuredCell
 
 from .manager import Manager
-from .. import nest_asyncio
 Macro = None # import later

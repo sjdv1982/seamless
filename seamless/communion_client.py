@@ -2,6 +2,26 @@ import asyncio
 
 REMOTE_TIMEOUT = 5.0
 
+
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
+
 class CommunionClient:
     def get_peer_id(self):
         mgr = communion_client_manager
@@ -34,7 +54,7 @@ class CommunionBufferClient(CommunionClient):
             except:
                 pass
         return result
-    
+
     async def submit(self, checksum):
         assert checksum is not None
         if not self.config_buffer:
@@ -90,7 +110,7 @@ class CommunionTransformationClient(CommunionClient):
         self.config_clear_exception = config["clear_exception"]
         self.future_clear_exception = None
 
-    async def status(self, checksum): 
+    async def status(self, checksum):
         if self.future_clear_exception is not None:
             await self.future_clear_exception
         assert checksum is not None
@@ -99,7 +119,7 @@ class CommunionTransformationClient(CommunionClient):
         message = {
             "type": "transformation_status",
             "content": checksum.hex()
-        }        
+        }
         result = await communion_server.client_submit(message, self.servant)
         if result is not None and result[0] != 0 and isinstance(result[-1], str):
             result = (*result[:-1], bytes.fromhex(result[-1]))
@@ -193,7 +213,7 @@ class CommunionClientManager:
                     c_master = True
                 else:
                     c_master = config_master[sub_communion_type]
-                c_servant = config_servant[sub_communion_type]               
+                c_servant = config_servant[sub_communion_type]
                 if not c_master or not c_servant:
                     c = False
                 elif sub_communion_type == "buffer":
@@ -206,7 +226,7 @@ class CommunionClientManager:
                 sub_communion_types[sub_communion_type] = c
             if not any(sub_communion_types.values()):
                 continue
-            print("ADD SERVANT", communion_type)
+            print_warning("ADD SERVANT", communion_type)
             clientclass = self._clientclasses[communion_type]
             client = clientclass(servant, sub_communion_types)
             self.clients[communion_type].append(client)
@@ -217,7 +237,7 @@ class CommunionClientManager:
         clients = self.servant_to_clients.pop(id(servant))
         self.servant_to_peer_id.pop(id(servant))
         for communion_type, client in clients:
-            print("REMOVE SERVANT", communion_type)
+            print_warning("REMOVE SERVANT", communion_type)
             self.clients[communion_type].remove(client)
 
     async def remote_semantic_to_syntactic(self, checksum, celltype, subcelltype, peer_id):
@@ -251,7 +271,7 @@ class CommunionClientManager:
         coros = [client.status(checksum) for client in clients]
         futures = [asyncio.ensure_future(coro) for coro in coros]
         while 1:
-            done, pending = await asyncio.wait(futures, 
+            done, pending = await asyncio.wait(futures,
                 timeout=REMOTE_TIMEOUT,
                 return_when=asyncio.FIRST_COMPLETED
             )
@@ -263,27 +283,27 @@ class CommunionClientManager:
                         return True
                 except:
                     import traceback
-                    traceback.print_exc()
+                    print_error(traceback.format_exc())
                     continue
             if not len(pending):
-                return False         
+                return False
 
     async def remote_transformation_status(self, checksum, peer_id):
-        clients = []        
+        clients = []
         for client in self.clients["transformation"]:
             client_peer_id = self.servant_to_peer_id[id(client.servant)]
             if client_peer_id != peer_id:
                 clients.append(client)
         if not len(clients):
-            return 
+            return
         coros = [client.status(checksum) for client in clients]
         futures = [asyncio.ensure_future(coro) for coro in coros]
         best_status, best_result = None, None
         while 1:
-            done, pending = await asyncio.wait(futures, 
+            done, pending = await asyncio.wait(futures,
                 timeout=REMOTE_TIMEOUT,
                 return_when=asyncio.FIRST_COMPLETED
-            )            
+            )
             for future in done:
                 try:
                     status, result = future.result()
@@ -293,7 +313,7 @@ class CommunionClientManager:
                         best_status = status
                 except:
                     import traceback
-                    traceback.print_exc()
+                    print_error(traceback.format_exc())
                     continue
             if not len(pending):
                 break
