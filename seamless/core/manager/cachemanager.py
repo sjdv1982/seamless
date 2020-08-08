@@ -141,7 +141,8 @@ class CacheManager:
             finally:
                 self.checksum_refs[checksum].append((refholder, authoritative, result))
         else:
-            self.checksum_refs[checksum].append((refholder, authoritative, result))
+            if (refholder, authoritative, result) not in self.checksum_refs[checksum]:
+                self.checksum_refs[checksum].append((refholder, authoritative, result))
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
 
     async def fingertip(self, checksum, *, must_have_cell=False):

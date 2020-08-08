@@ -77,6 +77,8 @@ class EvaluateExpressionTask(Task):
                                 expression_result_checksum = await CalculateChecksumTask(
                                     manager, result_buffer
                                 ).run()
+                                if expression_result_checksum is not None:
+                                    cachemanager.buffer_cache(expression_result_checksum, result_buffer, False) # temp
                         elif mode == "checksum":
                             expression_result_checksum = result
                         else:

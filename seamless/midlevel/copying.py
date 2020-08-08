@@ -74,7 +74,7 @@ def add_zip(manager, zipfile):
     for checksum in zipfile.namelist():
         checksum2 = bytes.fromhex(checksum)
         buffer = zipfile.read(checksum)
-        authoritative = True ### TODO: see issue 21
+        authoritative = True ### TODO: see issue 21; note that high-level libraries use this as well!
         buffer_cache.cache_buffer(checksum2, buffer, authoritative)
 
 def fill_checksum(manager, node, temp_path, composite=True):
