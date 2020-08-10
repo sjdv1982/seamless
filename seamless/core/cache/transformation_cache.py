@@ -35,6 +35,24 @@ TF_KEEP_ALIVE_MIN = 1.0
 TF_KEEP_ALIVE_MAX = 20.0
 TF_ALIVE_THRESHOLD = 20.0
 
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
 
 class RemoteTransformer:
     debug = False
@@ -71,14 +89,14 @@ def syntactic_is_semantic(celltype, subcelltype):
     return celltype not in ("cson", "yaml", "python")
 
 async def syntactic_to_semantic(
-    checksum, celltype, subcelltype, buffer_cache, codename
+    checksum, celltype, subcelltype, codename
 ):
     assert checksum is None or isinstance(checksum, bytes)
     if syntactic_is_semantic(celltype, subcelltype):
         return checksum
 
     try:
-        buffer = get_buffer(checksum, buffer_cache)
+        buffer = get_buffer(checksum)
     except CacheMissError:
         buffer = await get_buffer_remote(
             checksum,
@@ -86,7 +104,7 @@ async def syntactic_to_semantic(
         )
         if buffer is None:
             raise CacheMissError(checksum.hex()) from None
-        buffer_cache.cache_buffer(checksum, buffer, False) # temp cache for 20 secs, but also written into sinks
+        buffer_cache.cache_buffer(checksum, buffer)
     if celltype in ("cson", "yaml"):
         semantic_checksum = await convert(
             checksum, buffer, celltype, "plain"
@@ -123,11 +141,11 @@ class TransformationCache:
 
     @staticmethod
     def syntactic_to_semantic(
-        checksum, celltype, subcelltype, buffer_cache, codename
+        checksum, celltype, subcelltype, codename
     ):
         future = asyncio.ensure_future(
             syntactic_to_semantic(
-                checksum, celltype, subcelltype, buffer_cache, codename
+                checksum, celltype, subcelltype, codename
             )
         )
         asyncio.get_event_loop().run_until_complete(future)
@@ -147,7 +165,7 @@ class TransformationCache:
             self.decref_transformation(transformation, transformer)
 
     async def update_transformer(self,
-        transformer, celltypes, inputpin_checksums, outputpin, buffer_cache
+        transformer, celltypes, inputpin_checksums, outputpin
     ):
         assert isinstance(transformer, Transformer)
         outputname, celltype, subcelltype = outputpin
@@ -165,7 +183,7 @@ class TransformationCache:
                     if not syntactic_is_semantic(celltype, subcelltype):
                         sem_checksum = await syntactic_to_semantic(
                             checksum, celltype, subcelltype,
-                            buffer_cache, codename
+                            codename
                         )
                         self.syntactic_to_semantic_checksums[key] = sem_checksum
                         semkey = (sem_checksum, celltype, subcelltype)
@@ -206,7 +224,6 @@ class TransformationCache:
         from ..manager.tasks.transformer_update import TransformerResultUpdateTask
         tf_buffer = tf_get_buffer(transformation)
         tf_checksum = await calculate_checksum(tf_buffer)
-        buffer_cache.incref(tf_checksum, False) # transformation will be permanently in buffer cache
 
         if transformer.debug:
             if tf_checksum not in self.debug:
@@ -214,8 +231,14 @@ class TransformationCache:
                 self.clear_exception(transformer)
         if tf_checksum not in self.transformations:
             tf = []
+            buffer_cache.incref_buffer(tf_checksum, tf_buffer, False)
             self.transformations_to_transformers[tf_checksum] = tf
             self.transformations[tf_checksum] = transformation
+            for pinname in transformation:
+                if pinname == "__output__":
+                    continue
+                celltype, subcelltype, sem_checksum = transformation[pinname]
+                buffer_cache.incref(sem_checksum, False)
         else:
             tf = self.transformations_to_transformers[tf_checksum]
         if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
@@ -271,7 +294,7 @@ class TransformationCache:
               time.time() - job.start > TF_ALIVE_THRESHOLD:
                 delay = TF_KEEP_ALIVE_MAX
             tempref = functools.partial(self.destroy_transformation, transformation)
-            temprefmanager.add_ref(tempref, delay)
+            temprefmanager.add_ref(tempref, delay, on_shutdown=True)
 
     def destroy_transformation(self, transformation):
         tf_buffer = tf_get_buffer(transformation)
@@ -287,6 +310,17 @@ class TransformationCache:
             return
         self.transformations.pop(tf_checksum)
         self.transformations_to_transformers.pop(tf_checksum)
+        for pinname in transformation:
+            if pinname == "__output__":
+                continue
+            celltype, subcelltype, sem_checksum = transformation[pinname]
+            buffer_cache.decref(sem_checksum)
+        buffer_cache.decref(tf_checksum)
+        if tf_checksum in self.transformation_results:
+            result_checksum, result_prelim = self.transformation_results[tf_checksum]
+            buffer_cache.decref(result_checksum)
+            if result_prelim:
+                self.transformation_results.pop(tf_checksum)
         job = self.transformation_jobs.get(tf_checksum)
         if job is not None:
             if job.future is not None:
@@ -297,7 +331,6 @@ class TransformationCache:
                 job.future.cancel()
 
     def run_job(self, transformation, tf_checksum):
-        from seamless import VERBOSE
         transformers = self.transformations_to_transformers[tf_checksum]
         if tf_checksum in self.transformation_exceptions:
             exc = self.transformation_exceptions[tf_checksum]
@@ -312,17 +345,17 @@ class TransformationCache:
             codename = "<Unknown>"
         else:
             codename = str(transformers[-1])
-        if VERBOSE:
-            tfs = []
-            for transformer in transformers:
-                if isinstance(transformer,
-                (RemoteTransformer, DummyTransformer)
-                ):
-                    continue
-                tfs.append(transformer._format_path())
-            if len(tfs):
-                tftxt = ",".join(tfs)
-                print("Executing transformer: {}".format(tftxt))
+
+        tfs = []
+        for transformer in transformers:
+            if isinstance(transformer,
+            (RemoteTransformer, DummyTransformer)
+            ):
+                continue
+            tfs.append(transformer._format_path())
+        if len(tfs):
+            tftxt = ",".join(tfs)
+            print_info("Executing transformer: {}".format(tftxt))
 
         debug = tf_checksum in self.debug
         semantic_cache = {}
@@ -340,7 +373,7 @@ class TransformationCache:
             semantic_cache[semkey] = checksums
         job = TransformationJob(
             tf_checksum, codename,
-            buffer_cache, transformation, semantic_cache,
+            transformation, semantic_cache,
             debug
         )
         job.execute(
@@ -463,7 +496,7 @@ class TransformationCache:
             if exc is None:
                 result_checksum = future.result()
                 if result_checksum is None:
-                    exc = SeamlessUndefinedError(None)
+                    exc = SeamlessUndefinedError()
 
         if exc is not None and job.remote:
             try:
@@ -500,7 +533,13 @@ class TransformationCache:
         from ..manager.tasks.transformer_update import (
             TransformerResultUpdateTask
         )
+        if tf_checksum in self.transformation_results:
+            old_result_checksum, old_prelim = self.transformation_results[tf_checksum]
+            if not old_prelim:
+                return  # transformation result was already set by something else
+            buffer_cache.decref(old_result_checksum)
         self.transformation_results[tf_checksum] = result_checksum, prelim
+        buffer_cache.incref(result_checksum, False)
         if not prelim:
             database_sink.set_transformation_result(tf_checksum, result_checksum)
         transformers = self.transformations_to_transformers[tf_checksum]
@@ -562,7 +601,7 @@ class TransformationCache:
         if transformation is None:
             try:
                 transformation_buffer = get_buffer(
-                    tf_checksum, buffer_cache
+                    tf_checksum
                 )
             except CacheMissError:
                 transformation_buffer = await get_buffer_remote(

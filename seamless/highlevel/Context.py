@@ -534,7 +534,7 @@ Translation is not required after modifying only cell values""")
         self._do_translate(force=force)
         graph = self.get_graph()
         nodes0 = graph["nodes"]
-        nodes = {tuple(node["path"]):node for node in nodes0 if "scratch" not in node}
+        nodes = [node for node in nodes0 if "scratch" not in node]
         checksums = copying.get_checksums(nodes)
         manager = self._manager
         buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
@@ -556,7 +556,7 @@ Translation is not required after modifying only cell values""")
         self._do_translate(force=force)
         graph = self.get_graph()
         nodes0 = graph["nodes"]
-        nodes = {tuple(node["path"]):node for node in nodes0}
+        nodes = [node for node in nodes0]
         checksums = copying.get_checksums(nodes)
         manager = self._manager
         buffer_dict = await copying.get_buffer_dict(manager, checksums)
@@ -585,6 +585,20 @@ Translation is not required after modifying only cell values""")
         zip = self.get_zip_async()
         with open(filename, "wb") as f:
             f.write(zip)
+
+    def _set_lib(self, path, lib):
+        from ..core.cache.buffer_cache import buffer_cache
+        old_lib = self._graph.lib.get(path)
+        self._graph.lib[path] = lib
+        if lib is not None:
+            checksums = copying.get_checksums(lib["graph"]["nodes"])
+            for checksum in checksums:
+                buffer_cache.incref_checksum(checksums, True)
+        if old_lib is not None:
+            old_checksums = copying.get_checksums(old_lib["graph"]["nodes"])
+            for old_checksum in old_checksums:
+                buffer_cache.decref_checksum(old_checksum)
+
 
     def add_zip(self, zip):
         """Adds entries from "zip" to the checksum-to-buffer cache

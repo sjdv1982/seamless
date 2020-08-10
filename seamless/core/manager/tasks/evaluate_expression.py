@@ -25,7 +25,6 @@ class EvaluateExpressionTask(Task):
 
         manager = self.manager()
         cachemanager = self.manager().cachemanager
-        buffer_cache = cachemanager.buffer_cache
 
         # Get the expression result checksum from cache.
         expression_result_checksum = None
@@ -41,6 +40,7 @@ class EvaluateExpressionTask(Task):
                     expression.checksum,
                     expression.celltype,
                     expression.target_celltype,
+                    self.fingertip_mode
                 ) :
                     expression_result_checksum = await evaluate_from_checksum(
                         expression.checksum, expression.celltype,
@@ -49,13 +49,12 @@ class EvaluateExpressionTask(Task):
                 else:
                     buffer = await GetBufferTask(manager, expression.checksum).run()
                     if (
-                       (expression.path is None or expression.path == [] or expression.path == ()) \
-                        and expression.hash_pattern is None \
+                       (expression.path is None or expression.path == [] or expression.path == ())
                     ):
                         expression_result_checksum = await evaluate_from_buffer(
                             expression.checksum, buffer,
                             expression.celltype, expression.target_celltype,
-                            buffer_cache
+                            fingertip_mode=self.fingertip_mode
                         )
                     else:
                         assert expression.celltype == "mixed" # paths may apply only to mixed cells
@@ -78,8 +77,9 @@ class EvaluateExpressionTask(Task):
                                     manager, result_buffer
                                 ).run()
                                 if expression_result_checksum is not None:
-                                    cachemanager.buffer_cache(expression_result_checksum, result_buffer, False) # temp
+                                    buffer_cache.cache_buffer(expression_result_checksum, result_buffer)
                         elif mode == "checksum":
+                            assert expression.hash_pattern is not None
                             expression_result_checksum = result
                         else:
                             raise ValueError(mode)
@@ -88,8 +88,7 @@ class EvaluateExpressionTask(Task):
                         expression_result_checksum,
                         expression.target_celltype,
                         expression.target_subcelltype,
-                        codename="expression",
-                        buffer_cache=buffer_cache
+                        codename="expression"
                     )
             except asyncio.CancelledError as exc:
                 raise exc from None
@@ -98,12 +97,13 @@ class EvaluateExpressionTask(Task):
                 expression.exception = exc
 
             if expression_result_checksum is not None:
-                cachemanager.incref_checksum(
-                    expression_result_checksum,
-                    expression,
-                    False,
-                    True
-                )
+                if expression_result_checksum != expression.checksum:
+                    cachemanager.incref_checksum(
+                        expression_result_checksum,
+                        expression,
+                        False,
+                        True
+                    )
         return expression_result_checksum
 
 from .get_buffer import GetBufferTask
@@ -115,3 +115,4 @@ from ...protocol.conversion import conversion_forbidden
 from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.expression import get_subpath
 from .checksum import CalculateChecksumTask
+from ...cache.buffer_cache import buffer_cache

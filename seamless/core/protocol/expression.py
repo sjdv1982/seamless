@@ -53,7 +53,7 @@ def get_subpath_sync(value, hash_pattern, path):
             return None
         elif isinstance(result, str):
             checksum = bytes.fromhex(result)
-            buffer = get_buffer(checksum, buffer_cache)
+            buffer = get_buffer(checksum)
             value = deserialize_sync(buffer, checksum, "mixed", copy=True)
             return value
         else:
@@ -66,7 +66,7 @@ def get_subpath_sync(value, hash_pattern, path):
                 cs = checksum
                 if checksum is not None:
                     cs = bytes.fromhex(checksum)
-                buffer = get_buffer(cs, buffer_cache)
+                buffer = get_buffer(cs)
                 buffer_dict[checksum] = buffer
             value = deep_structure_to_value_sync(
                 sub_structure, sub_hash_pattern,
@@ -75,7 +75,7 @@ def get_subpath_sync(value, hash_pattern, path):
             return value
     else:
         checksum = bytes.fromhex(result)
-        buffer = get_buffer(checksum, buffer_cache)
+        buffer = get_buffer(checksum)
         value = deserialize_sync(buffer, checksum, "mixed", copy=True)
         return _get_subpath(value, post_path)
 
@@ -92,7 +92,7 @@ async def get_subpath(value, hash_pattern, path):
         elif isinstance(result, str):
             checksum = bytes.fromhex(result)
             return ("checksum", checksum)
-            #buffer = get_buffer(checksum, buffer_cache)
+            #buffer = get_buffer(checksum)
             #value = await deserialize(buffer, checksum, "mixed", copy=True)
             #return value
         else:
@@ -105,7 +105,7 @@ async def get_subpath(value, hash_pattern, path):
                 cs = checksum
                 if checksum is not None:
                     cs = bytes.fromhex(checksum)
-                buffer = get_buffer(cs, buffer_cache)
+                buffer = get_buffer(cs)
                 buffer_dict[checksum] = buffer
             value = await deep_structure_to_value(
                 sub_structure, sub_hash_pattern,
@@ -114,12 +114,12 @@ async def get_subpath(value, hash_pattern, path):
             return ("value", value)
     else:
         checksum = bytes.fromhex(result)
-        buffer = get_buffer(checksum, buffer_cache)
+        buffer = get_buffer(checksum)
         value = await deserialize(buffer, checksum, "mixed", copy=True)
         value = _get_subpath(value, post_path)
         return ("value", value)
 
-def set_subpath_sync(value, hash_pattern, path, subvalue, authoritative):
+def set_subpath_sync(value, hash_pattern, path, subvalue):
     """This function can be executed if the asyncio event loop is already running"""
     if hash_pattern is None:
         _set_subpath(value, path, subvalue)
@@ -136,11 +136,7 @@ def set_subpath_sync(value, hash_pattern, path, subvalue, authoritative):
     )
     mode = result[0]
     if mode == 0:
-        _, old_checksum = result
-        if checksum is not None:
-            buffer_cache.incref(checksum, authoritative)
-        if old_checksum is not None:
-            buffer_cache.decref(bytes.fromhex(old_checksum))
+        pass
     elif mode == 1:
         _, sub_hash_pattern = result
         sub_structure, _ = value_to_deep_structure_sync(
@@ -164,7 +160,7 @@ def set_subpath_sync(value, hash_pattern, path, subvalue, authoritative):
         if len(post_path):
             if curr_sub_checksum is not None:
                 curr_sub_checksum = bytes.fromhex(curr_sub_checksum)
-                curr_sub_buffer = get_buffer(curr_sub_checksum, buffer_cache)
+                curr_sub_buffer = get_buffer(curr_sub_checksum)
                 curr_sub_value = deserialize_sync(
                     curr_sub_buffer, curr_sub_checksum, "mixed", copy=True
                 )
@@ -179,7 +175,6 @@ def set_subpath_sync(value, hash_pattern, path, subvalue, authoritative):
                 new_sub_value, "mixed", use_cache=(len(post_path) == 0)
             )
             new_sub_checksum = calculate_checksum_sync(new_sub_buffer)
-            buffer_cache.cache_buffer(new_sub_checksum, new_sub_buffer, authoritative)
             new_sub_cs = new_sub_checksum.hex()
 
         result = write_deep_structure(
@@ -187,15 +182,11 @@ def set_subpath_sync(value, hash_pattern, path, subvalue, authoritative):
             create=True
         )
         assert result[0] == 0, result
-        if new_sub_checksum is not None:
-            buffer_cache.incref(new_sub_checksum, authoritative)
-        if curr_sub_checksum is not None:
-            buffer_cache.decref(curr_sub_checksum)
     else:
         raise ValueError(result)
 
 
-async def set_subpath(value, hash_pattern, path, subvalue, authoritative):
+async def set_subpath(value, hash_pattern, path, subvalue):
     if hash_pattern is None:
         _set_subpath(value, path, subvalue)
         return
@@ -211,12 +202,7 @@ async def set_subpath(value, hash_pattern, path, subvalue, authoritative):
     )
     mode = result[0]
     if mode == 0:
-        _, old_checksum = result
-        if checksum is not None:
-            buffer_cache.cache_buffer(checksum, buffer, authoritative)
-            buffer_cache.incref(checksum, authoritative)
-        if old_checksum is not None:
-            buffer_cache.decref(bytes.fromhex(old_checksum))
+        pass
     elif mode == 1:
         _, sub_hash_pattern = result
         sub_structure, _ = await value_to_deep_structure(
@@ -240,7 +226,7 @@ async def set_subpath(value, hash_pattern, path, subvalue, authoritative):
         if len(post_path):
             if curr_sub_checksum is not None:
                 curr_sub_checksum = bytes.fromhex(curr_sub_checksum)
-                curr_sub_buffer = get_buffer(curr_sub_checksum, buffer_cache)
+                curr_sub_buffer = get_buffer(curr_sub_checksum)
                 curr_sub_value = await deserialize(
                     curr_sub_buffer, curr_sub_checksum, "mixed", copy=True
                 )
@@ -255,7 +241,6 @@ async def set_subpath(value, hash_pattern, path, subvalue, authoritative):
                 new_sub_value, "mixed", use_cache=(len(post_path) == 0)
             )
             new_sub_checksum = await calculate_checksum(new_sub_buffer)
-            buffer_cache.cache_buffer(new_sub_checksum, new_sub_buffer, authoritative)
             new_sub_cs = new_sub_checksum.hex()
 
         result = write_deep_structure(
@@ -263,10 +248,6 @@ async def set_subpath(value, hash_pattern, path, subvalue, authoritative):
             create=True
         )
         assert result[0] == 0, result
-        if new_sub_checksum is not None:
-            buffer_cache.incref(new_sub_checksum, authoritative)
-        if curr_sub_checksum is not None:
-            buffer_cache.decref(curr_sub_checksum)
     else:
         raise ValueError(result)
 
@@ -277,7 +258,6 @@ from .deep_structure import (
     deep_structure_to_value, deep_structure_to_value_sync,
     deep_structure_to_checksums, access_deep_structure
 )
-from ..cache.buffer_cache import buffer_cache
 from .calculate_checksum import calculate_checksum, calculate_checksum_sync
 from .deserialize import deserialize_sync
 from .serialize import serialize, serialize_sync

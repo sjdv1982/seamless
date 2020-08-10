@@ -219,7 +219,7 @@ class ShareManager:
             from_buffer = False
             if checksum is not None and cell._celltype in ("plain", "mixed"):
                 try:
-                    buffer = get_buffer(checksum, buffer_cache)
+                    buffer = get_buffer(checksum)
                 except CacheMissError:
                     buffer = await get_buffer_remote(
                         checksum,
@@ -308,4 +308,3 @@ from ..shareserver import shareserver
 from .protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
 from .protocol.conversion import convert
 from .protocol.calculate_checksum import calculate_checksum
-from .cache.buffer_cache import buffer_cache

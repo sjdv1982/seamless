@@ -132,13 +132,9 @@ class Share:
         if marker is None:
             marker = self._marker + 1
         self._cancel()
-        if self._checksum is not None:
-            buffer_cache.decref(self._checksum)
         self._checksum = checksum
         if self.bound is not None:
             self.bound.update(checksum)
-        if self._checksum is not None:
-            buffer_cache.incref(self._checksum, True)
         self._marker = marker
         send_checksum_task = self._send_checksum()
         send_checksum_task = asyncio.ensure_future(send_checksum_task)
@@ -169,7 +165,7 @@ class Share:
         await task
 
         checksum = task.result()
-        buffer_cache.cache_buffer(checksum, buffer, False) # temporary
+        buffer_cache.cache_buffer(checksum, buffer)
         return self.set_checksum(checksum, marker)
 
     async def _calc_checksum(self, buffer):
@@ -200,8 +196,6 @@ class Share:
         if self._destroyed:
             return
         self._destroyed = True
-        if self._checksum is not None:
-            buffer_cache.decref(self._checksum)
         self._cancel()
         for rq in self.requests:
             rq.cancel()

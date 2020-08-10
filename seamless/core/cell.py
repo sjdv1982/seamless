@@ -134,7 +134,6 @@ class Cell(SeamlessBase):
             checksum,
             self._celltype,
             self._subcelltype,
-            manager.cachemanager.buffer_cache,
             str(self)
         )
         return sem_checksum.hex()

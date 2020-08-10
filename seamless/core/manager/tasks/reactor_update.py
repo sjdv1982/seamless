@@ -31,13 +31,13 @@ class ReactorUpdateTask(Task):
         upstream = False
         status_reason = None
         for pinname, accessor in upstreams.items():
-            if accessor._void:                
+            if accessor._void:
                 if not reactor._void:
                     print("WARNING: reactor %s is not yet void, shouldn't happen during reactor update" % reactor)
                     manager.cancel_reactor(reactor, void=True)
                     return
                 reactor._status_reason = StatusReasonEnum.UPSTREAM
-                return        
+                return
 
         for pinname in editpins:
             cell = editpin_to_cell[pinname]
@@ -47,7 +47,7 @@ class ReactorUpdateTask(Task):
                     manager.cancel_reactor(reactor, void=True)
                     return
                 reactor._status_reason = StatusReasonEnum.UPSTREAM
-                return        
+                return
 
         if reactor._void:
             for downstreams in livegraph.reactor_to_downstream[reactor].values():
@@ -55,7 +55,7 @@ class ReactorUpdateTask(Task):
                     propagate_accessor(livegraph, accessor, False)
 
         reactor._void = False
-        
+
         for pinname, accessor in upstreams.items():
             if accessor._checksum is None:
                 reactor._pending = True
@@ -68,7 +68,7 @@ class ReactorUpdateTask(Task):
             if checksum is None:
                 reactor._pending = True
                 return
-            editpin_checksums[pinname] = checksum            
+            editpin_checksums[pinname] = checksum
 
         reactor._pending = False
 
@@ -96,7 +96,7 @@ class ReactorUpdateTask(Task):
             new_inputs2[pinname] = cell._celltype, cell._subcelltype
 
         reactor._last_inputs = new_inputs
-        
+
         if not len(updated):
             return
 
@@ -115,7 +115,7 @@ class ReactorUpdateTask(Task):
             if checksum is None:
                 values[pinname] = None
                 continue
-            
+
             buffer = await GetBufferTask(manager, checksum).run()
             assert buffer is not None
             value = await DeserializeBufferTask(
@@ -125,7 +125,7 @@ class ReactorUpdateTask(Task):
                 raise CacheMissError(pinname, reactor)
             if pinname in ("code_start", "code_update", "code_stop"):
                 code_obj = cached_compile(value, str(reactor))
-                values[pinname] = code_obj                
+                values[pinname] = code_obj
             elif (celltype, subcelltype) == ("plain", "module"):
                 mod = await build_module_async(value)
                 module_workspace[pinname] = mod[1]
@@ -140,7 +140,7 @@ class ReactorUpdateTask(Task):
 
 class ReactorResultTask(Task):
     def __init__(self,
-        manager, reactor, 
+        manager, reactor,
         pinname, value,
         celltype, subcelltype
     ):
@@ -161,10 +161,10 @@ class ReactorResultTask(Task):
         manager = self.manager()
         livegraph = manager.livegraph
         accessors = livegraph.reactor_to_downstream[reactor][self.pinname]
-        celltype, subcelltype = self.celltype, self.subcelltype        
+        celltype, subcelltype = self.celltype, self.subcelltype
         pinname = self.pinname
         checksum = None
-        if self.value is not None:        
+        if self.value is not None:
             try:
                 buffer = await SerializeToBufferTask(
                     manager, self.value, celltype,
@@ -175,18 +175,16 @@ class ReactorResultTask(Task):
                 manager._set_reactor_exception(reactor, pinname, exc)
                 raise
         if checksum is not None:
-            buffer_cache = manager.cachemanager.buffer_cache
             await validate_subcelltype(
-                checksum, celltype, subcelltype, 
-                str(reactor) + ":" + pinname, 
-                buffer_cache
+                checksum, celltype, subcelltype,
+                str(reactor) + ":" + pinname
             )
         if reactor._last_outputs is None:
             reactor._last_outputs = {}
         reactor._last_outputs[pinname] = checksum
         downstreams = livegraph.reactor_to_downstream[reactor][pinname]
         for accessor in downstreams:
-            #- construct (not compute!) their expression using the cell checksum 
+            #- construct (not compute!) their expression using the cell checksum
             #  Constructing a downstream expression increfs the cell checksum
             changed = accessor.build_expression(livegraph, checksum)
             # TODO: prelim? tricky for a reactor...

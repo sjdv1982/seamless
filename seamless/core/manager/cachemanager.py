@@ -18,7 +18,7 @@ class CacheManager:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
         self.checksum_refs = {}
-        self.buffer_cache = buffer_cache
+
         self.cell_to_ref = {}
         self.inactive_expressions = set()
         self.expression_to_ref = {}
@@ -92,21 +92,21 @@ class CacheManager:
     def incref_checksum(self, checksum, refholder, authoritative, result):
         if checksum is None:
             return
-        #print("INCREF CHECKSUM", checksum, refholder)
+        #print("INCREF CHECKSUM", checksum.hex(), refholder, result)
         if isinstance(refholder, Cell):
             assert not result
             assert self.cell_to_ref[refholder] is None
             self.cell_to_ref[refholder] = (checksum, authoritative)
             cell = refholder
             if cell._hash_pattern is not None:
-                deep_buffer = self.buffer_cache.get_buffer(checksum)
+                deep_buffer = buffer_cache.get_buffer(checksum)
                 deep_structure = deserialize(deep_buffer, checksum, "mixed", False)
                 sub_checksums = deep_structure_to_checksums(
                     deep_structure, cell._hash_pattern
                 )
                 for sub_checksum in sub_checksums:
                     #print("INCREF SUB-CHECKSUM", sub_checksum, cell)
-                    self.buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)
+                    buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)
         elif isinstance(refholder, Expression):
             #print("INCREF EXPRESSION", refholder._get_hash(), result)
             assert not authoritative
@@ -116,6 +116,7 @@ class CacheManager:
                     assert v is None or v == checksum, refholder
                     self.expression_to_ref[refholder] = checksum
                 else:
+                    assert checksum != refholder.checksum
                     v = self.expression_to_result_checksum[refholder]
                     assert v is None or v == checksum, refholder
                     self.expression_to_result_checksum[refholder] = checksum
@@ -137,7 +138,7 @@ class CacheManager:
         if checksum not in self.checksum_refs:
             self.checksum_refs[checksum] = []
             try:
-                self.buffer_cache.incref(checksum, authoritative)
+                buffer_cache.incref(checksum, authoritative)
             finally:
                 self.checksum_refs[checksum].append((refholder, authoritative, result))
         else:
@@ -166,7 +167,7 @@ class CacheManager:
         if isinstance(checksum, str):
             checksum = bytes.fromhex(checksum)
         assert isinstance(checksum, bytes), checksum
-        buffer = self.buffer_cache.get_buffer(checksum)
+        buffer = buffer_cache.get_buffer(checksum)
         if buffer is not None:
             return buffer
 
@@ -216,7 +217,6 @@ class CacheManager:
             if buffer_length is None:
                 buffer_length = await get_buffer_length_remote(
                     checksum,
-                    buffer_cache,
                     remote_peer_id=None
                 )
             if buffer_length is not None:
@@ -242,20 +242,18 @@ class CacheManager:
             elif isinstance(refholder, Transformer) and recompute:
                 tf_checksum = tf_cache.transformer_to_transformations[refholder]
                 transformation = tf_cache.transformations[tf_checksum]
-                cs = tf_cache.transformation_results.get(tf_checksum, (None, None))[0]
-                if cs == checksum:
-                    coros.append(fingertip_transformation(transformation, tf_checksum))
+                coros.append(fingertip_transformation(transformation, tf_checksum))
 
         tasks = [asyncio.ensure_future(c) for c in coros]
         while len(tasks):
             _, tasks  = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-            buffer = self.buffer_cache.get_buffer(checksum)
+            buffer = buffer_cache.get_buffer(checksum)
             if buffer is not None:
                 for task in tasks:
                     task.cancel()
                 return buffer
 
-        buffer = self.buffer_cache.get_buffer(checksum)
+        buffer = buffer_cache.get_buffer(checksum)
         if buffer is not None:
             return buffer
 
@@ -279,13 +277,13 @@ class CacheManager:
             self.cell_to_ref[refholder] = None
             cell = refholder
             if not destroying and cell._hash_pattern is not None:
-                deep_buffer = self.buffer_cache.get_buffer(checksum)
+                deep_buffer = buffer_cache.get_buffer(checksum)
                 deep_structure = deserialize(deep_buffer, checksum, "mixed", False)
                 sub_checksums = deep_structure_to_checksums(
                     deep_structure, cell._hash_pattern
                 )
                 for sub_checksum in sub_checksums:
-                    self.buffer_cache.decref(bytes.fromhex(sub_checksum))
+                    buffer_cache.decref(bytes.fromhex(sub_checksum))
 
         elif isinstance(refholder, Expression):
             # Special case, since we never actually clear expression caches,
@@ -312,7 +310,7 @@ class CacheManager:
               [l for l in self.checksum_refs[checksum] if l[0] is not refholder]
         #print("cachemanager DECREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if len(self.checksum_refs[checksum]) == 0:
-            self.buffer_cache.decref(checksum)
+            buffer_cache.decref(checksum)
             self.checksum_refs.pop(checksum)
 
     @destroyer
@@ -321,12 +319,12 @@ class CacheManager:
         if ref is not None:
             checksum, authoritative = ref
             if checksum is not None and cell._hash_pattern is not None:
-                buffer = self.buffer_cache.get_buffer(checksum)
+                buffer = buffer_cache.get_buffer(checksum)
                 if buffer is not None:
                     deep_structure = json.loads(buffer) # non-standard, but we could be in precarious territory
                     sub_checksums = deep_structure_to_checksums(deep_structure, cell._hash_pattern)
                     for sub_checksum in sub_checksums:
-                        self.buffer_cache.decref(bytes.fromhex(sub_checksum))
+                        buffer_cache.decref(bytes.fromhex(sub_checksum))
             self.decref_checksum(checksum, cell, authoritative, False, destroying=True)
         self.cell_to_ref.pop(cell)
 

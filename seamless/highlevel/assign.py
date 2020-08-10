@@ -227,29 +227,6 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     }
     ctx._graph[1].append(connection)
 
-
-def copy_checksums(node, old_ctx, new_ctx):
-    if old_ctx is new_ctx:
-        return
-    if "checksum" not in node:
-        return
-    nchecksum = node["checksum"]
-    if isinstance(nchecksum, str):
-        checksums = [(None, nchecksum)]
-    else:
-        checksums = nchecksum.items()
-    old_mgr, new_mgr = old_ctx._get_manager(), new_ctx._get_manager()
-    old_bcache, new_bcache = old_mgr.buffer_cache, new_mgr.buffer_cache
-    for k,checksum0 in checksums:
-        checksum = bytes.fromhex(checksum0)
-        buffer = old_vcache._buffer_cache.get(checksum)
-        if buffer is not None:
-            buffer = buffer[2]
-        if buffer is not None:
-            authoritative = True ### TODO: see issue 21
-            new_vcache.incref(checksum, buffer, authoritative)
-
-
 def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
     from .Context import Context
     from .Cell import Cell

@@ -8,11 +8,12 @@ from ..core.protocol.deep_structure import apply_hash_pattern_sync
 def get_checksums(nodes):
     # TODO: deep cells
     checksums = set()
-    for p, node in nodes.items():
+    for node in nodes:
         if node["type"] in ("link", "context"):
             continue
         untranslated = node.get("UNTRANSLATED")
-        assert not untranslated, p
+        if untranslated:
+            continue
         checksum = node.get("checksum")
         if checksum is None:
             continue
@@ -28,12 +29,11 @@ async def get_buffer_dict(manager, checksums):
     from ..core.protocol.get_buffer import get_buffer
     result = {}
     cachemanager = manager.cachemanager
-    buffer_cache = cachemanager.buffer_cache
     coros = []
     checksums = list(checksums)
     async def get_buf(checksum):
         return await cachemanager.fingertip(checksum)
-        return get_buffer(bytes.fromhex(checksum), buffer_cache)
+        return get_buffer(bytes.fromhex(checksum))
     for checksum in checksums:
         coro = get_buf(checksum)
         coros.append(coro)
@@ -56,10 +56,9 @@ def get_buffer_dict_sync(manager, checksums):
         return fut.result()
 
     result = {}
-    buffer_cache = manager.cachemanager.buffer_cache
     checksums = list(checksums)
     for checksum in checksums:
-        buffer = get_buffer(bytes.fromhex(checksum), buffer_cache)
+        buffer = get_buffer(bytes.fromhex(checksum))
         result[checksum] = buffer
     return result
 
@@ -68,14 +67,14 @@ def add_zip(manager, zipfile):
     Caches all checksum-to-buffer entries in zipfile
     All "file names" in the zipfile must be checksum hexes
 
-    Note that caching without database only lasts 20 seconds
+    Note that caching is temporary and entries will be removed after some time
+     if no element (cell, expression, or high-level library) holds their checksum
     """
-    buffer_cache = manager.cachemanager.buffer_cache
+    from ..core.cache.buffer_cache import buffer_cache
     for checksum in zipfile.namelist():
         checksum2 = bytes.fromhex(checksum)
         buffer = zipfile.read(checksum)
-        authoritative = True ### TODO: see issue 21; note that high-level libraries use this as well!
-        buffer_cache.cache_buffer(checksum2, buffer, authoritative)
+        buffer_cache.cache_buffer(checksum2, buffer)
 
 def fill_checksum(manager, node, temp_path, composite=True):
     from ..core.utils import strip_source

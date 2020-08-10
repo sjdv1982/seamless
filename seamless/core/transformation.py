@@ -12,7 +12,24 @@ from .run_multi_remote import run_multi_remote, run_multi_remote_pair
 from .injector import transformer_injector as injector
 from .build_module import build_module_async
 
-DEBUG = False
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
 
 class SeamlessTransformationError(Exception):
     pass
@@ -66,7 +83,7 @@ class TransformationJob:
     start = None
     def __init__(self,
         checksum, codename,
-        buffer_cache, transformation,
+        transformation,
         semantic_cache, debug
     ):
         self.checksum = checksum
@@ -79,7 +96,6 @@ class TransformationJob:
         outputpin = transformation["__output__"]
         outputname, celltype, subcelltype = outputpin
         self.outputpin = outputpin
-        self.buffer_cache = weakref.ref(buffer_cache)
         self.job_id = TransformationJob._job_id_counter + 1
         TransformationJob._job_id_counter += 1
         self.transformation = transformation
@@ -89,7 +105,6 @@ class TransformationJob:
         self.future = None
         self.remote = False
         self.restart = False
-
 
     async def _probe_remote(self, clients):
         if not len(clients):
@@ -112,11 +127,11 @@ class TransformationJob:
             )
             for fut in done:
                 if fut.exception() is not None:
-                    if DEBUG:
-                        try:
-                            fut.result()
-                        except:
-                            traceback.print_exc()
+                    try:
+                        fut.result()
+                    except:
+                        exc = traceback.format_exc()
+                        print_debug("Transformation {}: {}".format(self.checksum.hex(), exc))
                     continue
                 try:
                     result = "<unknown>"
@@ -127,9 +142,8 @@ class TransformationJob:
                     else:
                         status, response = result
                 except:
-                    if DEBUG:
-                        print("STATUS RESULT", result)
-                        traceback.print_exc()
+                    print_debug("STATUS RESULT", result)
+                    print_debug(traceback.format_exc())
                     continue
                 if not isinstance(status, int):
                     continue
@@ -269,18 +283,18 @@ class TransformationJob:
             go_on = (len(pending) > 0)
             for future in done:
                 if future.exception() is not None:
-                    if DEBUG:
-                        try:
-                            future.result()
-                        except:
-                            traceback.print_exc()
+                    try:
+                        fut.result()
+                    except:
+                        exc = traceback.format_exc()
+                        print_debug("Transformation {}: {}".format(self.checksum.hex(), exc))
                     continue
                 try:
                     result = future.result()
                     status = result[0]
                 except:
-                    if DEBUG:
-                        traceback.print_exc()
+                    exc = traceback.format_exc()
+                    print_debug("Transformation {}: {}".format(self.checksum.hex(), exc))
                     continue
                 if not isinstance(status, int):
                     continue
@@ -323,7 +337,6 @@ class TransformationJob:
     async def _execute_local(self,
         prelim_callback, progress_callback
     ):
-        buffer_cache = self.buffer_cache()
         values = {}
         module_workspace = {}
         namespace = {"__name__": "transformer"}
@@ -343,7 +356,7 @@ class TransformationJob:
                 values[pinname] = None
                 continue
             # fingertipping must have happened before
-            buffer = get_buffer(checksum, buffer_cache)
+            buffer = get_buffer(checksum)
             assert buffer is not None
             try:
                 value = await deserialize(buffer, checksum, celltype, False)
@@ -386,15 +399,15 @@ class TransformationJob:
 
         assert code is not None
 
-        async def get_result_checksum(result):
-            if result is None:
+        async def get_result_checksum(result_buffer):
+            if result_buffer is None:
                 return None
             try:
                 await validate_subcelltype(
-                    result, celltype, subcelltype,
-                    self.codename, buffer_cache
+                    result_buffer, celltype, subcelltype,
+                    self.codename
                 )
-                result_checksum = await calculate_checksum(result)
+                result_checksum = await calculate_checksum(result_buffer)
             except Exception:
                 raise SeamlessInvalidValueError(result)
             return result_checksum
@@ -423,14 +436,15 @@ class TransformationJob:
                     status, msg = queue.get()
                     queue.task_done()
                     if status == 0:
-                        result = msg
+                        result_buffer = msg
                         done = True
                         break
                     elif status == 1:
                         raise SeamlessTransformationError(msg)
                     elif status == 2:
-                        prelim = msg
-                        prelim_checksum = await get_result_checksum(prelim)
+                        prelim_buffer = msg
+                        prelim_checksum = await get_result_checksum(prelim_buffer)
+                        buffer_cache.cache_buffer(prelim_checksum, prelim_buffer)
                         prelim_callback(self, prelim_checksum)
                     elif status == 3:
                         progress = msg
@@ -445,7 +459,7 @@ class TransformationJob:
                     done = True
                 if done:
                     break
-                await asyncio.sleep(0.001)
+                await asyncio.sleep(0.01)
             if not self.executor.is_alive():
                 self.executor = None
         except asyncio.CancelledError:
@@ -453,13 +467,8 @@ class TransformationJob:
                 self.executor.terminate()
         finally:
             release_lock(lock)
-        result_checksum = await get_result_checksum(result)
-        # cache buffer with temporary reference.
-        # For RemoteTransformers (if we are a jobslave)
-        #  or DummyTransformers (if run_transformation was activated)
-        #  this will last for 20 secs, but it is also written into any database sinks,
-        #  which may hold it for much longer
-        buffer_cache.cache_buffer(result_checksum, result, False)
+        result_checksum = await get_result_checksum(result_buffer)
+        buffer_cache.cache_buffer(result_checksum, result_buffer)
 
         return result_checksum
 
@@ -471,6 +480,7 @@ from .protocol.serialize import serialize
 from .protocol.calculate_checksum import calculate_checksum
 from .protocol.validate_subcelltype import validate_subcelltype
 from .cache import CacheMissError
+from .cache.buffer_cache import buffer_cache
 from .cache.transformation_cache import transformation_cache, syntactic_is_semantic
 from .status import SeamlessInvalidValueError
 from ..silk import Silk, Scalar

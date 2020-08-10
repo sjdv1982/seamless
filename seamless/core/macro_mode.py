@@ -26,7 +26,7 @@ def unregister_toplevel(ctx):
     _toplevel_registrable.discard(ctx)
     _toplevel_registered.discard(ctx)
 
-def _destroy_toplevels():    
+def _destroy_toplevels():
     for manager in list(_toplevel_managers):
         manager.destroy(from_del=True)
         if not isinstance(manager, UnboundManager):
@@ -49,6 +49,7 @@ def _destroy_toplevels():
             pass
         dummy_future = asyncio.ensure_future(dummy())
         asyncio.get_event_loop().run_until_complete(dummy_future)
+    buffer_cache.destroy()
 
 atexit.register(_destroy_toplevels)
 
@@ -69,23 +70,23 @@ async def until_macro_mode_off():
 
 @contextmanager
 def macro_mode_on(macro=None):
-    from . import mount    
+    from . import mount
     from .context import Context
-    from .cell import Cell    
+    from .cell import Cell
     from .macro import _global_paths
     global _macro_mode, _curr_macro
     if _macro_mode:
         raise Exception("macro mode cannot be re-entrant")
-        assert not _macro_mode 
+        assert not _macro_mode
     _macro_mode = True
     _curr_macro = macro
-    old_context = macro._gen_context if macro is not None else None    
+    old_context = macro._gen_context if macro is not None else None
     try:
         _mount_scans = []
         if old_context is not None:
             old_context.destroy()
         ok = False
-        yield        
+        yield
         if macro is None:
             def bind_all(cctx):
                 for childname, child in list(cctx._children.items()):
@@ -94,7 +95,7 @@ def macro_mode_on(macro=None):
                     bound_ctx = Context()
                     bound_ctx._set_context(cctx, childname)
                     cctx._children[childname] = bound_ctx
-                    child._bind(bound_ctx)                                        
+                    child._bind(bound_ctx)
                     bind_all(child)
             for ctx in list(_toplevel_registrable):
                 if isinstance(ctx, UnboundContext):
@@ -103,7 +104,7 @@ def macro_mode_on(macro=None):
                     old_manager = ctx._get_manager()
                     ctx._bind(top)
                     assert ctx._bound
-                    new_manager = top._get_manager()                    
+                    new_manager = top._get_manager()
                     _toplevel_registered.add(top)
                     # we kept the unbound manager alive, now we can get rid of it...
                     _toplevel_managers.discard(old_manager)
@@ -124,7 +125,7 @@ def macro_mode_on(macro=None):
             for ctx in _toplevel_registered:
                 for pathname, path in _global_paths.get(ctx, {}).items():
                     cctx = ctx
-                    for subpathname in pathname:                    
+                    for subpathname in pathname:
                         try:
                             _macro_mode = False
                             cctx = getattr(cctx, subpathname)
@@ -135,7 +136,7 @@ def macro_mode_on(macro=None):
                     else:
                         if isinstance(cctx, Cell):
                             path._bind(cctx, True)
-        if macro is not None:            
+        if macro is not None:
             _mount_scans.append(macro._gen_context)
 
         for scan_ctx in _mount_scans:
@@ -149,3 +150,4 @@ def macro_mode_on(macro=None):
 from .cache.transformation_cache import transformation_cache
 from .mount import mountmanager
 from .unbound_context import UnboundContext, UnboundManager
+from .cache.buffer_cache import buffer_cache

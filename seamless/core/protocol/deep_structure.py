@@ -374,7 +374,7 @@ async def value_to_deep_structure(value, hash_pattern):
         obj_buffer = await serialize(obj, "mixed")
         obj_checksum = await calculate_checksum(obj_buffer)
         new_checksums.add(obj_checksum.hex())
-        buffer_cache.cache_buffer(obj_checksum, obj_buffer, False) # temporary
+        buffer_cache.cache_buffer(obj_checksum, obj_buffer)
         obj_id_to_checksum[obj_id] = obj_checksum.hex()
 
     coros = []
@@ -412,7 +412,7 @@ def value_to_deep_structure_sync(value, hash_pattern):
         obj_buffer = serialize_sync(obj, "mixed")
         obj_checksum = calculate_checksum_sync(obj_buffer)
         new_checksums.add(obj_checksum.hex())
-        buffer_cache.cache_buffer(obj_checksum, obj_buffer, False) # temporary
+        buffer_cache.cache_buffer(obj_checksum, obj_buffer)
         obj_id_to_checksum[obj_id] = obj_checksum.hex()
 
     for obj_id in objects:
@@ -585,7 +585,7 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path,
 
 async def apply_hash_pattern(checksum, hash_pattern):
     """Converts a checksum to a checksum that represents a deep structure"""
-    buffer = get_buffer(checksum, buffer_cache)
+    buffer = get_buffer(checksum)
     value = await deserialize(
         buffer, checksum, "mixed", False
     )
@@ -605,7 +605,7 @@ def apply_hash_pattern_sync(checksum, hash_pattern):
         asyncio.get_event_loop().run_until_complete(fut)
         return fut.result()
 
-    buffer = get_buffer(checksum, buffer_cache)
+    buffer = get_buffer(checksum)
     value = deserialize_sync(
         buffer, checksum, "mixed", False
     )

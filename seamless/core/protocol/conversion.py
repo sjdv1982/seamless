@@ -170,20 +170,23 @@ async def reinterpret(checksum, buffer, celltype, target_celltype):
         raise ValueError(msg % (checksum.hex(), celltype, target_celltype))
     return
 
-async def reformat(checksum, buffer, celltype, target_celltype):
+async def reformat(checksum, buffer, celltype, target_celltype, fingertip_mode=False):
     key = (celltype, target_celltype)
     value = await deserialize(buffer, checksum, celltype, copy=False)
     if key == ("plain", "text"):
         if isinstance(value, str):
             new_buffer = await serialize(value, target_celltype)
         else:
+            if fingertip_mode:
+                buffer_cache.cache_buffer(checksum, buffer)
             return checksum
     else:
         new_buffer = await serialize(value, target_celltype)
     result = await calculate_checksum(new_buffer)
+    buffer_cache.cache_buffer(result, new_buffer)
     return result
 
-async def convert(checksum, buffer, celltype, target_celltype):
+async def convert(checksum, buffer, celltype, target_celltype, fingertip_mode=False):
     key = (celltype, target_celltype)
     try:
         if key == ("cson", "plain"):
@@ -195,11 +198,16 @@ async def convert(checksum, buffer, celltype, target_celltype):
             if isinstance(value, str):
                 new_buffer = await serialize(value, target_celltype)
                 result = await calculate_checksum(new_buffer)
+                buffer_cache.cache_buffer(result, new_buffer)
                 return result
             else:
+                if fingertip_mode:
+                    buffer_cache.cache_buffer(checksum, buffer)
                 return checksum
         elif key in (("bytes", "binary"), ("bytes", "mixed")):
             if is_numpy_buffer(buffer):
+                if fingertip_mode:
+                    buffer_cache.cache_buffer(checksum, buffer)
                 return checksum
             value = np.array(buffer)
         elif key in (("binary", "bytes"), ("mixed", "bytes")):
@@ -209,6 +217,7 @@ async def convert(checksum, buffer, celltype, target_celltype):
             if isinstance(value, np.ndarray) and value.dtype.char == "S":
                 new_buffer = value.tobytes()
                 result = await calculate_checksum(new_buffer)
+                buffer_cache.cache_buffer(result, new_buffer)
                 return result
         else:
             value = await deserialize(buffer, checksum, celltype, copy=False)
@@ -230,10 +239,10 @@ async def convert(checksum, buffer, celltype, target_celltype):
         else:
             new_buffer = await serialize(value, target_celltype)
     except Exception:
-        raise
         msg = "%s cannot be converted from %s to %s"
         raise ValueError(msg % (checksum.hex(), celltype, target_celltype)) from None
     result = await calculate_checksum(new_buffer)
+    buffer_cache.cache_buffer(result, new_buffer)
     return result
 
 import ruamel.yaml
@@ -245,6 +254,6 @@ from .serialize import serialize
 from .calculate_checksum import calculate_checksum
 from ...mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED, is_numpy_buffer
 from .cson import cson2json
-
+from ..cache.buffer_cache import buffer_cache
 
 check_conversions()

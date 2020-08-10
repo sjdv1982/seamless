@@ -195,8 +195,7 @@ class Transformer(Worker):
         from .protocol.get_buffer import get_buffer
         if self._checksum is None:
             return None
-        buffer_cache = self._get_manager().cachemanager.buffer_cache
-        buffer = get_buffer(self._checksum, buffer_cache)
+        buffer = get_buffer(self._checksum)
         return buffer
 
     async def _get_buffer(self):

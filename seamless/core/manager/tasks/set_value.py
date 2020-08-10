@@ -14,7 +14,6 @@ class SetCellValueTask(Task):
         from . import SerializeToBufferTask, CalculateChecksumTask, CellUpdateTask
         manager = self.manager()
         taskmanager = manager.taskmanager
-        buffer_cache = manager.cachemanager.buffer_cache
         livegraph = manager.livegraph
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
         cell = self.cell
@@ -48,9 +47,10 @@ class SetCellValueTask(Task):
             if checksum is not None:
                 await validate_subcelltype(
                     checksum, cell._celltype, cell._subcelltype,
-                    str(cell), buffer_cache
+                    str(cell)
                 )
                 checksum_cache[checksum] = buffer
+                buffer_cache.cache_buffer(checksum, buffer)
                 propagate_simple_cell(manager.livegraph, self.cell)
                 manager._set_cell_checksum(self.cell, checksum, False)
                 livegraph.cell_parsing_exceptions.pop(cell, None)
@@ -75,3 +75,4 @@ from ...status import StatusReasonEnum
 from ...protocol.deep_structure import value_to_deep_structure
 from .checksum import CellChecksumTask
 from .get_buffer import GetBufferTask
+from ...cache.buffer_cache import buffer_cache

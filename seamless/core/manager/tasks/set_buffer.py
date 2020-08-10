@@ -16,7 +16,6 @@ class SetCellBufferTask(Task):
         manager = self.manager()
         taskmanager = manager.taskmanager
         livegraph = manager.livegraph
-        buffer_cache = manager.cachemanager.buffer_cache
         cell = self.cell
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
         cell = self.cell
@@ -38,12 +37,11 @@ class SetCellBufferTask(Task):
                     ).run()
                 await validate_subcelltype(
                     checksum, cell._celltype, cell._subcelltype,
-                    str(cell), buffer_cache
+                    str(cell)
                 )
                 checksum_cache[checksum] = buffer
-                authoritative = self.cell.has_authority()
-                buffer_cache.incref(checksum, authoritative)
-                propagate_simple_cell(manager.livegraph, self.cell)
+                buffer_cache.cache_buffer(checksum, buffer)
+                propagate_simple_cell(livegraph, self.cell)
                 manager._set_cell_checksum(self.cell, checksum, False)
                 livegraph.cell_parsing_exceptions.pop(cell, None)
                 CellUpdateTask(manager, self.cell).launch()
@@ -59,3 +57,4 @@ from ...protocol.evaluate import evaluation_cache_1
 from ...protocol.calculate_checksum import checksum_cache
 from ...status import StatusReasonEnum
 from ..propagate import propagate_simple_cell
+from ...cache.buffer_cache import buffer_cache

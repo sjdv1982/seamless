@@ -4,7 +4,7 @@ import traceback
 DEBUG = True
 REMOTE_TIMEOUT = 5.0
 
-async def get_buffer_length_remote(checksum, buffer_cache, remote_peer_id):
+async def get_buffer_length_remote(checksum, remote_peer_id):
     clients = communion_client_manager.clients["buffer_length"]
     coros = []
     for client in clients:
@@ -87,7 +87,7 @@ async def get_buffer_remote(checksum, remote_peer_id):
         return buffer
 
 
-def get_buffer(checksum, buffer_cache):
+def get_buffer(checksum):
     """  Gets the buffer from its checksum
 - Check for a local checksum-to-buffer cache hit (synchronous)
 - Else, check database cache
@@ -115,5 +115,6 @@ def get_buffer(checksum, buffer_cache):
 
 from .calculate_checksum import checksum_cache
 from ..cache import CacheMissError
+from ..cache.buffer_cache import buffer_cache
 from ...communion_client import communion_client_manager
 from ..cache.transformation_cache import transformation_cache, tf_get_buffer

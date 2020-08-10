@@ -1,8 +1,16 @@
 class SeamlessInvalidValueError(ValueError):
-    pass
+    def __str__(self):
+        s = type(self).__name__
+        if len(self.args):
+            s += ":" +  " ".join([str(a) for a in self.args])
+        return s
 
 class SeamlessUndefinedError(ValueError):
-    pass
+    def __str__(self):
+        s = type(self).__name__
+        if len(self.args):
+            s += ":" +  " ".join([str(a) for a in self.args])
+        return s
 
 import json
 from enum import Enum

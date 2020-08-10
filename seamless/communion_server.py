@@ -409,7 +409,7 @@ class CommunionServer:
             for n in range(len(buffers)):
                 buffer = buffers[n]
                 if buffer is not None:
-                    buffer_cache.cache_buffer(remote_pins[n][0], buffer, False)
+                    buffer_cache.cache_buffer(remote_pins[n][0], buffer)
 
         await tcache.incref_transformation(
             transformation, transformer
@@ -439,11 +439,13 @@ class CommunionServer:
                 assert self.config_servant[type]
                 checksum = bytes.fromhex(content)
                 async def func():
-                    buffer = buffer_cache.get_buffer(checksum)
-                    # TODO: use buffer_check instead, and obtain buffer length
-                    print_debug("STATUS SERVE BUFFER", buffer, checksum.hex())
-                    if buffer is not None:
-                        if len(buffer) < 10000:
+                    has_buffer = buffer_cache.buffer_check(checksum)
+                    buffer_length = None
+                    if has_buffer:
+                        buffer_length = buffer_cache.buffer_length(checksum)
+                    print_debug("STATUS SERVE BUFFER", buffer_length, checksum.hex())
+                    if buffer_length is not None:
+                        if buffer_length < 10000:
                             return 1
                         status = self.config_servant["buffer_status"]
                         if status == "small":
@@ -463,7 +465,7 @@ class CommunionServer:
                 assert self.config_servant[type]
                 checksum = bytes.fromhex(content)
                 result = get_buffer(
-                    checksum, buffer_cache
+                    checksum
                 )
                 if result is None:
                     peer_id = self.peers[peer]["id"]
@@ -481,7 +483,6 @@ class CommunionServer:
                     peer_id = self.peers[peer]["id"]
                     result = await get_buffer_length_remote(
                         checksum,
-                        buffer_cache,
                         remote_peer_id=peer_id
                     )
                 print_info("BUFFERLENGTH", checksum.hex(), result)

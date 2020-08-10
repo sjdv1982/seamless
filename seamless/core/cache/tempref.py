@@ -6,15 +6,17 @@ class TempRefManager:
         self.refs = []
         self.running = False
 
-    def add_ref(self, ref, lifetime):
+    def add_ref(self, ref, lifetime, on_shutdown):
         expiry_time = time.time() + lifetime
-        self.refs.append((ref, expiry_time))
+        self.refs.append((ref, expiry_time, on_shutdown))
 
     def purge_all(self):
         """Purges all refs, regardless of expiry time
         Only call this when Seamless is shutting down"""
         while len(self.refs):
-            ref, _ = self.refs.pop(0)
+            ref, _, on_shutdown = self.refs.pop(0)
+            if not on_shutdown:
+                continue
             try:
                 ref()
             except:
@@ -24,7 +26,7 @@ class TempRefManager:
         """Purges expired refs"""
         t = time.time()
         for item in copy.copy(self.refs):
-            ref, expiry_time = item
+            ref, expiry_time, _ = item
             if expiry_time < t:
                 self.refs.remove(item)
                 ref()

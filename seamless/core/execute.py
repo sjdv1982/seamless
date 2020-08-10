@@ -20,6 +20,8 @@ import wurlitzer
 from .cached_compile import exec_code
 from .protocol.serialize import _serialize as serialize
 
+DIRECT_PRINT = False
+
 def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
     if not inspect.isclass(exctype):
@@ -132,6 +134,12 @@ def execute(name, code,
     ):
     assert identifier is not None
     try:
+        if DIRECT_PRINT:
+            result = _execute(name, code,
+                injector, module_workspace,
+                identifier, namespace,
+                inputs, output_name, celltype, result_queue
+            )
         old_stdio = sys.stdout, sys.stderr
         stdout, stderr = FakeStdStream(sys.stdout), FakeStdStream(sys.stderr)
         sys.stdout, sys.stderr = stdout, stderr
@@ -147,22 +155,23 @@ def execute(name, code,
             result_queue.put((1, msg))
         elif msg_code in (1, 10):
             std = ""
-            sout = stdout.read() + stdout2.read()
-            sys.stdout, sys.stderr = old_stdio
-            if len(sout):
-                if not len(std):
-                    std = "\n"
-                std += """*************************************************
+            if not DIRECT_PRINT:
+                sout = stdout.read() + stdout2.read()
+                sys.stdout, sys.stderr = old_stdio
+                if len(sout):
+                    if not len(std):
+                        std = "\n"
+                    std += """*************************************************
 * Standard output
 *************************************************
 {}
 *************************************************
 """.format(sout)
-            serr = stderr.read() + stderr2.read()
-            if len(serr):
-                if not len(std):
-                    std += "\n"
-                std +="""*************************************************
+                serr = stderr.read() + stderr2.read()
+                if len(serr):
+                    if not len(std):
+                        std += "\n"
+                    std +="""*************************************************
 * Standard error
 *************************************************
 {}
@@ -172,11 +181,13 @@ def execute(name, code,
                 msg = std + msg
             result_queue.put((1, msg))
         else:
-            sys.stdout.write(stdout.read() + stdout2.read())
-            sys.stderr.write(stderr.read() + stderr2.read())
+            if not DIRECT_PRINT:
+                sys.stdout.write(stdout.read() + stdout2.read())
+                sys.stderr.write(stderr.read() + stderr2.read())
             result_queue.put(result)
     finally:
-        sys.stdout, sys.stderr = old_stdio
+        if not DIRECT_PRINT:
+            sys.stdout, sys.stderr = old_stdio
         if USE_PROCESSES:
             result_queue.close()
         result_queue.join()

@@ -2,9 +2,24 @@ import weakref
 from ..status import StatusReasonEnum
 from .. import destroyer
 
-import sys
-def log(*args, **kwargs):
-    print(*args, **kwargs, file=sys.stderr)
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
 
 # NOTE: distinction between simple cells (no StructuredCell monitor), StructuredCell data cells, and StructuredCell buffer cells
 
@@ -861,7 +876,7 @@ class LiveGraph:
         for attrib in attribs:
             a = getattr(self, attrib)
             if len(a):
-                log(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                print_warning(name + ", " + attrib + ": %d undestroyed"  % len(a))
 
 from .propagate import propagate_accessor
 from .accessor import Accessor, ReadAccessor, WriteAccessor

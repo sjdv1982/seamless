@@ -7,7 +7,7 @@ class TransformerUpdateTask(Task):
         super().__init__(manager)
         self.dependencies.append(transformer)
 
-    async def _run(self):        
+    async def _run(self):
         transformer = self.transformer
         manager = self.manager()
         livegraph = manager.livegraph
@@ -22,8 +22,8 @@ class TransformerUpdateTask(Task):
         for pinname, accessor in upstreams.items():
             if accessor is None: #unconnected
                 transformer._status_reason = StatusReasonEnum.UNCONNECTED
-                return                
-        status_reason = None        
+                return
+        status_reason = None
         for pinname, accessor in upstreams.items():
             if accessor._void: #upstream error
                 status_reason = StatusReasonEnum.UPSTREAM
@@ -64,7 +64,7 @@ class TransformerUpdateTask(Task):
             manager.cancel_accessor(
                 accessor, void, origin_task=self
             )
-    
+
         first_output = downstreams[0].write_accessor.target()
         celltypes = {}
         for pinname, accessor in upstreams.items():
@@ -73,7 +73,6 @@ class TransformerUpdateTask(Task):
         transformer._last_inputs = inputpins
         cachemanager = manager.cachemanager
         transformation_cache = cachemanager.transformation_cache
-        buffer_cache = cachemanager.buffer_cache
         outputname = transformer._output_name
         outputpin0 = transformer._pins[outputname]
         output_celltype = outputpin0.celltype
@@ -82,9 +81,9 @@ class TransformerUpdateTask(Task):
             output_celltype = first_output._celltype
             output_subcelltype = first_output._subcelltype
         outputpin = outputname, output_celltype, output_subcelltype
-        self.waiting_for_job = True        
+        self.waiting_for_job = True
         await transformation_cache.update_transformer(
-            transformer, celltypes, inputpins, outputpin, buffer_cache
+            transformer, celltypes, inputpins, outputpin
         )
         return None
 
@@ -105,8 +104,8 @@ class TransformerResultUpdateTask(Task):
         checksum = transformer._checksum
         preliminary = transformer.preliminary
         for accessor in accessors:
-            #- construct (not compute!) their expression using the cell checksum 
-            #  Constructing a downstream expression increfs the cell checksum            
+            #- construct (not compute!) their expression using the cell checksum
+            #  Constructing a downstream expression increfs the cell checksum
             changed = accessor.build_expression(livegraph, checksum)
             if accessor._prelim != preliminary:
                 accessor._prelim = preliminary

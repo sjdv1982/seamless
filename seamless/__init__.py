@@ -3,8 +3,6 @@
 Copyright 2016-2020, Sjoerd de Vries
 """
 
-VERBOSE = False
-
 import sys
 import time
 import functools
