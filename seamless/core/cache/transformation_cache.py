@@ -234,6 +234,9 @@ class TransformationCache:
             buffer_cache.incref_buffer(tf_checksum, tf_buffer, False)
             self.transformations_to_transformers[tf_checksum] = tf
             self.transformations[tf_checksum] = transformation
+            if tf_checksum in self.transformation_results:
+                result_checksum, prelim = self.transformation_results[tf_checksum]
+                buffer_cache.incref(result_checksum, False)
             for pinname in transformation:
                 if pinname == "__output__":
                     continue
@@ -299,7 +302,6 @@ class TransformationCache:
     def destroy_transformation(self, transformation):
         tf_buffer = tf_get_buffer(transformation)
         tf_checksum = calculate_checksum_sync(tf_buffer)
-        ###assert tf_checksum in self.transformations_to_transformers
         if tf_checksum in self.transformations_to_transformers:
             if len(self.transformations_to_transformers[tf_checksum]):
                 return # A new transformer was registered in the meantime

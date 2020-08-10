@@ -19,7 +19,7 @@ async def server2(checksum):
     print("Server 2...")
     print("... server 2")
     raise Exception # Server 2 raises an exception
-    
+
 async def server3(checksum):
     print("Server 3...")
     await asyncio.sleep(0.5)
@@ -39,7 +39,7 @@ class DummyClient:
 
 from seamless.communion_client import communion_client_manager
 m = communion_client_manager
-m.clients["buffer"] = [DummyClient(s, st) 
+m.clients["buffer"] = [DummyClient(s, st)
     for s,st in ((server1, -2), (server2, 0), (server3, 1))
 ]
 
@@ -51,13 +51,13 @@ with macro_mode_on():
 
 ctx.compute()
 
-ctx.destroy()
-
 from seamless.core.cache.buffer_cache import buffer_cache
 from seamless.core.protocol.calculate_checksum import checksum_cache
 
 # Comment out the next line to get a cache miss
-cache.update(buffer_cache.buffer_cache)
+cache.update(buffer_cache.buffer_cache.copy())
+
+ctx.destroy()
 
 for k,v in cache.items():
     print(v, k.hex())
