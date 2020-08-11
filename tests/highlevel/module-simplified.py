@@ -5,6 +5,9 @@ In the future, this will be adapted to use highlevel Module objects
 (see feature issue E5)
 """
 
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
 tf_code = '''
 print(testmodule)
 print(testmodule.q)

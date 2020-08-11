@@ -10,7 +10,7 @@ ctx.tf.testdata = "a \nb \nc \nd \ne \nf \n"
 ctx.tf.lines = 3
 ctx.tf.code = ctx.code
 ctx.result = ctx.tf
-ctx.result.celltype = "text"
+ctx.result.celltype = "mixed"
 ctx.result.mount("/tmp/result", "w")
 ctx.translate(force=True)
 ctx.compute()

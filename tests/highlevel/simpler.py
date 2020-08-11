@@ -1,3 +1,6 @@
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
 from seamless.highlevel import Context
 from pprint import pprint
 
