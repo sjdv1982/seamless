@@ -147,6 +147,7 @@ class LiveGraph:
         accessors = self.expression_to_accessors[expression]
         accessors.remove(accessor)
         #print("DECREF", expression.celltype, expression.target_celltype, accessors)
+        #import traceback; traceback.print_stack(limit=3)
         if not len(accessors):
             self.expression_to_accessors.pop(expression)
             manager = self.manager()
@@ -457,7 +458,7 @@ class LiveGraph:
             read_accessor, void =from_unconnected_cell,
             from_unconnected_cell=from_unconnected_cell
         )
-        #sc.inchannels[target_path]._status_reason = StatusReasonEnum.UPSTREAM
+        sc.inchannels[target_path]._status_reason = StatusReasonEnum.UPSTREAM
 
         return read_accessor
 

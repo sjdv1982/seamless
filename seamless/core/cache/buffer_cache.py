@@ -69,8 +69,8 @@ class BufferCache:
 
         self.last_time.pop(checksum)
         if checksum in self.buffer_refcount:
-            no_local = database_sink.active and database_cache.active
-            if not no_local and checksum not in self.non_authoritative:
+            local = (not database_sink.active) or (not database_cache.active)
+            if local and checksum not in self.non_authoritative:
                 return
         self.buffer_cache.pop(checksum, None)
 
@@ -87,10 +87,14 @@ class BufferCache:
     def cache_buffer(self, checksum, buffer):
         """Caches a buffer locally for a short time, without incrementing its refcount
         Does not write into the database.
+        If the buffer already has a refcount AND a database is active, nothing happens
         """
-        if checksum is None:
-            return
+        assert checksum is not None
         assert isinstance(buffer, bytes)
+        #print("LOCAL CACHE", checksum.hex())
+        local = (not database_sink.active) or (not database_cache.active)
+        if not local and checksum in self.buffer_refcount:
+            return
         self._update_time(checksum, len(buffer))
         if checksum not in self.buffer_cache:
             self.buffer_cache[checksum] = buffer
@@ -115,7 +119,7 @@ class BufferCache:
         self._incref(checksum, authoritative, buffer)
 
     def _incref(self, checksum, authoritative, buffer):
-        #print("INCREF     ", checksum.hex(), authoritative)
+        #print("INCREF     ", checksum.hex(), authoritative, buffer is None)
         if checksum in self.buffer_refcount:
             self.buffer_refcount[checksum] += 1
             if database_sink.active:
@@ -128,23 +132,33 @@ class BufferCache:
                         database_sink.set_buffer(checksum, buffer, authoritative)
             if buffer is not None and checksum in self.missing:
                 self.missing.discard(checksum)
-                no_local = database_sink.active and database_cache.active
-                if authoritative and not no_local:
+                local = (not database_sink.active) or (not database_cache.active)
+                if authoritative and local:
                     if checksum not in self.buffer_cache:
                         self.buffer_cache[checksum] = buffer
         else:
             self.buffer_refcount[checksum] = 1
-            no_local = database_sink.active and database_cache.active
+            local = (not database_sink.active) or (not database_cache.active)
             if not authoritative:
                 self.non_authoritative.add(checksum)
+            if buffer is None:
+                buffer = self.buffer_cache.get(checksum)
             if buffer is not None:
                 if database_sink.active:
                     database_sink.set_buffer(checksum, buffer, authoritative)
-                if authoritative and not no_local:
-                    if checksum not in self.buffer_cache:
-                        self.buffer_cache[checksum] = buffer
+                if local:
+                    if authoritative:
+                        if checksum not in self.buffer_cache:
+                            self.buffer_cache[checksum] = buffer
+                    else:
+                        self.cache_buffer(checksum, buffer)
             else:
+                print("MISS", checksum.hex(), checksum in self.buffer_cache)
+                raise Exception ###
                 self.missing.add(checksum)
+            if not local and checksum in self.last_time:
+                self.last_time.pop(checksum)
+                self.buffer_cache.pop(checksum)
 
     def incref(self, checksum, authoritative):
         """Increments the refcount of a buffer checksum.
@@ -159,10 +173,9 @@ class BufferCache:
 
     def decref(self, checksum):
         """Decrements the refcount of a buffer checksum, cached with incref_buffer
-        If the refcount reaches zero, it will be evicted from local cache,
-         unless it was also cached with cache_buffer.
-        If there is a database, no eviction will occur,
-          since incref_buffer will not write into local cache then.
+        If the refcount reaches zero, and there is no database,
+         it will be added to local cache using cache_buffer.
+        This means that it will remain accessible for a short while
         """
         #print("DECREF     ", checksum.hex())
         if checksum not in self.buffer_refcount:
@@ -170,9 +183,14 @@ class BufferCache:
             return
         self.buffer_refcount[checksum] -= 1
         if self.buffer_refcount[checksum] == 0:
-            self.buffer_cache.pop(checksum, None)
             self.buffer_refcount.pop(checksum)
             self.missing.discard(checksum)
+            local = (not database_sink.active) or (not database_cache.active)
+            #print("DESTROY", checksum.hex(), local, checksum in self.buffer_cache)
+            if local:
+                buffer = self.get_buffer(checksum)
+                if buffer is not None:  # should be ok normally
+                    self.cache_buffer(checksum, buffer)
 
     def get_buffer(self, checksum):
         if checksum is None:

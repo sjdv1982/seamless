@@ -297,6 +297,7 @@ class StructuredCell(SeamlessBase):
             return
         buf = serialize(self._schema_value, "plain")
         checksum = calculate_checksum(buf)
+        buffer_cache.cache_buffer(checksum, buf)
         if checksum is not None:
             checksum = checksum.hex()
         self.schema._set_checksum(checksum)#, from_structured_cell=True)
@@ -420,3 +421,4 @@ from ..silk.policy import (
     default_policy as silk_default_policy,
     no_infer_policy as silk_no_infer_policy
 )
+from .cache.buffer_cache import buffer_cache

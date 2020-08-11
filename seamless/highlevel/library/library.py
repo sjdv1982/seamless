@@ -123,8 +123,8 @@ class Library:
                 raise AttributeError(attr)
             ctx = Context()
             ctx._weak = True
-            ctx.set_graph(graph)
             ctx.add_zip(self._zip)
+            ctx.set_graph(graph)
             ctx.compute()
             return ctx
         elif attr == "constructor":

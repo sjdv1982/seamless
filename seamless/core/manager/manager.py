@@ -248,7 +248,6 @@ class Manager:
 
 
     def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, prelim=False):
-        ###print("INCH", inchannel.subpath, checksum is not None)
         ###import traceback; traceback.print_stack(limit=5)
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void

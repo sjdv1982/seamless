@@ -93,8 +93,12 @@ class EvaluateExpressionTask(Task):
             except asyncio.CancelledError as exc:
                 raise exc from None
             except Exception as exc:
-                exc = traceback.format_exc()
-                expression.exception = exc
+                fexc = traceback.format_exc()
+                expression.exception = fexc
+                if isinstance(exc, CacheMissError):
+                    traceback.print_exc(limit=0)
+                else:
+                    traceback.print_exc()
 
             if expression_result_checksum is not None:
                 if expression_result_checksum != expression.checksum:
@@ -115,4 +119,4 @@ from ...protocol.conversion import conversion_forbidden
 from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.expression import get_subpath
 from .checksum import CalculateChecksumTask
-from ...cache.buffer_cache import buffer_cache
+from ...cache.buffer_cache import buffer_cache, CacheMissError

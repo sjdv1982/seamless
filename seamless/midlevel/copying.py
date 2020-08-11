@@ -1,6 +1,7 @@
 from ..mixed import MixedBase
 from copy import deepcopy
 import inspect, asyncio
+from ..core.cache.buffer_cache import buffer_cache
 from ..core.protocol.serialize import serialize_sync as serialize
 from ..core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from ..core.protocol.deep_structure import apply_hash_pattern_sync
@@ -70,7 +71,6 @@ def add_zip(manager, zipfile):
     Note that caching is temporary and entries will be removed after some time
      if no element (cell, expression, or high-level library) holds their checksum
     """
-    from ..core.cache.buffer_cache import buffer_cache
     for checksum in zipfile.namelist():
         checksum2 = bytes.fromhex(checksum)
         buffer = zipfile.read(checksum)
@@ -144,6 +144,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
 
     if checksum is None:
         return
+    buffer_cache.cache_buffer(checksum, buf)
     if node.get("hash_pattern") is not None:
         hash_pattern = node["hash_pattern"]
         checksum = apply_hash_pattern_sync(

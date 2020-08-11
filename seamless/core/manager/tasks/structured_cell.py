@@ -54,65 +54,88 @@ class StructuredCellJoinTask(Task):
                 checksum = sc.inchannels[()]._checksum
                 assert checksum is None or isinstance(checksum, bytes), checksum
             else:
-                if not sc.no_auth:
-                    value = copy.deepcopy(sc._auth_value)
-                    if value is None:
-                        if sc.auth._checksum is not None:
-                            ### value = copy.deepcopy(sc.auth.data)  # Not necessarily up to date (?)
-                            checksum = sc.auth._checksum
-                            buffer = await GetBufferTask(manager, checksum).run()
-                            value = await DeserializeBufferTask(
-                                manager, buffer, checksum, "mixed", False
+                try:
+                    if not sc.no_auth:
+                        value = copy.deepcopy(sc._auth_value)
+                        if value is None:
+                            if sc.auth._checksum is not None:
+                                ### value = copy.deepcopy(sc.auth.data)  # Not necessarily up to date (?)
+                                auth_checksum = sc.auth._checksum
+                                buffer = await GetBufferTask(manager, auth_checksum).run()
+                                if buffer is None:
+                                    raise CacheMissError(auth_checksum.hex())
+                                value = await DeserializeBufferTask(
+                                    manager, buffer, auth_checksum, "mixed", True
+                                ).run()
+                                sc._auth_value = value
+                        else:
+                            auth_buf = await SerializeToBufferTask(
+                                manager, value, "mixed",
+                                use_cache=False  # the value object changes all the time...
                             ).run()
-                            sc._auth_value = value
-                    else:
-                        auth_buf = await SerializeToBufferTask(
-                            manager, value, "mixed",
-                            use_cache=False  # the value object changes all the time...
-                        ).run()
-                        auth_checksum = await CalculateChecksumTask(manager, auth_buf).run()
-                        auth_checksum = auth_checksum.hex()
-                        sc.auth._set_checksum(auth_checksum, from_structured_cell=True)
+                            auth_checksum = await CalculateChecksumTask(manager, auth_buf).run()
+                            buffer_cache.cache_buffer(auth_checksum, auth_buf)
+                            auth_checksum = auth_checksum.hex()
+                            sc.auth._set_checksum(auth_checksum, from_structured_cell=True)
                         if not len(paths):
                             checksum = auth_checksum
-                if value is None:
-                    if isinstance(paths[0], int):
-                        value = []
-                    elif isinstance(paths[0], (list, tuple)) and len(paths[0]) and isinstance(paths[0][0], int):
-                        value = []
-                    else:
-                        value = {}
-                for path in paths:
-                    subchecksum = sc.inchannels[path]._checksum
-                    if subchecksum is not None:
-                        try:
-                            buffer = await GetBufferTask(manager, subchecksum).run()
-                            subvalue = await DeserializeBufferTask(
-                                manager, buffer, subchecksum, "mixed", False
-                            ).run()
-                            await set_subpath(value, sc.hash_pattern, path, subvalue)
-                        except CancelledError:
-                            ok = False
-                            canceled = True
-                            break
-                        except Exception:
-                            sc._exception = traceback.format_exc(limit=0)
-                            ok = False
-                            break
-                    else:
-                        pass  # It is OK to have inchannels at None (undefined)
-                              # Else, use required properties in the schema
+                        else:
+                            checksum = None  # needs to be re-computed after updating with inchannels
+                except (CacheMissError, TypeError, ValueError, KeyError):
+                    sc._exception = traceback.format_exc(limit=0)
+                    ok = False
+                except Exception:
+                    sc._exception = traceback.format_exc()
+                    ok = False
+                if ok:
+                    if value is None:
+                        if isinstance(paths[0], int):
+                            value = []
+                        elif isinstance(paths[0], (list, tuple)) and len(paths[0]) and isinstance(paths[0][0], int):
+                            value = []
+                        else:
+                            value = {}
+                    for path in paths:
+                        subchecksum = sc.inchannels[path]._checksum
+                        if subchecksum is not None:
+                            try:
+                                buffer = await GetBufferTask(manager, subchecksum).run()
+                                subvalue = await DeserializeBufferTask(
+                                    manager, buffer, subchecksum, "mixed", False
+                                ).run()
+                                # no need to buffer-cache, since the upstream inchannel accessors hold a ref
+                                await set_subpath(value, sc.hash_pattern, path, subvalue)
+                            except CancelledError:
+                                ok = False
+                                canceled = True
+                                break
+                            except (CacheMissError, TypeError, ValueError, KeyError):
+                                sc._exception = traceback.format_exc(limit=0)
+                                ok = False
+                                break
+                            except Exception:
+                                sc._exception = traceback.format_exc()
+                                ok = False
+                                break
+                        else:
+                            pass  # It is OK to have inchannels at None (undefined)
+                                # Else, use required properties in the schema
         else:
             value = copy.deepcopy(sc._auth_value)
             if value is None:
                 if sc.auth._checksum is not None:
                     checksum = sc.auth._checksum
                     ### value = copy.deepcopy(sc.auth.data) # Not necessarily up to date (?)
-                    buffer = await GetBufferTask(manager, checksum).run()
-                    value = await DeserializeBufferTask(
-                        manager, buffer, checksum, "mixed", False
-                    ).run()
-                    sc._auth_value = value
+                    try:
+                        buffer = await GetBufferTask(manager, checksum).run()
+                    except CacheMissError:
+                        sc._exception = traceback.format_exc(limit=0)
+                        ok = False
+                    else:
+                        value = await DeserializeBufferTask(
+                            manager, buffer, checksum, "mixed", True
+                        ).run()
+                        sc._auth_value = value
         if not ok:
             value = None
             checksum = None
@@ -124,11 +147,15 @@ class StructuredCellJoinTask(Task):
                     use_cache=False  # the value object changes all the time...
                 ).run()
                 checksum = await CalculateChecksumTask(manager, buf).run()
+                buffer_cache.cache_buffer(checksum, buf)
             except CancelledError:
                 ok = False
                 canceled = True
-            except Exception:
+            except CacheMissError:
                 sc._exception = traceback.format_exc(limit=0)
+                ok = False
+            except Exception:
+                sc._exception = traceback.format_exc()
                 ok = False
         if checksum is not None:
             if isinstance(checksum, bytes):
@@ -139,8 +166,13 @@ class StructuredCellJoinTask(Task):
                 sc.buffer._set_checksum(checksum, from_structured_cell=True)
             if schema is not None and value is None:
                 cs = bytes.fromhex(checksum)
-                buf = await GetBufferTask(manager, cs).run()
-                value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
+                try:
+                    buf = await GetBufferTask(manager, cs).run()
+                except CacheMissError:
+                    sc._exception = traceback.format_exc(limit=0)
+                    ok = False
+                else:
+                    value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
 
         if not ok and sc.buffer is not sc.auth:
             manager._set_cell_checksum(sc.buffer, None, void=True, status_reason=StatusReasonEnum.UPSTREAM)
@@ -191,16 +223,22 @@ class StructuredCellJoinTask(Task):
                                 if changed2:
                                     AccessorUpdateTask(manager, accessor).launch()
                     elif cs is not None: # morph
-                        for accessor in downstreams[out_path]:
-                            old_expression = accessor.expression
-                            if old_expression is not None:
-                                livegraph.decref_expression(old_expression, accessor)
-                            expression_result_checksum = \
-                                expression_to_result_checksum.get(old_expression)
-                            if expression_result_checksum is not None:
-                                accessor.build_expression(livegraph, cs)
-                                new_expression = accessor.expression
-                                livegraph.incref_expression(new_expression, accessor)
+                        try:
+                            for accessor in downstreams[out_path]:
+                                old_expression = accessor.expression
+                                expression_result_checksum = \
+                                    expression_to_result_checksum.get(old_expression)
+                                if expression_result_checksum is not None:
+                                    accessor.build_expression(livegraph, cs)
+                                    new_expression = accessor.expression
+                        except CacheMissError:
+                            sc._exception = traceback.format_exc(limit=0)
+                            manager.cancel_scell_hard(sc, self, hard_cancel_paths)
+                            return
+                        except Exception:
+                            sc._exception = traceback.format_exc()
+                            manager.cancel_scell_hard(sc, self, hard_cancel_paths)
+                            return
 
 
             sc.modified.clear()
@@ -218,5 +256,7 @@ from .deserialize_buffer import DeserializeBufferTask
 from .get_buffer import GetBufferTask
 from .checksum import CalculateChecksumTask
 from .accessor_update import AccessorUpdateTask
+from ...cache import CacheMissError
+from ...cache.buffer_cache import buffer_cache
 from ....silk.Silk import Silk, ValidationError
 from ...protocol.expression import get_subpath, set_subpath

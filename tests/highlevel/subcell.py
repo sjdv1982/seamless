@@ -53,7 +53,7 @@ ctx.a.irrelevant = "irrelevant"
 ctx.a.b = -12
 ctx.compute()
 print(ctx.q.value) #{'c': 8, 'd': -4, 'f': 20, 'g': 50}
-print(ctx.qq.value) #326 
+print(ctx.qq.value) #326
 
 print("Stage 6")
 def validator(self):

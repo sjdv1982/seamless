@@ -115,6 +115,7 @@ async def syntactic_to_semantic(
         tree = ast.parse(value, filename=codename)
         dump = ast.dump(tree).encode()
         semantic_checksum = await calculate_checksum(dump)
+        buffer_cache.cache_buffer(semantic_checksum, dump)
     else:
         raise TypeError(celltype)
     return semantic_checksum

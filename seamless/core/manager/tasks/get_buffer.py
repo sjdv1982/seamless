@@ -5,7 +5,7 @@ class GetBufferTask(Task):
     def refkey(self):
         return self.checksum
 
-    def __init__(self, 
+    def __init__(self,
         manager, checksum
     ):
         self.checksum = checksum
