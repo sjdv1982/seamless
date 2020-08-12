@@ -6,8 +6,8 @@ import database_backends
 from seamless.mixed.io.serialization import deserialize
 
 buffercodes = (
-    "buf", # authoritative buffer
-    "nbf", # non-authoritative buffer (may be evicted; should be stored in Redis with an expiry)
+    "buf", # persistent buffer
+    "nbf", # non-persistent buffer (may be evicted; should be stored in Redis with an expiry)
     "bfl", # buffer length
     "s2s", # semantic-to-syntactic
     "cpl", # compile result (for compiled modules and objects)
@@ -163,14 +163,14 @@ class DatabaseServer:
                 result = await source.get(key1)
                 if result is not None:
                     source_id = source.id
-                    authoritative = True
+                    persistent = True
                     break
             if result is None:
                 for source, source_config in self.db_sources:
                     result = await source.get(key2)
                     if result is not None:
                         source_id = source.id
-                        authoritative = False
+                        persistent = False
                         break
             if result is None:
                 raise DatabaseError("Unknown key")
@@ -186,13 +186,13 @@ class DatabaseServer:
                 has_key2 = await sink.has_key(key2)
                 if has_key2:
                     continue
-                if authoritative:
+                if persistent:
                     key = key1
                     importance = None
                 else:
                     key = key2
                     importance = request.get("importance", 0)
-                await sink.set(key, result, authoritative, importance)
+                await sink.set(key, result, persistent, importance)
 
             return result
         elif type == "buffer length":
@@ -281,23 +281,23 @@ class DatabaseServer:
             value = value.tobytes()
             key1 = "buf-" + checksum
             key2 = "nbf-" + checksum
-            authoritative = request.get("authoritative", False)
+            persistent = request.get("persistent", False)
             for sink, sink_config in self.db_sinks:
                 has_key1 = await sink.has_key(key1)
                 if has_key1:
                     continue
                 has_key2 = await sink.has_key(key2)
                 if has_key2:
-                    if authoritative:
+                    if persistent:
                         await sink.rename(key2, key1)
                     continue
-                if authoritative:
+                if persistent:
                     key = key1
                     importance = None
                 else:
                     key = key2
                     importance = request.get("importance", 0)
-                await sink.set(key, value, authoritative, importance)
+                await sink.set(key, value, persistent, importance)
         elif type == "delete key":
             key = key.encode()
             done = set()

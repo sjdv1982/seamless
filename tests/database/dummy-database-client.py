@@ -25,7 +25,7 @@ def main():
         "type": "buffer",
         "checksum": checksum,
         "value": np.frombuffer(buffer, dtype=np.uint8),
-        "authoritative": False,
+        "persistent": False,
     }
     response = s.put(url, data=serialize(request))
     print(response.text)

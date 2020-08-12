@@ -95,12 +95,12 @@ class DatabaseSink(DatabaseBase):
         }
         self.send_request(request)
 
-    def set_buffer(self, checksum, buffer, authoritative):
+    def set_buffer(self, checksum, buffer, persistent):
         request = {
             "type": "buffer",
             "checksum": checksum.hex(),
             "value": np.frombuffer(buffer, dtype=np.uint8),
-            "authoritative": authoritative,
+            "persistent": persistent,
         }
         self.send_request(request)
 

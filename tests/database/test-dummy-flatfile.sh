@@ -11,7 +11,7 @@ sleep 5
 python3 -u dummy-database-client.py
 echo
 echo 'Database keys:'
-seamless redis-cli -h 172.17.0.1 -p 6379 -c keys '???:*'
+seamless redis-cli -h 172.17.0.1 -p 6379 -c keys '???-*'
 echo
 echo 'File system:'
 for i in `find /tmp/seamless-db -type f`; do
@@ -24,7 +24,7 @@ echo 'Stage 2'
 python3 -u dummy2a-database-client.py
 echo
 echo 'Database keys:'
-seamless redis-cli -h 172.17.0.1 -p 6379 -c keys '???:*'
+seamless redis-cli -h 172.17.0.1 -p 6379 -c keys '???-*'
 echo
 echo 'File system:'
 for i in `find /tmp/seamless-db -type f`; do

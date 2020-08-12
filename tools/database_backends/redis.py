@@ -5,7 +5,7 @@ class RedisSink:
     RedisSink can be in cache mode or not
     If in cache mode, you should set eviction policy to allkeys-lru or allkeys-lfu
     In non-cache mode, you should set eviction policy to volatile-ttl
-      Seamless will set extremely long (30 years) expiry times for non-authoritative buffers
+      Seamless will set extremely long (30 years) expiry times for non-persistent buffers
       The higher the importance, the higher the expiry time
       Thus, the least important buffers get evicted first
     """
@@ -17,19 +17,19 @@ class RedisSink:
     def id(self):
         return id(self.connection)
 
-    async def set(self, key, value, authoritative=True, importance=None):
+    async def set(self, key, value, persistent=True, importance=None):
         if isinstance(key, bytes):
             key = key.decode()
         assert isinstance(value, bytes)
         r = self.connection
-        if self.cache and not authoritative:
+        if self.cache and not persistent:
             expiry = int(1e9 + 1000 * importance) # in seconds
             r.set(key, value, ex=expiry)
         else:
             r.set(key, value)
 
     async def rename(self, key1, key2):
-        """Renames a buffer, assumes that key2 is authoritative"""
+        """Renames a buffer, assumes that key2 is persistent"""
         if isinstance(key2, bytes):
             key1 = key1.decode()
         if isinstance(key2, bytes):

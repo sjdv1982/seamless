@@ -14,10 +14,10 @@ python3 -u dummy-database-client.py
 echo
 echo 'Database keys:'
 echo 'Database 1'
-seamless redis-cli -h 172.17.0.1 -p 6380 -c keys '???:*'
+seamless redis-cli -h 172.17.0.1 -p 6380 -c keys '???-*'
 echo
 echo 'Database 2'
-seamless redis-cli -h 172.17.0.1 -p 6381 -c keys '???:*'
+seamless redis-cli -h 172.17.0.1 -p 6381 -c keys '???-*'
 echo
 kill -1 $p2
 disown $p2
@@ -34,10 +34,10 @@ python3 -u dummy2-database-client.py
 echo
 echo 'Database keys:'
 echo 'Database 1'
-seamless redis-cli -h 172.17.0.1 -p 6380 -c keys '???:*'
+seamless redis-cli -h 172.17.0.1 -p 6380 -c keys '???-*'
 echo
 echo 'Database 2'
-seamless redis-cli -h 172.17.0.1 -p 6381 -c keys '???:*'
+seamless redis-cli -h 172.17.0.1 -p 6381 -c keys '???-*'
 echo
 echo 'Stage 2a'
 sleep 3
@@ -45,10 +45,10 @@ python3 -u dummy2a-database-client.py
 echo
 echo 'Database keys:'
 echo 'Database 1'
-seamless redis-cli -h 172.17.0.1 -p 6380 -c keys '???:*'
+seamless redis-cli -h 172.17.0.1 -p 6380 -c keys '???-*'
 echo
 echo 'Database 2'
-seamless redis-cli -h 172.17.0.1 -p 6381 -c keys '???:*'
+seamless redis-cli -h 172.17.0.1 -p 6381 -c keys '???-*'
 echo
 kill -1 $p2
 disown $p2

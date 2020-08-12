@@ -215,7 +215,7 @@ class CacheManager:
         rmap = {True: 2, None: 1, False: 0}
         remote, recompute= 2, 2 # True, True
         has_cell = False
-        for refholder, auth, result in self.checksum_refs.get(checksum, []):
+        for refholder, result in self.checksum_refs.get(checksum, []):
             if isinstance(refholder, Cell):
                 cell = refholder
                 has_cell = True
@@ -249,7 +249,7 @@ class CacheManager:
             except CacheMissError:
                 pass
 
-        for refholder, auth, result in self.checksum_refs.get(checksum, []):
+        for refholder, result in self.checksum_refs.get(checksum, []):
             if not result:
                 continue
             if isinstance(refholder, Expression):

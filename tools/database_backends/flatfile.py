@@ -62,7 +62,7 @@ class FlatFileBase:
 
 class FlatFileSink(FlatFileBase):
 
-    async def set(self, key, value, authoritative=True, importance=None):
+    async def set(self, key, value, persistent=True, importance=None):
         if isinstance(key, bytes):
             key = key.decode()
         assert isinstance(value, bytes)
@@ -76,7 +76,7 @@ class FlatFileSink(FlatFileBase):
                 os.unlink(lock_file)
 
     async def rename(self, key1, key2):
-        """Renames a buffer, assumes that key2 is authoritative"""
+        """Renames a buffer, assumes that key2 is persistent"""
         if isinstance(key1, bytes):
             key1 = key1.decode()
         if isinstance(key2, bytes):

@@ -2,44 +2,46 @@ Redis containers running
 Stage 1
 Database server running
 OK
-b'42\n'
+1 True
+42
+
 
 Database keys:
 Database 1
-nbf:fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+nbf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
 
 Database 2
 
 
 Server log
 Press Ctrl+C to end
-Set up a database server on port 5522
 
 Stage 2
 Database server running
-b'42\n'
+42
+
 
 Database keys:
 Database 1
-nbf:fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+nbf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
 
 Database 2
-nbf:fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+nbf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
 
 Stage 2a
 OK
-b'42\n'
+42
+
 
 Database keys:
 Database 1
-buf:fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+buf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
 
 Database 2
-buf:fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+buf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
 
 Server log
 Press Ctrl+C to end
-Set up a database server on port 5522
 
 redis-dummy1
 redis-dummy2

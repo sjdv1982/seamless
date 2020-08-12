@@ -16,7 +16,7 @@ def main():
         "type": "buffer",
         "checksum": checksum,
         "value": np.frombuffer(buffer, dtype=np.uint8),
-        "authoritative": True,
+        "persistent": True,
     }
     s = requests.Session()
     response = s.put(url, data=serialize(request))
