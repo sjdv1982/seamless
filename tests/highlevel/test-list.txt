@@ -7,8 +7,8 @@ schema.py
 subcell.py
 subsubcell.py
 inchannel-conflict.py
-deepcell-simple.py: As of Seamless 0.2, prints out double decref warnings at the end
-filesystemlike.py: As of Seamless 0.2, this test FAILS (issue 3)
+deepcell-simple.py
+filesystemlike.py
 context.py
 context2.py
 scratch.py
@@ -18,7 +18,7 @@ simple-missing.py
 simpler-listpin.py
 simpler-result.py
 simpler.py
-simpler-deepcell.py: As of Seamless 0.2, prints out double decref warnings at the end
+simpler-deepcell.py
 simpler-ipython.py: Run with ipython --no-term-title (not -i). Output is approximate, depends on exact timings.
 module-simplified.py
 bash.py

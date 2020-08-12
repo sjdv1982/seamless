@@ -130,6 +130,7 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
     else:
         buffer = serialize_sync(subvalue, "mixed")
         checksum = calculate_checksum_sync(buffer)
+        buffer_cache.cache_buffer(checksum, buffer)
         cs = checksum.hex()
     result = write_deep_structure(
         cs, deep_structure, hash_pattern, path
@@ -175,6 +176,7 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
                 new_sub_value, "mixed", use_cache=(len(post_path) == 0)
             )
             new_sub_checksum = calculate_checksum_sync(new_sub_buffer)
+            buffer_cache.cache_buffer(new_sub_checksum, new_sub_buffer)
             new_sub_cs = new_sub_checksum.hex()
 
         result = write_deep_structure(
@@ -196,6 +198,7 @@ async def set_subpath(value, hash_pattern, path, subvalue):
     else:
         buffer = await serialize(subvalue, "mixed")
         checksum = await calculate_checksum(buffer)
+        buffer_cache.cache_buffer(checksum, buffer)
         cs = checksum.hex()
     result = write_deep_structure(
         cs, deep_structure, hash_pattern, path
@@ -241,6 +244,7 @@ async def set_subpath(value, hash_pattern, path, subvalue):
                 new_sub_value, "mixed", use_cache=(len(post_path) == 0)
             )
             new_sub_checksum = await calculate_checksum(new_sub_buffer)
+            buffer_cache.cache_buffer(new_sub_checksum, new_sub_buffer)
             new_sub_cs = new_sub_checksum.hex()
 
         result = write_deep_structure(
@@ -262,3 +266,4 @@ from .calculate_checksum import calculate_checksum, calculate_checksum_sync
 from .deserialize import deserialize_sync
 from .serialize import serialize, serialize_sync
 from .get_buffer import get_buffer
+from ..cache.buffer_cache import buffer_cache

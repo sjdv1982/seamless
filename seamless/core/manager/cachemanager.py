@@ -2,12 +2,27 @@ import weakref
 from ..cache.buffer_cache import buffer_cache
 from .. import destroyer
 
-import sys
 import json
 import asyncio
 
-def log(*args, **kwargs):
-    print(*args, **kwargs, file=sys.stderr)
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
 
 RECOMPUTE_OVER_REMOTE = 1000000 # after this threshold, better to recompute than to download remotelt
                                 # TODO: have some dynamic component based on:
@@ -135,15 +150,15 @@ class CacheManager:
         else:
             raise TypeError(type(refholder))
 
+        refh = refholder
         if checksum not in self.checksum_refs:
             self.checksum_refs[checksum] = []
             try:
                 buffer_cache.incref(checksum, authoritative)
             finally:
-                self.checksum_refs[checksum].append((refholder, authoritative, result))
+                self.checksum_refs[checksum].append((refh, result))
         else:
-            if (refholder, authoritative, result) not in self.checksum_refs[checksum]:
-                self.checksum_refs[checksum].append((refholder, authoritative, result))
+            self.checksum_refs[checksum].append((refh, result))
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
 
     async def fingertip(self, checksum, *, must_have_cell=False):
@@ -272,6 +287,13 @@ class CacheManager:
 
 
     def decref_checksum(self, checksum, refholder, authoritative, result, *, destroying=False):
+        if checksum not in self.checksum_refs:
+            if checksum is None:
+                cs = "<None>"
+            else:
+                cs = checksum.hex()
+            print_warning("cachemanager: cannot decref unknown checksum {}".format(cs))
+            return
         if isinstance(refholder, Cell):
             assert self.cell_to_ref[refholder] is not None, refholder
             self.cell_to_ref[refholder] = None
@@ -304,10 +326,16 @@ class CacheManager:
         else:
             raise TypeError(type(refholder))
         try:
-            self.checksum_refs[checksum].remove((refholder, authoritative, result))
+            refh = refholder
+            self.checksum_refs[checksum].remove((refh, result))
         except ValueError:
-            self.checksum_refs[checksum][:] = \
-              [l for l in self.checksum_refs[checksum] if l[0] is not refholder]
+            print_warning("""cachemanager: cannot remove unknown checksum ref:
+checksum: {}
+refholder: {}
+is authoritative: {}
+is result: {}
+""".format(checksum.hex(), refholder, authoritative, result))
+            return
         #print("cachemanager DECREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if len(self.checksum_refs[checksum]) == 0:
             buffer_cache.decref(checksum)
@@ -392,7 +420,7 @@ class CacheManager:
             elif attrib.startswith("expression_to"):
                 a = [aa for aa in a if aa not in self.inactive_expressions]
             if len(a):
-                log(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                print_warning(name + ", " + attrib + ": %d undestroyed"  % len(a))
 
 from ..cell import Cell
 from ..transformer import Transformer

@@ -79,14 +79,14 @@ class UnboundManager:
             assert cell in self._registered
         self.commands.append(("bilink", (cell, other)))
 
-    def set_cell_checksum(self, 
+    def set_cell_checksum(self,
         cell, checksum, initial, from_structured_cell, trigger_bilinks
     ):
         assert cell._get_manager() is self
         assert cell in self._registered
         self.commands.append(
-            ("set cell checksum", 
-                (cell, checksum, initial, 
+            ("set cell checksum",
+                (cell, checksum, initial,
                 from_structured_cell, trigger_bilinks)
             )
         )
@@ -126,16 +126,16 @@ class UnboundContext(SeamlessBase):
 
     _name = None
     _children = {}
-    _boundmanager = None    
+    _boundmanager = None
     _auto = None
     _toplevel = False
-    _naming_pattern = "ctx"    
+    _naming_pattern = "ctx"
     _bound = None
     _context = None
     _realmanager = None
 
     def __init__(
-        self, *, 
+        self, *,
         root=None,
         toplevel=False,
         macro=False,
@@ -156,7 +156,7 @@ class UnboundContext(SeamlessBase):
             root = Context(toplevel=True, manager=manager)
             self._root_ = root
             self._realmanager = UnboundManager(self)
-            if manager is not None:                
+            if manager is not None:
                 root._realmanager = manager
         elif macro:
             assert manager is None
@@ -281,7 +281,7 @@ class UnboundContext(SeamlessBase):
         manager = ctx._get_manager()
 
         def register(child):
-            if not isinstance(child, 
+            if not isinstance(child,
                 (Cell, Reactor, Transformer, Macro)
             ):
                 return
@@ -299,7 +299,7 @@ class UnboundContext(SeamlessBase):
             if isinstance(child, UnboundContext):
                 bound_ctx = Context()
                 bound_ctx._macro = curr_macro()
-                child._bound = bound_ctx                
+                child._bound = bound_ctx
                 setattr(ctx, childname, bound_ctx)
                 ctxmap[childname] = bound_ctx
         for childname, child in self._children.items():
@@ -315,9 +315,9 @@ class UnboundContext(SeamlessBase):
                 if self._realmanager is not child._realmanager:
                     self._realmanager.commands += child._realmanager.commands
                     child._realmanager.commands.clear()
-                child._bind_stage1(bound_ctx)                
+                child._bind_stage1(bound_ctx)
         ctx._auto = self._auto
-        self._bound = ctx        
+        self._bound = ctx
 
     def _bind_stage2(self, manager):
         macro = self._macro
@@ -326,12 +326,12 @@ class UnboundContext(SeamlessBase):
                 manager.register_structured_cell(child)
             else:
                 continue
-        for comnr, (com, args) in enumerate(self._realmanager.commands):            
-            if com == "set cell":                
+        for comnr, (com, args) in enumerate(self._realmanager.commands):
+            if com == "set cell":
                 cell, value = args
                 supersede = False
                 for com2, args2 in self._realmanager.commands[comnr+1:]:
-                    if com2 == "set cell":         
+                    if com2 == "set cell":
                         cell2, _ = args2
                     elif com2 == "set cell checksum":
                         cell2, _, _, _, _ = args2
@@ -343,7 +343,7 @@ class UnboundContext(SeamlessBase):
                 if supersede:
                     continue
                 manager.set_cell(cell, value)
-            elif com == "connect cell":                
+            elif com == "connect cell":
                 cell, cell_subpath, other, other_subpath = args
                 manager.connect(cell, cell_subpath, other, other_subpath)
             elif com == "connect pin":
@@ -356,8 +356,8 @@ class UnboundContext(SeamlessBase):
                 cell, checksum, initial, from_structured_cell, trigger_bilinks = args
                 cell._initial_checksum = None
                 manager.set_cell_checksum(
-                    cell, checksum, 
-                    initial=initial, 
+                    cell, checksum,
+                    initial=initial,
                     from_structured_cell=from_structured_cell,
                     trigger_bilinks=trigger_bilinks
                 )
@@ -367,9 +367,9 @@ class UnboundContext(SeamlessBase):
     def _bind(self, ctx):
         from .context import Context
         from .macro import Path
-        if ctx._toplevel:       
-            assert self._toplevel        
-        self._bind_stage1(ctx)        
+        if ctx._toplevel:
+            assert self._toplevel
+        self._bind_stage1(ctx)
         manager = ctx._get_manager()
         for reg in self._realmanager._registered:
             if isinstance(reg, Path):
@@ -383,7 +383,7 @@ class UnboundContext(SeamlessBase):
             if isinstance(reg, StructuredCell):
                 if reg in join_structured_cells:
                     reg._join()
-    
+
     def destroy(self, *, from_del=False):
         if self._bound:
             return self._bound.destroy(from_del=from_del)

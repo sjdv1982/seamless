@@ -592,6 +592,7 @@ async def apply_hash_pattern(checksum, hash_pattern):
     deep_structure, _ = await value_to_deep_structure(value, hash_pattern)
     deep_buffer = await serialize(deep_structure, "plain")
     deep_checksum = await calculate_checksum(deep_buffer)
+    buffer_cache.cache_buffer(deep_checksum, deep_buffer)
     return deep_checksum
 
 def apply_hash_pattern_sync(checksum, hash_pattern):
@@ -612,6 +613,7 @@ def apply_hash_pattern_sync(checksum, hash_pattern):
     deep_structure, _ = value_to_deep_structure_sync(value, hash_pattern)
     deep_buffer = serialize_sync(deep_structure, "plain")
     deep_checksum = calculate_checksum_sync(deep_buffer)
+    buffer_cache.cache_buffer(deep_checksum, deep_buffer)
     return deep_checksum
 
 

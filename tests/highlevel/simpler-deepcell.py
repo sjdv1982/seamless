@@ -1,3 +1,6 @@
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
 from seamless.highlevel import Context
 from pprint import pprint
 
@@ -73,7 +76,7 @@ ctx.compute()
 print(ctx.transform.inp.schema)
 ###print("INPUT EXCEPTION", ctx.transform.inp.exception)
 print(ctx.transform.inp.value)    # None
-print(ctx.transform._get_tf().inp.auth.value)   #  As of Seamless 0.2, this gives {'a': 1, 'b': 100}  
+print(ctx.transform._get_tf().inp.auth.value)   #  As of Seamless 0.2, this gives {'a': 1, 'b': 100}
                                                 #  The a=1 is not cleared when the connection is broken!
 print("TRANSFORMER STATUS", ctx.transform.status)
 ctx.transform.b = "testing"

@@ -89,7 +89,8 @@ class BufferCache:
         Does not write into the database.
         If the buffer already has a refcount AND a database is active, nothing happens
         """
-        assert checksum is not None
+        if checksum is None:
+            return
         assert isinstance(buffer, bytes)
         #print("LOCAL CACHE", checksum.hex())
         local = (not database_sink.active) or (not database_cache.active)
@@ -153,8 +154,7 @@ class BufferCache:
                     else:
                         self.cache_buffer(checksum, buffer)
             else:
-                print("MISS", checksum.hex(), checksum in self.buffer_cache)
-                raise Exception ###
+                print_debug("Incref checksum of unknown buffer: {}".format(checksum.hex()))
                 self.missing.add(checksum)
             if not local and checksum in self.last_time:
                 self.last_time.pop(checksum)
