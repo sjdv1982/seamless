@@ -23,7 +23,8 @@ def with_cancel_cycle(func):
             return
         assert threading.current_thread() == threading.main_thread()
         manager = args[0]
-        assert manager.cancel_cycle.cleared
+        if not manager.cancel_cycle.cleared:
+            print("ERROR: manager cancel cycle was not cleared")
         try:
             manager.cancel_cycle.cleared = False
             result = func(*args, **kwargs)

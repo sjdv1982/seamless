@@ -99,9 +99,6 @@ def get_buffer(checksum):
 """
     if checksum is None:
         return None
-    buffer = checksum_cache.get(checksum)
-    if buffer is not None:
-        return buffer
     buffer = buffer_cache.get_buffer(checksum)
     if buffer is not None:
         return buffer
@@ -113,7 +110,6 @@ def get_buffer(checksum):
 
 
 
-from .calculate_checksum import checksum_cache
 from ..cache import CacheMissError
 from ..cache.buffer_cache import buffer_cache
 from ...communion_client import communion_client_manager

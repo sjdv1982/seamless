@@ -59,6 +59,13 @@ parser.add_argument(
     type=bool
 )
 
+parser.add_argument(
+    "--no-lru",
+    dest="no_lru",
+    help="Disable LRU caches for checksum-to-buffer, value-to-checksum, value-to-buffer, and buffer-to-value",
+    action="store_true"
+)
+
 args = parser.parse_args()
 
 if args.zipfile is None and not args.database:
@@ -79,7 +86,18 @@ if args.communion_incoming is not None:
     env["SEAMLESS_COMMUNION_INCOMING"] = args.communion_incoming
 
 
-import seamless, seamless.shareserver
+import seamless
+
+if args.no_lru:
+    from seamless.core.protocol.calculate_checksum import calculate_checksum_cache, checksum_cache
+    from seamless.core.protocol.deserialize import deserialize_cache
+    from seamless.core.protocol.serialize import serialize_cache
+    calculate_checksum_cache.disable()
+    checksum_cache.disable
+    deserialize_cache.disable()
+    serialize_cache.disable()
+
+import seamless.shareserver
 from seamless import communion_server
 
 communion_server.configure_master({

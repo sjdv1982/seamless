@@ -1,7 +1,6 @@
 from zipfile import ZipFile
 from io import BytesIO
 from ..core import context, cell
-from ..core.protocol.calculate_checksum import checksum_cache
 from . import copying
 from copy import deepcopy
 

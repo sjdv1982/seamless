@@ -144,7 +144,13 @@ class LiveGraph:
         self.expression_to_accessors[expression].append(accessor)
 
     def decref_expression(self, expression, accessor):
+        if expression not in self.expression_to_accessors:
+            print_warning("Error in decref_expression: non-existing expression")
+            return
         accessors = self.expression_to_accessors[expression]
+        if accessor not in accessors:
+            print_warning("Error in decref_expression: non-existing accessor")
+            return
         accessors.remove(accessor)
         #print("DECREF", expression.celltype, expression.target_celltype, accessors)
         #import traceback; traceback.print_stack(limit=3)

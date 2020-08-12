@@ -117,6 +117,7 @@ class BufferCache:
         if checksum in self.missing:
             self.missing.discard(checksum)
             if database_sink.active:
+                persistent = checksum not in self.non_persistent
                 database_sink.set_buffer(checksum, buffer, persistent)
 
     def incref_buffer(self, checksum, buffer, authoritative):
@@ -172,7 +173,7 @@ class BufferCache:
                 self.missing.add(checksum)
             if not local and checksum in self.last_time:
                 self.last_time.pop(checksum)
-                self.buffer_cache.pop(checksum)
+                self.buffer_cache.pop(checksum, None)
 
     def incref(self, checksum, authoritative):
         """Increments the refcount of a buffer checksum.
@@ -220,6 +221,9 @@ class BufferCache:
     def get_buffer(self, checksum):
         if checksum is None:
             return None
+        buffer = checksum_cache.get(checksum)
+        if buffer is not None:
+            return buffer
         buffer = self.buffer_cache.get(checksum)
         if buffer is not None:
             return buffer
@@ -254,7 +258,7 @@ class BufferCache:
         self.last_time = None
         self.buffer_refcount = None
         self.buffer_length = None
-        self.non_authoritative = None
+        self.non_persistent = None
 
 
 buffer_cache = BufferCache()
