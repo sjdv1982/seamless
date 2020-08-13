@@ -60,9 +60,8 @@ def validate_deep_structure(deep_structure, hash_pattern):
             key = list(hash_pattern.keys())[0]
             if has_star:
                 assert isinstance(deep_structure, dict)
-                for key in deep_structure:
-                    assert key.isalnum(), key
-                    validate_deep_structure(deep_structure[key], hash_pattern["*"])
+                for key2 in deep_structure:
+                    validate_deep_structure(deep_structure[key2], hash_pattern["*"])
             elif key == "!":
                 assert isinstance(deep_structure, list)
                 sub_hash_pattern = hash_pattern[key]

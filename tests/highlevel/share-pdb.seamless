@@ -115,14 +115,17 @@
       "SCHEMA": null,
       "checksum": {
         "code": "0cd230ffdbd4b753e46cfe93ec2c6d9a063cdfec2d21377e2b107fcb3e770a3b",
-        "input": "7c75505c70c3d835cc6e9e1568485477b18021afae3b5e361a42dbfabf64ebbf",
+        "input": "f8965fa517601f66e890dacd407cdacfd292721fd9d7fc026abc72ef47a07612",
         "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "input_buffer": "7c75505c70c3d835cc6e9e1568485477b18021afae3b5e361a42dbfabf64ebbf",
+        "input_buffer": "f8965fa517601f66e890dacd407cdacfd292721fd9d7fc026abc72ef47a07612",
         "result": "e8787d65a4c4e417d25e2b4361538db8d180dcbf7ab971b525bc51b2c8d0e322"
       },
       "compiled": false,
       "debug": false,
       "file_extension": "sh",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "bash",
       "path": [
         "filter_pdb"
@@ -155,14 +158,17 @@
       "SCHEMA": null,
       "checksum": {
         "code": "6f50cd3864e495284ac230b9ee999636cb8cd3c526ed3662d1137d10119d3791",
-        "input": "6d38b31f08563bb368ed7532ac10b0e0a1b36b4489f1fb58a4a004b5c31b4eba",
+        "input": "899c31da5ee1a0e7094df98b6cc47d3baa70df02b9711a3fd3ce27515e9c5ef3",
         "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "input_buffer": "6d38b31f08563bb368ed7532ac10b0e0a1b36b4489f1fb58a4a004b5c31b4eba",
+        "input_buffer": "899c31da5ee1a0e7094df98b6cc47d3baa70df02b9711a3fd3ce27515e9c5ef3",
         "result": "f9bfa4063e178413cae39d9adc3e1788db9d3fa0057fe806b14121030ec5040f"
       },
       "compiled": false,
       "debug": false,
       "file_extension": "sh",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "bash",
       "path": [
         "fix_pdb"

@@ -115,14 +115,17 @@
       "SCHEMA": null,
       "checksum": {
         "code": "0cd230ffdbd4b753e46cfe93ec2c6d9a063cdfec2d21377e2b107fcb3e770a3b",
-        "input": "e0def1c1ff7eb0d41ce636339960d154445c6d6b21c689e379952d2bad6cb8cf",
-        "input_auth": "2dba31dad17256fcc4681ef400b600d81ea593961fd02e53c02a2998672557f7",
-        "input_buffer": "e0def1c1ff7eb0d41ce636339960d154445c6d6b21c689e379952d2bad6cb8cf",
+        "input": "67ab1d9f9c31c05a334c2d0794b1f6ae31162b415559423512eaf6e8d819b005",
+        "input_auth": "9f27e123619b82e6da57155b9f921fb8c16918ffaf74864eb9a18823041a03b9",
+        "input_buffer": "67ab1d9f9c31c05a334c2d0794b1f6ae31162b415559423512eaf6e8d819b005",
         "result": null
       },
       "compiled": false,
       "debug": false,
       "file_extension": "sh",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "docker",
       "path": [
         "filter_pdb"
@@ -159,14 +162,17 @@
       "SCHEMA": null,
       "checksum": {
         "code": "6f50cd3864e495284ac230b9ee999636cb8cd3c526ed3662d1137d10119d3791",
-        "input": "2dba31dad17256fcc4681ef400b600d81ea593961fd02e53c02a2998672557f7",
-        "input_auth": "2dba31dad17256fcc4681ef400b600d81ea593961fd02e53c02a2998672557f7",
-        "input_buffer": "2dba31dad17256fcc4681ef400b600d81ea593961fd02e53c02a2998672557f7",
+        "input": "9f27e123619b82e6da57155b9f921fb8c16918ffaf74864eb9a18823041a03b9",
+        "input_auth": "9f27e123619b82e6da57155b9f921fb8c16918ffaf74864eb9a18823041a03b9",
+        "input_buffer": "9f27e123619b82e6da57155b9f921fb8c16918ffaf74864eb9a18823041a03b9",
         "result": null
       },
       "compiled": false,
       "debug": false,
       "file_extension": "sh",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "docker",
       "path": [
         "fix_pdb"

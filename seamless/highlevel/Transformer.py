@@ -19,7 +19,7 @@ default_pin = {
   "celltype": "mixed",
 }
 
-def new_transformer(ctx, path, code, pins):
+def new_transformer(ctx, path, code, pins, hash_pattern):
     if pins is None:
         pins = []
     if isinstance(pins, (list, tuple)):
@@ -35,6 +35,7 @@ def new_transformer(ctx, path, code, pins):
         "compiled": False,
         "language": "python",
         "pins": pins,
+        "hash_pattern": hash_pattern,
         "RESULT": "result",
         "INPUT": "inp",
         "SCHEMA": None, #the result schema can be exposed as an input pin to the transformer under this name
@@ -82,7 +83,7 @@ class Transformer(Base):
     """
     _temp_code = None
     _temp_pins = None
-    def __init__(self, *, parent=None, path=None, code=None, pins=None):
+    def __init__(self, *, parent=None, path=None, code=None, pins=None, hash_pattern={"*": "#"}):
         assert (parent is None) == (path is None)
         if parent is not None:
             self._init(parent, path, code, pins)
@@ -90,7 +91,7 @@ class Transformer(Base):
             self._temp_code = code
             self._temp_pins = pins
 
-    def _init(self, parent, path, code=None, pins=None):
+    def _init(self, parent, path, code=None, pins=None, hash_pattern={"*": "#"}):
         super().__init__(parent, path)
         if self._temp_code is not None:
             assert code is None
@@ -98,7 +99,7 @@ class Transformer(Base):
         if self._temp_pins is not None:
             assert pins is None
             pins = self._temp_pins
-        htf = new_transformer(parent, path, code, pins)
+        htf = new_transformer(parent, path, code, pins, hash_pattern)
         parent._children[path] = self
 
     @property
