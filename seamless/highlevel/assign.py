@@ -227,16 +227,14 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     }
     ctx._graph[1].append(connection)
 
-def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
+def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
     from .Context import Context
     from .Cell import Cell
     from .Transformer import Transformer
     assert isinstance(ctx, Context)
-    '''
-    old_core_ctx = old_ctx._gen_context
-    new_core_ctx = ctx._gen_context
-    '''
     nodes, connections, _, _ = ctx._graph
+    if runtime:
+        nodes, connections, _, _ = ctx._runtime_graph
     for p in list(nodes.keys()):
         if p[:len(path)] == path:
             nodes.pop(p)
@@ -262,7 +260,8 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
         pp = path + old_path
         node["path"] = pp
         nodetype = node["type"]
-        node["UNTRANSLATED"] = True
+        if not runtime:
+            node["UNTRANSLATED"] = True
         remove_checksum = []
         if nodetype == "cell":
             Cell(parent=ctx, path=pp)
@@ -274,19 +273,23 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
                 if old_path in targets:
                     remove_checksum.append("value")
         elif nodetype == "transformer":
-            Transformer(parent=ctx, path=pp)
+            node = Transformer(parent=ctx, path=pp)._get_htf()
             remove_checksum += ["input_temp", "input", "input_buffer", "result"]
             potential = ("code", "schema", "result_schema", "main_module")
             for pot in potential:
                 if old_path + (pot,) in targets:
                     remove_checksum.append(pot)
+            if runtime:
+                node.pop("UNTRANSLATED", None)
         elif nodetype == "macro":
-            Macro(ctx, pp)
+            node = Macro(ctx, pp)._get_node()
             remove_checksum += ["param_temp", "param", "param_buffer"]
             potential = ("code", "schema")
             for pot in potential:
                 if old_path + (pot,) in targets:
                     remove_checksum.append(pot)
+            if runtime:
+                node.pop("UNTRANSLATED", None)
         elif nodetype == "context":
             pass
         else:
@@ -301,18 +304,17 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
         con["target"] = path + con["target"]
         connections.append(con)
 
-def _assign_context(ctx, new_nodes, new_connections, path, old_ctx):
+def _assign_context(ctx, new_nodes, new_connections, path, runtime):
     ctx._destroy_path(path)
-    _assign_context2(ctx, new_nodes, new_connections, path, old_ctx)
+    _assign_context2(ctx, new_nodes, new_connections, path, runtime)
     subctx = ctx._graph.nodes[path]
     assert subctx["type"] == "context", path
     ctx._translate()
 
 def assign_context(ctx, path, value):
-    old_ctx = value
-    graph = old_ctx.get_graph()
+    graph = value.get_graph()
     new_nodes, new_connections = graph["nodes"], graph["connections"]
-    _assign_context(ctx, new_nodes, new_connections, path, old_ctx)
+    _assign_context(ctx, new_nodes, new_connections, path, runtime=False)
 
 def assign_to_subcell(cell, path, value):
     from ..core.structured_cell import StructuredCell

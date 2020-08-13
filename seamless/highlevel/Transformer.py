@@ -1003,3 +1003,7 @@ class Transformer(Base):
             std += list(("main_module", "header"))
         pins = list(htf["pins"].keys())
         return sorted(d + pins + std)
+
+    def __str__(self):
+        path = ".".join(self._path) if self._path is not None else None
+        return "Seamless Transformer: %s" % path

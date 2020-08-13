@@ -653,6 +653,15 @@ class Context(Base):
                 graph["params"],
                 graph["lib"]
             )
+        else:
+            graph0 = deepcopy(graph0)
+            self._runtime_graph = Graph(
+                {node["path"]: node for node in graph0["nodes"]},
+                graph0["connections"],
+                graph0["params"],
+                graph0["lib"]
+            )
+
         self._translate_count += 1
         try:
             self._translating = True
