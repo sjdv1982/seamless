@@ -58,8 +58,8 @@ class IncludedLibrary:
 
     def __call__(self, *args, **kwargs):
         arguments0 = self._signature.bind(*args, **kwargs)
-        arguments0.apply_defaults()        
-        arguments = {}        
+        arguments0.apply_defaults()
+        arguments = {}
         for argname, argvalue in arguments0.arguments.items():
             par = self._params[argname]
             if par["type"] == "value":
@@ -80,7 +80,7 @@ class IncludedLibrary:
                 except Exception:
                     raise TypeError((argname, type(argvalue))) from None
                 value = {}
-                for k, v in argvalue.items(): 
+                for k, v in argvalue.items():
                     if not isinstance(k, str):
                         msg = "%s must contain string keys, not '%s'"
                         raise TypeError(msg % (argname, type(k)))
@@ -90,11 +90,11 @@ class IncludedLibrary:
                     value[k] = v._path
             arguments[argname] = value
 
-        libmacro = LibMacro(self._ctx, libpath=self._path, arguments=arguments)
-        return libmacro
+        libinstance = LibInstance(self._ctx, libpath=self._path, arguments=arguments)
+        return libinstance
 
 from ...core.cached_compile import cached_compile
-from .libmacro import LibMacro        
+from .libinstance import LibInstance
 from ..Base import Base
 from ..Cell import Cell
 from ..Context import Context, SubContext

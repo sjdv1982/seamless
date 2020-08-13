@@ -3,7 +3,7 @@ from copy import deepcopy
 
 highlevel_names = ("Context", "Cell", "Transformer", "Macro", "Reactor")
 
-class LibMacro:
+class LibInstance:
 
     def __init__(self, parent, *, path=None, libpath=None, arguments=None):
         self._parent = weakref.ref(parent)
@@ -19,8 +19,8 @@ class LibMacro:
         assert self._temp_arguments is not None
         self._path = path
         node = {
-            "path": path,            
-            "type": "libmacro",
+            "path": path,
+            "type": "libinstance",
             "libpath": self._temp_libpath,
             "arguments": self._temp_arguments,
         }
@@ -32,9 +32,9 @@ class LibMacro:
     def _get_hmacro(self):
         parent = self._parent()
         return parent._graph.nodes[self._path]
-        
-    def _run(self):        
-        assert self._path is not None 
+
+    def _run(self):
+        assert self._path is not None
         hmacro = self._get_hmacro()
         libpath = hmacro["libpath"]
         arguments = hmacro["arguments"]
@@ -43,7 +43,7 @@ class LibMacro:
         graph = lib["graph"]
         constructor = lib["constructor"]
         params = lib["params"]
-        
+
         overlay_context = Context(manager=parent._manager)
         self._overlay_context = overlay_context
         namespace = {
@@ -53,7 +53,7 @@ class LibMacro:
         overlay_nodes = {}
         for argname, argvalue in arguments.items():
             par = params[argname]
-            if par["type"] == "value":                
+            if par["type"] == "value":
                 value = argvalue
             elif par["type"] == "cell":
                 if isinstance(argvalue, list):
@@ -107,7 +107,7 @@ class LibMacro:
         for name in highlevel_names:
             if name not in namespace:
                 namespace[name] = globals()[name]
-        identifier = ".".join(self._path)        
+        identifier = ".".join(self._path)
         exec_code(constructor, identifier, namespace, argnames, None)
         overlay_graph = overlay_context.get_graph()
         overlay_connections = connection_wrapper.connections
@@ -130,7 +130,7 @@ class LibMacro:
             if attr == "ctx":
                 parent = self._parent()
                 path = self._path + ("ctx",)
-                return LibMacroContextWrapper(parent, path)
+                return SynthContext(parent, path)
             if attr == "libpath":
                 return libpath
             if attr == "arguments":
@@ -145,7 +145,7 @@ class LibMacro:
         if par["type"] == "cell":
             if isinstance(argvalue, list):
                 argvalue = tuple(argvalue)
-            value = parent._children.get(argvalue)            
+            value = parent._children.get(argvalue)
         else:
             value = argvalue
         return value
@@ -175,67 +175,8 @@ class LibMacro:
         arguments[argname] = value
         parent._translate()
 
-class LibMacroContextWrapper:
-    def __init__(self, parent, path):
-        self._parent = weakref.ref(parent)
-        self._path = path
-
-    @property
-    def status(self):
-        raise NotImplementedError
-
-    def __dir__(self):
-        return self.children()
-    
-    def children(self):        
-        path = self._path
-        lp = len(path)
-        parent = self._parent()
-        if parent._libmacro_graph is None:
-            return []
-        dirs = []
-        for npath in parent._libmacro_graph.nodes:
-            if len(npath) > lp and npath[:lp] == path:
-                dirs.append(npath[lp])
-        return dirs
-
-    def __getattribute__(self, attr):
-        if attr.startswith("_"):
-            return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
-            return super().__getattribute__(attr)
-        return self._get_child(attr)
-
-    def __getitem__(self, item):
-        if isinstance(item, (str, int)):
-            return self._get_child(item)
-
-    def _get_child(self, attr):    
-        path = self._path + (attr,)
-        parent = self._parent()
-        try:
-            node = parent._libmacro_graph.nodes[path]
-        except KeyError:
-            if attr in self.__dir__():
-                return LibMacroContextWrapper(parent, path)
-            raise AttributeError(attr) from None
-        if node["type"] == "cell":
-            result = Cell()
-        elif node["type"] == "transformer":
-            result = Transformer()
-        elif node["type"] == "reactor":
-            result = Reactor()
-        elif node["type"] == "macro":
-            result = Macro()
-        elif node["type"] == "context":
-            return LibMacroContextWrapper(parent, path)
-        else:
-            raise NotImplementedError(node["type"])
-        Base.__init__(result, parent, path)
-        return result
-
 from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper
-from ..Base import Base
+from ..synth_context import SynthContext
 from ..Cell import Cell
 from ..SubCell import SubCell
 from ..Context import Context, SubContext

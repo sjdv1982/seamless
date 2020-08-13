@@ -18,7 +18,7 @@ color_mapping = {
 
 libnodes = [tuple(node["path"]) for node in graph["lib"]]
 
-def is_subnode(path):    
+def is_subnode(path):
     subnode = False
     if "ctx" in path:
         pos = path.index("ctx")
@@ -26,7 +26,7 @@ def is_subnode(path):
         if tuple(path0) in libnodes or 1:
             pass
         else:
-            path = path0            
+            path = path0
             subnode = True
     return path, subnode
 
@@ -44,7 +44,7 @@ for node in graph["nodes"]:
             path,
             path + (node["INPUT"],),
         ]
-    else: # TODO: libmacro, macro, reactor
+    else: # TODO: macro, reactor. Not li
         continue
 
     color = 5
@@ -103,7 +103,7 @@ for connection in graph["connections"]:
     if "ctx" in source  and is_subnode(source)[1]:
         pos = source.index("ctx")
         source = source[:pos]
-    
+
     if "ctx" in target and is_subnode(target)[1]:
         pos = target.index("ctx")
         target = target[:pos]
@@ -129,4 +129,4 @@ for connection in graph["connections"]:
 result = {
     "nodes": rnodes,
     "connections": rconnections,
-}    
+}

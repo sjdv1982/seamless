@@ -33,7 +33,7 @@ def status_callback(path, status):
     handle[path2] = status
 
 def observe_graph(graph):
-    ctx2.graph.set(graph)    
+    ctx2.graph.set(graph)
     paths_to_delete = set(status_callbacks.keys())
     for node in graph["nodes"]:
         path = tuple(node["path"])
@@ -44,9 +44,9 @@ def observe_graph(graph):
                 path,
                 path + (node["INPUT"],),
             ]
-        else: # TODO: libmacro, macro, reactor
-            continue        
-        for path in paths:            
+        else: # TODO: libinstance, macro, reactor
+            continue
+        for path in paths:
             if path in status_callbacks:
                 paths_to_delete.discard(path)
                 continue
@@ -139,11 +139,11 @@ print("""
 - Open http://localhost:5813/status/status-visualization.html in the browser")
 - Periodically enter the command "list_files()" to list the current files
 - Enter the following commands:
-  
+
   bind("data/genome.tgz", "b")
   bind("data/samples/A.fastq", "t")
   bind("data/samples/B.fastq", "t")
 
-- "ctx.compute()" or "await ctx.computation()" 
+- "ctx.compute()" or "await ctx.computation()"
    will block until the workflow is complete
 """)

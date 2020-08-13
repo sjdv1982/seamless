@@ -20,7 +20,7 @@ from .compiled import CompiledObjectDict, CompiledObjectWrapper
 from .SchemaWrapper import SchemaWrapper
 
 
-def under_libmacro_control(nodedict, path):
+def under_libinstance_control(nodedict, path):
     lp = len(path)
     if path in nodedict:
         longest_path = path
@@ -43,7 +43,7 @@ def under_libmacro_control(nodedict, path):
         if longest_path is None:
             return False
     node = nodedict[longest_path]
-    return node["type"] == "libmacro"
+    return node["type"] == "libinstance"
 
 def assign_constant(ctx, path, value):
     ###if isinstance(value, (Silk, MixedBase)):
@@ -128,17 +128,17 @@ def assign_transformer(ctx, path, func):
         assert ctx._children[path] is tf
         ctx._translate()
 
-def assign_libmacro(ctx, path, libmacro):
-    libmacro._bind(ctx, path)
+def assign_libinstance(ctx, path, libinstance):
+    libinstance._bind(ctx, path)
 
 
 def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     nodedict = ctx._graph[0]
-    if under_libmacro_control(nodedict, source):
-        msg = "Cannot connect from path under libmacro control: {}"
+    if under_libinstance_control(nodedict, source):
+        msg = "Cannot connect from path under libinstance control: {}"
         raise Exception(msg.format(source))
-    if under_libmacro_control(nodedict, target):
-        msg = "Cannot connect to path under libmacro control: {}"
+    if under_libinstance_control(nodedict, target):
+        msg = "Cannot connect to path under libinstance control: {}"
         raise Exception(msg.format(target))
     if standalone_target:
         if target not in ctx._children:
@@ -342,13 +342,13 @@ def assign_to_subcell(cell, path, value):
 
 def assign(ctx, path, value):
     from .Context import Context, SubContext
-    from .library.libmacro import LibMacro
+    from .library.libinstance import LibInstance
     from .library import Library, LibraryContainer
     from .library.include import IncludedLibrary, IncludedLibraryContainer
     from .proxy import Proxy
     nodedict = ctx._graph[0]
-    if under_libmacro_control(nodedict, path):
-        msg = "Cannot assign to path under libmacro control: {}"
+    if under_libinstance_control(nodedict, path):
+        msg = "Cannot assign to path under libinstance control: {}"
         raise Exception(msg.format(path))
     if isinstance(value, (Library, LibraryContainer)):
         raise TypeError("Library must be included first")
@@ -392,8 +392,8 @@ def assign(ctx, path, value):
     elif isinstance(value, (Context, SubContext)):
         assign_context(ctx, path, value)
         ctx._translate()
-    elif isinstance(value, LibMacro):
-        assign_libmacro(ctx, path, value)
+    elif isinstance(value, LibInstance):
+        assign_libinstance(ctx, path, value)
         ctx._translate()
     elif callable(value):
         if path in ctx._children:

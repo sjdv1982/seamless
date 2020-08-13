@@ -348,8 +348,8 @@ def translate(graph, ctx):
         elif t == "cell":
             inchannels, outchannels = find_channels(path, connection_paths)
             translate_cell(node, ctx, namespace, inchannels, outchannels)
-        elif t == "libmacro":
-            msg = "Libmacro '%s' was not removed during pre-translation, or is a nested libmacro"
+        elif t == "libinstance":
+            msg = "Libinstance '%s' was not removed during pre-translation, or is a nested libinstance"
             raise TypeError(msg % path)
         else:
             raise TypeError(t)

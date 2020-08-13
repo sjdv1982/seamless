@@ -27,7 +27,7 @@ def observe_graph(ctx, ctx2, graph):
                 path,
                 path + (node["INPUT"],),
             ]
-        else: # TODO: libmacro, macro, reactor
+        else: # TODO: macro, reactor
             continue
         for path in paths:
             if path in status_callbacks:
