@@ -677,6 +677,7 @@ class Context(Base):
                 if self._mount is not None:
                     ub_ctx._mount = self._mount.copy()
                 self._unbound_context = ub_ctx
+                ub_ctx._root_highlevel_context = self
                 translate(graph, ub_ctx)
                 nodedict = {node["path"]: node for node in graph["nodes"]}
                 nodedict0 = {node["path"]: node for node in graph0["nodes"]}
@@ -686,6 +687,7 @@ class Context(Base):
                     if node0 is not None and node is not node0:
                         node0.pop("UNTRANSLATED", None)
             self._gen_context = ub_ctx._bound
+            self._gen_context._root_highlevel_context = self
             assert self._gen_context._get_manager() is self._manager
             self._connect_share()
         finally:

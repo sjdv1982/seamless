@@ -37,6 +37,8 @@ class Context(SeamlessBase):
     _unmounted = False
     _macro = None # The macro that created this context
     _macro_root = None
+    _root_highlevel_context = None
+    _synth_highlevel_context = None
 
     def __init__(
         self, *,
@@ -159,7 +161,11 @@ name: str
 
     def __getattr__(self, attr):
         if attr in self._children:
-            return self._children[attr]
+            result = self._children[attr]
+            if isinstance(result, Context) and result._synth_highlevel_context is not None:
+                from ..highlevel.synth_context import SynthContext
+                return SynthContext(result._synth_highlevel_context, self._path)
+            return result
         raise AttributeError(attr)
 
     def _hasattr(self, attr):

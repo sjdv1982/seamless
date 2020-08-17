@@ -133,6 +133,7 @@ class UnboundContext(SeamlessBase):
     _bound = None
     _context = None
     _realmanager = None
+    _root_highlevel_context = None
 
     def __init__(
         self, *,
@@ -167,11 +168,11 @@ class UnboundContext(SeamlessBase):
             self._realmanager = manager
         else:
             assert manager is None
+            self._root_ = root
         if root is None:
             assert not toplevel and not macro
         else:
             assert isinstance(root, Context), root
-        self._root_ = root
         if toplevel:
             register_toplevel(self)
 
@@ -275,7 +276,8 @@ class UnboundContext(SeamlessBase):
     def _root(self):
         return self._root_
 
-    def _bind_stage1(self, ctx):
+    def _bind_stage1(self, ctx, highlevel_context):
+        from .HighLevelContext import HighLevelContext
         ctx._mount = copy.deepcopy(self._mount)
         ctxmap = {}
         manager = ctx._get_manager()
@@ -302,6 +304,9 @@ class UnboundContext(SeamlessBase):
                 child._bound = bound_ctx
                 setattr(ctx, childname, bound_ctx)
                 ctxmap[childname] = bound_ctx
+                if isinstance(child, HighLevelContext):
+                    child._translate(highlevel_context)
+
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 continue
@@ -315,7 +320,7 @@ class UnboundContext(SeamlessBase):
                 if self._realmanager is not child._realmanager:
                     self._realmanager.commands += child._realmanager.commands
                     child._realmanager.commands.clear()
-                child._bind_stage1(bound_ctx)
+                child._bind_stage1(bound_ctx, highlevel_context)
         ctx._auto = self._auto
         self._bound = ctx
 
@@ -369,7 +374,10 @@ class UnboundContext(SeamlessBase):
         from .macro import Path
         if ctx._toplevel:
             assert self._toplevel
-        self._bind_stage1(ctx)
+            highlevel_context = self._root_highlevel_context
+        else:
+            highlevel_context = ctx._root()._root_highlevel_context
+        self._bind_stage1(ctx, highlevel_context)
         manager = ctx._get_manager()
         for reg in self._realmanager._registered:
             if isinstance(reg, Path):

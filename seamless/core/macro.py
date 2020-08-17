@@ -68,6 +68,7 @@ class Macro(Worker):
         return cachemanager.macro_exceptions[self]
 
     def _execute(self, code, values, module_workspace):
+        from .HighLevelContext import HighLevelContext
         from .context import Context
         manager = self._get_manager()
         ok = False
@@ -85,6 +86,8 @@ class Macro(Worker):
                 self.namespace["__name__"] = "macro"
                 self.namespace.update(keep)
                 self.namespace.update( self.default_namespace.copy())
+                self.namespace["HighLevelContext"] = HighLevelContext
+                self.namespace["HighlevelContext"] = HighLevelContext
                 self.namespace["ctx"] = unbound_ctx
                 self.namespace.update(values)
                 inputs = ["ctx"] +  list(values.keys())
@@ -478,6 +481,8 @@ names = ("cell", "transformer", "context", "unilink",
 names += ("StructuredCell",)
 names = names + ("macro", "path")
 Macro.default_namespace = {n:globals()[n] for n in names}
+Macro.default_namespace["HighLevelContext"] = None   # import later to avoid circular imports
+Macro.default_namespace["HighlevelContext"] = None   # future alias for HighLevelContext
 
 from .cell import Cell
 from .unilink import UniLink
