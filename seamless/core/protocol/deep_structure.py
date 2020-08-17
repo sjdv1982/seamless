@@ -168,19 +168,20 @@ def _deep_structure_to_checksums(deep_structure, hash_pattern, checksums):
                 deep_structure[key], sub_hash_pattern, checksums
             )
     else:
-        if key.startswith("!"):
-            sub_hash_pattern = hash_pattern[key]
-            for sub_deep_structure in deep_structure:
+        for key in hash_pattern:
+            if key.startswith("!"):
+                sub_hash_pattern = hash_pattern[key]
+                for sub_deep_structure in deep_structure:
+                    _deep_structure_to_checksums(
+                        sub_deep_structure, sub_hash_pattern, checksums
+                    )
+            elif key.isalnum():
+                assert list(deep_structure.keys()) == [key]
                 _deep_structure_to_checksums(
-                    sub_deep_structure, sub_hash_pattern, checksums
+                    deep_structure[key], hash_pattern[key], checksums
                 )
-        elif key.isalnum():
-            assert list(deep_structure.keys()) == [key]
-            _deep_structure_to_checksums(
-                deep_structure[key], hash_pattern[key], checksums
-            )
-        else:
-            raise AssertionError(key)
+            else:
+                raise AssertionError(key)
 
 def deep_structure_to_checksums(deep_structure, hash_pattern):
     """Collects all checksums that are being referenced in a deep structure"""
@@ -216,24 +217,25 @@ def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):
             )
             result[key] = sub_result
     else:
-        if key.startswith("!"):
-            result = []
-            sub_hash_pattern = hash_pattern[key]
-            for sub_deep_structure in deep_structure:
+        for key in hash_pattern:
+            if key.startswith("!"):
+                result = []
+                sub_hash_pattern = hash_pattern[key]
+                for sub_deep_structure in deep_structure:
+                    sub_result = _deep_structure_to_value(
+                        sub_deep_structure, sub_hash_pattern,
+                        value_dict, copy=copy
+                    )
+                    result.append(sub_result)
+            elif key.isalnum():
+                assert list(deep_structure.keys()) == [key]
                 sub_result = _deep_structure_to_value(
-                    sub_deep_structure, sub_hash_pattern,
+                    deep_structure[key], sub_hash_pattern,
                     value_dict, copy=copy
                 )
-                result.append(sub_result)
-        elif key.isalnum():
-            assert list(deep_structure.keys()) == [key]
-            sub_result = _deep_structure_to_value(
-                deep_structure[key], sub_hash_pattern,
-                value_dict, copy=copy
-            )
-            result = {key: sub_result}
-        else:
-            raise AssertionError(key)
+                result = {key: sub_result}
+            else:
+                raise AssertionError(key)
     return result
 
 async def deep_structure_to_value(deep_structure, hash_pattern, buffer_dict, copy):
@@ -294,24 +296,25 @@ def _build_deep_structure(hash_pattern, d, c):
             )
             result[key] = sub_result
     else:
-        if key.startswith("!"):
-            result = []
-            sub_hash_pattern = hash_pattern[key]
-            for sub_d in d:
-                sub_result = _build_deep_structure(
-                    sub_hash_pattern, sub_d,
+        for key in hash_pattern:
+            if key.startswith("!"):
+                result = []
+                sub_hash_pattern = hash_pattern[key]
+                for sub_d in d:
+                    sub_result = _build_deep_structure(
+                        sub_hash_pattern, sub_d,
+                        c
+                    )
+                    result.append(sub_result)
+            elif key.isalnum():
+                assert list(d.keys()) == [key]
+                sub_result = _deep_structure_to_value(
+                    d[key], sub_hash_pattern,
                     c
                 )
-                result.append(sub_result)
-        elif key.isalnum():
-            assert list(d.keys()) == [key]
-            sub_result = _deep_structure_to_value(
-                d[key], sub_hash_pattern,
-                c
-            )
-            result = {key: sub_result}
-        else:
-            raise AssertionError(key)
+                result = {key: sub_result}
+            else:
+                raise AssertionError(key)
     return result
 
 def _value_to_objects(value, hash_pattern, objects):
@@ -337,24 +340,25 @@ def _value_to_objects(value, hash_pattern, objects):
             )
         return result
     else:
-        if key.startswith("!"):
-            result = []
-            sub_hash_pattern = hash_pattern[key]
-            assert isinstance(value, list), value
-            for sub_value in value:
+        for key in hash_pattern:
+            if key.startswith("!"):
+                result = []
+                sub_hash_pattern = hash_pattern[key]
+                assert isinstance(value, list), value
+                for sub_value in value:
+                    sub_result = _value_to_objects(
+                        sub_value, sub_hash_pattern, objects
+                    )
+                    result.append(sub_result)
+                return result
+            elif key.isalnum():
+                assert list(value.keys()) == [key]
                 sub_result = _value_to_objects(
-                    sub_value, sub_hash_pattern, objects
+                    value[key], hash_pattern[key], objects
                 )
-                result.append(sub_result)
-            return result
-        elif key.isalnum():
-            assert list(value.keys()) == [key]
-            sub_result = _value_to_objects(
-                value[key], hash_pattern[key], objects
-            )
-            return {key: sub_result}
-        else:
-            raise AssertionError(key)
+                return {key: sub_result}
+            else:
+                raise AssertionError(key)
 
 
 async def value_to_deep_structure(value, hash_pattern):
