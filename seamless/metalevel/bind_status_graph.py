@@ -46,8 +46,8 @@ def observe_graph(ctx, ctx2, graph):
         #print("DELETE", dpath)
         observers = status_callbacks.pop(dpath)
         for subpath, observer in observers.items():
-            status_callback(ctx, ctx2, subpath, None)
             observer.destroy()
+            status_callback(ctx, ctx2, subpath, None)
     #print("DONE")
 
 def bind_status_graph(ctx, status_graph, *, zips=None, mounts=False, shares=True):
@@ -115,7 +115,7 @@ They will be passed to ctx.add_zip before the graph is loaded
     )
     assert "graph" in ctx2.children()
     observe_graph_bound = partial(
-        observe_graph, ctx, ctx2
+        observe_graph, ctx, ctx2,
     )
     await ctx2.translation()
     params = {"runtime": True}

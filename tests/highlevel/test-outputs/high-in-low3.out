@@ -1,0 +1,33 @@
+DATA [{'a': 5, 'b': 6}, {'a': -2, 'b': 8}, {'a': 3, 'b': 14}, {'a': 12, 'b': 7}]
+Exception: None
+11
+6
+[11, 6, 17, 19]
+<Silk: [11, 6, 17, 19] >
+DATA [{'a': 12, 'b': -123}, {'a': 182, 'b': -83}]
+
+Exception: None
+-111
+[-111, 99]
+<Silk: [-111, 99] >
+DATA [{'a': 12, 'b': -123}, {'a': 182, 'b': -83}]
+
+Exception: None
+-111
+[-111, 99]
+<Silk: [-111, 99] >
+
+[('data',),
+ ('graph',),
+ ('m',),
+ ('result',),
+ ('m', 'macro', 'ctx', 'subctx1'),
+ ('m', 'macro', 'ctx', 'subctx1', 'a'),
+ ('m', 'macro', 'ctx', 'subctx1', 'add'),
+ ('m', 'macro', 'ctx', 'subctx1', 'b'),
+ ('m', 'macro', 'ctx', 'subctx1', 'result'),
+ ('m', 'macro', 'ctx', 'subctx2'),
+ ('m', 'macro', 'ctx', 'subctx2', 'a'),
+ ('m', 'macro', 'ctx', 'subctx2', 'add'),
+ ('m', 'macro', 'ctx', 'subctx2', 'b'),
+ ('m', 'macro', 'ctx', 'subctx2', 'result')]

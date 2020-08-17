@@ -22,6 +22,7 @@ class HighLevelContext(UnboundContext):
         super().__init__()
 
     def _translate(self, highlevel_ctx):
+        from .macro_mode import curr_macro
         from ..midlevel.translate import translate
         from ..highlevel.assign import _assign_context
         from ..highlevel.Context import Context
@@ -31,11 +32,11 @@ class HighLevelContext(UnboundContext):
             raise TypeError(type(highlevel_ctx))
         graph = self._graph
         translate(graph, self)
-
+        path = curr_macro().path + ("ctx",) + self.path
         _assign_context(
             highlevel_ctx,
             graph["nodes"],
             graph["connections"],
-            self.path,
+            path,
             runtime=True
         )

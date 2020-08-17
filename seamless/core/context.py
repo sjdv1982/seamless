@@ -326,6 +326,10 @@ name: str
                 toplevel=self._toplevel
             )
 
+    @property
+    def exception(self):
+        return None
+
     def __del__(self):
         if self._destroyed:
             return

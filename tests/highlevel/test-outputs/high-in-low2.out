@@ -32,3 +32,13 @@ Seamless int cell: .m.macro.ctx.subctx.a 200
 Seamless int cell: .m.macro.ctx.subctx.b 21
 Seamless context: .m.macro.ctx.subctx.add <Silk: 221 >
 Seamless int cell: .m.macro.ctx.subctx.result 221
+
+[('graph',),
+ ('m',),
+ ('par_dynamic',),
+ ('par_static',),
+ ('m', 'macro', 'ctx', 'subctx'),
+ ('m', 'macro', 'ctx', 'subctx', 'a'),
+ ('m', 'macro', 'ctx', 'subctx', 'add'),
+ ('m', 'macro', 'ctx', 'subctx', 'b'),
+ ('m', 'macro', 'ctx', 'subctx', 'result')]

@@ -47,6 +47,7 @@ def run_macro(ctx, par_static, graph):
 m.code = run_macro
 ctx.m.par_dynamic = ctx.par_dynamic
 ctx.compute()
+print(ctx.m.exception)
 print(ctx.m.ctx.par_dynamic)
 print(ctx.m.ctx.subctx.a)
 print(ctx.m.ctx.subctx.a.value)
@@ -79,3 +80,7 @@ print(subctx.a, subctx.a.value)
 print(subctx.b, subctx.b.value)
 print(subctx.add, subctx.add.result.value)
 print(subctx.result, subctx.result.value)
+
+print()
+from pprint import pprint
+pprint(list(ctx._runtime_graph.nodes.keys()))

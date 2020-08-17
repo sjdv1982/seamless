@@ -84,6 +84,10 @@ class Macro(Base):
         return mctx.macro.ctx
 
     @property
+    def macro(self):
+        return self
+
+    @property
     def schema(self):
         node = self._get_node()
         param = node["PARAM"]

@@ -1,4 +1,5 @@
 RUN MACRO 100
+None
 Seamless int cell: .m.macro.ctx.par_dynamic
 Seamless int cell: .m.macro.ctx.subctx.a
 100
@@ -21,3 +22,13 @@ Seamless Cell: m.macro.ctx.subctx.a 200
 Seamless Cell: m.macro.ctx.subctx.b 20
 Seamless Transformer: m.macro.ctx.subctx.add <Silk: 220 >
 Seamless Cell: m.macro.ctx.subctx.result 220
+
+[('graph',),
+ ('m',),
+ ('par_dynamic',),
+ ('par_static',),
+ ('m', 'macro', 'ctx', 'subctx'),
+ ('m', 'macro', 'ctx', 'subctx', 'a'),
+ ('m', 'macro', 'ctx', 'subctx', 'add'),
+ ('m', 'macro', 'ctx', 'subctx', 'b'),
+ ('m', 'macro', 'ctx', 'subctx', 'result')]

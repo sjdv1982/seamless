@@ -2,6 +2,7 @@ import inspect
 from copy import deepcopy
 from types import LambdaType
 from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda
+import textwrap
 
 from ..mixed import MixedBase
 from ..silk import Silk
@@ -29,6 +30,8 @@ def parse_function_code(code_or_func, identifier="<None>"):
     if callable(code_or_func):
         func = code_or_func
         code = inspect.getsource(func)
+        if code is not None:
+            code = textwrap.dedent(code)
         if isinstance(func, LambdaType) and func.__name__ == "<lambda>":
             code = lambdacode(func)
             if code is None:
@@ -61,15 +64,15 @@ from .Link import Link
 from ..midlevel.StaticContext import StaticContext
 
 def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, shares=True):
-    """Load a Context from graph. 
-    
+    """Load a Context from graph.
+
     "graph" can be a file name or a JSON dict
     Normally, it has been generated with Context.save_graph / Context.get_graph
 
     "zip" can be a file name, zip-compressed bytes or a Python ZipFile object.
     Normally, it has been generated with Context.save_zip / Context.get_zip
 
-    "cache_ctx": re-use a previous context for caching (e.g. checksum-to-buffer caching) 
+    "cache_ctx": re-use a previous context for caching (e.g. checksum-to-buffer caching)
 
     "static": create a StaticContext instead
 
@@ -84,7 +87,7 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
     if isinstance(graph, str):
         graph = json.load(open(graph))
     if isinstance(cache_ctx, Context):
-        manager = cache_ctx._ctx0._get_manager()        
+        manager = cache_ctx._ctx0._get_manager()
     elif isinstance(cache_ctx, CoreContext):
         manager = cache_ctx._get_manager()
     elif isinstance(cache_ctx, (Manager, UnboundManager)):
@@ -100,7 +103,7 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
         return StaticContext.from_graph(graph, manager=manager)
     else:
         return Context.from_graph(
-            graph, manager=manager, 
+            graph, manager=manager,
             mounts=mounts, shares=shares,
             zip=zip
         )

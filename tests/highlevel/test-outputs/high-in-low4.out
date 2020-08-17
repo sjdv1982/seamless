@@ -1,0 +1,52 @@
+GET GRAPH False
+DATA [{'a': 5, 'b': 6}, {'a': -2, 'b': 8}, {'a': 3, 'b': 14}, {'a': 12, 'b': 7}]
+Exception: None
+<Silk: [11, 6, 17, 19] >
+11
+6
+[11, 6, 17, 19]
+<Silk: [11, 6, 17, 19] >
+<Silk: [11, 6, 17, 19] >
+GET GRAPH False
+DATA [{'a': 12, 'b': -123}, {'a': 182, 'b': -83}]
+
+Exception: None
+<Silk: [-111, 99] >
+-111
+99
+[-111, 99]
+<Silk: [-111, 99] >
+<Silk: [-111, 99] >
+GET GRAPH False
+DATA [{'a': 12, 'b': -123}, {'a': 182, 'b': -83}]
+
+Exception: None
+<Silk: [135, 265] >
+135
+265
+[135, 265]
+<Silk: [135, 265] >
+<Silk: [135, 265] >
+
+[('adder',),
+ ('adder', 'a'),
+ ('adder', 'add'),
+ ('adder', 'b'),
+ ('adder', 'result'),
+ ('data',),
+ ('inst',),
+ ('inst', 'ctx'),
+ ('inst', 'ctx', 'data'),
+ ('inst', 'ctx', 'm'),
+ ('inst', 'ctx', 'result0'),
+ ('result',),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'a'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'add'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'b'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'result'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'a'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'add'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'b'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'result')]

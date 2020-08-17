@@ -1,6 +1,4 @@
 from seamless.highlevel import Context, Cell, Macro
-from seamless.highlevel.assign import _assign_context
-from seamless.highlevel.synth_context import SynthContext
 
 ctx = Context()
 ctx.a = Cell("int")
@@ -77,3 +75,7 @@ print(subctx.a, subctx.a.value)
 print(subctx.b, subctx.b.value)
 print(subctx.add, subctx.add.result.value)
 print(subctx.result, subctx.result.value)
+
+print()
+from pprint import pprint
+pprint(list(ctx._runtime_graph.nodes.keys()))
