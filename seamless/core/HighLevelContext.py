@@ -22,18 +22,20 @@ class HighLevelContext(UnboundContext):
         super().__init__()
 
     def _translate(self, highlevel_ctx):
+        from ..midlevel.translate import translate
         from ..highlevel.assign import _assign_context
         from ..highlevel.Context import Context
         if highlevel_ctx is None:
             raise TypeError("HighLevelContext cannot be part of a dissociated low-level context; there must be high-level root")
         if not isinstance(highlevel_ctx, Context):
             raise TypeError(type(highlevel_ctx))
-        bound = self._bound
         graph = self._graph
+        translate(graph, self)
+
         _assign_context(
             highlevel_ctx,
             graph["nodes"],
             graph["connections"],
-            bound.path,
+            self.path,
             runtime=True
         )

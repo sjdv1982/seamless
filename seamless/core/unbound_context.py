@@ -198,6 +198,7 @@ class UnboundContext(SeamlessBase):
         assert isinstance(ctx, Context) #unbound
 
     def _add_child(self, childname, child):
+        from .HighLevelContext import HighLevelContext
         classes = (UnboundContext, Worker, Cell, UniLink, StructuredCell)
         assert isinstance(child, classes), type(child)
         if isinstance(child, UnboundContext):
@@ -209,6 +210,11 @@ class UnboundContext(SeamlessBase):
             self._children[childname] = child
             for subchildname, subchild in child._children.items():
                 subchild._set_context(child, subchildname)
+            if isinstance(child, HighLevelContext):
+                highlevel_context = None
+                if self._root_ is not None:
+                    highlevel_context = self._root_._root_highlevel_context
+                child._translate(highlevel_context)
         else:
             self._children[childname] = child
             if self._realmanager is not None:
@@ -276,8 +282,7 @@ class UnboundContext(SeamlessBase):
     def _root(self):
         return self._root_
 
-    def _bind_stage1(self, ctx, highlevel_context):
-        from .HighLevelContext import HighLevelContext
+    def _bind_stage1(self, ctx):
         ctx._mount = copy.deepcopy(self._mount)
         ctxmap = {}
         manager = ctx._get_manager()
@@ -304,8 +309,6 @@ class UnboundContext(SeamlessBase):
                 child._bound = bound_ctx
                 setattr(ctx, childname, bound_ctx)
                 ctxmap[childname] = bound_ctx
-                if isinstance(child, HighLevelContext):
-                    child._translate(highlevel_context)
 
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
@@ -320,7 +323,7 @@ class UnboundContext(SeamlessBase):
                 if self._realmanager is not child._realmanager:
                     self._realmanager.commands += child._realmanager.commands
                     child._realmanager.commands.clear()
-                child._bind_stage1(bound_ctx, highlevel_context)
+                child._bind_stage1(bound_ctx)
         ctx._auto = self._auto
         self._bound = ctx
 
@@ -372,12 +375,7 @@ class UnboundContext(SeamlessBase):
     def _bind(self, ctx):
         from .context import Context
         from .macro import Path
-        if ctx._toplevel:
-            assert self._toplevel
-            highlevel_context = self._root_highlevel_context
-        else:
-            highlevel_context = ctx._root()._root_highlevel_context
-        self._bind_stage1(ctx, highlevel_context)
+        self._bind_stage1(ctx)
         manager = ctx._get_manager()
         for reg in self._realmanager._registered:
             if isinstance(reg, Path):

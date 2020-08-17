@@ -1,6 +1,7 @@
 RUN MACRO 100
 None
 Seamless int cell: .m.macro.ctx.par_dynamic
+Seamless context: .m.macro.ctx.subctx
 Seamless int cell: .m.macro.ctx.subctx.a
 100
 Seamless int cell: .m.macro.ctx.subctx.b
@@ -20,3 +21,14 @@ Seamless int cell: .m.macro.ctx.subctx.a 200
 Seamless int cell: .m.macro.ctx.subctx.b 20
 Seamless context: .m.macro.ctx.subctx.add <Silk: 220 >
 Seamless int cell: .m.macro.ctx.subctx.result 220
+
+Stage 3
+RUN MACRO 200
+Seamless int cell: .m.macro.ctx.subctx.a
+200
+Seamless int cell: .m.macro.ctx.subctx.b
+21
+Seamless int cell: .m.macro.ctx.subctx.a 200
+Seamless int cell: .m.macro.ctx.subctx.b 21
+Seamless context: .m.macro.ctx.subctx.add <Silk: 221 >
+Seamless int cell: .m.macro.ctx.subctx.result 221
