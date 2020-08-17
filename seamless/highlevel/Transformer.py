@@ -99,8 +99,16 @@ class Transformer(Base):
         if self._temp_pins is not None:
             assert pins is None
             pins = self._temp_pins
-        htf = new_transformer(parent, path, code, pins, hash_pattern)
         parent._children[path] = self
+        try:
+            assert code is None
+            assert pins is None
+            assert hash_pattern == {"*": "#"}
+            node = self._get_htf()
+        except:
+            node = None
+        if node is None:
+            htf = new_transformer(parent, path, code, pins, hash_pattern)
 
     @property
     def self(self):

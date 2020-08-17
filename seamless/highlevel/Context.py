@@ -763,8 +763,12 @@ class Context(Base):
             mimetype = hcell.mimetype
             cell.share(sharepath, readonly, mimetype=mimetype)
 
-    def _destroy_path(self, path):
+    def _destroy_path(self, path, runtime=False):
         nodes = self._graph.nodes
+        if runtime:
+            if self._runtime_graph is None:
+                return
+            nodes = self._runtime_graph.nodes
         for p in list(nodes.keys()):
             if p[:len(path)] == path:
                 node = nodes[p]

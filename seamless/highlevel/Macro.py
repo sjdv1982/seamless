@@ -62,7 +62,14 @@ class Macro(Base):
         if self._temp_pins is not None:
             assert pins is None
             pins = self._temp_pins
-        node = new_macro(parent, path, code, pins)
+        try:
+            assert code is None
+            assert pins is None
+            node = self._get_node()
+        except:
+            node = None
+        if node is None:
+            node = new_macro(parent, path, code, pins)
         parent._children[path] = self
 
     @property

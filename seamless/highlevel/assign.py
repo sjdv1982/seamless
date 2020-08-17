@@ -246,7 +246,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
             if target[:len(path)] != path:
                 continue
             connections.remove(con)
-    ctx._graph[0][path] = {
+    nodes[path] = {
         "path": path,
         "type": "context"
     }
@@ -260,6 +260,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
         pp = path + old_path
         node["path"] = pp
         nodetype = node["type"]
+        nodes[pp] = node
         if not runtime:
             node["UNTRANSLATED"] = True
         remove_checksum = []
@@ -273,7 +274,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
                 if old_path in targets:
                     remove_checksum.append("value")
         elif nodetype == "transformer":
-            node = Transformer(parent=ctx, path=pp)._get_htf()
+            Transformer(parent=ctx, path=pp)
             remove_checksum += ["input_temp", "input", "input_buffer", "result"]
             potential = ("code", "schema", "result_schema", "main_module")
             for pot in potential:
@@ -282,7 +283,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
             if runtime:
                 node.pop("UNTRANSLATED", None)
         elif nodetype == "macro":
-            node = Macro(ctx, pp)._get_node()
+            Macro(parent=ctx, path=pp)
             remove_checksum += ["param_temp", "param", "param_buffer"]
             potential = ("code", "schema")
             for pot in potential:
@@ -298,18 +299,23 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
             cs = node["checksum"]
             for item in remove_checksum:
                 cs.pop(item, None)
-        nodes[pp] = node
     for con in new_connections:
         con["source"] = path + con["source"]
         con["target"] = path + con["target"]
         connections.append(con)
 
 def _assign_context(ctx, new_nodes, new_connections, path, runtime):
-    ctx._destroy_path(path)
+    if runtime:
+        old_graph = deepcopy(ctx._graph)
+    ctx._destroy_path(path, runtime=runtime)
     _assign_context2(ctx, new_nodes, new_connections, path, runtime)
-    subctx = ctx._graph.nodes[path]
+    graph = ctx._runtime_graph if runtime else ctx._graph
+    subctx = graph.nodes[path]
     assert subctx["type"] == "context", path
     ctx._translate()
+    if runtime:
+        graph2 = deepcopy(ctx._graph)
+        assert old_graph == graph2
 
 def assign_context(ctx, path, value):
     graph = value.get_graph()

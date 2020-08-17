@@ -1,8 +1,10 @@
 from seamless.highlevel import Context, Cell, Macro
+from seamless.highlevel.assign import _assign_context
+from seamless.highlevel.synth_context import SynthContext
 
 ctx = Context()
 ctx.a = Cell("int")
-ctx.b = Cell("int").set(20)
+ctx.b = Cell("int")
 def add(a,b):
     return a+b
 ctx.add = add
@@ -11,7 +13,7 @@ ctx.add.b = ctx.b
 ctx.result = ctx.add
 ctx.result.celltype = "int"
 ctx.compute()
-graph = ctx.get_graph()
+graph = ctx.get_graph(runtime=True)
 
 ctx = Context()
 ctx.graph = Cell("plain").set(graph)
@@ -36,22 +38,43 @@ def run_macro(ctx, par_static, graph):
 
     from seamless.midlevel.translate import translate
     print("RUN MACRO", par_static)
-    ctx.par_dynamic = cell("int")
     ctx.subctx = context()
     translate(graph, ctx.subctx)
     ctx.subctx.a.set(par_static)
+    ctx.par_dynamic = cell("int")
+    ctx.par_dynamic.connect(ctx.subctx.b)
 
 m.code = run_macro
+ctx.m.par_dynamic = ctx.par_dynamic
 ctx.compute()
 print(ctx.m.ctx.par_dynamic)
+print(ctx.m.ctx.subctx.a)
+print(ctx.m.ctx.subctx.a.value)
 print(ctx.m.ctx.subctx.b)
 print(ctx.m.ctx.subctx.b.value)
 
-from seamless.highlevel.assign import _assign_context
 _assign_context(ctx, graph["nodes"], graph["connections"], ctx.m.ctx.subctx.path, runtime=True)
 
-from seamless.highlevel.synth_context import SynthContext
 subctx = SynthContext(ctx, ctx.m.ctx.subctx.path)
+print(subctx.children())
+print(subctx.a, subctx.a.value)
+print(subctx.b, subctx.b.value)
+print(subctx.add, subctx.add.result.value)
+print(subctx.result, subctx.result.value)
+print()
+
+print("Stage 2")
+ctx.par_static = 200
+ctx.compute()
+print(ctx.m.ctx.subctx.a)
+print(ctx.m.ctx.subctx.a.value)
+print(ctx.m.ctx.subctx.b)
+print(ctx.m.ctx.subctx.b.value)
+
+_assign_context(ctx, graph["nodes"], graph["connections"], ctx.m.ctx.subctx.path, runtime=True)
+
+subctx = SynthContext(ctx, ctx.m.ctx.subctx.path)
+print(subctx.children())
 print(subctx.a, subctx.a.value)
 print(subctx.b, subctx.b.value)
 print(subctx.add, subctx.add.result.value)
