@@ -2,7 +2,7 @@ from functools import partial
 
 status_callbacks = {}
 
-OBSERVE_GRAPH_DELAY = 0.5
+OBSERVE_GRAPH_DELAY = 0.47 # 47 is not a multiple of 200
 OBSERVE_STATUS_DELAY = 2
 
 def status_callback(ctx, ctx2, path, status):
