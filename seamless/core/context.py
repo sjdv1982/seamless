@@ -164,7 +164,7 @@ name: str
             result = self._children[attr]
             if isinstance(result, Context) and result._synth_highlevel_context is not None:
                 from ..highlevel.synth_context import SynthContext
-                return SynthContext(result._synth_highlevel_context, self._path)
+                return SynthContext(result._synth_highlevel_context, self.path + (attr,), context=result)
             return result
         raise AttributeError(attr)
 
@@ -255,6 +255,10 @@ name: str
             if isinstance(child, StructuredCell):
                 continue
             if childname in self._auto:
+                continue
+            if isinstance(child, Context) and child._synth_highlevel_context is not None:
+                child = getattr(self, childname)
+                status[childname] = child.status
                 continue
             status[childname] = (child, child._get_status())
         return status

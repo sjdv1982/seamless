@@ -215,7 +215,10 @@ class Macro(Base):
         try:
             p = parent._gen_context
             for subpath in self._path:
-                p = getattr(p, subpath)
+                p2 = getattr(p, subpath)
+                if isinstance(p2, SynthContext) and p2._context is not None:
+                    p2 = p2._context()
+                p = p2
             if not isinstance(p, CoreContext):
                 raise AttributeError
             return True
@@ -230,7 +233,10 @@ class Macro(Base):
             return None
         p = parent._gen_context
         for subpath in self._path:
-            p = getattr(p, subpath)
+            p2 = getattr(p, subpath)
+            if isinstance(p2, SynthContext) and p2._context is not None:
+                p2 = p2._context()
+            p = p2
         assert isinstance(p, CoreContext)
         return p
 
@@ -570,3 +576,5 @@ class Macro(Base):
         std = ["code", "pins", node["PARAM"], "exception", "status"]
         pins = list(node["pins"].keys())
         return sorted(d + pins + std)
+
+from .synth_context import SynthContext

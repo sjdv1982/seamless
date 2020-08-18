@@ -1,13 +1,25 @@
 import weakref
 
 class SynthContext:
-    def __init__(self, parent, path):
+    _context = None
+    def __init__(self, parent, path, context=None):
         self._parent = weakref.ref(parent)
         self._path = path
+        if context is not None:
+            self._context = weakref.ref(context)
 
     @property
     def status(self):
-        raise NotImplementedError
+        result = {}
+        for childname in self.children():
+            child = getattr(self, childname)
+            status = child.status
+            if status == "Status: OK":
+                continue
+            result[childname] = child.status
+        if len(result):
+            return result
+        return "Status: OK"
 
     def __dir__(self):
         return self.children()

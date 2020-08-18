@@ -40,3 +40,4 @@ class HighLevelContext(UnboundContext):
             path,
             runtime=True
         )
+        self._synth_highlevel_context = highlevel_ctx

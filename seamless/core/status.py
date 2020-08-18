@@ -266,6 +266,11 @@ def format_context_status(stat):
     from .context import Context
     result = {}
     for childname, value in stat.items():
+        if isinstance(value, (str, dict)):
+            if value == "Status: OK":
+                continue
+            result[childname] = value
+            continue
         child, childstat = value
         if not isinstance(child, Context):
             if childstat[0] == StatusEnum.VOID:

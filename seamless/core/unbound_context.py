@@ -134,6 +134,7 @@ class UnboundContext(SeamlessBase):
     _context = None
     _realmanager = None
     _root_highlevel_context = None
+    _synth_highlevel_context = None
 
     def __init__(
         self, *,
@@ -326,6 +327,7 @@ class UnboundContext(SeamlessBase):
                 child._bind_stage1(bound_ctx)
         ctx._auto = self._auto
         self._bound = ctx
+        ctx._synth_highlevel_context = self._synth_highlevel_context
 
     def _bind_stage2(self, manager):
         macro = self._macro

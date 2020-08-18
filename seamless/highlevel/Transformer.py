@@ -453,7 +453,11 @@ class Transformer(Base):
         try:
             p = parent._gen_context
             for subpath in self._path:
-                p = getattr(p, subpath)
+                p2 = getattr(p, subpath)
+                if isinstance(p2, SynthContext) and p2._context is not None:
+                    p2 = p2._context()
+                p = p2
+
             if not isinstance(p, CoreContext):
                 raise AttributeError
             return True
@@ -468,7 +472,11 @@ class Transformer(Base):
             return None
         p = parent._gen_context
         for subpath in self._path:
-            p = getattr(p, subpath)
+            p2 = getattr(p, subpath)
+            if isinstance(p2, SynthContext) and p2._context is not None:
+                p2 = p2._context()
+            p = p2
+
         assert isinstance(p, CoreContext)
         return p
 
@@ -1015,3 +1023,5 @@ class Transformer(Base):
     def __str__(self):
         path = ".".join(self._path) if self._path is not None else None
         return "Seamless Transformer: %s" % path
+
+from .synth_context import SynthContext
