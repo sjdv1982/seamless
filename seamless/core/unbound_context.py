@@ -377,6 +377,10 @@ class UnboundContext(SeamlessBase):
     def _bind(self, ctx):
         from .context import Context
         from .macro import Path
+        pseudo_connections = getattr(self, "_pseudo_connections", None)
+        highlevel_context = self._root_._root_highlevel_context
+        set_pseudo_connections(highlevel_context, ctx.path, pseudo_connections)
+
         self._bind_stage1(ctx)
         manager = ctx._get_manager()
         for reg in self._realmanager._registered:
@@ -422,3 +426,4 @@ from .structured_cell import StructuredCell
 from .context import Context
 from .macro_mode import curr_macro, register_toplevel
 from .mount import MountItem, is_dummy_mount
+from .pseudo_connections import set_pseudo_connections

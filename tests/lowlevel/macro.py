@@ -25,7 +25,7 @@ with macro_mode_on():
         ctx.b.connect(ctx.tf.b)
         ctx.code = cell("transformer").set("print('TRANSFORM'); import time; time.sleep(2); c = a + b")
         ctx.code.connect(ctx.tf.code)
-        ctx.tf.c.connect(ctx.result)        
+        ctx.tf.c.connect(ctx.result)
         assert param != 999   # on purpose
         if param > 1:
             ctx.d = cell().set(42)
@@ -43,7 +43,7 @@ ctx.compute(1)
 print(ctx.mymacro.ctx.a.value)
 print(ctx.mymacro.ctx.b.value)
 print(hasattr(ctx.mymacro.ctx, "d"))
-print(ctx.mymacro.ctx.result.value) #None 
+print(ctx.mymacro.ctx.result.value) #None
 ctx.compute()
 print(ctx.mymacro.ctx.result.value) #3002
 
@@ -72,7 +72,7 @@ try:
     print(ctx.mymacro.ctx)
 except AttributeError:
     print("ctx.mymacro.ctx is undefined")
-else:    
+else:
     print(ctx.mymacro.ctx.a.value)
     print(ctx.mymacro.ctx.b.value)
     print(ctx.mymacro.ctx.hasattr("d"))
@@ -92,7 +92,7 @@ try:
     print(ctx.mymacro.ctx)
 except AttributeError:
     print("ctx.mymacro.ctx is undefined")
-else:    
+else:
     print(ctx.mymacro.ctx.a.value)
     print(ctx.mymacro.ctx.b.value)
     print(ctx.mymacro.ctx.hasattr("d"))
@@ -124,7 +124,7 @@ try:
     print(ctx.mymacro.ctx)
 except AttributeError:
     print("ctx.mymacro.ctx is undefined")
-else:    
+else:
     print(ctx.mymacro.ctx.a.value)
     print(ctx.mymacro.ctx.b.value)
     print(ctx.mymacro.ctx.hasattr("d"))
@@ -165,7 +165,7 @@ try:
     print(ctx.mymacro.ctx)
 except AttributeError:
     print("ctx.mymacro.ctx is undefined")
-else:    
+else:
     print(ctx.mymacro.ctx.a.value)
     print(ctx.mymacro.ctx.b.value)
     print(ctx.mymacro.ctx.hasattr("d"))

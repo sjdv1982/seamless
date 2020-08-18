@@ -12,6 +12,7 @@ def constructor(ctx, libctx, context_graph, data, result):
     m.pins.result = {"io": "output"}
     def map_list(ctx, data, graph):
         print("DATA", data)
+        pseudo_connections = []
         #ctx.result = cell("mixed", hash_pattern = {"!": "#"})
         ctx.result = cell("mixed") ###
 
@@ -27,16 +28,24 @@ def constructor(ctx, libctx, context_graph, data, result):
 
         for n, item in enumerate(data):
             hc = HighLevelContext(graph)
-            setattr(ctx, "subctx%d" % (n+1), hc)
+            subctx = "subctx%d" % (n+1)
+            setattr(ctx, subctx, hc)
+            con = ["..data"], ["ctx", subctx, "a"]
+            pseudo_connections.append(con)
             hc.a.set(item["a"])
+            con = ["..data"], ["ctx", subctx, "b"]
+            pseudo_connections.append(con)
             hc.b.set(item["b"])
             resultname = "result%d" % (n+1)
             setattr(ctx, resultname, cell("int"))
             c = getattr(ctx, resultname)
             hc.result.connect(c)
             c.connect(ctx.sc.inchannels[(n+1,)])
+            con = ["ctx", subctx, "result"], ["..result0"]
+            pseudo_connections.append(con)
 
         ctx.sc.outchannels[()].connect(ctx.result)
+        ctx._pseudo_connections = pseudo_connections
 
     m.code = map_list
     ctx.result0 = Cell()
@@ -147,3 +156,5 @@ print(ctx.result.value)
 print()
 from pprint import pprint
 pprint(list(ctx._runtime_graph.nodes.keys()))
+print()
+pprint(list(ctx._runtime_graph.connections))
