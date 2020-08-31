@@ -257,4 +257,3 @@ class TransformerWrapper(WrapperBase):
         )
 
 from ..core.manager.tasks import GetBufferTask, DeserializeBufferTask
-from ..core.protocol.deserialize import deserialize_cache

@@ -1019,7 +1019,6 @@ class SubContext(Base):
         return graph
 
     def get_graph(self, runtime=False):
-        print("GET GRAPH", runtime)
         graph = self._get_graph(copy=True, runtime=runtime)
         return graph
 

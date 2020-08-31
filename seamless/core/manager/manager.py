@@ -231,7 +231,15 @@ class Manager:
         cell._status_reason = status_reason
         cell._prelim = prelim
         if checksum != old_checksum:
-            cachemanager.incref_checksum(checksum, cell, authoritative, False)
+            try:
+                cachemanager.incref_checksum(checksum, cell, authoritative, False)
+            except DeepStructureError as exc:
+                buf = buffer_cache.get_buffer(checksum)
+                from ..protocol.calculate_checksum import calculate_checksum_sync
+                cs2 = calculate_checksum_sync(buf)
+                assert cs2 == checksum, (cs2.hex(), checksum.hex(), buf)
+                print("CELL!", cell, buf, checksum.hex())
+                raise exc from None
             observer = cell._observer
             if observer is not None:
                 cs = checksum.hex() if checksum is not None else None
@@ -422,11 +430,10 @@ class Manager:
         if checksum is None:
             return None
         celltype = cell._celltype
-        subcelltype = cell._subcelltype
         if not copy:
             cached_value = deserialize_cache.get((checksum, celltype))
             if cached_value is not None:
-                return cached_value
+                return copy.deepcopy(cached_value)
         return self.resolve(checksum, celltype, copy=copy)
 
     def resolve(self, checksum, celltype="mixed", copy=False):
@@ -670,3 +677,4 @@ from ..structured_cell import StructuredCell
 from .tasks.structured_cell import StructuredCellJoinTask
 from .tasks.transformer_update import TransformerUpdateTask
 from ..utils import overlap_path
+from ..protocol.deep_structure import DeepStructureError

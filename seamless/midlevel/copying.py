@@ -3,12 +3,35 @@ from ..mixed import MixedBase
 from copy import deepcopy
 import inspect, asyncio
 from ..core.cache.buffer_cache import buffer_cache
+from ..core.protocol.deserialize import deserialize_sync as deserialize
 from ..core.protocol.serialize import serialize_sync as serialize
 from ..core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
-from ..core.protocol.deep_structure import apply_hash_pattern_sync
+from ..core.protocol.deep_structure import apply_hash_pattern_sync, deep_structure_to_checksums
 
 def get_checksums(nodes):
-    # TODO: deep cells
+    def add_checksum(node, checksum, subpath=None):
+        if checksum is None:
+            return
+        checksums.add(checksum)
+        hash_pattern = None
+        if node["type"] == "cell" and subpath != "schema":
+            hash_pattern = node.get("hash_pattern")
+        elif node["type"] == "transformer":
+            if subpath is not None and subpath.startswith("input") and not subpath.endswith("schema"):
+                hash_pattern = node.get("hash_pattern")
+        elif node["type"] == "macro":
+            if subpath is not None and subpath.startswith("param") and not subpath.endswith("schema"):
+                hash_pattern = {"*": "#"}
+        else:
+            pass
+        if hash_pattern is not None:
+            buffer = buffer_cache.get_buffer(bytes.fromhex(checksum))
+            if buffer is None:
+                print("WARNING: could not get checksums for deep structures in {}".format(node["path"]))
+                return
+            deep_structure = deserialize(buffer, checksum, "plain", copy=False)
+            deep_checksums = deep_structure_to_checksums(deep_structure, hash_pattern)
+            checksums.update(deep_checksums)
     checksums = set()
     for node in nodes:
         if node["type"] in ("link", "context"):
@@ -20,11 +43,11 @@ def get_checksums(nodes):
         if checksum is None:
             continue
         elif isinstance(checksum, str):
-            checksums.add(checksum)
+            add_checksum(node, checksum)
         else:
             for k,v in checksum.items():
                 if v is not None:
-                    checksums.add(v)
+                    add_checksum(node, v, k)
     return checksums
 
 async def get_buffer_dict(manager, checksums):
@@ -98,8 +121,8 @@ def fill_checksum(manager, node, temp_path, composite=True):
             celltype = "plain"
         else:
             celltype = "structured"
-            if temp_path.startswith("input"):
-                hash_pattern = {"*": "#"}
+            if temp_path.startswith("input") and not temp_path.endswith("schema"):
+                hash_pattern = node.get("hash_pattern")
     elif node["type"] == "reactor":
         raise NotImplementedError ### livegraph branch, feature E2
     elif node["type"] == "macro":
@@ -112,7 +135,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
                 celltype = "text"
         else:
             celltype = "structured"
-            if temp_path.startswith("param"):
+            if temp_path.startswith("param") and not temp_path.endswith("schema"):
                 hash_pattern = {"*": "#"}
     else:
         raise TypeError(node["type"])

@@ -93,7 +93,7 @@ if args.no_lru:
     from seamless.core.protocol.deserialize import deserialize_cache
     from seamless.core.protocol.serialize import serialize_cache
     calculate_checksum_cache.disable()
-    checksum_cache.disable
+    checksum_cache.disable()
     deserialize_cache.disable()
     serialize_cache.disable()
 

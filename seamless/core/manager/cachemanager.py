@@ -108,20 +108,14 @@ class CacheManager:
         if checksum is None:
             return
         #print("INCREF CHECKSUM", checksum.hex(), refholder, result)
+        incref_hash_pattern = False
         if isinstance(refholder, Cell):
             assert not result
             assert self.cell_to_ref[refholder] is None
             self.cell_to_ref[refholder] = (checksum, authoritative)
             cell = refholder
             if cell._hash_pattern is not None:
-                deep_buffer = buffer_cache.get_buffer(checksum)
-                deep_structure = deserialize(deep_buffer, checksum, "mixed", False)
-                sub_checksums = deep_structure_to_checksums(
-                    deep_structure, cell._hash_pattern
-                )
-                for sub_checksum in sub_checksums:
-                    #print("INCREF SUB-CHECKSUM", sub_checksum, cell)
-                    buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)
+                incref_hash_pattern = True
         elif isinstance(refholder, Expression):
             #print("INCREF EXPRESSION", refholder._get_hash(), result)
             assert not authoritative
@@ -160,6 +154,21 @@ class CacheManager:
         else:
             self.checksum_refs[checksum].append((refh, result))
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
+        if incref_hash_pattern:
+            deep_buffer = buffer_cache.get_buffer(checksum)
+            deep_structure = deserialize(deep_buffer, checksum, "mixed", False)
+            import copy; deep_structure2 = copy.deepcopy(deep_structure)
+            try:
+                sub_checksums = deep_structure_to_checksums(
+                    deep_structure, cell._hash_pattern
+                )
+            except Exception as exc:
+                print("DEEP", checksum.hex(), str(deep_structure2)[:100], deep_buffer[:100])
+                raise exc from None
+            for sub_checksum in sub_checksums:
+                #print("INCREF SUB-CHECKSUM", sub_checksum, cell)
+                buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)
+
 
     async def fingertip(self, checksum, *, must_have_cell=False):
         """Tries to put the checksum's corresponding buffer 'at your fingertips'

@@ -27,6 +27,7 @@ checksum_cache = lrucache2(100)
 async def calculate_checksum(buffer):
     if buffer is None:
         return None
+    assert isinstance(buffer, bytes)
     buf_id = id(buffer)
     cached_checksum, _ = calculate_checksum_cache.get(buf_id, (None, None))
     if cached_checksum is not None:
@@ -52,6 +53,7 @@ def calculate_checksum_sync(buffer):
     if buffer is None:
         return None
     buf_id = id(buffer)
+    assert isinstance(buffer, bytes)
     cached_checksum, _ = calculate_checksum_cache.get(buf_id, (None, None))
     if cached_checksum is not None:
         checksum_cache[cached_checksum] = buffer

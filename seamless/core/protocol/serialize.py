@@ -13,7 +13,6 @@ from ...mixed.io import serialize as mixed_serialize
 #  because id(value) is only unique while value does not die!!!
 serialize_cache = lrucache2(100)
 
-
 def _serialize(value, celltype):
     if celltype == "str":
         value = str(value)

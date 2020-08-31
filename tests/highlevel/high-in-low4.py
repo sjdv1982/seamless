@@ -1,8 +1,13 @@
 from seamless.highlevel import Context, Cell, Macro
 
 sctx = Context()
+sctx.inp = Cell("mixed")
+sctx.inp2 = Cell()
+sctx.inp2 = sctx.inp
 sctx.a = Cell("int")
 sctx.b = Cell("int")
+sctx.a = sctx.inp2.a
+sctx.b = sctx.inp2.b
 def add(a,b):
     return a+b
 sctx.add = add
@@ -39,20 +44,21 @@ ctx.data.hash_pattern = {"!": "#"}
 ctx.cs_data = Cell("checksum")
 ctx.cs_data = ctx.data
 ctx.compute()
-import sys; sys.exit()
 ctx.data.schema.storage = "pure-plain"
 ctx.data.set(data)
+ctx.compute()
 ctx.result = Cell()
 ctx.result.hash_pattern = {"!": "#"}
 ctx.compute()
 ctx.result.schema.storage = "pure-plain"
 
 m = ctx.m = Macro()
-m.data = ctx.data
+m.cs_data = ctx.cs_data
 m.graph = ctx.graph
 m.pins.result = {"io": "output", "celltype": "mixed", "hash_pattern": {"!": "#"}}
-def map_list(ctx, data, graph):
-    print("DATA", data)
+def map_list(ctx, cs_data, graph):
+    from seamless.core import Cell as CoreCell
+    print("CS-DATA", cs_data)
     ctx.result = cell("mixed", hash_pattern = {"!": "#"})
 
     ctx.sc_data = cell("mixed" , hash_pattern = {"!": "#"})
@@ -60,16 +66,23 @@ def map_list(ctx, data, graph):
     ctx.sc = StructuredCell(
         data=ctx.sc_data,
         buffer=ctx.sc_buffer,
-        inchannels=[(n,) for n in range(len(data))],
+        inchannels=[(n,) for n in range(len(cs_data))],
         outchannels=[()],
         hash_pattern = {"!": "#"}
     )
 
-    for n, item in enumerate(data):
+    for n, cs in enumerate(cs_data):
         hc = HighLevelContext(graph)
         setattr(ctx, "subctx%d" % (n+1), hc)
-        hc.a.set(item["a"])
-        hc.b.set(item["b"])
+        if not hasattr(hc, "inp"):
+            raise TypeError("Map-reduce context must have a cell called 'inp'")
+        if isinstance(hc.inp, StructuredCell):
+            raise TypeError("Map-reduce context has a cell called 'inp', but its celltype must be mixed, not structured")
+        if not isinstance(hc.inp, CoreCell):
+            raise TypeError("Map-reduce context must have an attribute 'inp' that is a cell, not a {}".format(type(hc.inp)))
+        if hc.inp.celltype != "mixed":
+            raise TypeError("Map-reduce context has a cell called 'inp', but its celltype must be mixed, not {}".format(hc.inp.celltype))
+        hc.inp.set_checksum(cs)
         resultname = "result%d" % (n+1)
         setattr(ctx, resultname, cell("int"))
         c = getattr(ctx, resultname)

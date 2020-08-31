@@ -110,10 +110,8 @@ class StructuredCellJoinTask(Task):
                                 # - the subchecksum has already the correct hash pattern (accessors make sure of this)
 
                                 sub_buffer = None
-                                if access_hash_pattern(sc.hash_pattern, path) != "#":
+                                if sc.hash_pattern is None or access_hash_pattern(sc.hash_pattern, path) != "#":
                                     sub_buffer = await GetBufferTask(manager, subchecksum).run()
-                                if str(sc).endswith(".result"):
-                                    sub_buffer2 = await GetBufferTask(manager, subchecksum).run()
                                 await set_subpath_checksum(value, sc.hash_pattern, path, subchecksum, sub_buffer)
                             except CancelledError:
                                 ok = False

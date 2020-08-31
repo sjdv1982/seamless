@@ -145,6 +145,7 @@ class BufferCache:
                         # TODO: this will normally not work. Add a database_sink "make_persistent" API function!
                         database_sink.set_buffer(checksum, buffer, persistent)
             if buffer is not None and checksum in self.missing:
+                assert isinstance(buffer, bytes)
                 self.missing.discard(checksum)
                 local = (not database_sink.active) or (not database_cache.active)
                 if persistent and local:
@@ -223,11 +224,15 @@ class BufferCache:
             return None
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
+            assert isinstance(buffer, bytes)
             return buffer
         buffer = self.buffer_cache.get(checksum)
         if buffer is not None:
+            assert isinstance(buffer, bytes)
             return buffer
-        return database_cache.get_buffer(checksum)
+        buffer = database_cache.get_buffer(checksum)
+        assert isinstance(buffer, bytes)
+        return buffer
 
     def get_buffer_length(self, checksum):
         if checksum is None:

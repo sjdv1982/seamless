@@ -8,6 +8,7 @@ from ...mixed.io import deserialize as mixed_deserialize
 from .calculate_checksum import lrucache2
 
 deserialize_cache = lrucache2(100)
+deserialize_cache.disable() ### apparently, something goes wrong somewhere, but I don't see how...
 
 def validate_checksum(v):
     if isinstance(v, str):
@@ -92,11 +93,12 @@ async def deserialize(buffer, checksum, celltype, copy):
     if buffer is None:
         return None
     value = deserialize_cache.get((checksum, celltype))
+    ###
+    copy = True # Apparently, sometimes the promise of not modifying the value is violated... for now, enforce a copy
+    ###
     if value is not None:
         if copy:
             newvalue = deepcopy(value)
-            id_newvalue = id(newvalue)
-            serialize_cache[id_newvalue, celltype] = buffer, newvalue
             return newvalue
         else:
             return value
@@ -113,10 +115,13 @@ async def deserialize(buffer, checksum, celltype, copy):
     else:
         value = _deserialize(buffer, checksum, celltype)
     if celltype not in text_types2:
+        if copy:
+            value = deepcopy(value)
         deserialize_cache[checksum, celltype] = value
     evaluation_cache_1.add((checksum, celltype))
-    id_value = id(value)
-    serialize_cache[id_value, celltype] = buffer, value
+    if not copy:
+        id_value = id(value)
+        serialize_cache[id_value, celltype] = buffer, value
     return value
 
 def deserialize_sync(buffer, checksum, celltype, copy):
@@ -130,22 +135,26 @@ def deserialize_sync(buffer, checksum, celltype, copy):
     This function can be executed if the asyncio event loop is already running"""
     if buffer is None:
         return None
+    ###
+    copy = True # Apparently, sometimes the promise of not modifying the value is violated... for now, enforce a copy
+    ###
     value = deserialize_cache.get((checksum, celltype))
     if value is not None:
         if copy:
             newvalue = deepcopy(value)
-            id_newvalue = id(newvalue)
-            serialize_cache[id_newvalue, celltype] = buffer, newvalue
             return newvalue
         else:
             return value
 
     value = _deserialize(buffer, checksum, celltype)
     if celltype not in text_types2:
+        if copy:
+            value = deepcopy(value)
         deserialize_cache[checksum, celltype] = value
     evaluation_cache_1.add((checksum, celltype))
-    id_value = id(value)
-    serialize_cache[id_value, celltype] = buffer, value
+    if not copy:
+        id_value = id(value)
+        serialize_cache[id_value, celltype] = buffer, value
     return value
 
 

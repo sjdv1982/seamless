@@ -122,6 +122,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
       ctx, input_name, inchannels, [()],
       fingertip_no_remote=node.get("fingertip_no_remote", False),
       fingertip_no_recompute=node.get("fingertip_no_recompute", False),
+      hash_pattern= node.get("hash_pattern"),
       return_context=True
     )
 

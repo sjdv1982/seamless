@@ -82,6 +82,10 @@ class Cell(SeamlessBase):
             self._set_checksum(checksum.hex(), initial, from_structured_cell)
             self._initial_checksum = None
 
+    @property
+    def celltype(self):
+        return self._celltype
+
     def __hash__(self):
         return self._counter
 
