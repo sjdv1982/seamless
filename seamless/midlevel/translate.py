@@ -249,7 +249,11 @@ def translate_connection(node, namespace, ctx):
             con_name = "CONNECTION_" + str(n)
             if con_name not in ctx._children:
                 break
-        intermediate = core_cell("mixed")
+        hash_pattern = source.hash_pattern
+        if isinstance(source, Outchannel):
+            if hash_pattern is not None:
+                hash_pattern = access_hash_pattern(hash_pattern, source.subpath)
+        intermediate = core_cell("mixed", hash_pattern=hash_pattern)
         intermediate._fingertip_remote = False
         setattr(ctx, con_name, intermediate)
         source.connect(intermediate)
@@ -373,4 +377,4 @@ from .translate_bash_transformer import translate_bash_transformer
 from .translate_docker_transformer import translate_docker_transformer
 from .translate_compiled_transformer import translate_compiled_transformer
 '''
-from ..core.protocol.deep_structure import apply_hash_pattern_sync
+from ..core.protocol.deep_structure import apply_hash_pattern_sync, access_hash_pattern

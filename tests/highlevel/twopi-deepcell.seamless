@@ -27,7 +27,9 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "b24cb296a9e7872c592baedc5ba4166c90dc3c464e4e2ddfddb78f9c56837b89"
+        "code": "b24cb296a9e7872c592baedc5ba4166c90dc3c464e4e2ddfddb78f9c56837b89",
+        "input": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "input_buffer": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "debug": false,
@@ -48,7 +50,9 @@
     {
       "celltype": "structured",
       "checksum": {
-        "auth": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3"
+        "auth": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3",
+        "buffer": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3",
+        "value": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3"
       },
       "datatype": "mixed",
       "hash_pattern": null,

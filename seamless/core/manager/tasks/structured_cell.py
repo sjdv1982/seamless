@@ -94,17 +94,27 @@ class StructuredCellJoinTask(Task):
                         elif isinstance(paths[0], (list, tuple)) and len(paths[0]) and isinstance(paths[0][0], int):
                             value = []
                         else:
-                            value = {}
+                            if sc.hash_pattern is not None:
+                                if isinstance(sc.hash_pattern, dict):
+                                    for k in sc.hash_pattern:
+                                        if k.startswith("!"):
+                                            value = []
+                                            break
+                            if value is None:
+                                value = {}
                     for path in paths:
                         subchecksum = sc.inchannels[path]._checksum
                         if subchecksum is not None:
                             try:
-                                buffer = await GetBufferTask(manager, subchecksum).run()
-                                subvalue = await DeserializeBufferTask(
-                                    manager, buffer, subchecksum, "mixed", False
-                                ).run()
-                                # no need to buffer-cache, since the upstream inchannel accessors hold a ref
-                                await set_subpath(value, sc.hash_pattern, path, subvalue)
+                                # - no need to buffer-cache, since the inchannel holds a ref
+                                # - the subchecksum has already the correct hash pattern (accessors make sure of this)
+
+                                sub_buffer = None
+                                if access_hash_pattern(sc.hash_pattern, path) != "#":
+                                    sub_buffer = await GetBufferTask(manager, subchecksum).run()
+                                if str(sc).endswith(".result"):
+                                    sub_buffer2 = await GetBufferTask(manager, subchecksum).run()
+                                await set_subpath_checksum(value, sc.hash_pattern, path, subchecksum, sub_buffer)
                             except CancelledError:
                                 ok = False
                                 canceled = True
@@ -203,42 +213,16 @@ class StructuredCellJoinTask(Task):
                 cs = bytes.fromhex(checksum) if checksum is not None else None
                 expression_to_result_checksum = cachemanager.expression_to_result_checksum
                 for out_path in sc.outchannels:
-                    changed = False
-                    if sc._exception is not None or sc._new_outgoing_connections:
-                        changed = True
+                    if cs is None:
+                        hard_cancel_paths.append(out_path)
                     else:
-                        for p in modified_outchannels:
-                            if overlap_path(p, out_path):
+                        for accessor in downstreams[out_path]:
+                            changed = accessor.build_expression(livegraph, cs)
+                            if prelim[out_path] != accessor._prelim:
+                                accessor._prelim = prelim[out_path]
                                 changed = True
-                                break
-                    if changed:
-                        if cs is None:
-                            hard_cancel_paths.append(out_path)
-                        else:
-                            for accessor in downstreams[out_path]:
-                                changed2 = accessor.build_expression(livegraph, cs)
-                                if prelim[out_path] != accessor._prelim:
-                                    accessor._prelim = prelim[out_path]
-                                    changed2 = True
-                                if changed2:
-                                    AccessorUpdateTask(manager, accessor).launch()
-                    elif cs is not None: # morph
-                        try:
-                            for accessor in downstreams[out_path]:
-                                old_expression = accessor.expression
-                                expression_result_checksum = \
-                                    expression_to_result_checksum.get(old_expression)
-                                if expression_result_checksum is not None:
-                                    accessor.build_expression(livegraph, cs)
-                                    new_expression = accessor.expression
-                        except CacheMissError:
-                            sc._exception = traceback.format_exc(limit=0)
-                            manager.cancel_scell_hard(sc, self, hard_cancel_paths)
-                            return
-                        except Exception:
-                            sc._exception = traceback.format_exc()
-                            manager.cancel_scell_hard(sc, self, hard_cancel_paths)
-                            return
+                            if changed:
+                                AccessorUpdateTask(manager, accessor).launch()
 
 
             sc.modified.clear()
@@ -259,4 +243,4 @@ from .accessor_update import AccessorUpdateTask
 from ...cache import CacheMissError
 from ...cache.buffer_cache import buffer_cache
 from ....silk.Silk import Silk, ValidationError
-from ...protocol.expression import get_subpath, set_subpath
+from ...protocol.expression import get_subpath, set_subpath, set_subpath_checksum, access_hash_pattern

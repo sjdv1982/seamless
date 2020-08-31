@@ -11,21 +11,20 @@ class MacroUpdateTask(Task):
 
     async def _run(self):
         while get_macro_mode():
-            await asyncio.sleep(0)
+            await asyncio.sleep(0.01)
         macro = self.macro
-        from . import SerializeToBufferTask
         manager = self.manager()
         livegraph = manager.livegraph
         taskmanager = manager.taskmanager
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
         upstreams = livegraph.macro_to_upstream[macro]
-        
+
         for pinname, accessor in upstreams.items():
             if accessor is None: #unconnected
                 macro._status_reason = StatusReasonEnum.UNCONNECTED
-                return                
-        
-        status_reason = None        
+                return
+
+        status_reason = None
         for pinname, accessor in upstreams.items():
             if accessor._void: #upstream error
                 status_reason = StatusReasonEnum.UPSTREAM
@@ -34,14 +33,19 @@ class MacroUpdateTask(Task):
             if not macro._void:
                 print("WARNING: macro %s is not yet void, shouldn't happen during macro update" % macro)
                 macro._status_reason = StatusReasonEnum.UPSTREAM
-                return
             return
 
+        ok, void = True, False
         for pinname, accessor in upstreams.items():
-            if accessor._checksum is None: #pending
-                macro._void = False
-                return
-        
+            if accessor._checksum is None: #pending or void
+                ok = False
+                if not void:
+                    void = accessor._void
+
+        if not ok:
+            macro._void = void
+            return
+
         inputpins = {}
         for pinname, accessor in upstreams.items():
             inputpins[pinname] = accessor._checksum
@@ -52,17 +56,19 @@ class MacroUpdateTask(Task):
         macro._last_inputs = inputpins.copy()
         macro._void = False
         macro._status_reason = None
-        
+
         cachemanager = manager.cachemanager
 
         code = None
         values = {}
-        module_workspace = {}        
+        module_workspace = {}
         for pinname, accessor in upstreams.items():
             expression_checksum = await EvaluateExpressionTask(
                 manager,
                 accessor.expression
             ).run()
+            if accessor.expression.hash_pattern is not None:
+                raise NotImplementedError
             celltype = accessor.write_accessor.celltype
             subcelltype = accessor.write_accessor.subcelltype
             buffer = await cachemanager.fingertip(expression_checksum)
@@ -77,7 +83,7 @@ class MacroUpdateTask(Task):
                 module_workspace[pinname] = mod[1]
             else:
                 values[pinname] = value
-        
+
         if macro._gen_context is not None:
             macro._gen_context.destroy()
             macro._gen_context = None

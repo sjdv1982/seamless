@@ -14,6 +14,10 @@ class Inchannel:
         self.structured_cell = weakref.ref(structured_cell)
         self.subpath = subpath
 
+    @property
+    def hash_pattern(self):
+        return self.structured_cell().hash_pattern
+
 class Outchannel:
     def __init__(self, structured_cell, subpath):
         assert isinstance(subpath, tuple)
@@ -28,6 +32,10 @@ class Outchannel:
         else:
             target_subpath = None
         manager.connect(sc._data, self.subpath, target, target_subpath)
+
+    @property
+    def hash_pattern(self):
+        return self.structured_cell().hash_pattern
 
 
 class ModifiedPathManager:

@@ -35,32 +35,31 @@ ctx = Context()
 graph = sctx.get_graph(runtime=True)
 ctx.graph = Cell("plain").set(graph)
 ctx.data = Cell()
-#ctx.data.hash_pattern = {"!": "#"}  ### TODO: BUG
+ctx.data.hash_pattern = {"!": "#"}
 ctx.compute()
 ctx.data.schema.storage = "pure-plain"
 ctx.data.set(data)
 ctx.result = Cell()
-#ctx.result.hash_pattern = {"!": "#"}  ### TODO: BUG
+ctx.result.hash_pattern = {"!": "#"}
 ctx.compute()
 ctx.result.schema.storage = "pure-plain"
 
 m = ctx.m = Macro()
 m.data = ctx.data
 m.graph = ctx.graph
-m.pins.result = {"io": "output"}
+m.pins.result = {"io": "output", "celltype": "mixed", "hash_pattern": {"!": "#"}}
 def map_list(ctx, data, graph):
     print("DATA", data)
-    #ctx.result = cell("mixed", hash_pattern = {"!": "#"})
-    ctx.result = cell("mixed") ###
+    ctx.result = cell("mixed", hash_pattern = {"!": "#"})
 
-    ctx.sc_data = cell("mixed") # , hash_pattern = {"!": "#"})
-    ctx.sc_buffer = cell("mixed") # , hash_pattern = {"!": "#"})
+    ctx.sc_data = cell("mixed" , hash_pattern = {"!": "#"})
+    ctx.sc_buffer = cell("mixed" , hash_pattern = {"!": "#"})
     ctx.sc = StructuredCell(
         data=ctx.sc_data,
         buffer=ctx.sc_buffer,
-        inchannels=[(n+1,) for n in range(len(data))],
-        outchannels=[()]
-        #, hash_pattern = {"!": "#"})
+        inchannels=[(n,) for n in range(len(data))],
+        outchannels=[()],
+        hash_pattern = {"!": "#"}
     )
 
     for n, item in enumerate(data):
@@ -72,7 +71,7 @@ def map_list(ctx, data, graph):
         setattr(ctx, resultname, cell("int"))
         c = getattr(ctx, resultname)
         hc.result.connect(c)
-        c.connect(ctx.sc.inchannels[(n+1,)])
+        c.connect(ctx.sc.inchannels[(n,)])
 
     ctx.sc.outchannels[()].connect(ctx.result)
 
@@ -84,11 +83,19 @@ print("Exception:", m.exception)
 print(ctx.m.ctx.result1.value)
 print(ctx.m.ctx.result2.value)
 print(ctx.m.ctx.result.value)
+print(ctx.m.ctx.result.data)
+print()
+print(ctx.m._get_mctx().result.value)
+print(ctx.m._get_mctx().result.data)
+print(ctx.m._get_mctx().result._hash_pattern)
+print()
 print(ctx.result.value)
+print(ctx.result.data)
 print(ctx.m.ctx.sc.status)
 print(ctx.m.ctx.subctx1.a.status)
 print(ctx.m.ctx.subctx1.status)
 print(ctx.m.ctx.status)
+print()
 
 ctx.data.set([{"a":12, "b":-123}, {"a":182, "b":-83}])
 ctx.compute()

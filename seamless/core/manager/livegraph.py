@@ -488,7 +488,7 @@ class LiveGraph:
         manager = self.manager()
         read_accessor = ReadAccessor(
             manager, None, source,
-            hash_pattern=None
+            hash_pattern=None  # will be derived from the cell bound to the macropath
         )
         write_accessor = WriteAccessor(
             read_accessor, target,

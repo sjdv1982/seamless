@@ -14,18 +14,21 @@ class ReadAccessor(Accessor):
         self.path = path
         assert celltype in celltypes or isinstance(celltype, MacroPath)
         self.reactor_pinname = None
-        self.celltype = celltype   
+        self.celltype = celltype
         self.write_accessor = None
         self.expression = None
         self._status_reason = StatusReasonEnum.UNDEFINED
-        if hash_pattern is not None:
-            assert celltype == "mixed"
-        self.hash_pattern = hash_pattern
-    
+        if isinstance(celltype, MacroPath):
+            assert hash_pattern is None
+        else:
+            if hash_pattern is not None:
+                assert celltype == "mixed"
+            self.hash_pattern = hash_pattern
+
     @property
     def preliminary(self):
         return self._prelim
-    
+
     def build_expression(self, livegraph, checksum):
         """Returns if expression has changed"""
         celltype = self.celltype
@@ -35,6 +38,9 @@ class ReadAccessor(Accessor):
                 self._clear_expression(livegraph)
                 return False
             celltype = macropath._cell._celltype
+            hash_pattern = macropath._cell._hash_pattern
+        else:
+            hash_pattern = self.hash_pattern
         target_celltype = self.write_accessor.celltype
         target_subcelltype = self.write_accessor.subcelltype
         if isinstance(target_celltype, MacroPath):
@@ -48,8 +54,8 @@ class ReadAccessor(Accessor):
         expression = Expression(
             checksum, self.path, celltype,
             target_celltype,
-            target_subcelltype, 
-            hash_pattern=self.hash_pattern,
+            target_subcelltype,
+            hash_pattern=hash_pattern,
         )
         if self.expression is not None:
             if expression == self.expression:
@@ -66,7 +72,7 @@ class ReadAccessor(Accessor):
         self.expression = None
 
 class WriteAccessor(Accessor):
-    def __init__(self, read_accessor, 
+    def __init__(self, read_accessor,
             target, celltype, subcelltype, pinname, path, *,
             hash_pattern
         ):
@@ -79,7 +85,7 @@ class WriteAccessor(Accessor):
         self.target = weakref.ref(target)
         assert celltype in celltypes or isinstance(celltype, MacroPath), celltype
         self.celltype = celltype
-        assert subcelltype is None or subcelltype in subcelltypes 
+        assert subcelltype is None or subcelltype in subcelltypes
         self.subcelltype = subcelltype
         self.pinname = pinname
         self.path = path

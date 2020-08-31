@@ -66,6 +66,24 @@ class Expression:
     def hash_pattern(self):
         return self._hash_pattern
 
+    @property
+    def result_hash_pattern(self):
+        if self.target_celltype != "mixed":
+            return None
+        if self.hash_pattern is not None:
+            validate_hash_pattern(self.hash_pattern)
+        if self.path is None or not len(self.path):
+            return self.hash_pattern
+        ###  Code below will only work for simple hash patterns (see validate_hash_pattern)
+        ###
+        if self.hash_pattern is None:
+            return None
+        if len(self.path) == 1:
+            return '#'
+        elif len(self.path) > 1:
+            return None
+        ###
+
     def _hash_dict(self):
         d = {}
         for slot in _hash_slots:
@@ -82,3 +100,5 @@ class Expression:
 
     def _get_hash(self):
         return get_hash(str(self)+"\n").hex()
+
+from ..protocol.deep_structure import validate_hash_pattern

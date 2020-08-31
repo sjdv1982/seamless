@@ -1,3 +1,4 @@
+import sys
 from ..mixed import MixedBase
 from copy import deepcopy
 import inspect, asyncio
@@ -81,8 +82,10 @@ def fill_checksum(manager, node, temp_path, composite=True):
     from ..core.cell import celltypes
     checksum = None
     subcelltype = None
+    hash_pattern = None
     if node["type"] == "cell":
         celltype = node["celltype"]
+        hash_pattern = node.get("hash_pattern")
     elif node["type"] == "transformer":
         if temp_path == "code":
             datatype = "code"
@@ -95,6 +98,8 @@ def fill_checksum(manager, node, temp_path, composite=True):
             celltype = "plain"
         else:
             celltype = "structured"
+            if temp_path.startswith("input"):
+                hash_pattern = {"*": "#"}
     elif node["type"] == "reactor":
         raise NotImplementedError ### livegraph branch, feature E2
     elif node["type"] == "macro":
@@ -107,6 +112,8 @@ def fill_checksum(manager, node, temp_path, composite=True):
                 celltype = "text"
         else:
             celltype = "structured"
+            if temp_path.startswith("param"):
+                hash_pattern = {"*": "#"}
     else:
         raise TypeError(node["type"])
     if celltype == "structured":
@@ -145,11 +152,14 @@ def fill_checksum(manager, node, temp_path, composite=True):
     if checksum is None:
         return
     buffer_cache.cache_buffer(checksum, buf)
-    if node.get("hash_pattern") is not None:
-        hash_pattern = node["hash_pattern"]
-        checksum = apply_hash_pattern_sync(
-            checksum, hash_pattern
-        )
+    if hash_pattern is not None:
+        try:
+            checksum = apply_hash_pattern_sync(
+                checksum, hash_pattern
+            )
+        except:
+            msg = "WARNING {}:{} : hash pattern encoding expected, not found (legacy Seamless version?)"
+            print(msg.format(node["path"], temp_path), file=sys.stderr)
     checksum = checksum.hex()
     if temp_path is None:
         temp_path = "value"

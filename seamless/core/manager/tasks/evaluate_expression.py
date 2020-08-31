@@ -48,7 +48,14 @@ class EvaluateExpressionTask(Task):
                     )
                 else:
                     buffer = await GetBufferTask(manager, expression.checksum).run()
+                    # We can evaluate from buffer, but only if:
+                    # - The expression path is trivial
+                    # - There is no hash pattern OR the target cell is mixed
+                    #   (In which case, the expression will have a result_hash_pattern that
+                    #    will be taken into account by the accessor)
                     if (
+                       (expression.hash_pattern is None or expression.target_celltype == "mixed")
+                       and
                        (expression.path is None or expression.path == [] or expression.path == ())
                     ):
                         expression_result_checksum = await evaluate_from_buffer(
@@ -57,32 +64,32 @@ class EvaluateExpressionTask(Task):
                             fingertip_mode=self.fingertip_mode
                         )
                     else:
+                        # Worst case. We have to deserialize the buffer, and evaluate the expression path on that.
                         assert expression.celltype == "mixed" # paths may apply only to mixed cells
                         value = await DeserializeBufferTask(
                             manager, buffer, expression.checksum,
                             expression.celltype, copy=False
                         ).run()
                         mode, result = await get_subpath(value, expression.hash_pattern, expression.path)
-                        if mode == "value":
-                            if result is None:
-                                return None
-                            else:
-                                result_value = result
-                                result_buffer = await SerializeToBufferTask(
-                                    manager, result_value,
-                                    expression.target_celltype,
-                                    use_cache=True
-                                ).run()
-                                expression_result_checksum = await CalculateChecksumTask(
-                                    manager, result_buffer
-                                ).run()
-                                if expression_result_checksum is not None:
-                                    buffer_cache.cache_buffer(expression_result_checksum, result_buffer)
-                        elif mode == "checksum":
-                            assert expression.hash_pattern is not None
+                        if mode == "checksum":
+                            if expression.target_celltype == "mixed":
+                                assert expression.result_hash_pattern == "#", expression.result_hash_pattern
                             expression_result_checksum = result
+                            result_buffer = None
+                        elif result is None:
+                            expression_result_checksum = None
                         else:
-                            raise ValueError(mode)
+                            result_value = result
+                            result_buffer = await SerializeToBufferTask(
+                                manager, result_value,
+                                expression.target_celltype,
+                                use_cache=True
+                            ).run()
+                            expression_result_checksum = await CalculateChecksumTask(
+                                manager, result_buffer
+                            ).run()
+                        if expression_result_checksum is not None and result_buffer is not None:
+                            buffer_cache.cache_buffer(expression_result_checksum, result_buffer)
 
                     await validate_subcelltype(
                         expression_result_checksum,

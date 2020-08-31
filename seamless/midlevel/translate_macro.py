@@ -25,27 +25,29 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
             pinname2 = as_tuple(pinname)
             interchannels.append(pinname2)
             if pinname2 in inchannels:
-                param_inchannels.append(pinname2)           
+                param_inchannels.append(pinname2)
         elif pin["io"] in ("input", "output"):
             pin_cell_name = pinname
         else:
-            raise ValueError((pin["io"], pinname))        
-        pin_cell = cell(pin.get("celltype", "mixed"))
+            raise ValueError((pin["io"], pinname))
+        pin_hash_pattern = pin.get("hash_pattern")
+        pin_cell = cell(pin.get("celltype", "mixed"), hash_pattern=pin_hash_pattern)
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pinname] = pin_cell
         if pin["io"] != "parameter":
             pin_mpaths0[pinname] = (pin["io"] == "input")
-        
-    mount = node.get("mount", {})    
+
+    mount = node.get("mount", {})
     param, param_ctx = build_structured_cell(
       ctx, param_name, param_inchannels, interchannels,
       return_context=True,
       fingertip_no_remote=False,
       fingertip_no_recompute=False,
+      hash_pattern={"*": "#"}
     )
 
     setattr(ctx, param_name, param)
-    namespace[node["path"] + ("SCHEMA",), False] = param.schema, node    
+    namespace[node["path"] + ("SCHEMA",), False] = param.schema, node
     if "param_schema" in mount:
         param_ctx.schema.mount(**mount["param_schema"])
 
