@@ -17,7 +17,8 @@ from .util import as_tuple, get_path, get_path_link, find_channels, build_struct
 
 direct_celltypes = (
     "text", "plain", "mixed", "binary",
-    "cson", "yaml", "str", "bytes", "int", "float", "bool"
+    "cson", "yaml", "str", "bytes", "int", "float", "bool",
+    "checksum"
 )
 
 def set_structured_cell_from_checksum(cell, checksum):

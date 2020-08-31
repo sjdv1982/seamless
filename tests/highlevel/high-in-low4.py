@@ -36,7 +36,10 @@ graph = sctx.get_graph(runtime=True)
 ctx.graph = Cell("plain").set(graph)
 ctx.data = Cell()
 ctx.data.hash_pattern = {"!": "#"}
+ctx.cs_data = Cell("checksum")
+ctx.cs_data = ctx.data
 ctx.compute()
+import sys; sys.exit()
 ctx.data.schema.storage = "pure-plain"
 ctx.data.set(data)
 ctx.result = Cell()

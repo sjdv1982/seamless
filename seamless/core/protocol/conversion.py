@@ -49,6 +49,8 @@ conversion_reformat = set([ # conversions that are guaranteed to work (if the in
     ("int", "str"), ("float", "str"), ("bool", "str"),
     ("int", "float"), ("bool", "int"),
     ("float", "int"), ("int", "bool"),
+    ("text", "checksum"),
+    ("checksum", "plain"),
 ])
 
 conversion_possible = set([ # conversions that (may) change checksum and are not guaranteed to work (raise exception)
@@ -85,6 +87,24 @@ conversion_equivalent = { #equivalent conversions
     ("int", "mixed"): ("int", "plain"),
     ("float", "mixed"): ("float", "plain"),
     ("bool", "mixed"): ("bool", "plain"),
+
+    ("binary", "checksum"): ("text", "checksum"),
+    ("python", "checksum"): ("text", "checksum"),
+    ("ipython", "checksum"): ("text", "checksum"),
+    ("transformer", "checksum"): ("text", "checksum"),
+    ("reactor", "checksum"): ("text", "checksum"),
+    ("macro", "checksum"): ("text", "checksum"),
+    ("plain", "checksum"): ("text", "checksum"),
+    ("cson", "checksum"): ("text", "checksum"),
+    ("mixed", "checksum"): ("text", "checksum"),  # if no hash pattern!
+    ("yaml", "checksum"): ("text", "checksum"),
+    ("str", "checksum"): ("text", "checksum"),
+    ("bytes", "checksum"): ("text", "checksum"),
+    ("int", "checksum"): ("text", "checksum"),
+    ("float", "checksum"): ("text", "checksum"),
+    ("bool", "checksum"): ("text", "checksum"),
+
+    ("checksum", "mixed"): ("checksum", "plain")
 }
 
 conversion_forbidden = set([ # forbidden conversions.
@@ -111,6 +131,21 @@ conversion_forbidden = set([ # forbidden conversions.
     ("int", "yaml"), ("float", "yaml"), ("bool", "yaml"),
     ("int", "bytes"), ("float", "bytes"), ("bool", "bytes"),
     ("bool", "float"), ("float", "bool"),
+    ("checksum", "binary"),
+    ("checksum", "text"),
+    ("checksum", "python"),
+    ("checksum", "ipython"),
+    ("checksum", "transformer"),
+    ("checksum", "reactor"),
+    ("checksum", "macro"),
+    ("checksum", "cson"),
+    ("checksum", "yaml"),
+    ("checksum", "str"),
+    ("checksum", "bytes"),
+    ("checksum", "int"),
+    ("checksum", "float"),
+    ("checksum", "bool"),
+
 ])
 
 def check_conversions():
@@ -172,16 +207,23 @@ async def reinterpret(checksum, buffer, celltype, target_celltype):
 
 async def reformat(checksum, buffer, celltype, target_celltype, fingertip_mode=False):
     key = (celltype, target_celltype)
-    value = await deserialize(buffer, checksum, celltype, copy=False)
-    if key == ("plain", "text"):
-        if isinstance(value, str):
-            new_buffer = await serialize(value, target_celltype)
+    if key == ("text", "checksum"):
+        if checksum is None:
+            value = None
         else:
-            if fingertip_mode:
-                buffer_cache.cache_buffer(checksum, buffer)
-            return checksum
+            value = checksum.hex()
+        new_buffer = await serialize(value, "plain")
     else:
-        new_buffer = await serialize(value, target_celltype)
+        value = await deserialize(buffer, checksum, celltype, copy=False)
+        if key == ("plain", "text"):
+            if isinstance(value, str):
+                new_buffer = await serialize(value, target_celltype)
+            else:
+                if fingertip_mode:
+                    buffer_cache.cache_buffer(checksum, buffer)
+                return checksum
+        else:
+            new_buffer = await serialize(value, target_celltype)
     result = await calculate_checksum(new_buffer)
     buffer_cache.cache_buffer(result, new_buffer)
     return result

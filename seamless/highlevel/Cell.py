@@ -12,7 +12,8 @@ from ..mime import get_mime, language_to_mime, ext_to_mime
 
 celltypes = (
     "structured", "text", "code", "plain", "mixed", "binary",
-    "cson", "yaml", "str", "bytes", "int", "float", "bool"
+    "cson", "yaml", "str", "bytes", "int", "float", "bool",
+    "checksum"
 )
 
 def get_new_cell(path):

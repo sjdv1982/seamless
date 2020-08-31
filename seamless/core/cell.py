@@ -567,6 +567,13 @@ class BoolCell(TextCell):
     """A cell containing a bool. Buffer ends with a newline"""
     _celltype = "bool"
 
+class ChecksumCell(TextCell):
+    """A cell that contains a checksum hex, or a deep (Merkle-like) structure
+
+    Checksum cells do not hold references to the checksum value(s) they contain
+    """
+    _celltype = "checksum"
+
 cellclasses = {
     "text": TextCell,
     "python": PythonCell,
@@ -584,6 +591,7 @@ cellclasses = {
     "int": IntCell,
     "float": FloatCell,
     "bool": BoolCell,
+    "checksum": ChecksumCell
 }
 
 def cell(celltype="plain", **kwargs):

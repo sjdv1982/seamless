@@ -49,6 +49,7 @@ compile-run-remote.py: run together with scripts/jobslave-nodatabase.py
 macro.py
 macro2.py
 macro3.py
+checksum-cell.py
 structured_cell/simple-deepcell.py
 structured_cell/channels-deepcell.py
 structured_cell/schema.py

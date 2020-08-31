@@ -32,9 +32,17 @@ class EvaluateExpressionTask(Task):
             expression_result_checksum = \
                 cachemanager.expression_to_result_checksum.get(expression)
         if expression_result_checksum is None:
+            trivial_path = (expression.path is None or expression.path == [] or expression.path == ())
+            if expression.target_celltype == "checksum":
+                need_buf = needs_buffer_evaluation(
+                    expression.checksum,
+                    expression.celltype,
+                    expression.target_celltype,
+                    self.fingertip_mode
+                )
             try:
                 # If the expression is trivial, obtain its result checksum directly
-                if expression.path is None and \
+                if trivial_path and \
                 expression.hash_pattern is None and \
                 not needs_buffer_evaluation(
                     expression.checksum,
@@ -46,6 +54,14 @@ class EvaluateExpressionTask(Task):
                         expression.checksum, expression.celltype,
                         expression.target_celltype
                     )
+                elif trivial_path and expression.hash_pattern is not None and expression.target_celltype == "checksum":
+                    if expression.hash_pattern is None:
+                        expression_result_checksum = await evaluate_from_checksum(
+                            expression.checksum, expression.celltype,
+                            expression.target_celltype
+                        )
+                    else:
+                        expression_result_checksum = expression.checksum
                 else:
                     buffer = await GetBufferTask(manager, expression.checksum).run()
                     # We can evaluate from buffer, but only if:
@@ -53,10 +69,8 @@ class EvaluateExpressionTask(Task):
                     # - There is no hash pattern OR the target cell is mixed
                     #   (In which case, the expression will have a result_hash_pattern that
                     #    will be taken into account by the accessor)
-                    if (
+                    if (trivial_path and
                        (expression.hash_pattern is None or expression.target_celltype == "mixed")
-                       and
-                       (expression.path is None or expression.path == [] or expression.path == ())
                     ):
                         expression_result_checksum = await evaluate_from_buffer(
                             expression.checksum, buffer,

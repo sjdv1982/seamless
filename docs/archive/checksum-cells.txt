@@ -9,3 +9,7 @@ Likewise, when connecting from a checksum cell:
 - A deep cell checks that the deep structure is correct, and accepts that deep structure as its own.
 Since checksum cells can be bound to macro paths, and deep cells (being structured cells) cannot, this is currently the only way
  to connect deep cells inside a macro to the outside.
+
+UPDATE: implementation done, but not quite in this way.
+Conversion is to plain, not text/str. No re-interpretation at all, plain is all you can get for now.
+Deep cells inside a macro can be connected to the outside world already.

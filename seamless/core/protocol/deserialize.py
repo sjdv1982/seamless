@@ -9,6 +9,18 @@ from .calculate_checksum import lrucache2
 
 deserialize_cache = lrucache2(100)
 
+def validate_checksum(v):
+    if isinstance(v, str):
+        bytes.fromhex(v)
+    elif isinstance(v, list):
+        for vv in v:
+            validate_checksum(vv)
+    elif isinstance(v, dict):
+        for vv in v.values():
+            validate_checksum(vv)
+    else:
+        raise TypeError(v)
+
 def _deserialize(buffer, checksum, celltype):
     if celltype in text_types2:
         s = buffer.decode()
@@ -60,6 +72,11 @@ def _deserialize(buffer, checksum, celltype):
             raise ValueError(s) from None
         if not isinstance(value, bool):
             raise ValueError(value)
+    elif celltype == "checksum":
+        value, storage = mixed_deserialize(buffer)
+        if storage != "pure-plain":
+            raise TypeError
+        validate_checksum(value)
     else:
         raise TypeError(celltype)
 

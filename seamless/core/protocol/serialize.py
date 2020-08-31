@@ -50,6 +50,9 @@ def _serialize(value, celltype):
         except Exception:
             pass
         buffer = (str(value).rstrip("\n")).encode()
+    elif celltype == "checksum":
+        txt = json.dumps(value, sort_keys=True, indent=2)
+        buffer = (txt + "\n").encode()
     else:
         raise TypeError(celltype)
     return buffer
