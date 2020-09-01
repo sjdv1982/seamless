@@ -37,22 +37,23 @@ class Monitor:
         else:
             raise TypeError(type_)
 
-    def _get_path(self, path):
-        subdata = self.backend.get_path(path)
-        subform = self.backend.get_subform(path)
-        return subdata, subform
-
     def get_path(self, path=()):
-        subdata, subform = self._get_path(path)
+        subform = self._get_form(path)
         return self.get_instance(subform, path)
 
-    def get_data(self, path=()):
-        subdata, subform = self._get_path(path)
+    def _get_data(self, path):
+        subdata = self.backend.get_path(path)
         return subdata
 
-    def get_form(self, path=()):
-        subdata, subform = self._get_path(path)
+    def get_data(self, path=()):
+        return self._get_data(path)
+
+    def _get_form(self, path):
+        subform = self.backend.get_subform(path)
         return subform
+
+    def get_form(self, path=()):
+        return self._get_form(path)
 
     def get_storage(self, path=()):
         if not len(path):
@@ -62,7 +63,8 @@ class Monitor:
             if parent_storage is None:
                 raise AttributeError(path)
         else:
-            parent_subdata, parent_subform = self._get_path(path[:-1])
+            parent_subdata = self._get_data(path[:-1])
+            parent_subform = self._get_form(path[:-1])
             if parent_subform is None:
                 raise AttributeError(path)
             parent_storage = parent_subform.get("storage")
@@ -71,7 +73,8 @@ class Monitor:
                     parent_storage = "pure-binary"
                 else:
                     parent_storage = "pure-plain"
-        subdata, subform = self._get_path(path)
+        subdata = self._get_data(path)
+        subform = self._get_form(path)
         storage = None
         if isinstance(subform, dict):
             storage = subform.get("storage")

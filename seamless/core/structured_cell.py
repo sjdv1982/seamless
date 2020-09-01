@@ -321,6 +321,7 @@ class StructuredCell(SeamlessBase):
         # Silk structure using self.auth
         # (_set_auth_path, _get_auth_path, wrapped in a Backend)
         # This is to control the authoritative part
+        # If hash pattern, return the MixedDict/MixedList directly
         backend = StructuredCellBackend(self)
         monitor = Monitor(backend)
         mixed_object = MixedObject(monitor, ())

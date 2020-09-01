@@ -4,7 +4,7 @@ import threading
 import asyncio
 import traceback
 import sys
-import copy
+from copy import deepcopy
 
 from ..status import StatusReasonEnum
 
@@ -346,7 +346,7 @@ class Manager:
         for sc in structured_cells:
             if sc is structured_cell:
                 continue
-            sc._schema_value = copy.deepcopy(value)
+            sc._schema_value = deepcopy(value)
             self.structured_cell_join(sc)
 
     def structured_cell_join(self, structured_cell):
@@ -433,7 +433,7 @@ class Manager:
         if not copy:
             cached_value = deserialize_cache.get((checksum, celltype))
             if cached_value is not None:
-                return copy.deepcopy(cached_value)
+                return deepcopy(cached_value)
         return self.resolve(checksum, celltype, copy=copy)
 
     def resolve(self, checksum, celltype="mixed", copy=False):
