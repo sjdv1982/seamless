@@ -26,7 +26,7 @@ def validate_checksum(v):
         raise TypeError(v)
 
 def _deserialize(buffer, checksum, celltype):
-    assert isinstance(checksum, bytes)
+    assert isinstance(checksum, bytes), type(checksum)
     logger.debug("DESERIALIZE: buffer of length {}, checksum {}".format(len(buffer), checksum.hex()))
     if celltype in text_types2:
         s = buffer.decode()

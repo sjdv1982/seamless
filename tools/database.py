@@ -269,7 +269,6 @@ class DatabaseServer:
                 await sink.set(key, result)
             return result.decode()
         elif type == "transformation result":
-            raise DatabaseError("Unknown key") ###
             key = "tfr-" + checksum
             for source, source_config in self.db_sources:
                 result = await source.get(key)

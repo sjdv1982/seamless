@@ -29,7 +29,7 @@ def get_checksums(nodes):
             if buffer is None:
                 print("WARNING: could not get checksums for deep structures in {}".format(node["path"]))
                 return
-            deep_structure = deserialize(buffer, checksum, "plain", copy=False)
+            deep_structure = deserialize(buffer, bytes.fromhex(checksum), "plain", copy=False)
             deep_checksums = deep_structure_to_checksums(deep_structure, hash_pattern)
             checksums.update(deep_checksums)
     checksums = set()

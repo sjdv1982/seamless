@@ -15,6 +15,7 @@ def print_warning(*args):
     logger.warning(msg)
 
 def print_debug(*args):
+    return ###
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
@@ -31,6 +32,29 @@ def is_equal(old, new):
         if old[k] != new[k]:
             return False
     return True
+
+_evaluation_locks = [None] * 5  # five evaluations
+
+def set_parallel_evaluations(evaluations):
+    if len(_evaluation_locks) != evaluations:
+        if any(_evaluation_locks):
+            msg = "WARNING: Cannot change number of parallel evaluations from %d to %d since there are running evaluations"
+            print(msg % (len(_evaluation_locks), evaluations), file=sys.stderr)
+        else:
+            _evaluation_locks[:] = [None] * evaluations
+
+
+async def acquire_evaluation_lock(task):
+    while 1:
+        for locknr, lock in enumerate(_evaluation_locks):
+            if lock is None:
+                _evaluation_locks[locknr] = task
+                return locknr
+        await asyncio.sleep(0.01)
+
+def release_evaluation_lock(locknr):
+    assert _evaluation_locks[locknr] is not None
+    _evaluation_locks[locknr] = None
 
 class Task:
     _realtask = None

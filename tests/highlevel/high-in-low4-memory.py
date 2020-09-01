@@ -5,11 +5,14 @@ seamless.core.execute.DIRECT_PRINT = True
 
 seamless.database_sink.connect()
 seamless.database_cache.connect()
-seamless.set_ncores(1)
+seamless.set_ncores(2)
+seamless.set_parallel_evaluations(5)
 
+"""
 import logging
 logging.basicConfig()
 logging.getLogger("seamless").setLevel(logging.DEBUG)
+"""
 
 from seamless.highlevel import Context, Cell, Macro
 
@@ -22,6 +25,7 @@ sctx.b = Cell("str")
 sctx.a = sctx.inp2.a
 sctx.b = sctx.inp2.b
 def add(a,b):
+    print("ADD", a[:10], b[:10])
     return a+b
 sctx.add = add
 sctx.add.a = sctx.a
@@ -41,8 +45,7 @@ ctx.compute()
 
 repeat = int(10e6)
 #for n in range(1000): # 2x10 GB
-#for n in range(42):
-for n in range(5):
+for n in range(100): # 2x1 GB
     a = "A:%d:" % n + str(n%10) * repeat
     b = "B:%d:" % n + str(n%10) * repeat
     ctx.data[n] = {}
@@ -55,6 +58,7 @@ for n in range(5):
 
 ctx.compute()
 print(ctx.data.data)
+import time; time.sleep(1); print(); print()
 
 ctx.cs_data = Cell("checksum")
 ctx.cs_data = ctx.data

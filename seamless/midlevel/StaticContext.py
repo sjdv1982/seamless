@@ -136,7 +136,7 @@ class SimpleCellWrapper(WrapperBase):
 
         celltype = self._celltype
         if celltype == "mixed":
-            value = deserialize_sync(buffer, checksum, "mixed", copy=True)
+            value = deserialize_sync(buffer,  bytes.fromhex(checksum), "mixed", copy=True)
             hash_pattern = self._node.get("hash_pattern")
             if hash_pattern is None:
                 return value
@@ -149,7 +149,7 @@ class SimpleCellWrapper(WrapperBase):
                 ct = "text"
         else:
             ct = celltype
-        value = deserialize_sync(buffer, checksum, ct, copy=True)
+        value = deserialize_sync(buffer, bytes.fromhex(checksum), ct, copy=True)
         return value
 
     def cell(self):

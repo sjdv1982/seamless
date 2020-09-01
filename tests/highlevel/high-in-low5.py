@@ -174,8 +174,6 @@ pprint(list(ctx._runtime_graph.nodes.keys()))
 print()
 pprint(list(ctx._runtime_graph.connections))
 
-"""
 ctx.save_graph("/tmp/temp.seamless")
 ctx.save_zip("/tmp/temp.zip")
 ctx.compute()
-"""
