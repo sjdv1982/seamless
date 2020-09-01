@@ -7,8 +7,11 @@ from ...mixed.io import deserialize as mixed_deserialize
 
 from .calculate_checksum import lrucache2
 
-deserialize_cache = lrucache2(100)
-deserialize_cache.disable() ### apparently, something goes wrong somewhere, but I don't see how...
+import logging
+logger = logging.getLogger("seamless")
+
+deserialize_cache = lrucache2(10)
+#deserialize_cache.disable() ### apparently, something goes wrong somewhere, but I don't see how...
 
 def validate_checksum(v):
     if isinstance(v, str):
@@ -23,6 +26,8 @@ def validate_checksum(v):
         raise TypeError(v)
 
 def _deserialize(buffer, checksum, celltype):
+    assert isinstance(checksum, bytes)
+    logger.debug("DESERIALIZE: buffer of length {}, checksum {}".format(len(buffer), checksum.hex()))
     if celltype in text_types2:
         s = buffer.decode()
         assert s.endswith("\n")
@@ -102,6 +107,7 @@ async def deserialize(buffer, checksum, celltype, copy):
             return newvalue
         else:
             return value
+
 
     # ProcessPool is too slow, but ThreadPool works
     if len(buffer) > 1000000:

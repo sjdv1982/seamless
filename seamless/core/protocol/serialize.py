@@ -11,7 +11,10 @@ from ...mixed.io import serialize as mixed_serialize
 # serialize_cache: maps id(value),celltype to (buffer, value).
 # Need to store (a ref to) value,
 #  because id(value) is only unique while value does not die!!!
-serialize_cache = lrucache2(100)
+serialize_cache = lrucache2(10)
+
+import logging
+logger = logging.getLogger("seamless")
 
 def _serialize(value, celltype):
     if celltype == "str":
@@ -40,20 +43,22 @@ def _serialize(value, celltype):
             value = np.array(value)
             buffer = mixed_serialize(value)
     elif celltype == "bytes":
+        buffer = None
         if isinstance(value, bytes):
             buffer = value
-            return buffer
-        try:
-            buffer = value.tobytes()
-            return buffer
-        except Exception:
-            pass
-        buffer = (str(value).rstrip("\n")).encode()
+        if buffer is None:
+            try:
+                buffer = value.tobytes()
+            except Exception:
+                pass
+        if buffer is None:
+            buffer = (str(value).rstrip("\n")).encode()
     elif celltype == "checksum":
         txt = json.dumps(value, sort_keys=True, indent=2)
         buffer = (txt + "\n").encode()
     else:
         raise TypeError(celltype)
+    logger.debug("SERIALIZE: buffer of length {}".format(len(buffer)))
     return buffer
 
 async def serialize(value, celltype, use_cache=True):

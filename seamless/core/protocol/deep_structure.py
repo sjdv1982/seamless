@@ -265,7 +265,7 @@ async def deep_structure_to_value(deep_structure, hash_pattern, buffer_dict, cop
     futures = {}
     for checksum in checksums:
         assert checksum in buffer_dict
-        coro = deserialize(buffer_dict[checksum], checksum, "mixed", copy=copy)
+        coro = deserialize(buffer_dict[checksum], bytes.fromhex(checksum), "mixed", copy=copy)
         futures[checksum] = asyncio.ensure_future(coro)
     await asyncio.gather(*futures.values())
     value_dict = {checksum:futures[checksum].result() for checksum in checksums}

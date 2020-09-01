@@ -20,9 +20,9 @@ class lrucache2(lrucache):
 # calculate_checksum_cache: maps id(buffer) to (checksum, buffer).
 # Need to store (a ref to) buffer,
 #  because id(buffer) is only unique while buffer does not die!!!
-calculate_checksum_cache = lrucache2(100)
+calculate_checksum_cache = lrucache2(10)
 
-checksum_cache = lrucache2(100)
+checksum_cache = lrucache2(10)
 
 async def calculate_checksum(buffer):
     if buffer is None:

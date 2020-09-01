@@ -49,6 +49,12 @@ load-graph.py
 load-graph-static.py
 library.py
 library2.py
+high-in-low.py
+high-in-low2.py
+high-in-low3.py
+high-in-low4.py
+high-in-low4-memory.py
+high-in-low5.py
 
 Non-automatic tests
 =========================
