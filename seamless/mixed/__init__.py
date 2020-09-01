@@ -101,6 +101,7 @@ for name in binary_special_method_names:
 
 
 from .MixedDict import MixedDict
+from .MixedList import MixedList
 from .MixedObject import MixedObject
 from .Monitor import Monitor
 from .Backend import Backend, DefaultBackend, SilkBackend

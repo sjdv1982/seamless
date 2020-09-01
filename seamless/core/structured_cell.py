@@ -193,6 +193,15 @@ class StructuredCell(SeamlessBase):
                     err = "%s and %s overlap"
                     raise Exception(err % (path1, path2))
 
+    def _auth_none(self):
+        assert not self.no_auth, self
+        assert self.auth is not None
+        if self.auth._destroyed:
+            return
+        if self._auth_value is None:
+            return self.auth._checksum is None
+        return False
+
     def _get_auth_path(self, path):
         assert not self.no_auth, self
         assert self.auth is not None
@@ -317,11 +326,13 @@ class StructuredCell(SeamlessBase):
         )
         manager.structured_cell_join(self)
 
+    def handle(self):
+        return self._get_handle(inference=True)
+
     def _get_handle(self, inference):
         # Silk structure using self.auth
         # (_set_auth_path, _get_auth_path, wrapped in a Backend)
         # This is to control the authoritative part
-        # If hash pattern, return the MixedDict/MixedList directly
         backend = StructuredCellBackend(self)
         monitor = Monitor(backend)
         mixed_object = MixedObject(monitor, ())
@@ -348,6 +359,22 @@ class StructuredCell(SeamlessBase):
     @property
     def handle_no_inference(self):
         return self._get_handle(inference=False)
+
+    @property
+    def handle_hash(self):
+        if self.hash_pattern is None:
+            return self.handle
+        backend = StructuredCellBackend(self)
+        monitor = Monitor(backend)
+        if self.hash_pattern == {"*": "#"}:
+            mixed_object = MixedDict(monitor, ())
+        elif self.hash_pattern == {"!": "#"}:
+            mixed_object = MixedList(monitor, ())
+        else:
+            raise NotImplementedError(self.hash_pattern)
+        return mixed_object
+
+
 
     @property
     def checksum(self):
@@ -424,7 +451,7 @@ from .protocol.deep_structure import validate_hash_pattern
 from .protocol.expression import get_subpath_sync as get_subpath, set_subpath_sync as set_subpath
 from ..mixed.Monitor import Monitor
 from ..mixed.Backend import StructuredCellBackend, StructuredCellSchemaBackend
-from ..mixed import MixedObject, MixedDict
+from ..mixed import MixedObject, MixedDict, MixedList
 from ..silk.Silk import Silk
 from ..silk.policy import (
     default_policy as silk_default_policy,

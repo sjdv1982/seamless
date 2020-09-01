@@ -1,3 +1,12 @@
+import seamless
+
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
+seamless.database_sink.connect()
+seamless.database_cache.connect()
+seamless.set_ncores(1)
+
 import logging
 logging.basicConfig()
 logging.getLogger("seamless").setLevel(logging.DEBUG)
@@ -23,28 +32,29 @@ sctx.compute()
 
 
 ctx = Context()
-###graph = sctx.get_graph(runtime=True)
-###ctx.graph = Cell("plain").set(graph)
+graph = sctx.get_graph(runtime=True)
+ctx.graph = Cell("plain").set(graph)
 ctx.data = Cell()
 ctx.data.hash_pattern = {"!": "#"}
 ctx.compute()
 #ctx.data.schema.storage = "pure-plain" # bad idea... validation forces full value construction
 
-repeat = 10000000
-for n in range(100):
+repeat = int(10e6)
+#for n in range(1000): # 2x10 GB
+#for n in range(42):
+for n in range(5):
     a = "A:%d:" % n + str(n%10) * repeat
     b = "B:%d:" % n + str(n%10) * repeat
-    """
     ctx.data[n] = {}
-    ctx.data[n].a = a
-    ctx.data[n].b = b
-    """
-    ctx.data[n] = {"a": a, "b": b}  # equivalent, but faster
-    ctx.compute() # cache friendly
-    print(n)
+    #ctx.data[n].a = a   # bad idea, forces full value construction
+    #ctx.data[n].b = b   # bad idea, forces full value construction
+    ctx.data[n] = {"a": a, "b": b}  # much better
+    if n % 20 == 0:
+        ctx.compute()
+    print(n+1)
 
 ctx.compute()
-import sys; sys.exit()
+print(ctx.data.data)
 
 ctx.cs_data = Cell("checksum")
 ctx.cs_data = ctx.data
@@ -97,4 +107,4 @@ m.code = map_list
 ctx.result = m.result
 ctx.compute()
 print("Exception:", m.exception)
-print(ctx.data.value)
+print(ctx.result.data)

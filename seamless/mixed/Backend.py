@@ -41,6 +41,8 @@ def get_subform(form, path):
 
 
 class Backend:
+    formless = False
+    toplevel_dataclass = None
     def __init__(self, plain):
         self._plain = plain
 
@@ -65,9 +67,9 @@ class Backend:
             if subdata is None:
                 break
         else:
-            start = len(path) - 1      
+            start = len(path) - 1
         for n in range(start, len(path)-1):
-            p = path[n]            
+            p = path[n]
             if isinstance(p, int):
                 d = []
             else:
@@ -81,8 +83,8 @@ class Backend:
         else:
             newpath = path[:start+1]
             newdata = self.get_path(newpath)
-        storage, form = calc_form(newdata)   
-        self._set_form(form, newpath)        
+        storage, form = calc_form(newdata)
+        self._set_form(form, newpath)
         if self.plain:
             assert storage == "pure-plain", storage
         else:
@@ -107,19 +109,19 @@ class Backend:
         attr = path[-1]
         if isinstance(attr, int):
             if subformtype != "array":
-                raise TypeError(subform) #must be "array" 
+                raise TypeError(subform) #must be "array"
             if substorage.endswith("binary"):
                 raise TypeError #cannot remove items from binary
             self._del_path(path)
         else:
             if subformtype != "object":
-                raise TypeError(subform) #must be "object" 
+                raise TypeError(subform) #must be "object"
             self._del_path(path)
         self._update(path)
 
     def insert_path(self, path, data):
         for pp in path:
-            assert isinstance(pp, (int, str))        
+            assert isinstance(pp, (int, str))
         attr = path[-1]
         if not isinstance(attr, int):
             raise TypeError(path)
@@ -134,7 +136,7 @@ class Backend:
             subformtype = subform["type"]
             substorage = subform.get("storage", storage)
         if subformtype != "array":
-            raise TypeError(subform) #must be "array" 
+            raise TypeError(subform) #must be "array"
         if substorage.endswith("binary"):
             raise TypeError #cannot insert items in binary
         self._insert_path(data, path)
@@ -213,7 +215,7 @@ class DefaultBackend(Backend):
             subdata[attr] = data
         else:
             subdata.insert(attr, data)
-        
+
     def _del_path(self, path):
         if not len(path):
             if self._data_setter is not None:
@@ -269,14 +271,14 @@ class DefaultBackend(Backend):
 class SilkBackend(DefaultBackend):
     _silk = None
     def __init__(self):
-        super().__init__(plain=False)        
-    
+        super().__init__(plain=False)
+
     def set_silk(self, silk):
         from ..silk.Silk import Silk
         if not isinstance(silk, Silk):
             raise TypeError("silk")
         self._silk = silk
-    
+
     def _update(self, path):
         super()._update(path)
         assert self._silk is not None
@@ -289,10 +291,37 @@ class StructuredCellBackend(Backend):
     def __init__(self, structured_cell):
         self._structured_cell = structured_cell
         super().__init__(False)
-        data = self.get_data()
-        storage, form = calc_form(data)
-        self._storage = storage
-        self._form = form
+        self._calc_form()
+
+    @property
+    def formless(self):
+        return self._structured_cell.hash_pattern is not None
+
+    @property
+    def toplevel_dataclass(self):
+        sc = self._structured_cell
+        if sc.hash_pattern is None:
+            return None
+        elif sc.hash_pattern == {"*": "#"}:
+            return dict
+        elif sc.hash_pattern == {"!": "#"}:
+            return list
+        else:
+            raise NotImplementedError(sc.hash_pattern)
+
+
+    def _calc_form(self):
+        sc = self._structured_cell
+        if sc.hash_pattern is not None:
+            self._storage = None
+            self._form = None
+        else:
+            data = self.get_data()
+            storage, form = calc_form(data)
+            if form == "null":
+                form = None
+            self._storage = storage
+            self._form = form
 
     def get_storage(self):
         if self._plain:
@@ -320,19 +349,44 @@ class StructuredCellBackend(Backend):
         if not len(path):
             sc._set_auth_path((), data)
             return
-        subdata = self.get_path(path[:-1])
-        attr = path[-1]        
-        subpath = path[:-1]
-        if isinstance(attr, int):
-            if attr >= len(subdata):
-                assert isinstance(subdata, list), type(subdata)
-                for n in range(len(subdata), attr):
-                    sc._set_auth_path(subpath + (n,), None)
+        probe_sub = False
+        if sc.hash_pattern is None:
+            probe_sub = True
+        else:
+            if sc.hash_pattern == {"*": "#"}:
+                if len(path) == 1:
+                    if sc._auth_none():
+                        sc._set_auth_path((), {})
+                else:
+                    probe_sub = True
+            elif sc.hash_pattern == {"!": "#"}:
+                if len(path) == 1:
+                    if sc._auth_none():
+                        sc._set_auth_path((), [])
+                else:
+                    probe_sub = True
+            else:
+                raise NotImplementedError(sc.hash_pattern)
+        if probe_sub:
+            subdata = self.get_path(path[:-1])
+            attr = path[-1]
+            subpath = path[:-1]
+            if subdata is None:
+                if isinstance(attr, int):
+                    sc._set_auth_path(path[:-1], [])
+                else:
+                    sc._set_auth_path(path[:-1], {})
+                subdata = self.get_path(path[:-1])
+            if isinstance(attr, int):
+                if attr >= len(subdata):
+                    assert isinstance(subdata, list), type(subdata)
+                    for n in range(len(subdata), attr):
+                        sc._set_auth_path(subpath + (n,), None)
         sc._set_auth_path(path, data)
 
     def _insert_path(self, data, path):
         raise NotImplementedError # StructuredCell Silk wrapper does not support insertion
-        
+
     def _del_path(self, path):
         sc = self._structured_cell
         sc._set_auth_path(path, None)
@@ -341,6 +395,8 @@ class StructuredCellBackend(Backend):
         if not len(path):
             return self.get_form(), self.get_storage()
         subform, substorage = self._get_form(path[:-1])
+        if subform is None:
+            return subform, substorage
         attr = path[-1]
         if isinstance(attr, int):
             if subform["identical"]:
@@ -355,9 +411,13 @@ class StructuredCellBackend(Backend):
 
     def _set_form(self, form, path):
         if not len(path):
+            if form == "null":
+                form = None
             self._form = deepcopy(form)
             return
         subform, _ = self._get_form(path[:-1])
+        if subform is None:
+            return
         attr = path[-1]
         if isinstance(attr, int):
             if subform["identical"]:
@@ -370,10 +430,7 @@ class StructuredCellBackend(Backend):
             subform["properties"][attr] = form
 
     def _update(self, path):
-        data = self.get_data()
-        storage, form = calc_form(data)
-        self._storage = storage
-        self._form = form
+        self._calc_form()
         sc = self._structured_cell
         sc._join()
 
@@ -384,7 +441,7 @@ class StructuredCellSchemaBackend(StructuredCellBackend):
         self._storage = "pure-plain"
         data = self.get_data()
         if data is None:
-            ### self.set_path((), {}) # .set_path can be async! 
+            ### self.set_path((), {}) # .set_path can be async!
             data = {}
         storage, form = calc_form(data)
         assert storage == "pure-plain"
@@ -408,7 +465,7 @@ class StructuredCellSchemaBackend(StructuredCellBackend):
             sc._set_schema_path((), data)
             return
         subdata = self.get_path(path[:-1])
-        attr = path[-1]        
+        attr = path[-1]
         subpath = path[:-1]
         if isinstance(attr, int):
             if attr >= len(subdata):
@@ -419,7 +476,7 @@ class StructuredCellSchemaBackend(StructuredCellBackend):
 
     def _insert_path(self, data, path):
         raise NotImplementedError # StructuredCell Silk wrapper does not support insertion
-        
+
     def _del_path(self, path):
         sc = self._structured_cell
         sc._set_schema_path(path, None)

@@ -4,6 +4,7 @@ import numpy as np
 import os, sys, asyncio, functools, json, traceback, socket
 import database_backends
 from seamless.mixed.io.serialization import deserialize
+import gc
 
 buffercodes = (
     "buf", # persistent buffer
@@ -65,75 +66,87 @@ class DatabaseServer:
         self.future = asyncio.ensure_future(coro)
 
     async def _handle_get(self, request):
-        data = await request.read()
-        status = 200
         try:
+            #print("NEW GET REQUEST", hex(id(request)))
+            data = await request.read()
+            status = 200
             try:
-                rq, _ = deserialize(data)
-            except:
-                raise DatabaseError("Malformed request") from None
-            try:
-                type = rq["type"]
-                if type not in types:
-                    raise KeyError
-                if type not in ("protocol", "has key"):
-                    checksum = rq["checksum"]
-                    key = None
-                elif type == "has key":
-                    key = rq["key"]
-                    checksum = None
-            except KeyError:
-                raise DatabaseError("Malformed request") from None
-            if type == "protocol":
-                response = json.dumps(self.PROTOCOL)
-            else:
-                response = await self.backend_get(type, checksum, key, rq)
-        except DatabaseError as exc:
-            status = 400
-            if exc.args[0] == "Unknown key":
-                status = 404
-            response = "ERROR:" + exc.args[0]
-        if response is None:
-            status = 400
-            response = "ERROR: No response"
-        return web.Response(
-            status=status,
-            body=response
-        )
+                try:
+                    rq, _ = deserialize(data)
+                except:
+                    raise DatabaseError("Malformed request") from None
+                try:
+                    type = rq["type"]
+                    if type not in types:
+                        raise KeyError
+                    if type not in ("protocol", "has key"):
+                        checksum = rq["checksum"]
+                        key = None
+                    elif type == "has key":
+                        key = rq["key"]
+                        checksum = None
+                except KeyError:
+                    raise DatabaseError("Malformed request") from None
+                if type == "protocol":
+                    response = json.dumps(self.PROTOCOL)
+                else:
+                    response = await self.backend_get(type, checksum, key, rq)
+            except DatabaseError as exc:
+                status = 400
+                if exc.args[0] == "Unknown key":
+                    status = 404
+                response = "ERROR:" + exc.args[0]
+            if response is None:
+                status = 400
+                response = "ERROR: No response"
+            return web.Response(
+                status=status,
+                body=response
+            )
+        finally:
+            #print("END GET REQUEST", hex(id(request)))
+            pass
 
     async def _handle_put(self, request):
-        data = await request.read()
-        status = 200
         try:
+            #print("NEW PUT REQUEST", hex(id(request)))
+            data = await request.read()
+            status = 200
             try:
-                rq, _ = deserialize(data)
-            except:
-                raise DatabaseError("Malformed request") from None
-            try:
-                type = rq["type"]
-                if type not in types:
-                    raise KeyError
-                if type == "delete key":
-                    key = rq["key"]
-                    checksum = None
-                    value = None
-                else:
-                    checksum = rq["checksum"]
-                    value = rq["value"]
-                    key = None
-            except KeyError:
-                raise DatabaseError("Malformed request") from None
-            response = await self.backend_set(type, checksum, key, value, rq)
-        except DatabaseError as exc:
-            status = 400
-            response = "ERROR:" + exc.args[0]
-        if response is None:
-            status = 400
-            response = "ERROR: No response"
-        return web.Response(
-            status=status,
-            body=response
-        )
+                try:
+                    rq, _ = deserialize(data)
+                except:
+                    raise DatabaseError("Malformed request") from None
+                try:
+                    type = rq["type"]
+                    if type not in types:
+                        raise KeyError
+                    if type == "delete key":
+                        key = rq["key"]
+                        checksum = None
+                        value = None
+                    else:
+                        checksum = rq["checksum"]
+                        value = rq["value"]
+                        key = None
+                except KeyError:
+                    raise DatabaseError("Malformed request") from None
+                response = await self.backend_set(type, checksum, key, value, rq)
+                if type == "buffer":
+                    gc.collect()
+            except DatabaseError as exc:
+                status = 400
+                response = "ERROR:" + exc.args[0]
+            if response is None:
+                status = 400
+                response = "ERROR: No response"
+            return web.Response(
+                status=status,
+                body=response
+            )
+        finally:
+            #print("END PUT REQUEST", hex(id(request)))
+            pass
 
 
     async def backend_get(self, type, checksum, key, request):
@@ -256,6 +269,7 @@ class DatabaseServer:
                 await sink.set(key, result)
             return result.decode()
         elif type == "transformation result":
+            raise DatabaseError("Unknown key") ###
             key = "tfr-" + checksum
             for source, source_config in self.db_sources:
                 result = await source.get(key)

@@ -53,7 +53,9 @@ high-in-low.py
 high-in-low2.py
 high-in-low3.py
 high-in-low4.py
-high-in-low4-memory.py
+high-in-low4-memory.py    # Run with rm -rf /tmp/dummy-db  && mkdir -p /tmp/dummy-db && seamless-devel-database dummydb-config.yaml
+                          #   after the test, "docker stop seamless-redis-container seamless-database-container"
+                          # Run as: python3 -u high-in-low4-memory.py 2>&1 | awk '{ok=1} /DEBUG/{ok=0} /SERIALIZE/{ok=1} ok' > test-outputs/high-in-low4-memory.out
 high-in-low5.py
 
 Non-automatic tests

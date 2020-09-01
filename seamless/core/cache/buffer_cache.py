@@ -115,6 +115,7 @@ class BufferCache:
             if checksum not in self.buffer_cache:
                 self.buffer_cache[checksum] = buffer
         if checksum in self.missing:
+            print_debug("Found missing buffer (1): {}".format(checksum.hex()))
             self.missing.discard(checksum)
             if database_sink.active:
                 persistent = checksum not in self.non_persistent
@@ -146,13 +147,15 @@ class BufferCache:
                         database_sink.set_buffer(checksum, buffer, persistent)
             if buffer is not None and checksum in self.missing:
                 assert isinstance(buffer, bytes)
+                print_debug("Found missing buffer (2): {}".format(checksum.hex()))
                 self.missing.discard(checksum)
                 local = (not database_sink.active) or (not database_cache.active)
                 if persistent and local:
                     if checksum not in self.buffer_cache:
                         self.buffer_cache[checksum] = buffer
                 if not local:
-                    database_sink.set_buffer(checksum, buffer, persistent)
+                    if not database_sink.has_buffer(checksum):
+                        database_sink.set_buffer(checksum, buffer, persistent)
         else:
             self.buffer_refcount[checksum] = 1
             local = (not database_sink.active) or (not database_cache.active)
@@ -162,7 +165,8 @@ class BufferCache:
                 buffer = self.buffer_cache.get(checksum)
             if buffer is not None:
                 if database_sink.active:
-                    database_sink.set_buffer(checksum, buffer, persistent)
+                    if not database_sink.has_buffer(checksum):
+                        database_sink.set_buffer(checksum, buffer, persistent)
                 if local:
                     if persistent:
                         if checksum not in self.buffer_cache:
@@ -170,8 +174,11 @@ class BufferCache:
                     else:
                         self.cache_buffer(checksum, buffer)
             else:
-                print_debug("Incref checksum of missing buffer: {}".format(checksum.hex()))
-                self.missing.add(checksum)
+                if database_cache.active and database_cache.has_buffer(checksum):
+                    pass
+                else:
+                    print_debug("Incref checksum of missing buffer: {}".format(checksum.hex()))
+                    self.missing.add(checksum)
             if not local and checksum in self.last_time:
                 self.last_time.pop(checksum)
                 self.buffer_cache.pop(checksum, None)

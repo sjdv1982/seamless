@@ -1,6 +1,7 @@
 from seamless.highlevel import Context
 ctx = Context()
 ctx.a = {}
+ctx.translate()
 ctx.a.b = 12
 ctx.compute()
 print(ctx.a.value, ctx.a.value.data)
@@ -23,6 +24,7 @@ print()
 print("Stage 2")
 ctx.f0 = 20
 ctx.q = {}
+ctx.translate()
 ctx.q.c = ctx.c
 ctx.q.d = ctx.d
 ctx.q.f = ctx.f0

@@ -268,11 +268,7 @@ class Cell(Base):
 
         hcell = self._get_hcell()
         if hcell.get("UNTRANSLATED"):
-            self._parent().translate(force=True)
-            hcell = self._get_hcell()
-            if hcell.get("UNTRANSLATED"):
-                raise AttributeError(attr)
-            return self._setattr(attr, value)
+            raise Exception("Cell has not yet been translated")
 
         assign_to_subcell(self, (attr,), value)
 
@@ -503,7 +499,10 @@ class Cell(Base):
     def handle(self):
         assert self.celltype == "structured"
         cell = self._get_cell()
-        return cell.handle_no_inference
+        if self.hash_pattern is not None:
+            return cell.handle_hash
+        else:
+            return cell.handle_no_inference
 
     @property
     def data(self):

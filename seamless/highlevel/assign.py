@@ -335,12 +335,10 @@ def assign_to_subcell(cell, path, value):
         assign_connection(ctx, value._path, cell._path + path, False)
         ctx._translate()
     elif isinstance(value, ConstantTypes):
-        sc = cell._get_cell()
-        assert isinstance(sc, StructuredCell)
         removed = ctx._remove_connections(cell._path + path)
         if removed:
             ctx._translate()
-        handle = sc.handle_no_inference
+        handle = cell.handle
         for p in path[:-1]:
             if isinstance(p, int):
                 handle = handle[p]

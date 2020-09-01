@@ -15,9 +15,23 @@ class Monitor:
 
     def get_instance(self, subform, path):
         if subform is None:
-            if len(path):
+            if self.backend.formless:
+                dataclass = None
+                if len(path) == 0:
+                    dataclass = self.backend.toplevel_dataclass
+                if dataclass is None:
+                    data = self._get_data(path)
+                    dataclass = type(data)
+                if issubclass(dataclass, dict):
+                    return MixedDict(self, path)
+                if issubclass(dataclass, list):
+                    return MixedList(self, path)
+                else:
+                    raise KeyError(path)
+            else:
+                if not len(path):
+                    return MixedObject(self, path)
                 raise KeyError(path)
-            return MixedObject(self, path)
         if isinstance(subform, str):
             type_ = subform
         else:

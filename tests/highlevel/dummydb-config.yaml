@@ -1,0 +1,16 @@
+host: 0.0.0.0  # all IPs
+port: 5522
+
+flatfile:
+    directory: /tmp/dummy-db
+
+
+backends: # backends are queried sequentially, in order; you probably want to define cache sources before non-cache sources
+-
+    type: source
+    backend: flatfile
+
+-
+    type: sink
+    backend: flatfile
+    cache: False
