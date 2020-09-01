@@ -177,8 +177,7 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
             new_sub_cs = new_sub_checksum.hex()
 
         result = write_deep_structure(
-            new_sub_cs, deep_structure, hash_pattern, pre_path,
-            create=True
+            new_sub_cs, deep_structure, hash_pattern, pre_path
         )
         assert result[0] == 0, result
     else:

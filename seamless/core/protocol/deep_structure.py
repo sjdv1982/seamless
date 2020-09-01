@@ -151,7 +151,7 @@ def access_deep_structure(deep_structure, hash_pattern, path):
                 assert isinstance(attribute, int)
                 if attribute >= len(deep_structure):
                     return None, None
-                sub_deep_structure = deep_structure.get(attribute)
+                sub_deep_structure = deep_structure[attribute]
                 sub_hash_pattern = hash_pattern[key]
                 return access_deep_structure(sub_deep_structure, sub_hash_pattern, path[1:])
             elif key.startswith("!"):

@@ -291,9 +291,7 @@ class Cell(Base):
         if isinstance(item, str):
             return setattr(self, item, value)
         elif isinstance(item, int):
-            raise NotImplementedError # TODO: should work, but need to adapt __setattr__
-        elif isinstance(item, slice):
-            raise NotImplementedError  # TODO: x[min:max] inchannels
+            return self._setattr(item, value)
         else:
             raise TypeError(item)
 

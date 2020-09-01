@@ -342,8 +342,15 @@ def assign_to_subcell(cell, path, value):
             ctx._translate()
         handle = sc.handle_no_inference
         for p in path[:-1]:
-            handle = getattr(handle, p)
-        setattr(handle, path[-1], value)
+            if isinstance(p, int):
+                handle = handle[p]
+            else:
+                handle = getattr(handle, p)
+        p = path[-1]
+        if isinstance(p, int):
+            handle[p] = value
+        else:
+            setattr(handle, p, value)
     else:
         raise TypeError(value)
 
