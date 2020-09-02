@@ -219,6 +219,16 @@ class Context(Base):
     def _get_subcontext(self, path):
         child = self._children[path]
 
+    def __getitem__(self, attr):
+        if not isinstance(attr, str):
+            raise KeyError(attr)
+        return getattr(self, attr)
+
+    def __setitem__(self, attr, value):
+        if not isinstance(attr, str):
+            raise KeyError(attr)
+        setattr(self, attr, value)
+
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
@@ -945,6 +955,16 @@ class Context(Base):
 class SubContext(Base):
     def __init__(self, parent, path):
         super().__init__(parent, path)
+
+    def __getitem__(self, attr):
+        if not isinstance(attr, str):
+            raise KeyError(attr)
+        return getattr(self, attr)
+
+    def __setitem__(self, attr, value):
+        if not isinstance(attr, str):
+            raise KeyError(attr)
+        setattr(self, attr, value)
 
     def __getattribute__(self, attr):
         if attr.startswith("_"):

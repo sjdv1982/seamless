@@ -416,6 +416,11 @@ class UnboundContext(SeamlessBase):
         else:
             return super().__dir__()
 
+    def __getitem__(self, attr):
+        if not isinstance(attr, str):
+            raise KeyError(attr)
+        return getattr(self, attr)
+
 from .unilink import UniLink
 from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase

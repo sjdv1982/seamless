@@ -334,6 +334,11 @@ name: str
     def exception(self):
         return None
 
+    def __getitem__(self, attr):
+        if not isinstance(attr, str):
+            raise KeyError(attr)
+        return getattr(self, attr)
+
     def __del__(self):
         if self._destroyed:
             return

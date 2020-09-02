@@ -41,3 +41,8 @@ class HighLevelContext(UnboundContext):
             runtime=True
         )
         self._synth_highlevel_context = highlevel_ctx
+
+    def __getitem__(self, attr):
+        if not isinstance(attr, str):
+            raise KeyError(attr)
+        return getattr(self, attr)
