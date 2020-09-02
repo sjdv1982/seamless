@@ -1,3 +1,6 @@
+# Version of high-in-low4.py where the input and result are really big
+# To be run with Seamless database with flatfile, so that the memory usage stays low
+
 import seamless
 
 import seamless.core.execute
@@ -44,21 +47,27 @@ ctx.compute()
 #ctx.data.schema.storage = "pure-plain" # bad idea... validation forces full value construction
 
 repeat = int(10e6)
+repeat = 10000 ##
 #for n in range(1000): # 2x10 GB
-for n in range(100): # 2x1 GB
+#for n in range(100): # 2x1 GB
+for n in range(3):
     a = "A:%d:" % n + str(n%10) * repeat
     b = "B:%d:" % n + str(n%10) * repeat
+    """
+    # not as fast
     ctx.data[n] = {}
-    #ctx.data[n].a = a   # bad idea, forces full value construction
-    #ctx.data[n].b = b   # bad idea, forces full value construction
-    ctx.data[n] = {"a": a, "b": b}  # much better
+    ctx.data[n].a = a
+    ctx.data[n].b = b
+    """
+    ctx.data[n] = {"a": a, "b": b}  # equivalent, but faster
     if n % 20 == 0:
         ctx.compute()
     print(n+1)
 
 ctx.compute()
 print(ctx.data.data)
-import time; time.sleep(1); print(); print()
+print(ctx.data.handle[0].value["a"][:10])
+###import time; time.sleep(1); print(); print()
 
 ctx.cs_data = Cell("checksum")
 ctx.cs_data = ctx.data

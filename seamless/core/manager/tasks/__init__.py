@@ -33,7 +33,7 @@ def is_equal(old, new):
             return False
     return True
 
-_evaluation_locks = [None] * 5  # five evaluations
+_evaluation_locks = [None] * 20  # twenty evaluations in parallel
 
 def set_parallel_evaluations(evaluations):
     if len(_evaluation_locks) != evaluations:

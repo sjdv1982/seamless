@@ -213,6 +213,9 @@ def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):
     """ build value from deep structure, using value_dict
     if copy is True, use deepcopies from the value dict, else just refer to the items
     """
+
+    if isinstance(hash_pattern, dict): raise Exception ### useful for debugging, to find out when a whole deep structure is converted to a value
+
     if deep_structure is None:
         return None
 

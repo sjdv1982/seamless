@@ -157,14 +157,9 @@ class CacheManager:
         if incref_hash_pattern:
             deep_buffer = buffer_cache.get_buffer(checksum)
             deep_structure = deserialize(deep_buffer, checksum, "mixed", False)
-            import copy; deep_structure2 = copy.deepcopy(deep_structure)
-            try:
-                sub_checksums = deep_structure_to_checksums(
-                    deep_structure, cell._hash_pattern
-                )
-            except Exception as exc:
-                print("DEEP", checksum.hex(), str(deep_structure2)[:100], deep_buffer[:100])
-                raise exc from None
+            sub_checksums = deep_structure_to_checksums(
+                deep_structure, cell._hash_pattern
+            )
             for sub_checksum in sub_checksums:
                 #print("INCREF SUB-CHECKSUM", sub_checksum, cell)
                 buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)

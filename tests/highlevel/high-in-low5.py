@@ -1,3 +1,19 @@
+"""
+Library version of high-in-low4
+
+NOTE:
+
+This is in fact not the best way to do it, as the evaluation of inp2.a and inp2.b is rather costly...
+(see high-in-low4-m)
+
+In fact, it is easy to shoot yourself in the foot with a hash pattern cell:
+- Invoke .value instead of .data or .handle
+- Define a schema
+- Make an error with the hash pattern
+Therefore, some Cell("hashdict") and Cell("hashlist") constructors would be useful,
+  that add a key to the graph node that blocks the bad APIs (.schema, .value), and perhaps some wrapper around .handle / .hash_handle
+"""
+
 from seamless.highlevel import Context, Cell, Macro
 from seamless.highlevel.library import LibraryContainer
 
@@ -120,6 +136,11 @@ ctx.data.hash_pattern = {"!": "#"}
 ctx.compute()
 #ctx.data.schema.storage = "pure-plain"  # bad idea... validation forces full value construction
 ctx.data.set(data)
+ctx.compute()
+#print(ctx.data.value[0].a) # bad idea... forces full value construction
+print(ctx.data.handle[0].value["a"])  # the correct way
+#print(ctx.data.handle[0].a.value)  # will not work; .value has to be right after the first key (0 in this case)
+
 ctx.result = Cell()
 ctx.result.hash_pattern = {"!": "#"}
 ctx.compute()

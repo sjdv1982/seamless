@@ -61,6 +61,9 @@ class Backend:
             assert isinstance(pp, (int, str))
         if data is None:
             return self.del_path(path)
+        if self.formless:
+           return self._set_path(path, data)
+
         for start in range(len(path)-1):
             subpath = path[:start]
             subdata = self.get_path(subpath)

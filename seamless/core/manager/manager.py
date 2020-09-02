@@ -216,10 +216,10 @@ class Manager:
         if void:
             assert status_reason is not None
             assert checksum is None
-        if cell._structured_cell:
+        if len(self.livegraph.schemacells[cell]):
             authoritative = True
-        elif len(self.livegraph.schemacells[cell]):
-            authoritative = True
+        elif cell._structured_cell is not None:
+            authoritative = (cell._structured_cell.auth is cell)
         else:
             authoritative = cell.has_authority()
         cachemanager = self.cachemanager
@@ -231,15 +231,7 @@ class Manager:
         cell._status_reason = status_reason
         cell._prelim = prelim
         if checksum != old_checksum:
-            try:
-                cachemanager.incref_checksum(checksum, cell, authoritative, False)
-            except DeepStructureError as exc:
-                buf = buffer_cache.get_buffer(checksum)
-                from ..protocol.calculate_checksum import calculate_checksum_sync
-                cs2 = calculate_checksum_sync(buf)
-                assert cs2 == checksum, (cs2.hex(), checksum.hex(), buf)
-                print("CELL!", cell, buf, checksum.hex())
-                raise exc from None
+            cachemanager.incref_checksum(checksum, cell, authoritative, False)
             observer = cell._observer
             if observer is not None:
                 cs = checksum.hex() if checksum is not None else None
