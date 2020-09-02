@@ -47,10 +47,8 @@ ctx.compute()
 #ctx.data.schema.storage = "pure-plain" # bad idea... validation forces full value construction
 
 repeat = int(10e6)
-repeat = 10000 ##
 #for n in range(1000): # 2x10 GB
-#for n in range(100): # 2x1 GB
-for n in range(3):
+for n in range(100): # 2x1 GB
     a = "A:%d:" % n + str(n%10) * repeat
     b = "B:%d:" % n + str(n%10) * repeat
     """
@@ -67,7 +65,7 @@ for n in range(3):
 ctx.compute()
 print(ctx.data.data)
 print(ctx.data.handle[0].value["a"][:10])
-###import time; time.sleep(1); print(); print()
+import time; time.sleep(1); print(); print()
 
 ctx.cs_data = Cell("checksum")
 ctx.cs_data = ctx.data
