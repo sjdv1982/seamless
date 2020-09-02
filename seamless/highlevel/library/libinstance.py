@@ -165,6 +165,7 @@ class LibInstance:
         lib = parent._get_lib(tuple(libpath))
         params = lib["params"]
         par = params[argname]
+        raise NotImplementedError # TODO: argument validation
         if par["type"] == "value":
             value = get_param_value(argvalue)
         else: # par["type"] == "cell":

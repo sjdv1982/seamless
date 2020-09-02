@@ -57,6 +57,7 @@ class IncludedLibrary:
         cached_compile(self._constructor, identifier)  # just to validate
 
     def __call__(self, *args, **kwargs):
+        # TODO: allow partial binding, store exception
         arguments0 = self._signature.bind(*args, **kwargs)
         arguments0.apply_defaults()
         arguments = {}
