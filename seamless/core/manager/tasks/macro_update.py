@@ -62,6 +62,7 @@ class MacroUpdateTask(Task):
         code = None
         values = {}
         module_workspace = {}
+        print("START MACRO")
         for pinname, accessor in upstreams.items():
             expression_checksum = await EvaluateExpressionTask(
                 manager,

@@ -15,7 +15,6 @@ def print_warning(*args):
     logger.warning(msg)
 
 def print_debug(*args):
-    return ###
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
@@ -60,6 +59,8 @@ class Task:
     _realtask = None
     _awaiting = False
     _canceled = False
+    _started = False
+    _cached_root = None
     future = None
 
     def __init__(self, manager, *args, **kwargs):
@@ -95,6 +96,8 @@ class Task:
             return self._dependencies
 
     def _root(self):
+        if self._cached_root is not None:
+            return self._cached_root
         root = None
         for dep in self._dependencies:
             deproot = dep._root()
@@ -102,6 +105,7 @@ class Task:
                 root = deproot
             elif deproot is not None:
                 assert root is deproot, (root, deproot) # tasks cannot depend on multiple toplevel contexts
+        self._cached_root = root
         return root
 
     def set_realtask(self, realtask):
@@ -131,6 +135,7 @@ class Task:
     async def _run0(self, taskmanager):
         await asyncio.shield(taskmanager.await_active())
         await asyncio.shield(communion_server.startup)
+        self._started = True
         return await self._run()
 
     def _launch(self):
@@ -141,7 +146,7 @@ class Task:
         if self.future is not None:
             return taskmanager
         taskmanager.run_synctasks()
-        print_debug("LAUNCH", self.__class__.__name__, hex(id(self)))
+        print_debug("LAUNCH", self.__class__.__name__, hex(id(self)), self.dependencies)
         awaitable = self._run0(taskmanager)
         self.future = asyncio.ensure_future(awaitable)
         taskmanager.add_task(self)

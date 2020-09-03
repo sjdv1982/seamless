@@ -29,6 +29,22 @@ RECOMPUTE_OVER_REMOTE = 1000000 # after this threshold, better to recompute than
                                 # - stored recomputation time from provenance server
                                 # - internet connection speed
 
+async def decref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative):
+    deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
+    sub_checksums = deep_structure_to_checksums(
+        deep_structure, hash_pattern
+    )
+    for sub_checksum in sub_checksums:
+        buffer_cache.decref(bytes.fromhex(sub_checksum))
+
+async def incref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative):
+    deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
+    sub_checksums = deep_structure_to_checksums(
+        deep_structure, hash_pattern
+    )
+    for sub_checksum in sub_checksums:
+        buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)
+
 class CacheManager:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
@@ -105,6 +121,12 @@ class CacheManager:
         self.reactor_exceptions[reactor] = None
 
     def incref_checksum(self, checksum, refholder, authoritative, result):
+        """
+        NOTE: incref/decref must happen with one async step
+        Therefore, the direct or indirect call of _sync versions of coroutines
+        (e.g. deserialize_sync, which launches coroutines and waits for them)
+        IS NOT ALLOWED
+        """
         if checksum is None:
             return
         #print("INCREF CHECKSUM", checksum.hex(), refholder, result)
@@ -156,13 +178,8 @@ class CacheManager:
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if incref_hash_pattern:
             deep_buffer = buffer_cache.get_buffer(checksum)
-            deep_structure = deserialize(deep_buffer, checksum, "mixed", False)
-            sub_checksums = deep_structure_to_checksums(
-                deep_structure, cell._hash_pattern
-            )
-            for sub_checksum in sub_checksums:
-                #print("INCREF SUB-CHECKSUM", sub_checksum, cell)
-                buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)
+            coro = incref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative)
+            asyncio.ensure_future(coro)
 
 
     async def fingertip(self, checksum, *, must_have_cell=False):
@@ -291,6 +308,12 @@ class CacheManager:
 
 
     def decref_checksum(self, checksum, refholder, authoritative, result, *, destroying=False):
+        """
+        NOTE: incref/decref must happen with one async step
+        Therefore, the direct or indirect call of _sync versions of coroutines
+        (e.g. deserialize_sync, which launches coroutines and waits for them)
+        IS NOT ALLOWED
+        """
         if checksum not in self.checksum_refs:
             if checksum is None:
                 cs = "<None>"
@@ -304,12 +327,8 @@ class CacheManager:
             cell = refholder
             if not destroying and cell._hash_pattern is not None:
                 deep_buffer = buffer_cache.get_buffer(checksum)
-                deep_structure = deserialize(deep_buffer, checksum, "mixed", False)
-                sub_checksums = deep_structure_to_checksums(
-                    deep_structure, cell._hash_pattern
-                )
-                for sub_checksum in sub_checksums:
-                    buffer_cache.decref(bytes.fromhex(sub_checksum))
+                coro = decref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative)
+                asyncio.ensure_future(coro)
 
         elif isinstance(refholder, Expression):
             # Special case, since we never actually clear expression caches,
@@ -432,7 +451,7 @@ from ..structured_cell import Inchannel
 from ..reactor import Reactor
 from .expression import Expression
 from ..protocol.deep_structure import deep_structure_to_checksums
-from ..protocol.deserialize import deserialize_sync as deserialize
+from ..protocol.deserialize import deserialize
 from ..protocol.get_buffer import (
     get_buffer_remote, get_buffer_length_remote, CacheMissError
 )

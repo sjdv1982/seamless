@@ -2,6 +2,23 @@
 Version of high-in-low5 that maps over N inputs, zipped
 """
 
+import seamless
+
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
+seamless.database_sink.connect()
+seamless.database_cache.connect()
+seamless.set_ncores(2)
+seamless.set_parallel_evaluations(5)
+
+seamless.set_ncores(8) ###
+seamless.set_parallel_evaluations(1000)  ###
+
+import logging
+logging.basicConfig()
+logging.getLogger("seamless").setLevel(logging.DEBUG)
+
 from seamless.highlevel import Context, Cell, Macro
 from seamless.highlevel.library import LibraryContainer
 
@@ -26,6 +43,7 @@ def constructor(ctx, libctx, context_graph, inp, result):
         setattr(m, inp_prefix + key , ctx.cs_inp[key])
 
     def map_list_N(ctx, inp_prefix, graph, **inp):
+        print("INP", inp)
         first_k = list(inp.keys())[0]
         length = len(inp[first_k])
         first_k = first_k[len(inp_prefix):]
@@ -51,6 +69,7 @@ def constructor(ctx, libctx, context_graph, inp, result):
         )
 
         for n in range(length):
+            print("MACRO", n+1)
             hc = HighLevelContext(graph)
 
             subctx = "subctx%d" % (n+1)
@@ -79,7 +98,7 @@ def constructor(ctx, libctx, context_graph, inp, result):
                 hci[k].set_checksum(cs)
 
             resultname = "result%d" % (n+1)
-            setattr(ctx, resultname, cell("int"))
+            setattr(ctx, resultname, cell("str"))
             c = getattr(ctx, resultname)
             hc.result.connect(c)
             c.connect(ctx.sc.inchannels[(n,)])
@@ -88,6 +107,7 @@ def constructor(ctx, libctx, context_graph, inp, result):
 
         ctx.sc.outchannels[()].connect(ctx.result)
         ctx._pseudo_connections = pseudo_connections
+        print("/MACRO")
 
     m.code = map_list_N
     ctx.result = Cell()
@@ -115,56 +135,47 @@ sctx = ctx.adder
 sctx.inp = Context()
 sctx.inp.a = Cell("mixed")
 sctx.inp.b = Cell("mixed")
-sctx.a = Cell("int")
-sctx.b = Cell("int")
+sctx.a = Cell("str")
+sctx.b = Cell("str")
 sctx.a = sctx.inp.a
 sctx.b = sctx.inp.b
 def add(a,b):
+    print("ADD", a[:10])
     return a+b
 sctx.add = add
 sctx.add.a = sctx.a
 sctx.add.b = sctx.b
 sctx.result = sctx.add
-sctx.result.celltype = "int"
+sctx.result.celltype = "str"
 ctx.compute()
-
-data = [
-    {
-        "a": 5,
-        "b": 6,
-    },
-    {
-        "a": -2,
-        "b": 8,
-    },
-    {
-        "a": 3,
-        "b": 14,
-    },
-    {
-        "a": 12,
-        "b": 7,
-    },
-]
-data_a = [v["a"] for v in data]
-data_b = [v["b"] for v in data]
 
 ctx.data_a = Cell()
 ctx.data_a.hash_pattern = {"!": "#"}
-#ctx.compute()
-#ctx.data_a.example.... # bad idea... validation forces full value construction
-ctx.data_a.set(data_a)
-
 ctx.data_b = Cell()
 ctx.data_b.hash_pattern = {"!": "#"}
-#ctx.compute()
-#ctx.data_b.example.... # bad idea... validation forces full value construction
-ctx.data_b.set(data_b)
+ctx.compute()
+
+repeat = int(10e6)
+#for n in range(1000): # 2x10 GB
+for n in range(100): # 2x1 GB
+    a = "A:%d:" % n + str(n%10) * repeat
+    b = "B:%d:" % n + str(n%10) * repeat
+    ctx.data_a[n] = a
+    ctx.data_b[n] = b
+    if n % 20 == 0:
+        ctx.compute()
+    print(n+1)
 
 ctx.result = Cell()
 ctx.result.hash_pattern = {"!": "#"}
 ctx.compute()
 #ctx.result.schema.storage = "pure-plain" # bad idea... validation forces full value construction
+
+print(ctx.data_a.data)
+print(ctx.data_a.handle[0].value[:10])
+print(ctx.data_b.handle[0].value[:10])
+print(ctx.data_b.data)
+import time; time.sleep(1); print(); print()
 
 ctx.include(mylib.map_list_N)
 ctx.inst = ctx.lib.map_list_N(
@@ -172,27 +183,8 @@ ctx.inst = ctx.lib.map_list_N(
     inp = {"a": ctx.data_a, "b": ctx.data_b},
     result = ctx.result
 )
-ctx.translate(force=True)
+#ctx.translate(force=True) # not a good idea without compute...
 ctx.compute()
 
 print("Exception:", ctx.inst.ctx.m.exception)
-print(ctx.inst.ctx.m.ctx.sc.value)
-print(ctx.inst.ctx.m.ctx.result1.value)
-print(ctx.inst.ctx.m.ctx.result2.value)
-print(ctx.inst.ctx.m.ctx.result.value)
-print(ctx.inst.result.value)
-print(ctx.result.value)
-
-def sub(a,b):
-    return a-b
-sctx.add.code = sub
-ctx.compute()
-print()
-
-print("Exception:", ctx.inst.ctx.m.exception)
-print(ctx.inst.ctx.m.ctx.sc.value)
-print(ctx.inst.ctx.m.ctx.result1.value)
-print(ctx.inst.ctx.m.ctx.result2.value)
-print(ctx.inst.ctx.m.ctx.result.value)
-print(ctx.inst.result.value)
-print(ctx.result.value)
+print(ctx.result.data)

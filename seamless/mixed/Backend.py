@@ -62,7 +62,9 @@ class Backend:
         if data is None:
             return self.del_path(path)
         if self.formless:
-           return self._set_path(path, data)
+           result = self._set_path(path, data)
+           self._update(path)
+           return result
 
         for start in range(len(path)-1):
             subpath = path[:start]
@@ -438,6 +440,7 @@ class StructuredCellBackend(Backend):
         sc._join()
 
 class StructuredCellSchemaBackend(StructuredCellBackend):
+    formless = False
     def __init__(self, structured_cell):
         self._structured_cell = structured_cell
         Backend.__init__(self, True)

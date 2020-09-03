@@ -25,6 +25,7 @@ class StructuredCellJoinTask(Task):
             tasks.append(task)
         if len(tasks):
             await taskmanager.await_tasks(tasks, shield=True)
+            await self.await_sc_tasks()
 
 
     async def _run(self):
@@ -38,6 +39,19 @@ class StructuredCellJoinTask(Task):
             return
 
         locknr = await acquire_evaluation_lock(self)
+
+        '''
+        structured_cell = self.structured_cell
+        if 1 or str(structured_cell).find("data_a") > -1 or str(structured_cell).find("data_b") > -1:
+            """
+            val = {}
+            for k, v in structured_cell.inchannels.items():
+                cs00 = v._checksum
+                if cs00 is not None:
+                    val[k] = cs00.hex()
+            """
+            print("***RUN***", structured_cell, "TASK:", self.taskid)
+        '''
         try:
 
             modified_outchannels = sc.modified.modified_outchannels
@@ -57,6 +71,8 @@ class StructuredCellJoinTask(Task):
                 if paths == [()] and not sc.hash_pattern:
                     checksum = sc.inchannels[()]._checksum
                     assert checksum is None or isinstance(checksum, bytes), checksum
+                    if checksum is None:
+                        ok = False
                 else:
                     try:
                         if not sc.no_auth:
@@ -159,6 +175,7 @@ class StructuredCellJoinTask(Task):
                         use_cache=False  # the value object changes all the time...
                     ).run()
                     checksum = await CalculateChecksumTask(manager, buf).run()
+                    assert checksum is not None
                     buffer_cache.cache_buffer(checksum, buf)
                 except CancelledError:
                     ok = False
@@ -169,12 +186,14 @@ class StructuredCellJoinTask(Task):
                 except Exception:
                     sc._exception = traceback.format_exc()
                     ok = False
-            if checksum is not None:
+            if ok and checksum is not None:
                 if isinstance(checksum, bytes):
                     checksum = checksum.hex()
                 if not len(sc.inchannels):
                     sc.auth._set_checksum(checksum, from_structured_cell=True)
                 if sc.buffer is not sc.auth:
+                    #if checksum is not None and (str(sc).find("inp.b") > -1 or str(sc).find("inp.a") > -1):
+                    #    print("STRUC SET CELL CHECKSUM", sc, checksum[:10], "TASK:", self.taskid)
                     sc.buffer._set_checksum(checksum, from_structured_cell=True)
                 if schema is not None and value is None:
                     cs = bytes.fromhex(checksum)
@@ -202,7 +221,8 @@ class StructuredCellJoinTask(Task):
                     except ValidationError:
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
-                        manager._set_cell_checksum(sc._data, None, void=True, status_reason=StatusReasonEnum.UPSTREAM)
+                        manager._set_cell_checksum(sc._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
+
             if ok:
                 hard_cancel_paths = []
                 if checksum is not None and sc._data is not sc.auth:

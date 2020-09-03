@@ -498,12 +498,19 @@ If origin_task is provided, that task is not cancelled."""
                 continue
             task.cancel()
 
-    def cancel_structured_cell(self, structured_cell, origin_task=None):
+    def cancel_structured_cell(self, structured_cell, kill_non_started):
+        not_started = False
         tasks = self.structured_cell_to_task.get(structured_cell, [])
         for task in tasks:
-            if task is origin_task:
+            if task._canceled:
+                continue
+            if task.future is not None and task.future.done():
+                continue
+            if not kill_non_started and not task._started:
+                not_started = True
                 continue
             task.cancel()
+        return not_started
 
     @destroyer
     def destroy_cell(self, cell, full=False):
@@ -514,7 +521,7 @@ If origin_task is provided, that task is not cancelled."""
 
     @destroyer
     def destroy_structured_cell(self, structured_cell):
-        self.cancel_structured_cell(structured_cell)
+        self.cancel_structured_cell(structured_cell, kill_non_started=True)
         self.structured_cell_to_task.pop(structured_cell)
 
     @destroyer

@@ -59,6 +59,18 @@ class AccessorUpdateTask(Task):
                 else:
                     raise TypeError(type(worker))
             elif isinstance(target, Cell): # If a cell:
+                """
+                if (str(target).find("CONNECTION_1") > -1 or str(target).find("CONNECTION_2") > -1):
+                    e00 = expression_result_checksum
+                    if e00 is not None:
+                        e00 = e00.hex()
+                    ctx = list(manager.contexts)[0]
+                    cs00 = ctx.data_a._data._checksum
+                    if cs00 is not None: cs00 = cs00.hex()
+                    cs01 = ctx.data_b._data._checksum
+                    if cs01 is not None: cs01 = cs01.hex()
+                    print("ACCESSOR SET", target, e00[:10], expression.checksum.hex()[:10], str(cs00)[:10], str(cs01)[:10], hex(id(ctx.data_a)), hex(id(ctx.data_b)))
+                """
                 result_checksum = expression_result_checksum
                 result_hash_pattern = expression.result_hash_pattern
                 if result_hash_pattern == "#":

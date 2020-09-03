@@ -273,7 +273,7 @@ class StructuredCell(SeamlessBase):
                 if overlap_path(inchannel, path):
                     break
             else:
-                cancel_cycle.cancel_scell_inpath(self, path, void=False, reason=None)
+                cancel_cycle.cancel_scell_all_outpaths(self, void=False, reason=None)
                 self.auth._set_checksum(None, from_structured_cell=True)
         finally:
             if resolve_cancel_cycle:

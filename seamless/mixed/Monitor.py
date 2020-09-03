@@ -7,6 +7,7 @@ from .Backend import Backend
 import json
 from copy import deepcopy
 from .. import Wrapper
+from numpy import ndarray, void
 
 class Monitor:
     def __init__(self, backend):
@@ -22,12 +23,18 @@ class Monitor:
                 if dataclass is None:
                     data = self._get_data(path)
                     dataclass = type(data)
+                if dataclass is None:
+                    raise KeyError(path)
                 if issubclass(dataclass, dict):
                     return MixedDict(self, path)
-                if issubclass(dataclass, list):
+                elif issubclass(dataclass, list):
                     return MixedList(self, path)
+                elif issubclass(dataclass, void):
+                    return MixedNumpyStruct(self, path)
+                elif issubclass(dataclass, ndarray):
+                    return MixedNumpyArray(self, path)
                 else:
-                    raise KeyError(path)
+                    return MixedScalar(self, path)
             else:
                 if not len(path):
                     return MixedObject(self, path)

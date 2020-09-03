@@ -26,6 +26,20 @@ class StructuredCellCancellation:
             self.canceled_outpaths[outpath] = (void, reason)
             cycle._cancel_cell_path(scell, outpath, void=void, reason=reason)
 
+    def cancel_all_outpaths(self, void, reason):
+        scell = self.scell()
+        if scell is None or scell._destroyed:
+            return
+        self.needs_join = True
+        cycle = self.cycle()
+        for outpath in scell.outchannels:
+            if outpath in self.canceled_outpaths:
+                void0, reason0 = self.canceled_outpaths[outpath]
+                if not void or (void0, reason0) == (void, reason):
+                    continue
+            self.canceled_outpaths[outpath] = (void, reason)
+            cycle._cancel_cell_path(scell, outpath, void=void, reason=reason)
+
     def cancel_outpath(self, outpath):
         scell = self.scell()
         if scell is None or scell._destroyed:
@@ -50,7 +64,8 @@ class StructuredCellCancellation:
             ic = sc.inchannels[path]
             manager._set_inchannel_checksum(
                 ic, None, void,
-                status_reason=reason
+                status_reason=reason,
+                from_cancel=True
             )
 
         clear_checksum = False
@@ -61,13 +76,19 @@ class StructuredCellCancellation:
 
         if self.needs_join:
             clear_checksum = True
-            manager.structured_cell_join(sc)
+            manager.structured_cell_join(sc, from_cancel=True)
 
         if clear_checksum and not self.needs_join:
             sc._data._set_checksum(None, from_structured_cell=True)
 
 
 class CancellationCycle:
+    """
+    NOTE: all cancellation must happen with one async step
+    Therefore, the direct or indirect call of _sync versions of coroutines
+    (e.g. deserialize_sync, which launches coroutines and waits for them)
+    IS NOT ALLOWED
+    """
     cleared = False
 
     def __init__(self, manager):
@@ -95,6 +116,8 @@ class CancellationCycle:
             void0, reason0 = self.cells[cell]
             if not void or (void0, reason0) == (void, reason):
                 return
+        if not void and not cell._void and cell._checksum is None:
+            return
 
         self.cells[cell] = (void, reason)
 
@@ -125,7 +148,7 @@ class CancellationCycle:
         taskmanager.cancel_cell(cell, origin_task=self.origin_task)
         if manager is None or manager._destroyed:
             return
-        manager._set_cell_checksum(cell, None, void, status_reason=reason)
+        manager._set_cell_checksum(cell, None, void, status_reason=reason) # no async, so OK
 
     def _cancel_cell_path(self, scell, path, *, void, reason):
         assert not self.cleared
@@ -160,6 +183,14 @@ class CancellationCycle:
         self.scells[scell].cancel_inpath(path, void, reason)
         if from_join_task:
             self.scells[scell].needs_join = False
+
+    def cancel_scell_all_outpaths(self, scell, *, void, reason):
+        assert not self.cleared
+        if scell not in self.scells:
+            self.scells[scell] = StructuredCellCancellation(scell, self)
+        if not void and scell._exception is not None:
+            return  # irrelevant; everything will be soft-canceled at resolve
+        self.scells[scell].cancel_all_outpaths(void, reason)
 
     def cancel_scell_outpath(self, scell, path):
         """Hard-cancels an output path, because an scell has a value but the outpath has not"""
