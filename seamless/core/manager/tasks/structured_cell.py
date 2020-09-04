@@ -77,10 +77,12 @@ class StructuredCellJoinTask(Task):
                     try:
                         if not sc.no_auth:
                             value = copy.deepcopy(sc._auth_value)
-                            if value is None:
-                                if sc.auth._checksum is not None:
+                            if value is None or sc._auth_temp_checksum is not None:
+                                if sc.auth._checksum is not None or sc._auth_temp_checksum is not None:
                                     ### value = copy.deepcopy(sc.auth.data)  # Not necessarily up to date (?)
                                     auth_checksum = sc.auth._checksum
+                                    if sc._auth_temp_checksum is not None:
+                                        auth_checksum = sc._auth_temp_checksum
                                     buffer = await GetBufferTask(manager, auth_checksum).run()
                                     if buffer is None:
                                         raise CacheMissError(auth_checksum.hex())
@@ -88,6 +90,7 @@ class StructuredCellJoinTask(Task):
                                         manager, buffer, auth_checksum, "mixed", True
                                     ).run()
                                     sc._auth_value = value
+                                    sc._auth_temp_checksum = None
                             else:
                                 auth_buf = await SerializeToBufferTask(
                                     manager, value, "mixed",
@@ -150,10 +153,11 @@ class StructuredCellJoinTask(Task):
                                     # Else, use required properties in the schema
             else:
                 value = copy.deepcopy(sc._auth_value)
-                if value is None:
-                    if sc.auth._checksum is not None:
+                if value is None or sc._auth_temp_checksum is not None:
+                    if sc.auth._checksum is not None or sc._auth_temp_checksum is not None:
                         checksum = sc.auth._checksum
-                        ### value = copy.deepcopy(sc.auth.data) # Not necessarily up to date (?)
+                        if sc._auth_temp_checksum is not None:
+                            checksum = sc._auth_temp_checksum
                         try:
                             buffer = await GetBufferTask(manager, checksum).run()
                         except CacheMissError:
@@ -164,6 +168,7 @@ class StructuredCellJoinTask(Task):
                                 manager, buffer, checksum, "mixed", True
                             ).run()
                             sc._auth_value = value
+                            sc._auth_temp_checksum = None
             if not ok:
                 value = None
                 checksum = None

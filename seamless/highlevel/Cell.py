@@ -525,6 +525,17 @@ class Cell(Base):
         else:
             cell.set(value)
 
+    def set_checksum(self, checksum):
+        from ..core.structured_cell import StructuredCell
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            raise NotImplementedError
+        cell = self._get_cell()
+        if isinstance(cell, StructuredCell):
+            cell.set_auth_checksum(checksum)
+        else:
+            cell.set_checksum(checksum)
+
     @property
     def status(self):
         """Returns the status of the cell.

@@ -151,6 +151,7 @@ class StructuredCell(SeamlessBase):
         self.modified = ModifiedPathManager(self)
 
         self._auth_value = None
+        self._auth_temp_checksum = None
         self._schema_value = None
 
         if hash_pattern is not None:
@@ -225,6 +226,8 @@ class StructuredCell(SeamlessBase):
         assert not self.no_auth
         if self.auth._destroyed:
             return
+        if self._auth_temp_checksum is not None:
+            raise RuntimeError(self) # cannot set auth value and auth temp checksum at the same time
         self.modified.add_auth_path(path)
         manager = self._get_manager()
         if manager._destroyed:
@@ -380,8 +383,12 @@ class StructuredCell(SeamlessBase):
     def checksum(self):
         return self._data.checksum
 
-    def set_checksum(self, checksum):
-        return self._data.set_checksum(checksum)
+    def set_auth_checksum(self, checksum):
+        assert checksum is None or isinstance(checksum, str)
+        assert not self.no_auth
+        self._auth_value = None
+        self._auth_temp_checksum = bytes.fromhex(checksum)
+        self._join()
 
     @property
     def value(self):
