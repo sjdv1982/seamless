@@ -1,18 +1,14 @@
 #!/bin/bash
+
+database_config=$1
+: ${database_config:=/home/jovyan/seamless-tools/default-config.yaml}
+
 set -u -e
 
 [ ! -d ~/.seamless/database ] && mkdir -p ~/.seamless/database
-[ ! -d ~/.seamless/redis ] && mkdir -p ~/.seamless/redis
 
-docker run \
-  --rm \
-  -d \
-  -p 6379:6379 \
-  --name seamless-redis-container \
-  -v ~/.seamless/redis:/data \
-  -u `id -u`:`id -g` \
-  redis redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy volatile-ttl
-
+echo "Starting container seamless-database-container"
+echo 'Running Seamless database adapter with' $database_config
 docker run \
   --rm \
   -d \
@@ -22,4 +18,4 @@ docker run \
   -u jovyan \
   rpbs/seamless \
   python3 -u /home/jovyan/seamless-tools/database.py \
-  /home/jovyan/seamless-tools/default-config.yaml
+  $database_config
