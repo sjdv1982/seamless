@@ -4,6 +4,7 @@ from asyncio import CancelledError
 from functools import partial
 import threading
 import time
+from bisect import bisect_left
 
 from .. import destroyer
 
@@ -35,6 +36,7 @@ class TaskManager:
         self.manager = weakref.ref(manager)
         self.loop = asyncio.get_event_loop()
         self.tasks = []
+        self.task_ids = []
         self.synctasks = []
         self.cell_to_task = {} # tasks that depend on cells
         self.accessor_to_task = {}  # ...
@@ -140,6 +142,7 @@ class TaskManager:
         assert task.future is not None
 
         self.tasks.append(task)
+        self.task_ids.append(task.taskid)
         task.future.add_done_callback(
             partial(self._clean_task, task)
         )
@@ -170,20 +173,25 @@ class TaskManager:
 
         dd.append(task)
 
-    def _get_upon_connection_tasks(self, root):
-        for task in self.tasks:
-            if isinstance(task, UponConnectionTask):
-                if task._root() is root:
-                    yield task
 
     async def await_upon_connection_tasks(self,taskid,root):
-        futures, tasks = [], []
-        for task in self._get_upon_connection_tasks(root):
-            if task.taskid >= taskid or task.future is None:
-                continue
-            tasks.append(task)
-        if len(tasks):
-            await self.await_tasks(tasks)
+        while 1:
+            pos = bisect_left(self.task_ids, taskid)
+            """
+            for n in range(pos): assert self.tasks[n].taskid < taskid, (pos, n)
+            for n in range(pos, len(self.tasks)): assert self.tasks[n].taskid >= taskid, (pos, n)
+            """
+            for task in reversed(self.tasks[:pos]):
+                if isinstance(task, UponConnectionTask):
+                    if task.future is None or task.future.done():
+                        continue
+                    if task._root() is not root:
+                        continue
+                    fut = asyncio.shield(task.future)
+                    await fut
+                    break
+            else:
+                break
 
     @staticmethod
     async def await_tasks(tasks, shield=False):
@@ -418,6 +426,7 @@ class TaskManager:
 
     def _clean_task(self, task, future):
         self.tasks.remove(task)
+        self.task_ids.remove(task.taskid)
         for dep in task.dependencies:
             self._clean_dep(dep, task)
         if task.future is not None and task.future.done():

@@ -222,7 +222,7 @@ class StructuredCell(SeamlessBase):
     def set_no_inference(self, value):
         self.handle_no_inference.set(value)
 
-    def _set_auth_path(self, path, value, from_pop=False, autogen=False):
+    def _set_auth_path(self, path, value, from_pop=False):
         assert not self.no_auth
         if self.auth._destroyed:
             return
@@ -232,55 +232,52 @@ class StructuredCell(SeamlessBase):
         manager = self._get_manager()
         if manager._destroyed:
             return
-        resolve_cancel_cycle = False
-        cancel_cycle = manager.cancel_cycle
-        if not autogen:
+
+        try:
+            resolve_cancel_cycle = False
+            cancel_cycle = manager.cancel_cycle
             if cancel_cycle.cleared:
                 resolve_cancel_cycle = True
                 cancel_cycle.cleared = False
-        try:
-            if not from_pop and value is None and len(path) and isinstance(path[-1], int):
-                l = len(self._get_auth_path(path[:-1]))
-                tail = path[-1]
-                new_value = None
-                for n in range(l-1, path[-1]+1, -1):
-                    path2 = path[:-1] + (n,)
-                    old_value = self._get_auth_path(path2)
-                    self._set_auth_path(path2, new_value, from_pop=True, autogen=True)
-                    new_value = old_value
-            elif self.hash_pattern is None:
+
+            cancel_cycle.cancel_scell_all_outpaths(self, void=False, reason=None)
+            self.auth._set_checksum(None, from_structured_cell=True)
+        finally:
+            if resolve_cancel_cycle:
+                cancel_cycle.resolve()
+
+        if not from_pop and value is None and len(path) and isinstance(path[-1], int):
+            l = len(self._get_auth_path(path[:-1]))
+            tail = path[-1]
+            new_value = None
+            for n in range(l-1, path[-1]+1, -1):
+                path2 = path[:-1] + (n,)
+                old_value = self._get_auth_path(path2)
+                self._set_auth_path(path2, new_value, from_pop=True)
+                new_value = old_value
+        elif self.hash_pattern is None:
+            if not len(path):
+                self._auth_value = value
+            elif self._auth_value is None:
+                if isinstance(path[0], str):
+                    self._auth_value = {}
+                elif isinstance(path[0], list):
+                    self._auth_value = []
+            if len(path):
+                set_subpath(self._auth_value, None, path, value)
+        else:
+            if not isinstance(self._auth_value, (list, dict)):
                 if not len(path):
-                    self._auth_value = value
-                elif self._auth_value is None:
+                    if list(self.hash_pattern.keys())[0][0] == "!":
+                        self._auth_value = []
+                    else:
+                        self._auth_value = {}
+                else:
                     if isinstance(path[0], str):
                         self._auth_value = {}
                     elif isinstance(path[0], list):
                         self._auth_value = []
-                if len(path):
-                    set_subpath(self._auth_value, None, path, value)
-            else:
-                if not isinstance(self._auth_value, (list, dict)):
-                    if not len(path):
-                        if list(self.hash_pattern.keys())[0][0] == "!":
-                            self._auth_value = []
-                        else:
-                            self._auth_value = {}
-                    else:
-                        if isinstance(path[0], str):
-                            self._auth_value = {}
-                        elif isinstance(path[0], list):
-                            self._auth_value = []
-                set_subpath(self._auth_value, self.hash_pattern, path, value)
-            cancel = True
-            for inchannel in self.inchannels:
-                if overlap_path(inchannel, path):
-                    break
-            else:
-                cancel_cycle.cancel_scell_all_outpaths(self, void=False, reason=None)
-                self.auth._set_checksum(None, from_structured_cell=True)
-        finally:
-            if resolve_cancel_cycle:
-                cancel_cycle.resolve()
+            set_subpath(self._auth_value, self.hash_pattern, path, value)
 
     def _join(self):
         if self.buffer._destroyed:

@@ -31,7 +31,11 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
         else:
             raise ValueError((pin["io"], pinname))
         pin_hash_pattern = pin.get("hash_pattern")
-        pin_cell = cell(pin.get("celltype", "mixed"), hash_pattern=pin_hash_pattern)
+        celltype = pin.get("celltype", "mixed")
+        if celltype == "mixed":
+            pin_cell = cell(celltype, hash_pattern=pin_hash_pattern)
+        else:
+            pin_cell = cell(celltype)
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pinname] = pin_cell
         if pin["io"] != "parameter":

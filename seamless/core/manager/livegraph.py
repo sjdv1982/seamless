@@ -607,6 +607,7 @@ class LiveGraph:
             root = cell_or_macropath._root()
         except Exception:
             root = None
+        """
         for task in self.manager().taskmanager._get_upon_connection_tasks(root):
             if task is from_upon_connection_task:
                 continue
@@ -614,6 +615,7 @@ class LiveGraph:
                 continue
             if task.target is cell_or_macropath:
                 return False
+        """
         if isinstance(cell_or_macropath, Path):
             macropath = cell_or_macropath
             assert path is None

@@ -362,7 +362,7 @@ class Manager:
             structured_cell, kill_non_started=False
         )
 
-        if not not_started:
+        if not from_cancel and not not_started:
             task = StructuredCellJoinTask(
                 self, structured_cell
             )

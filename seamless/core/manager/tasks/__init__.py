@@ -2,6 +2,7 @@ import weakref
 import asyncio
 from asyncio import CancelledError
 import traceback
+from functools import partial
 
 import logging
 logger = logging.getLogger("seamless")
@@ -62,6 +63,7 @@ class Task:
     _started = False
     _cached_root = None
     future = None
+    caller_count = None
 
     def __init__(self, manager, *args, **kwargs):
         if isinstance(manager, weakref.ref):
@@ -83,6 +85,7 @@ class Task:
 
         taskmanager._task_id_counter += 1
         self.taskid = taskmanager._task_id_counter
+        self.caller_count = 0
 
     @property
     def refkey(self):
@@ -113,23 +116,32 @@ class Task:
         realtask.refholders.append(self)
 
     async def run(self):
-        if self.future is not None:
-            print_debug("RUN", self.__class__.__name__, hex(id(self)))
         realtask = self._realtask
         if realtask is not None:
             result = await realtask.run()
             return result
-        self._launch()
-        assert self.future is not None
+        already_launched = (self.future is not None)
+        if not already_launched:
+            self._launch()
+            assert self.future is not None
+        if self.future.done():
+            return self.future.result()
+        if not already_launched:
+            print_debug("RUN", self.__class__.__name__, hex(id(self)))
         self._awaiting = True
-        print_debug("LAUNCHED", self.__class__.__name__, hex(id(self)))
         try:
+            if self.caller_count != -999:
+                self.caller_count += 1
             await asyncio.shield(self.future)
         except CancelledError:
-            print_debug("CANCELING", self.__class__.__name__, hex(id(self)))
-            self.cancel()
+            if self.caller_count != -999:
+                self.caller_count -= 1
+                if self.caller_count == 0:
+                    print_debug("CANCELING", self.__class__.__name__, hex(id(self)))
+                    self.cancel()
             raise
-        print_debug("HAS RUN", self.__class__.__name__, hex(id(self)))
+        if not already_launched:
+            print_debug("HAS RUN", self.__class__.__name__, hex(id(self)))
         return self.future.result()
 
     async def _run0(self, taskmanager):
@@ -141,6 +153,8 @@ class Task:
     def _launch(self):
         manager = self.manager()
         if manager is None or manager._destroyed:
+            return
+        if self._canceled:
             return
         taskmanager = manager.taskmanager
         if self.future is not None:
@@ -156,7 +170,10 @@ class Task:
         realtask = self._realtask
         if realtask is not None:
             return realtask.launch()
+        if self.future is not None:
+            return
         self._launch()
+        self.caller_count = -999
 
     def launch_and_await(self):
         assert not asyncio.get_event_loop().is_running()
@@ -186,7 +203,7 @@ class Task:
         if realtask is not None:
             return realtask.cancel_refholder(self)
         manager = self.manager()
-        if self.future is not None:
+        if self.future is not None and self.future != "DUMMY":
             if self.future.cancelled():
                 return
             self.future.cancel()

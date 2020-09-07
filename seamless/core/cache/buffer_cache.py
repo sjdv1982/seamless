@@ -238,7 +238,8 @@ class BufferCache:
             assert isinstance(buffer, bytes)
             return buffer
         buffer = database_cache.get_buffer(checksum)
-        assert isinstance(buffer, bytes)
+        if buffer is not None:
+            assert isinstance(buffer, bytes)
         return buffer
 
     def get_buffer_length(self, checksum):

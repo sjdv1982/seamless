@@ -24,7 +24,7 @@ def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
 
-RECOMPUTE_OVER_REMOTE = 1000000 # after this threshold, better to recompute than to download remotelt
+RECOMPUTE_OVER_REMOTE = int(100e6) # after this threshold, better to recompute than to download remotely
                                 # TODO: have some dynamic component based on:
                                 # - stored recomputation time from provenance server
                                 # - internet connection speed

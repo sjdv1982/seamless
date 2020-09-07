@@ -46,9 +46,12 @@ class Cell(SeamlessBase):
     If "fingertip_remote" is None or True:
     - Verify that the buffer is locally or remotely available;
         if remotely, download it.
-    If "fingertip_remote" is True and "fingertip_recompute" is None, remote download will
+    If "fingertip_recompute" is True and "fingertip_remote" is None, recomputation will
         be tried before recomputation.
     If both values are True or None, recomputation is tried first
+
+    But there is a buffer size lower limit RECOMPUTE_OVER_REMOTE;
+      below the limit, remote download is preferred
     """
 
     _fingertip_remote = None

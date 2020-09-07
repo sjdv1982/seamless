@@ -29,6 +29,33 @@ class UponConnectionTask(Task):
         else:
             raise TypeError(target)
 
+
+        taskmanager = manager.taskmanager
+        cancel_tasks = []
+        if isinstance(target, Cell):
+            for task in taskmanager.cell_to_task[target]:
+                if isinstance(task, SetCellValueTask):
+                    cancel_tasks.append(task)
+        elif isinstance(target, MacroPath):
+            cancel_tasks = taskmanager.macropath_to_task[target]
+        elif isinstance(target, PinBase):
+            worker = target.worker_ref()
+            if isinstance(worker, Transformer):
+                cancel_tasks = taskmanager.transformer_to_task[worker]
+            elif isinstance(worker, Reactor):
+                cancel_tasks = taskmanager.reactor_to_task[worker]
+            elif isinstance(worker, Macro):
+                cancel_tasks = taskmanager.macro_to_task[worker]
+            else:
+                raise TypeError(type(worker))
+        else:
+            raise TypeError(type(target))
+        for task in cancel_tasks:
+            if isinstance(task, UponConnectionTask):
+                continue
+            task.cancel()
+
+
     def _connect_cell_cell(self):
         source, target, source_subpath, target_subpath = (
           self.source, self.target, self.source_subpath, self.target_subpath
@@ -170,29 +197,6 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
         taskmanager = manager.taskmanager
 
         target = self.target
-        cancel_tasks = []
-        if isinstance(target, Cell):
-            for task in taskmanager.cell_to_task[target]:
-                if isinstance(task, SetCellValueTask):
-                    cancel_tasks.append(task)
-        elif isinstance(target, MacroPath):
-            cancel_tasks = taskmanager.macropath_to_task[target]
-        elif isinstance(target, PinBase):
-            worker = target.worker_ref()
-            if isinstance(worker, Transformer):
-                cancel_tasks = taskmanager.transformer_to_task[worker]
-            elif isinstance(worker, Reactor):
-                cancel_tasks = taskmanager.reactor_to_task[worker]
-            elif isinstance(worker, Macro):
-                cancel_tasks = taskmanager.macro_to_task[worker]
-            else:
-                raise TypeError(type(worker))
-        else:
-            raise TypeError(type(target))
-        for task in cancel_tasks:
-            if isinstance(task, UponConnectionTask):
-                continue
-            task.cancel()
 
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
 

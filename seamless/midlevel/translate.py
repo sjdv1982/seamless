@@ -84,7 +84,6 @@ def set_structured_cell_from_checksum(cell, checksum):
             from_structured_cell=True,
             initial=True
         )
-        join = True
     if join:
         cell._join()
 

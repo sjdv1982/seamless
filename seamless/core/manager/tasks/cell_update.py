@@ -25,7 +25,7 @@ class CellUpdateTask(Task):
         from . import CellChecksumTask
         manager = self.manager()
         cell = self.cell
-        await CellChecksumTask(manager, cell).run()
+        ###await CellChecksumTask(manager, cell).run() # is this really necessary?
 
         locknr = await acquire_evaluation_lock(self)
         try:
