@@ -20,3 +20,5 @@ UPDATE: as of March 26, auto_translate (sometimes, partially) silently fails in 
 For now, disable auto_translate.
 
 UPDATE: Now with 0.3, how much of it is still accurate?
+
+UPDATE: rip auto_translate

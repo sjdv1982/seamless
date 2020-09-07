@@ -1,0 +1,36 @@
+Big data
+========
+
+With the database branch, this is now almost working.
+Map-reduce library macros are in proof-of-principle stage
+
+
+Seamless overhead is now quite low, in the ms range per simple cell (see testing.py).
+Still, a high-level element is several simple cells (4 for a structured cell; 9 + 2 per pin for high-level Python transformers),
+and map-reduce graphs may be dozens of high-level elements, applied to 10**5 data elements.
+At this rate, overhead may become thousands or tens of thousands of seconds even for just re-translation, which is too much.
+
+
+Todo remains:
+- Library constructors may have optional parameters; also make it easier to change them, or partial instantiation
+(like a transformer would) + change params.
+- Make a map-reduce library in the standard lib, especially for map-dict and reduce-list, reduce-dict.
+  All of them have _N  versions that zip over N lists or dicts.
+  Reduce has an optional partial order input (list of keys); the final order is also an output.
+  It is recommended to set the input to the output when done.
+  At the top level, dict_reduce builds the full order key list, then builds one reductor per 2 instances, and then the whole pyramid
+  of reductor generations. Odd instances are put into their own piramid, the latest one is added to the main pyramid.
+- Elision for library instances. From the constructor, the input and output parameter values and cell paths are determined.
+  For every cell-to-libinstance connection (no matter if it is to a parameter pin or to a ctx cell inside the libinstance),
+  a special elision monitor is added. When a checksum is sent, a grand checksum dict is built, and the grand checksum is
+  checked against the elision cache. The elision cache contains the grand checksum as key and the checksum dict of output
+  cells as value. This avoids constructing the subgraph! (which is also not accessible now)
+  Elision is a parameter for every libinstance, and can be default on or off for the library. If libinstance.ctx is accessed,
+  an error message is printed regarding elision, and that it can be turned off. (Make this work also with status graph!)
+- Make all map-reduce elidable.
+- Make all map_list/dict  two-level elidable. They all divide the input in elision chunks,
+  (using an optional order parameter for dicts, just like reduce-dict/reduce-dict-N does in all cases).
+  For each chunk (if more than one), a level-one elidable sub-instance is constructed (i.e. 10 map-dict-N sub instances with chunksize 100
+  per map-dict-N instance of input size 1000 and chunk size 100).
+- Dump and load the expression cache with a new API function. Shouldn't be necessary for well-designed cases where expressions are
+  cheap, but the option should be available.

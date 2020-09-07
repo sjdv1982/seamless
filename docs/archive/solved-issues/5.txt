@@ -18,4 +18,5 @@ Maybe:
 
 UPDATE: memory freeing is DISABLED for now, as CacheMissErrors still occur,
  in particular when changing ctx.receptor in mti-autodock.
- 
+
+UPDATE: database branch has solved this, it seems.
