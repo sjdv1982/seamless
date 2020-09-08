@@ -119,29 +119,26 @@ TF DUPLEX Status: executing, 100.0 %
 RESULT        2.700 Status: preliminary
 RESULT DUPLEX 2.700 Status: preliminary
 
-TF        Status: executing, 10.0 %
-TF DUPLEX Status: executing, 10.0 %
-RESULT        0.300 Status: preliminary
-RESULT DUPLEX 0.300 Status: preliminary
+TF        Status: OK
+TF DUPLEX Status: OK
+RESULT        3.000 Status: OK
+RESULT DUPLEX 3.000 Status: OK
 
-TF        Status: executing, 20.0 %
-TF DUPLEX Status: executing, 20.0 %
-RESULT        0.300 Status: preliminary
-RESULT DUPLEX 0.300 Status: preliminary
+TF        Status: OK
+TF DUPLEX Status: OK
+RESULT        3.000 Status: OK
+RESULT DUPLEX 3.000 Status: OK
 
-TF        Status: executing, 20.0 %
-TF DUPLEX Status: executing, 20.0 %
-RESULT        0.300 Status: preliminary
-RESULT DUPLEX 0.300 Status: preliminary
+TF        Status: OK
+TF DUPLEX Status: OK
+RESULT        3.000 Status: OK
+RESULT DUPLEX 3.000 Status: OK
 
-TF        Status: executing, 30.0 %
-TF DUPLEX Status: executing, 30.0 %
-RESULT        0.900 Status: preliminary
-RESULT DUPLEX 0.900 Status: preliminary
+TF        Status: OK
+TF DUPLEX Status: OK
+RESULT        3.000 Status: OK
+RESULT DUPLEX 3.000 Status: OK
 
-Waiting for: Seamless transformer: .tfSeamless transformer: .tf_duplex
-Waiting for: Seamless transformer: .tfSeamless transformer: .tf_duplex
-Waiting for: Seamless transformer: .tfSeamless transformer: .tf_duplex
 TF        Status: OK
 TF DUPLEX Status: OK
 RESULT        3.000 Status: OK

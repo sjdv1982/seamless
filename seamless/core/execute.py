@@ -145,15 +145,16 @@ def execute(name, code,
                 identifier, namespace,
                 inputs, output_name, celltype, result_queue
             )
-        old_stdio = sys.stdout, sys.stderr
-        stdout, stderr = FakeStdStream(sys.stdout), FakeStdStream(sys.stderr)
-        sys.stdout, sys.stderr = stdout, stderr
-        with wurlitzer.pipes() as (stdout2, stderr2):
-            result = _execute(name, code,
-                injector, module_workspace,
-                identifier, namespace,
-                inputs, output_name, celltype, result_queue
-            )
+        else:
+            old_stdio = sys.stdout, sys.stderr
+            stdout, stderr = FakeStdStream(sys.stdout), FakeStdStream(sys.stderr)
+            sys.stdout, sys.stderr = stdout, stderr
+            with wurlitzer.pipes() as (stdout2, stderr2):
+                result = _execute(name, code,
+                    injector, module_workspace,
+                    identifier, namespace,
+                    inputs, output_name, celltype, result_queue
+                )
 
         msg_code, msg = result
         if msg_code == 2: # SeamlessTransformationError, propagate

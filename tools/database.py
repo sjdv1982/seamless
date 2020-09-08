@@ -237,6 +237,7 @@ class DatabaseServer:
                 result = await source.get_sem2syn(key)
                 if result is not None:
                     for r in result:
+                        assert isinstance(r, bytes)
                         if r not in results:
                             source_ids.add(source.id)
                         results.add(r)
