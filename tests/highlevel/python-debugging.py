@@ -75,6 +75,7 @@ def triple_it(a):
     return 3 * a
 
 ctx.transform = triple_it
+ctx.transform.debug = True
 ctx.code >> ctx.transform.code
 ctx.code.mount("triple_it.py")
 ctx.transform.a = ctx.a

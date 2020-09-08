@@ -19,7 +19,18 @@ parser.add_argument(
     help="Do not enter a mainloop. Assumes that the script was opened with an interactive shell (e.g. ipython -i)",
     action="store_true"
 )
+parser.add_argument(
+    "--direct-print",
+    dest="direct_print",
+    help="Print stdout and stderr of transformers directly on the console",
+    action="store_true"
+)
 args = parser.parse_args()
+
+if args.direct_print:
+    import seamless.core.execute
+    seamless.core.execute.DIRECT_PRINT = True
+
 
 env = os.environ
 

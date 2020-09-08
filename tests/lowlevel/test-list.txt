@@ -37,14 +37,14 @@ injection3.py
 injection4.py: the output is approximate, depends on exact timings, see also [1]
 injection5.py: see above
 simple-share.py
-transformation-checksum.sh: run with Seamless database
-simple-duplex.py
-simple-duplex-remote.py: run together with:
+BUGGED transformation-checksum.sh: run with Seamless database
+BUGGED simple-duplex.py
+TODO simple-duplex-remote.py: run together with:
      python3 -u ../../scripts/jobslave-nodatabase.py --time 40 > test-outputs/simple-duplex-remote-jobslave.out 2>&1
 simple-remote.py: run together with scripts/jobslave-nodatabase.py
-simple-remote2.py: run together with:
-     python3 -u ../../scripts/jobslave-nodatabase.py --time 20 > test-outputs/simple-remote2-jobslave.out 2>&1
-compile-run-remote.py: run together with scripts/jobslave-nodatabase.py
+BUGGED simple-remote2.py: run together with:
+     python3 -u ../../scripts/jobslave-nodatabase.py --time 20 --direct-print > test-outputs/simple-remote2-jobslave.out 2>&1
+compile-run-remote.py: run together with scripts/jobslave-nodatabase.py --direct-print
      The jobslave output should include "ADD 8.141592979431152"
 macro.py
 macro2.py
@@ -52,9 +52,9 @@ macro3.py
 checksum-cell.py
 structured_cell/simple-deepcell.py
 structured_cell/channels-deepcell.py
-structured_cell/schema.py
+BUGGED structured_cell/schema.py
 collatz.py: the output is approximate, depends on exact timings
-structured_cell/preliminary.py: the output is approximate, depends on exact timings
+BUGGED structured_cell/preliminary.py: the output is approximate, depends on exact timings
 
 Non-automatic tests
 =========================
@@ -75,7 +75,6 @@ simple-communion: run simple-communion-slave.py,
      The output is available in simple-communion-[master/slave].out
 simple-debug.py
 mount.ipynb
-collatz-heisenbug.sh: is in fact automatic, but takes a looong time to run
 communion-peer[12].sh: run communion-peer1.sh,
      then communion-peer2.sh in a different terminal,
      then Ctrl-C communion-peer1.sh

@@ -1,12 +1,16 @@
-- Feature to dump/load transformation result caches (already used in man page build.py)
+High priority:
+- hcell, hrc and htf refer to the node. Should be renamed.
+- Meta-data for cells and transformers
 
-- Unify docker transformer and bash transformer?
-
-- Meta-schema for schema editing (jsonschema has it)
-
-- An extra "table" celltype, for text (like awk or org-mode) or binary (like Pandas). Probably YAGNI.
-
+Medium priority:
+- Unify docker transformer and bash transformer
 - Support more foreign languages: Julia, R, JavaScript. IPython magics, also have a look at python-bond
+
+Low priority:
+- "Fallback". During development: A value for a cell that is used if upstream-None, i.e. if someone else is working upstream.
+
+Very low priority:
+- Meta-schema for schema editing (jsonschema has it)
 
 - API to construct transformations without low-level contexts, launch them, and to check for cache hits.
   Application 1: to implement efficient non-deterministic execution that gives a deterministic result.
@@ -28,8 +32,3 @@
 - Other *host* implementations than Python... JavaScript? Erlang? Elixir? Go?
 
 - Re-implement all high level classes as Silk classes with methods in their schema.
-
-- Serialize the topology of low-level contexts, including checksums.
-  May help with faster caching of low-level macros.
-
-- "Fallback". During development: A value for a cell that is used if upstream-None, i.e. if someone else is working upstream.
