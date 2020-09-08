@@ -107,6 +107,7 @@ class TransformationJob:
         self.future = None
         self.remote = False
         self.restart = False
+        self.n_restarted = 0
 
     async def _probe_remote(self, clients):
         if not len(clients):
@@ -220,6 +221,9 @@ class TransformationJob:
                 prelim_callback, progress_callback
             )
         if self.restart:
+            self.n_restarted += 1
+            if self.n_restarted > 100:
+                raise SeamlessTransformationError("Restarted transformation 100 times")
             self.restart = False
             result = await self._execute(
                 prelim_callback, progress_callback
@@ -459,7 +463,8 @@ class TransformationJob:
                         raise SeamlessTransformationError(
                           "Transformation exited with code %s\n" % self.executor.exitcode
                         )
-                    done = True
+                    if not done:
+                        raise SeamlessTransformationError("Transformation exited without result")
                 if done:
                     break
                 await asyncio.sleep(0.01)

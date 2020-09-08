@@ -56,6 +56,7 @@ def print_error(*args):
 
 class RemoteTransformer:
     debug = False
+    python_debug = False
     def __init__(self, tf_checksum, peer_id):
         self.tf_checksum = tf_checksum
         self.peer_id = peer_id
@@ -227,14 +228,6 @@ class TransformationCache:
         tf_buffer = tf_get_buffer(transformation)
         tf_checksum = await calculate_checksum(tf_buffer)
 
-        if transformer.debug:
-            if tf_checksum not in self.debug:
-                self.debug.add(tf_checksum)
-                self.clear_exception(transformer)
-        if transformer.python_debug:
-            if tf_checksum not in self.python_debug:
-                self.python_debug.add(tf_checksum)
-                self.clear_exception(transformer)
         if tf_checksum not in self.transformations:
             tf = []
             buffer_cache.incref_buffer(tf_checksum, tf_buffer, False)
@@ -250,6 +243,16 @@ class TransformationCache:
                 buffer_cache.incref(sem_checksum, False)
         else:
             tf = self.transformations_to_transformers[tf_checksum]
+
+        if transformer.debug:
+            if tf_checksum not in self.debug:
+                self.debug.add(tf_checksum)
+                self.clear_exception(transformer)
+        if transformer.python_debug:
+            if tf_checksum not in self.python_debug:
+                self.python_debug.add(tf_checksum)
+                self.clear_exception(transformer)
+
         if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
             old_tf_checksum = None
         else:

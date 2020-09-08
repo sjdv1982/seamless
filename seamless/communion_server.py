@@ -384,36 +384,39 @@ class CommunionServer:
 
 
     async def _process_transformation_request(self, transformation, transformer, peer):
-        tcache = transformation_cache
-        remote_pins = []
-        for pinname in transformation:
-            if pinname.startswith("__"):
-                continue
-            celltype, subcelltype, sem_checksum = transformation[pinname]
-            checksum2 = await tcache.serve_semantic_to_syntactic(
-                sem_checksum, celltype, subcelltype,
-                peer
-            )
-            checksum2 = checksum2[0]
-            assert isinstance(checksum2, bytes)
-            buffer = buffer_cache.get_buffer(checksum2)
-            if buffer is not None:
-                continue
-            coro = get_buffer_remote(
-                checksum2,
-                peer
-            )
-            remote_pins.append((checksum2, coro))
-        if len(remote_pins):
-            buffers = await asyncio.gather(*[rp[1] for rp in remote_pins])
-            for n in range(len(buffers)):
-                buffer = buffers[n]
+        try:
+            tcache = transformation_cache
+            remote_pins = []
+            for pinname in transformation:
+                if pinname.startswith("__"):
+                    continue
+                celltype, subcelltype, sem_checksum = transformation[pinname]
+                checksum2 = await tcache.serve_semantic_to_syntactic(
+                    sem_checksum, celltype, subcelltype,
+                    peer
+                )
+                checksum2 = checksum2[0]
+                assert isinstance(checksum2, bytes)
+                buffer = buffer_cache.get_buffer(checksum2)
                 if buffer is not None:
-                    buffer_cache.cache_buffer(remote_pins[n][0], buffer)
+                    continue
+                coro = get_buffer_remote(
+                    checksum2,
+                    peer
+                )
+                remote_pins.append((checksum2, coro))
+            if len(remote_pins):
+                buffers = await asyncio.gather(*[rp[1] for rp in remote_pins])
+                for n in range(len(buffers)):
+                    buffer = buffers[n]
+                    if buffer is not None:
+                        buffer_cache.cache_buffer(remote_pins[n][0], buffer)
+            await tcache.incref_transformation(
+                transformation, transformer
+            )
+        except Exception as exc:
+            tcache.transformation_exceptions[transformer.tf_checksum] = exc
 
-        await tcache.incref_transformation(
-            transformation, transformer
-        )
 
     async def _process_request_from_peer(self, peer, message):
         type = message["type"]
