@@ -17,6 +17,7 @@ class Transformer(Worker):
     _prelim_result = False
     _progress = 0.0
     debug = False
+    python_debug = False
 
     def __init__(self, transformer_params, *,  stream_params=None):
         self.code = InputPin(self, "code", "python", "transformer")

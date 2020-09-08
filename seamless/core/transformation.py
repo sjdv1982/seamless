@@ -84,7 +84,8 @@ class TransformationJob:
     def __init__(self,
         checksum, codename,
         transformation,
-        semantic_cache, debug
+        semantic_cache, debug,
+        python_debug
     ):
         self.checksum = checksum
         assert codename is not None
@@ -101,6 +102,7 @@ class TransformationJob:
         self.transformation = transformation
         self.semantic_cache = semantic_cache
         self.debug = debug
+        self.python_debug = python_debug
         self.executor = None
         self.future = None
         self.remote = False
@@ -205,7 +207,7 @@ class TransformationJob:
             await asyncio.sleep(0.05)
         clients = list(communion_client_manager.clients["transformation"])
         await self._probe_remote(clients)
-        if self.remote:
+        if self.remote and not self.debug and not self.python_debug:
             self.remote_futures = None
             try:
                 result = await self._execute_remote(
@@ -424,8 +426,9 @@ class TransformationJob:
                 self.codename,
                 namespace, inputs, outputname, celltype, queue
             )
+            kwargs = {"python_debug": self.python_debug}
             execute_command = execute_debug if self.debug else execute
-            self.executor = Executor(target=execute_command,args=args, daemon=True)
+            self.executor = Executor(target=execute_command,args=args, kwargs=kwargs, daemon=True)
             self.executor.start()
             running = True
             result = None

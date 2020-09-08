@@ -60,6 +60,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         }
     ctx.tf = transformer(all_pins)
     if node["debug"]:
+        ctx.tf.python_debug = True
+    if node.get("compiled_debug"):
         ctx.tf.debug = True
     if node["language"] == "ipython":
         ctx.code = cell("ipython")

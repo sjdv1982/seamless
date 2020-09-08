@@ -130,11 +130,16 @@ class FakeStdStream:
 def execute(name, code,
       injector, module_workspace,
       identifier, namespace,
-      inputs, output_name, celltype, result_queue
+      inputs, output_name, celltype, result_queue,
+      python_debug = None
     ):
+    if python_debug:
+        direct_print = True
+    else:
+        direct_print = DIRECT_PRINT
     assert identifier is not None
     try:
-        if DIRECT_PRINT:
+        if direct_print:
             result = _execute(name, code,
                 injector, module_workspace,
                 identifier, namespace,
@@ -155,7 +160,7 @@ def execute(name, code,
             result_queue.put((1, msg))
         elif msg_code in (1, 10):
             std = ""
-            if not DIRECT_PRINT:
+            if not direct_print:
                 sout = stdout.read() + stdout2.read()
                 sys.stdout, sys.stderr = old_stdio
                 if len(sout):
@@ -181,12 +186,12 @@ def execute(name, code,
                 msg = std + msg
             result_queue.put((1, msg))
         else:
-            if not DIRECT_PRINT:
+            if not direct_print:
                 sys.stdout.write(stdout.read() + stdout2.read())
                 sys.stderr.write(stderr.read() + stderr2.read())
             result_queue.put(result)
     finally:
-        if not DIRECT_PRINT:
+        if not direct_print:
             sys.stdout, sys.stderr = old_stdio
         if USE_PROCESSES:
             result_queue.close()
@@ -195,7 +200,8 @@ def execute(name, code,
 def execute_debug(name, code,
       injector, module_workspace,
       identifier, namespace,
-      inputs, output_name, celltype, result_queue
+      inputs, output_name, celltype, result_queue,
+      **args
     ):
     try:
         old_stdio = sys.stdout, sys.stderr

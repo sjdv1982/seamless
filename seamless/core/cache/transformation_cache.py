@@ -126,6 +126,7 @@ class TransformationCache:
     def __init__(self):
         self.transformations = {} # tf-checksum-to-transformation
         self.debug = set() # set of debug tf-checksums
+        self.python_debug = set() # set of python-debug tf-checksums
         self.transformation_results = {} # tf-checksum-to-(result-checksum, prelim)
         self.transformation_exceptions = {} # tf-checksum-to-exception
         self.transformation_jobs = {} # tf-checksum-to-job
@@ -229,6 +230,10 @@ class TransformationCache:
         if transformer.debug:
             if tf_checksum not in self.debug:
                 self.debug.add(tf_checksum)
+                self.clear_exception(transformer)
+        if transformer.python_debug:
+            if tf_checksum not in self.python_debug:
+                self.python_debug.add(tf_checksum)
                 self.clear_exception(transformer)
         if tf_checksum not in self.transformations:
             tf = []
@@ -361,6 +366,7 @@ class TransformationCache:
             print_info("Executing transformer: {}".format(tftxt))
 
         debug = tf_checksum in self.debug
+        python_debug = tf_checksum in self.python_debug
         semantic_cache = {}
         for k,v in transformation.items():
             if k == "__output__":
@@ -377,7 +383,7 @@ class TransformationCache:
         job = TransformationJob(
             tf_checksum, codename,
             transformation, semantic_cache,
-            debug
+            debug, python_debug
         )
         job.execute(
             self.prelim_callback,
