@@ -1,0 +1,1497 @@
+********************************************************************************
+*  PARAMETERS
+********************************************************************************
+KEY tf1
+Limit: 9
+Factor: 1000
+Delay: 1.5
+Offset: 0
+
+KEY tf2
+Limit: 15
+Factor: 10
+Delay: 0.7
+Offset: 0
+
+KEY tf3
+Limit: 9
+Factor: 1
+Delay: 0.5
+
+KEY tf4
+Limit: 1
+Factor: 9
+Delay: 0.1
+
+********************************************************************************
+
+Time elapsed: 0.117
+{'status': {'tf1': 'Status: executing',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 0.0,
+ 'tf1-result': 0.0,
+ 'tf2': 0.0,
+ 'tf2-result': 0.0,
+ 'tf3': 0.0,
+ 'tf3-result': 0.0,
+ 'tf4': 9.0,
+ 'tf4-result': 9.0}
+
+Time elapsed: 0.335
+{'status': {'tf1': 'Status: executing',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 13.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing',
+            'tf3-result': 'Status: pending',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: pending'},
+ 'tf1': 0.0,
+ 'tf1-result': 0.0,
+ 'tf2': 10.0,
+ 'tf2-result': 10.0,
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': None,
+ 'tf4-result': None}
+
+Time elapsed: 0.525
+{'status': {'tf1': 'Status: executing',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 13.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: upstream => delay void, factor void, limit void, '
+                   'offset void',
+            'tf3-result': 'Status: upstream',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 0.0,
+ 'tf1-result': 0.0,
+ 'tf2': 10.0,
+ 'tf2-result': 10.0,
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': 19.0,
+ 'tf4-result': 19.0}
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 
+************************************************************************
+*  Silk validation error
+************************************************************************
+Traceback (most recent call last):
+  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+    validator_func(silkobject)
+  File "Silk validator 1", line 8, in v
+    assert offset == 0 or offset > 2000 or self.factor == 9
+AssertionError
+************************************************************************
+
+
+Failed validating 'validators' in schema:
+    {'methods': {'subreport': {'code': 'def subreport(self):\n'
+                                       '    print("Limit:", '
+                                       'self.limit.unsilk)\n'
+                                       '    print("Factor:", '
+                                       'self.factor.unsilk)\n'
+                                       '    print("Delay:", '
+                                       'self.delay.unsilk)\n'
+                                       '    try:\n'
+                                       '        print("Offset:", '
+                                       'self.offset.unsilk)\n'
+                                       '    except AttributeError:\n'
+                                       '        pass\n'
+                                       '    print("")\n',
+                               'language': 'python'}},
+     'properties': {'factor': {}, 'offset': {}},
+     'type': 'object',
+     'validators': [{'code': '    def v(self):\n'
+                             '        try:\n'
+                             '            offset = self.offset\n'
+                             '        except AttributeError:\n'
+                             '            return\n'
+                             '        if offset.unsilk is None:\n'
+                             '            return\n'
+                             '        assert offset == 0 or offset > 2000 '
+                             'or self.factor == 9\n',
+                     'language': 'python',
+                     'name': 'v'}]}
+
+On instance:
+    {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 10.0}
+
+
+Time elapsed: 0.725
+{'status': {'tf1': 'Status: executing',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 13.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 33.3 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 0.0,
+ 'tf1-result': 0.0,
+ 'tf2': 10.0,
+ 'tf2-result': 10.0,
+ 'tf3': 2.0,
+ 'tf3-result': 2.0,
+ 'tf4': 19.0,
+ 'tf4-result': 19.0}
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 
+************************************************************************
+*  Silk validation error
+************************************************************************
+Traceback (most recent call last):
+  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+    validator_func(silkobject)
+  File "Silk validator 1", line 8, in v
+    assert offset == 0 or offset > 2000 or self.factor == 9
+AssertionError
+************************************************************************
+
+
+Failed validating 'validators' in schema:
+    {'methods': {'subreport': {'code': 'def subreport(self):\n'
+                                       '    print("Limit:", '
+                                       'self.limit.unsilk)\n'
+                                       '    print("Factor:", '
+                                       'self.factor.unsilk)\n'
+                                       '    print("Delay:", '
+                                       'self.delay.unsilk)\n'
+                                       '    try:\n'
+                                       '        print("Offset:", '
+                                       'self.offset.unsilk)\n'
+                                       '    except AttributeError:\n'
+                                       '        pass\n'
+                                       '    print("")\n',
+                               'language': 'python'}},
+     'properties': {'factor': {}, 'offset': {}},
+     'type': 'object',
+     'validators': [{'code': '    def v(self):\n'
+                             '        try:\n'
+                             '            offset = self.offset\n'
+                             '        except AttributeError:\n'
+                             '            return\n'
+                             '        if offset.unsilk is None:\n'
+                             '            return\n'
+                             '        assert offset == 0 or offset > 2000 '
+                             'or self.factor == 9\n',
+                     'language': 'python',
+                     'name': 'v'}]}
+
+On instance:
+    {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 10.0}
+
+
+Time elapsed: 1.138
+{'status': {'tf1': 'Status: executing, 22.2 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 20.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: upstream => delay void, factor void, limit void, '
+                   'offset void',
+            'tf3-result': 'Status: upstream',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: upstream'},
+ 'tf1': 1000.0,
+ 'tf1-result': 1000.0,
+ 'tf2': 20.0,
+ 'tf2-result': 20.0,
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': None,
+ 'tf4-result': None}
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 
+************************************************************************
+*  Silk validation error
+************************************************************************
+Traceback (most recent call last):
+  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+    validator_func(silkobject)
+  File "Silk validator 1", line 8, in v
+    assert offset == 0 or offset > 2000 or self.factor == 9
+AssertionError
+************************************************************************
+
+
+Failed validating 'validators' in schema:
+    {'methods': {'subreport': {'code': 'def subreport(self):\n'
+                                       '    print("Limit:", '
+                                       'self.limit.unsilk)\n'
+                                       '    print("Factor:", '
+                                       'self.factor.unsilk)\n'
+                                       '    print("Delay:", '
+                                       'self.delay.unsilk)\n'
+                                       '    try:\n'
+                                       '        print("Offset:", '
+                                       'self.offset.unsilk)\n'
+                                       '    except AttributeError:\n'
+                                       '        pass\n'
+                                       '    print("")\n',
+                               'language': 'python'}},
+     'properties': {'factor': {}, 'offset': {}},
+     'type': 'object',
+     'validators': [{'code': '    def v(self):\n'
+                             '        try:\n'
+                             '            offset = self.offset\n'
+                             '        except AttributeError:\n'
+                             '            return\n'
+                             '        if offset.unsilk is None:\n'
+                             '            return\n'
+                             '        assert offset == 0 or offset > 2000 '
+                             'or self.factor == 9\n',
+                     'language': 'python',
+                     'name': 'v'}]}
+
+On instance:
+    {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 1020.0}
+
+
+Time elapsed: 1.338
+{'status': {'tf1': 'Status: executing, 22.2 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 20.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 44.4 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 1000.0,
+ 'tf1-result': 1000.0,
+ 'tf2': 20.0,
+ 'tf2-result': 20.0,
+ 'tf3': 3.0,
+ 'tf3-result': 3.0,
+ 'tf4': 1029.0,
+ 'tf4-result': 1029.0}
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 
+************************************************************************
+*  Silk validation error
+************************************************************************
+Traceback (most recent call last):
+  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+    validator_func(silkobject)
+  File "Silk validator 1", line 8, in v
+    assert offset == 0 or offset > 2000 or self.factor == 9
+AssertionError
+************************************************************************
+
+
+Failed validating 'validators' in schema:
+    {'methods': {'subreport': {'code': 'def subreport(self):\n'
+                                       '    print("Limit:", '
+                                       'self.limit.unsilk)\n'
+                                       '    print("Factor:", '
+                                       'self.factor.unsilk)\n'
+                                       '    print("Delay:", '
+                                       'self.delay.unsilk)\n'
+                                       '    try:\n'
+                                       '        print("Offset:", '
+                                       'self.offset.unsilk)\n'
+                                       '    except AttributeError:\n'
+                                       '        pass\n'
+                                       '    print("")\n',
+                               'language': 'python'}},
+     'properties': {'factor': {}, 'offset': {}},
+     'type': 'object',
+     'validators': [{'code': '    def v(self):\n'
+                             '        try:\n'
+                             '            offset = self.offset\n'
+                             '        except AttributeError:\n'
+                             '            return\n'
+                             '        if offset.unsilk is None:\n'
+                             '            return\n'
+                             '        assert offset == 0 or offset > 2000 '
+                             'or self.factor == 9\n',
+                     'language': 'python',
+                     'name': 'v'}]}
+
+On instance:
+    {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 1020.0}
+
+
+Time elapsed: 1.744
+{'status': {'tf1': 'Status: executing, 22.2 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 26.7 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: upstream => delay void, factor void, limit void, '
+                   'offset void',
+            'tf3-result': 'Status: upstream',
+            'tf4': 'Status: upstream => offset void',
+            'tf4-result': 'Status: upstream'},
+ 'tf1': 1000.0,
+ 'tf1-result': 1000.0,
+ 'tf2': 30.0,
+ 'tf2-result': 30.0,
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': None,
+ 'tf4-result': None}
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 
+************************************************************************
+*  Silk validation error
+************************************************************************
+Traceback (most recent call last):
+  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+    validator_func(silkobject)
+  File "Silk validator 1", line 8, in v
+    assert offset == 0 or offset > 2000 or self.factor == 9
+AssertionError
+************************************************************************
+
+
+Failed validating 'validators' in schema:
+    {'methods': {'subreport': {'code': 'def subreport(self):\n'
+                                       '    print("Limit:", '
+                                       'self.limit.unsilk)\n'
+                                       '    print("Factor:", '
+                                       'self.factor.unsilk)\n'
+                                       '    print("Delay:", '
+                                       'self.delay.unsilk)\n'
+                                       '    try:\n'
+                                       '        print("Offset:", '
+                                       'self.offset.unsilk)\n'
+                                       '    except AttributeError:\n'
+                                       '        pass\n'
+                                       '    print("")\n',
+                               'language': 'python'}},
+     'properties': {'factor': {}, 'offset': {}},
+     'type': 'object',
+     'validators': [{'code': '    def v(self):\n'
+                             '        try:\n'
+                             '            offset = self.offset\n'
+                             '        except AttributeError:\n'
+                             '            return\n'
+                             '        if offset.unsilk is None:\n'
+                             '            return\n'
+                             '        assert offset == 0 or offset > 2000 '
+                             'or self.factor == 9\n',
+                     'language': 'python',
+                     'name': 'v'}]}
+
+On instance:
+    {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 1030.0}
+
+
+Time elapsed: 1.940
+{'status': {'tf1': 'Status: executing, 22.2 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 26.7 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: upstream => delay void, factor void, limit void, '
+                   'offset void',
+            'tf3-result': 'Status: upstream',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 1000.0,
+ 'tf1-result': 1000.0,
+ 'tf2': 30.0,
+ 'tf2-result': 30.0,
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': 1039.0,
+ 'tf4-result': 1039.0}
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 
+************************************************************************
+*  Silk validation error
+************************************************************************
+Traceback (most recent call last):
+  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+    validator_func(silkobject)
+  File "Silk validator 1", line 8, in v
+    assert offset == 0 or offset > 2000 or self.factor == 9
+AssertionError
+************************************************************************
+
+
+Failed validating 'validators' in schema:
+    {'methods': {'subreport': {'code': 'def subreport(self):\n'
+                                       '    print("Limit:", '
+                                       'self.limit.unsilk)\n'
+                                       '    print("Factor:", '
+                                       'self.factor.unsilk)\n'
+                                       '    print("Delay:", '
+                                       'self.delay.unsilk)\n'
+                                       '    try:\n'
+                                       '        print("Offset:", '
+                                       'self.offset.unsilk)\n'
+                                       '    except AttributeError:\n'
+                                       '        pass\n'
+                                       '    print("")\n',
+                               'language': 'python'}},
+     'properties': {'factor': {}, 'offset': {}},
+     'type': 'object',
+     'validators': [{'code': '    def v(self):\n'
+                             '        try:\n'
+                             '            offset = self.offset\n'
+                             '        except AttributeError:\n'
+                             '            return\n'
+                             '        if offset.unsilk is None:\n'
+                             '            return\n'
+                             '        assert offset == 0 or offset > 2000 '
+                             'or self.factor == 9\n',
+                     'language': 'python',
+                     'name': 'v'}]}
+
+On instance:
+    {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 1030.0}
+
+
+Time elapsed: 2.363
+{'status': {'tf1': 'Status: executing, 22.2 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 26.7 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 66.7 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 1000.0,
+ 'tf1-result': 1000.0,
+ 'tf2': 30.0,
+ 'tf2-result': 30.0,
+ 'tf3': 5.0,
+ 'tf3-result': 5.0,
+ 'tf4': 1039.0,
+ 'tf4-result': 1039.0}
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 
+************************************************************************
+*  Silk validation error
+************************************************************************
+Traceback (most recent call last):
+  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+    validator_func(silkobject)
+  File "Silk validator 1", line 8, in v
+    assert offset == 0 or offset > 2000 or self.factor == 9
+AssertionError
+************************************************************************
+
+
+Failed validating 'validators' in schema:
+    {'methods': {'subreport': {'code': 'def subreport(self):\n'
+                                       '    print("Limit:", '
+                                       'self.limit.unsilk)\n'
+                                       '    print("Factor:", '
+                                       'self.factor.unsilk)\n'
+                                       '    print("Delay:", '
+                                       'self.delay.unsilk)\n'
+                                       '    try:\n'
+                                       '        print("Offset:", '
+                                       'self.offset.unsilk)\n'
+                                       '    except AttributeError:\n'
+                                       '        pass\n'
+                                       '    print("")\n',
+                               'language': 'python'}},
+     'properties': {'factor': {}, 'offset': {}},
+     'type': 'object',
+     'validators': [{'code': '    def v(self):\n'
+                             '        try:\n'
+                             '            offset = self.offset\n'
+                             '        except AttributeError:\n'
+                             '            return\n'
+                             '        if offset.unsilk is None:\n'
+                             '            return\n'
+                             '        assert offset == 0 or offset > 2000 '
+                             'or self.factor == 9\n',
+                     'language': 'python',
+                     'name': 'v'}]}
+
+On instance:
+    {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 1030.0}
+
+
+Time elapsed: 2.563
+{'status': {'tf1': 'Status: executing, 22.2 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 33.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: upstream => delay void, factor void, limit void, '
+                   'offset void',
+            'tf3-result': 'Status: upstream',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 1000.0,
+ 'tf1-result': 1000.0,
+ 'tf2': 40.0,
+ 'tf2-result': 40.0,
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': 1040.0,
+ 'tf4-result': 1040.0}
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 
+************************************************************************
+*  Silk validation error
+************************************************************************
+Traceback (most recent call last):
+  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+    validator_func(silkobject)
+  File "Silk validator 1", line 8, in v
+    assert offset == 0 or offset > 2000 or self.factor == 9
+AssertionError
+************************************************************************
+
+
+Failed validating 'validators' in schema:
+    {'methods': {'subreport': {'code': 'def subreport(self):\n'
+                                       '    print("Limit:", '
+                                       'self.limit.unsilk)\n'
+                                       '    print("Factor:", '
+                                       'self.factor.unsilk)\n'
+                                       '    print("Delay:", '
+                                       'self.delay.unsilk)\n'
+                                       '    try:\n'
+                                       '        print("Offset:", '
+                                       'self.offset.unsilk)\n'
+                                       '    except AttributeError:\n'
+                                       '        pass\n'
+                                       '    print("")\n',
+                               'language': 'python'}},
+     'properties': {'factor': {}, 'offset': {}},
+     'type': 'object',
+     'validators': [{'code': '    def v(self):\n'
+                             '        try:\n'
+                             '            offset = self.offset\n'
+                             '        except AttributeError:\n'
+                             '            return\n'
+                             '        if offset.unsilk is None:\n'
+                             '            return\n'
+                             '        assert offset == 0 or offset > 2000 '
+                             'or self.factor == 9\n',
+                     'language': 'python',
+                     'name': 'v'}]}
+
+On instance:
+    {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 1040.0}
+
+
+WARNING: transformer Seamless transformer: .stf3.tf is not yet void, shouldn't happen during transformer update
+Time elapsed: 2.767
+{'status': {'tf1': 'Status: executing, 33.3 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 33.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 2000.0,
+ 'tf1-result': 2000.0,
+ 'tf2': 40.0,
+ 'tf2-result': 40.0,
+ 'tf3': 2040.0,
+ 'tf3-result': 2040.0,
+ 'tf4': 2040.0,
+ 'tf4-result': 2040.0}
+
+Time elapsed: 2.960
+{'status': {'tf1': 'Status: executing, 33.3 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 33.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 2000.0,
+ 'tf1-result': 2000.0,
+ 'tf2': 40.0,
+ 'tf2-result': 40.0,
+ 'tf3': 2040.0,
+ 'tf3-result': 2040.0,
+ 'tf4': 2049.0,
+ 'tf4-result': 2049.0}
+
+Time elapsed: 3.174
+{'status': {'tf1': 'Status: executing, 33.3 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 40.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 2000.0,
+ 'tf1-result': 2000.0,
+ 'tf2': 50.0,
+ 'tf2-result': 50.0,
+ 'tf3': 2050.0,
+ 'tf3-result': 2050.0,
+ 'tf4': 2050.0,
+ 'tf4-result': 2050.0}
+
+Time elapsed: 3.370
+{'status': {'tf1': 'Status: executing, 33.3 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 40.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 2000.0,
+ 'tf1-result': 2000.0,
+ 'tf2': 50.0,
+ 'tf2-result': 50.0,
+ 'tf3': 2050.0,
+ 'tf3-result': 2050.0,
+ 'tf4': 2059.0,
+ 'tf4-result': 2059.0}
+
+Time elapsed: 3.784
+{'status': {'tf1': 'Status: executing, 33.3 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 40.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 22.2 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 2000.0,
+ 'tf1-result': 2000.0,
+ 'tf2': 50.0,
+ 'tf2-result': 50.0,
+ 'tf3': 2051.0,
+ 'tf3-result': 2051.0,
+ 'tf4': 2059.0,
+ 'tf4-result': 2059.0}
+
+Time elapsed: 3.991
+{'status': {'tf1': 'Status: executing, 33.3 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 46.7 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 2000.0,
+ 'tf1-result': 2000.0,
+ 'tf2': 60.0,
+ 'tf2-result': 60.0,
+ 'tf3': 2060.0,
+ 'tf3-result': 2060.0,
+ 'tf4': 2069.0,
+ 'tf4-result': 2069.0}
+
+Time elapsed: 4.182
+{'status': {'tf1': 'Status: executing, 44.4 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 46.7 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 3000.0,
+ 'tf1-result': 3000.0,
+ 'tf2': 60.0,
+ 'tf2-result': 60.0,
+ 'tf3': 3060.0,
+ 'tf3-result': 3060.0,
+ 'tf4': 3060.0,
+ 'tf4-result': 3060.0}
+
+Time elapsed: 4.388
+{'status': {'tf1': 'Status: executing, 44.4 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 46.7 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 3000.0,
+ 'tf1-result': 3000.0,
+ 'tf2': 60.0,
+ 'tf2-result': 60.0,
+ 'tf3': 3060.0,
+ 'tf3-result': 3060.0,
+ 'tf4': 3069.0,
+ 'tf4-result': 3069.0}
+
+Time elapsed: 4.592
+{'status': {'tf1': 'Status: executing, 44.4 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 53.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 3000.0,
+ 'tf1-result': 3000.0,
+ 'tf2': 70.0,
+ 'tf2-result': 70.0,
+ 'tf3': 3070.0,
+ 'tf3-result': 3070.0,
+ 'tf4': 3070.0,
+ 'tf4-result': 3070.0}
+
+Time elapsed: 4.796
+{'status': {'tf1': 'Status: executing, 44.4 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 53.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 3000.0,
+ 'tf1-result': 3000.0,
+ 'tf2': 70.0,
+ 'tf2-result': 70.0,
+ 'tf3': 3070.0,
+ 'tf3-result': 3070.0,
+ 'tf4': 3079.0,
+ 'tf4-result': 3079.0}
+
+Time elapsed: 5.203
+{'status': {'tf1': 'Status: executing, 44.4 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 60.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 22.2 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 3000.0,
+ 'tf1-result': 3000.0,
+ 'tf2': 80.0,
+ 'tf2-result': 70.0,
+ 'tf3': 3071.0,
+ 'tf3-result': 3071.0,
+ 'tf4': 3079.0,
+ 'tf4-result': 3079.0}
+
+Time elapsed: 5.410
+{'status': {'tf1': 'Status: executing, 44.4 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 60.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 3000.0,
+ 'tf1-result': 3000.0,
+ 'tf2': 80.0,
+ 'tf2-result': 80.0,
+ 'tf3': 3080.0,
+ 'tf3-result': 3080.0,
+ 'tf4': 3089.0,
+ 'tf4-result': 3089.0}
+
+Time elapsed: 5.628
+{'status': {'tf1': 'Status: executing, 55.6 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 60.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 4000.0,
+ 'tf1-result': 3000.0,
+ 'tf2': 80.0,
+ 'tf2-result': 80.0,
+ 'tf3': 3080.0,
+ 'tf3-result': 3080.0,
+ 'tf4': None,
+ 'tf4-result': None}
+
+Time elapsed: 5.810
+{'status': {'tf1': 'Status: executing, 55.6 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 60.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 4000.0,
+ 'tf1-result': 4000.0,
+ 'tf2': 80.0,
+ 'tf2-result': 80.0,
+ 'tf3': 4080.0,
+ 'tf3-result': 4080.0,
+ 'tf4': 4089.0,
+ 'tf4-result': 4089.0}
+
+Time elapsed: 6.015
+{'status': {'tf1': 'Status: executing, 55.6 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 66.7 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 4000.0,
+ 'tf1-result': 4000.0,
+ 'tf2': 90.0,
+ 'tf2-result': 90.0,
+ 'tf3': 4090.0,
+ 'tf3-result': 4090.0,
+ 'tf4': 4090.0,
+ 'tf4-result': 4090.0}
+
+Time elapsed: 6.222
+{'status': {'tf1': 'Status: executing, 55.6 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 66.7 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 4000.0,
+ 'tf1-result': 4000.0,
+ 'tf2': 90.0,
+ 'tf2-result': 90.0,
+ 'tf3': 4090.0,
+ 'tf3-result': 4090.0,
+ 'tf4': 4099.0,
+ 'tf4-result': 4099.0}
+
+Time elapsed: 6.644
+{'status': {'tf1': 'Status: executing, 55.6 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 73.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: upstream => delay void, factor void, limit void, '
+                   'offset void',
+            'tf3-result': 'Status: upstream',
+            'tf4': 'Status: upstream => delay void, factor void, limit void, '
+                   'offset void',
+            'tf4-result': 'Status: upstream'},
+ 'tf1': 4000.0,
+ 'tf1-result': 4000.0,
+ 'tf2': 100.0,
+ 'tf2-result': 100.0,
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': None,
+ 'tf4-result': None}
+
+Time elapsed: 6.841
+{'status': {'tf1': 'Status: executing, 55.6 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 73.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 4000.0,
+ 'tf1-result': 4000.0,
+ 'tf2': 100.0,
+ 'tf2-result': 100.0,
+ 'tf3': 4100.0,
+ 'tf3-result': 4100.0,
+ 'tf4': 4109.0,
+ 'tf4-result': 4109.0}
+
+Time elapsed: 7.240
+{'status': {'tf1': 'Status: executing, 66.7 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 73.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 5000.0,
+ 'tf1-result': 5000.0,
+ 'tf2': 100.0,
+ 'tf2-result': 100.0,
+ 'tf3': 5100.0,
+ 'tf3-result': 5100.0,
+ 'tf4': 5100.0,
+ 'tf4-result': 5100.0}
+
+Time elapsed: 7.443
+{'status': {'tf1': 'Status: executing, 66.7 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 80.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 5000.0,
+ 'tf1-result': 5000.0,
+ 'tf2': 110.0,
+ 'tf2-result': 110.0,
+ 'tf3': 5110.0,
+ 'tf3-result': 5110.0,
+ 'tf4': 5110.0,
+ 'tf4-result': 5110.0}
+
+Time elapsed: 7.642
+{'status': {'tf1': 'Status: executing, 66.7 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 80.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 5000.0,
+ 'tf1-result': 5000.0,
+ 'tf2': 110.0,
+ 'tf2-result': 110.0,
+ 'tf3': 5110.0,
+ 'tf3-result': 5110.0,
+ 'tf4': 5119.0,
+ 'tf4-result': 5119.0}
+
+Time elapsed: 8.056
+{'status': {'tf1': 'Status: executing, 66.7 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 86.7 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: upstream',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: upstream'},
+ 'tf1': 5000.0,
+ 'tf1-result': 5000.0,
+ 'tf2': 120.0,
+ 'tf2-result': 120.0,
+ 'tf3': 5120.0,
+ 'tf3-result': 5120.0,
+ 'tf4': 5120.0,
+ 'tf4-result': None}
+
+Time elapsed: 8.270
+{'status': {'tf1': 'Status: executing, 66.7 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 86.7 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 5000.0,
+ 'tf1-result': 5000.0,
+ 'tf2': 120.0,
+ 'tf2-result': 120.0,
+ 'tf3': 5120.0,
+ 'tf3-result': 5120.0,
+ 'tf4': 5129.0,
+ 'tf4-result': 5129.0}
+
+Time elapsed: 8.672
+{'status': {'tf1': 'Status: executing, 77.8 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 86.7 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: upstream'},
+ 'tf1': 6000.0,
+ 'tf1-result': 6000.0,
+ 'tf2': 120.0,
+ 'tf2-result': 120.0,
+ 'tf3': 6120.0,
+ 'tf3-result': 6120.0,
+ 'tf4': 6120.0,
+ 'tf4-result': 6120.0}
+
+Time elapsed: 8.879
+{'status': {'tf1': 'Status: executing, 77.8 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 93.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 6000.0,
+ 'tf1-result': 6000.0,
+ 'tf2': 130.0,
+ 'tf2-result': 130.0,
+ 'tf3': 6130.0,
+ 'tf3-result': 6130.0,
+ 'tf4': 6139.0,
+ 'tf4-result': 6130.0}
+
+Time elapsed: 9.077
+{'status': {'tf1': 'Status: executing, 77.8 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 93.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 6000.0,
+ 'tf1-result': 6000.0,
+ 'tf2': 130.0,
+ 'tf2-result': 130.0,
+ 'tf3': 6130.0,
+ 'tf3-result': 6130.0,
+ 'tf4': 6139.0,
+ 'tf4-result': 6139.0}
+
+Time elapsed: 9.282
+{'status': {'tf1': 'Status: executing, 77.8 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 93.3 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 22.2 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 6000.0,
+ 'tf1-result': 6000.0,
+ 'tf2': 130.0,
+ 'tf2-result': 130.0,
+ 'tf3': 6131.0,
+ 'tf3-result': 6131.0,
+ 'tf4': 6139.0,
+ 'tf4-result': 6139.0}
+
+Time elapsed: 9.481
+{'status': {'tf1': 'Status: executing, 77.8 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 100.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 6000.0,
+ 'tf1-result': 6000.0,
+ 'tf2': 140.0,
+ 'tf2-result': 140.0,
+ 'tf3': 6140.0,
+ 'tf3-result': 6140.0,
+ 'tf4': 6140.0,
+ 'tf4-result': 6140.0}
+
+Time elapsed: 9.689
+{'status': {'tf1': 'Status: executing, 77.8 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 100.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 6000.0,
+ 'tf1-result': 6000.0,
+ 'tf2': 140.0,
+ 'tf2-result': 140.0,
+ 'tf3': 6140.0,
+ 'tf3-result': 6140.0,
+ 'tf4': 6149.0,
+ 'tf4-result': 6149.0}
+
+Time elapsed: 10.106
+{'status': {'tf1': 'Status: executing, 88.9 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 100.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 22.2 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 7000.0,
+ 'tf1-result': 6000.0,
+ 'tf2': 140.0,
+ 'tf2-result': 140.0,
+ 'tf3': 6141.0,
+ 'tf3-result': 6141.0,
+ 'tf4': 6149.0,
+ 'tf4-result': 6149.0}
+
+Time elapsed: 10.303
+{'status': {'tf1': 'Status: executing',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 7000.0,
+ 'tf1-result': 7000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 7150.0,
+ 'tf3-result': 7150.0,
+ 'tf4': 7150.0,
+ 'tf4-result': 7150.0}
+
+Time elapsed: 10.499
+{'status': {'tf1': 'Status: executing',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 7000.0,
+ 'tf1-result': 7000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 7150.0,
+ 'tf3-result': 7150.0,
+ 'tf4': 7159.0,
+ 'tf4-result': 7159.0}
+
+Time elapsed: 10.909
+{'status': {'tf1': 'Status: executing',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 22.2 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 7000.0,
+ 'tf1-result': 7000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 7151.0,
+ 'tf3-result': 7151.0,
+ 'tf4': 7159.0,
+ 'tf4-result': 7159.0}
+
+Time elapsed: 11.316
+{'status': {'tf1': 'Status: executing',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 33.3 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 7000.0,
+ 'tf1-result': 7000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 7152.0,
+ 'tf3-result': 7152.0,
+ 'tf4': 7159.0,
+ 'tf4-result': 7159.0}
+
+Time elapsed: 11.725
+{'status': {'tf1': 'Status: executing, 100.0 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 8000.0,
+ 'tf1-result': 8000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 8150.0,
+ 'tf3-result': 8150.0,
+ 'tf4': 8150.0,
+ 'tf4-result': 8150.0}
+
+Time elapsed: 11.923
+{'status': {'tf1': 'Status: executing, 100.0 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 8000.0,
+ 'tf1-result': 8000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 8150.0,
+ 'tf3-result': 8150.0,
+ 'tf4': 8159.0,
+ 'tf4-result': 8159.0}
+
+Time elapsed: 12.331
+{'status': {'tf1': 'Status: executing, 100.0 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 22.2 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 8000.0,
+ 'tf1-result': 8000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 8151.0,
+ 'tf3-result': 8151.0,
+ 'tf4': 8159.0,
+ 'tf4-result': 8159.0}
+
+Time elapsed: 12.740
+{'status': {'tf1': 'Status: executing, 100.0 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 33.3 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 8000.0,
+ 'tf1-result': 8000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 8152.0,
+ 'tf3-result': 8152.0,
+ 'tf4': 8159.0,
+ 'tf4-result': 8159.0}
+
+Time elapsed: 13.177
+{'status': {'tf1': 'Status: OK',
+            'tf1-result': 'Status: OK',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: upstream => delay void, factor void, limit void, '
+                   'offset void',
+            'tf3-result': 'Status: upstream',
+            'tf4': 'Status: upstream => delay void, factor void, limit void, '
+                   'offset void',
+            'tf4-result': 'Status: upstream'},
+ 'tf1': 9000.0,
+ 'tf1-result': 9000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': None,
+ 'tf4-result': None}
+
+Time elapsed: 13.371
+{'status': {'tf1': 'Status: OK',
+            'tf1-result': 'Status: OK',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 9000.0,
+ 'tf1-result': 9000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 9150.0,
+ 'tf3-result': 9150.0,
+ 'tf4': 9159.0,
+ 'tf4-result': 9159.0}
+
+Time elapsed: 13.779
+{'status': {'tf1': 'Status: OK',
+            'tf1-result': 'Status: OK',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 22.2 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 9000.0,
+ 'tf1-result': 9000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 9151.0,
+ 'tf3-result': 9151.0,
+ 'tf4': 9159.0,
+ 'tf4-result': 9159.0}
+
+Time elapsed: 14.386
+{'status': {'tf1': 'Status: OK',
+            'tf1-result': 'Status: OK',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 33.3 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 9000.0,
+ 'tf1-result': 9000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 9152.0,
+ 'tf3-result': 9152.0,
+ 'tf4': 9159.0,
+ 'tf4-result': 9159.0}
+
+Time elapsed: 14.785
+{'status': {'tf1': 'Status: OK',
+            'tf1-result': 'Status: OK',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 44.4 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 9000.0,
+ 'tf1-result': 9000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 9153.0,
+ 'tf3-result': 9153.0,
+ 'tf4': 9159.0,
+ 'tf4-result': 9159.0}
+
+Time elapsed: 15.404
+{'status': {'tf1': 'Status: OK',
+            'tf1-result': 'Status: OK',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 55.6 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 9000.0,
+ 'tf1-result': 9000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 9154.0,
+ 'tf3-result': 9154.0,
+ 'tf4': 9159.0,
+ 'tf4-result': 9159.0}
+
+Time elapsed: 15.798
+{'status': {'tf1': 'Status: OK',
+            'tf1-result': 'Status: OK',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 66.7 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 9000.0,
+ 'tf1-result': 9000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 9155.0,
+ 'tf3-result': 9155.0,
+ 'tf4': 9159.0,
+ 'tf4-result': 9159.0}
+
+Time elapsed: 16.417
+{'status': {'tf1': 'Status: OK',
+            'tf1-result': 'Status: OK',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 77.8 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 9000.0,
+ 'tf1-result': 9000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 9156.0,
+ 'tf3-result': 9156.0,
+ 'tf4': 9159.0,
+ 'tf4-result': 9159.0}
+
+Time elapsed: 16.823
+{'status': {'tf1': 'Status: OK',
+            'tf1-result': 'Status: OK',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 88.9 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 9000.0,
+ 'tf1-result': 9000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 9157.0,
+ 'tf3-result': 9157.0,
+ 'tf4': 9159.0,
+ 'tf4-result': 9159.0}
+
+Time elapsed: 17.227
+{'status': {'tf1': 'Status: OK',
+            'tf1-result': 'Status: OK',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 100.0 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 9000.0,
+ 'tf1-result': 9000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 9158.0,
+ 'tf3-result': 9158.0,
+ 'tf4': 9159.0,
+ 'tf4-result': 9159.0}
+
+Time elapsed: 17.827
+{'status': {'tf1': 'Status: OK',
+            'tf1-result': 'Status: OK',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: OK',
+            'tf3-result': 'Status: OK',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 9000.0,
+ 'tf1-result': 9000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 9159.0,
+ 'tf3-result': 9159.0,
+ 'tf4': 9159.0,
+ 'tf4-result': 9159.0}
+
+********************************************************************************
+*  PARAMETERS
+********************************************************************************
+KEY tf1
+Limit: 9
+Factor: 1000
+Delay: 1.5
+Offset: 0
+
+KEY tf2
+Limit: 15
+Factor: 10
+Delay: 0.7
+Offset: 0
+
+KEY tf3
+Limit: 9
+Factor: 1
+Delay: 0.5
+Offset: 9150.0
+
+KEY tf4
+Limit: 1
+Factor: 9
+Delay: 0.1
+Offset: 9150.0
+
+********************************************************************************
+
+<Silk: {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 9150.0} >

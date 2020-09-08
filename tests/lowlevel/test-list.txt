@@ -54,7 +54,7 @@ structured_cell/simple-deepcell.py
 structured_cell/channels-deepcell.py
 BUGGED structured_cell/schema.py
 collatz.py: the output is approximate, depends on exact timings
-BUGGED structured_cell/preliminary.py: the output is approximate, depends on exact timings
+structured_cell/preliminary.py: the output is approximate, depends on exact timings
 
 Non-automatic tests
 =========================
