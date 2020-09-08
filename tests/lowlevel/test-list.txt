@@ -37,12 +37,12 @@ injection3.py
 injection4.py: the output is approximate, depends on exact timings, see also [1]
 injection5.py: see above
 simple-share.py
-BUGGED transformation-checksum.sh: run with Seamless database
-BUGGED simple-duplex.py
-TODO simple-duplex-remote.py: run together with:
-     python3 -u ../../scripts/jobslave-nodatabase.py --time 40 > test-outputs/simple-duplex-remote-jobslave.out 2>&1
+transformation-checksum.sh: run with Seamless database
+simple-duplex.py
+simple-duplex-remote.py: run together with:
+     python3 -u ../../scripts/jobslave-nodatabase.py --time 40 --direct-print > test-outputs/simple-duplex-remote-jobslave.out 2>&1
 simple-remote.py: run together with scripts/jobslave-nodatabase.py
-BUGGED simple-remote2.py: run together with:
+simple-remote2.py: run together with:
      python3 -u ../../scripts/jobslave-nodatabase.py --time 20 --direct-print > test-outputs/simple-remote2-jobslave.out 2>&1
 compile-run-remote.py: run together with scripts/jobslave-nodatabase.py --direct-print
      The jobslave output should include "ADD 8.141592979431152"

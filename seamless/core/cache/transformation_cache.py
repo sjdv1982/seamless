@@ -65,6 +65,7 @@ class RemoteTransformer:
 class DummyTransformer:
     _status_reason = None
     debug = False
+    python_debug = False
     def __init__(self, tf_checksum):
         self.tf_checksum = tf_checksum
         self.progress = None
@@ -761,7 +762,15 @@ class TransformationCache:
         fut = asyncio.ensure_future(coro)
         last_result_checksum = None
         last_progress = None
+        fut_done_time = None
         while 1:
+            if fut.done():
+                if fut_done_time is None:
+                    fut_done_time = time.time()
+                else:
+                    if time.time() - fut_done_time > 2:
+                        fut.result()
+                        raise Exception("Transformation finished, but didn't trigger a result or exception")
             if transformer._status_reason == StatusReasonEnum.EXECUTING:
                 if self.transformation_jobs.get(tf_checksum) is None:
                     break

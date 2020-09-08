@@ -285,7 +285,7 @@ class StructuredCell(SeamlessBase):
         manager = self._get_manager()
         if manager._destroyed:
             return
-        manager.structured_cell_join(self)
+        manager.structured_cell_join(self, cancel_all=True, new_join=True)
 
     def _get_schema_path(self, path):
         if self.schema._destroyed:
@@ -324,7 +324,7 @@ class StructuredCell(SeamlessBase):
             self._schema_value,
             self
         )
-        manager.structured_cell_join(self)
+        manager.structured_cell_join(self, cancel_all=True, new_join=True)
 
     def handle(self):
         return self._get_handle(inference=True)

@@ -211,7 +211,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                 if sc is not None:
                     assert sc._data is source, (sc._data, source)
                     sc._new_outgoing_connections = True
-                    manager.structured_cell_join(sc)
+                    manager.structured_cell_join(sc, cancel_all=True, new_join=True)
                 else:
                     CellUpdateTask(manager, source).launch()
         elif isinstance(source, EditPin):

@@ -163,7 +163,7 @@ class Manager:
             if from_structured_cell:
                 if sc_data is None and sc_buf is None and not len(sc_schema):
                     assert cell._structured_cell is not None
-                    assert cell._structured_cell.auth is cell, cell
+                    ###assert cell._structured_cell.auth is cell, cell
             else:
                 assert cell._structured_cell is None
                 assert cell._hash_pattern is None
@@ -259,7 +259,7 @@ class Manager:
                 self.livegraph.activate_bilink(cell, checksum)
 
 
-    def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, prelim=False, from_cancel=False):
+    def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, prelim=False):
         ###import traceback; traceback.print_stack(limit=5)
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void
@@ -280,7 +280,7 @@ class Manager:
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, inchannel, False, False)
             sc.modified.add_inchannel(inchannel.subpath)
-            self.structured_cell_join(sc, from_cancel=from_cancel)
+            self.structured_cell_join(sc, cancel_all=False, new_join=True)
 
     def _set_transformer_checksum(self,
         transformer, checksum, void, *,
@@ -341,10 +341,10 @@ class Manager:
             if sc is structured_cell:
                 continue
             sc._schema_value = deepcopy(value)
-            self.structured_cell_join(sc)
+            self.structured_cell_join(sc, cancel_all=True, new_join=True)
 
-    def structured_cell_join(self, structured_cell, from_cancel=False):
-        if not from_cancel:
+    def structured_cell_join(self, structured_cell, cancel_all,  new_join):
+        if cancel_all:
             # Cancel all downstream paths
             assert self.cancel_cycle.cleared
             self.cancel_scell_all_outpaths(
@@ -357,16 +357,18 @@ class Manager:
         if structured_cell.buffer is not structured_cell.auth:
             structured_cell.buffer._set_checksum(None, from_structured_cell=True)
 
-        # Cancel all ongoing joins, but not if they haven't started yet
+        # Cancel all ongoing joins, but not if they haven't started yet.
         not_started = self.taskmanager.cancel_structured_cell(
             structured_cell, kill_non_started=False
         )
 
-        if not from_cancel and not not_started:
-            task = StructuredCellJoinTask(
-                self, structured_cell
-            )
-            task.launch()
+        if new_join:
+            # If there is no existing join task, create a new one
+            if not not_started:
+                task = StructuredCellJoinTask(
+                    self, structured_cell
+                )
+                task.launch()
 
 
     @run_in_mainthread

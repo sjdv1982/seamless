@@ -46,9 +46,9 @@ class UnboundManager:
         assert cell in self._registered
         self.commands.append(("set cell", (cell, value)))
 
-    def structured_cell_join(self, sc):
+    def structured_cell_join(self, sc, cancel_all, new_join):
         assert sc in self._registered
-        self.join_structured_cells.add(sc)
+        self.join_structured_cells.add((sc, cancel_all, new_join))
 
     def connect(self, source, source_subpath, target, target_subpath):
         from .macro import Path

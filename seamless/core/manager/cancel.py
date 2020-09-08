@@ -30,7 +30,7 @@ class StructuredCellCancellation:
         scell = self.scell()
         if scell is None or scell._destroyed:
             return
-        self.needs_join = True
+        self.needs_join = False
         cycle = self.cycle()
         for outpath in scell.outchannels:
             if outpath in self.canceled_outpaths:
@@ -64,19 +64,19 @@ class StructuredCellCancellation:
             ic = sc.inchannels[path]
             manager._set_inchannel_checksum(
                 ic, None, void,
-                status_reason=reason,
-                from_cancel=True
+                status_reason=reason
             )
 
         clear_checksum = False
         void = False
         reason = None
-        if () in self.canceled_outpaths:
-            clear_checksum = True
-
+        new_join = True
+        if not any([outpath not in self.canceled_outpaths for outpath in sc.outchannels]):
+            sc._data._set_checksum(None, from_structured_cell=True)
+            new_join = False
+            self.needs_join = True
         if self.needs_join:
-            clear_checksum = True
-            manager.structured_cell_join(sc, from_cancel=True)
+            manager.structured_cell_join(sc, cancel_all=False, new_join=new_join)
 
         if clear_checksum and not self.needs_join:
             sc._data._set_checksum(None, from_structured_cell=True)
@@ -253,6 +253,15 @@ class CancellationCycle:
         accessor._void = void
 
     def cancel_transformer(self, transformer, *, void, reason):
+        """
+        import sys
+        if hasattr(sys, "count"):
+            sys.count += 1
+            if sys.count == 1:
+                import traceback
+                traceback.print_stack()
+                sys.exit()
+        """
         assert not self.cleared
         if transformer in self.transformers:
             void0, reason0 = self.transformers[transformer]
