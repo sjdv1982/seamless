@@ -113,6 +113,8 @@ class DatabaseSink(DatabaseBase):
         self.send_request(request)
 
     def set_compile_result(self, checksum, buffer):
+        if not self.active:
+            return
         if not self.store_compile_result:
             return
         request = {

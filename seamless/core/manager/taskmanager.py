@@ -315,7 +315,7 @@ class TaskManager:
             if verbose:
                 print("Waiting for:",end=" ")
                 for obj in result:
-                    print(obj,end=" ")
+                    print(obj,end="")
                 print()
             return result, True
 
@@ -387,7 +387,7 @@ class TaskManager:
             if verbose:
                 print("Waiting for:",end=" ")
                 for obj in result:
-                    print(obj,end=" ")
+                    print(obj,end="")
                 print()
             return result, True
 

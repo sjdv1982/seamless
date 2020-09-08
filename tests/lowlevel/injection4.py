@@ -2,6 +2,9 @@ import seamless
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer
 
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
 with open("cell-ipython.ipy", "w") as f:
     with open("cell-ipython-ORIGINAL.ipy", "r") as f2:
         f.write(f2.read())
@@ -51,7 +54,7 @@ testmodule = {
     "code": ipy
 }
     """)
-    
+
     ctx.testmodule = cell("plain")
     ctx.gen_testmodule.testmodule.connect(ctx.testmodule)
     ctx.testmodule.connect(ctx.tf.testmodule)
@@ -78,4 +81,3 @@ fut = asyncio.ensure_future(asyncio.sleep(0.5))
 asyncio.get_event_loop().run_until_complete(fut)
 ctx.compute()
 print(ctx.result.value)
-

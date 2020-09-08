@@ -1,5 +1,8 @@
 from seamless.core.build_module import build_module
 
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
 ######################################################################
 # 1: set up compiled module
 ######################################################################

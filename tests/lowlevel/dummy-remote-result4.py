@@ -28,8 +28,8 @@ class DummyClient:
             prelim = 0.1 * (n+1)
             self.prelim = h(prelim)
             await self.queue.put(None)
-        self.st = 3        
-        self.result = h(1.0)        
+        self.st = 3
+        self.result = h(1.0)
         await self.queue.put(None)
     async def submit(self, checksum):
         self.checksum = checksum
@@ -62,7 +62,7 @@ from seamless.communion_client import communion_client_manager
 m = communion_client_manager
 m.clients["transformation"] = [
     DummyClient(),
-] 
+]
 
 with macro_mode_on():
     ctx = context(toplevel=True)

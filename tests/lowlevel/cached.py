@@ -2,6 +2,9 @@ import seamless
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, macro
 
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
 def run(a,b):
     print("RUN")
     import time
@@ -11,7 +14,7 @@ def run(a,b):
     return a + b
 
 def build(ctx, param, run):
-    print("BUILD")    
+    print("BUILD")
     tf_params = {
         "a": "input",
         "b": "input",
@@ -23,7 +26,7 @@ def build(ctx, param, run):
 
     ctx.run = cell("transformer").set(run)
     ctx.run.connect(tf.code)
-    ctx.a = cell()    
+    ctx.a = cell()
     ctx.b = cell()
     ctx.a.connect(tf.a)
     ctx.b.connect(tf.b)

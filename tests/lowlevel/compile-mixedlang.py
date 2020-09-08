@@ -1,5 +1,8 @@
 from seamless.core.build_module import build_module
 
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
 ######################################################################
 # 1: set up compiled module
 ######################################################################
@@ -39,7 +42,7 @@ module = {
     },
     "public_header": {
         "language": "c",
-        "code": public_header, 
+        "code": public_header,
     }
 }
 

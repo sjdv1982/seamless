@@ -2,6 +2,9 @@ import seamless
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, macro
 
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.param = cell().set(1)

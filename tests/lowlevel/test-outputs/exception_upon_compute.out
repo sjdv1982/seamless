@@ -10,7 +10,7 @@ TEST
 
 *************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/core/execute.py", line 87, in _execute
+  File "/seamless/seamless/core/execute.py", line 89, in _execute
     exec_code(code, identifier, namespace, inputs, output_name)
   File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code
     exec(code_obj, namespace)

@@ -442,7 +442,7 @@ class CommunionServer:
                     has_buffer = buffer_cache.buffer_check(checksum)
                     buffer_length = None
                     if has_buffer:
-                        buffer_length = buffer_cache.buffer_length(checksum)
+                        buffer_length = buffer_cache.get_buffer_length(checksum)
                     print_debug("STATUS SERVE BUFFER", buffer_length, checksum.hex())
                     if buffer_length is not None:
                         if buffer_length < 10000:
