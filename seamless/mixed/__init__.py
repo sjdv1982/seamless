@@ -90,6 +90,18 @@ class MixedScalar(MixedBase):
         if not isinstance(value, (str, np.ndarray)):
             raise TypeError(type(value))
         return value[item]
+    def __getattr__(self, attr):
+        if attr.startswith("_"):
+            raise AttributeError(attr)
+        if isinstance(self.value, np.ndarray):
+            return getattr(self.value, attr)
+        elif isinstance(attr, str):
+            try:
+                return self.__getitem__(attr)
+            except TypeError:
+                raise AttributeError(attr) from None
+        raise AttributeError(attr)
+
 
 for name in binary_special_method_names:
     if name.startswith("__i"):

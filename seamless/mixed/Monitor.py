@@ -82,24 +82,31 @@ class Monitor:
         if len(path) == 1:
             parent_storage = self.backend.get_storage()
             if parent_storage is None:
-                raise AttributeError(path)
+                if not self.backend.formless:
+                    raise AttributeError(path)
         else:
             parent_subdata = self._get_data(path[:-1])
             parent_subform = self._get_form(path[:-1])
             if parent_subform is None:
-                raise AttributeError(path)
-            parent_storage = parent_subform.get("storage")
-            if parent_storage is None:
-                if isinstance(parent_subdata, (void, ndarray)):
-                    parent_storage = "pure-binary"
+                if not self.backend.formless:
+                    raise AttributeError(path)
                 else:
-                    parent_storage = "pure-plain"
+                    parent_storage = None
+            else:
+                parent_storage = parent_subform.get("storage")
+                if parent_storage is None:
+                    if isinstance(parent_subdata, (void, ndarray)):
+                        parent_storage = "pure-binary"
+                    else:
+                        parent_storage = "pure-plain"
         subdata = self._get_data(path)
         subform = self._get_form(path)
         storage = None
         if isinstance(subform, dict):
             storage = subform.get("storage")
         if storage is None:
+            if parent_storage is None:
+                return None
             if parent_storage.endswith("binary"):
                 return "pure-binary"
             else:
