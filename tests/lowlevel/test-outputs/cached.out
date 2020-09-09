@@ -3,8 +3,7 @@ RUN
 Running 1
 Running 2
 Running 3
-Waiting for: Seamless transformer: .macro.ctx.tf2 
-Waiting for: Seamless transformer: .macro.ctx.tf2 
+Waiting for: Seamless transformer: .macro.ctx.tf2
 3
 Status: unconnected => code, a, b, c
 Status: OK

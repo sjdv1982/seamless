@@ -9,7 +9,7 @@ Traceback (most recent call last):
     self._data.set(value)
   File "/seamless/seamless/mixed/__init__.py", line 56, in set
     self._monitor.set_path(self._path, value)
-  File "/seamless/seamless/mixed/Monitor.py", line 119, in set_path
+  File "/seamless/seamless/mixed/Monitor.py", line 126, in set_path
     self.backend.set_path(path, subdata)
   File "/seamless/seamless/mixed/Backend.py", line 65, in set_path
     result = self._set_path(path, data)
@@ -37,34 +37,9 @@ START
 <Silk: {'x': 'test', 'y': 'test2', 'z': 'test3'} >
 {'x': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783', 'y': '3aace618e0d578104c110b4930ab376755695261858720cc631cbe62390cd61a', 'z': '153477a48af62df19f94c15f623fba4835f15f64502d98d4c95a6816387f4d62'}
 <Silk: test > <Silk: test2 > <Silk: test3 >
-Traceback (most recent call last):
-  File "/seamless/seamless/silk/Silk.py", line 772, in __getattribute__
-    return super().__getattribute__("_get_special")(attr)
-  File "/seamless/seamless/silk/Silk.py", line 709, in _get_special
-    data2 = RichValue(self._data).value
-  File "/seamless/seamless/silk/Silk.py", line 47, in __init__
-    value = value._unwrap()
-  File "/seamless/seamless/mixed/__init__.py", line 44, in _unwrap
-    return FormWrapper(self.value, self.form, self.storage)
-  File "/seamless/seamless/mixed/__init__.py", line 68, in __getattr__
-    return self.__getitem__(attr)
-  File "/seamless/seamless/mixed/__init__.py", line 92, in __getitem__
-    return value[item]
-TypeError: string indices must be integers
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "structured_cell/simple-deepcell.py", line 38, in <module>
-    print(data.x.unsilk, data.y.unsilk, data.z.unsilk)
-  File "/seamless/seamless/silk/Silk.py", line 784, in __getattribute__
-    result = RichValue(result).value
-  File "/seamless/seamless/silk/Silk.py", line 47, in __init__
-    value = value._unwrap()
-  File "/seamless/seamless/mixed/__init__.py", line 44, in _unwrap
-    return FormWrapper(self.value, self.form, self.storage)
-  File "/seamless/seamless/mixed/__init__.py", line 68, in __getattr__
-    return self.__getitem__(attr)
-  File "/seamless/seamless/mixed/__init__.py", line 92, in __getitem__
-    return value[item]
-TypeError: string indices must be integers
+test test2 test3
+{'p': 10, 'q': 20, 'r': 30}
+<Silk: {'p': 10, 'q': 20, 'r': 30} >
+<Silk: {'p': 10, 'q': 20, 'r': 30} >
+10 20 30
+STOP
