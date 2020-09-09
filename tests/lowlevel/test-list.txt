@@ -52,7 +52,8 @@ macro3.py
 checksum-cell.py
 structured_cell/simple-deepcell.py
 structured_cell/channels-deepcell.py
-BUGGED structured_cell/schema.py
+structured_cell/schema.py
+structured_cell/schema-deepcell.py
 collatz.py: the output is approximate, depends on exact timings
 structured_cell/preliminary.py: the output is approximate, depends on exact timings
 

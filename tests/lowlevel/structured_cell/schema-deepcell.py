@@ -1,13 +1,12 @@
-# adapted from tests/mixed/silk.py and tests/silk/test-complex.py
-# (and should give almost the same output)
+# Identical to schema.py, except for the hash pattern
+# (and should give the same output, except that there will be no AttributeError upon accessing a non-existent member)
 import sys
 from pprint import pprint
 from seamless.silk import Silk, ValidationError
 from seamless.core import context, cell, StructuredCell
 
 ctx = None
-#hash_pattern = {"*": "#"}
-hash_pattern = None
+hash_pattern = {"*": "#"}
 def reset_backend(share_schemas=True, with_hash_pattern=True):
     hp = hash_pattern if with_hash_pattern else None
     global ctx, s, s2, s3
