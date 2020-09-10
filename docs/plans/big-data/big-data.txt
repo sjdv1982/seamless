@@ -12,8 +12,7 @@ At this rate, overhead may become thousands or tens of thousands of seconds even
 
 
 Todo remains:
-- Library constructors may have optional parameters; also make it easier to change them, or partial instantiation
-(like a transformer would) + change params.
+- Library constructors may have optional parameters; also make it easier to change params.
 - Make a map-reduce library in the standard lib, especially for map-dict and reduce-list, reduce-dict.
   All of them have _N  versions that zip over N lists or dicts.
   Reduce has an optional partial order input (list of keys); the final order is also an output.

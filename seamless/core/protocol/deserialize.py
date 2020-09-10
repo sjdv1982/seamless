@@ -11,7 +11,6 @@ import logging
 logger = logging.getLogger("seamless")
 
 deserialize_cache = lrucache2(10)
-#deserialize_cache.disable() ### apparently, something goes wrong somewhere, but I don't see how...
 
 def validate_checksum(v):
     if isinstance(v, str):

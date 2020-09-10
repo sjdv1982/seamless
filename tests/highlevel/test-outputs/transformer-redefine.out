@@ -1,3 +1,23 @@
+Traceback (most recent call last):
+  File "/seamless/seamless/core/manager/tasks/evaluate_expression.py", line 115, in _run
+    codename="expression"
+  File "/seamless/seamless/core/protocol/validate_subcelltype.py", line 33, in validate_subcelltype
+    await build_module_async(v)
+  File "/seamless/seamless/core/build_module.py", line 153, in build_module_async
+    full_module_name, mod = build_module(module_definition)
+  File "/seamless/seamless/core/build_module.py", line 136, in build_module
+    full_module_name, completed_checksum, completed_module_definition
+  File "/seamless/seamless/core/build_module.py", line 96, in build_compiled_module
+    raise BuildModuleError(stderr)
+seamless.core.build_module.BuildModuleError: 
+g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+******************** ERROR ********************
+main.cpp:1:1: error: ‘lambda’ does not name a type
+ lambda a,b: a + b
+ ^~~~~~
+
+******************** /ERROR ********************
+
 ********************************************************************************
 
 /*
@@ -10,7 +30,7 @@ For C, you may need to include "stdint.h" and "stdbool.h".
 If your transform() function is written in C++, don't forget to add 'extern "C" '
 */
 
-double transform(int a, int b);
+int transform(int a, int b, double *result);
 ********************************************************************************
 
 g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o

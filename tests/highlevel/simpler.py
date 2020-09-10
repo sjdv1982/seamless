@@ -21,6 +21,7 @@ def triple_it_b(a, b):
 
 ctx.transform = triple_it
 ctx.transform.a = 1
+ctx.transform.debug = True
 print("START")
 ctx.translate()
 print(ctx.transform.inp.value, ctx.transform.result.value)

@@ -89,7 +89,7 @@ class StructuredCellJoinTask(Task):
                                     value = await DeserializeBufferTask(
                                         manager, buffer, auth_checksum, "mixed", True
                                     ).run()
-                                    sc._auth_value = value
+                                    sc._auth_value = copy.deepcopy(value)
                                     sc._auth_temp_checksum = None
                             else:
                                 auth_buf = await SerializeToBufferTask(

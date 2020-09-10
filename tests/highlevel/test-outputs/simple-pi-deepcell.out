@@ -48,7 +48,9 @@
     {
       "celltype": "structured",
       "checksum": {
-        "auth": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3"
+        "auth": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3",
+        "buffer": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3",
+        "value": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3"
       },
       "datatype": "mixed",
       "hash_pattern": null,
@@ -80,6 +82,6 @@
 
 <Silk: 3.141592653589793 >
 <Silk: 6.283185307179586 >
-d89a78eede0f535003eae21099499943  twopi-deepcell.seamless
+c45f5031f65e7f3a8ac99b6719d1b362  twopi-deepcell.seamless
 956e1f34a0047ad5f53dea731af782bd  twopi-deepcell-result.seamless
-db8ecc35cbcb213fc45366e54ab325e4  twopi-deepcell-result.zip
+f7afd884f26d6b0a92a76882bfad6ad8  twopi-deepcell-result.zip

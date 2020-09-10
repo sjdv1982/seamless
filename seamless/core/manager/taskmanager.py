@@ -314,9 +314,8 @@ class TaskManager:
             result = sorted(running, key=lambda dep: dep.path)
             if verbose:
                 print("Waiting for:",end=" ")
-                for obj in result:
-                    print(obj,end="")
-                print()
+                objs = " ".join([str(obj) for obj in result])
+                print(objs)
             return result, True
 
         while len(ptasks):
@@ -386,9 +385,8 @@ class TaskManager:
             result = sorted(running, key=lambda dep: dep.path)
             if verbose:
                 print("Waiting for:",end=" ")
-                for obj in result:
-                    print(obj,end="")
-                print()
+                objs = " ".join([str(obj) for obj in result])
+                print(objs)
             return result, True
 
         while len(ptasks):

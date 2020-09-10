@@ -5,7 +5,7 @@
 <Silk: {'x': 12, 'y': 20} >
 
 Stage 2
-<Silk: {'c': 20, 'f': 20, 'g': 50} >
+<Silk: {'c': 20, 'd': 32, 'f': 20, 'g': 50} >
 Stage 3
 <Silk: {'c': 7, 'd': 19, 'f': 20, 'g': 50} >
 Stage 4
@@ -16,7 +16,6 @@ Stage 5
 Stage 6
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': -4, 'f': 20} >
 Stage 7
-VALIDATE <Silk: {'g': 50, 'c': 8, 'f': 20} >
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 108, 'f': 20} >
 <Silk: None >
 <Silk: None >
@@ -26,7 +25,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in validator
     assert self.f > self.d
@@ -48,7 +47,6 @@ On instance:
     {'g': 50, 'c': 8, 'd': 108, 'f': 20}
 
 Stage 8
-VALIDATE <Silk: {'g': 50, 'c': 8, 'f': 20} >
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 88, 'f': 20} >
 <Silk: None >
 <Silk: None >
@@ -58,7 +56,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in validator
     assert self.f > self.d
@@ -80,7 +78,6 @@ On instance:
     {'g': 50, 'c': 8, 'd': 88, 'f': 20}
 
 Stage 9
-VALIDATE <Silk: {'g': 50, 'c': 8, 'f': 20} >
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 12, 'f': 20} >
 <Silk: {'c': 8, 'd': 12, 'f': 20, 'g': 50} >
 <Silk: 342 >

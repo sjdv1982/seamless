@@ -19,6 +19,7 @@ from seamless.highlevel import Context
 
 ctx = Context()
 ctx.a = {}
+ctx.translate()
 ctx.a.x = 20
 ctx.a.y = 88
 def validate(self):

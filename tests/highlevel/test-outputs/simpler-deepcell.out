@@ -1,7 +1,7 @@
 <Silk: 12 >
 None
 START
-<Silk: {'a': 1} > <Silk: None >
+<Silk: None > <Silk: None >
 <Silk: 12 > <Silk: {'a': 12} >
 {'properties': {'a': {'type': 'integer'}}, 'type': 'object'}
 <Silk: 12 > <Silk: {'a': 12} >
@@ -40,7 +40,7 @@ On instance['b']:
 {'properties': {'a': {'type': 'integer'}, 'b': {'type': 'string'}}, 'type': 'object'}
 <Silk: None >
 {'a': 1, 'b': 100}
-TRANSFORMER STATUS *inp*: Status: upstream
+TRANSFORMER STATUS *inp*: Status: invalid
 START!
 RUN!
 {'a': 1, 'b': 'testing'}

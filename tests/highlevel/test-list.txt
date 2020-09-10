@@ -59,6 +59,7 @@ high-in-low4-memory.py    # Quite long test. Creates 5.6 GB of buffer cache in /
                           # Run with rm -rf /tmp/dummy-db  && mkdir -p /tmp/dummy-db && seamless-devel-database dummydb-config.yaml
                           # Repeating the test will go slighly faster, as the transformation results are cached
                           # After the test, "rm -rf /tmp/dummy-db && docker stop seamless-database-container"
+high-in-low6-memory.py    # See above
 
 Non-automatic tests
 =========================

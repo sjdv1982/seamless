@@ -166,6 +166,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     # Transformer itself
     ctf = ctx.tf = context()
     debug = node["debug"] or node.get("compiled_debug")
+    if debug is None:
+        debug = False
     _init_from_graph(ctf, debug)
 
     ctx.code = cell("text")

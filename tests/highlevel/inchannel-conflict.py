@@ -3,6 +3,7 @@ ctx = Context()
 ctx.a = Cell("int").set(10)
 ctx.c = Cell("int").set(30)
 ctx.s = Cell()
+ctx.translate()
 ctx.s.a = ctx.a
 ctx.s.c = ctx.c
 ctx.ss = ctx.s

@@ -1,6 +1,6 @@
 ********************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/core/manager/tasks/set_value.py", line 43, in _run
+  File "/seamless/seamless/core/manager/tasks/set_value.py", line 42, in _run
     raise ValueError(exc) from None
 ValueError: invalid literal for int() with base 10: 'test'
 
@@ -17,33 +17,25 @@ b 12
 a None
 a test2
 ********************************************************************************
-b Traceback (most recent call last):
-  File "/seamless/seamless/core/manager/tasks/evaluate_expression.py", line 59, in _run
-    buffer_cache
-  File "/seamless/seamless/core/protocol/evaluate.py", line 95, in evaluate_from_buffer
-    result = await convert(checksum, buffer, celltype, target_celltype)
-  File "/seamless/seamless/core/protocol/conversion.py", line 229, in convert
-    new_buffer = await serialize(value, target_celltype)
-  File "/seamless/seamless/core/protocol/serialize.py", line 80, in serialize
-    buffer = _serialize(value, celltype)  ### for now...
-  File "/seamless/seamless/core/protocol/serialize.py", line 26, in _serialize
-    value = int(value)
-ValueError: invalid literal for int() with base 10: 'test2'
+b 3aace618e0d578104c110b4930ab376755695261858720cc631cbe62390cd61a cannot be converted from str to int
 
+Original exception:
+
+invalid literal for int() with base 10: 'test2'
 b None
 ********************************************************************************
 c Traceback (most recent call last):
-  File "/seamless/seamless/core/manager/tasks/set_buffer.py", line 37, in _run
+  File "/seamless/seamless/core/manager/tasks/set_buffer.py", line 36, in _run
     checksum, cell._celltype, copy=False
-  File "/seamless/seamless/core/manager/tasks/__init__.py", line 79, in run
+  File "/seamless/seamless/core/manager/tasks/__init__.py", line 135, in run
     await asyncio.shield(self.future)
-  File "/seamless/seamless/core/manager/tasks/__init__.py", line 90, in _run0
+  File "/seamless/seamless/core/manager/tasks/__init__.py", line 151, in _run0
     return await self._run()
   File "/seamless/seamless/core/manager/tasks/deserialize_buffer.py", line 23, in _run
     result = await deserialize(self.buffer, self.checksum, self.celltype, self.copy)
-  File "/seamless/seamless/core/protocol/deserialize.py", line 97, in deserialize
+  File "/seamless/seamless/core/protocol/deserialize.py", line 121, in deserialize
     value = _deserialize(buffer, checksum, celltype)
-  File "/seamless/seamless/core/protocol/deserialize.py", line 53, in _deserialize
+  File "/seamless/seamless/core/protocol/deserialize.py", line 70, in _deserialize
     raise ValueError(value)
 ValueError: blah
  None
@@ -54,31 +46,9 @@ ValueError: blah
 
 <Silk: 30 >
 <Silk: None >
-{'x': 'Traceback (most recent call last):\n'
-      '  File "/seamless/seamless/core/protocol/conversion.py", line 167, in '
-      'reinterpret\n'
-      '    _ = await serialize(value, target_celltype)\n'
-      '  File "/seamless/seamless/core/protocol/serialize.py", line 80, in '
-      'serialize\n'
-      '    buffer = _serialize(value, celltype)  ### for now...\n'
-      '  File "/seamless/seamless/core/protocol/serialize.py", line 26, in '
-      '_serialize\n'
-      '    value = int(value)\n'
-      "ValueError: invalid literal for int() with base 10: 'test'\n"
+{'x': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783 cannot '
+      'be re-interpreted from mixed to int\n'
       '\n'
-      'During handling of the above exception, another exception occurred:\n'
+      'Original exception:\n'
       '\n'
-      'Traceback (most recent call last):\n'
-      '  File "/seamless/seamless/core/manager/tasks/evaluate_expression.py", '
-      'line 59, in _run\n'
-      '    buffer_cache\n'
-      '  File "/seamless/seamless/core/protocol/evaluate.py", line 87, in '
-      'evaluate_from_buffer\n'
-      '    await reinterpret(checksum, buffer, celltype, target_celltype)\n'
-      '  File "/seamless/seamless/core/protocol/conversion.py", line 170, in '
-      'reinterpret\n'
-      '    raise ValueError(msg % (checksum.hex(), celltype, '
-      'target_celltype))\n'
-      'ValueError: '
-      'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783 cannot '
-      'be re-interpreted from mixed to int\n'}
+      "invalid literal for int() with base 10: 'test'"}

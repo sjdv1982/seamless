@@ -117,5 +117,5 @@ def map_list(ctx, cs_data, graph):
 m.code = map_list
 ctx.result = m.result
 ctx.compute()
-print("Exception:", ctx.inst.ctx.m.exception)
+print("Exception:", ctx.m.exception)
 print(ctx.result.data)

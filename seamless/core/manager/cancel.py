@@ -72,11 +72,14 @@ class StructuredCellCancellation:
         reason = None
         new_join = True
         if not any([outpath not in self.canceled_outpaths for outpath in sc.outchannels]):
-            sc._data._set_checksum(None, from_structured_cell=True)
-            new_join = False
+            if not sc._data._void:
+                sc._data._set_checksum(None, from_structured_cell=True)
+            ###new_join = False
             self.needs_join = True
         if self.needs_join:
-            manager.structured_cell_join(sc, cancel_all=False, new_join=new_join)
+            ot = self.cycle().origin_task
+            if ot is None or not hasattr(ot, "structured_cell") or ot.structured_cell is not sc:
+                manager.structured_cell_join(sc, cancel_all=False, new_join=new_join)
 
         if clear_checksum and not self.needs_join:
             sc._data._set_checksum(None, from_structured_cell=True)

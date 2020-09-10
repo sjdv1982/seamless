@@ -2,7 +2,7 @@
 ('subtract',)
 {'const': 42, 'inp1': ('a',), 'inp2': ('b',), 'outp': ('c',)}
 42
-<seamless.highlevel.library.libmacro.LibMacroContextWrapper object at 0x7f627eea1978>
+<seamless.highlevel.synth_context.SynthContext object at 0x7f22688f65c0>
 ['minus', 'result', 'x', 'y']
 Seamless Cell: subtract1.ctx.result
 <Silk: 80 >

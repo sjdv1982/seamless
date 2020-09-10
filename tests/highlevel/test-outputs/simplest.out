@@ -44,7 +44,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 3, in validation
     assert self != "test"
@@ -68,7 +68,6 @@ On instance:
  'lib': [],
  'nodes': [{'celltype': 'structured',
             'checksum': {'auth': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
-                         'buffer': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
                          'schema': '7a8e8e6fb89d23912b1bba61afba23226aed9bfb6e31543833267455c4ac9261'},
             'datatype': 'mixed',
             'hash_pattern': None,

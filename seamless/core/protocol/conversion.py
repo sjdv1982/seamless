@@ -6,6 +6,14 @@
 # python, ipython, cson, yaml, plain, binary, mixed
 # str (with double quotes around *the buffer*), bytes, int, float, bool
 
+class SeamlessConversionError(ValueError):
+    def __str__(self):
+        args = [str(arg) for arg in self.args]
+        return "\n".join(args)
+    def __repr__(self):
+        args = [str(arg) for arg in self.args]
+        return "\n".join(args)
+
 import numpy as np
 
 conversion_trivial = set([ # conversions that do not change checksum and are guaranteed to work (if the input is valid)
@@ -184,7 +192,7 @@ async def reinterpret(checksum, buffer, celltype, target_celltype):
     try:
         if len(buffer) > 1000 and celltype in ("plain", "mixed") \
             and target_celltype in ("int", "float", "bool"):
-                raise ValueError
+                raise SeamlessConversionError
 
         # Special cases
         key = (celltype, target_celltype)
@@ -200,9 +208,11 @@ async def reinterpret(checksum, buffer, celltype, target_celltype):
             elif key[0] in ("mixed", "plain") and key[1] in ("python", "ipython"):
                 assert isinstance(value, str)
             _ = await serialize(value, target_celltype)
-    except Exception:
-        msg = "%s cannot be re-interpreted from %s to %s"
-        raise ValueError(msg % (checksum.hex(), celltype, target_celltype))
+    except Exception as exc:
+        msg0 = "%s cannot be re-interpreted from %s to %s"
+        msg = msg0 % (checksum.hex(), celltype, target_celltype)
+        full_msg = msg + "\n\nOriginal exception:\n\n" + str(exc)
+        raise SeamlessConversionError(full_msg) from None
     return
 
 async def reformat(checksum, buffer, celltype, target_celltype, fingertip_mode=False):
@@ -280,9 +290,11 @@ async def convert(checksum, buffer, celltype, target_celltype, fingertip_mode=Fa
             new_buffer = await serialize(value, target_celltype)
         else:
             new_buffer = await serialize(value, target_celltype)
-    except Exception:
-        msg = "%s cannot be converted from %s to %s"
-        raise ValueError(msg % (checksum.hex(), celltype, target_celltype)) from None
+    except Exception as exc:
+        msg0 = "%s cannot be converted from %s to %s"
+        msg = msg0 % (checksum.hex(), celltype, target_celltype)
+        full_msg = msg + "\n\nOriginal exception:\n\n" + str(exc)
+        raise SeamlessConversionError(full_msg) from None
     result = await calculate_checksum(new_buffer)
     buffer_cache.cache_buffer(result, new_buffer)
     return result

@@ -29,15 +29,15 @@ class LibInstance:
         self._temp_libpath = None
         self._temp_arguments = None
 
-    def _get_hmacro(self):
+    def _get_node(self):
         parent = self._parent()
         return parent._graph.nodes[self._path]
 
     def _run(self):
         assert self._path is not None
-        hmacro = self._get_hmacro()
-        libpath = hmacro["libpath"]
-        arguments = hmacro["arguments"]
+        hnode = self._get_node()
+        libpath = hnode["libpath"]
+        arguments = hnode["arguments"]
         parent = self._parent()
         lib = parent._get_lib(tuple(libpath))
         graph = lib["graph"]
@@ -123,9 +123,9 @@ class LibInstance:
             return super().__getattribute__(attr)
         if attr in type(self).__dict__ or attr in self.__dict__:
             return super().__getattribute__(attr)
-        hmacro = self._get_hmacro()
-        libpath = hmacro["libpath"]
-        arguments = hmacro["arguments"]
+        hnode = self._get_node()
+        libpath = hnode["libpath"]
+        arguments = hnode["arguments"]
         if attr not in arguments:
             if attr == "ctx":
                 parent = self._parent()
@@ -151,29 +151,19 @@ class LibInstance:
         return value
 
     def __setattr__(self, attr, value):
-        from .include import get_argument_value
+        from .argument import parse_argument
         if attr.startswith("_"):
             super().__setattr__(attr, value)
             return
-        hmacro = self._get_hmacro()
-        libpath = hmacro["libpath"]
-        arguments = hmacro["arguments"]
+        hnode = self._get_node()
+        libpath = hnode["libpath"]
+        arguments = hnode["arguments"]
         if attr not in arguments:
             raise AttributeError(attr)
-        argname, argvalue = attr, value
         parent = self._parent()
         lib = parent._get_lib(tuple(libpath))
         params = lib["params"]
-        par = params[argname]
-        raise NotImplementedError # TODO: argument validation
-        if par["type"] == "value":
-            value = get_param_value(argvalue)
-        else: # par["type"] == "cell":
-            if isinstance(argvalue, SubCell) or not isinstance(argvalue, Cell):
-                msg = "%s must be Cell, not '%s'"
-                raise TypeError(msg % (argname, type(argvalue)))
-            value = argvalue._path
-        arguments[argname] = value
+        arguments[attr] = parse_argument(attr, value, params[attr])
         parent._translate()
 
 from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper

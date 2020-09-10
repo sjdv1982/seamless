@@ -11,6 +11,7 @@ def triple_it(a, b):
     return 3 * a + b
 
 ctx.transform = triple_it
+ctx.transform.debug = True
 ctx.transform.a = ctx.a
 ctx.transform.b = 6
 ctx.myresult = ctx.transform
@@ -35,4 +36,3 @@ graph = ctx.get_graph()
 j = json.dumps(graph, sort_keys=True, indent=2)
 from seamless import get_hash
 print(get_hash(j).hex())
-

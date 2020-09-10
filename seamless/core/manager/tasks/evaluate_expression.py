@@ -1,4 +1,5 @@
 import traceback, asyncio
+import sys
 
 from . import Task
 
@@ -117,12 +118,20 @@ class EvaluateExpressionTask(Task):
                 except asyncio.CancelledError as exc:
                     raise exc from None
                 except Exception as exc:
-                    fexc = traceback.format_exc()
-                    expression.exception = fexc
-                    if isinstance(exc, CacheMissError):
-                        traceback.print_exc(limit=0)
+                    if isinstance(exc, (CacheMissError, SeamlessConversionError)):
+                        expression.exception = str(exc)
+                        ###print(exc, file=sys.stderr))
+                    else:
+                        fexc = traceback.format_exc()
+                        expression.exception = fexc
+                        ###print(fexc, file=sys.stderr)
+
+                    """
+                    if isinstance(exc, (CacheMissError, SeamlessConversionError)):
+                        print(exc)
                     else:
                         traceback.print_exc()
+                    """
 
                 if expression_result_checksum is not None:
                     if expression_result_checksum != expression.checksum:
@@ -141,7 +150,7 @@ from .deserialize_buffer import DeserializeBufferTask
 from .serialize_buffer import SerializeToBufferTask
 from ..expression import Expression
 from ...protocol.evaluate import needs_buffer_evaluation, evaluate_from_checksum, evaluate_from_buffer
-from ...protocol.conversion import conversion_forbidden
+from ...protocol.conversion import conversion_forbidden, SeamlessConversionError
 from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.expression import get_subpath
 from .checksum import CalculateChecksumTask
