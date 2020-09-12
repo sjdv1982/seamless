@@ -253,7 +253,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                     ReactorUpdateTask(manager, source).launch()
             else:
                 raise TypeError(source)
-            AccessorUpdateTask(manager, accessor).launch()
+        #print("/UPON")
 
 class UponBiLinkTask(UponConnectionTask):
     def __init__(self, manager, source, target):

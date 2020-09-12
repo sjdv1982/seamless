@@ -1,4 +1,5 @@
 import traceback
+import asyncio
 from . import Task
 
 class SetCellBufferTask(Task):
@@ -44,6 +45,12 @@ class SetCellBufferTask(Task):
                 manager._set_cell_checksum(self.cell, checksum, False)
                 livegraph.cell_parsing_exceptions.pop(cell, None)
                 CellUpdateTask(manager, self.cell).launch()
+        except asyncio.CancelledError as exc:
+            if self._canceled:
+                raise exc from None
+            exc = traceback.format_exc()
+            manager.cancel_cell(self.cell, void=True, origin_task=self, reason=StatusReasonEnum.INVALID)
+            livegraph.cell_parsing_exceptions[cell] = exc
         except Exception as exc:
             if isinstance(exc, ValueError):
                 exc = str(type(exc).__name__) + ": " + str(exc)

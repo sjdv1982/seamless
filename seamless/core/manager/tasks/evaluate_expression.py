@@ -116,7 +116,11 @@ class EvaluateExpressionTask(Task):
                             codename="expression"
                         )
                 except asyncio.CancelledError as exc:
-                    raise exc from None
+                    if self._canceled:
+                        raise exc from None
+                    else:
+                        fexc = traceback.format_exc()
+                        expression.exception = fexc
                 except Exception as exc:
                     if isinstance(exc, (CacheMissError, SeamlessConversionError)):
                         expression.exception = str(exc)

@@ -25,11 +25,6 @@ ctx.compute()
 print(ctx.result.value)
 ctx.tf2.delay = 2
 sleep(0.5)
-import sys; sys.exit()
-
-import logging
-logging.basicConfig()
-logging.getLogger("seamless").setLevel(logging.DEBUG)
 
 print("START 1")
 ctx.tf1.delay = 5

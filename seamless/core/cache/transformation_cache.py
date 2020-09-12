@@ -160,7 +160,6 @@ class TransformationCache:
         assert transformer not in self.transformer_to_transformations
         self.transformer_to_transformations[transformer] = None
 
-    @destroyer
     def destroy_transformer(self, transformer):
         assert isinstance(transformer, Transformer)
         tf_checksum = self.transformer_to_transformations.pop(transformer)

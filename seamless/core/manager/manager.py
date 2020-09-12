@@ -28,8 +28,9 @@ def with_cancel_cycle(func):
         try:
             manager.cancel_cycle.cleared = False
             result = func(*args, **kwargs)
-        finally:
             manager.cancel_cycle.resolve()
+        finally:
+            manager.cancel_cycle._clear()
     functools.update_wrapper(func2, func)
     return func2
 
@@ -140,11 +141,16 @@ class Manager:
         """Setting a cell checksum.
   (This is done from the command line, usually at graph loading)
   initial=True in case of graph loading; from_structured_cell=True when triggered from StructuredCell)
+
   If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph)
+  If "from_structured_cell" is True, the function is triggered by StructuredCell state maintenance routines
+  In both cases, the caller is responsible for bookkeeping, such as incref/decref of checksums inside a deep structure
+
   If "initial" is true, but "from_structured_cell" is not, the cell:
   - Must be a simple cell
   - or: must be the auth cell of a structured cell.
-    In that case, the checksum is temporary, and converted to a value that is set on the auth handle of the structured cell
+    In that case, the checksum is temporary, and must be converted later to a value that is set on the auth handle of the structured cell
+
   If neither "initial" nor "from_structured_cell" is true, the cell:
   - cannot be the .data or .buffer attribute of a StructuredCell
   - cannot have any incoming connection.
@@ -197,8 +203,8 @@ class Manager:
         )
         if not from_structured_cell: # also for initial...
             if cell._structured_cell is not None and cell._structured_cell.auth is cell:
-                cell._structured_cell._modified_auth = True
-                cell._structured_cell._unvoid()
+                cell._structured_cell._modified = True
+                self.unvoid_scell(cell._structured_cell)
             if checksum is not None:
                 unvoid_cell(cell, self.livegraph)
             CellUpdateTask(self, cell).launch()
@@ -215,6 +221,7 @@ class Manager:
         Therefore, the direct or indirect call of _sync versions of coroutines
         (e.g. deserialize_sync, which launches coroutines and waits for them)
         IS NOT ALLOWED
+        NOTE: with h
         """
         if cell._destroyed:
             return
@@ -229,6 +236,13 @@ class Manager:
         if void:
             assert status_reason is not None
             assert checksum is None
+
+        try:
+            if unvoid and not void:
+                unvoid_cell(cell, self.livegraph)
+        except Exception:
+            traceback.print_exc()
+
         if len(self.livegraph.schemacells[cell]):
             authoritative = True
         elif cell._structured_cell is not None:
@@ -240,11 +254,6 @@ class Manager:
         if old_checksum is not None and old_checksum != checksum:
             cachemanager.decref_checksum(old_checksum, cell, authoritative, False)
         cell._checksum = checksum
-        try:
-            if unvoid and not void:
-                unvoid_cell(cell, self.livegraph)
-        except Exception:
-            traceback.print_exc()
         cell._void = void
         cell._status_reason = status_reason
         cell._prelim = prelim
@@ -281,6 +290,7 @@ class Manager:
                 except Exception:
                     traceback.print_exc()
 
+
     def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, prelim=False):
         ###import traceback; traceback.print_stack(limit=5)
         assert checksum is None or isinstance(checksum, bytes), checksum
@@ -301,9 +311,7 @@ class Manager:
         inchannel._prelim = prelim
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, inchannel, False, False)
-            if checksum is not None:
-                sc._unvoid()
-
+            sc._modified = True
             self.structured_cell_join(sc)
 
     def _set_transformer_checksum(self,
@@ -366,7 +374,8 @@ class Manager:
                 continue
             sc._schema_value = deepcopy(value)
             if not sc.buffer._void:
-                sc._unvoid()
+                sc._modified = True
+                self.unvoid_scell(sc)
                 self.cancel_scell_soft(sc)
                 self.structured_cell_join(sc)
 
@@ -388,6 +397,10 @@ class Manager:
                 self, structured_cell
             )
             task.launch()
+
+    def unvoid_scell(self, scell):
+        unvoid_scell(scell, self.livegraph)
+        #print("UNVOID", self, self._data._void)
 
 
     @run_in_mainthread
@@ -538,27 +551,17 @@ If origin_task is provided, that task is not cancelled."""
                 self.cancel_cycle.cancel_scell_outpath_soft(sc, path)
 
     @with_cancel_cycle
-    def cancel_scell_hard(self, sc):
+    def cancel_scell_hard(self, sc, reason):
         """Hard-cancel of a structured cell, as decided by the cancel system.
         The reason for canceling does not originate in joining, but because
         all inchannels are void and auth as well"""
+        #print("HARD CANCEL", sc)
         assert isinstance(sc, StructuredCell)
-        self.taskmanager.cancel_structured_cell(sc, kill_non_started=True)
-        if sc.auth is not None:
-            sc.auth._void = True
-            if sc.auth._checksum is not None:
-                sc.auth._checksum = None
-        if sc.buffer is not None:
-            sc.buffer._void = True
-            if sc.buffer._checksum is not None:
-                sc.buffer._checksum = None
-        sc._data._void = True
-        if sc._data._checksum is not None:
-            sc._data._checksum = None
         self.cancel_cycle.cancel_scell_inpath(
             sc, (), void=True,
-            reason=StatusReasonEnum.UPSTREAM
+            reason=reason
         )
+        #print("/HARD CANCEL", sc)
 
     @with_cancel_cycle
     def cancel_accessor(self,
@@ -719,7 +722,7 @@ from ..protocol.calculate_checksum import checksum_cache
 from ..protocol.deserialize import deserialize_cache, deserialize_sync
 from ..protocol.get_buffer import get_buffer
 from ..cache.buffer_cache import buffer_cache
-from .unvoid import unvoid_cell
+from .unvoid import unvoid_cell, unvoid_scell
 from ..cell import Cell
 from ..worker import Worker
 from ..transformer import Transformer

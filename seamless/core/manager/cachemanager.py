@@ -29,21 +29,40 @@ RECOMPUTE_OVER_REMOTE = int(100e6) # after this threshold, better to recompute t
                                 # - stored recomputation time from provenance server
                                 # - internet connection speed
 
-async def decref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative):
-    deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
-    sub_checksums = deep_structure_to_checksums(
-        deep_structure, hash_pattern
-    )
-    for sub_checksum in sub_checksums:
-        buffer_cache.decref(bytes.fromhex(sub_checksum))
+_deep_buffer_coro_count = 0
+def new_deep_buffer_coro_id():
+    global _deep_buffer_coro_count
+    _deep_buffer_coro_count += 1
+    return _deep_buffer_coro_count
 
-async def incref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative):
-    deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
-    sub_checksums = deep_structure_to_checksums(
-        deep_structure, hash_pattern
-    )
-    for sub_checksum in sub_checksums:
-        buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)
+deep_buffer_coros = []
+
+
+async def decref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
+    while deep_buffer_coros[0] != deep_buffer_coro_id:
+        await asyncio.sleep(0.01)
+    try:
+        deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
+        sub_checksums = deep_structure_to_checksums(
+            deep_structure, hash_pattern
+        )
+        for sub_checksum in sub_checksums:
+            buffer_cache.decref(bytes.fromhex(sub_checksum))
+    finally:
+        deep_buffer_coros.pop(0)
+
+async def incref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
+    while deep_buffer_coros[0] != deep_buffer_coro_id:
+        await asyncio.sleep(0.01)
+    try:
+        deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
+        sub_checksums = deep_structure_to_checksums(
+            deep_structure, hash_pattern
+        )
+        for sub_checksum in sub_checksums:
+            buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)
+    finally:
+        deep_buffer_coros.pop(0)
 
 class CacheManager:
     def __init__(self, manager):
@@ -63,8 +82,6 @@ class CacheManager:
         # for now, just a single global transformation cache
         from ..cache.transformation_cache import transformation_cache
         self.transformation_cache = transformation_cache
-
-        self._destroying = set()
 
     def register_cell(self, cell):
         assert cell not in self.cell_to_ref
@@ -178,7 +195,9 @@ class CacheManager:
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if incref_hash_pattern:
             deep_buffer = buffer_cache.get_buffer(checksum)
-            coro = incref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative)
+            deep_buffer_coro_id = new_deep_buffer_coro_id()
+            deep_buffer_coros.append(deep_buffer_coro_id)
+            coro = incref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
             asyncio.ensure_future(coro)
 
 
@@ -329,7 +348,9 @@ class CacheManager:
             cell = refholder
             if not destroying and cell._hash_pattern is not None:
                 deep_buffer = buffer_cache.get_buffer(checksum)
-                coro = decref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative)
+                deep_buffer_coro_id = new_deep_buffer_coro_id()
+                deep_buffer_coros.append(deep_buffer_coro_id)
+                coro = decref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
                 asyncio.ensure_future(coro)
 
         elif isinstance(refholder, Expression):
@@ -366,7 +387,6 @@ is result: {}
             buffer_cache.decref(checksum)
             self.checksum_refs.pop(checksum)
 
-    @destroyer
     def destroy_cell(self, cell):
         ref = self.cell_to_ref[cell]
         if ref is not None:
@@ -381,7 +401,6 @@ is result: {}
             self.decref_checksum(checksum, cell, authoritative, False, destroying=True)
         self.cell_to_ref.pop(cell)
 
-    @destroyer
     def destroy_structured_cell(self, sc):
         for inchannel in sc.inchannels.values():
             ref = self.inchannel_to_ref[inchannel]
@@ -390,7 +409,6 @@ is result: {}
                 self.decref_checksum(checksum, inchannel, False, False)
             self.inchannel_to_ref.pop(inchannel)
 
-    @destroyer
     def destroy_transformer(self, transformer):
         ref = self.transformer_to_result_checksum[transformer]
         if ref is not None:
@@ -399,11 +417,9 @@ is result: {}
         self.transformer_to_result_checksum.pop(transformer)
         self.transformation_cache.destroy_transformer(transformer)
 
-    @destroyer
     def destroy_macro(self, macro):
         self.macro_exceptions.pop(macro)
 
-    @destroyer
     def destroy_reactor(self, reactor):
         refs = self.reactor_to_refs.pop(reactor)
         for pinname in reactor.outputs:
@@ -413,7 +429,6 @@ is result: {}
                 self.decref_checksum(checksum, reactor, False, False)
         self.reactor_exceptions.pop(reactor)
 
-    @destroyer
     def destroy_expression(self, expression):
         # Special case, since we never actually clear expression caches,
         #  we just inactivate them if not referenced

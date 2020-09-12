@@ -199,7 +199,6 @@ class Task:
             return
         self._canceled = True
         print_debug("CANCEL", self.__class__.__name__, hex(id(self)), self.dependencies)
-        #import traceback; traceback.print_stack()
         realtask = self._realtask
         if realtask is not None:
             return realtask.cancel_refholder(self)
@@ -208,6 +207,7 @@ class Task:
             if self.future.cancelled():
                 return
             self.future.cancel()
+
         if manager is None or manager._destroyed:
             return
         taskmanager = manager.taskmanager

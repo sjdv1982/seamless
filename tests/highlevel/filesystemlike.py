@@ -10,7 +10,7 @@ test
 }
 ctx.job = lambda input: None
 ctx.job.language = "bash"
-ctx.job.code = "awk 'NF > 0{print $0 \" OK!\"}' input"
+ctx.job.code = "awk 'NF > 0{print $0 \" OK!\"}' input > RESULT"
 ctx.job.input = ctx.filesystem["test.txt"]
 ctx.result = ctx.job
 ctx.compute()
@@ -20,3 +20,5 @@ ctx.filesystem["result.txt"] = ctx.result
 ctx.compute(1)
 print(ctx.result.value)
 print(ctx.filesystem.value)
+###ctx.compute()
+###print(ctx.filesystem.value)

@@ -45,10 +45,8 @@ ctx.tfcode >> ctx.transform.code
 def triple_it2(a, b):
     return 3 * a + b
 ctx.tfcode = triple_it2
-ctx.compute()
+ctx.translate()
 print("5 (should be None)", ctx.myresult.value)
-print("STOP")
-import sys; sys.exit()
 
 # 6
 ctx.transform.b = 100

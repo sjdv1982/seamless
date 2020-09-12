@@ -78,7 +78,6 @@ def set_structured_cell_from_checksum(cell, checksum):
             initial=True
         )
     if join:
-        cell._unvoid()
         cell._get_manager().structured_cell_join(cell)
 
 
@@ -296,7 +295,8 @@ def import_before_translate(graph):
                 from .translate_docker_transformer import translate_docker_transformer
 
 def translate(graph, ctx):
-    ###import traceback; stack = traceback.extract_stack(); print("TRANSLATE:"); print("".join(traceback.format_list(stack[:3])))
+    #print("TRANSLATE")
+    #import traceback; stack = traceback.extract_stack(); print("TRANSLATE:"); print("".join(traceback.format_list(stack[:3])))
     nodes, connections = graph["nodes"], graph["connections"]
     contexts = {con["path"]: con for con in nodes if con["type"] == "context"}
     for path in sorted(contexts.keys(), key=lambda k:len(k)):

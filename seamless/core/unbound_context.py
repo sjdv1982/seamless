@@ -18,6 +18,7 @@ class UnboundManager:
         self.commands = []
         self.cells = {}
         self.join_structured_cells = set()
+        self.unvoid_structured_cells = set()
 
     def register_cell(self, cell):
         self._registered.add(cell)
@@ -49,6 +50,10 @@ class UnboundManager:
     def structured_cell_join(self, sc):
         assert sc in self._registered
         self.join_structured_cells.add(sc)
+
+    def unvoid_scell(self, sc):
+        assert sc in self._registered
+        self.unvoid_structured_cells.add(sc)
 
     def connect(self, source, source_subpath, target, target_subpath):
         from .macro import Path
@@ -391,8 +396,11 @@ class UnboundContext(SeamlessBase):
         ctx._root()._cache_paths()
         self._bind_stage2(ctx._get_manager())
         join_structured_cells = self._realmanager.join_structured_cells
+        unvoid_structured_cells = self._realmanager.unvoid_structured_cells
         for reg in self._realmanager._registered:
             if isinstance(reg, StructuredCell):
+                if reg in unvoid_structured_cells:
+                    manager.unvoid_scell(reg)
                 if reg in join_structured_cells:
                     manager.structured_cell_join(reg)
 

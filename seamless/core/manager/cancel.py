@@ -4,8 +4,9 @@ class StructuredCellCancellation:
     def __init__(self, scell, cycle):
         self.cycle = weakref.ref(cycle)
         self.scell = weakref.ref(scell)
-        self.modified_auth = scell._modified_auth
-        self.pending_inchannels = {k for k,ic in scell.inchannels.items() if ic._checksum is None and not ic._void}
+        self.modified_auth = scell._modified
+        self.valid_inchannels = {k for k,ic in scell.inchannels.items() if not ic._void}
+        self.pending_inchannels = {k for k,ic in scell.inchannels.items() if (ic._checksum is None and not ic._void) or ic._prelim}
         self.canceled_inchannels = {}
         self.canceled_outpaths = {}
         self.is_joined = False
@@ -15,8 +16,14 @@ class StructuredCellCancellation:
         if self.is_joined:
             self.is_void = False
         else:
-            self.is_void = (not len(self.pending_inchannels)) and (not scell._modified_auth) and scell._data._checksum is None
-            assert self.is_void == scell._data._void, (scell, self.is_void, scell._modified_auth, self.pending_inchannels, scell._data._void, scell._data._checksum is None)
+            if not len(_destroying) and not scell._destroyed:
+                self.is_void = (not len(self.valid_inchannels)) and (not scell._modified) and scell._data._checksum is None
+                try:
+                    assert self.is_void == scell._data._void, (scell, self.is_void, scell._modified, self.valid_inchannels, scell._data._void, scell._data._checksum is None)
+                except:
+                    import traceback; traceback.print_exc()
+            else:
+                self.is_void = scell._data._void
 
     def cancel_inpath(self, inpath, void, reason):
         scell = self.scell()
@@ -70,19 +77,25 @@ class StructuredCellCancellation:
 
         sc = self.scell()
         pending_inchannels = self.pending_inchannels.copy()
+        valid_inchannels = self.valid_inchannels.copy()
 
-        new_void = True
         for path, (void, reason) in self.canceled_inchannels.items():
             if void:
                 pending_inchannels.discard(path)
+                valid_inchannels.discard(path)
+            else:
+                valid_inchannels.discard(path)
+                pending_inchannels.add(path)
 
-        new_void = not len(pending_inchannels)
+        new_equilibrated = not len(pending_inchannels) # outchannels with value None become void
+        if not self.is_joined:
+            if sc._modified:
+                new_equilibrated = False
+        new_void = not len(valid_inchannels)
 
-        for path, (void, reason) in self.canceled_inchannels.items():
-            if not void:
-                new_void = False
+        if not new_equilibrated:
+            new_void = False
 
-        void_cell = False
         if self.is_joined:
             # The cancel originated from a join task for this structured cell
             assert not self.is_void
@@ -93,35 +106,45 @@ class StructuredCellCancellation:
                     invalid = sc._exception is not None
                     if invalid:
                         reason = StatusReasonEnum.INVALID
+                    taskmanager.cancel_structured_cell(
+                        sc, kill_non_started=True,
+                        origin_task=self.cycle().origin_task
+                    )
                     manager._set_cell_checksum(sc._data, None, void=True, status_reason=reason)
                     if sc.buffer is not sc.auth:
                         if sc.buffer._checksum is None:
                             manager._set_cell_checksum(sc.buffer, None, void=True, status_reason=reason)
-            if new_void:
-                # Outchannel accessors that evaluate to None will now become void
-                livegraph = manager.livegraph
-                downstreams = livegraph.paths_to_downstream[sc._data]
-                for outpath in sc.outchannels:
-                    for accessor in downstreams[outpath]:
-                        accessor._soften = False
         else:
             # The cancel did not originate from a join task for this structured cell
-            assert self.modified_auth == sc._modified_auth, sc
+            assert self.modified_auth == sc._modified, sc
             if self.modified_auth:
                 new_void = False
-            print("CANCEL NO JOIN", sc, new_void, self.is_void)
             if new_void and not self.is_void:
                 void_me = True
+                new_equilibrated = False
             elif self.is_void and not new_void:
                 unvoid_me = True
-            if not new_void:
-                if sc._modified_auth:
+            if not new_void and not new_equilibrated:
+                if sc._modified:
                     join_me = True
                 else:
                     for k,ic in sc.inchannels.items():
                         if ic._checksum is not None:
                             join_me = True
                             break
+
+        if new_equilibrated and not sc._equilibrated:
+            #print("SET EQUILIBRATED", sc)
+            sc._equilibrated = True
+            taskmanager.cancel_structured_cell(sc, kill_non_started=True, origin_task=self.cycle().origin_task)
+            # Outchannel accessors that evaluate to None will now become void
+            livegraph = manager.livegraph
+            downstreams = livegraph.paths_to_downstream[sc._data]
+            for outpath in sc.outchannels:
+                for accessor in downstreams[outpath]:
+                    accessor._soften = False
+            if not self.is_joined:  # joining task will have done this already
+                self.cycle().post_equilibrate.append(sc)
 
         for path, (void, reason) in self.canceled_inchannels.items():
             if reason is None and void:
@@ -138,6 +161,7 @@ class StructuredCellCancellation:
             self.cycle().to_void.append(sc)
         if join_me:
             self.cycle().to_join.append(sc)
+        #print("CA", sc, unvoid_me, void_me, join_me, new_equilibrated, self.is_joined)
 
 
 class CancellationCycle:
@@ -164,6 +188,7 @@ class CancellationCycle:
         self.to_unvoid = []
         self.to_void = []
         self.to_join = []
+        self.post_equilibrate = []
         self.origin_task = None
         self.cleared = True
 
@@ -210,6 +235,7 @@ class CancellationCycle:
         taskmanager.cancel_cell(cell, origin_task=self.origin_task)
         if manager is None or manager._destroyed:
             return
+        # use the _set_cell_checksum API, because we don't want to re-trigger a cancel cycle
         manager._set_cell_checksum(cell, None, void, status_reason=reason) # no async, so OK
 
     def _cancel_cell_path(self, scell, path, *, void, reason):
@@ -242,17 +268,23 @@ class CancellationCycle:
          if the structured cell has no pending inchannels left
         """
         assert not self.cleared
+        if scell._destroyed:
+            return
         if scell not in self.scells:
             self.scells[scell] = StructuredCellCancellation(scell, self)
 
     def cancel_scell_inpath(self, scell, path, *, void, reason):
         assert not self.cleared
+        if scell._destroyed:
+            return
         if scell not in self.scells:
             self.scells[scell] = StructuredCellCancellation(scell, self)
         self.scells[scell].cancel_inpath(path, void, reason)
 
     def cancel_scell_soft(self, scell):
         assert not self.cleared
+        if scell._destroyed:
+            return
         if scell not in self.scells:
             self.scells[scell] = StructuredCellCancellation(scell, self)
         self.scells[scell].cancel_all_outpaths(False, None)
@@ -260,6 +292,8 @@ class CancellationCycle:
     def cancel_scell_outpath_soft(self, scell):
         """Cancels an output path, because an scell has a value but the outpath has not"""
         assert not self.cleared
+        if scell._destroyed:
+            return
         if scell not in self.scells:
             self.scells[scell] = StructuredCellCancellation(scell, self)
         self.scells[scell].cancel_outpath(path, False)
@@ -314,8 +348,8 @@ class CancellationCycle:
             if accessor.expression is not None:
                 manager.livegraph.decref_expression(accessor.expression, accessor)
                 accessor.expression = None
-                accessor._checksum = None
-        accessor._void = void
+            accessor._checksum = None  #  accessors do not hold references to their checksums. Expressions do.
+            accessor._void = void
 
     def cancel_transformer(self, transformer, *, void, reason):
         assert not self.cleared
@@ -422,18 +456,16 @@ class CancellationCycle:
 
     def resolve(self):
         assert not self.cleared
-        self.to_unvoid = []
-        self.to_void = []
-        self.to_join = []
         manager = self.manager()
         taskmanager = self.taskmanager
 
         for cell, (void, reason) in self.cells.items():
             self._resolve_cell(taskmanager, manager, cell, void, reason)
+        for accessor, (void, reason) in self.accessors.items():
+            # Accessors before structured cells, to update the void status of the latter
+            self._resolve_accessor(taskmanager, manager, accessor, void, reason)
         for scell_cancellation in self.scells.values():
             scell_cancellation.resolve(taskmanager, manager)
-        for accessor, (void, reason) in self.accessors.items():
-            self._resolve_accessor(taskmanager, manager, accessor, void, reason)
         for transformer, (void, reason) in self.transformers.items():
             self._resolve_transformer(taskmanager, manager, transformer, void, reason)
         for reactor, (void, reason) in self.reactors.items():
@@ -443,16 +475,39 @@ class CancellationCycle:
         self._clear()
 
         macros = list(self.macros.items())
+        for scell in self.post_equilibrate:
+            taskmanager.cancel_structured_cell(scell) # will cancel joins; will not cancel accessor updates
+            for outpath in scell.outchannels:
+                for accessor in downstreams[outpath]:
+                    if accessor._checksum is None:
+                        if len(taskmanager.accessor_to_task.get(accessor, [])):
+                            manager.cancel_accessor(accessor, void=False, origin_task=self.origin_task)
+                            AccessorUpdateTask(manager, accessor).launch()
+                        else:
+                            manager.cancel_accessor(accessor, void=True, origin_task=self.origin_task)
         for scell in to_unvoid:
-            scell._unvoid()
+            manager.unvoid_scell(scell)
         for scell in to_join:
             manager.structured_cell_join(scell)
-        for scell in to_void:
-            print("HARD CANCEL", scell)
-            manager.cancel_scell_hard(scell)
+        #print("/CYCLE")
+        for sc in to_void:
+            taskmanager.cancel_structured_cell(sc, kill_non_started=True)
+            if len(sc.inchannels):
+                reason = StatusReasonEnum.UPSTREAM
+            else:
+                reason = StatusReasonEnum.UNDEFINED
+            if sc.auth is not None:
+                manager._set_cell_checksum(sc.auth, None, True, reason)
+            if sc.buffer is not None:
+                manager._set_cell_checksum(sc.buffer, None, True, reason)
+            manager._set_cell_checksum(sc._data, None, True, reason)
+            sc._equilibrated = True
+
+        for sc in to_void:
+            manager.cancel_scell_hard(sc, sc._data._status_reason)
 
         for macro, (void, reason) in macros:
-            self._resolve_macro(taskmanager, manager, macro, void, reason)
+            self._resolve_macro(taskmanager, manager, macro, void)
 
 from ..utils import overlap_path
 from ..cell import Cell
@@ -462,4 +517,6 @@ from ..macro import Macro, Path
 from ..reactor import Reactor
 from ..status import StatusReasonEnum
 from ..structured_cell import StructuredCell
+from ..manager.tasks.accessor_update import AccessorUpdateTask
 from .tasks.structured_cell import StructuredCellJoinTask
+from .. import _destroying

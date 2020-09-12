@@ -6,6 +6,7 @@ class AccessorUpdateTask(Task):
         self.accessor = accessor
         super().__init__(manager)
         self.dependencies.append(accessor)
+
     async def _run(self):
         accessor = self.accessor
 
@@ -33,6 +34,7 @@ class AccessorUpdateTask(Task):
                 accessor._status_reason = StatusReasonEnum.INVALID
                 manager.cancel_accessor(accessor, void=True, origin_task=self)
             return
+
         if accessor._checksum == expression_result_checksum:
             if not accessor._new_macropath:
                 return

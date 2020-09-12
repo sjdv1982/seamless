@@ -1,3 +1,4 @@
+import asyncio
 from . import Task
 from ...cached_compile import cached_compile
 
@@ -134,9 +135,13 @@ class ReactorResultTask(Task):
                     use_cache=True
                 ).run()
                 checksum = await CalculateChecksumTask(manager, buffer).run()
+            except asyncio.CancelledError as exc:
+                if not self._canceled:
+                    manager._set_reactor_exception(reactor, pinname, exc)
+                raise exc from None
             except Exception as exc:
                 manager._set_reactor_exception(reactor, pinname, exc)
-                raise
+                raise exc from None
         if checksum is not None:
             await validate_subcelltype(
                 checksum, celltype, subcelltype,

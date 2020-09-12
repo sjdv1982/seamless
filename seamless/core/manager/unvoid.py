@@ -19,9 +19,10 @@ def unvoid_scell(scell, livegraph):
     cell = scell._data
     if cell._destroyed:
         return
-    if not cell._void:
+    if not cell._void and not scell._equilibrated:
         return
-    #print("UNVOID", scell)
+    #print("UNVOID", scell, cell._void, scell._equilibrated)
+    scell._equilibrated = False
     cell._void = False
     if scell.auth is not None:
         scell.auth._void = False
@@ -103,13 +104,15 @@ def unvoid_reactor(reactor, livegraph):
             unvoid_accessor(accessor, livegraph)
 
 def unvoid_accessor(accessor, livegraph):
+    #print("UNVOID ACCESSOR", accessor)
+    accessor._void = False
     target = accessor.write_accessor.target()
     if target is None:
         return
-    accessor._void = False
+    path = accessor.write_accessor.path
     if isinstance(target, MacroPath):
         target = target._cell
-    if isinstance(target, Cell):
+    if isinstance(target, Cell) and path is None:
         from_unconnected_cell = False
         source = accessor.source
         if isinstance(source, MacroPath):
@@ -133,8 +136,11 @@ def unvoid_accessor(accessor, livegraph):
             )
         else:
             unvoid_cell(target, livegraph)
-    elif isinstance(target, Inchannel):
-        scell = target.structured_cell()
+    elif isinstance(target, Cell) and path is not None:
+        scell = target._structured_cell
+        ic = scell.inchannels[path]
+        #print("UNVOID INCHANNEL", i)
+        ic._void = False
         unvoid_scell(scell, livegraph)
     elif isinstance(target, Transformer):
         unvoid_transformer(target, livegraph)

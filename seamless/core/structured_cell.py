@@ -41,6 +41,7 @@ class Outchannel:
 class StructuredCell(SeamlessBase):
     _celltype = "structured"
     _exception = None
+    _equilibrated = True   # no more computation, unless an inchannel, auth or schema gets changed.
     def __init__(self, data, *,
         auth=None,
         schema=None,
@@ -101,7 +102,7 @@ class StructuredCell(SeamlessBase):
             assert auth._hash_pattern == data._hash_pattern
 
         self._validate_channels(inchannels, outchannels)
-        self._modified_auth = False
+        self._modified = False
 
         self._auth_value = None
         self._auth_temp_checksum = None
@@ -163,7 +164,7 @@ class StructuredCell(SeamlessBase):
             return
         if self._auth_value is None:
             if self.auth._checksum is not None:
-                self._auth_value = deepcopy(self.auth.value)
+                self._auth_value = deepcopy(self.auth.data)
         manager = self._get_manager()
         if manager._destroyed:
             return
@@ -174,12 +175,6 @@ class StructuredCell(SeamlessBase):
 
     def set_no_inference(self, value):
         self.handle_no_inference.set(value)
-
-    def _unvoid(self):
-        from .manager.unvoid import unvoid_scell
-        #print("UNVOID", self)
-        unvoid_scell(self, self._get_manager().livegraph)
-        #print("UNVOID", self, self._data._void)
 
     def _set_auth_path(self, path, value, from_pop=False):
         assert not self.no_auth
@@ -231,8 +226,8 @@ class StructuredCell(SeamlessBase):
         if manager._destroyed:
             return
         self.auth._set_checksum(None, from_structured_cell=True)
-        self._modified_auth = True
-        self._unvoid()
+        self._modified = True
+        manager.unvoid_scell(self)
         manager.cancel_scell_soft(self)
         manager.structured_cell_join(self)
 
@@ -273,10 +268,6 @@ class StructuredCell(SeamlessBase):
             self._schema_value,
             self
         )
-        if not self.buffer._void:
-            self._unvoid()
-            manager.cancel_scell_soft(self)
-            manager.structured_cell_join(self)
 
     def handle(self):
         return self._get_handle(inference=True)

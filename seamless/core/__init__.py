@@ -90,18 +90,20 @@ class SeamlessBase:
     def destroy(self, **kwargs):
         self._destroyed = True
 
+_destroying = set()
 def destroyer(func):
-    def wrapper(func, *args, **kwargs):
+    def wrapper(*args, **kwargs):
         self = args[0]
         lastarg = args[-1]
-        if lastarg in self._destroying:
+        if lastarg in _destroying:
             return
         try:
+            _destroying.add(lastarg)
             func(*args, **kwargs)
         finally:
-            self._destroying.discard(lastarg)
+            _destroying.discard(lastarg)
     update_wrapper(wrapper, func)
-    return func
+    return wrapper
 
 from .mount import mountmanager
 from .macro_mode import get_macro_mode, macro_mode_on

@@ -52,7 +52,6 @@ class TaskManager:
                                 # only while the checksum is being computed by a SetCellValueTask
         self.cell_locks = {} # The following tasks are in-order; they must acquire this lock
                              # SetCellValue, SetCellBuffer, SetCellPath, CellChecksum
-        self._destroying = set()
 
     def activate(self):
         self._active = True
@@ -505,10 +504,12 @@ If origin_task is provided, that task is not cancelled."""
                 continue
             task.cancel()
 
-    def cancel_structured_cell(self, structured_cell, kill_non_started):
+    def cancel_structured_cell(self, structured_cell, kill_non_started, origin_task=None):
         not_started = False
         tasks = self.structured_cell_to_task.get(structured_cell, [])
         for task in tasks:
+            if task is origin_task:
+                continue
             if task._canceled:
                 continue
             if task.future is not None and task.future.done():
@@ -519,29 +520,24 @@ If origin_task is provided, that task is not cancelled."""
             task.cancel()
         return not_started
 
-    @destroyer
     def destroy_cell(self, cell, full=False):
         self.cancel_cell(cell, full=full)
         self.cell_to_task.pop(cell)
         self.cell_to_value.pop(cell, None)
         self.cell_locks.pop(cell)
 
-    @destroyer
     def destroy_structured_cell(self, structured_cell):
         self.cancel_structured_cell(structured_cell, kill_non_started=True)
         self.structured_cell_to_task.pop(structured_cell)
 
-    @destroyer
     def destroy_accessor(self, accessor):
         self.cancel_accessor(accessor)
         self.accessor_to_task.pop(accessor, None) # guard here for an invalid connection
 
-    @destroyer
     def destroy_expression(self, expression):
         self.cancel_expression(expression)
         self.expression_to_task.pop(expression)
 
-    @destroyer
     def destroy_transformer(self, transformer, *, full=False):
         self.cancel_transformer(transformer, full=full)
         self.transformer_to_task.pop(transformer)
@@ -550,12 +546,10 @@ If origin_task is provided, that task is not cancelled."""
         self.cancel_reactor(reactor, full=full)
         self.reactor_to_task.pop(reactor)
 
-    @destroyer
     def destroy_macro(self, macro, *, full=False):
         self.cancel_macro(macro, full=full)
         self.macro_to_task.pop(macro)
 
-    @destroyer
     def destroy_macropath(self, macropath, *, full=False):
         if macropath not in self.macropath_to_task:
             return

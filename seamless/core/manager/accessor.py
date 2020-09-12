@@ -4,7 +4,7 @@ class Accessor:
     pass
 
 class ReadAccessor(Accessor):
-    _checksum = None
+    _checksum = None  # accessors do not hold references to their checksums. Expressions do.
     _void = True
     _status_reason = None
     _new_macropath = False # if source or target is a newly bound macropath

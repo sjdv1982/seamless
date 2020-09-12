@@ -40,12 +40,18 @@ class StructuredCellJoinTask(Task):
             return
 
         locknr = await acquire_evaluation_lock(self)
-        already_void = sc._data._void
-        if already_void:
+        if sc._data._void:
             print("{} should not be void!".format(sc), file=sys.stderr)
             return
             #import traceback
             #traceback.print_stack()
+        if sc._equilibrated:
+            print("{} should not be marked as equilibrated!".format(sc), file=sys.stderr)
+            return
+            #import traceback
+            #traceback.print_stack()
+
+        #print("JOIN", sc)
         try:
 
             prelim = {}
@@ -100,7 +106,13 @@ class StructuredCellJoinTask(Task):
                     except (CacheMissError, TypeError, ValueError, KeyError):
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
-                    except Exception:
+                    except CancelledError as exc:
+                        if self._canceled:
+                            raise exc from None
+                        else:
+                            sc._exception = traceback.format_exc()
+                            ok = False
+                    except Exception as exc:
                         sc._exception = traceback.format_exc()
                         ok = False
                     if ok:
@@ -129,7 +141,9 @@ class StructuredCellJoinTask(Task):
                                     if sc.hash_pattern is None or access_hash_pattern(sc.hash_pattern, path) != "#":
                                         sub_buffer = await GetBufferTask(manager, subchecksum).run()
                                     await set_subpath_checksum(value, sc.hash_pattern, path, subchecksum, sub_buffer)
-                                except CancelledError:
+                                except CancelledError as exc:
+                                    if self._canceled:
+                                        raise exc from None
                                     ok = False
                                     task_canceled = True
                                     break
@@ -175,7 +189,9 @@ class StructuredCellJoinTask(Task):
                     checksum = await CalculateChecksumTask(manager, buf).run()
                     assert checksum is not None
                     buffer_cache.cache_buffer(checksum, buf)
-                except CancelledError:
+                except CancelledError as exc:
+                    if self._canceled:
+                        raise exc from None
                     ok = False
                     task_canceled = True
                 except CacheMissError:
@@ -218,7 +234,7 @@ class StructuredCellJoinTask(Task):
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
 
-            self._modified_auth = False
+            self._modified = False
             self.ok = ok
             if ok:
                 cancel_paths = []
@@ -242,13 +258,17 @@ class StructuredCellJoinTask(Task):
                                     changed = True
                                 else:
                                     changed = accessor.build_expression(livegraph, cs)
-                                if changed:
                                 """
-                                manager.cancel_accessor(accessor, origin_task=self, void=False)
-                                accessor.build_expression(livegraph, cs)
-                                accessor._soften = True
-                                accessor._prelim = prelim[out_path]
-                                AccessorUpdateTask(manager, accessor).launch()
+                                if accessor.expression is None:
+                                    changed = True
+                                else:
+                                    changed = (accessor.expression.checksum != cs)
+                                if changed:
+                                    manager.cancel_accessor(accessor, origin_task=self, void=False)
+                                    accessor.build_expression(livegraph, cs)
+                                    accessor._soften = True
+                                    accessor._prelim = prelim[out_path]
+                                    AccessorUpdateTask(manager, accessor).launch()
 
 
                 sc._exception = None
@@ -261,6 +281,7 @@ class StructuredCellJoinTask(Task):
                     # The cancel system may now decide to put the scell into void state
                     #  depending if there are pending inchannels or not
                     manager.cancel_scell(sc, self)
+            #print("/JOIN", sc, ok, value, self)
         finally:
             release_evaluation_lock(locknr)
 

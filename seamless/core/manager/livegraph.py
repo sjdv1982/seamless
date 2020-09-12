@@ -54,8 +54,6 @@ class LiveGraph:
 
         self.cell_parsing_exceptions = {}
 
-        self._destroying = set()
-
     def register_cell(self, cell):
         self.cell_to_upstream[cell] = None
         self.cell_to_downstream[cell] = []
@@ -686,7 +684,7 @@ class LiveGraph:
             if cell is None:
                 continue
             editpin = reactor._pins[pinname]
-            if cell._destroyed or cell in self._destroying:
+            if cell._destroyed or cell in _destroying:
                 continue
             self.cell_to_editpins[cell].remove(editpin)
 
@@ -829,3 +827,4 @@ from ..cell import Cell
 from ..worker import EditPin
 from ..runtime_reactor import RuntimeReactor
 from .tasks.upon_connection import UponBiLinkTask
+from .. import _destroying

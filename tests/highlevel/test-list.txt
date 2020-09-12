@@ -8,7 +8,7 @@ subcell.py
 subsubcell.py
 inchannel-conflict.py
 deepcell-simple.py
-filesystemlike.py
+#filesystemlike.py  # As of Seamless 0.4, pseudo-cycles ar not supported!
 context.py
 context2.py
 scratch.py
