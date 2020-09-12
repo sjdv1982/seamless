@@ -697,6 +697,7 @@ class TransformationCache:
     def clear_exception(self, transformer=None, *, tf_checksum=None):
         from ..manager.tasks.transformer_update import TransformerUpdateTask
         from ...communion_client import communion_client_manager
+        from ..manager.unvoid import unvoid_transformer
         if transformer is None:
             assert tf_checksum is not None
         else:
@@ -724,6 +725,7 @@ class TransformationCache:
                 continue
             if isinstance(tf, DummyTransformer):
                 continue
+            unvoid_transformer(tf, tf._get_manager().livegraph)
             TransformerUpdateTask(tf._get_manager(), tf).launch()
 
     def hard_cancel(self, transformer=None, *, tf_checksum=None):

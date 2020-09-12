@@ -38,56 +38,9 @@ class Outchannel:
         return self.structured_cell().hash_pattern
 
 
-class ModifiedPathManager:
-    def __init__(self, structured_cell):
-        self.structured_cell = weakref.ref(structured_cell)
-        self.clear()
-
-    def clear(self):
-        self.modified_paths = set()       # just for bookkeeping
-        self.modified_inchannels = set()  # for now, just for monitoring...
-        self.modified_outchannels = set() # Used by join tasks
-
-    def _add_path(self, path):
-        if path in self.modified_paths:
-            return
-        for mp in self.modified_paths:
-            if path[:len(mp)] == mp:
-                return
-
-        new_paths = set()
-        new_paths.add(path)
-        for mp in self.modified_paths:
-            if mp[:len(path)] != path:
-                new_paths.add(mp)
-        self.modified_paths = new_paths
-
-        if not len(self.modified_paths):
-            return
-        modified_outchannels = set()
-        modified_outchannels.add( () )
-        sc = self.structured_cell()
-        if sc is None or sc._destroyed:
-            return
-        for outchannel in sc.outchannels:
-            for mp in self.modified_paths:
-                if overlap_path(outchannel, mp):
-                    modified_outchannels.add(mp)
-        modified_outchannels = set(modified_outchannels)
-        if self.modified_outchannels != modified_outchannels:
-            self.modified_outchannels = modified_outchannels
-
-    def add_auth_path(self, path):
-        self._add_path(path)
-
-    def add_inchannel(self, inchannel):
-        self.modified_inchannels.add(inchannel)
-        self._add_path(inchannel)
-
 class StructuredCell(SeamlessBase):
     _celltype = "structured"
     _exception = None
-    _new_outgoing_connections = False
     def __init__(self, data, *,
         auth=None,
         schema=None,
@@ -148,7 +101,7 @@ class StructuredCell(SeamlessBase):
             assert auth._hash_pattern == data._hash_pattern
 
         self._validate_channels(inchannels, outchannels)
-        self.modified = ModifiedPathManager(self)
+        self._modified_auth = False
 
         self._auth_value = None
         self._auth_temp_checksum = None
@@ -222,29 +175,21 @@ class StructuredCell(SeamlessBase):
     def set_no_inference(self, value):
         self.handle_no_inference.set(value)
 
+    def _unvoid(self):
+        from .manager.unvoid import unvoid_scell
+        #print("UNVOID", self)
+        unvoid_scell(self, self._get_manager().livegraph)
+        #print("UNVOID", self, self._data._void)
+
     def _set_auth_path(self, path, value, from_pop=False):
         assert not self.no_auth
         if self.auth._destroyed:
             return
         if self._auth_temp_checksum is not None:
             raise RuntimeError(self) # cannot set auth value and auth temp checksum at the same time
-        self.modified.add_auth_path(path)
         manager = self._get_manager()
         if manager._destroyed:
             return
-
-        try:
-            resolve_cancel_cycle = False
-            cancel_cycle = manager.cancel_cycle
-            if cancel_cycle.cleared:
-                resolve_cancel_cycle = True
-                cancel_cycle.cleared = False
-
-            cancel_cycle.cancel_scell_all_outpaths(self, void=False, reason=None)
-            self.auth._set_checksum(None, from_structured_cell=True)
-        finally:
-            if resolve_cancel_cycle:
-                cancel_cycle.resolve()
 
         if not from_pop and value is None and len(path) and isinstance(path[-1], int):
             l = len(self._get_auth_path(path[:-1]))
@@ -279,13 +224,17 @@ class StructuredCell(SeamlessBase):
                         self._auth_value = []
             set_subpath(self._auth_value, self.hash_pattern, path, value)
 
-    def _join(self):
+    def _join_auth(self):
         if self.buffer._destroyed:
             return
         manager = self._get_manager()
         if manager._destroyed:
             return
-        manager.structured_cell_join(self, cancel_all=True, new_join=True)
+        self.auth._set_checksum(None, from_structured_cell=True)
+        self._modified_auth = True
+        self._unvoid()
+        manager.cancel_scell_soft(self)
+        manager.structured_cell_join(self)
 
     def _get_schema_path(self, path):
         if self.schema._destroyed:
@@ -317,14 +266,17 @@ class StructuredCell(SeamlessBase):
         buffer_cache.cache_buffer(checksum, buf)
         if checksum is not None:
             checksum = checksum.hex()
-        self.schema._set_checksum(checksum)#, from_structured_cell=True)
+        self.schema._set_checksum(checksum)
         manager = self._get_manager()
         manager.update_schemacell(
             self.schema,
             self._schema_value,
             self
         )
-        manager.structured_cell_join(self, cancel_all=True, new_join=True)
+        if not self.buffer._void:
+            self._unvoid()
+            manager.cancel_scell_soft(self)
+            manager.structured_cell_join(self)
 
     def handle(self):
         return self._get_handle(inference=True)
@@ -385,7 +337,7 @@ class StructuredCell(SeamlessBase):
         assert not self.no_auth
         self._auth_value = None
         self._auth_temp_checksum = bytes.fromhex(checksum)
-        self._join()
+        self._join_auth()
 
     @property
     def value(self):

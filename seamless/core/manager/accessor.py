@@ -9,7 +9,9 @@ class ReadAccessor(Accessor):
     _status_reason = None
     _new_macropath = False # if source or target is a newly bound macropath
     _prelim = False # if accessor represents a preliminary result
-    def __init__(self, manager, path, celltype, *, hash_pattern):
+    _soften = False # Structured cell join tasks may set this to True. If the expression evaluates to zero, don't void the accessor.
+    def __init__(self, source, manager, path, celltype, *, hash_pattern):
+        self.source = source
         self.manager = weakref.ref(manager)
         self.path = path
         assert celltype in celltypes or isinstance(celltype, MacroPath)
@@ -31,6 +33,7 @@ class ReadAccessor(Accessor):
 
     def build_expression(self, livegraph, checksum):
         """Returns if expression has changed"""
+        self._harden = False
         celltype = self.celltype
         if isinstance(celltype, MacroPath):
             macropath = celltype
@@ -70,6 +73,12 @@ class ReadAccessor(Accessor):
             return
         livegraph.decref_expression(self.expression, self)
         self.expression = None
+
+    def __repr__(self):
+        result = "Accessor: " + str(self.source)
+        if self.write_accessor is not None:
+            result += " => " + str(self.write_accessor.target())
+        return result
 
 class WriteAccessor(Accessor):
     def __init__(self, read_accessor,

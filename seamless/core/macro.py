@@ -351,7 +351,6 @@ class Path:
                 )
 
     def _bind(self, cell, trigger):
-        from .manager.propagate import propagate_cell
         from .manager.tasks.cell_update import CellUpdateTask
         from .manager.tasks.accessor_update import AccessorUpdateTask
         if self._destroyed:
@@ -384,7 +383,6 @@ class Path:
             assert path is not self, self._path
         cell._paths.add(self)
         self._cell = cell
-        propagate_cell(livegraph, cell)
         if trigger:
             if self_authority:
                 for accessor in livegraph.macropath_to_downstream[self]:

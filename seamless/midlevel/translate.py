@@ -26,7 +26,6 @@ def set_structured_cell_from_checksum(cell, checksum):
     """
     if "temp" in checksum:
         assert len(checksum) == 1, checksum.keys()
-        cell.modified.add_auth_path(()))
         temp_checksum = checksum["temp"]
         if cell.hash_pattern is not None:
             temp_cs = bytes.fromhex(temp_checksum)
@@ -48,7 +47,6 @@ def set_structured_cell_from_checksum(cell, checksum):
         )
         join = True
         """
-        cell._data._void = False
 
     if "buffer" in checksum:
         # not done! value calculated anew...
@@ -60,11 +58,8 @@ def set_structured_cell_from_checksum(cell, checksum):
         )
         join = True
         """
-        cell.buffer._void = False
-        cell._data._void = False
 
     if "auth" in checksum:
-        cell.modified.add_auth_path(())
         if cell.auth is None:
             msg = "Warning: %s has no authority, but an auth checksum is present"
             print(msg % cell)
@@ -75,8 +70,6 @@ def set_structured_cell_from_checksum(cell, checksum):
                 initial=True
             )
             join = True
-            cell.buffer._void = False
-            cell._data._void = False
 
     if "schema" in checksum:
         cell.schema._set_checksum(
@@ -85,7 +78,9 @@ def set_structured_cell_from_checksum(cell, checksum):
             initial=True
         )
     if join:
-        cell._join()
+        cell._unvoid()
+        cell._get_manager().structured_cell_join(cell)
+
 
 
 def translate_py_reactor(node, root, namespace, inchannels, outchannels):
@@ -254,7 +249,6 @@ def translate_connection(node, namespace, ctx):
             if hash_pattern is not None:
                 hash_pattern = access_hash_pattern(hash_pattern, source.subpath)
         intermediate = core_cell("mixed", hash_pattern=hash_pattern)
-        intermediate._fingertip_remote = False
         setattr(ctx, con_name, intermediate)
         source.connect(intermediate)
         intermediate.connect(target)

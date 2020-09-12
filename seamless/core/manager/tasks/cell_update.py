@@ -8,24 +8,13 @@ class CellUpdateTask(Task):
         self.dependencies.append(cell)
 
     async def _run(self):
-        """
-        - If the cell's void attribute is True, log a warning and return.
-        - Await cell checksum task
-        - If the checksum is None, for each output accessor:
-            - do a void cancellation
-          Else, for each output read accessor:
-            - construct (not compute!) their expression using the cell checksum
-            Constructing a downstream expression increfs the cell checksum
-            - launch an accessor update task
-        """
+        """Assumes that the cell's checksum is not pending on a running task"""
         cell = self.cell
         if cell._void:
             print("WARNING: cell %s is void, shouldn't happen during cell update" % cell)
             return
-        from . import CellChecksumTask
         manager = self.manager()
         cell = self.cell
-        ###await CellChecksumTask(manager, cell).run() # is this really necessary?
 
         locknr = await acquire_evaluation_lock(self)
         try:

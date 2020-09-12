@@ -175,11 +175,6 @@ class Manager:
             assert not trigger_bilinks
             if not from_structured_cell and cell._structured_cell is not None:
                 assert cell._structured_cell.auth is cell, cell
-                if checksum is None:
-                    value = None
-                else:
-                    value = self.resolve(checksum)
-                return cell._structured_cell.set_no_inference(value)
         if checksum is None:
             reason = StatusReasonEnum.UNDEFINED
             if not from_structured_cell:
@@ -197,26 +192,34 @@ class Manager:
         self._set_cell_checksum(
             cell, checksum,
             (checksum is None), status_reason=reason,
-            trigger_bilinks=trigger_bilinks
+            trigger_bilinks=trigger_bilinks,
+            unvoid=False
         )
         if not from_structured_cell: # also for initial...
+            if cell._structured_cell is not None and cell._structured_cell.auth is cell:
+                cell._structured_cell._modified_auth = True
+                cell._structured_cell._unvoid()
+            if checksum is not None:
+                unvoid_cell(cell, self.livegraph)
             CellUpdateTask(self, cell).launch()
         if sc_schema:
             value = self.resolve(checksum, "plain")
             self.update_schemacell(cell, value, None)
 
     def _set_cell_checksum(self,
-        cell, checksum, void, status_reason=None, prelim=False, trigger_bilinks=True
+        cell, checksum, void, status_reason=None, prelim=False, trigger_bilinks=True, unvoid=True
     ):
         """
         NOTE: Any cell task depending on the old checksum must have been canceled already
-        NOTE: This function must take place in one async step
+        NOTE: This function must take place within one async step
         Therefore, the direct or indirect call of _sync versions of coroutines
         (e.g. deserialize_sync, which launches coroutines and waits for them)
         IS NOT ALLOWED
         """
         if cell._destroyed:
             return
+        #print("SET CELL CHECKSUM", cell, checksum is None, void, "UNVOID", unvoid)
+        #import traceback; traceback.print_stack()
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void
 
@@ -237,6 +240,11 @@ class Manager:
         if old_checksum is not None and old_checksum != checksum:
             cachemanager.decref_checksum(old_checksum, cell, authoritative, False)
         cell._checksum = checksum
+        try:
+            if unvoid and not void:
+                unvoid_cell(cell, self.livegraph)
+        except Exception:
+            traceback.print_exc()
         cell._void = void
         cell._status_reason = status_reason
         cell._prelim = prelim
@@ -244,20 +252,34 @@ class Manager:
             cachemanager.incref_checksum(checksum, cell, authoritative, False)
             observer = cell._observer
             if observer is not None:
-                cs = checksum.hex() if checksum is not None else None
-                observer(cs)
+                try:
+                    cs = checksum.hex() if checksum is not None else None
+                    observer(cs)
+                except Exception:
+                    traceback.print_exc()
             if checksum is not None:
                 for traitlet in cell._traitlets:
                     # TODO: block the async mainloop during the receive_update call
-                    traitlet.receive_update(checksum)
+                    try:
+                        traitlet.receive_update(checksum)
+                    except Exception:
+                        traceback.print_exc()
             if not is_dummy_mount(cell._mount):
-                buffer = buffer_cache.get_buffer(checksum)  # not async, so OK
-                self.mountmanager.add_cell_update(cell, checksum, buffer)
+                try:
+                    buffer = buffer_cache.get_buffer(checksum)  # not async, so OK
+                    self.mountmanager.add_cell_update(cell, checksum, buffer)
+                except Exception:
+                    traceback.print_exc()
             if cell._share is not None:
-                self.sharemanager.add_cell_update(cell, checksum)
+                try:
+                    self.sharemanager.add_cell_update(cell, checksum)
+                except Exception:
+                    traceback.print_exc()
             if checksum is not None and trigger_bilinks:
-                self.livegraph.activate_bilink(cell, checksum)
-
+                try:
+                    self.livegraph.activate_bilink(cell, checksum)
+                except Exception:
+                    traceback.print_exc()
 
     def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, prelim=False):
         ###import traceback; traceback.print_stack(limit=5)
@@ -279,8 +301,10 @@ class Manager:
         inchannel._prelim = prelim
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, inchannel, False, False)
-            sc.modified.add_inchannel(inchannel.subpath)
-            self.structured_cell_join(sc, cancel_all=False, new_join=True)
+            if checksum is not None:
+                sc._unvoid()
+
+            self.structured_cell_join(sc)
 
     def _set_transformer_checksum(self,
         transformer, checksum, void, *,
@@ -341,34 +365,29 @@ class Manager:
             if sc is structured_cell:
                 continue
             sc._schema_value = deepcopy(value)
-            self.structured_cell_join(sc, cancel_all=True, new_join=True)
+            if not sc.buffer._void:
+                sc._unvoid()
+                self.cancel_scell_soft(sc)
+                self.structured_cell_join(sc)
 
-    def structured_cell_join(self, structured_cell, cancel_all,  new_join):
-        if cancel_all:
-            # Cancel all downstream paths
-            assert self.cancel_cycle.cleared
-            self.cancel_scell_all_outpaths(
-                structured_cell, False
-            )
-
+    def structured_cell_join(self, structured_cell):
         if self._destroyed or structured_cell._destroyed:
             return
-        structured_cell._data._set_checksum(None, from_structured_cell=True)
+        self._set_cell_checksum(structured_cell._data, None, void=False)
         if structured_cell.buffer is not structured_cell.auth:
-            structured_cell.buffer._set_checksum(None, from_structured_cell=True)
+            self._set_cell_checksum(structured_cell.buffer, None, void=False)
 
         # Cancel all ongoing joins, but not if they haven't started yet.
         not_started = self.taskmanager.cancel_structured_cell(
             structured_cell, kill_non_started=False
         )
 
-        if new_join:
-            # If there is no existing join task, create a new one
-            if not not_started:
-                task = StructuredCellJoinTask(
-                    self, structured_cell
-                )
-                task.launch()
+        # If there is no existing join task, create a new one
+        if not not_started:
+            task = StructuredCellJoinTask(
+                self, structured_cell
+            )
+            task.launch()
 
 
     @run_in_mainthread
@@ -459,7 +478,7 @@ class Manager:
         return value
 
     ##########################################################################
-    # API section ???: Cancellation
+    # API section III: Cancellation
     ##########################################################################
 
     @run_in_mainthread
@@ -495,12 +514,12 @@ If origin_task is provided, that task is not cancelled."""
         self.cancel_cycle.cancel_scell_inpath(sc, path, void=void, reason=reason)
 
     @with_cancel_cycle
-    def cancel_scell_all_outpaths(self, sc, void, reason=StatusReasonEnum.UPSTREAM):
-        self.cancel_cycle.cancel_scell_all_outpaths(sc, void=void, reason=reason)
+    def cancel_scell_soft(self, sc):
+        self.cancel_cycle.cancel_scell_soft(sc)
 
     @with_cancel_cycle
-    def cancel_scell_hard(self, sc, join_task, paths=None):
-        """Hard-cancel of a structured cell (entirely or in part), launched by the join task:
+    def cancel_scell(self, sc, join_task, paths=None):
+        """Cancel of a structured cell (entirely or in part), launched by the join task:
         - Entirely (paths=None), because of:
             - Because of an error in obtaining inchannel values (parsing, cache miss, etc.)
             - Because of a validation error
@@ -510,12 +529,36 @@ If origin_task is provided, that task is not cancelled."""
         self.cancel_cycle.origin_task = join_task
         if paths is None:
             self.cancel_cycle.cancel_scell_inpath(
-                sc, (), void=True,
-                reason=StatusReasonEnum.UPSTREAM, from_join_task=True
+                sc, (), void=False,
+                reason=StatusReasonEnum.UPSTREAM
             )
         else:
+            self.cancel_cycle.cancel_scell_trigger(sc)
             for path in paths:
-                self.cancel_cycle.cancel_scell_outpath(sc, path)
+                self.cancel_cycle.cancel_scell_outpath_soft(sc, path)
+
+    @with_cancel_cycle
+    def cancel_scell_hard(self, sc):
+        """Hard-cancel of a structured cell, as decided by the cancel system.
+        The reason for canceling does not originate in joining, but because
+        all inchannels are void and auth as well"""
+        assert isinstance(sc, StructuredCell)
+        self.taskmanager.cancel_structured_cell(sc, kill_non_started=True)
+        if sc.auth is not None:
+            sc.auth._void = True
+            if sc.auth._checksum is not None:
+                sc.auth._checksum = None
+        if sc.buffer is not None:
+            sc.buffer._void = True
+            if sc.buffer._checksum is not None:
+                sc.buffer._checksum = None
+        sc._data._void = True
+        if sc._data._checksum is not None:
+            sc._data._checksum = None
+        self.cancel_cycle.cancel_scell_inpath(
+            sc, (), void=True,
+            reason=StatusReasonEnum.UPSTREAM
+        )
 
     @with_cancel_cycle
     def cancel_accessor(self,
@@ -531,8 +574,8 @@ If origin_task is provided, that task is not cancelled."""
             reason = StatusReasonEnum.UNCONNECTED
 
 
-        self.cancel_cycle.cancel_accessor(accessor, void=void, reason=reason)
         self.cancel_cycle.origin_task = origin_task
+        self.cancel_cycle.cancel_accessor(accessor, void=void, reason=reason)
 
 
     @with_cancel_cycle
@@ -552,7 +595,7 @@ If origin_task is provided, that task is not cancelled."""
         self.cancel_cycle.cancel_macro(macro, void=void, reason=reason)
 
     ##########################################################################
-    # API section ???: Connection support
+    # API section IV: Connection support
     ##########################################################################
 
     @mainthread
@@ -605,7 +648,7 @@ If origin_task is provided, that task is not cancelled."""
         return path_source, path_target
 
     ##########################################################################
-    # API section ???: Destruction
+    # API section V: Destruction
     ##########################################################################
 
     def _destroy_cell(self, cell):
@@ -676,6 +719,7 @@ from ..protocol.calculate_checksum import checksum_cache
 from ..protocol.deserialize import deserialize_cache, deserialize_sync
 from ..protocol.get_buffer import get_buffer
 from ..cache.buffer_cache import buffer_cache
+from .unvoid import unvoid_cell
 from ..cell import Cell
 from ..worker import Worker
 from ..transformer import Transformer
@@ -684,6 +728,5 @@ from ..reactor import Reactor
 from .accessor import ReadAccessor
 from ..structured_cell import StructuredCell
 from .tasks.structured_cell import StructuredCellJoinTask
-from .tasks.transformer_update import TransformerUpdateTask
 from ..utils import overlap_path
 from ..protocol.deep_structure import DeepStructureError

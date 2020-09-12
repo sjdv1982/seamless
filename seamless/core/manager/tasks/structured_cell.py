@@ -18,10 +18,11 @@ class StructuredCellJoinTask(Task):
         taskmanager = manager.taskmanager
         tasks = []
         for task in taskmanager.tasks:
-            if sc not in task.dependencies:
-                continue
-            if task.taskid >= self.taskid or task.future is None:
-                continue
+            if not isinstance(task, UponConnectionTask):
+                if sc not in task.dependencies:
+                    continue
+                if task.taskid >= self.taskid or task.future is None:
+                    continue
             tasks.append(task)
         if len(tasks):
             await taskmanager.await_tasks(tasks, shield=True)
@@ -33,28 +34,20 @@ class StructuredCellJoinTask(Task):
         manager = self.manager()
         sc = self.structured_cell
         await self.await_sc_tasks()
-        canceled = False
+        task_canceled = False
         if sc._data is not sc.auth and sc._data._checksum is not None:
             print("{} should have been canceled!".format(sc), file=sys.stderr)
             return
 
         locknr = await acquire_evaluation_lock(self)
-
-        '''
-        structured_cell = self.structured_cell
-        if 1 or str(structured_cell).find("data_a") > -1 or str(structured_cell).find("data_b") > -1:
-            """
-            val = {}
-            for k, v in structured_cell.inchannels.items():
-                cs00 = v._checksum
-                if cs00 is not None:
-                    val[k] = cs00.hex()
-            """
-            print("***RUN***", structured_cell, "TASK:", self.taskid)
-        '''
+        already_void = sc._data._void
+        if already_void:
+            print("{} should not be void!".format(sc), file=sys.stderr)
+            return
+            #import traceback
+            #traceback.print_stack()
         try:
 
-            modified_outchannels = sc.modified.modified_outchannels
             prelim = {}
             for out_path in sc.outchannels:
                 curr_prelim = False
@@ -138,7 +131,7 @@ class StructuredCellJoinTask(Task):
                                     await set_subpath_checksum(value, sc.hash_pattern, path, subchecksum, sub_buffer)
                                 except CancelledError:
                                     ok = False
-                                    canceled = True
+                                    task_canceled = True
                                     break
                                 except (CacheMissError, TypeError, ValueError, KeyError):
                                     sc._exception = traceback.format_exc(limit=0)
@@ -184,14 +177,15 @@ class StructuredCellJoinTask(Task):
                     buffer_cache.cache_buffer(checksum, buf)
                 except CancelledError:
                     ok = False
-                    canceled = True
+                    task_canceled = True
                 except CacheMissError:
                     sc._exception = traceback.format_exc(limit=0)
                     ok = False
                 except Exception:
                     sc._exception = traceback.format_exc()
                     ok = False
-            if ok and checksum is not None:
+            if ok:
+                assert checksum is not None
                 if isinstance(checksum, bytes):
                     checksum = checksum.hex()
                 if not len(sc.inchannels):
@@ -210,9 +204,6 @@ class StructuredCellJoinTask(Task):
                     else:
                         value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
 
-            if not ok and sc.buffer is not sc.auth:
-                manager._set_cell_checksum(sc.buffer, None, void=True, status_reason=StatusReasonEnum.UPSTREAM)
-
             if ok and value is not None and schema is not None:
                 if schema is not None:
                     if sc.hash_pattern is None:
@@ -226,10 +217,11 @@ class StructuredCellJoinTask(Task):
                     except ValidationError:
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
-                        manager._set_cell_checksum(sc._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
 
+            self._modified_auth = False
+            self.ok = ok
             if ok:
-                hard_cancel_paths = []
+                cancel_paths = []
                 if checksum is not None and sc._data is not sc.auth:
                     sc._data._set_checksum(checksum, from_structured_cell=True)
 
@@ -241,25 +233,34 @@ class StructuredCellJoinTask(Task):
                     expression_to_result_checksum = cachemanager.expression_to_result_checksum
                     for out_path in sc.outchannels:
                         if cs is None:
-                            hard_cancel_paths.append(out_path)
+                            cancel_paths.append(out_path)
                         else:
                             for accessor in downstreams[out_path]:
-                                changed = accessor.build_expression(livegraph, cs)
+                                # TODO: we could try some expression morphing for efficiency
+                                """
                                 if prelim[out_path] != accessor._prelim:
-                                    accessor._prelim = prelim[out_path]
                                     changed = True
+                                else:
+                                    changed = accessor.build_expression(livegraph, cs)
                                 if changed:
-                                    AccessorUpdateTask(manager, accessor).launch()
+                                """
+                                manager.cancel_accessor(accessor, origin_task=self, void=False)
+                                accessor.build_expression(livegraph, cs)
+                                accessor._soften = True
+                                accessor._prelim = prelim[out_path]
+                                AccessorUpdateTask(manager, accessor).launch()
 
 
-                sc.modified.clear()
-                sc._new_connections = False
                 sc._exception = None
-                if len(hard_cancel_paths):
-                    manager.cancel_scell_hard(sc, self, hard_cancel_paths)
+                # Do this even if cancel_paths is empty.
+                # If there are no more pending inchannels, the cancel system
+                #  will now unsoften any outchannel accessors that resolve to None, causing them to be void
+                manager.cancel_scell(sc, self, cancel_paths)
             else:
-                if not canceled:
-                    manager.cancel_scell_hard(sc, self)
+                if not task_canceled:
+                    # The cancel system may now decide to put the scell into void state
+                    #  depending if there are pending inchannels or not
+                    manager.cancel_scell(sc, self)
         finally:
             release_evaluation_lock(locknr)
 
@@ -268,6 +269,7 @@ from .deserialize_buffer import DeserializeBufferTask
 from .get_buffer import GetBufferTask
 from .checksum import CalculateChecksumTask
 from .accessor_update import AccessorUpdateTask
+from .upon_connection import UponConnectionTask
 from ...cache import CacheMissError
 from ...cache.buffer_cache import buffer_cache
 from ....silk.Silk import Silk, ValidationError

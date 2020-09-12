@@ -1,51 +1,11 @@
 {
-  "connections": [
-    {
-      "source": [
-        "executor_code"
-      ],
-      "target": [
-        "executor",
-        "code"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "docker_command"
-      ],
-      "target": [
-        "executor",
-        "docker_command"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "testdata"
-      ],
-      "target": [
-        "executor",
-        "testdata"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "executor"
-      ],
-      "target": [
-        "result"
-      ],
-      "type": "connection"
-    }
-  ],
+  "connections": [],
   "lib": [],
   "nodes": [
     {
       "celltype": "code",
       "checksum": {
-        "value": "1a36d4ae9bf5ab65289185de8b7f8ac2c57303454a107ca7dfc9a527158bb8ba"
+        "value": "d1f1088c2b936c5e225b757067bb3f3961972fa148040a6c77c1ef566cd83559"
       },
       "datatype": "mixed",
       "language": "python",

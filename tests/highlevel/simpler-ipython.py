@@ -13,6 +13,7 @@ ctx.transform = Transformer()
 ctx.transform.language = "ipython"
 ctx.transform.code = ipycode
 ctx.transform.a = ctx.a
+ctx.transform.debug = True
 ctx.myresult = ctx.transform
 ctx.compute()
 print(ctx.myresult.value) # None

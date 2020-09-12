@@ -87,8 +87,18 @@ try:
             container.start()
             exit_status = container.wait()['StatusCode']
 
+            stdout = container.logs(stdout=True, stderr=False)
+            try:
+                stdout = stdout.decode()
+            except:
+                pass
+            stderr = container.logs(stdout=False, stderr=True)
+            try:
+                stderr = stderr.decode()
+            except:
+                pass
+
             if exit_status != 0:
-                stderr = container.logs(stdout=False, stderr=True).decode()
                 raise SeamlessTransformationError("""
 Docker transformer exception
 ============================
@@ -99,6 +109,10 @@ Docker transformer exception
 {}
 *************************************************
 Exit code: {}
+*************************************************
+* Standard output
+*************************************************
+{}
 *************************************************
 * Standard error
 *************************************************
@@ -134,7 +148,23 @@ Docker transformer exception
 Error: Result file RESULT does not exist
 """.format(docker_command)
             try:
-                stderr = container.logs(stdout=False, stderr=True).decode()
+                stdout = container.logs(stdout=True, stderr=False)
+                try:
+                    stdout = stdout.decode()
+                except:
+                    pass
+                if len(stdout):
+                    msg += """*************************************************
+* Standard output
+*************************************************
+{}
+*************************************************
+""".format(stdout)
+                stderr = container.logs(stdout=False, stderr=True)
+                try:
+                    stderr = stderr.decode()
+                except:
+                    pass
                 if len(stderr):
                     msg += """*************************************************
 * Standard error
@@ -146,8 +176,14 @@ Error: Result file RESULT does not exist
                 pass
 
             raise SeamlessTransformationError(msg)
+        else:
+            if len(stdout):
+                print(stdout)
+            if len(stderr):
+                print(stderr, file=sys.stderr)
     finally:
         container.remove()
+
 
     try:
         tar = tarfile.open(resultfile)

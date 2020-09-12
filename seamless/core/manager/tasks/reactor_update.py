@@ -17,46 +17,9 @@ class ReactorUpdateTask(Task):
         editpins = rtreactor.editpins
         editpin_to_cell = livegraph.editpin_to_cell[reactor]
         upstreams = livegraph.reactor_to_upstream[reactor]
-        for pinname, accessor in upstreams.items():
-            if accessor is None: #unconnected
-                assert reactor._void
-                reactor._status_reason = StatusReasonEnum.UNCONNECTED
-                return
-        for pinname in editpins:
-            if editpin_to_cell[pinname] is None: #unconnected
-                assert reactor._void
-                reactor._status_reason = StatusReasonEnum.UNCONNECTED
-                return
-
-        upstream = False
-        status_reason = None
-        for pinname, accessor in upstreams.items():
-            if accessor._void:
-                if not reactor._void:
-                    print("WARNING: reactor %s is not yet void, shouldn't happen during reactor update" % reactor)
-                    manager.cancel_reactor(reactor, void=True)
-                    return
-                reactor._status_reason = StatusReasonEnum.UPSTREAM
-                return
-
-        for pinname in editpins:
-            cell = editpin_to_cell[pinname]
-            if cell._void:
-                if not reactor._void:
-                    print("WARNING: reactor %s is not yet void, shouldn't happen during reactor update" % reactor)
-                    manager.cancel_reactor(reactor, void=True)
-                    return
-                reactor._status_reason = StatusReasonEnum.UPSTREAM
-                return
-
-        if reactor._void:
-            for downstreams in livegraph.reactor_to_downstream[reactor].values():
-                for accessor in downstreams:
-                    propagate_accessor(livegraph, accessor, False)
-
-        reactor._void = False
 
         for pinname, accessor in upstreams.items():
+            assert not accessor._void, (reactor, pinname)
             if accessor._checksum is None:
                 reactor._pending = True
                 return
@@ -64,10 +27,10 @@ class ReactorUpdateTask(Task):
         editpin_checksums = {}
         for pinname in editpins:
             cell = editpin_to_cell[pinname]
+            assert not cell._void, (reactor, pinname)
             checksum = cell._checksum
             if checksum is None:
-                reactor._pending = True
-                return
+                raise Exception # authoritative cell cannot be non-void and no checksum
             editpin_checksums[pinname] = checksum
 
         reactor._pending = False
@@ -196,7 +159,6 @@ class ReactorResultTask(Task):
 
 from ...status import StatusReasonEnum
 from .accessor_update import AccessorUpdateTask
-from ..propagate import propagate_accessor
 from .deserialize_buffer import DeserializeBufferTask
 from .serialize_buffer import SerializeToBufferTask
 from .checksum import CalculateChecksumTask

@@ -358,16 +358,6 @@ class Context(Base):
         return await self._do_translate_async(force=force, explicit=True)
 
     @property
-    def auto_translate(self):
-        return self._auto_translate
-
-    @auto_translate.setter
-    def auto_translate(self, value):
-        if not isinstance(value, bool):
-            raise TypeError(type(value))
-        self._auto_translate = value
-
-    @property
     def share_namespace(self):
         """The preferred namespace for sharing cells by the HTTP server
 

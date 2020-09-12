@@ -51,7 +51,6 @@ class SetCellValueTask(Task):
                 )
                 checksum_cache[checksum] = buffer
                 buffer_cache.cache_buffer(checksum, buffer)
-                propagate_simple_cell(manager.livegraph, self.cell)
                 manager._set_cell_checksum(self.cell, checksum, False)
                 livegraph.cell_parsing_exceptions.pop(cell, None)
                 CellUpdateTask(manager, self.cell).launch()
@@ -70,7 +69,6 @@ class SetCellValueTask(Task):
 
 from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.calculate_checksum import checksum_cache
-from ..propagate import propagate_simple_cell
 from ...status import StatusReasonEnum
 from ...protocol.deep_structure import value_to_deep_structure
 from .checksum import CellChecksumTask

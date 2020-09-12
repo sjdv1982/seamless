@@ -6,7 +6,6 @@ class AccessorUpdateTask(Task):
         self.accessor = accessor
         super().__init__(manager)
         self.dependencies.append(accessor)
-
     async def _run(self):
         accessor = self.accessor
 
@@ -26,9 +25,13 @@ class AccessorUpdateTask(Task):
         expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()
 
         # If the expression result is None, do an accessor void cancellation
+        #  but only if the accessor has not been softened.
         if expression_result_checksum is None:
-            accessor._status_reason = StatusReasonEnum.INVALID
-            manager.cancel_accessor(accessor, void=True, origin_task=self)
+            if accessor._soften:
+                manager.cancel_accessor(accessor, void=False, origin_task=self)
+            else:
+                accessor._status_reason = StatusReasonEnum.INVALID
+                manager.cancel_accessor(accessor, void=True, origin_task=self)
             return
         if accessor._checksum == expression_result_checksum:
             if not accessor._new_macropath:
@@ -47,14 +50,20 @@ class AccessorUpdateTask(Task):
         locknr = await acquire_evaluation_lock(self)
         try:
             accessor._new_macropath = False
+            unvoid_accessor(accessor, manager.livegraph)
             if isinstance(target, Worker):
                 worker = target
                 # If a worker, launch a worker update task. The worker will retrieve the upstream checksums by itself.
                 if isinstance(worker, Transformer):
-                    TransformerUpdateTask(manager, worker).launch()
+                    manager.taskmanager.cancel_transformer(worker)
+                    if not worker._void:
+                        TransformerUpdateTask(manager, worker).launch()
                 elif isinstance(worker, Reactor):
-                    ReactorUpdateTask(manager, worker).launch()
+                    manager.taskmanager.cancel_reactor(worker)
+                    if not worker._void:
+                        ReactorUpdateTask(manager, worker).launch()
                 elif isinstance(worker, Macro):
+                    manager.taskmanager.cancel_macro(worker)
                     MacroUpdateTask(manager, worker).launch()
                 else:
                     raise TypeError(type(worker))
@@ -154,4 +163,5 @@ from ...cache import CacheMissError
 from ...cache.buffer_cache import buffer_cache
 from ...protocol.deep_structure import access_hash_pattern, apply_hash_pattern, value_to_deep_structure
 from ...protocol.expression import get_subpath
+from ..unvoid import unvoid_accessor
 from . import acquire_evaluation_lock, release_evaluation_lock

@@ -1,51 +1,11 @@
 {
-  "connections": [
-    {
-      "source": [
-        "executor_code"
-      ],
-      "target": [
-        "executor",
-        "code"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "bashcode"
-      ],
-      "target": [
-        "executor",
-        "bashcode"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "testdata"
-      ],
-      "target": [
-        "executor",
-        "testdata"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "executor"
-      ],
-      "target": [
-        "result"
-      ],
-      "type": "connection"
-    }
-  ],
+  "connections": [],
   "lib": [],
   "nodes": [
     {
       "celltype": "code",
       "checksum": {
-        "value": "3e77a0b7ec33bdc31f98e293db368507950bbd2f105321d931bcd0dbf0ebf63f"
+        "value": "f16167c9d0edbc3cec80dc385ada4a594d5267122a679e1c43bc2feb96120f17"
       },
       "datatype": "mixed",
       "language": "python",

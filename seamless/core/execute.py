@@ -188,8 +188,16 @@ def execute(name, code,
             result_queue.put((1, msg))
         else:
             if not direct_print:
+                """ # does not normally work...
                 sys.stdout.write(stdout.read() + stdout2.read())
                 sys.stderr.write(stderr.read() + stderr2.read())
+                """
+                content = stdout.read() + stdout2.read()
+                if len(content):
+                    result_queue.put((4, (0, content)))
+                content = stderr.read() + stderr2.read()
+                if len(content):
+                    result_queue.put((4, (1, content)))
             result_queue.put(result)
     finally:
         if not direct_print:

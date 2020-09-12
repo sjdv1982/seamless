@@ -68,6 +68,11 @@ try:
             env=env
         )
     except subprocess.CalledProcessError as exc:
+        stdout = exc.stdout
+        try:
+            stdout = stdout.decode()
+        except:
+            pass
         stderr = exc.stderr
         try:
             stderr = stderr.decode()
@@ -84,11 +89,17 @@ Bash transformer exception
 *************************************************
 
 *************************************************
+* Standard output
+*************************************************
+{}
+*************************************************
+
+*************************************************
 * Standard error
 *************************************************
 {}
 *************************************************
-""".format(bashcode, stderr)) from None
+""".format(bashcode, stdout, stderr)) from None
     if not os.path.exists(resultfile):
         msg = """
 Bash transformer exception
@@ -102,6 +113,14 @@ Bash transformer exception
 Error: Result file RESULT does not exist
 """.format(bashcode)
         try:
+            stdout = process.stdout.decode()
+            if len(stdout):
+                msg += """*************************************************
+* Standard output
+*************************************************
+{}
+*************************************************
+""".format(stdout)
             stderr = process.stderr.decode()
             if len(stderr):
                 msg += """*************************************************
@@ -110,10 +129,27 @@ Error: Result file RESULT does not exist
 {}
 *************************************************
 """.format(stderr)
+
         except:
             pass
 
         raise SeamlessTransformationError(msg)
+    else:
+        stdout = process.stdout
+        try:
+            stdout = stdout.decode()
+        except:
+            pass
+        if len(stdout):
+            print(stdout)
+
+        stderr = process.stderr
+        try:
+            stderr = stderr.decode()
+        except:
+            pass
+        if len(stderr):
+            print(stderr, file=sys.stderr)
     try:
         tar = tarfile.open(resultfile)
         result = {}

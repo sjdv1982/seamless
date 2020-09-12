@@ -437,7 +437,7 @@ class StructuredCellBackend(Backend):
     def _update(self, path):
         self._calc_form()
         sc = self._structured_cell
-        sc._join()
+        sc._join_auth()
 
 class StructuredCellSchemaBackend(StructuredCellBackend):
     formless = False

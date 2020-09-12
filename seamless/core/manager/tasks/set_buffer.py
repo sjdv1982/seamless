@@ -41,12 +41,15 @@ class SetCellBufferTask(Task):
                 )
                 checksum_cache[checksum] = buffer
                 buffer_cache.cache_buffer(checksum, buffer)
-                propagate_simple_cell(livegraph, self.cell)
                 manager._set_cell_checksum(self.cell, checksum, False)
                 livegraph.cell_parsing_exceptions.pop(cell, None)
                 CellUpdateTask(manager, self.cell).launch()
         except Exception as exc:
-            exc = traceback.format_exc()
+            if isinstance(exc, ValueError):
+                exc = str(type(exc).__name__) + ": " + str(exc)
+            else:
+                exc = traceback.format_exc()
+            manager.cancel_cell(self.cell, void=True, origin_task=self, reason=StatusReasonEnum.INVALID)
             livegraph.cell_parsing_exceptions[cell] = exc
         finally:
             taskmanager.release_cell_lock(cell, lock)
@@ -56,5 +59,4 @@ from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.evaluate import evaluation_cache_1
 from ...protocol.calculate_checksum import checksum_cache
 from ...status import StatusReasonEnum
-from ..propagate import propagate_simple_cell
 from ...cache.buffer_cache import buffer_cache

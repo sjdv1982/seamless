@@ -32,7 +32,6 @@ simple.py
 simple-deepcell.py
 simple-pi.py: Also creates twopi.seamless, twopi-result.seamless, twopi-result.zip
 simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-result.seamless, twopi-deepcell-result.zip
-simple-pi-database.py: requires Seamless database to run as a Sink
 simple-pi-remote.py: run with jobslave-nodatabase
 simple-pi-remote-database.py: run with jobslave; makes no assumptions about the database contents
 subcontext.py
@@ -63,7 +62,7 @@ high-in-low6-memory.py    # See above
 
 Non-automatic tests
 =========================
-add.py
+add.py:           Run with ipython -i, then change mounts
 simpler-share.py: Run with ipython -i, then do "curl localhost:5813/ctx/myresult".
                   IPython values printed should be 36 then 39 (Silk); curl should return 39
                   change ctx.a to get 3*a as the result
@@ -75,7 +74,6 @@ python-debugging: Run with ipython -i, then continue in interactive mode.
 observe-graph.ipynb: Run "jupyter-seamless-devel" and then open /cwd in the browser
 traitlets.ipynb: same as above
 share-pdb.py: open with seamless-devel-ipython -i, Open in http://localhost:5813/ctx/index.html
-visualize-graph/visualize-graph.py, Open in http://localhost:5813/ctx/index.html
 share-pdb-docker.seamless/.zip: to test using:
       seamless-devel python3 /home/jovyan/seamless-scripts/serve-graph.py \
       share-pdb-docker.seamless share-pdb-docker.zip

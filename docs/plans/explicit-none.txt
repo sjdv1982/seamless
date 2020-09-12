@@ -1,12 +1,21 @@
 Dealing properly with explicit None values
 ==========================================
 
-Make it so that transformations and reactors CAN set None on their result
-(Allow any worker inputpin to be annotated as must_be_defined=False.)
- Same for None explicitly set on cells (cell.set_value(None), or cell.set_none() by a graph;
-  cell.set_void() explicitly sets a cell to void-None)
- Read accessors that retrieve None when reading their path (as opposed to AttributeError/KeyError)
-  also are considered "explicit None".
- Transformations that resulted in an exception are NOT explicit None (they are "void-None").
- Explicit None values are NOT void and do NOT lead to void cancellation
- Explicit None values are allowed on input pins that have their support explicitly enabled.
+Allow simple cells to have an support_explicit_none flag.
+If so:
+- They can be set to explicit none with cell.set_explicit_none().
+  This sets the value to Seamless.ExplicitNone.
+  Setting the cell to a normal None means cancellation, as usual.
+- Connections between two explicit-None-supporting cells carry Seamless.ExplicitNone.
+- Connection between two simple cells of which only one supports explicit None leads to a normal None and cancellation.
+- Connection of an outchannel to an explicit-None-supporting cell sets the cell to ExplicitNone if the outchannel is None.
+  In other words, structured cells are explicit-None-supporting as far as downstream connections are considered.
+- All downstream connections of a void cell or worker remain void.
+  Structured cells remain void if their auth is None and all of their inchannels are void.
+
+Allow any worker inputpin to be annotated as support_explicit_none
+These inputpins must be connected from explicit-None-supporting cells.
+If the upstream cell is Seamless.ExplicitNone, a normal None is fed into the worker namespace.
+
+It remains illegal for a transformer to return None.
+A None set by a reactor remains a normal None. To avoid confusion, editpins and reactor outputpins cannot be connected to explicit-None-supporting cells.

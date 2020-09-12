@@ -129,51 +129,11 @@
     },
     {
       "source": [
-        "cppcode"
-      ],
-      "target": [
-        "integrator",
-        "compiled_code"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "tf0",
-        "SCHEMA"
-      ],
-      "target": [
-        "input_schema"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "tf0",
-        "RESULTSCHEMA"
-      ],
-      "target": [
-        "result_schema"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
         "kwargs"
       ],
       "target": [
         "executor",
         "kwargs"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "module"
-      ],
-      "target": [
-        "executor",
-        "module"
       ],
       "type": "connection"
     }
@@ -186,13 +146,13 @@
       "SCHEMA": null,
       "checksum": {
         "code": "07031eabb2c41d35b4e570391249890fcb3409cec187ce39b274450f64d7a4c0",
-        "input": "2969f041f9deaa53fe2910fb32c331e62041b3357ad08f4336958f9e26931aa4",
-        "input_auth": "72d0e5971cffebd3c32bce8d5715cc78307c22436e6d8b69561d214404adbdef",
-        "input_buffer": "2969f041f9deaa53fe2910fb32c331e62041b3357ad08f4336958f9e26931aa4",
-        "result": "f7221e124b8289337040a8872eea7f08030c4569f291c99412cf485e314f54da"
+        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "debug": false,
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "python",
       "mount": {
         "code": {
@@ -248,13 +208,13 @@
       "SCHEMA": null,
       "checksum": {
         "code": "6b9bcaea471911a9d34691e7004234908f6c6453e5cd891f9113d336030eeb5e",
-        "input": "31a9c7a80148a5ffe50e6035ea73105a2b64ade3603311611f63631457fabcfb",
-        "input_auth": "72d0e5971cffebd3c32bce8d5715cc78307c22436e6d8b69561d214404adbdef",
-        "input_buffer": "31a9c7a80148a5ffe50e6035ea73105a2b64ade3603311611f63631457fabcfb",
-        "result": "c0b3a64e4257d1a879a0228177b78fe768ca4fd5e070be33d284da9badd8c5c2"
+        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
-      "debug": false,
+      "debug": true,
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "python",
       "mount": {
         "code": {
@@ -299,9 +259,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "024de8b8411a0e1ad06b3f69e5e35a8026acbcc32a16ae139d20a6b00c5cbcca"
-      },
       "datatype": "mixed",
       "path": [
         "header"
@@ -310,9 +267,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "a5138c9ee3902be6772226aae234bf3bba4415bda5cf7b2169c9e1248e896f50"
-      },
       "datatype": "mixed",
       "path": [
         "input_name"
@@ -321,9 +275,6 @@
     },
     {
       "celltype": "plain",
-      "checksum": {
-        "value": "055634b5accd39143867e321bf8833ed796c423c95b111331025a1f74104a823"
-      },
       "datatype": "mixed",
       "path": [
         "input_schema"
@@ -332,9 +283,6 @@
     },
     {
       "celltype": "plain",
-      "checksum": {
-        "value": "5d1b232ebee0b4b96e5ff84037e30f63ea1a930649b5956e519c531ce883818e"
-      },
       "datatype": "mixed",
       "path": [
         "inputpins"
@@ -347,13 +295,13 @@
       "SCHEMA": null,
       "checksum": {
         "code": "58d3eabc2e72543e49179a9a02e590ad95566b5f170197c18c86ff03cdf1dbc2",
-        "input": "70f48124972d28f95d7c96a0a7a23714f3afd86d8a56a5f2f50c38a451aad093",
-        "input_auth": "72d0e5971cffebd3c32bce8d5715cc78307c22436e6d8b69561d214404adbdef",
-        "input_buffer": "70f48124972d28f95d7c96a0a7a23714f3afd86d8a56a5f2f50c38a451aad093",
-        "result": "55d9c56cf42fd5eeaf90025ed5c00fad1d8bbf82f1082f62a134af85f05a59b3"
+        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
-      "debug": false,
+      "debug": true,
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "python",
       "mount": {
         "code": {
@@ -398,11 +346,6 @@
     },
     {
       "celltype": "structured",
-      "checksum": {
-        "auth": "d1a7413e72f87ecd956a022d7cc9220cad3f73bd243a247d28869f53117ab8f7",
-        "buffer": "d1a7413e72f87ecd956a022d7cc9220cad3f73bd243a247d28869f53117ab8f7",
-        "value": "d1a7413e72f87ecd956a022d7cc9220cad3f73bd243a247d28869f53117ab8f7"
-      },
       "datatype": "mixed",
       "hash_pattern": null,
       "path": [
@@ -412,10 +355,6 @@
     },
     {
       "celltype": "structured",
-      "checksum": {
-        "buffer": "55d9c56cf42fd5eeaf90025ed5c00fad1d8bbf82f1082f62a134af85f05a59b3",
-        "value": "55d9c56cf42fd5eeaf90025ed5c00fad1d8bbf82f1082f62a134af85f05a59b3"
-      },
       "datatype": "mixed",
       "hash_pattern": null,
       "path": [
@@ -425,9 +364,6 @@
     },
     {
       "celltype": "float",
-      "checksum": {
-        "value": "f7221e124b8289337040a8872eea7f08030c4569f291c99412cf485e314f54da"
-      },
       "datatype": "mixed",
       "path": [
         "result"
@@ -436,9 +372,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "6eb879aa9b36242a038c2889df9433728fbb3ed05013868b18584b8d4e78ecdf"
-      },
       "datatype": "mixed",
       "path": [
         "result_name"
@@ -447,9 +380,6 @@
     },
     {
       "celltype": "plain",
-      "checksum": {
-        "value": "79419749d1ab0762d68e4180162a56fa39da4680b37639d5279dc9d8b08ec2fc"
-      },
       "datatype": "mixed",
       "path": [
         "result_schema"

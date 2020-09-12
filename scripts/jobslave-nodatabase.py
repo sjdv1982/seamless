@@ -25,12 +25,25 @@ parser.add_argument(
     help="Print stdout and stderr of transformers directly on the console",
     action="store_true"
 )
+
+parser.add_argument(
+    "--debug",
+    help="Serve graph in debugging mode. Turns on asyncio debugging, and sets the Seamless logger to DEBUG",
+    action="store_true"
+)
+
 args = parser.parse_args()
 
 if args.direct_print:
     import seamless.core.execute
     seamless.core.execute.DIRECT_PRINT = True
 
+if args.debug:
+    import asyncio
+    asyncio.get_event_loop().set_debug(True)
+    import logging
+    logging.basicConfig()
+    logging.getLogger("seamless").setLevel(logging.DEBUG)
 
 env = os.environ
 

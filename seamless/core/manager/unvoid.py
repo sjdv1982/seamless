@@ -1,0 +1,157 @@
+
+def unvoid_cell(cell, livegraph):
+    if cell._structured_cell is not None:
+        return unvoid_scell(cell._structured_cell, livegraph)
+    if not cell._void:
+        return
+    cell._void = False
+    #print("UNVOID", cell)
+    accessors = livegraph.cell_to_downstream.get(cell, None)
+    if accessors is None:
+        return
+    for path in cell._paths:
+        path_accessors = livegraph.macropath_to_downstream[path]
+        accessors = accessors + path_accessors
+    for accessor in accessors:
+        unvoid_accessor(accessor, livegraph)
+
+def unvoid_scell(scell, livegraph):
+    cell = scell._data
+    if cell._destroyed:
+        return
+    if not cell._void:
+        return
+    #print("UNVOID", scell)
+    cell._void = False
+    if scell.auth is not None:
+        scell.auth._void = False
+    if scell.buffer is not None:
+        scell.buffer._void = False
+
+    all_accessors = livegraph.paths_to_downstream.get(cell, None)
+    if all_accessors is None:
+        return
+    for accessors in all_accessors.values():
+        for accessor in accessors:
+            unvoid_accessor(accessor, livegraph)
+
+def unvoid_transformer(transformer, livegraph):
+    if not transformer._void:
+        return
+    upstreams = livegraph.transformer_to_upstream[transformer]
+    downstreams = livegraph.transformer_to_downstream[transformer]
+    if not len(downstreams):
+        transformer._status_reason = StatusReasonEnum.UNCONNECTED
+        return
+    for pinname, accessor in upstreams.items():
+        if accessor is None: #unconnected
+            transformer._status_reason = StatusReasonEnum.UNCONNECTED
+            return
+    for pinname, accessor in upstreams.items():
+        if accessor._void: #upstream error
+            transformer._status_reason = StatusReasonEnum.UPSTREAM
+            return
+
+    #print("UNVOID", transformer)
+    transformer._void = False
+    accessors = livegraph.transformer_to_downstream.get(transformer, None)
+    if accessors is None:
+        return
+    for accessor in accessors:
+        unvoid_accessor(accessor, livegraph)
+
+
+def unvoid_reactor(reactor, livegraph):
+    if not reactor._void:
+        return
+
+    rtreactor = livegraph.rtreactors[reactor]
+    editpins = rtreactor.editpins
+    editpin_to_cell = livegraph.editpin_to_cell[reactor]
+    upstreams = livegraph.reactor_to_upstream[reactor]
+    for pinname, accessor in upstreams.items():
+        if accessor is None: #unconnected
+            reactor._status_reason = StatusReasonEnum.UNCONNECTED
+            return
+    for pinname in editpins:
+        if editpin_to_cell[pinname] is None: #unconnected
+            reactor._status_reason = StatusReasonEnum.UNCONNECTED
+            return
+
+    for pinname, accessor in upstreams.items():
+        if accessor._void:
+            reactor._status_reason = StatusReasonEnum.UPSTREAM
+            return
+
+    for pinname in editpins:
+        cell = editpin_to_cell[pinname]
+        if cell._void:
+            reactor._status_reason = StatusReasonEnum.UPSTREAM
+            return
+
+    #print("UNVOID", reactor)
+    reactor._void = False
+
+    outputpins = [pinname for pinname in reactor._pins \
+        if reactor._pins[pinname].io == "output" ]
+    downstreams = livegraph.reactor_to_downstream.get(reactor, None)
+    if downstreams is None:
+        return
+    for pinname in outputpins:
+        accessors = downstreams[pinname]
+        for accessor in accessors:
+            unvoid_accessor(accessor, livegraph)
+
+def unvoid_accessor(accessor, livegraph):
+    target = accessor.write_accessor.target()
+    if target is None:
+        return
+    accessor._void = False
+    if isinstance(target, MacroPath):
+        target = target._cell
+    if isinstance(target, Cell):
+        from_unconnected_cell = False
+        source = accessor.source
+        if isinstance(source, MacroPath):
+            if source._cell is None:
+                from_unconnected_cell = True
+            else:
+                source = source._cell
+        if isinstance(source, Cell):
+            sc = source._structured_cell
+            if sc is not None and accessor.source.path == ():
+                if () in sc.inchannels:
+                    sreason = sc.inchannels[()]._status_reason
+            else:
+                sreason = source._status_reason
+            if sreason == StatusReasonEnum.UNCONNECTED:
+                from_unconnected_cell = True
+        if from_unconnected_cell:
+            livegraph.manager().cancel_accessor(
+                accessor, void=True,
+                from_unconnected_cell=True
+            )
+        else:
+            unvoid_cell(target, livegraph)
+    elif isinstance(target, Inchannel):
+        scell = target.structured_cell()
+        unvoid_scell(scell, livegraph)
+    elif isinstance(target, Transformer):
+        unvoid_transformer(target, livegraph)
+    elif isinstance(target, Reactor):
+        unvoid_reactor(target, livegraph)
+    elif isinstance(target, Macro):
+        target._void = False
+    elif target is None:
+        pass
+    else:
+        raise TypeError(target)
+
+
+from ..cell import Cell
+from ..structured_cell import Inchannel
+from ..worker import PinBase, EditPin
+from ..transformer import Transformer
+from ..reactor import Reactor
+from ..macro import Macro, Path as MacroPath
+from ..status import StatusReasonEnum

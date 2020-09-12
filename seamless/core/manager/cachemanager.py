@@ -122,7 +122,7 @@ class CacheManager:
 
     def incref_checksum(self, checksum, refholder, authoritative, result):
         """
-        NOTE: incref/decref must happen with one async step
+        NOTE: incref/decref must happen within one async step
         Therefore, the direct or indirect call of _sync versions of coroutines
         (e.g. deserialize_sync, which launches coroutines and waits for them)
         IS NOT ALLOWED
@@ -309,17 +309,19 @@ class CacheManager:
 
     def decref_checksum(self, checksum, refholder, authoritative, result, *, destroying=False):
         """
-        NOTE: incref/decref must happen with one async step
+        NOTE: incref/decref must happen within one async step
         Therefore, the direct or indirect call of _sync versions of coroutines
         (e.g. deserialize_sync, which launches coroutines and waits for them)
         IS NOT ALLOWED
         """
+        #print("DECREF", refholder, checksum.hex())
         if checksum not in self.checksum_refs:
             if checksum is None:
                 cs = "<None>"
             else:
                 cs = checksum.hex()
             print_warning("cachemanager: cannot decref unknown checksum {}".format(cs))
+            import sys; sys.exit()
             return
         if isinstance(refholder, Cell):
             assert self.cell_to_ref[refholder] is not None, refholder

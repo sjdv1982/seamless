@@ -456,6 +456,10 @@ class TransformationJob:
                     elif status == 3:
                         progress = msg
                         progress_callback(self, progress)
+                    elif status == 4:
+                        is_stderr, content = msg
+                        dest = sys.stderr if is_stderr else sys.stdout
+                        print(content, file=dest, end="")
                     else:
                         raise Exception("Unknown return status {}".format(status))
                 if not self.executor.is_alive():
@@ -473,6 +477,7 @@ class TransformationJob:
         except asyncio.CancelledError:
             if running:
                 self.executor.terminate()
+            raise asyncio.CancelledError from None
         finally:
             release_lock(lock)
         result_checksum = await get_result_checksum(result_buffer)
