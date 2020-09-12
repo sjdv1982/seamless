@@ -4,11 +4,9 @@ TRANSFORM
 2001
 False
 None
-Waiting for: Seamless transformer: .mymacro.ctx.tf
 3002
 Change 0
 TRANSFORM
-Waiting for: Seamless transformer: .mymacro.ctx.tf
 Waiting for: Seamless transformer: .mymacro.ctx.tf
 Seamless context: .mymacro.ctx
 990
@@ -17,8 +15,6 @@ False
 2980
 Change 1
 TRANSFORM
-Waiting for: Seamless transformer: .mymacro.ctx.tf
-Waiting for: Seamless transformer: .mymacro.ctx.tf
 Seamless context: .mymacro.ctx
 1002
 2002
@@ -36,7 +32,6 @@ True
 3004
 Change 5
 TRANSFORM
-Waiting for: Seamless transformer: .mymacro.ctx.tf
 1000
 2000
 False

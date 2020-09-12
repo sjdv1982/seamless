@@ -472,9 +472,9 @@ class CancellationCycle:
             self._resolve_reactor(taskmanager, manager, reactor, void, reason)
 
         to_void, to_unvoid, to_join = self.to_void, self.to_unvoid, self.to_join
+        macros = list(self.macros.items())
         self._clear()
 
-        macros = list(self.macros.items())
         for scell in self.post_equilibrate:
             taskmanager.cancel_structured_cell(scell) # will cancel joins; will not cancel accessor updates
             for outpath in scell.outchannels:
@@ -507,7 +507,7 @@ class CancellationCycle:
             manager.cancel_scell_hard(sc, sc._data._status_reason)
 
         for macro, (void, reason) in macros:
-            self._resolve_macro(taskmanager, manager, macro, void)
+            self._resolve_macro(taskmanager, manager, macro, void, reason)
 
 from ..utils import overlap_path
 from ..cell import Cell

@@ -59,14 +59,14 @@ Status: executing, 60.0 %
 Status: preliminary
 0.6000000000000001
 
+STEP 9
+Status: executing, 60.0 %
+0.6000000000000001
+Status: preliminary
+0.6000000000000001
+
 Server PROGRESS 70
 Server PRELIM 0.7000000000000001
-STEP 9
-Status: executing, 70.0 %
-0.7000000000000001
-Status: preliminary
-0.7000000000000001
-
 STEP 10
 Status: executing, 70.0 %
 0.7000000000000001

@@ -38,9 +38,9 @@ Status: upstream
 None
 
 STEP 1
-Status: error , exception: None
+Status: executing , exception: None
 None
-Status: upstream
+Status: pending
 None
 
 Server

@@ -231,6 +231,8 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
             source2 = source._cell
             if source2 is not None:
                 assert source in source2._paths
+            else:
+                manager.cancel_accessor(accessor, True, self, from_unconnected_cell=True)
             source = source2
         else:
             raise TypeError(type(source))
@@ -253,6 +255,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                     ReactorUpdateTask(manager, source).launch()
             else:
                 raise TypeError(source)
+
         #print("/UPON")
 
 class UponBiLinkTask(UponConnectionTask):

@@ -119,7 +119,7 @@ else:
 
 print("Change 3")
 ctx.macrocode.set(
-    ctx.macrocode.value.replace("#raise Exception", "raise Exception")
+    ctx.macrocode.value.replace("# raise Exception", "raise Exception")
 )
 ctx.compute()
 
