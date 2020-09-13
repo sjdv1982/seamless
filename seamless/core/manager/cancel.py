@@ -385,6 +385,7 @@ class CancellationCycle:
                 if curr_reason.value <= reason.value:
                     return
         taskmanager.cancel_transformer(transformer)
+        manager.cachemanager.transformation_cache.cancel_transformer(transformer)
         manager._set_transformer_checksum(
             transformer, None, void,
             status_reason=reason,

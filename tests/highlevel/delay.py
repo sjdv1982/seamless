@@ -33,8 +33,5 @@ print(ctx.result.status, ctx.result.value.unsilk) # pending, None
 print("START 2")
 sleep(2)
 print(ctx.result.status, ctx.result.value.unsilk) # pending, None !
-print("END")
-"""
 ctx.compute()
 print(ctx.result.value)
-"""

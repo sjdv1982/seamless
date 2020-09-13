@@ -160,6 +160,15 @@ class TransformationCache:
         assert transformer not in self.transformer_to_transformations
         self.transformer_to_transformations[transformer] = None
 
+    def cancel_transformer(self, transformer):
+        assert isinstance(transformer, Transformer)
+        assert transformer in self.transformer_to_transformations
+        tf_checksum = self.transformer_to_transformations.get(transformer)
+        if tf_checksum is not None:
+            transformation = self.transformations[tf_checksum]
+            self.decref_transformation(transformation, transformer)
+        self.transformer_to_transformations[transformer] = None
+
     def destroy_transformer(self, transformer):
         assert isinstance(transformer, Transformer)
         tf_checksum = self.transformer_to_transformations.pop(transformer)
@@ -218,6 +227,7 @@ class TransformationCache:
 
 
     async def incref_transformation(self, transformation, transformer):
+        ###import traceback; traceback.print_stack()
         assert isinstance(transformer, (Transformer, RemoteTransformer, DummyTransformer))
         if isinstance(transformer, RemoteTransformer):
             key = transformer.tf_checksum, transformer.peer_id
@@ -227,6 +237,7 @@ class TransformationCache:
         from ..manager.tasks.transformer_update import TransformerResultUpdateTask
         tf_buffer = tf_get_buffer(transformation)
         tf_checksum = await calculate_checksum(tf_buffer)
+        #print("INCREF", tf_checksum.hex(), transformer)
 
         if tf_checksum not in self.transformations:
             tf = []
@@ -262,6 +273,7 @@ class TransformationCache:
                 self.transformer_to_transformations[transformer] = tf_checksum
             tf.append(transformer)
             if old_tf_checksum is not None:
+                #print("INCREF WITH OLD",  tf_checksum.hex(), old_tf_checksum.hex())
                 old_transformation = self.transformations[old_tf_checksum]
                 self.decref_transformation(old_transformation, transformer)
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
@@ -282,6 +294,7 @@ class TransformationCache:
                 await asyncio.shield(job.future)
 
     def decref_transformation(self, transformation, transformer):
+        ###import traceback; traceback.print_stack()
         assert isinstance(transformer, (Transformer, RemoteTransformer, DummyTransformer))
         if isinstance(transformer, RemoteTransformer):
             try:
@@ -292,6 +305,7 @@ class TransformationCache:
             self.remote_transformers.pop(key, None)
         tf_buffer = tf_get_buffer(transformation)
         tf_checksum = calculate_checksum_sync(tf_buffer)
+        #print("DECREF", tf_checksum.hex(), transformer)
         assert tf_checksum in self.transformations
         transformers = self.transformations_to_transformers[tf_checksum]
         assert transformer in transformers
@@ -485,6 +499,7 @@ class TransformationCache:
 
         transformation = self.transformations[tf_checksum]
         transformers = self.transformations_to_transformers[tf_checksum]
+        #print("DONE!", tf_checksum.hex(), transformers, cancelled)
 
         for transformer in list(transformers):
             if isinstance(transformer,RemoteTransformer):

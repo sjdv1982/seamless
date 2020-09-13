@@ -8,7 +8,7 @@ subcell.py
 subsubcell.py
 inchannel-conflict.py
 deepcell-simple.py
-#filesystemlike.py  # As of Seamless 0.4, pseudo-cycles ar not supported!
+filesystemlike.py
 context.py
 context2.py
 scratch.py
@@ -20,6 +20,7 @@ simpler-result.py
 simpler.py
 simpler-deepcell.py
 simpler-ipython.py: Run with ipython --no-term-title (not -i). Output is approximate, depends on exact timings.
+delay.py
 module-simplified.py
 bash.py
 docker_.py
