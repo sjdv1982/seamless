@@ -103,6 +103,7 @@ class StructuredCell(SeamlessBase):
 
         self._validate_channels(inchannels, outchannels)
         self._modified = False
+        self._modified_schema = False
 
         self._auth_value = None
         self._auth_temp_checksum = None
@@ -261,7 +262,7 @@ class StructuredCell(SeamlessBase):
         buffer_cache.cache_buffer(checksum, buf)
         if checksum is not None:
             checksum = checksum.hex()
-        self.schema._set_checksum(checksum)
+        self.schema._set_checksum(checksum, from_structured_cell=True)
         manager = self._get_manager()
         manager.update_schemacell(
             self.schema,

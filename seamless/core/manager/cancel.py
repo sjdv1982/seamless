@@ -4,7 +4,7 @@ class StructuredCellCancellation:
     def __init__(self, scell, cycle):
         self.cycle = weakref.ref(cycle)
         self.scell = weakref.ref(scell)
-        self.modified_auth = scell._modified
+        self.modified = scell._modified or scell._modified_schema
         self.valid_inchannels = {k for k,ic in scell.inchannels.items() if not ic._void}
         self.pending_inchannels = {k for k,ic in scell.inchannels.items() if (ic._checksum is None and not ic._void) or ic._prelim}
         self.canceled_inchannels = {}
@@ -17,9 +17,9 @@ class StructuredCellCancellation:
             self.is_void = False
         else:
             if not len(_destroying) and not scell._destroyed:
-                self.is_void = (not len(self.valid_inchannels)) and (not scell._modified) and scell._data._checksum is None
+                self.is_void = (not len(self.valid_inchannels)) and (not scell._modified and not scell._modified_schema) and scell._data._checksum is None
                 try:
-                    assert self.is_void == scell._data._void, (scell, self.is_void, scell._modified, self.valid_inchannels, scell._data._void, scell._data._checksum is None)
+                    assert self.is_void == scell._data._void, (scell, self.is_void, scell._modified, scell._modified_schema, self.valid_inchannels, scell._data._void, scell._data._checksum is None)
                 except:
                     import traceback; traceback.print_exc()
             else:
@@ -89,7 +89,7 @@ class StructuredCellCancellation:
 
         new_equilibrated = not len(pending_inchannels) # outchannels with value None become void
         if not self.is_joined:
-            if sc._modified:
+            if sc._modified or sc._modified_schema:
                 new_equilibrated = False
         new_void = not len(valid_inchannels)
 
@@ -116,8 +116,8 @@ class StructuredCellCancellation:
                             manager._set_cell_checksum(sc.buffer, None, void=True, status_reason=reason)
         else:
             # The cancel did not originate from a join task for this structured cell
-            assert self.modified_auth == sc._modified, sc
-            if self.modified_auth:
+            assert self.modified == (sc._modified or sc._modified_schema), sc
+            if self.modified:
                 new_void = False
             if new_void and not self.is_void:
                 void_me = True
@@ -125,7 +125,7 @@ class StructuredCellCancellation:
             elif self.is_void and not new_void:
                 unvoid_me = True
             if not new_void and not new_equilibrated:
-                if sc._modified:
+                if sc._modified or sc._modified_schema:
                     join_me = True
                 else:
                     for k,ic in sc.inchannels.items():

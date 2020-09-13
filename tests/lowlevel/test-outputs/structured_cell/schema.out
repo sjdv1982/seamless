@@ -66,6 +66,7 @@ VALIDATE 12 25
                                       'language': 'python'}]}},
  'type': 'object'}
 VALIDATE 12 25
+VALIDATE 12 25
 [1, 2, 3, 10]
 VALIDATE 12 25
 [1, 2, 3, 10, 5, 1, 2, 3, 10, 5]

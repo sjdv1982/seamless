@@ -234,7 +234,9 @@ class StructuredCellJoinTask(Task):
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
 
-            self._modified = False
+            modified = sc._modified or sc._modified_schema
+            sc._modified = False
+            sc._modified_schema = False
             self.ok = ok
             if ok:
                 cancel_paths = []
@@ -252,19 +254,29 @@ class StructuredCellJoinTask(Task):
                             cancel_paths.append(out_path)
                         else:
                             for accessor in downstreams[out_path]:
-                                # TODO: we could try some expression morphing for efficiency
-                                """
-                                if prelim[out_path] != accessor._prelim:
+                                changed = False
+                                if modified:
                                     changed = True
-                                else:
-                                    changed = accessor.build_expression(livegraph, cs)
-                                """
+
                                 if accessor.expression is None:
                                     changed = True
                                 else:
-                                    changed = (accessor.expression.checksum != cs)
+                                    old_expression = accessor.expression
+                                    expression_result_checksum = expression_to_result_checksum.get(old_expression)
+                                    accessor.build_expression(livegraph, cs)
+                                    new_expression = accessor.expression
+                                    if expression_result_checksum != cs:
+                                        cachemanager.incref_checksum(
+                                            expression_result_checksum,
+                                            new_expression,
+                                            False,
+                                            True
+                                        )
+                                    accessor._prelim = prelim[out_path]
+                                    changed = False
+
+
                                 if changed:
-                                    manager.cancel_accessor(accessor, origin_task=self, void=False)
                                     accessor.build_expression(livegraph, cs)
                                     accessor._soften = True
                                     accessor._prelim = prelim[out_path]

@@ -236,7 +236,6 @@ ctx.compute(0.1)
 state = {}
 oldstate = {}
 start = time.time()
-import sys; sys.count = 0
 while 1:
     waitfor, background = ctx.compute(0.01, report=None)
     state["status"] = {

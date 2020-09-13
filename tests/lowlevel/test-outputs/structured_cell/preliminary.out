@@ -25,7 +25,7 @@ Delay: 0.1
 
 ********************************************************************************
 
-Time elapsed: 0.123
+Time elapsed: 0.122
 {'status': {'tf1': 'Status: executing',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing',
@@ -43,16 +43,14 @@ Time elapsed: 0.123
  'tf4': 9.0,
  'tf4-result': 9.0}
 
-Time elapsed: 0.332
+Time elapsed: 0.326
 {'status': {'tf1': 'Status: executing',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 13.3 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: upstream => delay void, factor void, limit void, '
-                   'offset void',
+            'tf3': 'Status: executing',
             'tf3-result': 'Status: upstream',
-            'tf4': 'Status: upstream => delay void, factor void, limit void, '
-                   'offset void',
+            'tf4': 'Status: executing',
             'tf4-result': 'Status: upstream'},
  'tf1': 0.0,
  'tf1-result': 0.0,
@@ -62,14 +60,59 @@ Time elapsed: 0.332
  'tf3-result': None,
  'tf4': None,
  'tf4-result': None}
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 
+************************************************************************
+*  Silk validation error
+************************************************************************
+Traceback (most recent call last):
+  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
+    validator_func(silkobject)
+  File "Silk validator 1", line 8, in v
+    assert offset == 0 or offset > 2000 or self.factor == 9
+AssertionError
+************************************************************************
 
-Time elapsed: 0.529
+
+Failed validating 'validators' in schema:
+    {'methods': {'subreport': {'code': 'def subreport(self):\n'
+                                       '    print("Limit:", '
+                                       'self.limit.unsilk)\n'
+                                       '    print("Factor:", '
+                                       'self.factor.unsilk)\n'
+                                       '    print("Delay:", '
+                                       'self.delay.unsilk)\n'
+                                       '    try:\n'
+                                       '        print("Offset:", '
+                                       'self.offset.unsilk)\n'
+                                       '    except AttributeError:\n'
+                                       '        pass\n'
+                                       '    print("")\n',
+                               'language': 'python'}},
+     'properties': {'factor': {}, 'offset': {}},
+     'type': 'object',
+     'validators': [{'code': '    def v(self):\n'
+                             '        try:\n'
+                             '            offset = self.offset\n'
+                             '        except AttributeError:\n'
+                             '            return\n'
+                             '        if offset.unsilk is None:\n'
+                             '            return\n'
+                             '        assert offset == 0 or offset > 2000 '
+                             'or self.factor == 9\n',
+                     'language': 'python',
+                     'name': 'v'}]}
+
+On instance:
+    {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 10.0}
+
+
+Time elapsed: 0.524
 {'status': {'tf1': 'Status: executing',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 13.3 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: upstream => delay void, factor void, limit void, '
-                   'offset void',
+            'tf3': 'Status: executing',
             'tf3-result': 'Status: upstream',
             'tf4': 'Status: executing',
             'tf4-result': 'Status: preliminary'},
@@ -128,7 +171,7 @@ On instance:
     {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 10.0}
 
 
-Time elapsed: 0.725
+Time elapsed: 0.723
 {'status': {'tf1': 'Status: executing',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 13.3 %',
@@ -192,27 +235,71 @@ On instance:
     {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 10.0}
 
 
-Time elapsed: 1.135
+Time elapsed: 1.127
 {'status': {'tf1': 'Status: executing, 22.2 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 20.0 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: upstream => delay void, factor void, limit void, '
-                   'offset void',
+            'tf3': 'Status: executing, 44.4 %',
             'tf3-result': 'Status: upstream',
-            'tf4': 'Status: upstream => delay void, factor void, limit void, '
-                   'offset void',
+            'tf4': 'Status: executing',
             'tf4-result': 'Status: upstream'},
  'tf1': 1000.0,
  'tf1-result': 1000.0,
  'tf2': 20.0,
  'tf2-result': 20.0,
- 'tf3': None,
+ 'tf3': 3.0,
  'tf3-result': None,
  'tf4': None,
  'tf4-result': None}
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 
+************************************************************************
+*  Silk validation error
+************************************************************************
+Traceback (most recent call last):
+  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
+    validator_func(silkobject)
+  File "Silk validator 1", line 8, in v
+    assert offset == 0 or offset > 2000 or self.factor == 9
+AssertionError
+************************************************************************
 
-Time elapsed: 1.338
+
+Failed validating 'validators' in schema:
+    {'methods': {'subreport': {'code': 'def subreport(self):\n'
+                                       '    print("Limit:", '
+                                       'self.limit.unsilk)\n'
+                                       '    print("Factor:", '
+                                       'self.factor.unsilk)\n'
+                                       '    print("Delay:", '
+                                       'self.delay.unsilk)\n'
+                                       '    try:\n'
+                                       '        print("Offset:", '
+                                       'self.offset.unsilk)\n'
+                                       '    except AttributeError:\n'
+                                       '        pass\n'
+                                       '    print("")\n',
+                               'language': 'python'}},
+     'properties': {'factor': {}, 'offset': {}},
+     'type': 'object',
+     'validators': [{'code': '    def v(self):\n'
+                             '        try:\n'
+                             '            offset = self.offset\n'
+                             '        except AttributeError:\n'
+                             '            return\n'
+                             '        if offset.unsilk is None:\n'
+                             '            return\n'
+                             '        assert offset == 0 or offset > 2000 '
+                             'or self.factor == 9\n',
+                     'language': 'python',
+                     'name': 'v'}]}
+
+On instance:
+    {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 1020.0}
+
+
+Time elapsed: 1.335
 {'status': {'tf1': 'Status: executing, 22.2 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 20.0 %',
@@ -276,15 +363,14 @@ On instance:
     {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 1020.0}
 
 
-Time elapsed: 1.743
+Time elapsed: 1.740
 {'status': {'tf1': 'Status: executing, 22.2 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 26.7 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing, 55.6 %',
-            'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: upstream => delay void, factor void, limit void, '
-                   'offset void',
+            'tf3': 'Status: executing',
+            'tf3-result': 'Status: upstream',
+            'tf4': 'Status: executing, 100.0 %',
             'tf4-result': 'Status: upstream'},
  'tf1': 1000.0,
  'tf1-result': 1000.0,
@@ -292,16 +378,61 @@ Time elapsed: 1.743
  'tf2-result': 30.0,
  'tf3': None,
  'tf3-result': None,
- 'tf4': None,
+ 'tf4': 1030.0,
  'tf4-result': None}
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 
+************************************************************************
+*  Silk validation error
+************************************************************************
+Traceback (most recent call last):
+  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
+    validator_func(silkobject)
+  File "Silk validator 1", line 8, in v
+    assert offset == 0 or offset > 2000 or self.factor == 9
+AssertionError
+************************************************************************
+
+
+Failed validating 'validators' in schema:
+    {'methods': {'subreport': {'code': 'def subreport(self):\n'
+                                       '    print("Limit:", '
+                                       'self.limit.unsilk)\n'
+                                       '    print("Factor:", '
+                                       'self.factor.unsilk)\n'
+                                       '    print("Delay:", '
+                                       'self.delay.unsilk)\n'
+                                       '    try:\n'
+                                       '        print("Offset:", '
+                                       'self.offset.unsilk)\n'
+                                       '    except AttributeError:\n'
+                                       '        pass\n'
+                                       '    print("")\n',
+                               'language': 'python'}},
+     'properties': {'factor': {}, 'offset': {}},
+     'type': 'object',
+     'validators': [{'code': '    def v(self):\n'
+                             '        try:\n'
+                             '            offset = self.offset\n'
+                             '        except AttributeError:\n'
+                             '            return\n'
+                             '        if offset.unsilk is None:\n'
+                             '            return\n'
+                             '        assert offset == 0 or offset > 2000 '
+                             'or self.factor == 9\n',
+                     'language': 'python',
+                     'name': 'v'}]}
+
+On instance:
+    {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 1030.0}
+
 
 Time elapsed: 1.950
 {'status': {'tf1': 'Status: executing, 22.2 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 26.7 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: upstream => delay void, factor void, limit void, '
-                   'offset void',
+            'tf3': 'Status: executing',
             'tf3-result': 'Status: upstream',
             'tf4': 'Status: executing',
             'tf4-result': 'Status: preliminary'},
@@ -360,7 +491,7 @@ On instance:
     {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 1030.0}
 
 
-Time elapsed: 2.348
+Time elapsed: 2.145
 {'status': {'tf1': 'Status: executing, 22.2 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 26.7 %',
@@ -424,15 +555,14 @@ On instance:
     {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 1030.0}
 
 
-Time elapsed: 2.560
+Time elapsed: 2.555
 {'status': {'tf1': 'Status: executing, 22.2 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 33.3 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: upstream => delay void, factor void, limit void, '
-                   'offset void',
+            'tf3': 'Status: executing',
             'tf3-result': 'Status: upstream',
-            'tf4': 'Status: executing, 100.0 %',
+            'tf4': 'Status: executing',
             'tf4-result': 'Status: preliminary'},
  'tf1': 1000.0,
  'tf1-result': 1000.0,
@@ -440,8 +570,8 @@ Time elapsed: 2.560
  'tf2-result': 40.0,
  'tf3': None,
  'tf3-result': None,
- 'tf4': 1040.0,
- 'tf4-result': 1040.0}
+ 'tf4': 1049.0,
+ 'tf4-result': 1049.0}
 Traceback (most recent call last):
 jsonschema.exceptions.ValidationError: 
 ************************************************************************
@@ -489,25 +619,7 @@ On instance:
     {'delay': 0.5, 'factor': 1, 'limit': 9, 'offset': 1040.0}
 
 
-Time elapsed: 2.771
-{'status': {'tf1': 'Status: executing, 33.3 %',
-            'tf1-result': 'Status: preliminary',
-            'tf2': 'Status: executing, 33.3 %',
-            'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing, 11.1 %',
-            'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: executing',
-            'tf4-result': 'Status: preliminary'},
- 'tf1': 2000.0,
- 'tf1-result': 2000.0,
- 'tf2': 40.0,
- 'tf2-result': 40.0,
- 'tf3': 2040.0,
- 'tf3-result': 2040.0,
- 'tf4': 2049.0,
- 'tf4-result': 2040.0}
-
-Time elapsed: 2.971
+Time elapsed: 2.756
 {'status': {'tf1': 'Status: executing, 33.3 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 33.3 %',
@@ -525,7 +637,7 @@ Time elapsed: 2.971
  'tf4': 2049.0,
  'tf4-result': 2049.0}
 
-Time elapsed: 3.185
+Time elapsed: 3.168
 {'status': {'tf1': 'Status: executing, 33.3 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 40.0 %',
@@ -543,7 +655,7 @@ Time elapsed: 3.185
  'tf4': 2050.0,
  'tf4-result': 2050.0}
 
-Time elapsed: 3.383
+Time elapsed: 3.368
 {'status': {'tf1': 'Status: executing, 33.3 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 40.0 %',
@@ -561,10 +673,10 @@ Time elapsed: 3.383
  'tf4': 2059.0,
  'tf4-result': 2059.0}
 
-Time elapsed: 3.796
+Time elapsed: 3.786
 {'status': {'tf1': 'Status: executing, 33.3 %',
             'tf1-result': 'Status: preliminary',
-            'tf2': 'Status: executing, 40.0 %',
+            'tf2': 'Status: executing, 46.7 %',
             'tf2-result': 'Status: preliminary',
             'tf3': 'Status: executing, 22.2 %',
             'tf3-result': 'Status: preliminary',
@@ -572,14 +684,14 @@ Time elapsed: 3.796
             'tf4-result': 'Status: preliminary'},
  'tf1': 2000.0,
  'tf1-result': 2000.0,
- 'tf2': 50.0,
+ 'tf2': 60.0,
  'tf2-result': 50.0,
- 'tf3': 2051.0,
- 'tf3-result': 2051.0,
- 'tf4': 2059.0,
- 'tf4-result': 2059.0}
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': None,
+ 'tf4-result': None}
 
-Time elapsed: 3.997
+Time elapsed: 3.983
 {'status': {'tf1': 'Status: executing, 33.3 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 46.7 %',
@@ -597,7 +709,7 @@ Time elapsed: 3.997
  'tf4': 2069.0,
  'tf4-result': 2069.0}
 
-Time elapsed: 4.196
+Time elapsed: 4.201
 {'status': {'tf1': 'Status: executing, 44.4 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 46.7 %',
@@ -615,7 +727,7 @@ Time elapsed: 4.196
  'tf4': 3060.0,
  'tf4-result': 3060.0}
 
-Time elapsed: 4.403
+Time elapsed: 4.402
 {'status': {'tf1': 'Status: executing, 44.4 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 46.7 %',
@@ -633,7 +745,7 @@ Time elapsed: 4.403
  'tf4': 3069.0,
  'tf4-result': 3069.0}
 
-Time elapsed: 4.603
+Time elapsed: 4.610
 {'status': {'tf1': 'Status: executing, 44.4 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 53.3 %',
@@ -651,7 +763,7 @@ Time elapsed: 4.603
  'tf4': 3070.0,
  'tf4-result': 3070.0}
 
-Time elapsed: 4.808
+Time elapsed: 4.813
 {'status': {'tf1': 'Status: executing, 44.4 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 53.3 %',
@@ -669,25 +781,25 @@ Time elapsed: 4.808
  'tf4': 3079.0,
  'tf4-result': 3079.0}
 
-Time elapsed: 5.210
+Time elapsed: 5.224
 {'status': {'tf1': 'Status: executing, 44.4 %',
             'tf1-result': 'Status: preliminary',
-            'tf2': 'Status: executing, 53.3 %',
+            'tf2': 'Status: executing, 60.0 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing, 22.2 %',
-            'tf3-result': 'Status: preliminary',
+            'tf3': 'Status: executing',
+            'tf3-result': 'Status: upstream',
             'tf4': 'Status: executing',
-            'tf4-result': 'Status: preliminary'},
+            'tf4-result': 'Status: upstream'},
  'tf1': 3000.0,
  'tf1-result': 3000.0,
  'tf2': 80.0,
- 'tf2-result': 70.0,
- 'tf3': 3071.0,
- 'tf3-result': 3071.0,
- 'tf4': 3079.0,
- 'tf4-result': 3079.0}
+ 'tf2-result': 80.0,
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': None,
+ 'tf4-result': None}
 
-Time elapsed: 5.414
+Time elapsed: 5.424
 {'status': {'tf1': 'Status: executing, 44.4 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 60.0 %',
@@ -705,15 +817,15 @@ Time elapsed: 5.414
  'tf4': 3089.0,
  'tf4-result': 3089.0}
 
-Time elapsed: 5.623
+Time elapsed: 5.626
 {'status': {'tf1': 'Status: executing, 55.6 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 60.0 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing, 11.1 %',
-            'tf3-result': 'Status: preliminary',
+            'tf3': 'Status: executing',
+            'tf3-result': 'Status: upstream',
             'tf4': 'Status: executing',
-            'tf4-result': 'Status: preliminary'},
+            'tf4-result': 'Status: upstream'},
  'tf1': 4000.0,
  'tf1-result': 4000.0,
  'tf2': 80.0,
@@ -723,7 +835,7 @@ Time elapsed: 5.623
  'tf4': None,
  'tf4-result': None}
 
-Time elapsed: 5.818
+Time elapsed: 5.824
 {'status': {'tf1': 'Status: executing, 55.6 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 60.0 %',
@@ -759,7 +871,7 @@ Time elapsed: 6.027
  'tf4': 4090.0,
  'tf4-result': 4090.0}
 
-Time elapsed: 6.226
+Time elapsed: 6.237
 {'status': {'tf1': 'Status: executing, 55.6 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 66.7 %',
@@ -777,16 +889,14 @@ Time elapsed: 6.226
  'tf4': 4099.0,
  'tf4-result': 4099.0}
 
-Time elapsed: 6.647
+Time elapsed: 6.636
 {'status': {'tf1': 'Status: executing, 55.6 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 73.3 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: upstream => delay void, factor void, limit void, '
-                   'offset void',
+            'tf3': 'Status: executing',
             'tf3-result': 'Status: upstream',
-            'tf4': 'Status: upstream => delay void, factor void, limit void, '
-                   'offset void',
+            'tf4': 'Status: executing',
             'tf4-result': 'Status: upstream'},
  'tf1': 4000.0,
  'tf1-result': 4000.0,
@@ -797,7 +907,7 @@ Time elapsed: 6.647
  'tf4': None,
  'tf4-result': None}
 
-Time elapsed: 6.849
+Time elapsed: 6.846
 {'status': {'tf1': 'Status: executing, 55.6 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 73.3 %',
@@ -815,7 +925,7 @@ Time elapsed: 6.849
  'tf4': 4109.0,
  'tf4-result': 4109.0}
 
-Time elapsed: 7.257
+Time elapsed: 7.251
 {'status': {'tf1': 'Status: executing, 66.7 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 73.3 %',
@@ -833,7 +943,7 @@ Time elapsed: 7.257
  'tf4': 5100.0,
  'tf4-result': 5100.0}
 
-Time elapsed: 7.450
+Time elapsed: 7.447
 {'status': {'tf1': 'Status: executing, 66.7 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 80.0 %',
@@ -851,7 +961,7 @@ Time elapsed: 7.450
  'tf4': 5110.0,
  'tf4-result': 5110.0}
 
-Time elapsed: 7.655
+Time elapsed: 7.653
 {'status': {'tf1': 'Status: executing, 66.7 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 80.0 %',
@@ -869,25 +979,43 @@ Time elapsed: 7.655
  'tf4': 5119.0,
  'tf4-result': 5119.0}
 
-Time elapsed: 8.059
+Time elapsed: 7.855
+{'status': {'tf1': 'Status: executing, 66.7 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 80.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 22.2 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 5000.0,
+ 'tf1-result': 5000.0,
+ 'tf2': 110.0,
+ 'tf2-result': 110.0,
+ 'tf3': 5111.0,
+ 'tf3-result': None,
+ 'tf4': 5119.0,
+ 'tf4-result': 5119.0}
+
+Time elapsed: 8.062
 {'status': {'tf1': 'Status: executing, 66.7 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 86.7 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: upstream => offset void',
+            'tf3': 'Status: executing, 11.1 %',
             'tf3-result': 'Status: upstream',
-            'tf4': 'Status: upstream => offset void',
+            'tf4': 'Status: executing, 100.0 %',
             'tf4-result': 'Status: upstream'},
  'tf1': 5000.0,
  'tf1-result': 5000.0,
  'tf2': 120.0,
  'tf2-result': 120.0,
- 'tf3': None,
+ 'tf3': 5120.0,
  'tf3-result': None,
- 'tf4': None,
+ 'tf4': 5120.0,
  'tf4-result': None}
 
-Time elapsed: 8.262
+Time elapsed: 8.261
 {'status': {'tf1': 'Status: executing, 66.7 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 86.7 %',
@@ -905,28 +1033,10 @@ Time elapsed: 8.262
  'tf4': 5129.0,
  'tf4-result': 5129.0}
 
-Time elapsed: 8.676
+Time elapsed: 8.666
 {'status': {'tf1': 'Status: executing, 77.8 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 86.7 %',
-            'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing, 11.1 %',
-            'tf3-result': 'Status: upstream',
-            'tf4': 'Status: executing, 100.0 %',
-            'tf4-result': 'Status: upstream'},
- 'tf1': 6000.0,
- 'tf1-result': 6000.0,
- 'tf2': 120.0,
- 'tf2-result': 120.0,
- 'tf3': 6120.0,
- 'tf3-result': 6120.0,
- 'tf4': 6120.0,
- 'tf4-result': None}
-
-Time elapsed: 8.878
-{'status': {'tf1': 'Status: executing, 77.8 %',
-            'tf1-result': 'Status: preliminary',
-            'tf2': 'Status: executing, 93.3 %',
             'tf2-result': 'Status: preliminary',
             'tf3': 'Status: executing, 11.1 %',
             'tf3-result': 'Status: preliminary',
@@ -934,14 +1044,14 @@ Time elapsed: 8.878
             'tf4-result': 'Status: preliminary'},
  'tf1': 6000.0,
  'tf1-result': 6000.0,
- 'tf2': 130.0,
- 'tf2-result': 130.0,
- 'tf3': 6130.0,
- 'tf3-result': 6130.0,
- 'tf4': 6130.0,
- 'tf4-result': 6130.0}
+ 'tf2': 120.0,
+ 'tf2-result': 120.0,
+ 'tf3': 6120.0,
+ 'tf3-result': 6120.0,
+ 'tf4': 6120.0,
+ 'tf4-result': 6120.0}
 
-Time elapsed: 9.082
+Time elapsed: 8.875
 {'status': {'tf1': 'Status: executing, 77.8 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 93.3 %',
@@ -959,12 +1069,12 @@ Time elapsed: 9.082
  'tf4': 6139.0,
  'tf4-result': 6139.0}
 
-Time elapsed: 9.286
+Time elapsed: 9.282
 {'status': {'tf1': 'Status: executing, 77.8 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 93.3 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing, 11.1 %',
+            'tf3': 'Status: executing, 22.2 %',
             'tf3-result': 'Status: preliminary',
             'tf4': 'Status: executing',
             'tf4-result': 'Status: preliminary'},
@@ -973,19 +1083,19 @@ Time elapsed: 9.286
  'tf2': 130.0,
  'tf2-result': 130.0,
  'tf3': 6131.0,
- 'tf3-result': 6130.0,
+ 'tf3-result': 6131.0,
  'tf4': 6139.0,
  'tf4-result': 6139.0}
 
-Time elapsed: 9.489
+Time elapsed: 9.492
 {'status': {'tf1': 'Status: executing, 77.8 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 100.0 %',
             'tf2-result': 'Status: preliminary',
             'tf3': 'Status: executing, 11.1 %',
-            'tf3-result': 'Status: upstream',
+            'tf3-result': 'Status: preliminary',
             'tf4': 'Status: executing, 100.0 %',
-            'tf4-result': 'Status: upstream'},
+            'tf4-result': 'Status: preliminary'},
  'tf1': 6000.0,
  'tf1-result': 6000.0,
  'tf2': 140.0,
@@ -993,9 +1103,9 @@ Time elapsed: 9.489
  'tf3': 6140.0,
  'tf3-result': 6140.0,
  'tf4': 6140.0,
- 'tf4-result': None}
+ 'tf4-result': 6140.0}
 
-Time elapsed: 9.683
+Time elapsed: 9.693
 {'status': {'tf1': 'Status: executing, 77.8 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 100.0 %',
@@ -1013,43 +1123,25 @@ Time elapsed: 9.683
  'tf4': 6149.0,
  'tf4-result': 6149.0}
 
-Time elapsed: 10.089
-{'status': {'tf1': 'Status: executing, 77.8 %',
-            'tf1-result': 'Status: preliminary',
-            'tf2': 'Status: executing, 100.0 %',
-            'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing, 22.2 %',
-            'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: executing',
-            'tf4-result': 'Status: preliminary'},
- 'tf1': 6000.0,
- 'tf1-result': 6000.0,
- 'tf2': 140.0,
- 'tf2-result': 140.0,
- 'tf3': 6141.0,
- 'tf3-result': 6141.0,
- 'tf4': 6149.0,
- 'tf4-result': 6149.0}
-
-Time elapsed: 10.302
+Time elapsed: 10.102
 {'status': {'tf1': 'Status: executing, 88.9 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
-            'tf2-result': 'Status: OK',
-            'tf3': 'Status: executing, 11.1 %',
-            'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: executing, 100.0 %',
-            'tf4-result': 'Status: preliminary'},
+            'tf2-result': 'Status: pending',
+            'tf3': 'Status: executing',
+            'tf3-result': 'Status: pending',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: pending'},
  'tf1': 7000.0,
  'tf1-result': 7000.0,
  'tf2': 150.0,
- 'tf2-result': 150.0,
- 'tf3': 7150.0,
- 'tf3-result': 7150.0,
- 'tf4': 7150.0,
- 'tf4-result': 7150.0}
+ 'tf2-result': None,
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': None,
+ 'tf4-result': None}
 
-Time elapsed: 10.503
+Time elapsed: 10.305
 {'status': {'tf1': 'Status: executing, 88.9 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -1067,25 +1159,7 @@ Time elapsed: 10.503
  'tf4': 7159.0,
  'tf4-result': 7159.0}
 
-Time elapsed: 10.706
-{'status': {'tf1': 'Status: executing, 88.9 %',
-            'tf1-result': 'Status: preliminary',
-            'tf2': 'Status: OK',
-            'tf2-result': 'Status: OK',
-            'tf3': 'Status: executing, 22.2 %',
-            'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: executing',
-            'tf4-result': 'Status: preliminary'},
- 'tf1': 7000.0,
- 'tf1-result': 7000.0,
- 'tf2': 150.0,
- 'tf2-result': 150.0,
- 'tf3': 7151.0,
- 'tf3-result': 7150.0,
- 'tf4': 7159.0,
- 'tf4-result': 7159.0}
-
-Time elapsed: 10.906
+Time elapsed: 10.715
 {'status': {'tf1': 'Status: executing, 88.9 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -1103,7 +1177,7 @@ Time elapsed: 10.906
  'tf4': 7159.0,
  'tf4-result': 7159.0}
 
-Time elapsed: 11.316
+Time elapsed: 11.329
 {'status': {'tf1': 'Status: executing, 88.9 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -1121,7 +1195,7 @@ Time elapsed: 11.316
  'tf4': 7159.0,
  'tf4-result': 7159.0}
 
-Time elapsed: 11.722
+Time elapsed: 11.737
 {'status': {'tf1': 'Status: executing, 100.0 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -1139,7 +1213,7 @@ Time elapsed: 11.722
  'tf4': 8150.0,
  'tf4-result': 8150.0}
 
-Time elapsed: 11.924
+Time elapsed: 11.940
 {'status': {'tf1': 'Status: executing, 100.0 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -1157,7 +1231,7 @@ Time elapsed: 11.924
  'tf4': 8159.0,
  'tf4-result': 8159.0}
 
-Time elapsed: 12.338
+Time elapsed: 12.337
 {'status': {'tf1': 'Status: executing, 100.0 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -1175,7 +1249,7 @@ Time elapsed: 12.338
  'tf4': 8159.0,
  'tf4-result': 8159.0}
 
-Time elapsed: 12.741
+Time elapsed: 12.745
 {'status': {'tf1': 'Status: executing, 100.0 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -1193,27 +1267,25 @@ Time elapsed: 12.741
  'tf4': 8159.0,
  'tf4-result': 8159.0}
 
-Time elapsed: 13.155
+Time elapsed: 13.162
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
             'tf2-result': 'Status: OK',
-            'tf3': 'Status: upstream => delay void, factor void, limit void, '
-                   'offset void',
-            'tf3-result': 'Status: upstream',
-            'tf4': 'Status: upstream => delay void, factor void, limit void, '
-                   'offset void',
-            'tf4-result': 'Status: upstream'},
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: pending',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: pending'},
  'tf1': 9000.0,
  'tf1-result': 9000.0,
  'tf2': 150.0,
  'tf2-result': 150.0,
- 'tf3': None,
+ 'tf3': 9150.0,
  'tf3-result': None,
- 'tf4': None,
+ 'tf4': 9150.0,
  'tf4-result': None}
 
-Time elapsed: 13.356
+Time elapsed: 13.362
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -1231,7 +1303,7 @@ Time elapsed: 13.356
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 13.766
+Time elapsed: 13.770
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -1249,7 +1321,25 @@ Time elapsed: 13.766
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 14.375
+Time elapsed: 14.170
+{'status': {'tf1': 'Status: OK',
+            'tf1-result': 'Status: OK',
+            'tf2': 'Status: OK',
+            'tf2-result': 'Status: OK',
+            'tf3': 'Status: executing, 33.3 %',
+            'tf3-result': 'Status: pending',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 9000.0,
+ 'tf1-result': 9000.0,
+ 'tf2': 150.0,
+ 'tf2-result': 150.0,
+ 'tf3': 9152.0,
+ 'tf3-result': None,
+ 'tf4': 9159.0,
+ 'tf4-result': 9159.0}
+
+Time elapsed: 14.374
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -1285,7 +1375,7 @@ Time elapsed: 14.780
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 15.398
+Time elapsed: 15.185
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -1303,7 +1393,7 @@ Time elapsed: 15.398
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 15.809
+Time elapsed: 15.801
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -1321,7 +1411,7 @@ Time elapsed: 15.809
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 16.411
+Time elapsed: 16.213
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -1339,7 +1429,7 @@ Time elapsed: 16.411
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 16.826
+Time elapsed: 16.822
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -1357,25 +1447,7 @@ Time elapsed: 16.826
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 17.231
-{'status': {'tf1': 'Status: OK',
-            'tf1-result': 'Status: OK',
-            'tf2': 'Status: OK',
-            'tf2-result': 'Status: OK',
-            'tf3': 'Status: executing, 100.0 %',
-            'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: OK',
-            'tf4-result': 'Status: OK'},
- 'tf1': 9000.0,
- 'tf1-result': 9000.0,
- 'tf2': 150.0,
- 'tf2-result': 150.0,
- 'tf3': 9158.0,
- 'tf3-result': 9157.0,
- 'tf4': 9159.0,
- 'tf4-result': 9159.0}
-
-Time elapsed: 17.437
+Time elapsed: 17.225
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -1393,7 +1465,7 @@ Time elapsed: 17.437
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 17.824
+Time elapsed: 17.829
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',

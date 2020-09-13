@@ -80,6 +80,9 @@ class ReadAccessor(Accessor):
             result += " => " + str(self.write_accessor.target())
         return result
 
+    def _root(self):
+        return self.source._root()
+
 class WriteAccessor(Accessor):
     def __init__(self, read_accessor,
             target, celltype, subcelltype, pinname, path, *,

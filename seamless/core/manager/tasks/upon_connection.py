@@ -237,22 +237,23 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
         else:
             raise TypeError(type(source))
 
-        if accessor is not None and source is not None and not source._void:
+        if accessor is not None and source is not None:
             if isinstance(source, Cell):
-                accessor.build_expression(manager.livegraph, source._checksum)
-                unvoid_accessor(accessor, manager.livegraph)
-                if source._checksum is not None:
-                    AccessorUpdateTask(manager, accessor).launch()
+                if not source._void:
+                    accessor.build_expression(manager.livegraph, source._checksum)
+                    unvoid_accessor(accessor, manager.livegraph)
+                    if source._checksum is not None:
+                        AccessorUpdateTask(manager, accessor).launch()
             elif isinstance(source, Transformer):
                 if source._void:
                     unvoid_transformer(source, manager.livegraph)  # result connection may unvoid the transformer, which will launch a task
-                else:
+                elif source._checksum is not None:
                     TransformerUpdateTask(manager, source).launch()
-
             elif isinstance(source, Reactor):
                 if not source._void:
-                    # TODO: will not normally work...
-                    ReactorUpdateTask(manager, source).launch()
+                    if source._checksum is not None:
+                        # TODO: will not normally work...
+                        ReactorUpdateTask(manager, source).launch()
             else:
                 raise TypeError(source)
 

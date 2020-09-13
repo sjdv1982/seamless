@@ -95,6 +95,7 @@ class CacheManager:
         # Special case, since we never actually clear expression caches,
         #  we just inactivate them if not referenced
         if expression in self.inactive_expressions:
+            self.inactive_expressions.remove(expression)
             checksum = self.expression_to_ref.get(expression)
             if checksum is not None:
                 self.incref_checksum(
@@ -111,7 +112,6 @@ class CacheManager:
                     False,
                     True
                 )
-            self.inactive_expressions.remove(expression)
             return True
         else:
             assert expression not in self.expression_to_ref
@@ -158,16 +158,16 @@ class CacheManager:
         elif isinstance(refholder, Expression):
             #print("INCREF EXPRESSION", refholder._get_hash(), result)
             assert not authoritative
-            if refholder not in self.inactive_expressions:
-                if not result:
-                    v = self.expression_to_ref[refholder]
-                    assert v is None or v == checksum, refholder
-                    self.expression_to_ref[refholder] = checksum
-                else:
-                    assert checksum != refholder.checksum
-                    v = self.expression_to_result_checksum[refholder]
-                    assert v is None or v == checksum, refholder
-                    self.expression_to_result_checksum[refholder] = checksum
+            assert refholder not in self.inactive_expressions
+            if not result:
+                v = self.expression_to_ref[refholder]
+                assert v is None or v == checksum, refholder
+                self.expression_to_ref[refholder] = checksum
+            else:
+                assert checksum != refholder.checksum
+                v = self.expression_to_result_checksum[refholder]
+                assert v is None or v == checksum, refholder
+                self.expression_to_result_checksum[refholder] = checksum
         elif isinstance(refholder, Transformer):
             assert not authoritative
             assert result
@@ -185,13 +185,15 @@ class CacheManager:
 
         refh = refholder
         if checksum not in self.checksum_refs:
-            self.checksum_refs[checksum] = []
+            self.checksum_refs[checksum] = set()
             try:
                 buffer_cache.incref(checksum, authoritative)
             finally:
-                self.checksum_refs[checksum].append((refh, result))
+                item = (refh, result)
+                self.checksum_refs[checksum].add(item)
         else:
-            self.checksum_refs[checksum].append((refh, result))
+            item = (refh, result)
+            self.checksum_refs[checksum].add(item)
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if incref_hash_pattern:
             deep_buffer = buffer_cache.get_buffer(checksum)
@@ -255,7 +257,7 @@ class CacheManager:
         rmap = {True: 2, None: 1, False: 0}
         remote, recompute= 2, 2 # True, True
         has_cell = False
-        for refholder, result in self.checksum_refs.get(checksum, []):
+        for refholder, result in self.checksum_refs.get(checksum, set()):
             if isinstance(refholder, Cell):
                 cell = refholder
                 has_cell = True
@@ -289,7 +291,7 @@ class CacheManager:
             except CacheMissError:
                 pass
 
-        for refholder, result in self.checksum_refs.get(checksum, []):
+        for refholder, result in self.checksum_refs.get(checksum, set()):
             if not result:
                 continue
             if isinstance(refholder, Expression):
@@ -340,7 +342,6 @@ class CacheManager:
             else:
                 cs = checksum.hex()
             print_warning("cachemanager: cannot decref unknown checksum {}".format(cs))
-            import sys; sys.exit()
             return
         if isinstance(refholder, Cell):
             assert self.cell_to_ref[refholder] is not None, refholder
@@ -374,7 +375,7 @@ class CacheManager:
         try:
             refh = refholder
             self.checksum_refs[checksum].remove((refh, result))
-        except ValueError:
+        except Exception:
             print_warning("""cachemanager: cannot remove unknown checksum ref:
 checksum: {}
 refholder: {}
@@ -456,7 +457,7 @@ is result: {}
         for attrib in attribs:
             a = getattr(self, attrib)
             if attrib == "checksum_refs":
-                a = [aa for aa in a.values() if aa != []]
+                a = [list(aa) for aa in a.values() if len(aa)]
             elif attrib.startswith("expression_to"):
                 a = [aa for aa in a if aa not in self.inactive_expressions]
             if len(a):

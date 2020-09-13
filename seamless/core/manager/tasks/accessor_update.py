@@ -8,11 +8,14 @@ class AccessorUpdateTask(Task):
         self.dependencies.append(accessor)
 
     async def _run(self):
+        manager = self.manager()
+        taskmanager = manager.taskmanager
+        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
+
         accessor = self.accessor
 
         # Get the expression. If it is None, do an accessor void cancellation
         expression = accessor.expression
-        manager = self.manager()
 
         if expression is None:
             accessor._status_reason = StatusReasonEnum.UNDEFINED
@@ -52,7 +55,6 @@ class AccessorUpdateTask(Task):
         locknr = await acquire_evaluation_lock(self)
         try:
             accessor._new_macropath = False
-            unvoid_accessor(accessor, manager.livegraph)
             if isinstance(target, Worker):
                 worker = target
                 # If a worker, launch a worker update task. The worker will retrieve the upstream checksums by itself.
@@ -124,6 +126,12 @@ class AccessorUpdateTask(Task):
                         sc = target._structured_cell
                         assert sc is not None
                         inchannel = sc.inchannels[path]
+
+                        # Cancel the inchannel.
+                        # The value will already be None, but a join task may have been fired previously
+                        # (after all, inchannels with value None are allowed for structured cells)
+                        manager.cancel_scell_inpath(sc, path, False)
+
                         manager._set_inchannel_checksum(
                             inchannel, result_checksum,
                             False, None, prelim=accessor._prelim
@@ -153,5 +161,4 @@ from ...cache import CacheMissError
 from ...cache.buffer_cache import buffer_cache
 from ...protocol.deep_structure import access_hash_pattern, apply_hash_pattern, value_to_deep_structure
 from ...protocol.expression import get_subpath
-from ..unvoid import unvoid_accessor
 from . import acquire_evaluation_lock, release_evaluation_lock

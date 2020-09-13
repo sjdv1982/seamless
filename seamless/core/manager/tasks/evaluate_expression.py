@@ -32,10 +32,12 @@ class EvaluateExpressionTask(Task):
 
             # Get the expression result checksum from cache.
             expression_result_checksum = None
+            from_cache = True
             if not self.fingertip_mode:
                 expression_result_checksum = \
                     cachemanager.expression_to_result_checksum.get(expression)
             if expression_result_checksum is None:
+                from_cache = False
                 trivial_path = (expression.path is None or expression.path == [] or expression.path == ())
                 if expression.target_celltype == "checksum":
                     need_buf = needs_buffer_evaluation(
@@ -137,7 +139,7 @@ class EvaluateExpressionTask(Task):
                         traceback.print_exc()
                     """
 
-                if expression_result_checksum is not None:
+                if not from_cache and expression_result_checksum is not None:
                     if expression_result_checksum != expression.checksum:
                         cachemanager.incref_checksum(
                             expression_result_checksum,

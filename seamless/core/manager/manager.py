@@ -187,13 +187,7 @@ class Manager:
                 self.cancel_cell(cell, void=True, reason=reason)
         else:
             reason = None
-            #if not trigger_bilinks:
             old_checksum = cell._checksum # avoid infinite task loop...
-            #else:
-            #    old_checksum = self.get_cell_checksum(cell)
-            if old_checksum is not None:
-                if not from_structured_cell:
-                    self.cancel_cell(cell, void=False)
         #and cell._context()._macro is None: # TODO: forbid
         self._set_cell_checksum(
             cell, checksum,
@@ -207,6 +201,8 @@ class Manager:
                 self.unvoid_scell(cell._structured_cell)
             if checksum is not None:
                 unvoid_cell(cell, self.livegraph)
+            if not initial:
+                self.cancel_cell(cell, (checksum is None))
             CellUpdateTask(self, cell).launch()
         if sc_schema:
             value = self.resolve(checksum, "plain")
@@ -311,7 +307,6 @@ class Manager:
         inchannel._prelim = prelim
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, inchannel, False, False)
-            sc._modified = True
             self.structured_cell_join(sc)
 
     def _set_transformer_checksum(self,
@@ -374,7 +369,7 @@ class Manager:
                 continue
             sc._schema_value = deepcopy(value)
             if not sc.buffer._void:
-                sc._modified = True
+                sc._modified_schema = True
                 self.unvoid_scell(sc)
                 self.cancel_scell_soft(sc)
                 self.structured_cell_join(sc)
