@@ -289,8 +289,10 @@ class TaskManager:
             ptasks, futures = [], []
             for task in tasks:
                 future = task.future
+                """
                 if future is None:
                     continue
+                """
                 ptasks.append(task)
                 futures.append(future)
             return ptasks, futures
@@ -300,6 +302,8 @@ class TaskManager:
             running = set()
             #print("TASKS", ptasks)
             for task in ptasks:
+                if task.future is None:
+                    continue
                 for dep in task.dependencies:
                     if isinstance(dep, SeamlessBase):
                         running.add(dep)
@@ -328,7 +332,7 @@ class TaskManager:
                     curr_timeout = report
                 else:
                     curr_timeout = None
-            self.loop.run_until_complete(asyncio.sleep(0.0001))
+            self.loop.run_until_complete(asyncio.sleep(0.001))
             ptasks, futures = select_pending_tasks()
             if curr_timeout is not None:
                 curr_time = time.time()
@@ -360,8 +364,10 @@ class TaskManager:
             ptasks, futures = [], []
             for task in tasks:
                 future = task.future
+                """
                 if future is None:
                     continue
+                """
                 ptasks.append(task)
                 futures.append(future)
             return ptasks, futures
@@ -372,6 +378,8 @@ class TaskManager:
             #print("TASKS", ptasks)
             for task in ptasks:
                 for dep in task.dependencies:
+                    if task.future is None:
+                        continue
                     if isinstance(dep, SeamlessBase):
                         running.add(dep)
                         #print("TASK",task)
@@ -419,9 +427,13 @@ class TaskManager:
         if task._realtask is not None:
             task.cancel()
         else:
-            task.future.cancel() # will call _clean_task soon
+            task.future.cancel() # will call _clean_task soon, but better do it now
+            self._clean_task(task, task.future)
 
     def _clean_task(self, task, future):
+        if task._cleaned:
+            return
+        task._cleaned = True
         self.tasks.remove(task)
         self.task_ids.remove(task.taskid)
         for dep in task.dependencies:
@@ -570,11 +582,14 @@ If origin_task is provided, that task is not cancelled."""
             "rev_reftasks",
             "cell_to_value",
         )
+        ok = True
         name = self.__class__.__name__
         for attrib in attribs:
             a = getattr(self, attrib)
             if len(a):
-                print_error(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                print_error(name + ", " + attrib + ": %d undestroyed"  % len(a), a)
+                ok = False
+        return ok
 
     def destroy(self):
         # just to stop the loop...

@@ -813,11 +813,14 @@ class LiveGraph:
             "schemacells",
             "rtreactors"
         )
+        ok = True
         name = self.__class__.__name__
         for attrib in attribs:
             a = getattr(self, attrib)
             if len(a):
                 print_warning(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                ok = False
+        return ok
 
 from .accessor import Accessor, ReadAccessor, WriteAccessor
 from ..transformer import Transformer

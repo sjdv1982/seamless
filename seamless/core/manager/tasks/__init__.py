@@ -61,6 +61,7 @@ class Task:
     _awaiting = False
     _canceled = False
     _started = False
+    _cleaned = False
     _cached_root = None
     future = None
     caller_count = None
@@ -203,7 +204,7 @@ class Task:
         if realtask is not None:
             return realtask.cancel_refholder(self)
         manager = self.manager()
-        if self.future is not None and self.future != "DUMMY":
+        if self.future is not None:
             if self.future.cancelled():
                 return
             self.future.cancel()

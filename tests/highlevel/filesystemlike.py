@@ -20,5 +20,6 @@ ctx.filesystem["result.txt"] = ctx.result
 ctx.compute(1)
 print(ctx.result.value)
 print(ctx.filesystem.value)
-###ctx.compute()
-###print(ctx.filesystem.value)
+ctx.compute()
+print(ctx.filesystem.value)
+print(ctx.status)

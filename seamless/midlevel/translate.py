@@ -15,6 +15,25 @@ from seamless.core import (cell as core_cell,
 from . import copying
 from .util import as_tuple, get_path, get_path_link, find_channels, build_structured_cell
 
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
+
 direct_celltypes = (
     "text", "plain", "mixed", "binary",
     "cson", "yaml", "str", "bytes", "int", "float", "bool",
@@ -69,6 +88,7 @@ def set_structured_cell_from_checksum(cell, checksum):
                 from_structured_cell=True,
                 initial=True
             )
+            cell._modified = True
             join = True
 
     if "schema" in checksum:
@@ -77,6 +97,8 @@ def set_structured_cell_from_checksum(cell, checksum):
             from_structured_cell=True,
             initial=True
         )
+        cell._modified = True
+
     if join:
         cell._get_manager().structured_cell_join(cell)
 
@@ -199,7 +221,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         if ct == "structured":
             set_structured_cell_from_checksum(child, checksum)
         else:
-            if "value" in checksum:
+            if "value" in checksum and not len(inchannels):
                 child._set_checksum(checksum["value"], initial=True)
             """
             if "temp" in checksum:
@@ -295,7 +317,7 @@ def import_before_translate(graph):
                 from .translate_docker_transformer import translate_docker_transformer
 
 def translate(graph, ctx):
-    #print("TRANSLATE")
+    print_debug("*" * 30 + "TRANSLATE" + "*" * 30)
     #import traceback; stack = traceback.extract_stack(); print("TRANSLATE:"); print("".join(traceback.format_list(stack[:3])))
     nodes, connections = graph["nodes"], graph["connections"]
     contexts = {con["path"]: con for con in nodes if con["type"] == "context"}

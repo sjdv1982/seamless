@@ -453,6 +453,7 @@ is result: {}
             "transformer_to_result_checksum",
             "reactor_to_refs"
         )
+        ok = True
         name = self.__class__.__name__
         for attrib in attribs:
             a = getattr(self, attrib)
@@ -462,6 +463,7 @@ is result: {}
                 a = [aa for aa in a if aa not in self.inactive_expressions]
             if len(a):
                 print_warning(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                ok = False
 
 from ..cell import Cell
 from ..transformer import Transformer

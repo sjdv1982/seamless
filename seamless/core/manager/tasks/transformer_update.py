@@ -22,6 +22,7 @@ class TransformerUpdateTask(Task):
         for pinname, accessor in upstreams.items():
             if accessor._checksum is None: #pending
                 ok = False
+                #print("TF PENDING", transformer, pinname)
                 assert not accessor._void, (transformer, pinname)
         if not ok:
             return

@@ -235,8 +235,6 @@ class StructuredCellJoinTask(Task):
                         ok = False
 
             modified = sc._modified or sc._modified_schema
-            sc._modified = False
-            sc._modified_schema = False
             self.ok = ok
             if ok:
                 cancel_paths = []
@@ -249,6 +247,7 @@ class StructuredCellJoinTask(Task):
                     downstreams = livegraph.paths_to_downstream[sc._data]
                     cs = bytes.fromhex(checksum) if checksum is not None else None
                     expression_to_result_checksum = cachemanager.expression_to_result_checksum
+                    #print("SC VALUE", self, sc, value)
                     for out_path in sc.outchannels:
                         if cs is None:
                             cancel_paths.append(out_path)
@@ -260,6 +259,13 @@ class StructuredCellJoinTask(Task):
 
                                 if accessor.expression is None:
                                     changed = True
+
+                                #print("!SC VALUE", out_path, accessor._checksum, modified, accessor.expression is None, changed)
+                                if changed:
+                                    accessor.build_expression(livegraph, cs)
+                                    accessor._soften = True
+                                    accessor._prelim = prelim[out_path]
+                                    AccessorUpdateTask(manager, accessor).launch()
                                 else:
                                     old_expression = accessor.expression
                                     expression_result_checksum = expression_to_result_checksum.get(old_expression)
@@ -273,21 +279,16 @@ class StructuredCellJoinTask(Task):
                                             True
                                         )
                                     accessor._prelim = prelim[out_path]
-                                    changed = False
 
-
-                                if changed:
-                                    accessor.build_expression(livegraph, cs)
-                                    accessor._soften = True
-                                    accessor._prelim = prelim[out_path]
-                                    AccessorUpdateTask(manager, accessor).launch()
-
+                    #print("/SC VALUE", sc, value)
 
                 sc._exception = None
                 # Do this even if cancel_paths is empty.
                 # If there are no more pending inchannels, the cancel system
                 #  will now unsoften any outchannel accessors that resolve to None, causing them to be void
                 manager.cancel_scell(sc, self, cancel_paths)
+                sc._modified = False
+                sc._modified_schema = False
             else:
                 if not task_canceled:
                     # The cancel system may now decide to put the scell into void state

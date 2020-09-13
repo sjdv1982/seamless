@@ -12,6 +12,26 @@ from zipfile import ZipFile
 from io import BytesIO
 import json
 
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
+
+
 from .Base import Base
 from ..core import macro_mode
 from ..core.macro_mode import macro_mode_on, get_macro_mode, until_macro_mode_off
@@ -681,6 +701,11 @@ class Context(Base):
             ctx = None
             if self._gen_context is not None:
                 self._gen_context.destroy()
+                print_debug("*" * 30 + "DESTROYED BEFORE TRANSLATE" + "*" * 30)
+                ok1 = self._manager.livegraph.check_destroyed()
+                ok2 = self._manager.taskmanager.check_destroyed()
+                if not ok1 or not ok2:
+                    raise Exception("Cannot re-translate, since clean-up of old context was incomplete")
             import_before_translate(graph)
             with macro_mode_on():
                 ub_ctx = context(

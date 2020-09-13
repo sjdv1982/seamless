@@ -21,10 +21,9 @@ def double_it(a):
     return 2 * a
 
 ctx.transform = double_it
-###ctx.transform.hash_pattern = {"*": "#"}
-ctx.transform.a = ctx.a ###
-ctx.myresult = ctx.transform ###
-ctx.myresult.celltype = "int" ###
+ctx.transform.a = ctx.a
+ctx.myresult = ctx.transform
+ctx.myresult.celltype = "int"
 ctx.compute()
 print("2", ctx.myresult.value)
 
@@ -45,7 +44,7 @@ ctx.tfcode >> ctx.transform.code
 def triple_it2(a, b):
     return 3 * a + b
 ctx.tfcode = triple_it2
-ctx.translate()
+ctx.compute()
 print("5 (should be None)", ctx.myresult.value)
 
 # 6
