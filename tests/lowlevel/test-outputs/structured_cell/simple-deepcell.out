@@ -15,7 +15,7 @@ Traceback (most recent call last):
     result = self._set_path(path, data)
   File "/seamless/seamless/mixed/Backend.py", line 355, in _set_path
     sc._set_auth_path((), data)
-  File "/seamless/seamless/core/structured_cell.py", line 220, in _set_auth_path
+  File "/seamless/seamless/core/structured_cell.py", line 221, in _set_auth_path
     set_subpath(self._auth_value, self.hash_pattern, path, value)
   File "/seamless/seamless/core/protocol/expression.py", line 141, in set_subpath_sync
     subvalue, sub_hash_pattern
