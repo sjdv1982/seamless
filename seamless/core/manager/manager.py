@@ -203,7 +203,8 @@ class Manager:
                 self.unvoid_scell(cell._structured_cell)
             if checksum is not None:
                 unvoid_cell(cell, self.livegraph)
-            CellUpdateTask(self, cell).launch()
+            if not initial or cell._structured_cell is None or sc_schema:
+                CellUpdateTask(self, cell).launch()
         if sc_schema:
             value = self.resolve(checksum, "plain")
             self.update_schemacell(cell, value, None)
