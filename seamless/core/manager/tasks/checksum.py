@@ -1,8 +1,8 @@
 import asyncio
-from . import Task
+from . import Task, BackgroundTask
 from ...protocol.calculate_checksum import calculate_checksum
 
-class CalculateChecksumTask(Task):
+class CalculateChecksumTask(BackgroundTask):
     @property
     def refkey(self):
         return id(self.buffer)
@@ -23,7 +23,7 @@ class CellChecksumTask(Task):
     def __init__(self, manager, cell):
         self.cell = cell
         super().__init__(manager)
-        self.dependencies.append(cell)
+        self._dependencies.append(cell)
 
     async def _run(self):
         taskmanager = self.manager().taskmanager

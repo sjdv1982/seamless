@@ -6,7 +6,7 @@ class ReactorUpdateTask(Task):
     def __init__(self, manager, reactor):
         self.reactor = reactor
         super().__init__(manager)
-        self.dependencies.append(reactor)
+        self._dependencies.append(reactor)
 
     async def _run(self):
         reactor = self.reactor
@@ -110,7 +110,7 @@ class ReactorResultTask(Task):
     ):
         self.reactor = reactor
         super().__init__(manager)
-        self.dependencies.append(reactor)
+        self._dependencies.append(reactor)
         self.pinname = pinname
         self.value = value
         self.celltype = celltype

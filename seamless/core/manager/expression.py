@@ -87,6 +87,8 @@ class Expression:
     def _hash_dict(self):
         d = {}
         for slot in _hash_slots:
+            if slot == "exception":
+                continue
             v = getattr(self, slot)
             if slot == "_checksum":
                 if v is not None:

@@ -1,6 +1,6 @@
-from . import Task
+from . import BackgroundTask
 
-class GetBufferTask(Task):
+class GetBufferTask(BackgroundTask):
     @property
     def refkey(self):
         return self.checksum

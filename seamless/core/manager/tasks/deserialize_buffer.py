@@ -1,11 +1,11 @@
 from collections import namedtuple
 
-from . import Task
+from . import BackgroundTask
 from ...protocol.deserialize import deserialize
 
 Deserialization = namedtuple("Deserialization",["checksum", "celltype", "copy"])
 
-class DeserializeBufferTask(Task):
+class DeserializeBufferTask(BackgroundTask):
     @property
     def refkey(self):
         return Deserialization(self.checksum, self.celltype, self.copy)
@@ -17,10 +17,8 @@ class DeserializeBufferTask(Task):
         assert checksum.hex().isalnum() and len(checksum) == 32, checksum
         self.celltype = celltype
         self.copy = copy
-        super().__init__(manager)      
+        super().__init__(manager)
 
-    async def _run(self): 
+    async def _run(self):
         result = await deserialize(self.buffer, self.checksum, self.celltype, self.copy)
-        return result 
-
-
+        return result

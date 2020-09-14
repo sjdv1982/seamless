@@ -5,7 +5,7 @@ class CellUpdateTask(Task):
         assert cell._structured_cell is None or cell._structured_cell.schema is cell, cell # cell update is not for StructuredCell cells, unless schema
         self.cell = cell
         super().__init__(manager)
-        self.dependencies.append(cell)
+        self._dependencies.append(cell)
 
     async def _run(self):
         """Updates the downstream dependencies (accessors) of a cell"""

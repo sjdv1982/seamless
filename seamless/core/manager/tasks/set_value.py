@@ -8,7 +8,7 @@ class SetCellValueTask(Task):
         super().__init__(manager)
         self.cell = cell
         self.value = value
-        self.dependencies.append(cell)
+        self._dependencies.append(cell)
 
     async def _run(self):
         from . import SerializeToBufferTask, CalculateChecksumTask, CellUpdateTask

@@ -7,7 +7,7 @@ class MacroUpdateTask(Task):
     def __init__(self, manager, macro):
         self.macro = macro
         super().__init__(manager)
-        self.dependencies.append(macro)
+        self._dependencies.append(macro)
 
     async def _run(self):
         while get_macro_mode():

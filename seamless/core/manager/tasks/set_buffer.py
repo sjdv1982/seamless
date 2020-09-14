@@ -10,7 +10,7 @@ class SetCellBufferTask(Task):
         self.cell = cell
         self.buffer = buffer
         self.checksum = checksum
-        self.dependencies.append(cell)
+        self._dependencies.append(cell)
 
     async def _run(self):
         from . import DeserializeBufferTask, CalculateChecksumTask, CellUpdateTask

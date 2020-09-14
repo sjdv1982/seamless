@@ -136,6 +136,7 @@ class TaskManager:
         assert task.manager() is manager
         assert task.future is not None
 
+        assert task not in self.tasks
         self.tasks.append(task)
         self.task_ids.append(task.taskid)
         task.future.add_done_callback(
@@ -257,14 +258,12 @@ class TaskManager:
             d = self.macropath_to_task
         else:
             raise TypeError(dep)
-        dd = d.get(dep)
-        if dd is None:
-            return
-
+        dd = d[dep]
         try:
             dd.remove(task)
-        except ValueError:
-            pass
+        except ValueError as exc:
+            print(dep, task, dd)
+            raise exc from None
 
     def compute(self, timeout, report, get_tasks_func=None):
         assert not asyncio.get_event_loop().is_running()
@@ -419,9 +418,10 @@ class TaskManager:
 
     def cancel_task(self, task):
         if task.future is None or task.future.cancelled():
+            self._clean_task(task, task.future)
             return
         if task._realtask is not None:
-            task.cancel()
+            return self.cancel_task(task._realtask)
         else:
             task.future.cancel() # will call _clean_task soon, but better do it now
             self._clean_task(task, task.future)
@@ -433,7 +433,12 @@ class TaskManager:
         self.tasks.remove(task)
         self.task_ids.remove(task.taskid)
         for dep in task.dependencies:
-            self._clean_dep(dep, task)
+            try:
+                self._clean_dep(dep, task)
+            except Exception:
+                import traceback
+                print("ERROR in", task, task.dependencies)
+                traceback.print_exc()
         if task.future is not None and task.future.done():
             fut = task.future
             fut._log_traceback = False
@@ -450,9 +455,6 @@ class TaskManager:
                     pass
                 finally:
                     task._awaiting = True
-        if task.future is None or not task.future.done():
-            for refholder in task.refholders:
-                refholder.cancel()
         refkey = self.rev_reftasks.pop(task, None)
         if refkey is not None:
             self.reftasks.pop(refkey)
@@ -461,44 +463,44 @@ class TaskManager:
         """Cancels all tasks depending on cell.
 If origin_task is provided, that task is not cancelled.
 If full = True, cancels all UponConnectionTasks as well"""
-        for task in self.cell_to_task.get(cell, []):
+        for task in list(self.cell_to_task[cell]):
             if task is origin_task:
                 continue
-            if not full and isinstance(task, UponConnectionTask):
+            if (not full) and isinstance(task, UponConnectionTask):
                 continue
             task.cancel()
 
     def cancel_accessor(self, accessor, origin_task=None):
         """Cancels all tasks depending on accessor.
 If origin_task is provided, that task is not cancelled."""
-        for task in self.accessor_to_task.get(accessor, []):
+        for task in list(self.accessor_to_task[accessor]):
             if task is origin_task:
                 continue
             task.cancel()
 
     def cancel_expression(self, expression):
         """Cancels all tasks depending on expression."""
-        for task in self.expression_to_task[expression]:
+        for task in list(self.expression_to_task[expression]):
             task.cancel()
 
     def cancel_transformer(self, transformer, full=False):
         """Cancels all tasks depending on transformer."""
-        for task in self.transformer_to_task[transformer]:
-            if not full and isinstance(task, UponConnectionTask):
+        for task in list(self.transformer_to_task[transformer]):
+            if (not full) and isinstance(task, UponConnectionTask):
                 continue
             task.cancel()
 
     def cancel_reactor(self, reactor, full=False):
         """Cancels all tasks depending on reactor."""
-        for task in self.reactor_to_task[reactor]:
-            if not full and isinstance(task, UponConnectionTask):
+        for task in list(self.reactor_to_task[reactor]):
+            if (not full) and isinstance(task, UponConnectionTask):
                 continue
             task.cancel()
 
     def cancel_macro(self, macro, full=False):
         """Cancels all tasks depending on macro."""
-        for task in self.macro_to_task[macro]:
-            if not full and isinstance(task, UponConnectionTask):
+        for task in list(self.macro_to_task[macro]):
+            if (not full) and isinstance(task, UponConnectionTask):
                 continue
             task.cancel()
 
@@ -507,8 +509,8 @@ If origin_task is provided, that task is not cancelled."""
         If full = True, cancels all UponConnectionTasks as well"""
         if macropath not in self.macropath_to_task:
             return
-        for task in self.macropath_to_task[macropath]:
-            if not full and isinstance(task, UponConnectionTask):
+        for task in list(self.macropath_to_task[macropath]):
+            if (not full) and isinstance(task, UponConnectionTask):
                 continue
             task.cancel()
 
@@ -539,7 +541,7 @@ If origin_task is provided, that task is not cancelled."""
 
     def destroy_accessor(self, accessor):
         self.cancel_accessor(accessor)
-        self.accessor_to_task.pop(accessor, None) # guard here for an invalid connection
+        self.accessor_to_task.pop(accessor)
 
     def destroy_expression(self, expression):
         self.cancel_expression(expression)
@@ -564,6 +566,7 @@ If origin_task is provided, that task is not cancelled."""
         self.macropath_to_task.pop(macropath)
 
     def check_destroyed(self):
+        from .tasks import BackgroundTask
         attribs = (
             "tasks",
             "cell_to_task",
@@ -581,6 +584,12 @@ If origin_task is provided, that task is not cancelled."""
         name = self.__class__.__name__
         for attrib in attribs:
             a = getattr(self, attrib)
+            if attrib == "tasks":
+                a = [aa for aa in a if not isinstance(aa, BackgroundTask)]
+            if attrib == "reftasks":
+                a = [aa for aa in a.values() if not isinstance(aa, BackgroundTask)]
+            if attrib == "rev_reftasks":
+                a = [aa for aa in a.keys() if not isinstance(aa, BackgroundTask)]
             if len(a):
                 print_error(name + ", " + attrib + ": %d undestroyed"  % len(a))
                 ok = False

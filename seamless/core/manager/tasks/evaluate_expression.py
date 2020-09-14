@@ -17,7 +17,7 @@ class EvaluateExpressionTask(Task):
         self.expression = expression
         self.fingertip_mode = fingertip_mode
         super().__init__(manager)
-        self.dependencies.append(expression)
+        self._dependencies.append(expression)
 
     async def _run(self):
         expression = self.expression

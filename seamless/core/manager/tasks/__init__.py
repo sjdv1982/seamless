@@ -205,15 +205,16 @@ class Task:
             return realtask.cancel_refholder(self)
         manager = self.manager()
         if self.future is not None:
-            if self.future.cancelled():
+            if not self.future.cancelled():
+                self.future.cancel()
+            if manager is None or manager._destroyed:
                 return
-            self.future.cancel()
+            taskmanager = manager.taskmanager
+            taskmanager.cancel_task(self)
 
-        if manager is None or manager._destroyed:
-            return
-        taskmanager = manager.taskmanager
-        taskmanager.cancel_task(self)
 
+class BackgroundTask(Task):
+    pass
 
 from .set_value import SetCellValueTask
 from .set_buffer import SetCellBufferTask

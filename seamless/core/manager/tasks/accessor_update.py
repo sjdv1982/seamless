@@ -5,7 +5,7 @@ class AccessorUpdateTask(Task):
         assert isinstance(accessor, ReadAccessor)
         self.accessor = accessor
         super().__init__(manager)
-        self.dependencies.append(accessor)
+        self._dependencies.append(accessor)
 
     async def _run(self):
         manager = self.manager()

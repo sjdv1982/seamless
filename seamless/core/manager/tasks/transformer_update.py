@@ -5,7 +5,7 @@ class TransformerUpdateTask(Task):
     def __init__(self, manager, transformer):
         self.transformer = transformer
         super().__init__(manager)
-        self.dependencies.append(transformer)
+        self._dependencies.append(transformer)
 
     async def _run(self):
         transformer = self.transformer
@@ -56,7 +56,7 @@ class TransformerResultUpdateTask(Task):
     def __init__(self, manager, transformer):
         self.transformer = transformer
         super().__init__(manager)
-        self.dependencies.append(transformer)
+        self._dependencies.append(transformer)
 
     async def _run(self):
         transformer = self.transformer

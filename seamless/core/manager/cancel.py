@@ -33,11 +33,19 @@ class StructuredCellCancellation:
             self.canceled_inchannels[inpath] = (void, reason)
         cycle = self.cycle()
         for outpath in scell.outchannels:
-            if not overlap_path(outpath, inpath):
-                continue
-            if outpath in self.canceled_outpaths:
-                void0, reason0 = self.canceled_outpaths[outpath]
-                if not void or (void0, reason0) == (void, reason):
+            if void:
+                if len(outpath) < len(inpath):
+                    continue
+                if outpath[:len(inpath)] != inpath:
+                    continue
+                if outpath in self.canceled_outpaths:
+                    void0, reason0 = self.canceled_outpaths[outpath]
+                    if (void0, reason0) == (void, reason):
+                        continue
+            else:
+                if not overlap_path(outpath, inpath):
+                    continue
+                if outpath in self.canceled_outpaths:
                     continue
             self.canceled_outpaths[outpath] = (void, reason)
             cycle._cancel_cell_path(scell, outpath, void=void, reason=reason)

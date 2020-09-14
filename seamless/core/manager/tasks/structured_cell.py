@@ -10,7 +10,7 @@ class StructuredCellJoinTask(Task):
     def __init__(self, manager, structured_cell):
         super().__init__(manager)
         self.structured_cell = structured_cell
-        self.dependencies.append(structured_cell)
+        self._dependencies.append(structured_cell)
 
     async def await_sc_tasks(self):
         sc = self.structured_cell

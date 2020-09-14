@@ -13,19 +13,19 @@ class UponConnectionTask(Task):
         self.current_macro = curr_macro()
         super().__init__(manager)
         if isinstance(source, (OutputPin, EditPin) ):
-            self.dependencies.append(source.worker_ref())
+            self._dependencies.append(source.worker_ref())
         elif isinstance(source, Cell):
-            self.dependencies.append(source)
+            self._dependencies.append(source)
         elif isinstance(source, Path):
-            self.dependencies.append(source)
+            self._dependencies.append(source)
         else:
             raise TypeError(source)
         if isinstance(target, (InputPin, EditPin) ):
-            self.dependencies.append(target.worker_ref())
+            self._dependencies.append(target.worker_ref())
         elif isinstance(target, Cell):
-            self.dependencies.append(target)
+            self._dependencies.append(target)
         elif isinstance(target, Path):
-            self.dependencies.append(target)
+            self._dependencies.append(target)
         else:
             raise TypeError(target)
 
@@ -269,8 +269,8 @@ class UponBiLinkTask(UponConnectionTask):
             raise TypeError(type(source))
         if not isinstance(target, Cell):
             raise TypeError(type(target))
-        self.dependencies.append(source)
-        self.dependencies.append(target)
+        self._dependencies.append(source)
+        self._dependencies.append(target)
 
     async def _run(self):
         manager = self.manager()
