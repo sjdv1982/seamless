@@ -2,7 +2,7 @@ from . import Task
 
 class CellUpdateTask(Task):
     def __init__(self, manager, cell):
-        assert not cell._structured_cell, cell # cell update is not for StructuredCell cells
+        assert cell._structured_cell is None or cell._structured_cell.schema is cell, cell # cell update is not for StructuredCell cells, unless schema
         self.cell = cell
         super().__init__(manager)
         self.dependencies.append(cell)
