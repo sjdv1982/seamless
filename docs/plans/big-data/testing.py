@@ -1,5 +1,7 @@
 """
 Performance tests based on tests/highlevel/high-in-low6-memory.py
+
+Note that transformations run in subprocesses, so this is all about latency, not total CPU usage
 """
 
 import seamless
@@ -171,12 +173,11 @@ ctx.data_b = Cell()
 ctx.data_b.hash_pattern = {"!": "#"}
 ctx.compute()
 
-# Next section is 13 secs, but can be elided to ~0.5s by setting checksum directly (if in flatfile cache).
-# Not having a DB at all is also 13 secs, so DB communication doesn't cost anything.
+# Next section is 14.5 secs (if the database is filled), but can be elided to ~0.5s by setting checksum directly (if in flatfile cache).
+# Not having a DB at all is also 13.5 secs, so DB request communication (without upload) doesn't cost much.
 
-"""
 repeat = int(10e6)
-repeat = int(5) ###
+#repeat = int(5) ###
 #for n in range(1000): # 2x10 GB
 #for n in range(100): # 2x1 GB
 for n in range(100):
@@ -191,10 +192,11 @@ for n in range(100):
 ctx.compute()
 print(ctx.data_a.checksum)
 print(ctx.data_b.checksum)
-"""
 
+"""
 ctx.data_a.set_checksum("983730afb7ab41d524b72f1097daaf4a3c15b98943291f96e523730849cabe8c")
 ctx.data_b.set_checksum("46dabc02b59be44064a9e06dd50bc6841833578c2b6339fbc43f090cc17831fa")
+"""
 
 #
 ### For repeat=10 million
@@ -210,17 +212,23 @@ ctx.compute()
 # If the database has been filled:
 
 # - 1.5 secs up to here (with the above elision). Another 1.5 secs to execute the length-100 macro
-# - it is about 17 seconds to propagate the signals (evidenced from re-translation)  (BUT: see below)
-# - Since total time is about 58 secs, that leaves about 38 secs for database buffer download and expression evaluation  (BUT: see below)
-# - Signal propagation still scales very much with buffer size, as retranslation is 5 (6.5 - 1.5) seconds for repeat 5  (BUT: see below)
-#   BUT: elided mixed-to-str conversion => 32 secs for total time, and 11.5-1.5 secs for retrans (repeat 10e6)
+# - it is about 9 seconds to propagate the signals (evidenced from re-translation, minus macro execution)
+# - Since total time is about 30 secs, that leaves about 21 - 3 = 18 secs for database buffer download and expression evaluation
+# - Signal propagation still scales very much with buffer size, as for repeat 5:
+#       - retranslation is 3.7 (5.2 - 1.5) seconds, rather than 9
+#       - total time is 6.4 seconds (9.4 - 3), rather than 30.
+#       Why is this so?? Expressions should be of the same size, since everything is a deep structure ??
 
 
-# If the database has not been filled:
-# - Filling up the input alone is 25 seconds (so 12 seconds for the raw upload, since it is 13 seconds w/o elision)
-# - 144 secs in total; that leaves about 118 sec for database buffer download, expression evaluation, transformation and upload (BUT: see above)
-# - compared to the previous: upload and transformation seems to be about 100 seconds  (BUT: see above)
-# - again, 17 secs for retranslation  (BUT: see above)
+# If the database has NOT been filled:
+# - Filling up the input alone is 25.5 seconds (so 11 seconds for the raw upload, since it is 14.5 seconds w/o elision)
+# - 119 secs in total; that leaves about 94 - 3 = 91 sec for database buffer download, expression evaluation, transformation and upload
+# - again, about 10 secs for retranslation. Retranslation is only 8 - 1.5 = 6.5 secs w/o database.
+# - Not having a DB at all is 83 secs in total, leaving 83 - 13.5 - 6.5 - 3 = 60 secs for expression evaluation and transformation
+#   This is still a rather hefty overhead from the checksumming + cell division:
+#       - Direct calculation in Python is ~1.75 seconds. Deepcopies don't change anything (very efficient for str)
+#       - Direct calculation + calculating checksums for inputs and outputs makes it 14 seconds
+#       - The hash is calculated only once
 
 ctx.result = Cell()
 ctx.result.hash_pattern = {"!": "#"}
