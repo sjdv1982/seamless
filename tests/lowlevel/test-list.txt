@@ -73,14 +73,14 @@ mount-cson.py:
      - then open /tmp/test.cson and /tmp/test.json, manipulate resp. monitor them
 mount-plain.py: see above, minus the .cson
 
-simple-communion: run simple-communion-slave.py,
-     then simple-communion-master.py in a different terminal,
+simple-communion: run "python3 -u simple-communion-slave.py > test-outputs/simple-communion-slave.out 2>&1"
+     then "python3 -u simple-communion-master.py > test-outputs/simple-communion-master.out 2>&1" in a different terminal,
      then Ctrl-C simple-communion-slave.py
      The output is available in simple-communion-[master/slave].out
 simple-debug.py
 mount.ipynb
-communion-peer[12].sh: run communion-peer1.sh,
-     then communion-peer2.sh in a different terminal,
+communion-peer[12].sh: run communion-peer1.sh > test-outputs/communion-peer1.out 2>&1,
+     then run "communion-peer2.sh > test-outputs/communion-peer2.out 2>&1" in a different terminal,
      then Ctrl-C communion-peer1.sh
      The output is available in communion-peer[12].out
 compile-debug.py
