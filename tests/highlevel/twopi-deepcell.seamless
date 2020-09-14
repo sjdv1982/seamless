@@ -27,7 +27,9 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "b24cb296a9e7872c592baedc5ba4166c90dc3c464e4e2ddfddb78f9c56837b89"
+        "code": "b24cb296a9e7872c592baedc5ba4166c90dc3c464e4e2ddfddb78f9c56837b89",
+        "input": "b17233472bc65400d753219f1d4ca6ad726e913db78a68f39a6a910df1ed5f8c",
+        "input_buffer": "b17233472bc65400d753219f1d4ca6ad726e913db78a68f39a6a910df1ed5f8c"
       },
       "compiled": false,
       "debug": false,

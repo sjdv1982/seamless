@@ -1,5 +1,6 @@
 # In general, run with:
 #   seamless-devel python3 -u TEST.py > test-outputs/TEST.out 2>&1
+#   Best also to test using "ipython3 TEST.py", since re-translation may work differently
 bytes-conversion.py
 mime.py
 test-html.py
@@ -37,9 +38,9 @@ simple-pi-remote.py: run with jobslave-nodatabase
 simple-pi-remote-database.py: run with jobslave; makes no assumptions about the database contents
 subcontext.py
 reassign-transformer.py
-transformer-compiled.py
+BUGGED transformer-compiled.py  (build graph again)
 transformer-redefine.py
-transformer-compiled-error.py
+BUGGED transformer-compiled-error.py
 transformer-compiled-module.py
 twopi-graph-database.sh: run with Seamless database; delete job results (e.g. redis-cli flushall)
                       run as i=twopi-graph-database; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
@@ -51,9 +52,9 @@ library.py
 library2.py
 high-in-low.py
 high-in-low2.py
-high-in-low3.py
-high-in-low4.py
-high-in-low5.py
+BUGGED high-in-low3.py
+BUGGED high-in-low4.py
+BUGGED high-in-low5.py
 high-in-low6.py
 high-in-low4-memory.py    # Quite long test. Creates 5.6 GB of buffer cache in /tmp/dummy-db
                           # Run with rm -rf /tmp/dummy-db  && mkdir -p /tmp/dummy-db && seamless-devel-database dummydb-config.yaml
