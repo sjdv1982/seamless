@@ -30,6 +30,7 @@ class AccessorUpdateTask(Task):
 
         # If the expression result is None, do an accessor void cancellation
         #  but only if the accessor has not been softened.
+        # Softening is done by structured cell joins, to indicate that the accessor may have a result later
         if expression_result_checksum is None:
             if accessor._soften:
                 manager.cancel_accessor(accessor, void=False, origin_task=self)

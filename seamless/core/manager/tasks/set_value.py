@@ -17,7 +17,7 @@ class SetCellValueTask(Task):
         livegraph = manager.livegraph
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
         cell = self.cell
-        lock = await taskmanager.acquire_cell_lock(cell)
+        await taskmanager.await_cell(cell, self.taskid, self._root())
         try:
             taskmanager.cell_to_value[cell] = self.value
             value = self.value
@@ -69,7 +69,6 @@ class SetCellValueTask(Task):
             livegraph.cell_parsing_exceptions[self.cell] = exc
             manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.INVALID)
         finally:
-            taskmanager.release_cell_lock(cell, lock)
             taskmanager.cell_to_value.pop(cell, None)
         return None
 
@@ -77,6 +76,5 @@ from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.calculate_checksum import checksum_cache
 from ...status import StatusReasonEnum
 from ...protocol.deep_structure import value_to_deep_structure
-from .checksum import CellChecksumTask
 from .get_buffer import GetBufferTask
 from ...cache.buffer_cache import buffer_cache

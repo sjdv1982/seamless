@@ -55,6 +55,7 @@ class ShareItem:
             self._namespace = name
 
             cell_checksum = cell._checksum
+            cell_pending = manager.taskmanager.is_pending(cell)
             cell_empty = (cell_checksum is None)
             _, cached_share = sharemanager.cached_shares.get((name, self.path), (None, None))
             from_cache = False
@@ -77,7 +78,7 @@ class ShareItem:
                     celltype, self.mimetype
                 )
             self.share.bind(self)
-            if from_cache:
+            if from_cache and not cell_pending:
                 self.update(cell_checksum)
         finally:
             self._initialized = True
@@ -92,7 +93,12 @@ class ShareItem:
         while self._initializing:
             await asyncio.sleep(0.01)
         if self.share is not None:
-            self.share.set_checksum(cell._checksum)
+            manager = cell._get_manager()
+            cell_pending = manager.taskmanager.is_pending(cell)
+            if not cell_pending:
+                # If the cell is pending, a running task will later call manager._set_cell_checksum,
+                #   which will call sharemanager.add_cell_update, which will call us again
+                self.share.set_checksum(cell._checksum)
 
     def update(self, checksum):
         # called by shareserver, or from init
@@ -243,8 +249,10 @@ class ShareManager:
                 continue
             try:
                 share_item = self.shares[cell]
-                share_item.init()
-                await share_item.write()
+                if not share_item._initialized:
+                    share_item.init()
+                else:
+                    await share_item.write()
             except:
                 traceback.print_exc()
 

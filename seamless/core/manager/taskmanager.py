@@ -50,9 +50,6 @@ class TaskManager:
         self.rev_reftasks = {} # mapping of a task to their refholder tasks
         self.cell_to_value = {} # very short term cache:
                                 # only while the checksum is being computed by a SetCellValueTask
-        self.cell_locks = {} # The following tasks are in-order; they must acquire this lock
-                             # SetCellValue, SetCellBuffer, SetCellPath, CellChecksum
-
     def activate(self):
         self._active = True
 
@@ -68,7 +65,6 @@ class TaskManager:
 
     def register_cell(self, cell):
         assert cell not in self.cell_to_task
-        self.cell_locks[cell] = []
         self.cell_to_task[cell] = []
 
     def register_structured_cell(self, structured_cell):
@@ -192,6 +188,25 @@ class TaskManager:
             else:
                 break
 
+    async def await_cell(self,cell,taskid,root):
+        while 1:
+            cell_tasks = self.cell_to_task[cell]
+            if len(cell_tasks) == 0 or cell_tasks[0].taskid >= taskid:
+                break
+            await asyncio.sleep(0.001)
+
+    def is_pending(self, cell):
+        """Returns if a cell's checksum is pending on a auth task (set cell buffer or set cell value)
+        If they do not fail, these tasks are guaranteed to call manager._set_cell_checksum.
+        """
+        from .tasks.set_buffer import SetCellBufferTask
+        from .tasks.set_value import SetCellValueTask
+        cell_tasks = self.cell_to_task[cell]
+        for task in cell_tasks:
+            if isinstance(task, (SetCellBufferTask, SetCellValueTask)):
+                return True
+        return False
+
     @staticmethod
     async def await_tasks(tasks, shield=False):
         """Wait for taskmanager Tasks. Any cancel will raise CancelError, unless shield is True"""
@@ -222,25 +237,6 @@ class TaskManager:
                 ok = False
         if not ok and not shield:
             raise CancelledError
-
-    async def acquire_cell_lock(self, cell):
-        if cell._destroyed:
-            return
-        locks = self.cell_locks[cell]
-        if not len(locks):
-            id = 1
-        else:
-            id = locks[-1] + 1
-        locks.append(id)
-        while locks[0] != id:
-            await asyncio.sleep(0.001)   # 1 ms
-        return id
-
-    def release_cell_lock(self, cell, id):
-        if cell._destroyed:
-            return
-        locks = self.cell_locks[cell]
-        locks.remove(id)
 
     def _clean_dep(self, dep, task):
         if isinstance(dep, Cell):
@@ -536,7 +532,6 @@ If origin_task is provided, that task is not cancelled."""
         self.cancel_cell(cell, full=full)
         self.cell_to_task.pop(cell)
         self.cell_to_value.pop(cell, None)
-        self.cell_locks.pop(cell)
 
     def destroy_structured_cell(self, structured_cell):
         self.cancel_structured_cell(structured_cell, kill_non_started=True)
@@ -587,7 +582,7 @@ If origin_task is provided, that task is not cancelled."""
         for attrib in attribs:
             a = getattr(self, attrib)
             if len(a):
-                print_error(name + ", " + attrib + ": %d undestroyed"  % len(a), a)
+                print_error(name + ", " + attrib + ": %d undestroyed"  % len(a))
                 ok = False
         return ok
 

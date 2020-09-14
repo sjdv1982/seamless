@@ -289,7 +289,6 @@ class UponBiLinkTask(UponConnectionTask):
 
 
 from .cell_update import CellUpdateTask
-from .checksum import CellChecksumTask
 from .accessor_update import AccessorUpdateTask
 from .transformer_update import TransformerUpdateTask
 from .reactor_update import ReactorUpdateTask

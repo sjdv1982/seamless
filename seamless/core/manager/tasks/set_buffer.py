@@ -22,7 +22,7 @@ class SetCellBufferTask(Task):
         cell = self.cell
         buffer = self.buffer
         checksum = self.checksum
-        lock = await taskmanager.acquire_cell_lock(cell)
+        await taskmanager.await_cell(cell, self.taskid, self._root())
         try:
             if checksum is None and buffer is not None:
                 checksum = await CalculateChecksumTask(manager, buffer).run()
@@ -58,8 +58,6 @@ class SetCellBufferTask(Task):
                 exc = traceback.format_exc()
             manager.cancel_cell(self.cell, void=True, origin_task=self, reason=StatusReasonEnum.INVALID)
             livegraph.cell_parsing_exceptions[cell] = exc
-        finally:
-            taskmanager.release_cell_lock(cell, lock)
         return None
 
 from ...protocol.validate_subcelltype import validate_subcelltype

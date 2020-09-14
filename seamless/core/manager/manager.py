@@ -189,6 +189,8 @@ class Manager:
             reason = None
             old_checksum = cell._checksum # avoid infinite task loop...
         #and cell._context()._macro is None: # TODO: forbid
+        if not initial and not from_structured_cell:
+            self.cancel_cell(cell, (checksum is None))
         self._set_cell_checksum(
             cell, checksum,
             (checksum is None), status_reason=reason,
@@ -201,8 +203,6 @@ class Manager:
                 self.unvoid_scell(cell._structured_cell)
             if checksum is not None:
                 unvoid_cell(cell, self.livegraph)
-            if not initial:
-                self.cancel_cell(cell, (checksum is None))
             CellUpdateTask(self, cell).launch()
         if sc_schema:
             value = self.resolve(checksum, "plain")
@@ -417,15 +417,21 @@ class Manager:
                 break
             if self._destroyed or cell._destroyed:
                 break
-            count += 1
-            if count == 100:
-                break
+
             try:
+                # This will make the cell checksum current
                 task = CellChecksumTask(self, cell)
                 task.launch_and_await()
                 break
             except asyncio.CancelledError:
-                continue
+                pass
+
+            count += 1
+            if count == 100:
+                # This cell has been canceled 100 times... what can we do?
+                # Let's return our best guess
+                return cell._checksum, cell._void
+
         return cell._checksum, cell._void
 
     @mainthread

@@ -8,13 +8,17 @@ class CellUpdateTask(Task):
         self.dependencies.append(cell)
 
     async def _run(self):
-        """Assumes that the cell's checksum is not pending on a running task"""
+        """Updates the downstream dependencies (accessors) of a cell"""
         cell = self.cell
         if cell._void:
             print("WARNING: cell %s is void, shouldn't happen during cell update" % cell)
             return
         manager = self.manager()
+        taskmanager = manager.taskmanager
         cell = self.cell
+
+        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
+        await taskmanager.await_cell(cell, self.taskid, self._root())
 
         locknr = await acquire_evaluation_lock(self)
         try:
