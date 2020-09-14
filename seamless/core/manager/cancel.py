@@ -358,16 +358,26 @@ class CancellationCycle:
             if not void or (void0, reason0) == (void, reason):
                 return
 
-        self.transformers[transformer] = (void, reason)
-
         manager = self.manager()
         livegraph = manager.livegraph
 
         downstreams = livegraph.transformer_to_downstream.get(transformer, None)
+
         if downstreams is None:
             if transformer._destroyed:
                 return
             raise KeyError(transformer)
+
+        if not void:
+            upstreams = livegraph.transformer_to_upstream[transformer]
+            if not len(downstreams):
+                return
+            for pinname, accessor in upstreams.items():
+                if accessor is None: #unconnected
+                    return
+
+        self.transformers[transformer] = (void, reason)
+
         for accessor in downstreams:
             self.cancel_accessor(
                 accessor, void=void, reason=StatusReasonEnum.UPSTREAM
@@ -376,16 +386,15 @@ class CancellationCycle:
     def _resolve_transformer(self, taskmanager, manager, transformer, void, reason):
         if manager is None or manager._destroyed:
             return
-        if (not void) and transformer._void:
-            return
         if void:
             assert reason is not None
             if transformer._void:
                 curr_reason = transformer._status_reason
                 if curr_reason.value <= reason.value:
                     return
+        void_error = (void == True) and (reason == StatusReasonEnum.ERROR)
         taskmanager.cancel_transformer(transformer)
-        manager.cachemanager.transformation_cache.cancel_transformer(transformer)
+        manager.cachemanager.transformation_cache.cancel_transformer(transformer, void_error)
         manager._set_transformer_checksum(
             transformer, None, void,
             status_reason=reason,

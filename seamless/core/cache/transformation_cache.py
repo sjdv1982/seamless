@@ -160,14 +160,15 @@ class TransformationCache:
         assert transformer not in self.transformer_to_transformations
         self.transformer_to_transformations[transformer] = None
 
-    def cancel_transformer(self, transformer):
+    def cancel_transformer(self, transformer, void_error):
         assert isinstance(transformer, Transformer)
         assert transformer in self.transformer_to_transformations
         tf_checksum = self.transformer_to_transformations.get(transformer)
         if tf_checksum is not None:
             transformation = self.transformations[tf_checksum]
-            self.decref_transformation(transformation, transformer)
-        self.transformer_to_transformations[transformer] = None
+            if not void_error:
+                self.decref_transformation(transformation, transformer)
+                self.transformer_to_transformations[transformer] = None
 
     def destroy_transformer(self, transformer):
         assert isinstance(transformer, Transformer)
@@ -517,7 +518,7 @@ class TransformationCache:
 
         if job._hard_cancelled:
             exc = HardCancelError()
-            print("Hard cancel:", job.codename)
+            print_debug("Hard cancel:", job.codename)
         else:
             exc = future.exception()
             if exc is None:
