@@ -2,6 +2,16 @@
 Performance tests based on tests/highlevel/high-in-low6-memory.py
 
 Note that transformations run in subprocesses, so this is all about latency, not total CPU usage
+
+Conclusion:
+- With low data size, expression eval overhead scales worse than linear with graph size: 6x longer (~200 ms per transformer instead of ~30 ms)
+when going from 100 to 1000 transformers in parallel.
+- With low data size, graph re-translation scales worse than linear with graph size: 5x longer (~116 ms per transformer instead of ~24 ms)
+- In contrast, auth operations and macro evaluations are about linear.
+
+- With growing data size, auth operation is about 14 sec per 2 GB, i.e 7 ms per megabyte, of which about half is raw checksum calculation
+- Expression evaluation is about 56 sec per 2 GB, i.e. 28 ms per megabyte, of which about 1/4 is raw checksum calculation
+- Graph re-translation overhead is doubled or tripled, to 65 ms per transformer.
 """
 
 import seamless
@@ -9,8 +19,8 @@ import seamless
 import seamless.core.execute
 seamless.core.execute.DIRECT_PRINT = True
 
-seamless.database_sink.connect()
-seamless.database_cache.connect()
+###seamless.database_sink.connect()
+###seamless.database_cache.connect()
 #seamless.set_ncores(2)
 #seamless.set_parallel_evaluations(5)
 
@@ -176,11 +186,11 @@ ctx.compute()
 # Next section is 14.5 secs (if the database is filled), but can be elided to ~0.5s by setting checksum directly (if in flatfile cache).
 # Not having a DB at all is also 13.5 secs, so DB request communication (without upload) doesn't cost much.
 
-repeat = int(10e6)
-#repeat = int(5) ###
+#repeat = int(10e6)
+repeat = int(5)
 #for n in range(1000): # 2x10 GB
 #for n in range(100): # 2x1 GB
-for n in range(100):
+for n in range(1000):
     a = "A:%d:" % n + str(n%10) * repeat
     b = "B:%d:" % n + str(n%10) * repeat
     ctx.data_a[n] = a
@@ -207,7 +217,7 @@ ctx.data_b.set_checksum("46dabc02b59be44064a9e06dd50bc6841833578c2b6339fbc43f090
 ### ctx.data_a.set_checksum("9b4a551a6c1c5830d6070b9c22ae1788b9743e9637be47d56103bcda019a897c")
 ### ctx.data_b.set_checksum("9820f1ab795db7b0d195f21966ecb071d76e9ce2fd3a90845974a3905584eb3e")
 ctx.compute()
-#
+
 
 # If the database has been filled:
 
@@ -224,11 +234,23 @@ ctx.compute()
 # - Filling up the input alone is 25.5 seconds (so 11 seconds for the raw upload, since it is 14.5 seconds w/o elision)
 # - 119 secs in total; that leaves about 94 - 3 = 91 sec for database buffer download, expression evaluation, transformation and upload
 # - again, about 10 secs for retranslation. Retranslation is only 8 - 1.5 = 6.5 secs w/o database.
-# - Not having a DB at all is 83 secs in total, leaving 83 - 13.5 - 6.5 - 3 = 60 secs for expression evaluation and transformation
+# - Not having a DB at all is 83 secs in total, leaving 83 - 14.5 - 6.5 - 3 = 59 secs for expression evaluation and transformation
 #   This is still a rather hefty overhead from the checksumming + cell division:
 #       - Direct calculation in Python is ~1.75 seconds. Deepcopies don't change anything (very efficient for str)
 #       - Direct calculation + calculating checksums for inputs and outputs makes it 14 seconds
-#       - The hash is calculated only once
+#       - Seamless logs say that the hash is calculated only once
+#   HOWEVER: changing the repeat to 5, with no database:
+#   - Filling the input takes 2.3 secs
+#   - Macro evaluates in 0.4 secs
+#   - Changes re-translation to 2.4 seconds (2.8 - 0.4)
+#   - Time for expression evaluation is 6.1 - 2.4 - 0.4 = 3.3 seconds, rather than 59!
+#   More experiments confirm that the transformation itself is almost free (no time save),
+#     and that it must be expression evaluation that is expensive.
+#   Finally, with repeat = 5 and 1000 instead of 100:
+#   - 11.5 seconds to fill the database
+#   - 6 seconds to evaluate the macro
+#   - Total time is 328.4 seconds, of which 328.4 - 116.7 - 6 = 205 seconds for translation/expression evaluation
+#   - Re-translation is 122.7 - 6 = 116.7 seconds
 
 ctx.result = Cell()
 ctx.result.hash_pattern = {"!": "#"}
