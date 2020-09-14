@@ -1,18 +1,18 @@
 Set up a communion outgoing port 8601
+OUTGOING Peer1 Peer2
+ADD SERVANT buffer
+ADD SERVANT buffer_length
+ADD SERVANT semantic_to_syntactic
 Secret source code  f71eba57962891040561f1379572d97d6eb29ee7be4f95aac01e3ba697d74010
 hash verification   f71eba57962891040561f1379572d97d6eb29ee7be4f95aac01e3ba697d74010
 5
 ba6ba8dcc8a2d9789f1221df37b27ca157b1b40817cde05eadb5c6075e5dd1c3
 Communion peer 1 ready.
-OUTGOING Peer1 Peer2
-ADD SERVANT buffer
-ADD SERVANT buffer_length
-ADD SERVANT semantic_to_syntactic
 REMOVE SERVANT buffer
 REMOVE SERVANT buffer_length
 REMOVE SERVANT semantic_to_syntactic
 Traceback (most recent call last):
-  File "communion-peer1.py", line 42, in <module>
+  File "communion-peer1.py", line 39, in <module>
     asyncio.get_event_loop().run_forever()
   File "/opt/conda/lib/python3.7/asyncio/base_events.py", line 539, in run_forever
     self._run_once()
