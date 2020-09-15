@@ -181,8 +181,11 @@ class TaskManager:
                 if isinstance(task, UponConnectionTask):
                     if task.future is None or task.future.done():
                         continue
+                    """
+                    # can't happen. Every root context has its own taskmanager
                     if task._root() is not root:
                         continue
+                    """
                     fut = asyncio.shield(task.future)
                     await fut
                     break

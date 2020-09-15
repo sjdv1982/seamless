@@ -44,9 +44,8 @@ seamless.database_cache.connect()
 seamless.set_ncores(8) ###
 seamless.set_parallel_evaluations(100)  ###
 
-# for the big testing, 1 core and 5 evaluations... still 10 GB of memory used
-seamless.set_ncores(1) ###
-seamless.set_parallel_evaluations(5)  ###
+# for the big testing, 20 evaluations
+seamless.set_parallel_evaluations(20)  ###
 
 """
 import logging
@@ -208,7 +207,6 @@ ctx.compute()
 # Next section is 14.5 secs (if the database is filled), but can be elided to ~0.5s by setting checksum directly (if in flatfile cache).
 # Not having a DB at all is also 13 secs, so DB request communication (without upload) doesn't cost much.
 
-"""
 repeat = int(10e6)
 #repeat = int(5)
 #for n in range(1000): # 2x10 GB
@@ -225,14 +223,22 @@ for n in range(1000):
 ctx.compute()
 print(ctx.data_a.checksum)
 print(ctx.data_b.checksum)
+
 """
-ctx.data_a.set_checksum("fa4e6aa7e7edaa6feb036fd5e8c28ffc48575cefc332187552c5be4bf0511af8")
-ctx.data_b.set_checksum("2988c44780790e4ffceb1f97391e475f165e316f27a656957282a2998aee9d4f")
+ctx.data_a.set_checksum("d07050610c50de8c810aa1d1e322786ed8932cf6eafa0fbe1f132b2c881af9c2")
+ctx.data_b.set_checksum("374c02504f89ed0a760b03c3e1fd2258988576b919d763254709b66fc7bfb22e")
+ctx.compute()
+
+"""
 
 #
 ### For repeat=10 million, 1000 items
 ### ctx.data_a.set_checksum("fa4e6aa7e7edaa6feb036fd5e8c28ffc48575cefc332187552c5be4bf0511af8")
 ### ctx.data_b.set_checksum("2988c44780790e4ffceb1f97391e475f165e316f27a656957282a2998aee9d4f")
+
+### For repeat=10 million, 200 items
+### ctx.data_a.set_checksum("d07050610c50de8c810aa1d1e322786ed8932cf6eafa0fbe1f132b2c881af9c2")
+### ctx.data_b.set_checksum("374c02504f89ed0a760b03c3e1fd2258988576b919d763254709b66fc7bfb22e")
 
 ### For repeat=10 million
 ### ctx.data_a.set_checksum("983730afb7ab41d524b72f1097daaf4a3c15b98943291f96e523730849cabe8c")
@@ -335,7 +341,8 @@ print(time.time()-t0)
 print("Re-eval")
 ctx.set_graph(graph)
 """
-
+"""
 ctx.translate(force=True)
 ctx.compute()
 print(time.time()-t0)
+"""

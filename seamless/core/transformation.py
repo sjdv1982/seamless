@@ -348,6 +348,7 @@ class TransformationJob:
         namespace = {"__name__": "transformer"}
         inputs = []
         code = None
+        lock = await acquire_lock(self.checksum)
         for pinname in self.transformation:
             if pinname == "__output__":
                 continue
@@ -418,7 +419,6 @@ class TransformationJob:
                 raise SeamlessInvalidValueError(result)
             return result_checksum
 
-        lock = await acquire_lock(self.checksum)
         self.start = time.time()
         running = False
         try:
