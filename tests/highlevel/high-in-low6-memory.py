@@ -137,8 +137,8 @@ sctx = ctx.adder
 sctx.inp = Context()
 sctx.inp.a = Cell("mixed")
 sctx.inp.b = Cell("mixed")
-sctx.a = Cell("str")
-sctx.b = Cell("str")
+sctx.a = Cell("mixed")  # str would be expensive!!
+sctx.b = Cell("mixed")  # str would be expensive!!
 sctx.a = sctx.inp.a
 sctx.b = sctx.inp.b
 def add(a,b):

@@ -1,38 +1,48 @@
 """
 Performance tests based on tests/highlevel/high-in-low6-memory.py
+See also auth-*py.
 
-Note that transformations run in subprocesses, so this is all about latency, not total CPU usage
-
-Conclusion:
-- With low data size, expression eval overhead scales worse than linear with graph size: 6x longer (~200 ms per transformer instead of ~30 ms)
-when going from 100 to 1000 transformers in parallel.
-- With low data size, graph re-translation scales worse than linear with graph size: 5x longer (~116 ms per transformer instead of ~24 ms)
-- In contrast, auth operations and macro evaluations are about linear.
-
-- With growing data size, auth operation is about 14 sec per 2 GB, i.e 7 ms per megabyte, of which about half is raw checksum calculation
-- Expression evaluation is about 56 sec per 2 GB, i.e. 28 ms per megabyte, of which about 1/4 is raw checksum calculation
-- Graph re-translation overhead is doubled or tripled, to 65 ms per transformer.
-
-
-UPDATE: see auth-*py.
-- Overhead can be reduced a bit by getting rid of checksum processing pools; overhead is now at ~6.5 ms / MB.
-- A lot of the auth overhead comes from json.dumps.
+- Data overhead is now at ~6.5 ms / MB.
+  A lot of the data overhead comes from json.dumps. This is to build mixed cells.
+  The rest is from get_hash.
   Pure Python version (with get_hash and dumps) is at 6.3 ms / MB,
-  so the rest of the auth overhead is fine!
+  so the rest of the data overhead is fine!
+
+- Database upload overhead is about the same (7 ms / MB) with a flatfile backend
+  Database download is almost free.
+
+- A structured cell auth operation is about 10 ms.
+
+- map-list macro evaluation is cheap, 5 ms per (parallel) transformation
+
+- re-translation is about 20 ms per transformation (on top of the macro)
+
+- expression evaluation is about 10 ms + 0.5 ms / MB (of input + output) per transformation
+  (speculative relationship!)
+
+- BUT: Non-linear scaling:
+  between 100 and 1000 parallel transformations, a x4 slowdown is observed for the last three overheads above.
+
+
+NOTE: Mixed-to-str conversion is expensive, don't do it!
+
+
+
 """
 
+import sys
 import seamless
 
 import seamless.core.execute
 seamless.core.execute.DIRECT_PRINT = True
 
-###seamless.database_sink.connect()
-###seamless.database_cache.connect()
+seamless.database_sink.connect()
+seamless.database_cache.connect()
 #seamless.set_ncores(2)
 #seamless.set_parallel_evaluations(5)
 
 seamless.set_ncores(8) ###
-seamless.set_parallel_evaluations(10)  ###
+seamless.set_parallel_evaluations(100)  ###
 
 """
 import logging
@@ -43,7 +53,8 @@ logging.getLogger("seamless").setLevel(logging.DEBUG)
 from seamless.highlevel import Context, Cell, Macro
 from seamless.highlevel.library import LibraryContainer
 
-import cProfile, pstats, io
+import time
+import cProfile
 cProfile.profiler = cProfile.Profile()
 
 mylib = LibraryContainer("mylib")
@@ -170,8 +181,8 @@ sctx = ctx.adder
 sctx.inp = Context()
 sctx.inp.a = Cell("mixed")
 sctx.inp.b = Cell("mixed")
-sctx.a = Cell("str")
-sctx.b = Cell("str")
+sctx.a = Cell("mixed")
+sctx.b = Cell("mixed")
 sctx.a = sctx.inp.a
 sctx.b = sctx.inp.b
 def add(a,b):
@@ -191,13 +202,14 @@ ctx.data_b.hash_pattern = {"!": "#"}
 ctx.compute()
 
 # Next section is 14.5 secs (if the database is filled), but can be elided to ~0.5s by setting checksum directly (if in flatfile cache).
-# Not having a DB at all is also 13.5 secs, so DB request communication (without upload) doesn't cost much.
+# Not having a DB at all is also 13 secs, so DB request communication (without upload) doesn't cost much.
 
-#repeat = int(10e6)
-repeat = int(5)
+"""
+repeat = int(10e6)
+#repeat = int(5)
 #for n in range(1000): # 2x10 GB
 #for n in range(100): # 2x1 GB
-for n in range(1000):
+for n in range(100):
     a = "A:%d:" % n + str(n%10) * repeat
     b = "B:%d:" % n + str(n%10) * repeat
     ctx.data_a[n] = a
@@ -209,11 +221,10 @@ for n in range(1000):
 ctx.compute()
 print(ctx.data_a.checksum)
 print(ctx.data_b.checksum)
-
 """
+
 ctx.data_a.set_checksum("983730afb7ab41d524b72f1097daaf4a3c15b98943291f96e523730849cabe8c")
 ctx.data_b.set_checksum("46dabc02b59be44064a9e06dd50bc6841833578c2b6339fbc43f090cc17831fa")
-"""
 
 #
 ### For repeat=10 million
@@ -225,39 +236,56 @@ ctx.data_b.set_checksum("46dabc02b59be44064a9e06dd50bc6841833578c2b6339fbc43f090
 ### ctx.data_b.set_checksum("9820f1ab795db7b0d195f21966ecb071d76e9ce2fd3a90845974a3905584eb3e")
 ctx.compute()
 
+"""
+If there is no database (100 x repeat 10e6):
+- 13 secs up to here (6.5 ms per MB)
+- 0.5 secs to evaluate the macro
+- 2.3 secs (2.8 - 0.5) for re-translation (23 ms per transformer)
+- 32 secs total time, which leaves 32 - 13 - 0.5 = 18.5 secs for transformation and expression evaluation
+  Since 13 secs is required for calculate checksum and decoding, that means ~5.5 secs (55 ms per transformer) overhead
+  This is a supplement of 32 ms over just re-translation
 
-# If the database has been filled:
+If there is no database (100 x repeat 5):
+- 2.3 secs up to here (12 ms per auth operation)
+- Still 0.5 secs to evaluate the macro
+- Still 2.3 secs (2.8 - 0.5) for re-translation (23 ms per transformer, independent of data size!)
+- 6.2 secs total time, which leaves 6.2 - 2.3 - 0.5 = 3.5 secs for transformation and expression evaluation
+  This is an overhead of 35 ms per transformer, a supplement of just 12 ms over re-translation
+  The 20 ms reduction compared to above comes from not handling 2x10 MB of input and 20 MB of output,
+  so that's 0.5 ms/MB.
 
-# - 1.5 secs up to here (with the above elision). Another 1.5 secs to execute the length-100 macro
-# - it is about 9 seconds to propagate the signals (evidenced from re-translation, minus macro execution)
-# - Since total time is about 30 secs, that leaves about 21 - 3 = 18 secs for database buffer download and expression evaluation
-# - Signal propagation still scales very much with buffer size, as for repeat 5:
-#       - retranslation is 3.7 (5.2 - 1.5) seconds, rather than 9
-#       - total time is 6.4 seconds (9.4 - 3), rather than 30.
-#       Why is this so?? Expressions should be of the same size, since everything is a deep structure ??
+If there is no database (1000 x repeat 5):
+- 11.7 secs up to here (12 ms per auth operation). So scales linearly.
+- 6.5 secs to evaluate the macro, so scales about linearly
+- 98 secs (104.5 - 6.5) for re-translation, which is 4x slower than above  (98 ms)
+- 145 secs total time, which leaves 145 - 11.7 - 6.5 = 127 secs for transformation and expression evaluation
+  This is an overhead of 127 ms per transformer, which is 4x slower than above (127 ms).
+  => So in principle, 90 sconds slower than might be
+    - Some 45 secs is await-upon-connection-tasks, this could be optimized?
+    - 12 seconds from isinstance is probably unavoidable
+    - 9 seconds comes from validate deep structure, that may be unavoidable
+    - 5 seconds each from taskmanager.add_task (61k tasks) and asyncio.Task.done (119 million tasks). Avoidable?
+  => do maplist-inside-maplist
 
+If the database has not been filled:
+- 27.5 secs up to here
+If the database has been filled:
+- 14 secs up to here: to synthesize the data, and to verify that all is present
+  So the raw upload is 13.5 seconds (27.5 - 14); and communication with the DB delays only 1 sec.
+- 1.5 secs up to here, with the above elision.
 
-# If the database has NOT been filled:
-# - Filling up the input alone is 25.5 seconds (so 11 seconds for the raw upload, since it is 14.5 seconds w/o elision)
-# - 119 secs in total; that leaves about 94 - 3 = 91 sec for database buffer download, expression evaluation, transformation and upload
-# - again, about 10 secs for retranslation. Retranslation is only 8 - 1.5 = 6.5 secs w/o database.
-# - Not having a DB at all is 83 secs in total, leaving 83 - 14.5 - 6.5 - 3 = 59 secs for expression evaluation and transformation
-#   This is still a rather hefty overhead from the checksumming + cell division:
-#       - Direct calculation in Python is ~1.75 seconds. Deepcopies don't change anything (very efficient for str)
-#       - Direct calculation + calculating checksums for inputs and outputs makes it 14 seconds
-#       - Seamless logs say that the hash is calculated only once
-#   HOWEVER: changing the repeat to 5, with no database:
-#   - Filling the input takes 2.3 secs
-#   - Macro evaluates in 0.4 secs
-#   - Changes re-translation to 2.4 seconds (2.8 - 0.4)
-#   - Time for expression evaluation is 6.1 - 2.4 - 0.4 = 3.3 seconds, rather than 59!
-#   More experiments confirm that the transformation itself is almost free (no time save),
-#     and that it must be expression evaluation that is expensive.
-#   Finally, with repeat = 5 and 1000 instead of 100:
-#   - 11.5 seconds to fill the database
-#   - 6 seconds to evaluate the macro
-#   - Total time is 328.4 seconds, of which 328.4 - 116.7 - 6 = 205 seconds for translation/expression evaluation
-#   - Re-translation is 122.7 - 6 = 116.7 seconds
+With the database:
+- 1.5 secs to evaluate the macro (DB slows down!)
+- 5.5 secs for re-translation
+- 45.7 secs total time, which leaves 45.7 - 5.5 - 1.5 = 38.5 secs for transformation and expression evaluation
+  Compare this to the 18.5 secs w/o database, this is a loss of 20 secs.
+  But we have to count the download of the inputs and upload of the results.
+  When removing the tfr entries from the database, transformations will be repeated, but no buffers will be uploaded,
+  as the sink knows them already.
+  This brings total time down to 32 secs, the same as no database!
+  So all of the extra overhead is from upload, and download is almost free. (This could be hard disk caching, though)
+- 5.5 secs total time with pulling transformation results out of the DB. Again, download is almost free.
+"""
 
 ctx.result = Cell()
 ctx.result.hash_pattern = {"!": "#"}
@@ -274,14 +302,12 @@ ctx.compute()
 print("Exception:", ctx.inst.ctx.m.exception)
 print(ctx.result.data)
 
-import io, pstats
-s = io.StringIO()
+import pstats
 sortby = 'tottime'
-ps = pstats.Stats(cProfile.profiler, stream=s).sort_stats(sortby)
+ps = pstats.Stats(cProfile.profiler).sort_stats(sortby)
 ps.print_stats(40)
-###print(s.getvalue())
-import time; t0 = time.time()
 
+t0 = time.time()
 """
 print("Re-set")
 graph = ctx.get_graph()
@@ -294,7 +320,8 @@ print(time.time()-t0)
 print("Re-eval")
 ctx.set_graph(graph)
 """
-
+"""
 ctx.translate(force=True)
 ctx.compute()
 print(time.time()-t0)
+"""
