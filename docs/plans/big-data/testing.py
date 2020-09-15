@@ -44,6 +44,10 @@ seamless.database_cache.connect()
 seamless.set_ncores(8) ###
 seamless.set_parallel_evaluations(100)  ###
 
+# for the big testing, 1 core and 5 evaluations... still 10 GB of memory used
+seamless.set_ncores(1) ###
+seamless.set_parallel_evaluations(5)  ###
+
 """
 import logging
 logging.basicConfig()
@@ -209,7 +213,7 @@ repeat = int(10e6)
 #repeat = int(5)
 #for n in range(1000): # 2x10 GB
 #for n in range(100): # 2x1 GB
-for n in range(100):
+for n in range(1000):
     a = "A:%d:" % n + str(n%10) * repeat
     b = "B:%d:" % n + str(n%10) * repeat
     ctx.data_a[n] = a
@@ -222,11 +226,14 @@ ctx.compute()
 print(ctx.data_a.checksum)
 print(ctx.data_b.checksum)
 """
-
-ctx.data_a.set_checksum("983730afb7ab41d524b72f1097daaf4a3c15b98943291f96e523730849cabe8c")
-ctx.data_b.set_checksum("46dabc02b59be44064a9e06dd50bc6841833578c2b6339fbc43f090cc17831fa")
+ctx.data_a.set_checksum("fa4e6aa7e7edaa6feb036fd5e8c28ffc48575cefc332187552c5be4bf0511af8")
+ctx.data_b.set_checksum("2988c44780790e4ffceb1f97391e475f165e316f27a656957282a2998aee9d4f")
 
 #
+### For repeat=10 million, 1000 items
+### ctx.data_a.set_checksum("fa4e6aa7e7edaa6feb036fd5e8c28ffc48575cefc332187552c5be4bf0511af8")
+### ctx.data_b.set_checksum("2988c44780790e4ffceb1f97391e475f165e316f27a656957282a2998aee9d4f")
+
 ### For repeat=10 million
 ### ctx.data_a.set_checksum("983730afb7ab41d524b72f1097daaf4a3c15b98943291f96e523730849cabe8c")
 ### ctx.data_b.set_checksum("46dabc02b59be44064a9e06dd50bc6841833578c2b6339fbc43f090cc17831fa")
@@ -285,6 +292,14 @@ With the database:
   This brings total time down to 32 secs, the same as no database!
   So all of the extra overhead is from upload, and download is almost free. (This could be hard disk caching, though)
 - 5.5 secs total time with pulling transformation results out of the DB. Again, download is almost free.
+
+
+Big test with the database (1000 x repeat 10e6):
+- Total time 940 secs. Data upload overhead should be ~120 secs, and Seamless data overhead should be ~140 secs.
+- 142 secs for re-translation + macro evaluation (142 ms / transformation), a factor 6 slowdown
+- 940 - 142 - 120 - 140 = ~540 secs for evaluation
+   I.e. 540 ms per transformation. If the same slowdown applies, it would have been 90.
+   But we would have expected 30. So a larger slowdown (fewer parallel expressions may have been a cause too)
 """
 
 ctx.result = Cell()
@@ -320,8 +335,7 @@ print(time.time()-t0)
 print("Re-eval")
 ctx.set_graph(graph)
 """
-"""
+
 ctx.translate(force=True)
 ctx.compute()
 print(time.time()-t0)
-"""
