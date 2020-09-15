@@ -419,19 +419,6 @@ class Context(Base):
             SetCellValueTask, SetCellBufferTask, StructuredCellJoinTask
         )
 
-        if self._gen_context is not None and not asyncio.get_event_loop().is_running():
-            taskmanager = self._gen_context._get_manager().taskmanager
-            def get_join_tasks(taskmanager):
-                tasks = []
-                for task in taskmanager.tasks:
-                    if isinstance(task, join_task_types):
-                        tasks.append(task)
-                return tasks
-            remaining, _ = taskmanager.compute(
-                timeout=10, report=2,
-                get_tasks_func=get_join_tasks
-            )
-            assert not len(remaining), remaining
         try:
             self._translating = True
             manager = self._manager

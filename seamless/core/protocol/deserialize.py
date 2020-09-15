@@ -108,8 +108,8 @@ async def deserialize(buffer, checksum, celltype, copy):
             return value
 
 
-    # ProcessPool is too slow, but ThreadPool works
-    if len(buffer) > 1000000:
+    # ProcessPool is too slow, but ThreadPool works... do experiment with later
+    if 0:
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor() as executor:
             value = await loop.run_in_executor(

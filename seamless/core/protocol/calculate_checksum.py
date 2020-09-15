@@ -33,8 +33,8 @@ async def calculate_checksum(buffer):
     if cached_checksum is not None:
         checksum_cache[cached_checksum] = buffer
         return cached_checksum
-    if len(buffer) > 1000000:
-        # ThreadPoolExecutor does not work...
+    if 0:
+        # ThreadPoolExecutor does not work... ProcessPoolExecutor is slow. To experiment with later
         loop = asyncio.get_event_loop()
         with ProcessPoolExecutor() as executor:
             checksum = await loop.run_in_executor(

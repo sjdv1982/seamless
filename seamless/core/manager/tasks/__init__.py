@@ -7,6 +7,7 @@ from functools import partial
 import logging
 logger = logging.getLogger("seamless")
 
+
 def print_info(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
@@ -127,8 +128,6 @@ class Task:
             assert self.future is not None
         if self.future.done():
             return self.future.result()
-        if not already_launched:
-            print_debug("RUN", self.__class__.__name__, hex(id(self)))
         self._awaiting = True
         try:
             if self.caller_count != -999:
@@ -141,8 +140,6 @@ class Task:
                     print_debug("CANCELING", self.__class__.__name__, hex(id(self)))
                     self.cancel()
             raise
-        if not already_launched:
-            print_debug("HAS RUN", self.__class__.__name__, hex(id(self)))
         return self.future.result()
 
     async def _run0(self, taskmanager):

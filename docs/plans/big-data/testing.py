@@ -12,6 +12,13 @@ when going from 100 to 1000 transformers in parallel.
 - With growing data size, auth operation is about 14 sec per 2 GB, i.e 7 ms per megabyte, of which about half is raw checksum calculation
 - Expression evaluation is about 56 sec per 2 GB, i.e. 28 ms per megabyte, of which about 1/4 is raw checksum calculation
 - Graph re-translation overhead is doubled or tripled, to 65 ms per transformer.
+
+
+UPDATE: see auth-*py.
+- Overhead can be reduced a bit by getting rid of checksum processing pools; overhead is now at ~6.5 ms / MB.
+- A lot of the auth overhead comes from json.dumps.
+  Pure Python version (with get_hash and dumps) is at 6.3 ms / MB,
+  so the rest of the auth overhead is fine!
 """
 
 import seamless

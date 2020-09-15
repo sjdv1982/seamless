@@ -281,18 +281,9 @@ class TaskManager:
                 tasks = self.tasks
             else:
                 tasks = get_tasks_func(self)
-            ptasks, futures = [], []
-            for task in tasks:
-                future = task.future
-                """
-                if future is None:
-                    continue
-                """
-                ptasks.append(task)
-                futures.append(future)
-            return ptasks, futures
+            return tasks
 
-        ptasks, futures = select_pending_tasks()
+        ptasks = select_pending_tasks()
         def print_report(verbose=True):
             running = set()
             #print("TASKS", ptasks)
@@ -328,7 +319,7 @@ class TaskManager:
                 else:
                     curr_timeout = None
             self.loop.run_until_complete(asyncio.sleep(0.001))
-            ptasks, futures = select_pending_tasks()
+            ptasks = select_pending_tasks()
             if curr_timeout is not None:
                 curr_time = time.time()
             if report is not None and report > 0:
@@ -356,18 +347,9 @@ class TaskManager:
                 tasks = self.tasks
             else:
                 tasks = get_tasks_func(self)
-            ptasks, futures = [], []
-            for task in tasks:
-                future = task.future
-                """
-                if future is None:
-                    continue
-                """
-                ptasks.append(task)
-                futures.append(future)
-            return ptasks, futures
+            return tasks
 
-        ptasks, futures = select_pending_tasks()
+        ptasks = select_pending_tasks()
         def print_report(verbose=True):
             running = set()
             #print("TASKS", ptasks)
@@ -403,7 +385,7 @@ class TaskManager:
                 else:
                     curr_timeout = None
             await asyncio.sleep(0.0001)
-            ptasks, futures = select_pending_tasks()
+            ptasks = select_pending_tasks()
             if curr_timeout is not None:
                 curr_time = time.time()
             if report is not None and report > 0:
@@ -429,6 +411,7 @@ class TaskManager:
     def _clean_task(self, task, future):
         if task._cleaned:
             return
+        print_debug("FINISHED", task.__class__.__name__, hex(id(task)), task.dependencies)
         task._cleaned = True
         self.tasks.remove(task)
         self.task_ids.remove(task.taskid)
