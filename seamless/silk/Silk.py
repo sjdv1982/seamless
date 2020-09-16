@@ -885,12 +885,6 @@ class Silk(SilkBase):
         else:
             return self._getitem(item)
 
-    def _get_data_value(self):
-        data = self._data
-        if isinstance(data, Wrapper):
-            data = data._unwrap()
-        return data
-
     def _validate(self):
         need_form = True # TODO: detect "form" in schema, i.e. if validator_form will ever be triggered
         rich_value = RichValue(self._data, need_form)

@@ -1,5 +1,3 @@
-#raise Exception("As of version 0.4, Seamless does not support pseudo-cyclic dependencies")
-
 from seamless.core import (
     context, cell, transformer, macro_mode_on
 )

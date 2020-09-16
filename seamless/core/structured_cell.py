@@ -102,11 +102,11 @@ class StructuredCell(SeamlessBase):
             assert auth._hash_pattern == data._hash_pattern
 
         self._validate_channels(inchannels, outchannels)
-        self._modified = False
+        self._modified_auth = False
         self._modified_schema = False
 
         self._auth_value = None
-        self._auth_temp_checksum = None
+        self._auth_invalid = False
         self._schema_value = None
 
         if hash_pattern is not None:
@@ -181,11 +181,14 @@ class StructuredCell(SeamlessBase):
         assert not self.no_auth
         if self.auth._destroyed:
             return
-        if self._auth_temp_checksum is not None:
-            raise RuntimeError(self) # cannot set auth value and auth temp checksum at the same time
         manager = self._get_manager()
         if manager._destroyed:
             return
+
+        if self._auth_value is None:
+            if self._auth_invalid:
+                raise AttributeError(path)
+            self._auth_value = deepcopy(self.auth.data) # not .value, because of hash pattern
 
         if not from_pop and value is None and len(path) and isinstance(path[-1], int):
             l = len(self._get_auth_path(path[:-1]))
@@ -227,10 +230,10 @@ class StructuredCell(SeamlessBase):
         if manager._destroyed:
             return
         self.auth._set_checksum(None, from_structured_cell=True)
-        self._modified = True
+        self._modified_auth = True
         manager.unvoid_scell(self)
         manager.cancel_scell_soft(self)
-        manager.structured_cell_join(self)
+        manager.structured_cell_join(self, True)
 
     def _get_schema_path(self, path):
         if self.schema._destroyed:
@@ -328,7 +331,6 @@ class StructuredCell(SeamlessBase):
         assert checksum is None or isinstance(checksum, str)
         assert not self.no_auth
         self._auth_value = None
-        self._auth_temp_checksum = bytes.fromhex(checksum)
         self._join_auth()
 
     @property

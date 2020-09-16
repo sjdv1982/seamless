@@ -423,43 +423,48 @@ class TaskManager:
             return self.cancel_task(task._realtask)
         else:
             task.future.cancel() # will call _clean_task soon, but better do it now
-            self._clean_task(task, task.future)
+            self._clean_task(task, task.future, manual=True)
 
-    def _clean_task(self, task, future):
-        if task.future is not None and task.future.done():
-            fut = task.future
-            fut._log_traceback = False
-            if not task._awaiting:
-                try:
-                    assert task.future is fut
-                    assert not task.future._log_traceback
-                    task.future.result() # to raise Exception; TODO: log it instead
-                except CancelledError:
-                    try:
-                        task.future._exception = None ### KLUDGE
-                    except AttributeError:
-                        pass
-                    pass
-                finally:
-                    task._awaiting = True
-
-        if task._cleaned:
+    def _clean_task(self, task, future, manual=False):
+        if manual and task._cleaned:
             return
-        print_debug("FINISHED", task.__class__.__name__, hex(id(task)), task.dependencies)
-        task._cleaned = True
+        cleaned = task._cleaned
+        if not cleaned:
+            self.tasks.remove(task)
+            self.task_ids.remove(task.taskid)
+            task._cleaned = True
 
-        self.tasks.remove(task)
-        self.task_ids.remove(task.taskid)
-        for dep in task.dependencies:
-            try:
-                self._clean_dep(dep, task)
-            except Exception:
-                import traceback
-                print("ERROR in", task, task.dependencies)
-                traceback.print_exc()
-        refkey = self.rev_reftasks.pop(task, None)
-        if refkey is not None:
-            self.reftasks.pop(refkey)
+            print_debug("FINISHED", task.__class__.__name__, hex(id(task)), task.dependencies)
+
+            for dep in task.dependencies:
+                try:
+                    self._clean_dep(dep, task)
+                except Exception:
+                    import traceback
+                    print("ERROR in", task, task.dependencies)
+                    traceback.print_exc()
+            refkey = self.rev_reftasks.pop(task, None)
+            if refkey is not None:
+                self.reftasks.pop(refkey)
+
+        if not manual:
+            if task.future is not None and task.future.done():
+                fut = task.future
+                fut._log_traceback = False
+                if not task._awaiting:
+                    try:
+                        assert task.future is fut
+                        assert not task.future._log_traceback
+                        task.future.result() # to raise Exception; TODO: log it instead
+                    except CancelledError:
+                        try:
+                            task.future._exception = None ### KLUDGE
+                        except AttributeError:
+                            pass
+                        pass
+                    finally:
+                        task._awaiting = True
+
 
     def cancel_cell(self, cell, *, origin_task=None, full=False):
         """Cancels all tasks depending on cell.
@@ -517,20 +522,32 @@ If origin_task is provided, that task is not cancelled."""
             task.cancel()
 
     def cancel_structured_cell(self, structured_cell, kill_non_started, origin_task=None):
-        not_started = False
-        tasks = self.structured_cell_to_task.get(structured_cell, [])
-        for task in tasks:
-            if task is origin_task:
-                continue
-            if task._canceled:
-                continue
-            if task.future is not None and task.future.done():
-                continue
-            if not kill_non_started and not task._started:
-                not_started = True
-                continue
-            task.cancel()
-        return not_started
+        change = True
+        canceled = set()
+        while change:
+            change = False
+            not_started_auth, not_started_join = False, False
+            tasks = self.structured_cell_to_task.get(structured_cell, [])
+            for task in tasks:
+                if task is origin_task:
+                    continue
+                if task in canceled:
+                    continue
+                if task._canceled:
+                    continue
+                if task.future is not None and task.future.done():
+                    continue
+                if not kill_non_started and not task._started:
+                    if isinstance(task, StructuredCellAuthTask):
+                        not_started_auth = True
+                        continue
+                    elif isinstance(task, StructuredCellJoinTask):
+                        not_started_join = True
+                        continue
+                change = True
+                canceled.add(task)
+                task.cancel()
+        return not_started_auth, not_started_join
 
     def destroy_cell(self, cell, full=False):
         self.cancel_cell(cell, full=full)
@@ -611,4 +628,5 @@ from .. import SeamlessBase
 from .accessor import ReadAccessor
 from .expression import Expression
 from .tasks.upon_connection import UponConnectionTask
+from .tasks.structured_cell import StructuredCellAuthTask, StructuredCellJoinTask
 from ...communion_server import communion_server

@@ -47,9 +47,15 @@ class UnboundManager:
         assert cell in self._registered
         self.commands.append(("set cell", (cell, value)))
 
-    def structured_cell_join(self, sc):
+    def structured_cell_join(self, sc, updated_auth):
         assert sc in self._registered
-        self.join_structured_cells.add(sc)
+        if (sc, True) in self.join_structured_cells:
+            return
+        elif updated_auth:
+            self.join_structured_cells.discard((sc, False))
+            self.join_structured_cells.add((sc, True))
+        else:
+            self.join_structured_cells.add((sc, False))
 
     def unvoid_scell(self, sc):
         assert sc in self._registered
@@ -401,8 +407,10 @@ class UnboundContext(SeamlessBase):
             if isinstance(reg, StructuredCell):
                 if reg in unvoid_structured_cells:
                     manager.unvoid_scell(reg)
-                if reg in join_structured_cells:
-                    manager.structured_cell_join(reg)
+                if (reg, True) in join_structured_cells:
+                    manager.structured_cell_join(reg, True)
+                elif (reg, False) in join_structured_cells:
+                    manager.structured_cell_join(reg, False)
 
     def destroy(self, *, from_del=False):
         if self._bound:

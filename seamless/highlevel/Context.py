@@ -364,6 +364,7 @@ class Context(Base):
         """
         from seamless import verify_sync_translate
         verify_sync_translate()
+        self._wait_for_auth_tasks("the graph is re-translated")
         return self._do_translate(force=force, explicit=True)
 
     async def translation(self, force=False):
@@ -375,6 +376,7 @@ class Context(Base):
         If force=True, translation will happen even though no
         change in topology or celltype was detected.
         """
+        await self._wait_for_auth_tasks_async("the graph is re-translated")
         return await self._do_translate_async(force=force, explicit=True)
 
     @property
@@ -413,10 +415,10 @@ class Context(Base):
         return self._live_share_namespace
 
     def _get_graph(self, copy):
-        from ..core.manager.tasks.structured_cell import StructuredCellJoinTask
+        from ..core.manager.tasks.structured_cell import StructuredCellAuthTask
         from ..core.manager.tasks import SetCellValueTask, SetCellBufferTask
-        join_task_types = (
-            SetCellValueTask, SetCellBufferTask, StructuredCellJoinTask
+        auth_task_types = (
+            SetCellValueTask, SetCellBufferTask, StructuredCellAuthTask
         )
 
         try:
@@ -442,26 +444,7 @@ class Context(Base):
         return graph
 
     async def _get_graph_async(self, copy):
-        from ..core.manager.tasks.structured_cell import StructuredCellJoinTask
-        from ..core.manager.tasks import SetCellValueTask, SetCellBufferTask
-        join_task_types = (
-            SetCellValueTask, SetCellBufferTask, StructuredCellJoinTask
-        )
-
-        if self._gen_context is not None:
-            taskmanager = self._gen_context._get_manager().taskmanager
-            def get_join_tasks(taskmanager):
-                tasks = []
-                for task in taskmanager.tasks:
-                    if isinstance(task, join_task_types):
-                        tasks.append(task)
-                return tasks
-            remaining, _ = await taskmanager.computation(
-                timeout=10, report=2,
-                get_tasks_func=get_join_tasks
-            )
-            assert not len(remaining), remaining
-
+        await self._wait_for_auth_tasks_async("the graph is being obtained")
         try:
             self._translating = True
             manager = self._manager
@@ -534,6 +517,7 @@ class Context(Base):
         """
         # TODO: option to follow deep cell checksums
         force = (self._gen_context is None)
+        self._wait_for_auth_tasks("the graph buffers are obtained for zip")
         self._do_translate(force=force)
         graph = self.get_graph()
         nodes0 = graph["nodes"]
@@ -556,6 +540,7 @@ class Context(Base):
         """
         # TODO: option to follow deep cell checksums
         force = (self._gen_context is None)
+        await self._wait_for_auth_tasks_async("the graph buffers are obtained for zip")
         self._do_translate(force=force)
         graph = self.get_graph()
         nodes0 = graph["nodes"]
@@ -638,7 +623,52 @@ class Context(Base):
             lib.include_zip(self)
         else:
             lib.include(self, full_path=full_path)
-            self._translate()
+        self._translate()
+
+
+    def _wait_for_auth_tasks(self, what_happens_text):
+        if self._gen_context is not None and not asyncio.get_event_loop().is_running():
+            taskmanager = self._gen_context._get_manager().taskmanager
+            taskmanager.compute(
+                timeout=10, report=2,
+                get_tasks_func=get_auth_tasks
+            )
+            auth_lost_cells = set()
+            for task in taskmanager.tasks:
+                if not isinstance(task, auth_task_types):
+                    continue
+                if task._canceled:
+                    continue
+                auth_lost_cells.add(task.dependencies[0])
+                task.cancel()
+
+            if len(auth_lost_cells):
+                warn = """WARNING: the following cells had their authoritative value under modification while %s
+    These modifications have been CANCELED:
+    %s""" % (what_happens_text, list(auth_lost_cells))
+                print(warn)
+
+    async def _wait_for_auth_tasks_async(self, what_happens_text):
+        if self._gen_context is not None:
+            taskmanager = self._gen_context._get_manager().taskmanager
+            await taskmanager.computation(
+                timeout=10, report=2,
+                get_tasks_func=get_auth_tasks
+            )
+            auth_lost_cells = set()
+            for task in taskmanager.tasks:
+                if not isinstance(task, auth_task_types):
+                    continue
+                if task._canceled:
+                    continue
+                auth_lost_cells.add(task.dependencies[0])
+                task.cancel()
+
+            if len(auth_lost_cells):
+                warn = """WARNING: the following cells had their authoritative value under modification while %s
+    These modifications have been CANCELED:
+    %s""" % (what_happens_text, list(auth_lost_cells))
+                print(warn)
 
     @run_in_mainthread
     def _do_translate(self, force=False, explicit=False):
@@ -1006,6 +1036,7 @@ class SubContext(Base):
 
     def _get_graph(self, copy, runtime=False):
         parent = self._parent()
+        parent._wait_for_auth_tasks("the graph is being obtained")
         nodes, connections, params, _ = parent._graph
         path = self._path
         lp = len(path)
@@ -1091,5 +1122,18 @@ nodeclasses = {
     "context": SubContext,
     "macro": Macro,
 }
+
+from ..core.manager.tasks.structured_cell import StructuredCellAuthTask
+from ..core.manager.tasks import SetCellValueTask, SetCellBufferTask
+auth_task_types = (
+    SetCellValueTask, SetCellBufferTask, StructuredCellAuthTask
+)
+
+def get_auth_tasks(taskmanager):
+    tasks = []
+    for task in taskmanager.tasks:
+        if isinstance(task, auth_task_types):
+            tasks.append(task)
+    return tasks
 
 from ..core.cache.buffer_cache import buffer_cache

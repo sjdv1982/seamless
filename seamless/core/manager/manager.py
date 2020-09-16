@@ -199,7 +199,7 @@ class Manager:
         )
         if not from_structured_cell: # also for initial...
             if cell._structured_cell is not None and cell._structured_cell.auth is cell:
-                cell._structured_cell._modified = True
+                cell._structured_cell._modified_auth = True
                 self.unvoid_scell(cell._structured_cell)
             if checksum is not None:
                 unvoid_cell(cell, self.livegraph)
@@ -308,7 +308,7 @@ class Manager:
         inchannel._prelim = prelim
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, inchannel, False, False)
-            self.structured_cell_join(sc)
+            self.structured_cell_join(sc, False)
 
     def _set_transformer_checksum(self,
         transformer, checksum, void, *,
@@ -373,22 +373,30 @@ class Manager:
                 sc._modified_schema = True
                 self.unvoid_scell(sc)
                 self.cancel_scell_soft(sc)
-                self.structured_cell_join(sc)
+                self.structured_cell_join(sc, False)
 
-    def structured_cell_join(self, structured_cell):
+    def structured_cell_join(self, structured_cell, updated_auth):
         if self._destroyed or structured_cell._destroyed:
             return
         self._set_cell_checksum(structured_cell._data, None, void=False)
         if structured_cell.buffer is not structured_cell.auth:
             self._set_cell_checksum(structured_cell.buffer, None, void=False)
 
-        # Cancel all ongoing joins, but not if they haven't started yet.
-        not_started = self.taskmanager.cancel_structured_cell(
+        # Cancel all ongoing joins and auth tasks, but not if they haven't started yet.
+        not_started_auth, not_started_join = self.taskmanager.cancel_structured_cell(
             structured_cell, kill_non_started=False
         )
 
+        if updated_auth:
+            # If there is no existing auth task, create a new one
+            if not not_started_auth:
+                task = StructuredCellAuthTask(
+                    self, structured_cell
+                )
+                task.launch()
+
         # If there is no existing join task, create a new one
-        if not not_started:
+        if not not_started_join:
             task = StructuredCellJoinTask(
                 self, structured_cell
             )
@@ -553,12 +561,13 @@ If origin_task is provided, that task is not cancelled."""
                 self.cancel_cycle.cancel_scell_outpath_soft(sc, path)
 
     @with_cancel_cycle
-    def cancel_scell_hard(self, sc, reason):
+    def cancel_scell_hard(self, sc, reason, origin_task=None):
         """Hard-cancel of a structured cell, as decided by the cancel system.
         The reason for canceling does not originate in joining, but because
         all inchannels are void and auth as well"""
         #print("HARD CANCEL", sc)
         assert isinstance(sc, StructuredCell)
+        self.cancel_cycle.origin_task = origin_task
         self.cancel_cycle.cancel_scell_inpath(
             sc, (), void=True,
             reason=reason
@@ -732,6 +741,6 @@ from ..macro import Macro, Path, _global_paths
 from ..reactor import Reactor
 from .accessor import ReadAccessor
 from ..structured_cell import StructuredCell
-from .tasks.structured_cell import StructuredCellJoinTask
+from .tasks.structured_cell import StructuredCellJoinTask, StructuredCellAuthTask
 from ..utils import overlap_path
 from ..protocol.deep_structure import DeepStructureError

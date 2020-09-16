@@ -30,7 +30,7 @@ class StructuredCellCancellation:
     def __init__(self, scell, cycle):
         self.cycle = weakref.ref(cycle)
         self.scell = weakref.ref(scell)
-        self.modified = scell._modified or scell._modified_schema
+        self.modified = scell._modified_auth or scell._modified_schema
         self.valid_inchannels = {k for k,ic in scell.inchannels.items() if not ic._void}
         self.pending_inchannels = {k for k,ic in scell.inchannels.items() if (ic._checksum is None and not ic._void) or ic._prelim}
         self.canceled_inchannels = {}
@@ -43,9 +43,9 @@ class StructuredCellCancellation:
             self.is_void = False
         else:
             if not len(_destroying) and not scell._destroyed:
-                self.is_void = (not len(self.valid_inchannels)) and (not scell._modified and not scell._modified_schema) and scell._data._checksum is None
+                self.is_void = (not len(self.valid_inchannels)) and (not scell._modified_auth and not scell._modified_schema) and scell._data._checksum is None
                 try:
-                    assert self.is_void == scell._data._void, (scell, self.is_void, scell._modified, scell._modified_schema, self.valid_inchannels, scell._data._void, scell._data._checksum is None)
+                    assert self.is_void == scell._data._void, (scell, self.is_void, scell._modified_auth, scell._modified_schema, self.valid_inchannels, scell._data._void, scell._data._checksum is None)
                 except:
                     import traceback; traceback.print_exc()
             else:
@@ -123,15 +123,18 @@ class StructuredCellCancellation:
 
         new_equilibrated = not len(pending_inchannels) # outchannels with value None become void
         if not self.is_joined:
-            if sc._modified or sc._modified_schema:
+            if sc._modified_auth or sc._modified_schema:
                 new_equilibrated = False
         new_void = not len(valid_inchannels)
+
+        if new_equilibrated and sc._exception is not None:
+            new_void = True
 
         if not new_equilibrated:
             new_void = False
 
         if self.is_joined:
-            # The cancel originated from a join task for this structured cell
+            # The cancel originated from a join task for this structured cell, and it's not a hard cancel
             assert not self.is_void
             reason = StatusReasonEnum.UPSTREAM
             if not self.cycle().origin_task.ok:
@@ -144,6 +147,7 @@ class StructuredCellCancellation:
                     invalid = sc._exception is not None
                     if invalid:
                         reason = StatusReasonEnum.INVALID
+
                     taskmanager.cancel_structured_cell(
                         sc, kill_non_started=True,
                         origin_task=self.cycle().origin_task
@@ -152,9 +156,10 @@ class StructuredCellCancellation:
                     if sc.buffer is not sc.auth:
                         if sc.buffer._checksum is None:
                             manager._set_cell_checksum(sc.buffer, None, void=True, status_reason=reason)
+
         else:
             # The cancel did not originate from a join task for this structured cell
-            assert self.modified == (sc._modified or sc._modified_schema), sc
+            assert self.modified == (sc._modified_auth or sc._modified_schema), sc
             if self.modified:
                 new_void = False
             if new_void and not self.is_void:
@@ -163,7 +168,7 @@ class StructuredCellCancellation:
             elif self.is_void and not new_void:
                 unvoid_me = True
             if not new_void and not new_equilibrated:
-                if sc._modified or sc._modified_schema:
+                if sc._modified_auth or sc._modified_schema:
                     join_me = True
                 else:
                     for k,ic in sc.inchannels.items():
@@ -172,7 +177,6 @@ class StructuredCellCancellation:
                             break
 
         if new_equilibrated and not sc._equilibrated:
-            #print("SET EQUILIBRATED", sc)
             sc._equilibrated = True
             taskmanager.cancel_structured_cell(sc, kill_non_started=True, origin_task=self.cycle().origin_task)
             # Outchannel accessors that evaluate to None will now become void
@@ -181,7 +185,7 @@ class StructuredCellCancellation:
             for outpath in sc.outchannels:
                 for accessor in downstreams[outpath]:
                     accessor._soften = False
-            if not self.is_joined:  # joining task will have done this already
+            if not self.is_joined or len(self.canceled_inchannels):  # joining task will have done this already, unless it is the
                 self.cycle().post_equilibrate.append(sc)
 
         for path, (void, reason) in self.canceled_inchannels.items():
@@ -550,6 +554,7 @@ class CancellationCycle:
     def resolve(self):
         assert not self.cleared
         manager = self.manager()
+        livegraph = manager.livegraph
         taskmanager = self.taskmanager
 
         for cell, (void, reason) in self.cells.items():
@@ -574,7 +579,8 @@ class CancellationCycle:
         self._clear()
 
         for scell in post_equilibrate:
-            taskmanager.cancel_structured_cell(scell) # will cancel joins; will not cancel accessor updates
+            downstreams = livegraph.paths_to_downstream[scell._data]
+            taskmanager.cancel_structured_cell(scell, kill_non_started=True) # will cancel joins; will not cancel accessor updates
             for outpath in scell.outchannels:
                 for accessor in downstreams[outpath]:
                     if accessor._checksum is None:
@@ -586,7 +592,7 @@ class CancellationCycle:
         for scell in to_unvoid:
             manager.unvoid_scell(scell)
         for scell in to_join:
-            manager.structured_cell_join(scell)
+            manager.structured_cell_join(scell, False)
 
         #print("/CYCLE")
         for ele, reason in to_void:

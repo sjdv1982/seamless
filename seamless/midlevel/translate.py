@@ -88,7 +88,7 @@ def set_structured_cell_from_checksum(cell, checksum):
                 from_structured_cell=True,
                 initial=True
             )
-            cell._modified = True
+            cell._modified_auth = True
             join = True
 
     if "schema" in checksum:
@@ -97,10 +97,10 @@ def set_structured_cell_from_checksum(cell, checksum):
             from_structured_cell=True,
             initial=True
         )
-        cell._modified = True
+        cell._modified_schema = True
 
     if join:
-        cell._get_manager().structured_cell_join(cell)
+        cell._get_manager().structured_cell_join(cell, True)
 
 
 
