@@ -3,6 +3,25 @@ from . import Task
 from ...build_module import build_module_async
 from ...macro_mode import get_macro_mode
 
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
+
 class MacroUpdateTask(Task):
     def __init__(self, manager, macro):
         self.macro = macro
@@ -17,46 +36,42 @@ class MacroUpdateTask(Task):
         livegraph = manager.livegraph
         taskmanager = manager.taskmanager
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
-        upstreams = livegraph.macro_to_upstream[macro]
 
-        for pinname, accessor in upstreams.items():
-            if accessor is None: #unconnected
-                macro._status_reason = StatusReasonEnum.UNCONNECTED
-                return
+        if macro._void:
+            print("WARNING: macro %s is void, shouldn't happen during macro update" % macro)
+            manager.cancel_macro(macro, True, StatusReasonEnum.ERROR)
+            return
+
+        upstreams = livegraph.macro_to_upstream[macro]
 
         status_reason = None
         for pinname, accessor in upstreams.items():
-            if accessor._void: #upstream error
-                status_reason = StatusReasonEnum.UPSTREAM
+            if accessor is None: #unconnected
+                status_reason = StatusReasonEnum.UNCONNECTED
+                break
+        else:
+            for pinname, accessor in upstreams.items():
+                if accessor._void: #upstream error
+                    status_reason = StatusReasonEnum.UPSTREAM
 
         if status_reason is not None:
-            if not macro._void:
-                print("WARNING: macro %s is not yet void, shouldn't happen during macro update" % macro)
-                macro._status_reason = StatusReasonEnum.UPSTREAM
+            print("WARNING: macro %s is void, shouldn't happen during macro update" % macro)
+            manager.cancel_macro(macro, True, status_reason)
             return
 
-        ok, void = True, False
         for pinname, accessor in upstreams.items():
-            if accessor._checksum is None: #pending or void
-                ok = False
-                if not void:
-                    void = accessor._void
-
-        if not ok:
-            macro._void = void
-            return
+            if accessor._checksum is None: #pending, a legitimate use case, but we can't proceed
+                print_debug("ABORT", self.__class__.__name__, hex(id(self)), self.dependencies)
+                manager.cancel_macro(macro, False)
+                return
 
         inputpins = {}
         for pinname, accessor in upstreams.items():
             inputpins[pinname] = accessor._checksum
         if is_equal(inputpins, macro._last_inputs):
-            if not macro._void:
-                return
+            return
 
         macro._last_inputs = inputpins.copy()
-        macro._void = False
-        macro._status_reason = None
-
         cachemanager = manager.cachemanager
 
         code = None

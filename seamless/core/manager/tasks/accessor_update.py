@@ -69,7 +69,8 @@ class AccessorUpdateTask(Task):
                         ReactorUpdateTask(manager, worker).launch()
                 elif isinstance(worker, Macro):
                     manager.taskmanager.cancel_macro(worker)
-                    MacroUpdateTask(manager, worker).launch()
+                    if not worker._void:
+                        MacroUpdateTask(manager, worker).launch()
                 else:
                     raise TypeError(type(worker))
             elif isinstance(target, Cell): # If a cell:

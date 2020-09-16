@@ -70,12 +70,22 @@ def unvoid_reactor(reactor, livegraph):
     editpins = rtreactor.editpins
     editpin_to_cell = livegraph.editpin_to_cell[reactor]
     upstreams = livegraph.reactor_to_upstream[reactor]
+    outputpins = [pinname for pinname in reactor._pins \
+        if reactor._pins[pinname].io == "output" ]
+
     for pinname, accessor in upstreams.items():
         if accessor is None: #unconnected
             reactor._status_reason = StatusReasonEnum.UNCONNECTED
             return
+
     for pinname in editpins:
         if editpin_to_cell[pinname] is None: #unconnected
+            reactor._status_reason = StatusReasonEnum.UNCONNECTED
+            return
+
+    all_downstreams = livegraph.reactor_to_downstream[reactor]
+    for outputpin in outputpins:
+        if not len(all_downstreams.get(outputpin, [])):
             reactor._status_reason = StatusReasonEnum.UNCONNECTED
             return
 
@@ -86,7 +96,7 @@ def unvoid_reactor(reactor, livegraph):
 
     for pinname in editpins:
         cell = editpin_to_cell[pinname]
-        if cell._void:
+        if cell._void: # TODO: allow them to be void? By definition, these cells have authority
             reactor._status_reason = StatusReasonEnum.UPSTREAM
             return
 
@@ -95,13 +105,25 @@ def unvoid_reactor(reactor, livegraph):
 
     outputpins = [pinname for pinname in reactor._pins \
         if reactor._pins[pinname].io == "output" ]
-    downstreams = livegraph.reactor_to_downstream.get(reactor, None)
-    if downstreams is None:
-        return
     for pinname in outputpins:
-        accessors = downstreams[pinname]
+        accessors = all_downstreams[pinname]
         for accessor in accessors:
             unvoid_accessor(accessor, livegraph)
+
+def unvoid_macro(macro, livegraph):
+    if not macro._void:
+        return
+    upstreams = livegraph.macro_to_upstream[macro]
+    for pinname, accessor in upstreams.items():
+        if accessor is None: #unconnected
+            macro._status_reason = StatusReasonEnum.UNCONNECTED
+            return
+    for pinname, accessor in upstreams.items():
+        if accessor._void: #upstream error
+            macro._status_reason = StatusReasonEnum.UPSTREAM
+            return
+    #print("UNVOID", macro)
+    macro._void = False
 
 def unvoid_accessor(accessor, livegraph):
     #print("UNVOID ACCESSOR", accessor)
@@ -147,7 +169,7 @@ def unvoid_accessor(accessor, livegraph):
     elif isinstance(target, Reactor):
         unvoid_reactor(target, livegraph)
     elif isinstance(target, Macro):
-        target._void = False
+        unvoid_macro(target, livegraph)
     elif target is None:
         pass
     else:

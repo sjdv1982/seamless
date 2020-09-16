@@ -1,5 +1,24 @@
 from . import Task
 
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
+
 class TransformerUpdateTask(Task):
     waiting_for_job = False
     def __init__(self, manager, transformer):
@@ -13,20 +32,39 @@ class TransformerUpdateTask(Task):
         livegraph = manager.livegraph
         taskmanager = manager.taskmanager
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
-        assert not transformer._void, transformer
-        upstreams = livegraph.transformer_to_upstream[transformer]
-        downstreams = livegraph.transformer_to_downstream[transformer]
-        inputpins = {}
 
-        ok = True
-        for pinname, accessor in upstreams.items():
-            if accessor._checksum is None: #pending
-                ok = False
-                #print("TF PENDING", transformer, pinname)
-                assert not accessor._void, (transformer, pinname)
-        if not ok:
+        if transformer._void:
+            print("WARNING: transformer %s is void, shouldn't happen during transformer update" % transformer)
+            manager.cancel_transformer(transformer, True, StatusReasonEnum.ERROR)
             return
 
+        upstreams = livegraph.transformer_to_upstream[transformer]
+        downstreams = livegraph.transformer_to_downstream[transformer]
+
+        status_reason = None
+        for pinname, accessor in upstreams.items():
+            if accessor is None: #unconnected
+                status_reason = StatusReasonEnum.UNCONNECTED
+                break
+        else:
+            for pinname, accessor in upstreams.items():
+                if accessor._void: #upstream error
+                    status_reason = StatusReasonEnum.UPSTREAM
+        if not len(downstreams):
+            status_reason = StatusReasonEnum.UNCONNECTED
+
+        if status_reason is not None:
+            print("WARNING: transformer %s is void, shouldn't happen during transformer update" % transformer)
+            manager.cancel_transformer(transformer, True, status_reason)
+            return
+
+        for pinname, accessor in upstreams.items():
+            if accessor._checksum is None: #pending; a legitimate use case, but we can't proceed
+                print_debug("ABORT", self.__class__.__name__, hex(id(self)), self.dependencies)
+                manager.cancel_transformer(transformer, False)
+                return
+
+        inputpins = {}
         for pinname, accessor in upstreams.items():
             inputpins[pinname] = accessor._checksum
 

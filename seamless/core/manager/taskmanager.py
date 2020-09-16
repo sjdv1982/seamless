@@ -244,29 +244,43 @@ class TaskManager:
 
     def _clean_dep(self, dep, task):
         if isinstance(dep, Cell):
+            if dep._destroyed:
+                return
             d = self.cell_to_task
         elif isinstance(dep, StructuredCell):
+            if dep._destroyed:
+                return
             d = self.structured_cell_to_task
         elif isinstance(dep, ReadAccessor):
             d = self.accessor_to_task
+            if dep not in d:
+                return
         elif isinstance(dep, Expression):
             d = self.expression_to_task
+            if dep not in d:
+                return
         elif isinstance(dep, Transformer):
+            if dep._destroyed:
+                return
             d = self.transformer_to_task
         elif isinstance(dep, Reactor):
+            if dep._destroyed:
+                return
             d = self.reactor_to_task
         elif isinstance(dep, Macro):
+            if dep._destroyed:
+                return
             d = self.macro_to_task
         elif isinstance(dep, MacroPath):
+            if dep._destroyed:
+                return
             d = self.macropath_to_task
+            if dep not in d:
+                return
         else:
             raise TypeError(dep)
         dd = d[dep]
-        try:
-            dd.remove(task)
-        except ValueError as exc:
-            print(dep, task, dd)
-            raise exc from None
+        dd.remove(task)
 
     def compute(self, timeout, report, get_tasks_func=None):
         assert not asyncio.get_event_loop().is_running()
@@ -412,19 +426,6 @@ class TaskManager:
             self._clean_task(task, task.future)
 
     def _clean_task(self, task, future):
-        if task._cleaned:
-            return
-        print_debug("FINISHED", task.__class__.__name__, hex(id(task)), task.dependencies)
-        task._cleaned = True
-        self.tasks.remove(task)
-        self.task_ids.remove(task.taskid)
-        for dep in task.dependencies:
-            try:
-                self._clean_dep(dep, task)
-            except Exception:
-                import traceback
-                print("ERROR in", task, task.dependencies)
-                traceback.print_exc()
         if task.future is not None and task.future.done():
             fut = task.future
             fut._log_traceback = False
@@ -441,6 +442,21 @@ class TaskManager:
                     pass
                 finally:
                     task._awaiting = True
+
+        if task._cleaned:
+            return
+        print_debug("FINISHED", task.__class__.__name__, hex(id(task)), task.dependencies)
+        task._cleaned = True
+
+        self.tasks.remove(task)
+        self.task_ids.remove(task.taskid)
+        for dep in task.dependencies:
+            try:
+                self._clean_dep(dep, task)
+            except Exception:
+                import traceback
+                print("ERROR in", task, task.dependencies)
+                traceback.print_exc()
         refkey = self.rev_reftasks.pop(task, None)
         if refkey is not None:
             self.reftasks.pop(refkey)

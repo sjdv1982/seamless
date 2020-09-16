@@ -9,7 +9,7 @@ class ReadAccessor(Accessor):
     _status_reason = None
     _new_macropath = False # if source or target is a newly bound macropath
     _prelim = False # if accessor represents a preliminary result
-    _soften = False # Structured cell join tasks may set this to True. If the expression evaluates to zero, don't void the accessor.
+    _soften = False # Structured cell join tasks may set this to True. If the expression evaluates to None, don't void the accessor.
     def __init__(self, source, manager, path, celltype, *, hash_pattern):
         self.source = source
         self.manager = weakref.ref(manager)
@@ -38,7 +38,7 @@ class ReadAccessor(Accessor):
         if isinstance(celltype, MacroPath):
             macropath = celltype
             if macropath._cell is None:
-                self._clear_expression(livegraph)
+                self.clear_expression(livegraph)
                 return False
             celltype = macropath._cell._celltype
             hash_pattern = macropath._cell._hash_pattern
@@ -49,7 +49,7 @@ class ReadAccessor(Accessor):
         if isinstance(target_celltype, MacroPath):
             macropath = target_celltype
             if macropath._cell is None:
-                self._clear_expression(livegraph)
+                self.clear_expression(livegraph)
                 return False
             target_celltype = macropath._cell._celltype
             target_subcelltype = macropath._cell._subcelltype
@@ -68,7 +68,7 @@ class ReadAccessor(Accessor):
         livegraph.incref_expression(expression, self)
         return True
 
-    def _clear_expression(self, livegraph):
+    def clear_expression(self, livegraph):
         if self.expression is None:
             return
         livegraph.decref_expression(self.expression, self)
