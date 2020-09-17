@@ -239,8 +239,6 @@ class StructuredCellJoinTask(StructuredCellTask):
                 assert checksum is not None
                 if isinstance(checksum, bytes):
                     checksum = checksum.hex()
-                if not len(sc.inchannels):
-                    sc.auth._set_checksum(checksum, from_structured_cell=True)
                 if sc.buffer is not sc.auth:
                     #if checksum is not None and (str(sc).find("inp.b") > -1 or str(sc).find("inp.a") > -1):
                     #    print("STRUC SET CELL CHECKSUM", sc, checksum[:10], "TASK:", self.taskid)

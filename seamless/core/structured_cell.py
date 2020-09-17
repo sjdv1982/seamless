@@ -223,6 +223,7 @@ class StructuredCell(SeamlessBase):
                         self._auth_value = []
             set_subpath(self._auth_value, self.hash_pattern, path, value)
 
+
     def _join_auth(self):
         if self.buffer._destroyed:
             return

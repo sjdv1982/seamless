@@ -150,7 +150,8 @@ class StructuredCellCancellation:
 
                     taskmanager.cancel_structured_cell(
                         sc, kill_non_started=True,
-                        origin_task=self.cycle().origin_task
+                        no_auth=True,
+                        origin_task=self.cycle().origin_task,
                     )
                     manager._set_cell_checksum(sc._data, None, void=True, status_reason=reason)
                     if sc.buffer is not sc.auth:
@@ -178,7 +179,11 @@ class StructuredCellCancellation:
 
         if new_equilibrated and not sc._equilibrated:
             sc._equilibrated = True
-            taskmanager.cancel_structured_cell(sc, kill_non_started=True, origin_task=self.cycle().origin_task)
+            taskmanager.cancel_structured_cell(
+                sc, kill_non_started=True,
+                no_auth=True,
+                origin_task=self.cycle().origin_task
+            )
             # Outchannel accessors that evaluate to None will now become void
             livegraph = manager.livegraph
             downstreams = livegraph.paths_to_downstream[sc._data]
@@ -580,7 +585,10 @@ class CancellationCycle:
 
         for scell in post_equilibrate:
             downstreams = livegraph.paths_to_downstream[scell._data]
-            taskmanager.cancel_structured_cell(scell, kill_non_started=True) # will cancel joins; will not cancel accessor updates
+            taskmanager.cancel_structured_cell(
+                scell, kill_non_started=True,
+                no_auth=True
+            ) # will cancel joins; will not cancel accessor updates
             for outpath in scell.outchannels:
                 for accessor in downstreams[outpath]:
                     if accessor._checksum is None:
@@ -598,7 +606,7 @@ class CancellationCycle:
         for ele, reason in to_void:
             if isinstance(ele, StructuredCell):
                 sc = ele
-                taskmanager.cancel_structured_cell(sc, kill_non_started=True)
+                taskmanager.cancel_structured_cell(sc, kill_non_started=True, no_auth=True)
                 if sc.auth is not None:
                     manager._set_cell_checksum(sc.auth, None, True, reason)
                 if sc.buffer is not None:

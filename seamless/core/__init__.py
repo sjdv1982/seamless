@@ -91,6 +91,7 @@ class SeamlessBase:
         self._destroyed = True
 
 _destroying = set()
+_observing = [] # observers are NOT allowed to destroy cells!
 def destroyer(func):
     def wrapper(*args, **kwargs):
         self = args[0]
@@ -102,6 +103,18 @@ def destroyer(func):
             func(*args, **kwargs)
         finally:
             _destroying.discard(lastarg)
+            if not len(_destroying):
+                observing = _observing.copy()
+                _observing.clear()
+                for cell, checksum in observing:
+                    if cell._destroyed or cell._observer is None:
+                        continue
+                        try:
+                            cs = checksum.hex() if checksum is not None else None
+                            cell._observer(cs)
+                        except Exception:
+                            traceback.print_exc()
+
     update_wrapper(wrapper, func)
     return wrapper
 

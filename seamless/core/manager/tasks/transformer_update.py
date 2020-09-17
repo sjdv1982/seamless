@@ -60,7 +60,7 @@ class TransformerUpdateTask(Task):
 
         for pinname, accessor in upstreams.items():
             if accessor._checksum is None: #pending; a legitimate use case, but we can't proceed
-                print_debug("ABORT", self.__class__.__name__, hex(id(self)), self.dependencies)
+                print_debug("ABORT", self.__class__.__name__, hex(id(self)), self.dependencies, " <= pinname", pinname)
                 manager.cancel_transformer(transformer, False)
                 return
 

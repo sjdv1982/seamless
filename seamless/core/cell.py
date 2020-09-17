@@ -406,10 +406,10 @@ class Cell(SeamlessBase):
             return
         self.unshare()
         super().destroy(from_del=from_del)
+        self._unmount()
         self._get_manager()._destroy_cell(self)
         for path in list(self._paths):
             path._bind(None, trigger=True)
-        self._unmount()
 
     def _unmount(self, from_del=False):
         from .macro import Macro

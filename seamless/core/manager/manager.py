@@ -7,6 +7,7 @@ import sys
 from copy import deepcopy
 
 from ..status import StatusReasonEnum
+from .. import _observing, _destroying
 
 def mainthread(func):
     def func2(*args, **kwargs):
@@ -258,11 +259,14 @@ class Manager:
             cachemanager.incref_checksum(checksum, cell, authoritative, False)
             observer = cell._observer
             if observer is not None:
-                try:
-                    cs = checksum.hex() if checksum is not None else None
-                    observer(cs)
-                except Exception:
-                    traceback.print_exc()
+                if not len(_destroying):
+                    try:
+                        cs = checksum.hex() if checksum is not None else None
+                        cell._observer(cs)
+                    except Exception:
+                        traceback.print_exc()
+                else:
+                    _observing.append((cell, checksum))
             if checksum is not None:
                 for traitlet in cell._traitlets:
                     # TODO: block the async mainloop during the receive_update call
@@ -384,7 +388,7 @@ class Manager:
 
         # Cancel all ongoing joins and auth tasks, but not if they haven't started yet.
         not_started_auth, not_started_join = self.taskmanager.cancel_structured_cell(
-            structured_cell, kill_non_started=False
+            structured_cell, kill_non_started=False, no_auth=(not updated_auth)
         )
 
         if updated_auth:

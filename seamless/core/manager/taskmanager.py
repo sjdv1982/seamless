@@ -521,7 +521,7 @@ If origin_task is provided, that task is not cancelled."""
                 continue
             task.cancel()
 
-    def cancel_structured_cell(self, structured_cell, kill_non_started, origin_task=None):
+    def cancel_structured_cell(self, structured_cell, kill_non_started, *, no_auth, origin_task=None):
         change = True
         canceled = set()
         while change:
@@ -544,6 +544,9 @@ If origin_task is provided, that task is not cancelled."""
                     elif isinstance(task, StructuredCellJoinTask):
                         not_started_join = True
                         continue
+                if no_auth:
+                    if isinstance(task, StructuredCellAuthTask):
+                        continue
                 change = True
                 canceled.add(task)
                 task.cancel()
@@ -555,7 +558,7 @@ If origin_task is provided, that task is not cancelled."""
         self.cell_to_value.pop(cell, None)
 
     def destroy_structured_cell(self, structured_cell):
-        self.cancel_structured_cell(structured_cell, kill_non_started=True)
+        self.cancel_structured_cell(structured_cell, kill_non_started=True, no_auth=False)
         self.structured_cell_to_task.pop(structured_cell)
 
     def destroy_accessor(self, accessor):
