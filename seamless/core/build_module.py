@@ -31,6 +31,7 @@ def build_interpreted_module(full_module_name, module_definition):
     assert language in ("python", "ipython"), language
     assert isinstance(code, str), type(code)
     mod = ModuleType(full_module_name)
+    mod.__path__ = []
     namespace = mod.__dict__
     if language == "ipython":
         ipython_execute(code, namespace)
