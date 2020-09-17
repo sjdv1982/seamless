@@ -95,6 +95,8 @@ class UnboundManager:
     ):
         assert cell._get_manager() is self
         assert cell in self._registered
+        if initial:
+            assert checksum is not None
         self.commands.append(
             ("set cell checksum",
                 (cell, checksum, initial,

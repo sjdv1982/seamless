@@ -630,8 +630,9 @@ class CancellationCycle:
 
         for macro in macros_to_destroy:
             gen_context = macro._gen_context
-            gen_context.destroy()
-            macro._gen_context = None
+            if gen_context is not None:
+                gen_context.destroy()
+                macro._gen_context = None
 
 
 from ..utils import overlap_path

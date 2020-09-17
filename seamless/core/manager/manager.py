@@ -147,10 +147,7 @@ class Manager:
   If "from_structured_cell" is True, the function is triggered by StructuredCell state maintenance routines
   In both cases, the caller is responsible for bookkeeping, such as incref/decref of checksums inside a deep structure
 
-  If "initial" is true, but "from_structured_cell" is not, the cell:
-  - Must be a simple cell
-  - or: must be the auth cell of a structured cell.
-    In that case, the checksum is temporary, and must be converted later to a value that is set on the auth handle of the structured cell
+  If "initial" is true, but "from_structured_cell" is not, the cell must be a simple cell
 
   If neither "initial" nor "from_structured_cell" is true, the cell:
   - cannot be the .data or .buffer attribute of a StructuredCell
@@ -170,7 +167,6 @@ class Manager:
             if from_structured_cell:
                 if sc_data is None and sc_buf is None and not len(sc_schema):
                     assert cell._structured_cell is not None
-                    ###assert cell._structured_cell.auth is cell, cell
             else:
                 assert cell._structured_cell is None
                 assert cell._hash_pattern is None
@@ -183,9 +179,11 @@ class Manager:
             if not from_structured_cell and cell._structured_cell is not None:
                 assert cell._structured_cell.auth is cell, cell
         if checksum is None:
+            assert not initial
             reason = StatusReasonEnum.UNDEFINED
             if not from_structured_cell:
-                self.cancel_cell(cell, void=True, reason=reason)
+                if cell._structured_cell is None or sc_schema:
+                    self.cancel_cell(cell, void=True, reason=reason)
         else:
             reason = None
             old_checksum = cell._checksum # avoid infinite task loop...
@@ -200,12 +198,17 @@ class Manager:
         )
         if not from_structured_cell: # also for initial...
             if cell._structured_cell is not None and cell._structured_cell.auth is cell:
-                cell._structured_cell._modified_auth = True
-                self.unvoid_scell(cell._structured_cell)
-            if checksum is not None:
-                unvoid_cell(cell, self.livegraph)
-            if not initial or cell._structured_cell is None or sc_schema:
-                CellUpdateTask(self, cell).launch()
+                scell = cell._structured_cell
+                scell._modified_auth = True
+                self.unvoid_scell(scell)
+                self.structured_cell_join(
+                    scell, True
+                )
+            else:
+                if checksum is not None:
+                    unvoid_cell(cell, self.livegraph)
+                if cell._structured_cell is None or sc_schema:
+                    CellUpdateTask(self, cell).launch()
         if sc_schema:
             value = self.resolve(checksum, "plain")
             self.update_schemacell(cell, value, None)
@@ -258,7 +261,7 @@ class Manager:
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, cell, authoritative, False)
             observer = cell._observer
-            if observer is not None:
+            if observer is not None and (checksum is not None or void):
                 if not len(_destroying):
                     try:
                         cs = checksum.hex() if checksum is not None else None
