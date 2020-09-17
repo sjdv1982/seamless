@@ -346,7 +346,7 @@ class CacheManager:
             assert self.cell_to_ref[refholder] is not None, refholder
             self.cell_to_ref[refholder] = None
             cell = refholder
-            if not destroying and cell._hash_pattern is not None:
+            if cell._hash_pattern is not None:
                 deep_buffer = buffer_cache.get_buffer(checksum)
                 deep_buffer_coro_id = new_deep_buffer_coro_id()
                 deep_buffer_coros.append(deep_buffer_coro_id)
@@ -391,13 +391,6 @@ is result: {}
         ref = self.cell_to_ref[cell]
         if ref is not None:
             checksum, authoritative = ref
-            if checksum is not None and cell._hash_pattern is not None:
-                buffer = buffer_cache.get_buffer(checksum)
-                if buffer is not None:
-                    deep_structure = json.loads(buffer) # non-standard, but we could be in precarious territory
-                    sub_checksums = deep_structure_to_checksums(deep_structure, cell._hash_pattern)
-                    for sub_checksum in sub_checksums:
-                        buffer_cache.decref(bytes.fromhex(sub_checksum))
             self.decref_checksum(checksum, cell, authoritative, False, destroying=True)
         self.cell_to_ref.pop(cell)
 

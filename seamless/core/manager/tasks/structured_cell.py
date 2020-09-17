@@ -31,14 +31,18 @@ class StructuredCellTask(Task):
                     if not isinstance(task, StructuredCellAuthTask):
                         if task.taskid >= self.taskid or task.future is None:
                             continue
-                if task.future.done():
-                    continue
+            if task.future is not None and task.future.done():
+                continue
             tasks.append(task)
         if len(tasks):
             if _iter == 10:
                 raise Exception(tasks[:10], self) # could not wait for tasks
-            futures = [task.future for future in tasks]
-            await asyncio.wait(futures)
+            futures0 = [task.future for future in tasks]
+            futures = [future for future in futures0 if future is not None]
+            if not len(futures):
+                await asyncio.sleep(0.05)
+            else:
+                await asyncio.wait(futures)
             await self.await_sc_tasks(auth, _iter=_iter+1)
 
 

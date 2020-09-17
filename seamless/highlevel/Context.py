@@ -884,11 +884,17 @@ class Context(Base):
         from .library.include import IncludedLibraryContainer
         return IncludedLibraryContainer(self, ())
 
-    def resolve(self, checksum):
+    def resolve(self, checksum, celltype=None):
         """Returns the data buffer that corresponds to the checksum.
+        If celltype is provided, a value is returned instead
 
         The checksum must be a SHA3-256 hash, as hex string or as bytes"""
-        return self._manager.resolve(checksum)
+        if celltype is None:
+            if isinstance(checksum, str):
+                checksum = bytes.fromhex(checksum)
+            return self._manager._get_buffer(checksum)
+        else:
+            return self._manager.resolve(checksum, celltype=celltype, copy=True)
 
     def observe(self, path, callback, polling_interval, observe_none=False, params=None):
         """Observes attributes of the context, analogous to Cell.observe"""
