@@ -9,6 +9,7 @@ import seamless.core.execute
 seamless.core.execute.DIRECT_PRINT = True
 
 tf_code = '''
+print(__name__)
 print(testmodule)
 print(testmodule.q)
 from .testmodule import q
