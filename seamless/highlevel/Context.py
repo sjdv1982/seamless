@@ -35,7 +35,7 @@ def print_error(*args):
 from .Base import Base
 from ..core import macro_mode
 from ..core.macro_mode import macro_mode_on, get_macro_mode, until_macro_mode_off
-from ..core.context import context, Context as CoreContext
+from ..core.context import context
 from ..core.cell import cell
 from ..core.mount import mountmanager #for now, just a single global mountmanager
 from .assign import assign
@@ -685,6 +685,7 @@ class Context(Base):
     def _do_translate2(self, graph0, force, explicit):
         from ..midlevel.translate import translate, import_before_translate
         from ..midlevel.pretranslate import pretranslate
+        from ..core.context import Context as CoreContext
         #from pprint import pprint; pprint(graph0)
         if not force and not self._needs_translation:
             return
@@ -713,7 +714,9 @@ class Context(Base):
             )
 
         self._translate_count += 1
+        livegraph = self._manager.livegraph
         try:
+            ok = False
             self._translating = True
             ctx = None
             if self._gen_context is not None:
@@ -724,6 +727,14 @@ class Context(Base):
                 if not ok1 or not ok2:
                     raise Exception("Cannot re-translate, since clean-up of old context was incomplete")
             import_before_translate(graph)
+            """ KLUDGE
+            The translation process does NOT happen in one async step; it will start launching tasks
+            and those tasks will be run.
+            This is a problem for the high level observers, that will miss checksum updates
+             because they are connected only in the next step.
+            We must hold all observations during translation, and flush them afterwards
+            """
+            livegraph._hold_observations = True
             with macro_mode_on():
                 ub_ctx = context(
                     toplevel=True,
@@ -745,7 +756,10 @@ class Context(Base):
             self._gen_context._root_highlevel_context = self
             assert self._gen_context._get_manager() is self._manager
             self._connect_share()
+            ok = True
         finally:
+            if not ok:
+                livegraph._hold_observations = False
             self._translating = False
             self._unbound_context = None
             needs_translation = False
@@ -757,12 +771,6 @@ class Context(Base):
 
         try:
             self._translating = True
-            for traitlet in self._traitlets.values():
-                try:
-                    traitlet._connect_seamless()
-                except Exception:
-                    traceback.print_exc()
-
             for path, child in self._children.items():
                 if isinstance(child, (Cell, Transformer, Reactor, Macro)):
                     try:
@@ -773,8 +781,18 @@ class Context(Base):
                     continue
                 else:
                     raise TypeError(type(child))
+
+            for traitlet in self._traitlets.values():
+                try:
+                    traitlet._connect_seamless()
+                except Exception:
+                    traceback.print_exc()
+
         finally:
+            livegraph._hold_observations = False
             self._translating = False
+
+        livegraph._flush_observations()
 
     def _get_shares(self):
         shares = {}

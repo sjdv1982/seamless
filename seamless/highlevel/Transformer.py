@@ -1004,7 +1004,7 @@ class Transformer(Base):
         schemacell = resultcell.schema
         schemacell._set_observer(self._observe_result_schema)
         if htf["compiled"]:
-            tf.main_module._data._set_observer(self._observe_main_module)
+            tf.main_module.auth._set_observer(self._observe_main_module)
 
 
     def __delattr__(self, attr):
