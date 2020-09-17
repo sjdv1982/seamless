@@ -1,6 +1,5 @@
 import weakref
 from ..cache.buffer_cache import buffer_cache
-from .. import destroyer
 
 import json
 import asyncio

@@ -42,7 +42,8 @@ class StructuredCellCancellation:
         if self.is_joined:
             self.is_void = False
         else:
-            if not len(_destroying) and not scell._destroyed:
+            livegraph = cycle.manager().livegraph
+            if not len(livegraph._destroying) and not scell._destroyed:
                 self.is_void = (not len(self.valid_inchannels)) and (not scell._modified_auth and not scell._modified_schema) and scell._data._checksum is None
                 try:
                     assert self.is_void == scell._data._void, (scell, self.is_void, scell._modified_auth, scell._modified_schema, self.valid_inchannels, scell._data._void, scell._data._checksum is None)
@@ -645,4 +646,3 @@ from ..status import StatusReasonEnum
 from ..structured_cell import StructuredCell
 from ..manager.tasks.accessor_update import AccessorUpdateTask
 from .tasks.structured_cell import StructuredCellJoinTask
-from .. import _destroying

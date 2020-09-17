@@ -7,7 +7,6 @@ import sys
 from copy import deepcopy
 
 from ..status import StatusReasonEnum
-from .. import _observing, _destroying
 
 def mainthread(func):
     def func2(*args, **kwargs):
@@ -222,7 +221,6 @@ class Manager:
         Therefore, the direct or indirect call of _sync versions of coroutines
         (e.g. deserialize_sync, which launches coroutines and waits for them)
         IS NOT ALLOWED
-        NOTE: with h
         """
         if cell._destroyed:
             return
@@ -244,7 +242,8 @@ class Manager:
         except Exception:
             traceback.print_exc()
 
-        if len(self.livegraph.schemacells[cell]):
+        livegraph = self.livegraph
+        if len(livegraph.schemacells[cell]):
             authoritative = True
         elif cell._structured_cell is not None:
             authoritative = (cell._structured_cell.auth is cell)
@@ -261,15 +260,15 @@ class Manager:
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, cell, authoritative, False)
             observer = cell._observer
-            if observer is not None and (checksum is not None or void):
-                if not len(_destroying):
+            if (observer is not None or livegraph._hold_observations) and ((checksum is not None) or void):
+                cs = checksum.hex() if checksum is not None else None
+                if not livegraph._hold_observations and not len(livegraph._destroying):
                     try:
-                        cs = checksum.hex() if checksum is not None else None
                         cell._observer(cs)
                     except Exception:
                         traceback.print_exc()
                 else:
-                    _observing.append((cell, checksum))
+                    livegraph._observing.append((cell, cs))
             if checksum is not None:
                 for traitlet in cell._traitlets:
                     # TODO: block the async mainloop during the receive_update call
@@ -469,7 +468,10 @@ class Manager:
         if buffer is not None:
             assert isinstance(buffer, bytes)
             return buffer
-        return GetBufferTask(self, checksum).launch_and_await()
+        try:
+            return GetBufferTask(self, checksum).launch_and_await()
+        except asyncio.CancelledError:
+            return None
 
     @mainthread
     def get_cell_buffer_and_checksum(self, cell):
@@ -504,7 +506,10 @@ class Manager:
             self, buffer, checksum, celltype,
             copy=copy
         )
-        value = task.launch_and_await()
+        try:
+            value = task.launch_and_await()
+        except asyncio.CancelledError:
+            return None
         return value
 
     ##########################################################################

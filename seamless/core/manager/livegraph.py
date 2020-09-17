@@ -1,6 +1,7 @@
 import weakref
+from functools import update_wrapper
 from ..status import StatusReasonEnum
-from .. import destroyer
+from collections import deque
 
 import logging
 logger = logging.getLogger("seamless")
@@ -22,6 +23,24 @@ def print_error(*args):
     logger.error(msg)
 
 # NOTE: distinction between simple cells (no StructuredCell monitor), StructuredCell data cells, and StructuredCell buffer cells
+
+def destroyer(func):
+    def wrapper(*args, **kwargs):
+        self = args[0]
+        lastarg = args[-1]
+        if lastarg in self._destroying:
+            return
+        try:
+            self._destroying.add(lastarg)
+            func(*args, **kwargs)
+        finally:
+            self._destroying.discard(lastarg)
+            if not len(self._destroying):
+                self._flush_observations()
+
+    update_wrapper(wrapper, func)
+    return wrapper
+
 
 class LiveGraph:
     def __init__(self, manager):
@@ -53,6 +72,10 @@ class LiveGraph:
         self.temp_auth = weakref.WeakKeyDictionary()
 
         self.cell_parsing_exceptions = {}
+
+        self._destroying = set()
+        self._observing = deque()
+        self._hold_observations = False
 
     def register_cell(self, cell):
         self.cell_to_upstream[cell] = None
@@ -684,7 +707,7 @@ class LiveGraph:
             if cell is None:
                 continue
             editpin = reactor._pins[pinname]
-            if cell._destroyed or cell in _destroying:
+            if cell._destroyed or cell in self._destroying:
                 continue
             self.cell_to_editpins[cell].remove(editpin)
 
@@ -822,6 +845,20 @@ class LiveGraph:
                 ok = False
         return ok
 
+    def _flush_observations(self):
+        while 1:
+            if len(self._destroying) or not len(self._observing) or self._hold_observations:
+                break
+            cell, checksum = self._observing.popleft()
+            if cell._destroyed or cell._observer is None:
+                continue
+                try:
+                    cs = checksum.hex() if checksum is not None else None
+                    cell._observer(cs)
+                except Exception:
+                    traceback.print_exc()
+
+
 from .accessor import Accessor, ReadAccessor, WriteAccessor
 from ..transformer import Transformer
 from ..reactor import Reactor
@@ -830,4 +867,3 @@ from ..cell import Cell
 from ..worker import EditPin
 from ..runtime_reactor import RuntimeReactor
 from .tasks.upon_connection import UponBiLinkTask
-from .. import _destroying

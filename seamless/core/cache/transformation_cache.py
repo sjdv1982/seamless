@@ -26,8 +26,6 @@ TODO: do the same with stdout, stderr
 TODO: add some metadata to the above? (when and where it was executed)
 """
 
-from .. import destroyer
-
 # Keep transformations alive for 20 secs after the last ref has expired,
 #  but only if they have been running locally for at least 20 secs,
 # else, keep them alive for 1 sec

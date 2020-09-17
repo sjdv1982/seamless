@@ -1,6 +1,4 @@
 import weakref
-from functools import lru_cache, update_wrapper
-
 class IpyString(str):
     def _repr_pretty_(self, p, cycle):
         return p.text(str(self))
@@ -89,34 +87,6 @@ class SeamlessBase:
 
     def destroy(self, **kwargs):
         self._destroyed = True
-
-_destroying = set()
-_observing = [] # observers are NOT allowed to destroy cells!
-def destroyer(func):
-    def wrapper(*args, **kwargs):
-        self = args[0]
-        lastarg = args[-1]
-        if lastarg in _destroying:
-            return
-        try:
-            _destroying.add(lastarg)
-            func(*args, **kwargs)
-        finally:
-            _destroying.discard(lastarg)
-            if not len(_destroying):
-                observing = _observing.copy()
-                _observing.clear()
-                for cell, checksum in observing:
-                    if cell._destroyed or cell._observer is None:
-                        continue
-                        try:
-                            cs = checksum.hex() if checksum is not None else None
-                            cell._observer(cs)
-                        except Exception:
-                            traceback.print_exc()
-
-    update_wrapper(wrapper, func)
-    return wrapper
 
 from .mount import mountmanager
 from .macro_mode import get_macro_mode, macro_mode_on

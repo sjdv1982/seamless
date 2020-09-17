@@ -6,8 +6,6 @@ import threading
 import time
 from bisect import bisect_left
 
-from .. import destroyer
-
 import logging
 logger = logging.getLogger("seamless")
 
