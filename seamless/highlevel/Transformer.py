@@ -395,6 +395,7 @@ class Transformer(Base):
                 tf = self._get_tf(force=True)
                 if callable(value):
                     value, _, _ = parse_function_code(value)
+                check_libinstance_subcontext_binding(parent, self._path)
                 tf.code.set(value)
         elif attr == htf["INPUT"]:
             target_path = self._path
@@ -1025,3 +1026,4 @@ class Transformer(Base):
         return "Seamless Transformer: %s" % path
 
 from .synth_context import SynthContext
+from .assign import check_libinstance_subcontext_binding

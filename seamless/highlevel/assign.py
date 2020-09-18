@@ -3,6 +3,21 @@ from copy import deepcopy
 import json
 import weakref
 
+
+def check_libinstance_subcontext_binding(ctx, path):
+    for node in ctx._graph.nodes.values():
+        if node["type"] == "libinstance":
+            libpath = node["libpath"]
+            lib = ctx._get_lib(tuple(libpath))
+            params = lib["params"]
+            for argname, par in params.items():
+                if par["type"] == "context":
+                    argvalue = node["arguments"].get(argname)
+                    if argvalue is not None:
+                        if path[:len(argvalue)] == argvalue:
+                            ctx._translate()
+                            return
+
 from . import ConstantTypes
 from ..mixed import MixedBase
 from ..silk import Silk
@@ -336,6 +351,7 @@ def assign_to_subcell(cell, path, value):
         assign_connection(ctx, value._path, cell._path + path, False)
         ctx._translate()
     elif isinstance(value, ConstantTypes):
+        check_libinstance_subcontext_binding(ctx, path)
         removed = ctx._remove_connections(cell._path + path)
         if removed:
             ctx._translate()
@@ -395,6 +411,8 @@ def assign(ctx, path, value):
         new_cell = assign_constant(ctx, path, v)
         if new_cell:
             ctx._translate()
+        else:
+            check_libinstance_subcontext_binding(ctx, path)
         if isinstance(value, Resource):
             node = ctx._graph.nodes[path]
             node["mount"] = {
@@ -414,7 +432,9 @@ def assign(ctx, path, value):
             old = ctx._children[path]
             if isinstance(old, Cell):
                 if old.celltype == "code":
-                    return assign_constant(ctx, path, value)
+                    result = assign_constant(ctx, path, value)
+                    check_libinstance_subcontext_binding(ctx, path)
+                    return result
         assign_transformer(ctx, path, value)
     elif isinstance(value, (Proxy, SchemaWrapper)):
         assert value._parent()._parent() is ctx
@@ -424,6 +444,7 @@ def assign(ctx, path, value):
             ctx._graph[0][path] = node
         #TODO: break links and connections from ctx._children[path]
         assign_connection(ctx, value._virtual_path, path, False)
+        check_libinstance_subcontext_binding(ctx, path)
         ctx._translate()
     elif isinstance(value, Link):
         value._init(ctx, path)

@@ -22,9 +22,9 @@ simpler.py
 simpler-deepcell.py
 simpler-ipython.py: Run with ipython --no-term-title (not -i). Output is approximate, depends on exact timings.
 delay.py
-module-simplified.py
+module-simplified.py (1)
 bash.py
-docker_.py
+docker_.py (semi-BUGGED: need to guarantee destruction of Docker containers with signals SIGTERM/SIGKILL handler )
 docker2.py
 expression-exceptions.py
 highlink-schema.py
@@ -38,9 +38,9 @@ simple-pi-remote.py: run with jobslave-nodatabase
 simple-pi-remote-database.py: run with jobslave; makes no assumptions about the database contents
 subcontext.py
 reassign-transformer.py
-BUGGED transformer-compiled.py  (build graph again)
+transformer-compiled.py
 transformer-redefine.py
-BUGGED transformer-compiled-error.py
+transformer-compiled-error.py
 transformer-compiled-module.py
 twopi-graph-database.sh: run with Seamless database; delete job results (e.g. redis-cli flushall)
                       run as i=twopi-graph-database; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
@@ -52,9 +52,9 @@ library.py
 library2.py
 high-in-low.py
 high-in-low2.py
-BUGGED high-in-low3.py
-BUGGED high-in-low4.py
-BUGGED high-in-low5.py
+high-in-low3.py
+high-in-low4.py
+high-in-low5.py
 high-in-low6.py
 high-in-low4-memory.py    # Quite long test. Creates 5.6 GB of buffer cache in /tmp/dummy-db
                           # Run with rm -rf /tmp/dummy-db  && mkdir -p /tmp/dummy-db && seamless-devel-database dummydb-config.yaml
@@ -85,3 +85,7 @@ share-pdb-docker.seamless/.zip: to test using:
       --status-graph /seamless/seamless/graphs/status-visualization.seamless \
       --add-zip /seamless/seamless/graphs/status-visualization.zip
     In that case, open also http://localhost:5813/status/index.html
+
+NOTES
+=====
+(1) Be sure to test this in a Docker container, as it doesn't work with Python3.6
