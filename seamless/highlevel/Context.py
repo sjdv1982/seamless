@@ -721,7 +721,7 @@ class Context(Base):
             ctx = None
             if self._gen_context is not None:
                 self._gen_context.destroy()
-                print_debug("*" * 30 + "DESTROYED BEFORE TRANSLATE" + "*" * 30)
+                print_info("*" * 30 + "DESTROYED BEFORE TRANSLATE" + "*" * 30)
                 ok1 = self._manager.livegraph.check_destroyed()
                 ok2 = self._manager.taskmanager.check_destroyed()
                 if not ok1 or not ok2:

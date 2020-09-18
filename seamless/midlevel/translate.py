@@ -317,7 +317,9 @@ def import_before_translate(graph):
                 from .translate_docker_transformer import translate_docker_transformer
 
 def translate(graph, ctx):
-    print_info("*" * 30 + "TRANSLATE" + "*" * 30)
+    from ..core.macro_mode import curr_macro
+    if curr_macro() is None:
+        print_info("*" * 30 + "TRANSLATE" + "*" * 30)
     #import traceback; stack = traceback.extract_stack(); print("TRANSLATE:"); print("".join(traceback.format_list(stack[:3])))
     nodes, connections = graph["nodes"], graph["connections"]
     contexts = {con["path"]: con for con in nodes if con["type"] == "context"}

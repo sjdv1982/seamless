@@ -312,10 +312,11 @@ def _assign_context(ctx, new_nodes, new_connections, path, runtime):
     graph = ctx._runtime_graph if runtime else ctx._graph
     subctx = graph.nodes[path]
     assert subctx["type"] == "context", path
-    ctx._translate()
     if runtime:
         graph2 = deepcopy(ctx._graph)
         assert old_graph == graph2
+    else:
+        ctx._translate()
 
 def assign_context(ctx, path, value):
     graph = value.get_graph()
