@@ -211,7 +211,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                         ok = False
                     else:
                         value = await DeserializeBufferTask(
-                            manager, buffer, checksum, "mixed", True
+                            manager, buffer, checksum, "mixed", copy=True
                         ).run()
                 else:
                     ok = False

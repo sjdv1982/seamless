@@ -88,7 +88,7 @@ class MacroUpdateTask(Task):
             subcelltype = accessor.write_accessor.subcelltype
             buffer = await cachemanager.fingertip(expression_checksum)
             assert buffer is not None
-            value = await deserialize(buffer, expression_checksum, celltype, False)
+            value = await deserialize(buffer, expression_checksum, celltype, True)
             if value is None:
                 raise CacheMissError(pinname, codename)
             if pinname == "code":

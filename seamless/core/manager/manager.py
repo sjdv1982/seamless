@@ -493,8 +493,11 @@ class Manager:
                 return deepcopy(cached_value)
         return self.resolve(checksum, celltype, copy=copy)
 
-    def resolve(self, checksum, celltype="mixed", copy=False):
-        # Returns value corresponding to checksum (str or hex)
+    def resolve(self, checksum, celltype=None, copy=True):
+        """Returns the data buffer that corresponds to the checksum.
+        If celltype is provided, a value is returned instead
+
+        The checksum must be a SHA3-256 hash, as hex string or as bytes"""
         if checksum is None:
             return None
         if isinstance(checksum, str):

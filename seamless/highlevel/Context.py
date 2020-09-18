@@ -889,12 +889,7 @@ class Context(Base):
         If celltype is provided, a value is returned instead
 
         The checksum must be a SHA3-256 hash, as hex string or as bytes"""
-        if celltype is None:
-            if isinstance(checksum, str):
-                checksum = bytes.fromhex(checksum)
-            return self._manager._get_buffer(checksum)
-        else:
-            return self._manager.resolve(checksum, celltype=celltype, copy=True)
+        return self._manager.resolve(checksum, celltype=celltype, copy=True)
 
     def observe(self, path, callback, polling_interval, observe_none=False, params=None):
         """Observes attributes of the context, analogous to Cell.observe"""

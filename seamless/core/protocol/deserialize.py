@@ -120,9 +120,9 @@ async def deserialize(buffer, checksum, celltype, copy):
     else:
         value = _deserialize(buffer, checksum, celltype)
     if celltype not in text_types2:
+        deserialize_cache[checksum, celltype] = value
         if copy:
             value = deepcopy(value)
-        deserialize_cache[checksum, celltype] = value
     evaluation_cache_1.add((checksum, celltype))
     if not copy:
         id_value = id(value)
