@@ -7,6 +7,7 @@ Exception: None
 [11, 6, 17, 19]
 <Silk: [11, 6, 17, 19] >
 <Silk: [11, 6, 17, 19] >
+CS-DATA []
 CS-DATA ['43dceac4624340dc5f4a088935b0f7acba19421e825d86f9d2b37890df757b6d', '91e22ba81966651ff932108572fc66d1bdaaee1939314026fc055a12a9155ea7']
 
 Exception: None
@@ -135,4 +136,3 @@ Exception: None
  {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'result'),
   'target': ('inst', 'ctx', 'result'),
   'type': 'connection'}]
-CS-DATA ['43dceac4624340dc5f4a088935b0f7acba19421e825d86f9d2b37890df757b6d', '91e22ba81966651ff932108572fc66d1bdaaee1939314026fc055a12a9155ea7']

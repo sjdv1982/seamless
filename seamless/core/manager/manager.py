@@ -375,7 +375,9 @@ class Manager:
             if sc is structured_cell:
                 continue
             sc._schema_value = deepcopy(value)
-            if not sc.buffer._void:
+            ####unvoid = not sc.buffer._void
+            unvoid = True # to keep in line with the rules in cancel.py
+            if unvoid:
                 sc._modified_schema = True
                 self.unvoid_scell(sc)
                 self.cancel_scell_soft(sc)
