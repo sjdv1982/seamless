@@ -3,7 +3,12 @@ set -u -e
 # /tmp is also mounted, this is needed by Docker transformers (as they run on the host)
 
 firstarg=$1 #there must be at least one argument
-gdbflags='--cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined'
+
+###
+# The following does not currently work (Ubuntu 18.04.3, Docker 19.03.12); not even --privileged works, unless we are root:
+# gdbflags='--cap-add SYS_PTRACE --security-opt=seccomp:unconfined --security-opt=apparmor:unconfined'
+gdbflags='' ###
+
 docker run --rm \
   $gdbflags \
   --network=host \
