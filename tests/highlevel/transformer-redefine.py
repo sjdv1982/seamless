@@ -17,6 +17,7 @@ ctx.result.celltype = "plain"
 ctx.transform.result.example = 0.0 #example, just to fill the schema
 ctx.transform.language = "cpp"
 ctx.compute()
+print(ctx.transform.exception)
 print("*" * 80)
 print(ctx.transform.header.value)
 print("*" * 80)

@@ -24,21 +24,7 @@ Original exception:
 invalid literal for int() with base 10: 'test2'
 b None
 ********************************************************************************
-c Traceback (most recent call last):
-  File "/seamless/seamless/core/manager/tasks/set_buffer.py", line 36, in _run
-    checksum, cell._celltype, copy=False
-  File "/seamless/seamless/core/manager/tasks/__init__.py", line 135, in run
-    await asyncio.shield(self.future)
-  File "/seamless/seamless/core/manager/tasks/__init__.py", line 151, in _run0
-    return await self._run()
-  File "/seamless/seamless/core/manager/tasks/deserialize_buffer.py", line 23, in _run
-    result = await deserialize(self.buffer, self.checksum, self.celltype, self.copy)
-  File "/seamless/seamless/core/protocol/deserialize.py", line 121, in deserialize
-    value = _deserialize(buffer, checksum, celltype)
-  File "/seamless/seamless/core/protocol/deserialize.py", line 70, in _deserialize
-    raise ValueError(value)
-ValueError: blah
- None
+c ValueError: blah None
 
 ********************************************************************************
 * TRANSFORMER

@@ -1,13 +1,14 @@
+*** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/manager/tasks/evaluate_expression.py", line 115, in _run
-    codename="expression"
-  File "/seamless/seamless/core/protocol/validate_subcelltype.py", line 33, in validate_subcelltype
-    await build_module_async(v)
-  File "/seamless/seamless/core/build_module.py", line 153, in build_module_async
+  File "/seamless/seamless/core/transformation.py", line 221, in _execute
+    prelim_callback, progress_callback
+  File "/seamless/seamless/core/transformation.py", line 378, in _execute_local
+    mod = await build_module_async(value)
+  File "/seamless/seamless/core/build_module.py", line 154, in build_module_async
     full_module_name, mod = build_module(module_definition)
-  File "/seamless/seamless/core/build_module.py", line 136, in build_module
+  File "/seamless/seamless/core/build_module.py", line 137, in build_module
     full_module_name, completed_checksum, completed_module_definition
-  File "/seamless/seamless/core/build_module.py", line 96, in build_compiled_module
+  File "/seamless/seamless/core/build_module.py", line 97, in build_compiled_module
     raise BuildModuleError(stderr)
 seamless.core.build_module.BuildModuleError: 
 g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
@@ -17,6 +18,8 @@ main.cpp:1:1: error: ‘lambda’ does not name a type
  ^~~~~~
 
 ******************** /ERROR ********************
+
+*** /executor ***
 
 ********************************************************************************
 

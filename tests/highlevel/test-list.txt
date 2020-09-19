@@ -4,10 +4,10 @@
 bytes-conversion.py
 mime.py
 test-html.py
-schema.py
-subcell.py
+GLITCHED? schema.py
+BUGGED subcell.py
 subsubcell.py
-inchannel-conflict.py
+BUGGED? inchannel-conflict.py
 deepcell-simple.py
 filesystemlike.py
 context.py
@@ -18,20 +18,20 @@ simplest.py
 simple-missing.py
 simpler-listpin.py
 simpler-result.py
-simpler.py
-simpler-deepcell.py
+BUGGED? simpler.py
+BUGGED? simpler-deepcell.py
 simpler-ipython.py: Run with ipython --no-term-title (not -i). Output is approximate, depends on exact timings.
 delay.py
 module-simplified.py [1]
 bash.py [2]
-docker_.py (semi-BUGGED: need to guarantee destruction of Docker containers with signals SIGTERM/SIGKILL handler )
+docker_.py
 docker2.py
 expression-exceptions.py
 highlink-schema.py
 traitlet.py
 traitlet2.py: The exact output is dependent on random memory locations
 simple.py
-simple-deepcell.py
+BUGGED simple-deepcell.py
 simple-pi.py: Also creates twopi.seamless, twopi-result.seamless, twopi-result.zip
 simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-result.seamless, twopi-deepcell-result.zip
 simple-pi-remote.py: run with jobslave-nodatabase
@@ -87,6 +87,8 @@ share-pdb-docker.seamless/.zip: to test using:
       --status-graph /seamless/seamless/graphs/status-visualization.seamless \
       --add-zip /seamless/seamless/graphs/status-visualization.zip
     In that case, open also http://localhost:5813/status/index.html
+BUGGED: auth gets lost for fix_pdb!
+# maybe -o pipefail is too strict => code 141
 
 NOTES
 =====
