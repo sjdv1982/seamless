@@ -10,9 +10,19 @@ from seamless.core.transformation import SeamlessTransformationError
 from seamless.mixed.get_form import get_form
 from seamless import subprocess
 from subprocess import PIPE
+import psutil
+import signal
+
 env = os.environ.copy()
 
 resultfile = "RESULT"
+
+def sighandler(signal, frame):
+    if process is not None:
+        subprocess.kill_children(process)
+    os.chdir(old_cwd)
+    shutil.rmtree(tempdir, ignore_errors=True)
+    raise SystemExit()
 
 def read_data(data):
     try:
@@ -30,8 +40,10 @@ def read_data(data):
 
 old_cwd = os.getcwd()
 try:
+    process = None
     tempdir = tempfile.mkdtemp(prefix="seamless-bash-transformer")
     os.chdir(tempdir)
+    signal.signal(signal.SIGTERM, sighandler)
     for pin in pins_:
         v = globals()[pin]
         if isinstance(v, Silk):
@@ -61,7 +73,7 @@ try:
                 with open(pin, "bw") as pinf:
                     np.save(pinf,v,allow_pickle=False)
     try:
-        bashcode2 = "set -u -e -o pipefail\n" + bashcode
+        bashcode2 = "set -u -e -o pipefail\ntrap 'jobs -p | xargs -r kill' EXIT\n" + bashcode
         process = subprocess.run(
             bashcode2, capture_output=True, shell=True, check=True,
             executable='/bin/bash',
@@ -150,6 +162,7 @@ Error: Result file RESULT does not exist
             pass
         if len(stderr):
             print(stderr, file=sys.stderr)
+
     try:
         tar = tarfile.open(resultfile)
         result = {}

@@ -13,6 +13,7 @@ from seamless.core.transformation import SeamlessTransformationError
 
 resultfile = "RESULT"
 
+
 def read_data(data):
     try:
         npdata = BytesIO(data)
@@ -27,11 +28,28 @@ def read_data(data):
         except ValueError:
             return sdata
 
+def sighandler(signal, frame):
+    if container is not None:
+        try:
+            container.stop()
+        except:
+            pass
+        try:
+            container.remove()
+        except:
+            pass
+    os.chdir(old_cwd)
+    shutil.rmtree(tempdir, ignore_errors=True)
+    raise SystemExit()
+
 old_cwd = os.getcwd()
 try:
+    import signal
     import docker as docker_module
     tempdir = tempfile.mkdtemp(prefix="seamless-docker-transformer")
     os.chdir(tempdir)
+    container = None
+    signal.signal(signal.SIGTERM, sighandler)
     options = docker_options.copy()
     if "environment" in options:
         env = options["environment"].copy()
@@ -118,7 +136,7 @@ Exit code: {}
 *************************************************
 {}
 *************************************************
-""".format(docker_command, exit_status, stderr)) from None
+""".format(docker_command, exit_status, stdout, stderr)) from None
         except ConnectionError as exc:
             msg = "Unknown connection error"
             if len(exc.args) == 1:

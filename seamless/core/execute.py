@@ -93,6 +93,8 @@ def _execute(name, code,
         except SeamlessStreamTransformationError as exc:
             exc = str(exc) + "\n"
             return (10, exc)
+        except SystemExit as exc:
+            raise exc from None
         except Exception:
             exc = traceback.format_exc()
             return (1, exc)
@@ -139,6 +141,7 @@ def execute(name, code,
         direct_print = DIRECT_PRINT
     assert identifier is not None
     try:
+        ok = False
         if direct_print:
             result = _execute(name, code,
                 injector, module_workspace,
@@ -199,12 +202,16 @@ def execute(name, code,
                 if len(content):
                     result_queue.put((4, (1, content)))
             result_queue.put(result)
+        ok = True
+    except Exception:
+        print("EXC!")
     finally:
         if not direct_print:
             sys.stdout, sys.stderr = old_stdio
         if USE_PROCESSES:
             result_queue.close()
-        result_queue.join()
+        if ok:
+            result_queue.join()
 
 def execute_debug(name, code,
       injector, module_workspace,
@@ -213,6 +220,7 @@ def execute_debug(name, code,
       **args
     ):
     try:
+        ok = False
         old_stdio = sys.stdout, sys.stderr
         sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
@@ -236,8 +244,10 @@ def execute_debug(name, code,
             inputs, output_name, celltype, result_queue
         )
         result_queue.put(result)
+        ok = True
     finally:
         sys.stdout, sys.stderr = old_stdio
         if USE_PROCESSES:
             result_queue.close()
-        result_queue.join()
+        if ok:
+            result_queue.join()

@@ -23,7 +23,7 @@ simpler-deepcell.py
 simpler-ipython.py: Run with ipython --no-term-title (not -i). Output is approximate, depends on exact timings.
 delay.py
 module-simplified.py (1)
-bash.py
+bash.py (2)
 docker_.py (semi-BUGGED: need to guarantee destruction of Docker containers with signals SIGTERM/SIGKILL handler )
 docker2.py
 expression-exceptions.py
@@ -64,6 +64,8 @@ high-in-low6-memory.py    # See above
 
 Non-automatic tests
 =========================
+docker-kill.py    The output is not important. Important is that "docker ps -a" reveals no remaining orphaned "ubuntu" Docker containers.
+bash-kill.py      The output is not important. Important is that the script finishes in 3.5-4 sec, and that 'ps -ef' reveals no remaining orphaned "sleep" processes
 add.py:           Run with ipython -i, then change mounts
 simpler-share.py: Run with ipython -i, then do "curl localhost:5813/ctx/myresult".
                   IPython values printed should be 36 then 39 (Silk); curl should return 39
@@ -88,4 +90,5 @@ share-pdb-docker.seamless/.zip: to test using:
 
 NOTES
 =====
-(1) Be sure to test this in a Docker container, as it doesn't work with Python3.6
+(1) Be sure to test this in a Docker container, as it doesn't work with Python3.6.9 or 3.7.6, but it does work for 3.7.3
+(2) Be sure to test this in a Docker container or with Python3.7, as it doesn't work with Python3.6 (subprocess API too old)
