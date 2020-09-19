@@ -9,7 +9,7 @@ if buffer is None:
     sys.exit()
 if len(sys.argv) > 2:
     celltype = sys.argv[2]
-    value = deserialize_sync(buffer, checksum, celltype, True)
+    value = deserialize_sync(buffer, checksum, celltype)
     print(value)
 else:
     print(buffer)

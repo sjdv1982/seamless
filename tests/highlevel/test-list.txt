@@ -22,8 +22,8 @@ simpler.py
 simpler-deepcell.py
 simpler-ipython.py: Run with ipython --no-term-title (not -i). Output is approximate, depends on exact timings.
 delay.py
-module-simplified.py (1)
-bash.py (2)
+module-simplified.py [1]
+bash.py [2]
 docker_.py (semi-BUGGED: need to guarantee destruction of Docker containers with signals SIGTERM/SIGKILL handler )
 docker2.py
 expression-exceptions.py
@@ -90,5 +90,5 @@ share-pdb-docker.seamless/.zip: to test using:
 
 NOTES
 =====
-(1) Be sure to test this in a Docker container, as it doesn't work with Python3.6.9 or 3.7.6, but it does work for 3.7.3
-(2) Be sure to test this in a Docker container or with Python3.7, as it doesn't work with Python3.6 (subprocess API too old)
+[1] Be sure to test this in a Docker container, as it doesn't work with Python3.6.9 or 3.7.6, but it does work for 3.7.3
+[2] Be sure to test this in a Docker container or with Python3.7, as it doesn't work with Python3.6 (subprocess API too old)

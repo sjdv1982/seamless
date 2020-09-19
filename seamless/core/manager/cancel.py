@@ -291,6 +291,8 @@ class CancellationCycle:
             )
 
     def _resolve_cell(self, taskmanager, manager, cell, void, reason):
+        if manager is None or manager._destroyed:
+            return
         if (not void) and cell._void:
             return
         taskmanager.cancel_cell(cell, origin_task=self.origin_task)
@@ -399,6 +401,8 @@ class CancellationCycle:
             raise TypeError(target)
 
     def _resolve_accessor(self, taskmanager, manager, accessor, void, reason):
+        if manager is None or manager._destroyed:
+            return
         origin_task = self.origin_task
         taskmanager.cancel_accessor(accessor, origin_task=origin_task)
         if manager is None or manager._destroyed:
@@ -511,6 +515,8 @@ class CancellationCycle:
 
             rtreactor = livegraph.rtreactors[reactor]
             editpin_to_cell = livegraph.editpin_to_cell[reactor]
+            editpins = [pinname for pinname in reactor._pins \
+                if reactor._pins[pinname].io == "edit" ]
             for pinname in editpins:
                 if editpin_to_cell[pinname] is None:
                     revoid_reason = StatusReasonEnum.UNCONNECTED

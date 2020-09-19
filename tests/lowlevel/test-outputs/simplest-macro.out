@@ -2,6 +2,3 @@
 1
 None
 None
-Task exception was never retrieved
-future: <Task finished coro=<Task._run0() done, defined at /seamless/seamless/core/manager/tasks/__init__.py:148> exception=CancelledError()>
-concurrent.futures._base.CancelledError
