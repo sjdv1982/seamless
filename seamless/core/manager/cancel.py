@@ -44,9 +44,10 @@ class StructuredCellCancellation:
         else:
             livegraph = cycle.manager().livegraph
             if not len(livegraph._destroying) and not scell._destroyed:
-                self.is_void = (not len(self.valid_inchannels)) and (not scell._modified_auth and not scell._modified_schema) and scell._data._checksum is None
+                invalid = (not len(self.valid_inchannels)) or (scell._exception is not None and not len(self.pending_inchannels))
+                self.is_void = invalid and (not scell._modified_auth and not scell._modified_schema) and scell._data._checksum is None
                 try:
-                    assert self.is_void == scell._data._void, (scell, self.is_void, scell._modified_auth, scell._modified_schema, self.valid_inchannels, scell._data._void, scell._data._checksum is None)
+                    assert self.is_void == scell._data._void, (scell, self.is_void, scell._modified_auth, scell._modified_schema, self.valid_inchannels, self.pending_inchannels, scell._exception is not None, scell._data._void, scell._data._checksum is None)
                 except:
                     import traceback; traceback.print_exc()
             else:
@@ -115,6 +116,17 @@ class StructuredCellCancellation:
         valid_inchannels = self.valid_inchannels.copy()
 
         for path, (void, reason) in self.canceled_inchannels.items():
+            ic = sc.inchannels[path]
+
+            """
+            if not void and ic._void:
+                print("UNVOID!", sc, path)
+            elif void and not ic._void:
+                print("VOID!", sc, path)
+            """
+
+            ic._void = void
+            ic._status_reason = reason
             if void:
                 pending_inchannels.discard(path)
                 valid_inchannels.discard(path)
@@ -588,7 +600,20 @@ class CancellationCycle:
         to_void, to_unvoid, to_join = self.to_void, self.to_unvoid, self.to_join
         macros_to_destroy = self.macros_to_destroy
         post_equilibrate = self.post_equilibrate
+
+        for ele, reason in to_void:
+            if isinstance(ele, StructuredCell):
+                sc = ele
+                taskmanager.cancel_structured_cell(sc, kill_non_started=True, no_auth=True)
+                if sc.auth is not None:
+                    manager._set_cell_checksum(sc.auth, None, True, reason)
+                if sc.buffer is not None:
+                    manager._set_cell_checksum(sc.buffer, None, True, reason)
+                manager._set_cell_checksum(sc._data, None, True, reason)
+                sc._equilibrated = True
+
         self._clear()
+        #print("/CYCLE")
 
         for scell in post_equilibrate:
             downstreams = livegraph.paths_to_downstream[scell._data]
@@ -609,17 +634,9 @@ class CancellationCycle:
         for scell in to_join:
             manager.structured_cell_join(scell, False)
 
-        #print("/CYCLE")
         for ele, reason in to_void:
             if isinstance(ele, StructuredCell):
-                sc = ele
-                taskmanager.cancel_structured_cell(sc, kill_non_started=True, no_auth=True)
-                if sc.auth is not None:
-                    manager._set_cell_checksum(sc.auth, None, True, reason)
-                if sc.buffer is not None:
-                    manager._set_cell_checksum(sc.buffer, None, True, reason)
-                manager._set_cell_checksum(sc._data, None, True, reason)
-                sc._equilibrated = True
+                pass
             elif isinstance(ele, Transformer):
                 manager.cancel_transformer(ele, True, reason)
             elif isinstance(ele, Reactor):
@@ -640,7 +657,6 @@ class CancellationCycle:
             if gen_context is not None:
                 gen_context.destroy()
                 macro._gen_context = None
-
 
 from ..utils import overlap_path
 from ..cell import Cell

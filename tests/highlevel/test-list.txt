@@ -4,8 +4,8 @@
 bytes-conversion.py
 mime.py
 test-html.py
-GLITCHED? schema.py
-BUGGED subcell.py
+schema.py
+subcell.py
 subsubcell.py
 BUGGED? inchannel-conflict.py
 deepcell-simple.py

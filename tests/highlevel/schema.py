@@ -17,6 +17,9 @@ print(buf)
 
 from seamless.highlevel import Context
 
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
 ctx = Context()
 ctx.a = {}
 ctx.translate()
@@ -31,3 +34,4 @@ ctx.translate()
 print("OK")
 print(ctx.a._get_cell().value)
 print(ctx.a._get_cell().handle)
+ctx.compute()
