@@ -63,3 +63,4 @@ json.dump(graph, open("simple-graph.json", "w"), sort_keys=True, indent=2)
 
 inp = ctx.transform.inp
 print(inp.value.unsilk)
+print(inp.data)

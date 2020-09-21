@@ -18,8 +18,8 @@ simplest.py
 simple-missing.py
 simpler-listpin.py
 simpler-result.py
-BUGGED? simpler.py
-BUGGED? simpler-deepcell.py
+simpler.py
+simpler-deepcell.py
 simpler-ipython.py: Run with ipython --no-term-title (not -i). Output is approximate, depends on exact timings.
 delay.py
 module-simplified.py [1]
@@ -31,7 +31,7 @@ highlink-schema.py
 traitlet.py
 traitlet2.py: The exact output is dependent on random memory locations
 simple.py
-BUGGED simple-deepcell.py
+simple-deepcell.py
 simple-pi.py: Also creates twopi.seamless, twopi-result.seamless, twopi-result.zip
 simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-result.seamless, twopi-deepcell-result.zip
 simple-pi-remote.py: run with jobslave-nodatabase

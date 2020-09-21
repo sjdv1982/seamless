@@ -20,8 +20,8 @@ def triple_it_b(a, b):
     return 3 * a + b
 
 ctx.transform = triple_it
-ctx.transform.a = 1
 ctx.transform.debug = True
+ctx.transform.a = 1
 print("START")
 ctx.translate()
 print(ctx.transform.inp.value, ctx.transform.result.value)
@@ -67,9 +67,10 @@ print("RESULT", ctx.transform.result.value, ctx.myresult.value)
 
 ctx.transform.example.b = "test"  # modification of schema => .inp exception
 ctx.translate()
+print("TRANSFORMER INPUT EXCEPTION", ctx.transform.inp.exception) # None
 print(ctx.transform.inp.value)
-print("TRANSFORMER INPUT EXCEPTION", ctx.transform.inp.exception)
 ctx.compute()
+print("TRANSFORMER INPUT EXCEPTION", ctx.transform.inp.exception) # jsonschema.exceptions.ValidationError: 100 is not of type 'string'
 ###print("TF STATUS", ctx.transform.status)
 ###ctx.translate(force=True); ctx.compute()  ### ERROR
 print(ctx.transform.inp.schema)

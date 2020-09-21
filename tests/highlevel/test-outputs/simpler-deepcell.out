@@ -19,14 +19,15 @@ TRANSFORMER EXCEPTION Traceback (most recent call last):
 TypeError: triple_it_b() missing 1 required positional argument: 'b'
 
 RUN!
-RUN!
 <Silk: {'a': 12, 'b': 100} >
 RESULT <Silk: 136 > <Silk: 136 >
 START
 RUN!
+RUN!
 <Silk: 13 >
 <Silk: {'a': 13, 'b': 100} >
 RESULT <Silk: 139 > <Silk: 139 >
+TRANSFORMER INPUT EXCEPTION None
 <Silk: None >
 TRANSFORMER INPUT EXCEPTION Traceback (most recent call last):
 jsonschema.exceptions.ValidationError: 100 is not of type 'string'
@@ -61,7 +62,6 @@ TRANSFORMER EXCEPTION Traceback (most recent call last):
 TypeError: unsupported operand type(s) for +: 'int' and 'str'
 
 START2
-RUN!
 <Silk: None >
 TRANSFORMER INPUT EXCEPTION None
 TRANSFORMER STATUS *tf*: Status: error
