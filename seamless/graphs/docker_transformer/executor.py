@@ -92,7 +92,11 @@ try:
     if "working_dir" not in options:
         options["working_dir"] = "/run"
     with open("DOCKER-COMMAND","w") as f:
-        f.write("set -u -e -o pipefail\n")
+        bash_header = """set -u -e -o pipefail
+trap '' PIPE
+""" # don't add "trap 'jobs -p | xargs -r kill' EXIT" as it gives serious problems
+
+        f.write(bash_header)
         f.write(docker_command)
     full_docker_command = "bash DOCKER-COMMAND"
     try:
@@ -199,6 +203,8 @@ Error: Result file RESULT does not exist
                 print(stdout)
             if len(stderr):
                 print(stderr, file=sys.stderr)
+    except Exception:
+        import traceback; traceback.print_exc()
     finally:
         container.remove()
 

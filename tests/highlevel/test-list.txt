@@ -88,7 +88,6 @@ share-pdb-docker.seamless/.zip: to test using:
       --add-zip /seamless/seamless/graphs/status-visualization.zip
     In that case, open also http://localhost:5813/status/index.html
 BUGGED: auth gets lost for fix_pdb!
-# maybe -o pipefail is too strict => code 141
 
 NOTES
 =====

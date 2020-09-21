@@ -73,7 +73,11 @@ try:
                 with open(pin, "bw") as pinf:
                     np.save(pinf,v,allow_pickle=False)
     try:
-        bashcode2 = "set -u -e -o pipefail\ntrap 'jobs -p | xargs -r kill' EXIT\n" + bashcode
+        bash_header = """set -u -e -o pipefail
+trap '' PIPE
+trap 'jobs -p | xargs -r kill' EXIT
+"""
+        bashcode2 = bash_header + bashcode
         process = subprocess.run(
             bashcode2, capture_output=True, shell=True, check=True,
             executable='/bin/bash',

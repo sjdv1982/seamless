@@ -5,10 +5,15 @@ cwd = os.getcwd()
 tempdir = tempfile.mkdtemp(prefix="seamless-docker-transformer")
 os.chdir(tempdir)
 
+bash_header = """set -u -e -o pipefail
+trap '' PIPE
+trap 'jobs -p | xargs -r kill' EXIT
+"""
+
 with open("DOCKER-COMMAND", "w") as f:
-    f.write("""set -u -e -o pipefail
-bash COMMAND
-""")
+    f.write(bash_header)
+    f.write("bash COMMAND\n")
+
 with open("COMMAND", "w") as f:
     f.write("python3 -c 'import numpy as np; np.save(\"test\",np.arange(12)*3)'; cat test.npy\n")
 

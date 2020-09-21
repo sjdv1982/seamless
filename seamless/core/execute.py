@@ -204,14 +204,17 @@ def execute(name, code,
             result_queue.put(result)
         ok = True
     except Exception:
-        print("EXC!")
+        traceback.print_exc()
     finally:
         if not direct_print:
             sys.stdout, sys.stderr = old_stdio
-        if USE_PROCESSES:
-            result_queue.close()
-        if ok:
-            result_queue.join()
+        try:
+            if USE_PROCESSES:
+                result_queue.close()
+            if ok:
+                result_queue.join()
+        except Exception:
+            traceback.print_exc()
 
 def execute_debug(name, code,
       injector, module_workspace,
