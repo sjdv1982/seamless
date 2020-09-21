@@ -1,6 +1,6 @@
 ********************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/core/manager/tasks/set_value.py", line 42, in _run
+  File "/seamless/seamless/core/manager/tasks/set_value.py", line 44, in _run
     raise ValueError(exc) from None
 ValueError: invalid literal for int() with base 10: 'test'
 
