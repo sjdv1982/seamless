@@ -179,9 +179,11 @@ class TransformationCache:
         transformer, celltypes, inputpin_checksums, outputpin
     ):
         assert isinstance(transformer, Transformer)
+        cachemanager = transformer._get_manager().cachemanager
         outputname, celltype, subcelltype = outputpin
         transformation = {"__output__": outputpin}
         for pinname, checksum in inputpin_checksums.items():
+            await cachemanager.fingertip(checksum)
             pin = transformer._pins[pinname]
             celltype, subcelltype = celltypes[pinname]
             if checksum is None:

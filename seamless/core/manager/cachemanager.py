@@ -300,13 +300,31 @@ class CacheManager:
                 transformation = tf_cache.transformations[tf_checksum]
                 coros.append(fingertip_transformation(transformation, tf_checksum))
 
-        tasks = [asyncio.ensure_future(c) for c in coros]
+        async def buffer_from_syn2sem(checksum, syn_checksum, celltype, subcelltype):
+            await syntactic_to_semantic(syn_checksum, celltype, subcelltype, "fingertip")
+            return buffer_cache.get_buffer(checksum)
+
+        sem2syn = self.transformation_cache.semantic_to_syntactic_checksums
+        for (semkey, celltype, subcelltype), syn_checksums in sem2syn.items():
+            if semkey == checksum:
+                for syn_checksum in syn_checksums:
+                    coro = buffer_from_syn2sem(checksum, syn_checksum, celltype, subcelltype)
+                    coros.append(coro)
+
+        all_tasks = [asyncio.ensure_future(c) for c in coros]
+        tasks = all_tasks
         while len(tasks):
             _, tasks  = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
             buffer = buffer_cache.get_buffer(checksum)
             if buffer is not None:
                 for task in tasks:
                     task.cancel()
+                for task in all_tasks:
+                    if task.done():
+                        try:
+                            task.result()
+                        except Exception:
+                            pass
                 return buffer
 
         buffer = buffer_cache.get_buffer(checksum)
@@ -467,3 +485,4 @@ from ..protocol.deserialize import deserialize
 from ..protocol.get_buffer import (
     get_buffer_remote, get_buffer_length_remote, CacheMissError
 )
+from ..cache.transformation_cache import syntactic_to_semantic
