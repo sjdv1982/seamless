@@ -6,6 +6,7 @@ import sys
 import traceback
 import functools
 import time
+import atexit
 
 from .execute import Queue, Executor, execute, execute_debug
 from .run_multi_remote import run_multi_remote, run_multi_remote_pair
@@ -14,6 +15,20 @@ from .build_module import build_module_async
 
 import logging
 logger = logging.getLogger("seamless")
+
+forked_processes = weakref.WeakKeyDictionary()
+def _kill_processes():
+    for process, termination_time in forked_processes.items():
+        if not process.is_alive:
+            continue
+        ctime = time.time()
+        kill_time = termination_time + 2
+        if kill_time > ctime:
+            print("Killing transformer process...")
+            time.sleep(kill_time - ctime)
+        process.kill()
+
+atexit.register(_kill_processes)
 
 def print_info(*args):
     msg = " ".join([str(arg) for arg in args])
@@ -477,6 +492,7 @@ class TransformationJob:
         except asyncio.CancelledError:
             if running:
                 self.executor.terminate()
+                forked_processes[self.executor] = time.time()
             raise asyncio.CancelledError from None
         finally:
             release_lock(lock)
