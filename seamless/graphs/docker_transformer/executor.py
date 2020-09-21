@@ -92,8 +92,7 @@ try:
     if "working_dir" not in options:
         options["working_dir"] = "/run"
     with open("DOCKER-COMMAND","w") as f:
-        bash_header = """set -u -e -o pipefail
-trap '' PIPE
+        bash_header = """set -u -e
 """ # don't add "trap 'jobs -p | xargs -r kill' EXIT" as it gives serious problems
 
         f.write(bash_header)
@@ -203,8 +202,6 @@ Error: Result file RESULT does not exist
                 print(stdout)
             if len(stderr):
                 print(stderr, file=sys.stderr)
-    except Exception:
-        import traceback; traceback.print_exc()
     finally:
         container.remove()
 
