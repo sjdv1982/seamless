@@ -161,7 +161,7 @@ def unvoid_accessor(accessor, livegraph):
     elif isinstance(target, Cell) and path is not None:
         scell = target._structured_cell
         ic = scell.inchannels[path]
-        #print("UNVOID INCHANNEL", i)
+        #print("UNVOID INCHANNEL", ic)
         ic._void = False
         unvoid_scell(scell, livegraph)
     elif isinstance(target, Transformer):

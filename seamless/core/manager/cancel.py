@@ -225,9 +225,12 @@ class StructuredCellCancellation:
         if unvoid_me:
             self.cycle().to_unvoid.append(sc)
         elif void_me:
-            reason = sc._data._status_reason
-            if reason is None:
-                reason = StatusReasonEnum.UPSTREAM
+            if sc._auth_invalid:
+                reason = StatusReasonEnum.INVALID
+            else:
+                reason = sc._data._status_reason
+                if reason is None:
+                    reason = StatusReasonEnum.UPSTREAM
             self.cycle().to_void.append((sc, reason))
         if join_me:
             sc._equilibrated = False
@@ -613,7 +616,7 @@ class CancellationCycle:
             if isinstance(ele, StructuredCell):
                 sc = ele
                 taskmanager.cancel_structured_cell(sc, kill_non_started=True, no_auth=True)
-                if sc.auth is not None:
+                if sc.auth is not None and sc._auth_invalid:
                     manager._set_cell_checksum(sc.auth, None, True, reason)
                 if sc.buffer is not None:
                     manager._set_cell_checksum(sc.buffer, None, True, reason)
@@ -646,11 +649,23 @@ class CancellationCycle:
             if isinstance(ele, StructuredCell):
                 pass
             elif isinstance(ele, Transformer):
-                manager.cancel_transformer(ele, True, reason)
+                transformer = ele
+                upstreams = livegraph.transformer_to_upstream[transformer]
+                revoid_reason = revoid_worker(upstreams)
+                if revoid_reason:
+                    manager.cancel_transformer(transformer, True, reason)
             elif isinstance(ele, Reactor):
-                manager.cancel_reactor(ele, True, reason)
+                reactor = ele
+                upstreams = livegraph.reactor_to_upstream[reactor]
+                revoid_reason = revoid_worker(upstreams)
+                if revoid_reason:
+                    manager.cancel_reactor(reactor, True, reason)
             elif isinstance(ele, Macro):
-                manager.cancel_macro(ele, True, reason)
+                macro = ele
+                upstreams = livegraph.macro_to_upstream[macro]
+                revoid_reason = revoid_worker(upstreams)
+                if revoid_reason:
+                    manager.cancel_macro(ele, True, reason)
             else:
                 raise TypeError(ele)
 
