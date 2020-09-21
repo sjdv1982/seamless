@@ -38,6 +38,7 @@ simple-pi-remote.py: run with jobslave-nodatabase
 simple-pi-remote-database.py: run with jobslave; makes no assumptions about the database contents
 subcontext.py
 reassign-transformer.py
+cascade.py
 transformer-compiled.py
 transformer-redefine.py
 transformer-compiled-error.py
@@ -87,7 +88,6 @@ share-pdb-docker.seamless/.zip: to test using:
       --status-graph /seamless/seamless/graphs/status-visualization.seamless \
       --add-zip /seamless/seamless/graphs/status-visualization.zip
     In that case, open also http://localhost:5813/status/index.html
-BUGGED: auth gets lost for fix_pdb!
 
 NOTES
 =====
