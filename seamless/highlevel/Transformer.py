@@ -197,6 +197,10 @@ class Transformer(Base):
         else:
             htf.pop("fingertip_no_recompute", None)
 
+    def clear_exception(self):
+        tf = self._get_tf(force=True)
+        tf.tf.clear_exception()
+
     @property
     def hash_pattern(self):
         htf = self._get_htf()
@@ -606,6 +610,8 @@ class Transformer(Base):
                 htf["RESULT"]
             )
         for k in attrs:
+            pending = False
+            upstream = False
             if k in (htf["INPUT"], htf["RESULT"]):
                 cell = getattr(self, k)
                 status = cell.status
@@ -617,7 +623,16 @@ class Transformer(Base):
                 tf = self._get_tf(force=True).tf
                 status = getattr(tf, k).status
             if not status.endswith("OK"):
-                return "*" + k + "*: " + status
+                if status.endswith(" pending"):
+                    pending = True
+                elif status.endswith(" upstream"):
+                    upstream = True
+                else:
+                    return "*" + k + "*: " + status
+        if upstream:
+            return "Status: upstream"
+        elif pending:
+            return "Status: pending"
         return "Status: OK"
 
     def __getattribute__(self, attr):
