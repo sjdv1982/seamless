@@ -32,20 +32,22 @@ class SetCellValueTask(Task):
                 )
                 value = new_deep_value
 
-            task = SerializeToBufferTask(
-                manager, value, cell._celltype,
-                use_cache=False
-            ).run()
-            try:
-                buffer = await task
-            except ValueError as exc:
-                raise ValueError(exc) from None
-            except asyncio.CancelledError as exc:
-                raise exc from None
-            except Exception as exc:
-                raise exc from None
-            assert buffer is None or isinstance(buffer, bytes)
-            checksum = await CalculateChecksumTask(manager, buffer).run()
+            checksum = None
+            if value is not None:
+                task = SerializeToBufferTask(
+                    manager, value, cell._celltype,
+                    use_cache=False
+                ).run()
+                try:
+                    buffer = await task
+                except ValueError as exc:
+                    raise ValueError(exc) from None
+                except asyncio.CancelledError as exc:
+                    raise exc from None
+                except Exception as exc:
+                    raise exc from None
+                assert buffer is None or isinstance(buffer, bytes)
+                checksum = await CalculateChecksumTask(manager, buffer).run()
             if checksum is not None:
                 await validate_subcelltype(
                     checksum, cell._celltype, cell._subcelltype,
@@ -57,17 +59,17 @@ class SetCellValueTask(Task):
                 livegraph.cell_parsing_exceptions.pop(cell, None)
                 CellUpdateTask(manager, self.cell).launch()
             else:
-                manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.UNDEFINED)
+                manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.UNDEFINED, origin_task=self)
         except asyncio.CancelledError as exc:
             if self._canceled:
                 raise exc from None
             exc = traceback.format_exc()
             livegraph.cell_parsing_exceptions[self.cell] = exc
-            manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.INVALID)
+            manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.INVALID, origin_task=self)
         except Exception as exc:
             exc = traceback.format_exc()
             livegraph.cell_parsing_exceptions[self.cell] = exc
-            manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.INVALID)
+            manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.INVALID, origin_task=self)
         finally:
             taskmanager.cell_to_value.pop(cell, None)
         return None

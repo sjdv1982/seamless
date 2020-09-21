@@ -61,22 +61,25 @@ class StructuredCellCancellation:
             self.canceled_inchannels[inpath] = (void, reason)
         cycle = self.cycle()
         for outpath in scell.outchannels:
-            if void:
+            out_void = void
+            if out_void:
                 if len(outpath) < len(inpath):
-                    continue
+                    out_void = False
                 if outpath[:len(inpath)] != inpath:
-                    continue
+                    out_void = False
+            if out_void:
                 if outpath in self.canceled_outpaths:
                     void0, reason0 = self.canceled_outpaths[outpath]
                     if (void0, reason0) == (void, reason):
                         continue
-            else:
+            if not out_void:
                 if not overlap_path(outpath, inpath):
                     continue
                 if outpath in self.canceled_outpaths:
                     continue
-            self.canceled_outpaths[outpath] = (void, reason)
-            cycle._cancel_cell_path(scell, outpath, void=void, reason=reason)
+            out_reason = reason if out_void else None
+            self.canceled_outpaths[outpath] = (out_void, out_reason)
+            cycle._cancel_cell_path(scell, outpath, void=out_void, reason=out_reason)
 
     def cancel_all_outpaths(self, void, reason):
         scell = self.scell()
@@ -138,6 +141,10 @@ class StructuredCellCancellation:
         if not self.is_joined:
             if sc._modified_auth or sc._modified_schema:
                 new_equilibrated = False
+            for path, (void, reason) in self.canceled_inchannels.items():
+                ic = sc.inchannels[path]
+                if ic._valued:
+                    new_equilibrated = False
         new_void = not len(valid_inchannels)
 
         if new_equilibrated and sc._exception is not None:
@@ -223,8 +230,9 @@ class StructuredCellCancellation:
                 reason = StatusReasonEnum.UPSTREAM
             self.cycle().to_void.append((sc, reason))
         if join_me:
+            sc._equilibrated = False
             self.cycle().to_join.append(sc)
-        #print("CA", sc, unvoid_me, void_me, join_me, new_equilibrated, self.is_joined)
+        #print("CA", sc, unvoid_me, void_me, join_me, new_void, new_equilibrated, self.is_joined, sc._data._checksum is None)
 
 
 def revoid_worker(upstreams):

@@ -7,6 +7,7 @@ from .utils import overlap_path
 class Inchannel:
     _void = True
     _checksum = None
+    _valued = False # Did we have a value at the last join?
     _prelim = False
     _status_reason = StatusReasonEnum.UNDEFINED
     def __init__(self, structured_cell, subpath):
@@ -199,29 +200,28 @@ class StructuredCell(SeamlessBase):
                 old_value = self._get_auth_path(path2)
                 self._set_auth_path(path2, new_value, from_pop=True)
                 new_value = old_value
-        elif self.hash_pattern is None:
-            if not len(path):
-                self._auth_value = value
-            elif self._auth_value is None:
-                if isinstance(path[0], str):
-                    self._auth_value = {}
-                elif isinstance(path[0], list):
-                    self._auth_value = []
-            if len(path):
-                set_subpath(self._auth_value, None, path, value)
         else:
-            if not isinstance(self._auth_value, (list, dict)):
+            if self.hash_pattern is None:
                 if not len(path):
-                    if list(self.hash_pattern.keys())[0][0] == "!":
-                        self._auth_value = []
-                    else:
-                        self._auth_value = {}
-                else:
+                    self._auth_value = value
+                elif self._auth_value is None:
                     if isinstance(path[0], str):
                         self._auth_value = {}
                     elif isinstance(path[0], list):
                         self._auth_value = []
-            set_subpath(self._auth_value, self.hash_pattern, path, value)
+            else:
+                if not isinstance(self._auth_value, (list, dict)):
+                    token = list(self.hash_pattern.keys())[0][0]
+                    if token == "!":
+                        self._auth_value = []
+                    elif token == "*":
+                        self._auth_value = {}
+                    else:
+                        raise NotImplementedError(self.hash_pattern)
+            if len(path):
+                set_subpath(self._auth_value, self.hash_pattern, path, value)
+            else:
+                self._join_auth()
 
 
     def _join_auth(self):

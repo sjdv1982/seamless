@@ -61,10 +61,6 @@ def under_libinstance_control(nodedict, path):
     return node["type"] == "libinstance"
 
 def assign_constant(ctx, path, value):
-    ###if isinstance(value, (Silk, MixedBase)):
-    ###    raise NotImplementedError
-    #TODO: run it through Silk or something, to check that there aren't lists/dicts/tuples-of-whatever-custom-classes
-    # not sure if tuple is natively accepted too
     old = None
     if path in ctx._children:
         old = ctx._children[path]

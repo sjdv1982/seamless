@@ -29,7 +29,7 @@ class SetCellBufferTask(Task):
             elif buffer is None and checksum is not None:
                 buffer = buffer_cache.get_buffer(checksum)
             if checksum is None or buffer is None:
-                manager.cancel_cell(cell, True, StatusReasonEnum.UNDEFINED)
+                manager.cancel_cell(cell, True, StatusReasonEnum.UNDEFINED, origin_task=self)
             else:
                 if (checksum, cell._celltype) not in evaluation_cache_1:
                     await DeserializeBufferTask(

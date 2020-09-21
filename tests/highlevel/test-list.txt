@@ -7,7 +7,7 @@ test-html.py
 schema.py
 subcell.py
 subsubcell.py
-BUGGED? inchannel-conflict.py
+inchannel-conflict.py
 deepcell-simple.py
 filesystemlike.py
 context.py

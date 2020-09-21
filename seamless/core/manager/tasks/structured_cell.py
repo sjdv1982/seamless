@@ -333,6 +333,11 @@ class StructuredCellJoinTask(StructuredCellTask):
                         for out_path in sc.outchannels:
                             for accessor in downstreams[out_path]:
                                 manager.cancel_accessor(accessor, void=True)
+            for inchannel in sc.inchannels.values():
+                if inchannel._checksum is not None:
+                    inchannel._valued = True
+                else:
+                    inchannel._valued = False
             #print("/JOIN", sc, ok, value, self)
         finally:
             release_evaluation_lock(locknr)
