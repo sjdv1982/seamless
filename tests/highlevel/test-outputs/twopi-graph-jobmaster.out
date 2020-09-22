@@ -1,8 +1,6 @@
-c45f5031f65e7f3a8ac99b6719d1b362  twopi.seamless
-7b84ea4a0b9b6307e601465930fa967c  /tmp/twopi-database.seamless
-TaskManager, tasks: 3 undestroyed
-TaskManager, reftasks: 1 undestroyed
-TaskManager, rev_reftasks: 1 undestroyed
+d89a78eede0f535003eae21099499943  twopi.seamless
+d89a78eede0f535003eae21099499943  /tmp/twopi-database.seamless
+TaskManager, tasks: 12 undestroyed
 OUTGOING jobslave jobmaster
 INCOMING jobmaster jobslave
 ADD SERVANT buffer

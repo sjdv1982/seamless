@@ -57,11 +57,14 @@ high-in-low3.py
 high-in-low4.py
 high-in-low5.py
 high-in-low6.py
-high-in-low4-memory.py    # Quite long test. Creates 5.6 GB of buffer cache in /tmp/dummy-db
+high-in-low4-memory.py    # Quite long test.
+                          # Creates 5.6 GB of buffer cache in /tmp/dummy-db
                           # Run with rm -rf /tmp/dummy-db  && mkdir -p /tmp/dummy-db && seamless-devel-database dummydb-config.yaml
-                          # Repeating the test will go slighly faster, as the transformation results are cached
+                          # Time is ~120 seconds, or ~60 seconds when re-executed
+                          # Re-executing the test is faster, because the transformation results and input buffers are cached
+                          # Exact output will depend on timings
                           # After the test, "rm -rf /tmp/dummy-db && docker stop seamless-database-container"
-high-in-low6-memory.py    # See above
+high-in-low6-memory.py    # See above. Time is ~90 seconds, or ~40 seconds when re-executed
 
 Non-automatic tests
 =========================
