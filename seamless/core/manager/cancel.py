@@ -141,10 +141,11 @@ class StructuredCellCancellation:
         if not self.is_joined:
             if sc._modified_auth or sc._modified_schema:
                 new_equilibrated = False
-            for path, (void, reason) in self.canceled_inchannels.items():
-                ic = sc.inchannels[path]
-                if ic._valued:
-                    new_equilibrated = False
+            if len(valid_inchannels):
+                for path, (void, reason) in self.canceled_inchannels.items():
+                    ic = sc.inchannels[path]
+                    if ic._valued:
+                        new_equilibrated = False
         new_void = not len(valid_inchannels)
 
         if new_equilibrated and sc._exception is not None:
@@ -587,6 +588,7 @@ class CancellationCycle:
             macro._status_reason = None
 
     def resolve(self):
+        #print("CYCLE")
         assert not self.cleared
         manager = self.manager()
         livegraph = manager.livegraph
@@ -680,6 +682,8 @@ class CancellationCycle:
             if gen_context is not None:
                 gen_context.destroy()
                 macro._gen_context = None
+
+        #print("/CYCLE2")
 
 from ..utils import overlap_path
 from ..cell import Cell
