@@ -377,7 +377,7 @@ class Path:
         if not cell_authority and not self_authority:
             msg = "Cannot bind %s to %s: both have no authority"
             raise Exception(msg % (cell, self))
-        if cell_authority and not self_authority:
+        if cell_authority and not self_authority:  # bound cell loses authority
             manager.cancel_cell(cell, void=False)
         for path in cell._paths:
             assert path is not self, self._path
@@ -387,17 +387,17 @@ class Path:
             if self_authority:
                 for accessor in livegraph.macropath_to_downstream[self]:
                     accessor._new_macropath = True
-                    AccessorUpdateTask(manager, accessor).launch()
-                if not cell._void:
+                    manager.cancel_accessor(accessor, void=False)
+                if cell._checksum is not None:
                     CellUpdateTask(manager, cell).launch()
             else:
                 up_accessor = livegraph.macropath_to_upstream[self]
                 assert up_accessor is not None  # if no up accessor, how could we have no authority?
                 up_accessor._new_macropath = True
-                AccessorUpdateTask(manager, up_accessor).launch()
+                manager.cancel_accessor(up_accessor, void=False)
                 upstream_cell = livegraph.accessor_to_upstream[up_accessor]
                 assert isinstance(upstream_cell, Cell)
-                if not upstream_cell._void:
+                if upstream_cell._checksum is not None:
                     CellUpdateTask(manager, upstream_cell).launch()
 
 
