@@ -189,6 +189,16 @@ class Transformer(Worker):
         return "".join(s)
 
     @property
+    def logs(self):
+        manager = self._get_manager()
+        transformation_cache = manager.cachemanager.transformation_cache
+        transformation = transformation_cache.transformer_to_transformations.get(self)
+        if transformation is None:
+            return None
+        logs = transformation_cache.transformation_logs.get(transformation)
+        return logs
+
+    @property
     def void(self):
         return self._void
 

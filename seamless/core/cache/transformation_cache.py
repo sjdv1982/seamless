@@ -129,6 +129,7 @@ class TransformationCache:
         self.python_debug = set() # set of python-debug tf-checksums
         self.transformation_results = {} # tf-checksum-to-(result-checksum, prelim)
         self.transformation_exceptions = {} # tf-checksum-to-exception
+        self.transformation_logs = {} # tf-checksum-to-stdout/stderr-logs (max 10k each)
         self.transformation_jobs = {} # tf-checksum-to-job
         self.rev_transformation_jobs = {} # job-to-tf-checksum
         self.job_progress = {}
@@ -522,7 +523,8 @@ class TransformationCache:
         else:
             exc = future.exception()
             if exc is None:
-                result_checksum = future.result()
+                result_checksum, logs = future.result()
+                self.transformation_logs[tf_checksum] = logs
                 if result_checksum is None:
                     exc = SeamlessUndefinedError()
 

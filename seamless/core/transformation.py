@@ -229,10 +229,11 @@ class TransformationJob:
                 result = await self._execute_remote(
                     prelim_callback, progress_callback
                 )
+                logs = None
             finally:
                 self.remote_futures = None
         else:
-            result = await self._execute_local(
+            result, logs = await self._execute_local(
                 prelim_callback, progress_callback
             )
         if self.restart:
@@ -240,10 +241,10 @@ class TransformationJob:
             if self.n_restarted > 100:
                 raise SeamlessTransformationError("Restarted transformation 100 times")
             self.restart = False
-            result = await self._execute(
+            result, logs = await self._execute(
                 prelim_callback, progress_callback
             )
-        return result
+        return result, logs
 
     async def _execute_remote(self,
         prelim_callback, progress_callback
@@ -363,6 +364,7 @@ class TransformationJob:
         namespace = {"__name__": "transformer"}
         inputs = []
         code = None
+        logs = [None, None]
         lock = await acquire_lock(self.checksum)
         for pinname in self.transformation:
             if pinname == "__output__":
@@ -473,8 +475,18 @@ class TransformationJob:
                         progress_callback(self, progress)
                     elif status == 4:
                         is_stderr, content = msg
-                        dest = sys.stderr if is_stderr else sys.stdout
-                        print(content, file=dest, end="")
+                        try:
+                            content = str(content)
+                        except:
+                            pass
+                        else:
+                            if len(content) > 10000:
+                                skipped = len(content)-5000-4960
+                                content2 = content[:4960]
+                                content2 += "\n...(skipped %d characters)...\n" % skipped
+                                content2 += content[-5000:]
+                                content = content2
+                            logs[is_stderr] = content
                     else:
                         raise Exception("Unknown return status {}".format(status))
                 if not self.executor.is_alive():
@@ -499,7 +511,24 @@ class TransformationJob:
         result_checksum = await get_result_checksum(result_buffer)
         buffer_cache.cache_buffer(result_checksum, result_buffer)
 
-        return result_checksum
+        if logs[0] is None and logs[1] is None:
+            logstr = None
+        elif logs[0] is not None and logs[1] is None:
+            logstr = logs[0]
+        elif logs[0] is None and logs[1] is not None:
+            logstr = logs[1]
+        else:
+            logstr = """*************************************************
+* Standard output
+*************************************************
+{}
+*************************************************
+*************************************************
+* Standard error
+*************************************************
+{}
+""".format(logs[0], logs[1])
+        return result_checksum, logstr
 
 
 

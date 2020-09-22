@@ -587,6 +587,15 @@ class Transformer(Base):
         return exc
 
     @property
+    def logs(self):
+        """Returns the stdout/stderr logs of the transformer, if any"""
+        htf = self._get_htf()
+        if htf.get("UNTRANSLATED"):
+            return None
+        tf = self._get_tf(force=True).tf
+        return tf.logs
+
+    @property
     def status(self):
         """The status of the transformer, analogous to Cell.status.
 
