@@ -218,9 +218,10 @@ class StructuredCell(SeamlessBase):
                         self._auth_value = {}
                     else:
                         raise NotImplementedError(self.hash_pattern)
-            if len(path):
+            if len(path) or self.hash_pattern is not None:
                 set_subpath(self._auth_value, self.hash_pattern, path, value)
             else:
+                self._auth_value = deepcopy(value)
                 self._join_auth()
 
 
