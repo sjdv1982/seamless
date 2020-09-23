@@ -184,12 +184,11 @@ class Context(Base):
         params = deepcopy(self._default_parameters)
         params.update(graph["params"])
         lib0 = graph.get("lib", [])
-        lib = {}
+        self._graph = Graph(nodes, connections, params, {})
         for l in lib0:
             path = tuple(l["path"])
             l["path"] = path
-            lib[path] = l
-        self._graph = Graph(nodes, connections, params, lib)
+            self._set_lib(path, l)
         self._translate()
         return self
 
