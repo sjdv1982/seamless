@@ -505,6 +505,8 @@ class Manager:
         if isinstance(checksum, str):
             checksum = bytes.fromhex(checksum)
         buffer = self._get_buffer(checksum)
+        if celltype is None:
+            return buffer
         if asyncio.get_event_loop().is_running():
             return deserialize_sync(buffer, checksum, celltype, copy=copy)
         task = DeserializeBufferTask(
