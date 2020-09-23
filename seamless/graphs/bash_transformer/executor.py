@@ -50,7 +50,7 @@ try:
             v = v.unsilk
         storage, form = get_form(v)
         if storage.startswith("mixed"):
-            raise TypeError("pin '%s' has mixed data" % pin)
+            raise TypeError("pin '%s' has '%s' data" % (pin, storage)))
         if storage == "pure-plain":
             if isinstance(form, str):
                 vv = str(v)
