@@ -182,15 +182,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
       'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c' # {}
     )
     ctx.main_module.auth._set_checksum(main_module_checksum, initial=True)
-    inp_checksum = {}
-    for k in checksum:
-        if k == "schema":
-            inp_checksum[k] = checksum[k]
-            continue
-        if not k.startswith("input"):
-            continue
-        k2 = "value" if k == "input" else k[len("input_"):]
-        inp_checksum[k2] = checksum[k]
+    inp_checksum = convert_checksum_dict(checksum, "inp", check_legacy=True)
     set_structured_cell_from_checksum(inp, inp_checksum)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
@@ -235,3 +227,4 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     namespace[node["path"], False] = result, node
 
 from .util import get_path, as_tuple, build_structured_cell, cell_setattr, STRUC_ID
+from .convert_checksum_dict import convert_checksum_dict

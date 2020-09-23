@@ -86,17 +86,7 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels)
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    inp_checksum = {}
-    for k in checksum:
-        if k == "schema":
-            inp_checksum[k] = checksum[k]
-            continue
-        if not k.startswith("input"):
-            continue
-        k2 = "value" if k == "input" else k[len("input_"):]
-        if k2 == "auth" and checksum[k] == 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c':
-            continue
-        inp_checksum[k2] = checksum[k]
+    inp_checksum = convert_checksum_dict(checksum, "inp", check_legacy=True)
     set_structured_cell_from_checksum(inp, inp_checksum)
 
     ctx.executor_code = sctx.executor_code.cell()
@@ -148,3 +138,4 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels)
     namespace[node["path"], False] = result, node
 
 from .util import get_path, as_tuple, build_structured_cell, cell_setattr
+from .convert_checksum_dict import convert_checksum_dict
