@@ -81,7 +81,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    inp_checksum = convert_checksum_dict(checksum, "inp", check_legacy=True)
+    inp_checksum = convert_checksum_dict(checksum, "input")
     set_structured_cell_from_checksum(inp, inp_checksum)
 
     ctx.executor_code = sctx.executor_code.cell()

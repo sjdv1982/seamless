@@ -74,7 +74,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    inp_checksum = convert_checksum_dict(checksum, "inp", check_legacy=True)
+    inp_checksum = convert_checksum_dict(checksum, "input")
     """
     print("INP CHECKSUM", inp_checksum)
     from ..core.context import Context

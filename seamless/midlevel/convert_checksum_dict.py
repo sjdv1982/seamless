@@ -1,7 +1,14 @@
+'''
 def check_and_convert_legacy(checksum):
+    """
+    If check_legacy is True, the (auth) checksums are for hash pattern {"*": "!"} (big dict)
+     but legacy Seamless versions may have encoded the checksums without hash pattern;
+     this will be checked and converted
+    NOTE: superfluous, since those transformers will have no hash pattern...
+    """
     if checksum is None:
         return None
-    buf = buffer_cache.get_buffer(checksum)
+    buf = buffer_cache.get_buffer(bytes.fromhex(checksum))
     if buf is None:
         raise CacheMissError(checksum)
     value, storage = mixed_deserialize(buf)
@@ -28,16 +35,13 @@ def check_and_convert_legacy(checksum):
     result = calculate_checksum_sync(deep_buffer)
     if result is None:
         raise ValueError
-    return True, result
+    return True, result.hex()
+'''
 
 
-
-def convert_checksum_dict(checksum_dict, prefix, *, check_legacy):
+def convert_checksum_dict(checksum_dict, prefix):
     """
     Convert highlevel checksum dict keys to checksum dict keys that a structured cell expects
-    If check_legacy is True, the (auth) checksums are for hash pattern {"*": "!"} (big dict)
-     but legacy Seamless versions may have encoded the checksums without hash pattern;
-     this will be checked and converted
     """
     is_legacy = False
     result = {}
@@ -50,12 +54,14 @@ def convert_checksum_dict(checksum_dict, prefix, *, check_legacy):
         k2 = "value" if k == prefix else k[len(prefix+"_"):]
         if k2 == "auth" and checksum_dict[k] == 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c': #{}
             continue
+        """
         if k2 == "auth":
             unconverted_checksum = checksum_dict[k]
             is_legacy, converted_checksum = check_and_convert_legacy(unconverted_checksum)
             if is_legacy:
                 result[k2] = converted_checksum
                 continue
+        """
         result[k2] = checksum_dict[k]
     if is_legacy:
         for k in list(result.keys()):

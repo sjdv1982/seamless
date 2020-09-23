@@ -81,7 +81,7 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    param_checksum = convert_checksum_dict(checksum, "param", check_legacy=True)
+    param_checksum = convert_checksum_dict(checksum, "param")
     set_structured_cell_from_checksum(param, param_checksum)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
