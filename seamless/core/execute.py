@@ -21,6 +21,7 @@ from .cached_compile import exec_code
 from .protocol.serialize import _serialize as serialize
 
 DIRECT_PRINT = False
+DIRECT_PRINT = True ###
 
 def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
@@ -93,12 +94,15 @@ def _execute(name, code,
         except SeamlessStreamTransformationError as exc:
             exc = str(exc) + "\n"
             return (10, exc)
-        except SystemExit as exc:
-            raise exc from None
-        except Exception:
+        except Exception as exc:
+            open("/tmp/qqq3", "w").write("NULL SYSEXC: %s %s" % (str(exc), type(exc)))
             exc = traceback.format_exc()
             return (1, exc)
+        except SystemExit:
+            open("/tmp/qqq3", "w").write("SYSEXC")
+            raise SystemExit() from None
         else:
+            open("/tmp/qqq3", "w").write("ZERO SYSEXC")
             if output_name is None:
                 return (0, None)
             else:
@@ -140,6 +144,7 @@ def execute(name, code,
     else:
         direct_print = DIRECT_PRINT
     assert identifier is not None
+    _exiting = False
     try:
         ok = False
         if direct_print:
@@ -203,18 +208,28 @@ def execute(name, code,
                     result_queue.put((4, (1, content)))
             result_queue.put(result)
         ok = True
+    except SystemExit:
+        open("/tmp/qqq", "a").write("SYSEXC\n")
+        _exiting = True
+        if USE_PROCESSES:
+            signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        raise SystemExit() from None
     except Exception:
         traceback.print_exc()
     finally:
         if not direct_print:
             sys.stdout, sys.stderr = old_stdio
-        try:
-            if USE_PROCESSES:
-                result_queue.close()
-            if ok:
-                result_queue.join()
-        except Exception:
-            traceback.print_exc()
+        if not _exiting:
+            open("/tmp/qqq", "a").write("NO SYSEXC\n")
+            try:
+                if USE_PROCESSES:
+                    result_queue.close()
+                if ok:
+                    result_queue.join()
+            except Exception:
+                traceback.print_exc()
+        open("/tmp/qqq", "a").write("DONE\n")
+
 
 def execute_debug(name, code,
       injector, module_workspace,
@@ -222,6 +237,7 @@ def execute_debug(name, code,
       inputs, output_name, celltype, result_queue,
       **args
     ):
+    _exiting = False
     try:
         ok = False
         old_stdio = sys.stdout, sys.stderr
@@ -248,9 +264,21 @@ def execute_debug(name, code,
         )
         result_queue.put(result)
         ok = True
-    finally:
-        sys.stdout, sys.stderr = old_stdio
+    except SystemExit:
+        _exiting = True
         if USE_PROCESSES:
-            result_queue.close()
-        if ok:
-            result_queue.join()
+            signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        raise SystemExit() from None
+    except Exception:
+        traceback.print_exc()
+    finally:
+        if not direct_print:
+            sys.stdout, sys.stderr = old_stdio
+        if not _exiting:
+            try:
+                if USE_PROCESSES:
+                    result_queue.close()
+                if ok:
+                    result_queue.join()
+            except Exception:
+                traceback.print_exc()

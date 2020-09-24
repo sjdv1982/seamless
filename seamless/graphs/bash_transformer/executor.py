@@ -50,7 +50,7 @@ try:
             v = v.unsilk
         storage, form = get_form(v)
         if storage.startswith("mixed"):
-            raise TypeError("pin '%s' has '%s' data" % (pin, storage)))
+            raise TypeError("pin '%s' has '%s' data" % (pin, storage))
         if storage == "pure-plain":
             if isinstance(form, str):
                 vv = str(v)
@@ -178,5 +178,7 @@ Error: Result file RESULT does not exist
             resultdata = f.read()
         result = read_data(resultdata)
 finally:
+    if process is not None:
+        subprocess.kill_children(process)
     os.chdir(old_cwd)
     shutil.rmtree(tempdir, ignore_errors=True)

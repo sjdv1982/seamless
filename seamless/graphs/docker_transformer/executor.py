@@ -13,6 +13,8 @@ from seamless.core.transformation import SeamlessTransformationError
 
 resultfile = "RESULT"
 
+_creating_container = False
+_to_exit = False
 
 def read_data(data):
     try:
@@ -29,6 +31,10 @@ def read_data(data):
             return sdata
 
 def sighandler(signal, frame):
+    global _creating_container, _to_exit
+    if _creating_container:
+        _to_exit = True
+        return
     if container is not None:
         try:
             container.stop()
@@ -40,7 +46,7 @@ def sighandler(signal, frame):
             pass
     os.chdir(old_cwd)
     shutil.rmtree(tempdir, ignore_errors=True)
-    raise SystemExit()
+    raise SystemExit() from None
 
 old_cwd = os.getcwd()
 try:
@@ -62,7 +68,7 @@ try:
             v = v.unsilk
         storage, form = get_form(v)
         if storage.startswith("mixed"):
-            raise TypeError("pin '%s' has '%s' data" % (pin, storage)))
+            raise TypeError("pin '%s' has '%s' data" % (pin, storage))
         if storage == "pure-plain":
             if isinstance(form, str):
                 vv = str(v)
@@ -99,11 +105,17 @@ try:
         f.write(docker_command)
     full_docker_command = "bash DOCKER-COMMAND"
     try:
-        container = docker_client.containers.create(
-            docker_image,
-            full_docker_command,
-            **options
-        )
+        try:
+            _creating_container = True
+            container = docker_client.containers.create(
+                docker_image,
+                full_docker_command,
+                **options
+            )
+            if _to_exit:
+                raise SystemExit() from None
+        finally:
+            _creating_container = False
         try:
             container.start()
             exit_status = container.wait()['StatusCode']
@@ -172,7 +184,7 @@ Error: Result file RESULT does not exist
                 stdout = container.logs(stdout=True, stderr=False)
                 try:
                     stdout = stdout.decode()
-                except:
+                except Exception:
                     pass
                 if len(stdout):
                     msg += """*************************************************
@@ -184,7 +196,7 @@ Error: Result file RESULT does not exist
                 stderr = container.logs(stdout=False, stderr=True)
                 try:
                     stderr = stderr.decode()
-                except:
+                except Exception:
                     pass
                 if len(stderr):
                     msg += """*************************************************
@@ -193,7 +205,7 @@ Error: Result file RESULT does not exist
 {}
 *************************************************
 """.format(stderr)
-            except:
+            except Exception:
                 pass
 
             raise SeamlessTransformationError(msg)
@@ -218,5 +230,18 @@ Error: Result file RESULT does not exist
             resultdata = f.read()
         result = read_data(resultdata)
 finally:
-    os.chdir(old_cwd)
-    shutil.rmtree(tempdir, ignore_errors=True)
+    open("/tmp/qqq1", "w").write("exit: %s" % _to_exit)
+    if container is not None:
+        try:
+            container.stop()
+        except:
+            pass
+        try:
+            container.remove()
+        except:
+            pass
+    try:
+        os.chdir(old_cwd)
+        shutil.rmtree(tempdir, ignore_errors=True)
+    except:
+        pass

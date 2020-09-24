@@ -19,13 +19,19 @@ logger = logging.getLogger("seamless")
 forked_processes = weakref.WeakKeyDictionary()
 def _kill_processes():
     for process, termination_time in forked_processes.items():
-        if not process.is_alive:
+        if not process.is_alive():
             continue
+        kill_time = termination_time + 10
         ctime = time.time()
-        kill_time = termination_time + 2
-        if kill_time > ctime:
-            print("Killing transformer process...")
-            time.sleep(kill_time - ctime)
+        while kill_time > ctime:
+            print("Waiting for transformer process to terminate...")
+            time.sleep(2)
+            if not process.is_alive():
+                break
+            ctime = time.time()
+        if not process.is_alive():
+            continue
+        print("Killing transformer process... cleanup will not have happened!")
         process.kill()
 
 atexit.register(_kill_processes)
