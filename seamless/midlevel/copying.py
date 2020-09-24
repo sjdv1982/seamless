@@ -191,6 +191,16 @@ def fill_checksum(manager, node, temp_path, composite=True):
     temp_path = temp_path.lstrip("_")
     node["checksum"][temp_path] = checksum
 
+def get_graph_checksums(graph, with_libraries):
+    nodes0 = graph["nodes"]
+    nodes = [node for node in nodes0 if "scratch" not in node]
+    checksums = get_checksums(nodes)
+    if with_libraries:
+        for lib in graph["lib"]:
+            lib_checksums = get_graph_checksums(lib["graph"], with_libraries=True)
+            checksums.update(lib_checksums)
+    return checksums
+
 def fill_checksums(mgr, nodes, *, path=None):
     """Fills checksums in the nodes from TEMP, if untranslated
     """

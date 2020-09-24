@@ -509,7 +509,7 @@ class Context(Base):
         with open(filename, "w") as f:
             json.dump(graph, f, sort_keys=True, indent=2)
 
-    def get_zip(self):
+    def get_zip(self, with_libraries=True):
         """Obtain the checksum-to-buffer cache for the current graph
 
         The cache is returned as zipped bytes
@@ -519,9 +519,7 @@ class Context(Base):
         self._wait_for_auth_tasks("the graph buffers are obtained for zip")
         self._do_translate(force=force)
         graph = self.get_graph()
-        nodes0 = graph["nodes"]
-        nodes = [node for node in nodes0 if "scratch" not in node]
-        checksums = copying.get_checksums(nodes)
+        checksums = copying.get_graph_checksums(graph, with_libraries)
         manager = self._manager
         buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
         archive = BytesIO()
@@ -532,7 +530,7 @@ class Context(Base):
         archive.close()
         return result
 
-    async def get_zip_async(self):
+    async def get_zip_async(self, with_libraries=True):
         """Obtain the checksum-to-buffer cache for the current graph
 
         The cache is returned as zipped bytes
@@ -542,9 +540,7 @@ class Context(Base):
         await self._wait_for_auth_tasks_async("the graph buffers are obtained for zip")
         self._do_translate(force=force)
         graph = self.get_graph()
-        nodes0 = graph["nodes"]
-        nodes = [node for node in nodes0]
-        checksums = copying.get_checksums(nodes)
+        checksums = copying.get_graph_checksums(graph, with_libraries)
         manager = self._manager
         buffer_dict = await copying.get_buffer_dict(manager, checksums)
         archive = BytesIO()
