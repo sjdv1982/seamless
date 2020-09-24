@@ -312,20 +312,22 @@ class CacheManager:
                     coros.append(coro)
 
         all_tasks = [asyncio.ensure_future(c) for c in coros]
-        tasks = all_tasks
-        while len(tasks):
-            _, tasks  = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-            buffer = buffer_cache.get_buffer(checksum)
-            if buffer is not None:
-                for task in tasks:
+        try:
+            tasks = all_tasks
+            while len(tasks):
+                _, tasks  = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+                buffer = buffer_cache.get_buffer(checksum)
+                if buffer is not None:
+                    return buffer
+        finally:
+            for task in all_tasks:
+                if task.done():
+                    try:
+                        task.result()
+                    except Exception:
+                        pass
+                else:
                     task.cancel()
-                for task in all_tasks:
-                    if task.done():
-                        try:
-                            task.result()
-                        except Exception:
-                            pass
-                return buffer
 
         buffer = buffer_cache.get_buffer(checksum)
         if buffer is not None:
