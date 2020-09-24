@@ -21,7 +21,7 @@ def _kill_processes():
     for process, termination_time in forked_processes.items():
         if not process.is_alive():
             continue
-        kill_time = termination_time + 10
+        kill_time = termination_time + 15  # "docker stop" has 10 secs grace, add 5 secs margin
         ctime = time.time()
         while kill_time > ctime:
             print("Waiting for transformer process to terminate...")

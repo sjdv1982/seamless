@@ -15,6 +15,7 @@ resultfile = "RESULT"
 
 _creating_container = False
 _to_exit = False
+_sys_exit = False
 
 def read_data(data):
     try:
@@ -31,21 +32,25 @@ def read_data(data):
             return sdata
 
 def sighandler(signal, frame):
-    global _creating_container, _to_exit
+    global _creating_container, _to_exit, _sys_exit
     if _creating_container:
         _to_exit = True
         return
     if container is not None:
         try:
-            container.stop()
+            container.stop(timeout=10)
         except:
             pass
         try:
             container.remove()
         except:
             pass
-    os.chdir(old_cwd)
-    shutil.rmtree(tempdir, ignore_errors=True)
+    try:
+        os.chdir(old_cwd)
+        shutil.rmtree(tempdir, ignore_errors=True)
+    except:
+        pass
+    _sys_exit = True
     raise SystemExit() from None
 
 old_cwd = os.getcwd()
@@ -215,7 +220,11 @@ Error: Result file RESULT does not exist
             if len(stderr):
                 print(stderr, file=sys.stderr)
     finally:
-        container.remove()
+        if not _sys_exit:
+            try:
+                container.remove()
+            except:
+                pass
 
 
     try:
@@ -230,18 +239,18 @@ Error: Result file RESULT does not exist
             resultdata = f.read()
         result = read_data(resultdata)
 finally:
-    open("/tmp/qqq1", "w").write("exit: %s" % _to_exit)
-    if container is not None:
+    if not _sys_exit:
+        if container is not None:
+            try:
+                container.stop(timeout=10)
+            except:
+                pass
+            try:
+                container.remove()
+            except:
+                pass
         try:
-            container.stop()
+            os.chdir(old_cwd)
+            shutil.rmtree(tempdir, ignore_errors=True)
         except:
             pass
-        try:
-            container.remove()
-        except:
-            pass
-    try:
-        os.chdir(old_cwd)
-        shutil.rmtree(tempdir, ignore_errors=True)
-    except:
-        pass

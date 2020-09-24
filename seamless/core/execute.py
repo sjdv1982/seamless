@@ -94,14 +94,11 @@ def _execute(name, code,
             exc = str(exc) + "\n"
             return (10, exc)
         except Exception as exc:
-            open("/tmp/qqq3", "w").write("NULL SYSEXC: %s %s" % (str(exc), type(exc)))
             exc = traceback.format_exc()
             return (1, exc)
         except SystemExit:
-            open("/tmp/qqq3", "w").write("SYSEXC")
             raise SystemExit() from None
         else:
-            open("/tmp/qqq3", "w").write("ZERO SYSEXC")
             if output_name is None:
                 return (0, None)
             else:
@@ -208,7 +205,6 @@ def execute(name, code,
             result_queue.put(result)
         ok = True
     except SystemExit:
-        open("/tmp/qqq", "a").write("SYSEXC\n")
         _exiting = True
         if USE_PROCESSES:
             signal.signal(signal.SIGTERM, signal.SIG_DFL)
@@ -219,7 +215,6 @@ def execute(name, code,
         if not direct_print:
             sys.stdout, sys.stderr = old_stdio
         if not _exiting:
-            open("/tmp/qqq", "a").write("NO SYSEXC\n")
             try:
                 if USE_PROCESSES:
                     result_queue.close()
@@ -227,7 +222,6 @@ def execute(name, code,
                     result_queue.join()
             except Exception:
                 traceback.print_exc()
-        open("/tmp/qqq", "a").write("DONE\n")
 
 
 def execute_debug(name, code,
