@@ -272,7 +272,10 @@ class StructuredCellJoinTask(StructuredCellTask):
                         ok = False
 
             modified = sc._modified_auth or sc._modified_schema
+            sc._modified_auth = False
+            sc._modified_schema = False
             self.ok = ok
+
             if ok:
                 if checksum is not None and sc._data is not sc.auth:
                     sc._data._set_checksum(checksum, from_structured_cell=True)
@@ -320,8 +323,6 @@ class StructuredCellJoinTask(StructuredCellTask):
                 # If there are no more pending inchannels, the cancel system
                 #  will now unsoften any outchannel accessors that resolve to None, causing them to be void
                 manager.cancel_scell(sc, self, [])
-                sc._modified_auth = False
-                sc._modified_schema = False
             else:
                 if not task_canceled:
                     # The cancel system may now decide to put the scell into void state

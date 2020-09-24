@@ -27,6 +27,7 @@ The signals are then applied to the elements in the "resolve" stage of the cance
 import weakref
 
 class StructuredCellCancellation:
+    _inconsistent = False
     def __init__(self, scell, cycle):
         self.cycle = weakref.ref(cycle)
         self.scell = weakref.ref(scell)
@@ -49,6 +50,7 @@ class StructuredCellCancellation:
                 try:
                     assert self.is_void == scell._data._void, (scell, self.is_void, scell._modified_auth, scell._modified_schema, self.valid_inchannels, self.pending_inchannels, scell._exception is not None, scell._data._void, scell._data._checksum is None)
                 except:
+                    self._inconsistent = True
                     import traceback; traceback.print_exc()
             else:
                 self.is_void = scell._data._void
@@ -110,6 +112,8 @@ class StructuredCellCancellation:
         cycle._cancel_cell_path(scell, outpath, void=void, reason=reason)
 
     def resolve(self, taskmanager, manager):
+        if self._inconsistent:
+            return
         unvoid_me = False
         void_me = False
         join_me = False

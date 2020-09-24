@@ -235,6 +235,9 @@ class Manager:
         if void:
             assert status_reason is not None
             assert checksum is None
+            if cell._structured_cell is not None and cell._structured_cell._data is cell:
+                sc = cell._structured_cell
+                assert not (sc._modified_auth or sc._modified_schema), (sc, sc._modified_auth, sc._modified_schema)
 
         try:
             if unvoid and not void:

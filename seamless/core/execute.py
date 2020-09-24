@@ -21,7 +21,6 @@ from .cached_compile import exec_code
 from .protocol.serialize import _serialize as serialize
 
 DIRECT_PRINT = False
-DIRECT_PRINT = True ###
 
 def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
