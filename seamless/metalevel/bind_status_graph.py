@@ -2,8 +2,8 @@ from functools import partial
 
 status_callbacks = {}
 
-OBSERVE_GRAPH_DELAY = 0.47 # 47 is not a multiple of 200
-OBSERVE_STATUS_DELAY = 2
+OBSERVE_GRAPH_DELAY = 0.23 # 23 is not a multiple of 100
+OBSERVE_STATUS_DELAY = 1
 
 def status_callback(ctx, ctx2, path, status):
     if ctx._gen_context is None or ctx2._gen_context is None:

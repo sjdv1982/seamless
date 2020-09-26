@@ -22,7 +22,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     all_inchannels = set(inchannels)
     pin_cells = {}
     for pin in list(node["pins"].keys()):
-        pin_cell_name = pin + "_INCHANNEL"
+        pin_cell_name = pin + "_PIN"
         assert pin_cell_name not in all_inchannels
         assert pin_cell_name not in node["pins"]
         pin_cell = cell("mixed")

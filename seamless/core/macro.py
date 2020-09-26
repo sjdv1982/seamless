@@ -341,7 +341,7 @@ class Path:
         for accessor in livegraph.macropath_to_downstream[self]:
             manager.cancel_accessor(
                 accessor, True,
-                from_unconnected_cell=True
+                reason=StatusReasonEnum.UNCONNECTED
             )
         if not oldcell._destroyed:
             if not self_authority:
@@ -386,16 +386,18 @@ class Path:
         if trigger:
             if self_authority:
                 for accessor in livegraph.macropath_to_downstream[self]:
-                    accessor._new_macropath = True
-                    manager.cancel_accessor(accessor, void=False)
+                    if not cell._void:
+                        accessor._new_macropath = True
+                        manager.cancel_accessor(accessor, void=False)
                 if cell._checksum is not None:
                     CellUpdateTask(manager, cell).launch()
             else:
                 up_accessor = livegraph.macropath_to_upstream[self]
                 assert up_accessor is not None  # if no up accessor, how could we have no authority?
-                up_accessor._new_macropath = True
-                manager.cancel_accessor(up_accessor, void=False)
                 upstream_cell = livegraph.accessor_to_upstream[up_accessor]
+                if not upstream_cell._void:
+                    up_accessor._new_macropath = True
+                    manager.cancel_accessor(up_accessor, void=False)
                 assert isinstance(upstream_cell, Cell)
                 if upstream_cell._checksum is not None:
                     CellUpdateTask(manager, upstream_cell).launch()

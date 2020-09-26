@@ -1,7 +1,11 @@
 
 def unvoid_cell(cell, livegraph):
     if cell._structured_cell is not None:
-        return unvoid_scell(cell._structured_cell, livegraph)
+        scell = cell._structured_cell
+        if scell.buffer is cell:
+            return unvoid_scell_inpath(scell, livegraph, ())
+        else:
+            raise Exception
     if not cell._void:
         return
     cell._void = False
@@ -15,23 +19,53 @@ def unvoid_cell(cell, livegraph):
     for accessor in accessors:
         unvoid_accessor(accessor, livegraph)
 
-def unvoid_scell(scell, livegraph):
+def unvoid_scell_inpath(scell, livegraph, inpath):
     cell = scell._data
     if cell._destroyed:
         return
-    if not cell._void and not scell._equilibrated:
+
+    if not cell._void:
         return
-    #print("UNVOID", scell, cell._void, scell._equilibrated)
+
     scell._equilibrated = False
+    scell._exception = None
     cell._void = False
+
     if scell.auth is not None:
         scell.auth._void = False
     if scell.buffer is not None:
         scell.buffer._void = False
 
-    all_accessors = livegraph.paths_to_downstream.get(cell, None)
-    if all_accessors is None:
+
+    state = get_scell_state(scell)
+    #print("UNVOID INPATH", scell, inpath, state)
+
+    if state == "void":
         return
+    manager = livegraph.manager()
+    manager.cancel_scell_inpath(scell, inpath, void=False)
+
+def unvoid_scell(scell, livegraph):
+    cell = scell._data
+    if cell._destroyed:
+        return
+
+    state = get_scell_state(scell)
+    if state == "void":
+        return
+    assert state in ("pending+" "devalued+"), (scell, state)
+
+    scell._equilibrated = False
+    scell._exception = None
+    cell._void = False
+    #print("UNVOID", scell, state)
+
+    if scell.auth is not None:
+        scell.auth._void = False
+    if scell.buffer is not None:
+        scell.buffer._void = False
+
+    all_accessors = livegraph.paths_to_downstream.get(cell, {})
     for accessors in all_accessors.values():
         for accessor in accessors:
             unvoid_accessor(accessor, livegraph)
@@ -50,6 +84,7 @@ def unvoid_transformer(transformer, livegraph):
             return
     for pinname, accessor in upstreams.items():
         if accessor._void: #upstream error
+            #print("NOT UNVOID", transformer, pinname)
             transformer._status_reason = StatusReasonEnum.UPSTREAM
             return
 
@@ -126,6 +161,8 @@ def unvoid_macro(macro, livegraph):
     macro._void = False
 
 def unvoid_accessor(accessor, livegraph):
+    if not accessor._void:
+        return
     #print("UNVOID ACCESSOR", accessor)
     accessor._void = False
     target = accessor.write_accessor.target()
@@ -154,16 +191,18 @@ def unvoid_accessor(accessor, livegraph):
         if from_unconnected_cell:
             livegraph.manager().cancel_accessor(
                 accessor, void=True,
-                from_unconnected_cell=True
+                reason=StatusReasonEnum.UNCONNECTED
             )
         else:
             unvoid_cell(target, livegraph)
     elif isinstance(target, Cell) and path is not None:
         scell = target._structured_cell
         ic = scell.inchannels[path]
+        if not ic._void:
+            return
         #print("UNVOID INCHANNEL", ic)
         ic._void = False
-        unvoid_scell(scell, livegraph)
+        unvoid_scell_inpath(scell, livegraph, path)
     elif isinstance(target, Transformer):
         unvoid_transformer(target, livegraph)
     elif isinstance(target, Reactor):
@@ -183,3 +222,5 @@ from ..transformer import Transformer
 from ..reactor import Reactor
 from ..macro import Macro, Path as MacroPath
 from ..status import StatusReasonEnum
+from ..manager.complex_structured_cell import get_scell_state, scell_is_complex
+from ..manager.tasks.structured_cell import StructuredCellJoinTask

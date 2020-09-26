@@ -101,11 +101,6 @@ class StructuredCellJoinTask(StructuredCellTask):
             return
             #import traceback
             #traceback.print_stack()
-        if sc._equilibrated:
-            print("{} should not be marked as equilibrated!".format(sc), file=sys.stderr)
-            return
-            #import traceback
-            #traceback.print_stack()
 
         #print("JOIN", sc)
 
@@ -272,14 +267,8 @@ class StructuredCellJoinTask(StructuredCellTask):
                         ok = False
 
             modified = sc._modified_auth or sc._modified_schema
-            sc._modified_auth = False
-            sc._modified_schema = False
-            self.ok = ok
 
             if ok:
-                if checksum is not None and sc._data is not sc.auth:
-                    sc._data._set_checksum(checksum, from_structured_cell=True)
-
                 if len(sc.outchannels):
                     livegraph = manager.livegraph
                     cachemanager = manager.cachemanager
@@ -287,22 +276,31 @@ class StructuredCellJoinTask(StructuredCellTask):
                     cs = bytes.fromhex(checksum)
                     expression_to_result_checksum = cachemanager.expression_to_result_checksum
                     #print("SC VALUE", self, sc, value)
+                    taskmanager = manager.taskmanager
+
                     for out_path in sc.outchannels:
                         for accessor in downstreams[out_path]:
+                            accessor._soften = True
+
                             changed = False
                             if modified:
                                 changed = True
 
-                            if accessor.expression is None:
+                            if accessor.expression is None or accessor._void:
                                 changed = True
 
-                            #print("!SC VALUE", out_path, accessor._checksum, modified, accessor.expression is None, changed)
+                            if scell_is_complex(sc):
+                                changed = True
+
+                            #print("!SC VALUE", sc, out_path, accessor._void, changed)
                             if changed:
+                                if accessor._void:
+                                    manager.cancel_accessor(accessor, False, origin_task=self)
                                 accessor.build_expression(livegraph, cs)
-                                accessor._soften = True
                                 accessor._prelim = prelim[out_path]
                                 AccessorUpdateTask(manager, accessor).launch()
                             else:
+                                accessor_update_running = len(taskmanager.accessor_to_task.get(accessor, []))
                                 old_expression = accessor.expression
                                 expression_result_checksum = expression_to_result_checksum.get(old_expression)
                                 accessor.build_expression(livegraph, cs)
@@ -315,31 +313,29 @@ class StructuredCellJoinTask(StructuredCellTask):
                                         True
                                     )
                                 accessor._prelim = prelim[out_path]
+                                if accessor_update_running:
+                                    AccessorUpdateTask(manager, accessor).launch()
 
                     #print("/SC VALUE", sc, value)
 
+            sc._modified_auth = False
+            sc._modified_schema = False
+
+            if ok:
+                assert checksum is not None
+                if sc._data is not sc.auth:
+                    sc._data._set_checksum(checksum, from_structured_cell=True)
                 sc._exception = None
-                # Do this even if ok=True
-                # If there are no more pending inchannels, the cancel system
-                #  will now unsoften any outchannel accessors that resolve to None, causing them to be void
-                manager.cancel_scell(sc, self, [])
-            else:
-                if not task_canceled:
-                    # The cancel system may now decide to put the scell into void state
-                    #  depending if there are pending inchannels or not
-                    manager.cancel_scell(sc, self)
-                    if sc._exception is not None: # the cancel system will not cancel accessors in this case
-                        livegraph = manager.livegraph
-                        downstreams = livegraph.paths_to_downstream[sc._data]
-                        for out_path in sc.outchannels:
-                            for accessor in downstreams[out_path]:
-                                manager.cancel_accessor(accessor, void=True)
+
             for inchannel in sc.inchannels.values():
-                if inchannel._checksum is not None:
-                    inchannel._valued = True
-                else:
-                    inchannel._valued = False
-            #print("/JOIN", sc, ok, value, self)
+                inchannel._save_state()
+
+            new_state = get_scell_state(sc)
+            if new_state == "void":
+                sc._data._set_checksum(None, from_structured_cell=True)
+
+            manager.cancel_scell_post_join(sc)
+
         finally:
             release_evaluation_lock(locknr)
 
@@ -352,5 +348,6 @@ from .upon_connection import UponConnectionTask
 from ...cache import CacheMissError
 from ...cache.buffer_cache import buffer_cache
 from ....silk.Silk import Silk, ValidationError
+from ..complex_structured_cell import get_scell_state, scell_is_complex
 from ...protocol.expression import get_subpath, set_subpath, set_subpath_checksum, access_hash_pattern
 from . import acquire_evaluation_lock, release_evaluation_lock

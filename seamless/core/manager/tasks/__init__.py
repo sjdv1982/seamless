@@ -143,6 +143,7 @@ class Task:
         return self.future.result()
 
     async def _run0(self, taskmanager):
+        taskmanager.launching_tasks.discard(self)
         await asyncio.shield(taskmanager.await_active())
         await asyncio.shield(communion_server.startup)
         if isinstance(self, StructuredCellJoinTask):
@@ -157,12 +158,13 @@ class Task:
         manager = self.manager()
         if manager is None or manager._destroyed:
             return
-        if self._canceled:
-            return
         taskmanager = manager.taskmanager
         if self.future is not None:
             return taskmanager
         taskmanager.run_synctasks()
+        if self._canceled:
+            taskmanager.launching_tasks.discard(self)
+            return
         print_debug("LAUNCH", self.__class__.__name__, hex(id(self)), self.dependencies)
         awaitable = self._run0(taskmanager)
         self.future = asyncio.ensure_future(awaitable)
@@ -175,7 +177,13 @@ class Task:
             return realtask.launch()
         if self.future is not None:
             return
+        manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
+        taskmanager = manager.taskmanager
+        taskmanager.launching_tasks.add(self)
         self._launch()
+
         self.caller_count = -999
 
     def launch_and_await(self):
@@ -212,8 +220,8 @@ class Task:
             if manager is None or manager._destroyed:
                 return
             taskmanager = manager.taskmanager
+            taskmanager.launching_tasks.discard(self)
             taskmanager.cancel_task(self)
-
 
 class BackgroundTask(Task):
     pass

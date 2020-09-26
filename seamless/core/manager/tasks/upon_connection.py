@@ -232,7 +232,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
             if source2 is not None:
                 assert source in source2._paths
             else:
-                manager.cancel_accessor(accessor, True, self, from_unconnected_cell=True)
+                manager.cancel_accessor(accessor, True, origin_task=self, reason=StatusReasonEnum.UNCONNECTED)
             source = source2
         else:
             raise TypeError(type(source))
@@ -301,4 +301,5 @@ from ...transformer import Transformer
 from ...reactor import Reactor
 from ...macro_mode import curr_macro
 from ...macro import Macro, Path as MacroPath
+from ...status import StatusReasonEnum
 from ..unvoid import unvoid_accessor, unvoid_transformer

@@ -1,8 +1,8 @@
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 236, in _execute
+  File "/seamless/seamless/core/transformation.py", line 243, in _execute
     prelim_callback, progress_callback
-  File "/seamless/seamless/core/transformation.py", line 393, in _execute_local
+  File "/seamless/seamless/core/transformation.py", line 401, in _execute_local
     mod = await build_module_async(value)
   File "/seamless/seamless/core/build_module.py", line 154, in build_module_async
     full_module_name, mod = build_module(module_definition)

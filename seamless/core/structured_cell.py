@@ -7,13 +7,16 @@ from .utils import overlap_path
 class Inchannel:
     _void = True
     _checksum = None
-    _valued = False # Did we have a value at the last join?
     _prelim = False
     _status_reason = StatusReasonEnum.UNDEFINED
+    _last_state = (None, None, None) # Allows the inchannel state to be saved
     def __init__(self, structured_cell, subpath):
         assert isinstance(subpath, tuple)
         self.structured_cell = weakref.ref(structured_cell)
         self.subpath = subpath
+
+    def _save_state(self):
+        self._last_state = (self._void, self._checksum, self._status_reason)
 
     @property
     def hash_pattern(self):

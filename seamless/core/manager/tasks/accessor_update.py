@@ -33,6 +33,7 @@ class AccessorUpdateTask(Task):
         # Softening is done by structured cell joins, to indicate that the accessor may have a result later
         if expression_result_checksum is None:
             if accessor._soften:
+                unvoid_accessor(accessor, manager.livegraph)
                 manager.cancel_accessor(accessor, void=False, origin_task=self)
             else:
                 accessor._status_reason = StatusReasonEnum.INVALID
@@ -163,4 +164,5 @@ from ...cache import CacheMissError
 from ...cache.buffer_cache import buffer_cache
 from ...protocol.deep_structure import access_hash_pattern, apply_hash_pattern, value_to_deep_structure
 from ...protocol.expression import get_subpath
+from ..unvoid import unvoid_accessor
 from . import acquire_evaluation_lock, release_evaluation_lock

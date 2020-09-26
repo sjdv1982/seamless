@@ -51,8 +51,6 @@ print("5 (should be None)", ctx.myresult.value)
 ctx.transform.b = 100
 ctx.compute()
 print("6", ctx.myresult.value)
-print(ctx.transform._get_tf().inp.auth.value)
-import sys; sys.exit()
 
 # 6a
 ctx.translate(force=True)

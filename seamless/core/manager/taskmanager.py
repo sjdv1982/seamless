@@ -34,6 +34,7 @@ class TaskManager:
         self.manager = weakref.ref(manager)
         self.loop = asyncio.get_event_loop()
         self.tasks = []
+        self.launching_tasks = set()
         self.task_ids = []
         self.synctasks = []
         self.cell_to_task = {} # tasks that depend on cells
@@ -135,6 +136,7 @@ class TaskManager:
         assert task.future is not None
 
         assert task not in self.tasks
+        self.launching_tasks.discard(task)
         self.tasks.append(task)
         self.task_ids.append(task.taskid)
         task.future.add_done_callback(
@@ -322,7 +324,7 @@ class TaskManager:
                 print(objs)
             return result, True
 
-        while len(ptasks):
+        while len(ptasks) or len(self.launching_tasks):
             if timeout is not None:
                 if report is not None and report > 0:
                     curr_timeout=min(remaining, report)
@@ -388,7 +390,7 @@ class TaskManager:
                 print(objs)
             return result, True
 
-        while len(ptasks):
+        while len(ptasks) or len(self.launching_tasks):
             if timeout is not None:
                 if report is not None and report > 0:
                     curr_timeout=min(remaining, report)
@@ -589,6 +591,7 @@ If origin_task is provided, that task is not cancelled."""
         from .tasks import BackgroundTask
         attribs = (
             "tasks",
+            "launching_tasks",
             "cell_to_task",
             "accessor_to_task",
             "expression_to_task",

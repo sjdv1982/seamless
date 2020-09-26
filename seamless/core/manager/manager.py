@@ -235,14 +235,11 @@ class Manager:
         if void:
             assert status_reason is not None
             assert checksum is None
-            if cell._structured_cell is not None and cell._structured_cell._data is cell:
-                sc = cell._structured_cell
-                assert not (sc._modified_auth or sc._modified_schema), (sc, sc._modified_auth, sc._modified_schema)
-
         try:
             if unvoid and not void:
                 unvoid_cell(cell, self.livegraph)
         except Exception:
+            traceback.print_stack()
             traceback.print_exc()
 
         livegraph = self.livegraph
@@ -297,17 +294,21 @@ class Manager:
                     traceback.print_exc()
 
 
-    def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, prelim=False):
+    def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, *,
+      prelim=False, from_cancel_system=False
+    ):
         ###import traceback; traceback.print_stack(limit=5)
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void
         if void:
             assert status_reason is not None
             assert checksum is None
+            assert not prelim
         sc = inchannel.structured_cell()
         if sc._destroyed:
             return
         cachemanager = self.cachemanager
+        assert not (inchannel._void and (inchannel._checksum is not None))
         old_checksum = inchannel._checksum
         if old_checksum is not None and old_checksum != checksum:
             cachemanager.decref_checksum(old_checksum, inchannel, False, False)
@@ -316,8 +317,11 @@ class Manager:
         inchannel._status_reason = status_reason
         inchannel._prelim = prelim
         if checksum != old_checksum:
+            if checksum is not None:
+                unvoid_scell_inpath(sc, self.livegraph, inchannel.subpath)
             cachemanager.incref_checksum(checksum, inchannel, False, False)
-            self.structured_cell_join(sc, False)
+            if not from_cancel_system:
+                self.structured_cell_join(sc, False)
 
     def _set_transformer_checksum(self,
         transformer, checksum, void, *,
@@ -378,20 +382,18 @@ class Manager:
             if sc is structured_cell:
                 continue
             sc._schema_value = deepcopy(value)
-            ####unvoid = not sc.buffer._void
-            unvoid = True # to keep in line with the rules in cancel.py
-            if unvoid:
-                sc._modified_schema = True
-                self.unvoid_scell(sc)
-                self.cancel_scell_soft(sc)
-                self.structured_cell_join(sc, False)
+            sc._modified_schema = True
+            self.structured_cell_join(sc, False)
+            self.unvoid_scell(sc)
+            self.cancel_scell_soft(sc)
+            self.structured_cell_join(sc, False)
 
     def structured_cell_join(self, structured_cell, updated_auth):
         if self._destroyed or structured_cell._destroyed:
             return
-        self._set_cell_checksum(structured_cell._data, None, void=False)
+        self._set_cell_checksum(structured_cell._data, None, void=False, unvoid=False)
         if structured_cell.buffer is not structured_cell.auth:
-            self._set_cell_checksum(structured_cell.buffer, None, void=False)
+            self._set_cell_checksum(structured_cell.buffer, None, void=False, unvoid=False)
 
         # Cancel all ongoing joins and auth tasks, but not if they haven't started yet.
         not_started_auth, not_started_join = self.taskmanager.cancel_structured_cell(
@@ -541,7 +543,7 @@ class Manager:
         self.cancel_reactor(reactor, void=True, reason=reason)
 
     @with_cancel_cycle
-    def cancel_cell(self, cell, void, origin_task=None, reason=StatusReasonEnum.UPSTREAM):
+    def cancel_cell(self, cell, void, origin_task=None, reason=None):
         """Cancels all tasks depending on cell, and sets all dependencies to None.
 If void=True, all dependencies are set to void as well.
 If origin_task is provided, that task is not cancelled."""
@@ -551,36 +553,25 @@ If origin_task is provided, that task is not cancelled."""
         if cell._destroyed:
             return
 
-        self.cancel_cycle.origin_task = origin_task
+        if origin_task is not None:
+            self.cancel_cycle.origin_task = origin_task
+        if void and reason is None:
+            reason = StatusReasonEnum.UPSTREAM
         self.cancel_cycle.cancel_cell(cell, void=void, reason=reason)
 
     @with_cancel_cycle
-    def cancel_scell_inpath(self, sc, path, void, reason=StatusReasonEnum.UPSTREAM):
+    def cancel_scell_inpath(self, sc, path, void, reason=None):
+        if void and reason is None:
+            reason = StatusReasonEnum.UPSTREAM
         self.cancel_cycle.cancel_scell_inpath(sc, path, void=void, reason=reason)
+
+    @with_cancel_cycle
+    def cancel_scell_post_join(self, sc):
+        self.cancel_cycle.cancel_scell_post_join(sc)
 
     @with_cancel_cycle
     def cancel_scell_soft(self, sc):
         self.cancel_cycle.cancel_scell_soft(sc)
-
-    @with_cancel_cycle
-    def cancel_scell(self, sc, join_task, paths=None):
-        """Cancel of a structured cell (entirely or in part), launched by the join task:
-        - Entirely (paths=None), because of:
-            - Because of an error in obtaining inchannel values (parsing, cache miss, etc.)
-            - Because of a validation error
-        - In part (specified paths), because of outchannel paths that are undefined in value
-        """
-        assert isinstance(sc, StructuredCell)
-        self.cancel_cycle.origin_task = join_task
-        if paths is None:
-            self.cancel_cycle.cancel_scell_inpath(
-                sc, (), void=False,
-                reason=StatusReasonEnum.UPSTREAM
-            )
-        else:
-            self.cancel_cycle.cancel_scell_trigger(sc)
-            for path in paths:
-                self.cancel_cycle.cancel_scell_outpath_soft(sc, path)
 
     @with_cancel_cycle
     def cancel_scell_hard(self, sc, reason, origin_task=None):
@@ -589,7 +580,8 @@ If origin_task is provided, that task is not cancelled."""
         all inchannels are void and auth as well"""
         #print("HARD CANCEL", sc)
         assert isinstance(sc, StructuredCell)
-        self.cancel_cycle.origin_task = origin_task
+        if origin_task is not None:
+            self.cancel_cycle.origin_task = origin_task
         self.cancel_cycle.cancel_scell_inpath(
             sc, (), void=True,
             reason=reason
@@ -599,35 +591,39 @@ If origin_task is provided, that task is not cancelled."""
     @with_cancel_cycle
     def cancel_accessor(self,
         accessor, void,
+        reason=None,
         origin_task=None,
-        from_unconnected_cell=False
     ):
         assert isinstance(accessor, ReadAccessor)
 
-        reason = StatusReasonEnum.UPSTREAM
-        if from_unconnected_cell:
-            assert void
-            reason = StatusReasonEnum.UNCONNECTED
+        if void and reason is None:
+            reason = StatusReasonEnum.UPSTREAM
 
-
-        self.cancel_cycle.origin_task = origin_task
+        if origin_task is not None:
+            self.cancel_cycle.origin_task = origin_task
         self.cancel_cycle.cancel_accessor(accessor, void=void, reason=reason)
 
 
     @with_cancel_cycle
-    def cancel_transformer(self, transformer, void, reason=StatusReasonEnum.UPSTREAM):
+    def cancel_transformer(self, transformer, void, reason=None):
         assert isinstance(transformer, Transformer)
+        if void and reason is None:
+            reason = None
         self.cancel_cycle.cancel_transformer(transformer, void=void, reason=reason)
 
 
     @with_cancel_cycle
-    def cancel_reactor(self, reactor, void, reason=StatusReasonEnum.UPSTREAM):
+    def cancel_reactor(self, reactor, void, reason=None):
         assert isinstance(reactor, Reactor)
+        if void and reason is None:
+            reason = StatusReasonEnum.UPSTREAM
         self.cancel_cycle.cancel_reactor(reactor, void=void, reason=reason)
 
     @with_cancel_cycle
-    def cancel_macro(self, macro, void, reason=StatusReasonEnum.UPSTREAM):
+    def cancel_macro(self, macro, void, reason=None):
         assert isinstance(macro, Macro)
+        if void and reason is None:
+            reason = StatusReasonEnum.UPSTREAM
         self.cancel_cycle.cancel_macro(macro, void=void, reason=reason)
 
     ##########################################################################
@@ -755,7 +751,7 @@ from ..protocol.calculate_checksum import checksum_cache
 from ..protocol.deserialize import deserialize_cache, deserialize_sync
 from ..protocol.get_buffer import get_buffer
 from ..cache.buffer_cache import buffer_cache
-from .unvoid import unvoid_cell, unvoid_scell
+from .unvoid import unvoid_cell, unvoid_scell, unvoid_scell_inpath
 from ..cell import Cell
 from ..worker import Worker
 from ..transformer import Transformer
