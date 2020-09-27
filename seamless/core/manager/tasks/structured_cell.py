@@ -275,7 +275,6 @@ class StructuredCellJoinTask(StructuredCellTask):
                     downstreams = livegraph.paths_to_downstream[sc._data]
                     cs = bytes.fromhex(checksum)
                     expression_to_result_checksum = cachemanager.expression_to_result_checksum
-                    #print("SC VALUE", self, sc, value)
                     taskmanager = manager.taskmanager
 
                     for out_path in sc.outchannels:
@@ -320,6 +319,7 @@ class StructuredCellJoinTask(StructuredCellTask):
 
             sc._modified_auth = False
             sc._modified_schema = False
+            sc._equilibrated = False
 
             if ok:
                 assert checksum is not None
@@ -332,9 +332,12 @@ class StructuredCellJoinTask(StructuredCellTask):
 
             new_state = get_scell_state(sc)
             if new_state == "void":
+                if ok:
+                    print("WARNING: join for %s went ok, but new status is void" % sc)
+                    get_scell_state(sc, verbose=True)
                 sc._data._set_checksum(None, from_structured_cell=True)
 
-            manager.cancel_scell_post_join(sc)
+            manager.cancel_scell_post_join(sc, self)
 
         finally:
             release_evaluation_lock(locknr)

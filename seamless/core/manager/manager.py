@@ -566,7 +566,8 @@ If origin_task is provided, that task is not cancelled."""
         self.cancel_cycle.cancel_scell_inpath(sc, path, void=void, reason=reason)
 
     @with_cancel_cycle
-    def cancel_scell_post_join(self, sc):
+    def cancel_scell_post_join(self, sc, origin_task):
+        self.cancel_cycle.origin_task = origin_task
         self.cancel_cycle.cancel_scell_post_join(sc)
 
     @with_cancel_cycle

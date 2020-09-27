@@ -143,10 +143,12 @@ class StructuredCellCancellation:
 
         has_joins = len(taskmanager.structured_cell_to_task.get(scell, []))
         if new_state == "equilibrium":
-            if self.old_state == "equilibrium":
-                return
-            if has_joins:
-                return
+            if has_joins or self.old_state == "equilibrium":
+                origin_task = self.cycle().origin_task
+                if not isinstance(origin_task, StructuredCellJoinTask):
+                    return
+                if origin_task.dependencies[0] is not scell:
+                    return
             self.cycle().post_equilibrate.append(scell)
             return
 
@@ -552,7 +554,11 @@ class CancellationCycle:
             for scell in post_equilibrate:
                 has_joins = len(taskmanager.structured_cell_to_task.get(scell, []))
                 if has_joins:
-                    continue
+                    origin_task = self.origin_task
+                    if not isinstance(origin_task, StructuredCellJoinTask):
+                        continue
+                    if origin_task.dependencies[0] is not scell:
+                        continue
                 downstreams = livegraph.paths_to_downstream[scell._data]
                 for outpath in scell.outchannels:
                     for accessor in downstreams[outpath]:

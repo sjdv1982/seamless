@@ -135,11 +135,12 @@ def _update_outchannel_accessor(scell, outpath, accessor, to_void, to_unvoid, er
                     return
         else:
             if not has_auth:
-                if ic._checksum is not None:
-                    if overlap_path(inpath, outpath):
-                        return
-            print("WARNING: %s outchannel \"%s\" shouldn't have a value (2)" % (scell, outpath))
-            err.append((outpath, accessor))
+                for inpath, ic in scell.inchannels.items():
+                    if ic._checksum is not None:
+                        if overlap_path(inpath, outpath):
+                            return
+                print("WARNING: %s outchannel \"%s\" shouldn't have a value (2)" % (scell, outpath))
+                err.append((outpath, accessor))
 
 
 
