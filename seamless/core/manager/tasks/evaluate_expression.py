@@ -1,5 +1,6 @@
 import traceback, asyncio
 import sys
+from asyncio import CancelledError
 
 from . import Task
 
@@ -17,7 +18,8 @@ class EvaluateExpressionTask(Task):
         self.expression = expression
         self.fingertip_mode = fingertip_mode
         super().__init__(manager)
-        self._dependencies.append(expression)
+        if not self.fingertip_mode:
+            self._dependencies.append(expression)
 
     async def _run(self):
         expression = self.expression
@@ -26,6 +28,11 @@ class EvaluateExpressionTask(Task):
 
         manager = self.manager()
         cachemanager = self.manager().cachemanager
+
+        if not self.fingertip_mode:
+            livegraph = manager.livegraph
+            if expression not in livegraph.expression_to_accessors:
+                raise CancelledError  # No idea why this could happen, and I am not sure it does
 
         locknr = await acquire_evaluation_lock(self)
         try:

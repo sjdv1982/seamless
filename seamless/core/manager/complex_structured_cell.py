@@ -193,11 +193,11 @@ def update_outchannels(scell, manager, origin_task):
         if new_state == "equilibrium":
             scell._equilibrated = True
 
-def resolve_complex_scell(cycle, scell, post_join):
+def resolve_complex_scell(cycle, scell, post_join, old_state):
     if scell._destroyed:
         return
     new_state = get_scell_state(scell)
-    if post_join and (scell._exception is not None or scell._auth_invalid):
+    if post_join and (scell._exception is not None or scell._auth_invalid) and new_state not in ("pending", "pending+"):
         new_state = "void"
 
     taskmanager = cycle.taskmanager
@@ -213,26 +213,20 @@ def resolve_complex_scell(cycle, scell, post_join):
             if new_state == "pending+":
                 print("WARNING: %s is in state '%s' but no joins were launched" % (scell, new_state))
                 get_scell_state(scell, verbose=True)
-                import traceback
-                traceback.print_stack()
                 manager.structured_cell_join(scell, False)
             if scell not in cycle.to_join:
                 cycle.to_join.append(scell)
-        if scell not in cycle.to_unvoid:
-            cycle.to_unvoid.append(scell)
-        return
-    if new_state == "pending":
-        if post_join:
-            cycle.to_soft_cancel.append(scell)
-            return
-        scell._equilibrated = False
-        if scell._data._void:
+        if old_state not in ("pending", "pending+"):
             if scell not in cycle.to_unvoid:
                 cycle.to_unvoid.append(scell)
-        if not has_joins:
-            #update_outchannels(scell, cycle.manager(), cycle.origin_task)
-            args = (scell, cycle.manager(), cycle.origin_task)
-            cycle.to_update.append(args)
+            manager._set_cell_checksum(scell._data, None, void=False, unvoid=False)
+        return
+    if new_state == "pending":
+        if post_join or old_state not in ("pending", "pending+"):
+            scell._equilibrated = False
+            if scell not in cycle.to_unvoid:
+                cycle.to_unvoid.append(scell)
+            manager._set_cell_checksum(scell._data, None, void=False, unvoid=False)
         return
 
     if new_state == "devalued+":
@@ -251,9 +245,14 @@ def resolve_complex_scell(cycle, scell, post_join):
         elif scell._exception is not None and scell.buffer._checksum is not None:
             reason = StatusReasonEnum.INVALID
         else:
-            reason = scell._data._status_reason
-            if reason is None:
-                reason = StatusReasonEnum.UPSTREAM
+            reason = None
+            if post_join: #  The join task may set the reason already.
+                          #  In particular, cache misses make the scell invalid,
+                          #   even though there will be no buffer
+                reason = scell._data._status_reason
+        if reason is None:
+            reason = StatusReasonEnum.UPSTREAM
+        manager._set_cell_checksum(scell._data, None, void=True, unvoid=False, status_reason=reason)
         cycle.to_void[:] = [item for item in cycle.to_void if item[0] is not scell]
         cycle.to_void.append((scell, reason))
         return
@@ -278,18 +277,20 @@ def unvoid_complex_scell(cycle, scell):
     if scell._destroyed:
         return
 
+    manager = cycle.manager()
+    if manager is None or manager._destroyed:
+        return
+
     scell._equilibrated = False
     scell._exception = None
     scell._data._void = False
+    manager._set_cell_checksum(scell._data, None, void=False, unvoid=False)
 
     if scell.auth is not None:
         scell.auth._void = False
     if scell.buffer is not None:
         scell.buffer._void = False
 
-    manager = cycle.manager()
-    if manager is None or manager._destroyed:
-        return
     livegraph = manager.livegraph
     all_accessors = livegraph.paths_to_downstream.get(scell._data, {})
     for accessors in all_accessors.values():

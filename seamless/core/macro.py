@@ -18,6 +18,7 @@ class Macro(Worker):
         self.namespace = {}
         self.input_dict = {}  #pinname-to-accessor
         self._paths = {} #Path objects
+        self._void = True
         super().__init__()
         forbidden = ("code",)
         for p in sorted(macro_params.keys()):

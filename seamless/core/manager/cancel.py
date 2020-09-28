@@ -38,6 +38,7 @@ class StructuredCellCancellation:
         self.canceled_outpaths = {}
         self.old_state = get_scell_state(scell)
         self.is_complex = scell_is_complex(scell)
+        self.auth_modified = scell._modified_auth or scell._modified_schema or scell._old_modified
         self.post_join = post_join
         livegraph = cycle.manager().livegraph
         if not len(livegraph._destroying) and not scell._destroyed:
@@ -54,6 +55,7 @@ class StructuredCellCancellation:
                         traceback.print_exc()
                         traceback.print_stack()
                         get_scell_state(scell, verbose=True)
+                        import sys; sys.exit()
                         cycle._known_inconsistencies[scell.path] = incon
                 else:
                     incon = cycle._known_inconsistencies.pop(scell.path, None)
@@ -65,9 +67,15 @@ class StructuredCellCancellation:
             if void and self.is_void:
                 # no void cancellation will have any effect
                 return
+
         scell = self.scell()
         if scell is None or scell._destroyed:
             return
+
+        if not void:
+            if not scell._auth_invalid:
+                scell._exception = None  # a pending cell can only have an auth exception
+
         if inpath in scell.inchannels:
             self.canceled_inchannels[inpath] = (void, reason)
         if self.is_complex:
@@ -75,16 +83,11 @@ class StructuredCellCancellation:
 
         cycle = self.cycle()
         for outpath in scell.outchannels:
-            if void:
-                if outpath in self.canceled_outpaths:
-                    void0, reason0 = self.canceled_outpaths[outpath]
-                    if (void0, reason0) == (void, reason):
-                        continue
-            else:
-                if outpath in self.canceled_outpaths:
+            if not overlap_path(outpath, inpath):
+                if void or not self.auth_modified:
                     continue
-                if not overlap_path(outpath, inpath):
-                    continue
+            if not void and not scell._forward_cancel:
+                continue
             self.canceled_outpaths[outpath] = (void, reason)
             cycle._cancel_cell_path(scell, outpath, void=void, reason=reason)
 
@@ -109,11 +112,12 @@ class StructuredCellCancellation:
                 prelim=False, from_cancel_system=True
             )
 
+        ##print("RESOLVE", scell, self.is_complex, self.post_join, self.old_state, get_scell_state(scell) )
         if self.is_complex:
-            return resolve_complex_scell(self.cycle(), scell, self.post_join)
+            return resolve_complex_scell(self.cycle(), scell, self.post_join, self.old_state)
 
         new_state = get_scell_state(scell)
-        if self.post_join and (scell._exception is not None or scell._auth_invalid):
+        if self.post_join and (scell._exception is not None or scell._auth_invalid) and new_state not in ("pending", "pending+"):
             new_state = "void"
 
         if new_state == "pending+":
@@ -121,19 +125,26 @@ class StructuredCellCancellation:
             has_joins = len(taskmanager.structured_cell_to_task.get(scell, []))
             if not has_joins and not self.post_join:
                 print("WARNING: %s is in state 'pending+' but no joins were launched" % scell)
-
+            if not self.post_join:
+                scell._forward_cancel = False
             return
 
         if new_state == "void":
+            self._forward_cancel = True
             if self.post_join or not self.is_void:
                 if scell._auth_invalid:
                     reason = StatusReasonEnum.INVALID
                 elif scell._exception is not None and scell.buffer._checksum is not None:
                     reason = StatusReasonEnum.INVALID
                 else:
-                    reason = scell._data._status_reason
-                    if reason is None:
-                        reason = StatusReasonEnum.UPSTREAM
+                    reason = None
+                    if self.post_join: #  The join task may set the reason already.
+                                       #  In particular, cache misses make the scell invalid,
+                                       #   even though there will be no buffer
+                        reason = scell._data._status_reason
+                if reason is None:
+                    reason = StatusReasonEnum.UPSTREAM
+                manager._set_cell_checksum(scell._data, None, void=True, unvoid=False, status_reason=reason)
                 self.cycle().to_void[:] = [item for item in self.cycle().to_void if item[0] is not scell]
                 self.cycle().to_void.append((scell, reason))
             return
@@ -145,19 +156,23 @@ class StructuredCellCancellation:
                 self.cycle().to_soft_cancel.append(scell)
                 return
             #print("UNVOID FROM CANCEL", scell, "from", self.old_state)
+            scell._forward_cancel = False
             scell._equilibrated = False
             scell._exception = None
-            scell._data._void = False
             manager._set_cell_checksum(scell._data, None, void=False, unvoid=False)
 
             if scell.auth is not None:
                 scell.auth._void = False
             if scell.buffer is not None:
                 scell.buffer._void = False
+            cycle = self.cycle()
+            if scell not in cycle.to_unvoid:
+                cycle.to_unvoid.append(scell)
             return
 
         has_joins = len(taskmanager.structured_cell_to_task.get(scell, []))
         if new_state == "equilibrium":
+            self._forward_cancel = True
             if has_joins:
                 return
             if self.old_state == "equilibrium":
@@ -167,6 +182,7 @@ class StructuredCellCancellation:
             return
 
         if new_state == "join":
+            self._forward_cancel = True
             if not has_joins:
                 manager.structured_cell_join(scell, False)
             return
@@ -224,8 +240,6 @@ class CancellationCycle:
 
 
     def cancel_cell(self, cell, void, reason):
-        if void and cell._void and reason == cell._status_reason:
-            return
         assert not self.cleared
 
         if reason is None:
@@ -298,6 +312,8 @@ class CancellationCycle:
         assert not self.cleared
         if scell._destroyed:
             return
+        if not void and scell in self.to_unvoid:
+            return
         if scell not in self.scells:
             self.scells[scell] = StructuredCellCancellation(scell, self)
         self.scells[scell].cancel_inpath(path, void, reason)
@@ -306,6 +322,7 @@ class CancellationCycle:
         assert not self.cleared
         if scell._destroyed:
             return
+        scell._data._void = False # to get the proper previous state, before the join
         self.scells[scell] = StructuredCellCancellation(scell, self, post_join=True)
 
     def cancel_scell_soft(self, scell):
@@ -317,9 +334,6 @@ class CancellationCycle:
             self._cancel_cell_path(scell, outchannel, void=True, reason=None)
 
     def cancel_accessor(self, accessor, *, void, reason):
-        if void and str(accessor).find("inp_PIN_write-autodock.py") > -1:
-            #traceback.print_stack()
-            pass
         if void:
             if accessor._void and accessor._status_reason == reason:
                 return
@@ -366,8 +380,6 @@ class CancellationCycle:
             return
         origin_task = self.origin_task
         taskmanager.cancel_accessor(accessor, origin_task=origin_task)
-        if manager is None or manager._destroyed:
-            return
         if origin_task is None \
           or not hasattr(origin_task, "accessor") \
           or origin_task.accessor is not accessor:
@@ -377,8 +389,6 @@ class CancellationCycle:
             accessor._void = void
 
     def cancel_transformer(self, transformer, *, void, reason):
-        if void and transformer._void and reason == transformer._status_reason:
-            return
         assert not self.cleared
         if transformer in self.transformers:
             void0, reason0 = self.transformers[transformer]
@@ -438,8 +448,6 @@ class CancellationCycle:
 
 
     def cancel_reactor(self, reactor, *, void, reason):
-        if void and reactor._void and reason == reactor._status_reason:
-            return
         assert not self.cleared
         if reactor in self.reactors:
             void0, reason0 = self.reactors[reactor]
@@ -509,6 +517,7 @@ class CancellationCycle:
         if manager is None or manager._destroyed:
             return
         gen_context = macro._gen_context
+        taskmanager.cancel_macro(macro)
         if void:
             if gen_context is not None:
                 self.macros_to_destroy.append(macro)
@@ -546,6 +555,7 @@ class CancellationCycle:
             # Structured cells and workers
             for scell_cancellation in list(self.scells.values()):
                 scell_cancellation.resolve(taskmanager, manager)
+                StructuredCellCancellation(scell_cancellation.scell(), self) ###
             for transformer, (void, reason) in list(self.transformers.items()):
                 self._resolve_transformer(taskmanager, manager, transformer, void, reason)
             for reactor, (void, reason) in list(self.reactors.items()):
@@ -632,13 +642,17 @@ class CancellationCycle:
                         unvoid_complex_scell(self, scell)
                     else:
                         manager.cancel_scell_soft(scell)
+                    StructuredCellCancellation(scell, self) ###
                 while len(self.to_soft_cancel):
                     scell = self.to_soft_cancel.popleft()
                     manager.cancel_scell_soft(scell)
+                    StructuredCellCancellation(scell, self) ###
                 while len(self.to_join):
                     scell = self.to_join.popleft()
                     scell._exception = None
+                    scell._data._void = False
                     manager.structured_cell_join(scell, False)
+                    StructuredCellCancellation(scell, self) ###
         finally:
             self.origin_task = None
 

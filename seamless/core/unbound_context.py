@@ -5,7 +5,7 @@ from . import SeamlessBase
 
 class DummyTaskManager:
     @staticmethod
-    def run_synctasks():
+    def _run_synctasks():
         pass
 
 class UnboundManager:

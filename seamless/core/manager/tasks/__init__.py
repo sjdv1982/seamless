@@ -139,17 +139,19 @@ class Task:
                 if self.caller_count == 0:
                     print_debug("CANCELING", self.__class__.__name__, hex(id(self)))
                     self.cancel()
-            raise
+            raise CancelledError from None
         return self.future.result()
 
     async def _run0(self, taskmanager):
         taskmanager.launching_tasks.discard(self)
         await asyncio.shield(taskmanager.await_active())
         await asyncio.shield(communion_server.startup)
+        while len(taskmanager.synctasks):
+            await asyncio.sleep(0.001)
         if isinstance(self, StructuredCellJoinTask):
             scell = self.dependencies[0]
             if scell._modified_auth or scell._modified_schema:
-                # just wait a few msec, since we often get re-triggered
+                # for efficiency, just wait a few msec, since we often get re-triggered
                 await asyncio.sleep(0.01)
         self._started = True
         return await self._run()
@@ -161,7 +163,6 @@ class Task:
         taskmanager = manager.taskmanager
         if self.future is not None:
             return taskmanager
-        taskmanager.run_synctasks()
         if self._canceled:
             taskmanager.launching_tasks.discard(self)
             return

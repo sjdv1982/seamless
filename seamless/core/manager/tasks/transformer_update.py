@@ -115,6 +115,8 @@ class TransformerResultUpdateTask(Task):
                 changed = True
             #- launch an accessor update task
             if changed:
+                taskmanager = manager.taskmanager
+                taskmanager.cancel_accessor(accessor)
                 AccessorUpdateTask(manager, accessor).launch()
         return None
 

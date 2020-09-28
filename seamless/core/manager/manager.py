@@ -200,6 +200,7 @@ class Manager:
                 scell = cell._structured_cell
                 scell._modified_auth = True
                 self.unvoid_scell(scell)
+                self.cancel_scell_soft(scell)
                 self.structured_cell_join(
                     scell, True
                 )
@@ -316,8 +317,6 @@ class Manager:
         inchannel._status_reason = status_reason
         inchannel._prelim = prelim
         if checksum != old_checksum:
-            if checksum is not None:
-                unvoid_scell_inpath(sc, self.livegraph, inchannel.subpath)
             cachemanager.incref_checksum(checksum, inchannel, False, False)
             if not from_cancel_system:
                 self.structured_cell_join(sc, False)
@@ -600,6 +599,23 @@ If origin_task is provided, that task is not cancelled."""
             self.cancel_cycle.origin_task = origin_task
         self.cancel_cycle.cancel_accessor(accessor, void=void, reason=reason)
 
+
+    @with_cancel_cycle
+    def cancel_accessors(self,
+        accessors, void,
+        reason=None,
+        origin_task=None,
+    ):
+        if void and reason is None:
+            reason = StatusReasonEnum.UPSTREAM
+
+        if origin_task is not None:
+            self.cancel_cycle.origin_task = origin_task
+
+        for accessor in accessors:
+            assert isinstance(accessor, ReadAccessor)
+
+            self.cancel_cycle.cancel_accessor(accessor, void=void, reason=reason)
 
     @with_cancel_cycle
     def cancel_transformer(self, transformer, void, reason=None):

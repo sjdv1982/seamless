@@ -48,7 +48,6 @@ class StructuredCellTask(Task):
 
 class StructuredCellAuthTask(StructuredCellTask):
     async def _run(self):
-        from ...status import StatusReasonEnum
         manager = self.manager()
         sc = self.structured_cell
         await self.await_sc_tasks(auth=True)
@@ -72,7 +71,7 @@ class StructuredCellAuthTask(StructuredCellTask):
                 raise exc from None
             sc._exception = traceback.format_exc(limit=0)
             sc._auth_invalid = True
-        except CacheMissError:
+        except CacheMissError:  # should not happen: we keep refs-to-auth!
             sc._exception = traceback.format_exc(limit=0)
             sc._auth_invalid = True
         except Exception:
@@ -125,6 +124,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                 return
 
         locknr = await acquire_evaluation_lock(self)
+        #print("JOIN", sc)
 
         try:
             prelim = {}
@@ -164,7 +164,10 @@ class StructuredCellJoinTask(StructuredCellTask):
                                     if value is not None:
                                         has_auth = True
                                 checksum = None  # needs to be re-computed after updating with inchannels
-                    except (CacheMissError, TypeError, ValueError, KeyError):
+                    except CacheMissError: # shouldn't happen; we keep refs-to-auth!
+                        sc._exception = traceback.format_exc(limit=0)
+                        ok = False
+                    except (TypeError, ValueError, KeyError):
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
                     except CancelledError as exc:
@@ -210,7 +213,12 @@ class StructuredCellJoinTask(StructuredCellTask):
                                     ok = False
                                     task_canceled = True
                                     break
-                                except (CacheMissError, TypeError, ValueError, KeyError):
+                                except CacheMissError:
+                                    sc._exception = traceback.format_exc(limit=0)
+                                    sc._data._status_reason = StatusReasonEnum.INVALID
+                                    ok = False
+                                    break
+                                except (TypeError, ValueError, KeyError):
                                     sc._exception = traceback.format_exc(limit=0)
                                     ok = False
                                     break
@@ -226,7 +234,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                 if checksum is not None:
                     try:
                         buffer = await GetBufferTask(manager, checksum).run()
-                    except CacheMissError:
+                    except CacheMissError: # should not happen: we keep refs-to-auth!
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
                     else:
@@ -255,7 +263,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                         raise exc from None
                     ok = False
                     task_canceled = True
-                except CacheMissError:
+                except CacheMissError:  # shouldn't happen; checksum is fresh
                     sc._exception = traceback.format_exc(limit=0)
                     ok = False
                 except Exception:
@@ -273,7 +281,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                     cs = bytes.fromhex(checksum)
                     try:
                         buf = await GetBufferTask(manager, cs).run()
-                    except CacheMissError:
+                    except CacheMissError:  # shouldn't happen; checksum is fresh
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
                     else:
@@ -295,6 +303,13 @@ class StructuredCellJoinTask(StructuredCellTask):
 
             modified = sc._modified_auth or sc._modified_schema or sc._old_modified
 
+            for inchannel in sc.inchannels.values():
+                if inchannel._checksum is None and not inchannel._void:
+                    # We have become pending. Return
+                    if not sc._auth_invalid:
+                        sc._exception = None
+                    return
+
             if ok:
                 if len(sc.outchannels):
                     livegraph = manager.livegraph
@@ -304,46 +319,24 @@ class StructuredCellJoinTask(StructuredCellTask):
                     expression_to_result_checksum = cachemanager.expression_to_result_checksum
                     taskmanager = manager.taskmanager
 
+                    accessors_to_cancel = []  # shouldn't happen, since we can normally predict void states, and we cancel before join
+                    for out_path in sc.outchannels:
+                        for accessor in downstreams[out_path]:
+                            if accessor._void or accessor._checksum is not None:
+                                accessors_to_cancel.append(accessor)
+                    if len(accessors_to_cancel):
+                        manager.cancel_accessors(accessors_to_cancel, False, origin_task=self)
+
                     for out_path in sc.outchannels:
                         for accessor in downstreams[out_path]:
                             accessor._soften = True
 
-                            changed = False
-                            if modified:
-                                changed = True
-
-                            if accessor.expression is None or accessor._void:
-                                changed = True
-
-                            if scell_is_complex(sc):
-                                changed = True
-
-
-                            #print("!SC VALUE", sc, out_path, accessor._void, changed)
-                            if changed:
-                                if accessor._void:
-                                    manager.cancel_accessor(accessor, False, origin_task=self)
-                                accessor.build_expression(livegraph, cs)
-                                accessor._prelim = prelim[out_path]
-                                AccessorUpdateTask(manager, accessor).launch()
-                            else:
-                                accessor_update_running = len(taskmanager.accessor_to_task.get(accessor, []))
-                                old_expression = accessor.expression
-                                expression_result_checksum = expression_to_result_checksum.get(old_expression)
-                                accessor.build_expression(livegraph, cs)
-                                new_expression = accessor.expression
-                                if expression_result_checksum != cs:
-                                    cachemanager.incref_checksum(
-                                        expression_result_checksum,
-                                        new_expression,
-                                        False,
-                                        True
-                                    )
-                                accessor._prelim = prelim[out_path]
-                                if accessor_update_running:
-                                    AccessorUpdateTask(manager, accessor).launch()
-
-                    #print("/SC VALUE", sc, value)
+                            #print("!SC VALUE", sc, out_path, accessor._void)
+                            taskmanager.cancel_accessor(accessor)
+                            accessor.build_expression(livegraph, cs)
+                            accessor._prelim = prelim[out_path]
+                            AccessorUpdateTask(manager, accessor).launch()
+                sc._forward_cancel = True
 
             sc._modified_auth = False
             sc._modified_schema = False
@@ -356,6 +349,9 @@ class StructuredCellJoinTask(StructuredCellTask):
                 if sc._data is not sc.auth:
                     sc._data._set_checksum(checksum, from_structured_cell=True)
                 sc._exception = None
+            else:
+                sc._data._void = True # just temporary, to avoid errors
+
 
             for inchannel in sc.inchannels.values():
                 inchannel._save_state()

@@ -93,7 +93,7 @@ class TaskManager:
         assert macro not in self.macro_to_task
         self.macro_to_task[macro] = []
 
-    def run_synctasks(self):
+    def _run_synctasks(self):
         synctasks = self.synctasks
         if not len(synctasks):
             return
@@ -113,7 +113,7 @@ class TaskManager:
     async def loop_run_synctasks(self):
         while not self._destroyed:
             try:
-                self.run_synctasks()
+                self._run_synctasks()
             except Exception:
                 import traceback
                 print_error(traceback.format_exc())
@@ -155,8 +155,6 @@ class TaskManager:
             d = self.accessor_to_task
         elif isinstance(dep, Expression):
             d = self.expression_to_task
-            if dep not in d:
-                raise CancelledError
         elif isinstance(dep, Transformer):
             d = self.transformer_to_task
         elif isinstance(dep, Reactor):

@@ -7,6 +7,14 @@ class AccessorUpdateTask(Task):
         super().__init__(manager)
         self._dependencies.append(accessor)
 
+        target = accessor.write_accessor.target()
+        if isinstance(target, MacroPath):
+            target = target._cell
+            if target is None:
+                return
+        if isinstance(target, Cell):
+            assert not target._void, accessor
+
     async def _run(self):
         manager = self.manager()
         taskmanager = manager.taskmanager
@@ -24,7 +32,36 @@ class AccessorUpdateTask(Task):
                 accessor, void=True,
                 origin_task=self
             )
+            import sys; sys.exit()
             return
+
+        livegraph = manager.livegraph
+        assert expression in livegraph.expression_to_accessors
+
+        assert not accessor._void
+        path = accessor.write_accessor.path
+        target = accessor.write_accessor.target()
+        if not isinstance(target, MacroPath):
+            if isinstance(target, Cell):
+                cell = target
+                if path is None:
+                    assert not cell._void, cell
+                    assert cell._checksum is None, cell
+                else:
+                    sc = target._structured_cell
+                    try:
+                        assert not target._void, (sc, cell, path)
+                        inchannel = sc.inchannels[path]
+                        assert not inchannel._void, (sc, cell, path)
+                        assert inchannel._checksum is None, (sc, cell, path)
+                    except:
+                        import traceback; traceback.print_exc()
+                        from seamless.core.manager.complex_structured_cell import get_scell_state
+                        get_scell_state(sc, True)
+                        inchannel = sc.inchannels[path]
+                        print(accessor._void, inchannel._void)
+                        import asyncio; await asyncio.sleep(3)
+                        import sys; sys.exit()
 
         expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()
 
@@ -40,12 +77,7 @@ class AccessorUpdateTask(Task):
                 manager.cancel_accessor(accessor, void=True, origin_task=self)
             return
 
-        if accessor._checksum == expression_result_checksum:
-            if not accessor._new_macropath:
-                return
         accessor._checksum = expression_result_checksum
-        accessor._void = False
-        accessor._status_reason = None
 
         # Select the write accessor's target.
         target = accessor.write_accessor.target()
@@ -130,10 +162,7 @@ class AccessorUpdateTask(Task):
                         assert sc is not None
                         inchannel = sc.inchannels[path]
 
-                        # Cancel the inchannel.
-                        # The value will already be None, but a join task may have been fired previously
-                        # (after all, inchannels with value None are allowed for structured cells)
-                        manager.cancel_scell_inpath(sc, path, False)
+                        assert not inchannel._void, (sc, path)
 
                         manager._set_inchannel_checksum(
                             inchannel, result_checksum,
@@ -166,3 +195,4 @@ from ...protocol.deep_structure import access_hash_pattern, apply_hash_pattern, 
 from ...protocol.expression import get_subpath
 from ..unvoid import unvoid_accessor
 from . import acquire_evaluation_lock, release_evaluation_lock
+from ...macro import Path as MacroPath

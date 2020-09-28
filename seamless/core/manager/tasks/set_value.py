@@ -53,13 +53,14 @@ class SetCellValueTask(Task):
                     checksum, cell._celltype, cell._subcelltype,
                     str(cell)
                 )
+                manager.cancel_cell(cell, void=False, origin_task=self)
                 checksum_cache[checksum] = buffer
                 buffer_cache.cache_buffer(checksum, buffer)
                 manager._set_cell_checksum(self.cell, checksum, False)
                 livegraph.cell_parsing_exceptions.pop(cell, None)
-                CellUpdateTask(manager, self.cell).launch()
+                CellUpdateTask(manager, cell).launch()
             else:
-                manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.UNDEFINED, origin_task=self)
+                manager.cancel_cell(cell, True, reason=StatusReasonEnum.UNDEFINED, origin_task=self)
         except asyncio.CancelledError as exc:
             if self._canceled:
                 raise exc from None

@@ -240,8 +240,10 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
         if accessor is not None and source is not None:
             if isinstance(source, Cell):
                 if not source._void:
-                    accessor.build_expression(manager.livegraph, source._checksum)
+                    taskmanager = manager.taskmanager
                     unvoid_accessor(accessor, manager.livegraph)
+                    manager.cancel_accessor(accessor, void=False, origin_task=self)
+                    accessor.build_expression(manager.livegraph, source._checksum)
                     if source._checksum is not None:
                         AccessorUpdateTask(manager, accessor).launch()
             elif isinstance(source, Transformer):

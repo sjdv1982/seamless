@@ -46,6 +46,7 @@ class StructuredCell(SeamlessBase):
     _celltype = "structured"
     _exception = None
     _equilibrated = True   # no more computation, unless an inchannel, auth or schema gets changed.
+    _forward_cancel = True  # whenever the scell becomes pending, cancel all outchannels
     def __init__(self, data, *,
         auth=None,
         schema=None,

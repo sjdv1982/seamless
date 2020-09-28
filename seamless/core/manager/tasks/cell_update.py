@@ -7,6 +7,16 @@ class CellUpdateTask(Task):
         super().__init__(manager)
         self._dependencies.append(cell)
 
+        accessors = manager.livegraph.cell_to_downstream[cell]
+        for accessor in accessors:
+            target = accessor.write_accessor.target()
+            if isinstance(target, MacroPath):
+                target = target._cell
+                if target is None:
+                    continue
+            if isinstance(target, Cell):
+                assert not target._void, accessor
+
     async def _run(self):
         """Updates the downstream dependencies (accessors) of a cell"""
         cell = self.cell
@@ -38,6 +48,18 @@ class CellUpdateTask(Task):
                     changed = True
                 #- launch an accessor update task
                 if changed or accessor._new_macropath:
+                    target = accessor.write_accessor.target()
+                    if isinstance(target, MacroPath):
+                        target = target._cell
+                        if target is None:
+                            continue
+                    if isinstance(target, Cell):
+                        assert not target._void, accessor
+                    if accessor._new_macropath:
+                        manager.cancel_cell(target, void=False)
+                    else:
+                        taskmanager = manager.taskmanager
+                        taskmanager.cancel_accessor(accessor)
                     task = AccessorUpdateTask(manager, accessor)
                     task.launch()
             for editpin in livegraph.cell_to_editpins[cell]:
@@ -61,3 +83,5 @@ from .reactor_update import ReactorUpdateTask
 from .get_buffer import GetBufferTask
 from .deserialize_buffer import DeserializeBufferTask
 from . import acquire_evaluation_lock, release_evaluation_lock
+from ...macro import Path as MacroPath
+from ...cell import Cell

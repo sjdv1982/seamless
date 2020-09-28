@@ -36,12 +36,6 @@ def unvoid_scell_inpath(scell, livegraph, inpath):
     if scell.buffer is not None:
         scell.buffer._void = False
 
-
-    state = get_scell_state(scell)
-    #print("UNVOID INPATH", scell, inpath, state)
-
-    if state == "void":
-        return
     manager = livegraph.manager()
     manager.cancel_scell_inpath(scell, inpath, void=False)
 
@@ -222,5 +216,5 @@ from ..transformer import Transformer
 from ..reactor import Reactor
 from ..macro import Macro, Path as MacroPath
 from ..status import StatusReasonEnum
-from ..manager.complex_structured_cell import get_scell_state, scell_is_complex
+from ..manager.complex_structured_cell import get_scell_state
 from ..manager.tasks.structured_cell import StructuredCellJoinTask
