@@ -155,6 +155,8 @@ class TaskManager:
             d = self.accessor_to_task
         elif isinstance(dep, Expression):
             d = self.expression_to_task
+            if dep not in d:
+                raise CancelledError
         elif isinstance(dep, Transformer):
             d = self.transformer_to_task
         elif isinstance(dep, Reactor):

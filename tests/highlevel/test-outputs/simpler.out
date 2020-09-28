@@ -19,7 +19,6 @@ TRANSFORMER EXCEPTION Traceback (most recent call last):
 TypeError: triple_it_b() missing 1 required positional argument: 'b'
 
 RUN!
-RUN!
 <Silk: {'a': 12, 'b': 100} >
 RESULT <Silk: 136 > <Silk: 136 >
 START
@@ -41,7 +40,7 @@ On instance['b']:
 {'properties': {'a': {'type': 'integer'}, 'b': {'type': 'string'}}, 'type': 'object'}
 <Silk: None >
 {'a': 1, 'b': 100}
-TRANSFORMER STATUS *inp*: Status: undefined
+TRANSFORMER STATUS *inp*: Status: invalid
 START!
 RUN!
 {'a': 1, 'b': 'testing'}
@@ -62,7 +61,6 @@ TRANSFORMER EXCEPTION Traceback (most recent call last):
 TypeError: unsupported operand type(s) for +: 'int' and 'str'
 
 START2
-RUN!
 <Silk: None >
 TRANSFORMER INPUT EXCEPTION None
 TRANSFORMER STATUS *tf*: Status: error

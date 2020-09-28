@@ -30,44 +30,49 @@ import traceback
 
 class StructuredCellCancellation:
     _inconsistent = False
-    def __init__(self, scell, cycle):
+    post_join = False  # are we initiated by the end of a join task?
+    def __init__(self, scell, cycle, post_join=False):
         self.cycle = weakref.ref(cycle)
         self.scell = weakref.ref(scell)
         self.canceled_inchannels = {}
         self.canceled_outpaths = {}
         self.old_state = get_scell_state(scell)
         self.is_complex = scell_is_complex(scell)
+        self.post_join = post_join
         livegraph = cycle.manager().livegraph
         if not len(livegraph._destroying) and not scell._destroyed:
             state = get_scell_state(scell)
             self.is_void = (state == "void")
-            try:
-                assert self.is_void == scell._data._void, (scell,  scell._data._void, state, self.is_complex)
-            except:
-                self._inconsistent = True
-                known_inconsistency = cycle._known_inconsistencies.get(scell.path)
-                incon = (self.is_void, scell._data._void, state)
-                if known_inconsistency is None or known_inconsistency != incon:
-                    traceback.print_exc()
-                    traceback.print_stack()
-                    get_scell_state(scell, verbose=True)
-                    cycle._known_inconsistencies[scell.path] = incon
-            else:
-                incon = cycle._known_inconsistencies.pop(scell.path, None)
+            if not post_join:
+                try:
+                    assert self.is_void == scell._data._void, (scell,  scell._data._void, state, self.is_complex)
+                except:
+                    self._inconsistent = True
+                    known_inconsistency = cycle._known_inconsistencies.get(scell.path)
+                    incon = (self.is_void, scell._data._void, state)
+                    if known_inconsistency is None or known_inconsistency != incon:
+                        traceback.print_exc()
+                        traceback.print_stack()
+                        get_scell_state(scell, verbose=True)
+                        cycle._known_inconsistencies[scell.path] = incon
+                else:
+                    incon = cycle._known_inconsistencies.pop(scell.path, None)
         else:
             self.is_void = scell._data._void
 
     def cancel_inpath(self, inpath, void, reason):
-        if self.is_complex:
-            return
-        if void and self.is_void:
-            # no void cancellation will have any effect
-            return
+        if not self.is_complex:
+            if void and self.is_void:
+                # no void cancellation will have any effect
+                return
         scell = self.scell()
         if scell is None or scell._destroyed:
             return
         if inpath in scell.inchannels:
             self.canceled_inchannels[inpath] = (void, reason)
+        if self.is_complex:
+            return
+
         cycle = self.cycle()
         for outpath in scell.outchannels:
             if void:
@@ -89,12 +94,6 @@ class StructuredCellCancellation:
 
         scell = self.scell()
 
-        if self.is_complex:
-            if scell in self.cycle().complex_scell_to_resolve:
-                return
-            self.cycle().complex_scell_to_resolve.append(scell)
-            return
-
         for path, (void, reason) in self.canceled_inchannels.items():
             ic = scell.inchannels[path]
             """
@@ -110,14 +109,26 @@ class StructuredCellCancellation:
                 prelim=False, from_cancel_system=True
             )
 
+        if self.is_complex:
+            return resolve_complex_scell(self.cycle(), scell, self.post_join)
+
         new_state = get_scell_state(scell)
+        if self.post_join and (scell._exception is not None or scell._auth_invalid):
+            new_state = "void"
+
         if new_state == "pending+":
             assert self.old_state == "pending+"
+            has_joins = len(taskmanager.structured_cell_to_task.get(scell, []))
+            if not has_joins and not self.post_join:
+                print("WARNING: %s is in state 'pending+' but no joins were launched" % scell)
+
             return
 
         if new_state == "void":
-            if not self.is_void:
+            if self.post_join or not self.is_void:
                 if scell._auth_invalid:
+                    reason = StatusReasonEnum.INVALID
+                elif scell._exception is not None and scell.buffer._checksum is not None:
                     reason = StatusReasonEnum.INVALID
                 else:
                     reason = scell._data._status_reason
@@ -128,12 +139,16 @@ class StructuredCellCancellation:
             return
 
         if new_state == "pending":
-            if self.old_state == "pending":
+            if self.old_state == "pending" and not self.post_join:
+                return
+            if self.post_join:
+                self.cycle().to_soft_cancel.append(scell)
                 return
             #print("UNVOID FROM CANCEL", scell, "from", self.old_state)
             scell._equilibrated = False
             scell._exception = None
             scell._data._void = False
+            manager._set_cell_checksum(scell._data, None, void=False, unvoid=False)
 
             if scell.auth is not None:
                 scell.auth._void = False
@@ -143,11 +158,10 @@ class StructuredCellCancellation:
 
         has_joins = len(taskmanager.structured_cell_to_task.get(scell, []))
         if new_state == "equilibrium":
-            if has_joins or self.old_state == "equilibrium":
-                origin_task = self.cycle().origin_task
-                if not isinstance(origin_task, StructuredCellJoinTask):
-                    return
-                if origin_task.dependencies[0] is not scell:
+            if has_joins:
+                return
+            if self.old_state == "equilibrium":
+                if not self.post_join:
                     return
             self.cycle().post_equilibrate.append(scell)
             return
@@ -189,9 +203,10 @@ class CancellationCycle:
         self.taskmanager = manager.taskmanager
         self._clear()
         self._known_inconsistencies = {}
+        self.to_soft_cancel = deque()
         self.to_unvoid = deque()
         self.to_join = deque()
-        self.complex_scell_to_resolve = deque()
+        self.to_update = deque()
         self.nested_resolve = 0
         self.origin_task = None
 
@@ -291,12 +306,15 @@ class CancellationCycle:
         assert not self.cleared
         if scell._destroyed:
             return
-        if scell not in self.scells:
-            self.scells[scell] = StructuredCellCancellation(scell, self)
+        self.scells[scell] = StructuredCellCancellation(scell, self, post_join=True)
 
     def cancel_scell_soft(self, scell):
         for outchannel in scell.outchannels:
             self._cancel_cell_path(scell, outchannel, void=False, reason=None)
+
+    def cancel_scell_hard(self, scell, reason):
+        for outchannel in scell.outchannels:
+            self._cancel_cell_path(scell, outchannel, void=True, reason=None)
 
     def cancel_accessor(self, accessor, *, void, reason):
         if void and str(accessor).find("inp_PIN_write-autodock.py") > -1:
@@ -526,13 +544,13 @@ class CancellationCycle:
                 self._resolve_accessor(taskmanager, manager, accessor, void, reason)
 
             # Structured cells and workers
-            for scell_cancellation in self.scells.values():
+            for scell_cancellation in list(self.scells.values()):
                 scell_cancellation.resolve(taskmanager, manager)
-            for transformer, (void, reason) in self.transformers.items():
+            for transformer, (void, reason) in list(self.transformers.items()):
                 self._resolve_transformer(taskmanager, manager, transformer, void, reason)
-            for reactor, (void, reason) in self.reactors.items():
+            for reactor, (void, reason) in list(self.reactors.items()):
                 self._resolve_reactor(taskmanager, manager, reactor, void, reason)
-            for macro, (void, reason) in self.macros.items():
+            for macro, (void, reason) in list(self.macros.items()):
                 self._resolve_macro(taskmanager, manager, macro, void, reason)
 
             to_void = self.to_void
@@ -554,11 +572,7 @@ class CancellationCycle:
             for scell in post_equilibrate:
                 has_joins = len(taskmanager.structured_cell_to_task.get(scell, []))
                 if has_joins:
-                    origin_task = self.origin_task
-                    if not isinstance(origin_task, StructuredCellJoinTask):
-                        continue
-                    if origin_task.dependencies[0] is not scell:
-                        continue
+                    return
                 downstreams = livegraph.paths_to_downstream[scell._data]
                 for outpath in scell.outchannels:
                     for accessor in downstreams[outpath]:
@@ -608,16 +622,19 @@ class CancellationCycle:
             return
 
         try:
-            while len(self.complex_scell_to_resolve) or len(self.to_unvoid) or len(self.to_join):
-                while len(self.complex_scell_to_resolve):
-                    scell = self.complex_scell_to_resolve.popleft()
-                    resolve_complex_scell(self, scell)
+            while len(self.to_soft_cancel) or len(self.to_update) or len(self.to_unvoid) or len(self.to_join):
+                while len(self.to_update):
+                    args = self.to_update.popleft()
+                    update_outchannels(*args)
                 while len(self.to_unvoid):
                     scell = self.to_unvoid.popleft()
                     if scell_is_complex(scell):
                         unvoid_complex_scell(self, scell)
                     else:
                         manager.cancel_scell_soft(scell)
+                while len(self.to_soft_cancel):
+                    scell = self.to_soft_cancel.popleft()
+                    manager.cancel_scell_soft(scell)
                 while len(self.to_join):
                     scell = self.to_join.popleft()
                     scell._exception = None
@@ -638,4 +655,6 @@ from ..status import StatusReasonEnum
 from ..structured_cell import StructuredCell
 from ..manager.tasks.accessor_update import AccessorUpdateTask
 from .tasks.structured_cell import StructuredCellJoinTask
-from .complex_structured_cell import get_scell_state, scell_is_complex, resolve_complex_scell, unvoid_complex_scell
+from .complex_structured_cell import (
+    get_scell_state, scell_is_complex, resolve_complex_scell, unvoid_complex_scell, update_outchannels
+)

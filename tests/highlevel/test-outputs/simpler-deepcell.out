@@ -23,7 +23,6 @@ RUN!
 RESULT <Silk: 136 > <Silk: 136 >
 START
 RUN!
-RUN!
 <Silk: 13 >
 <Silk: {'a': 13, 'b': 100} >
 RESULT <Silk: 139 > <Silk: 139 >

@@ -209,6 +209,8 @@ class Manager:
                 if cell._structured_cell is None or sc_schema:
                     CellUpdateTask(self, cell).launch()
         if sc_schema:
+            for structured_cell in self.livegraph.schemacells[cell]:
+                self.structured_cell_join(structured_cell, False)  # to avoid a "pending+" warning from the cancel system
             value = self.resolve(checksum, "plain")
             self.update_schemacell(cell, value, None)
 
@@ -228,9 +230,6 @@ class Manager:
         #import traceback; traceback.print_stack()
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void
-
-        #if checksum is not None and (str(cell).find("inp.b") > -1 or str(cell).find("inp.a") > -1):
-        #    print("SET CELL CHECKSUM", cell, checksum.hex()[:10])
 
         if void:
             assert status_reason is not None
@@ -583,10 +582,7 @@ If origin_task is provided, that task is not cancelled."""
         assert isinstance(sc, StructuredCell)
         if origin_task is not None:
             self.cancel_cycle.origin_task = origin_task
-        self.cancel_cycle.cancel_scell_inpath(
-            sc, (), void=True,
-            reason=reason
-        )
+        self.cancel_cycle.cancel_scell_hard(sc, reason)
         #print("/HARD CANCEL", sc)
 
     @with_cancel_cycle

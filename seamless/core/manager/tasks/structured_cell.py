@@ -92,17 +92,37 @@ class StructuredCellJoinTask(StructuredCellTask):
         sc = self.structured_cell
         await self.await_sc_tasks(auth=False)
         task_canceled = False
+
         if sc._data is not sc.auth and sc._data._checksum is not None:
             print("{} should have been canceled!".format(sc), file=sys.stderr)
-            return
 
         if sc._data._void:
             print("{} should not be void!".format(sc), file=sys.stderr)
             return
-            #import traceback
-            #traceback.print_stack()
 
-        #print("JOIN", sc)
+
+        for inchannel in sc.inchannels.values():
+            if inchannel._checksum is None and not inchannel._void:
+                # Refuse to join while pending.
+                #
+                # We could implement it for non-complex scells,
+                #  (since we know the inchannel-outchannel relationship)
+                # But writing out only the fully known outchannels
+                #  would be mostly pointless.
+                # Alternatively, we could write out partially known
+                #  outchannels with a prelim status,
+                #  but this will make the system much harder to debug,
+                #  as a lot of tasks will be launched and canceled and relaunched.
+                if sc._modified_auth or sc._modified_schema:
+                    sc._old_modified = True
+                sc._modified_auth = False
+                sc._modified_schema = False
+
+                # manager.cancel_scell_post_join(sc, self)  # Don't call it directly; better to finish the join task first
+                manager.taskmanager.add_synctask(manager.cancel_scell_post_join, (sc, self), {}, False)
+                manager.taskmanager.cancel_structured_cell(sc, True, no_auth=True, origin_task=self)
+
+                return
 
         locknr = await acquire_evaluation_lock(self)
 
@@ -118,6 +138,8 @@ class StructuredCellJoinTask(StructuredCellTask):
             value, checksum = None, None
             ok = True
             schema = sc.get_schema()
+            has_auth = False
+            has_inchannel = False
             if len(sc.inchannels):
                 paths = sorted(list(sc.inchannels))
                 if paths == [()] and not sc.hash_pattern:
@@ -139,6 +161,8 @@ class StructuredCellJoinTask(StructuredCellTask):
                                     value = await DeserializeBufferTask(
                                         manager, buffer, auth_checksum, "mixed", copy=True
                                     ).run()
+                                    if value is not None:
+                                        has_auth = True
                                 checksum = None  # needs to be re-computed after updating with inchannels
                     except (CacheMissError, TypeError, ValueError, KeyError):
                         sc._exception = traceback.format_exc(limit=0)
@@ -171,6 +195,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                         for path in paths:
                             subchecksum = sc.inchannels[path]._checksum
                             if subchecksum is not None:
+                                has_inchannel = True
                                 try:
                                     # - no need to buffer-cache, since the inchannel holds a ref
                                     # - the subchecksum has already the correct hash pattern (accessors make sure of this)
@@ -208,6 +233,8 @@ class StructuredCellJoinTask(StructuredCellTask):
                         value = await DeserializeBufferTask(
                             manager, buffer, checksum, "mixed", copy=True
                         ).run()
+                        if value is not None:
+                            has_auth = True
                 else:
                     ok = False
             if not ok:
@@ -266,7 +293,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
 
-            modified = sc._modified_auth or sc._modified_schema
+            modified = sc._modified_auth or sc._modified_schema or sc._old_modified
 
             if ok:
                 if len(sc.outchannels):
@@ -290,6 +317,7 @@ class StructuredCellJoinTask(StructuredCellTask):
 
                             if scell_is_complex(sc):
                                 changed = True
+
 
                             #print("!SC VALUE", sc, out_path, accessor._void, changed)
                             if changed:
@@ -319,10 +347,12 @@ class StructuredCellJoinTask(StructuredCellTask):
 
             sc._modified_auth = False
             sc._modified_schema = False
+            sc._old_modified = False
             sc._equilibrated = False
 
             if ok:
-                assert checksum is not None
+                if has_auth or has_inchannel:
+                    assert checksum is not None
                 if sc._data is not sc.auth:
                     sc._data._set_checksum(checksum, from_structured_cell=True)
                 sc._exception = None
@@ -332,12 +362,12 @@ class StructuredCellJoinTask(StructuredCellTask):
 
             new_state = get_scell_state(sc)
             if new_state == "void":
-                if ok:
+                if ok and (has_auth or has_inchannel):
                     print("WARNING: join for %s went ok, but new status is void" % sc)
-                    get_scell_state(sc, verbose=True)
-                sc._data._set_checksum(None, from_structured_cell=True)
 
-            manager.cancel_scell_post_join(sc, self)
+            # manager.cancel_scell_post_join(sc, self)  # Don't call it directly; better to finish the join task first
+            manager.taskmanager.add_synctask(manager.cancel_scell_post_join, (sc, self), {}, False)
+            manager.taskmanager.cancel_structured_cell(sc, True, no_auth=True, origin_task=self)
 
         finally:
             release_evaluation_lock(locknr)

@@ -108,6 +108,7 @@ class StructuredCell(SeamlessBase):
         self._validate_channels(inchannels, outchannels)
         self._modified_auth = False
         self._modified_schema = False
+        self._old_modified = False  # True if a join was aborted because of pending inchannels, while _modified_auth or _modified_schema
 
         self._auth_value = None
         self._auth_invalid = False

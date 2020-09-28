@@ -145,9 +145,9 @@ def _update_outchannel_accessor(scell, outpath, accessor, to_void, to_unvoid, er
 
 
 
-def _update_outchannels(scell, manager, origin_task):
+def update_outchannels(scell, manager, origin_task):
     """
-    Only call this function if no joins are going on
+    Only call this function outside the resolve cycle
     For an outchannel accessor with checksum None:
        if covered at least partially by a pending inchannel, it is pending and softened
        else:
@@ -167,10 +167,13 @@ def _update_outchannels(scell, manager, origin_task):
 
             nothing to do
     """
+    taskmanager = manager.taskmanager
+    joins = taskmanager.structured_cell_to_task.get(scell, [])
+    if len(joins) > 1 or (len(joins) == 1 and joins[0] is not origin_task):
+        return
     if manager is None or manager._destroyed:
         return
     livegraph = manager.livegraph
-    taskmanager = manager.taskmanager
     all_accessors = livegraph.paths_to_downstream.get(scell._data, {})
     to_unvoid = []
     to_void = []
@@ -185,33 +188,51 @@ def _update_outchannels(scell, manager, origin_task):
         manager.cancel_accessor(accessor, True, origin_task=origin_task)
     if len(err):
         manager.structured_cell_join(scell, False)
+    else:
+        new_state = get_scell_state(scell)
+        if new_state == "equilibrium":
+            scell._equilibrated = True
 
-def resolve_complex_scell(cycle, scell):
+def resolve_complex_scell(cycle, scell, post_join):
     if scell._destroyed:
         return
     new_state = get_scell_state(scell)
+    if post_join and (scell._exception is not None or scell._auth_invalid):
+        new_state = "void"
+
     taskmanager = cycle.taskmanager
+    manager = cycle.manager()
+    if manager is None or manager._destroyed:
+        return
     has_joins = len(taskmanager.structured_cell_to_task.get(scell, []))
-    #print("RESOLVE", scell, new_state)
+    #print("RESOLVE COMPLEX", scell, new_state, scell._equilibrated)
     if new_state == "pending+" or new_state == "join":
         if new_state == "pending+":
             scell._equilibrated = False
-        if not has_joins:
+        if not has_joins and not post_join:
             if new_state == "pending+":
                 print("WARNING: %s is in state '%s' but no joins were launched" % (scell, new_state))
                 get_scell_state(scell, verbose=True)
+                import traceback
+                traceback.print_stack()
+                manager.structured_cell_join(scell, False)
             if scell not in cycle.to_join:
                 cycle.to_join.append(scell)
         if scell not in cycle.to_unvoid:
             cycle.to_unvoid.append(scell)
         return
     if new_state == "pending":
+        if post_join:
+            cycle.to_soft_cancel.append(scell)
+            return
         scell._equilibrated = False
         if scell._data._void:
             if scell not in cycle.to_unvoid:
                 cycle.to_unvoid.append(scell)
         if not has_joins:
-            _update_outchannels(scell, cycle.manager(), cycle.origin_task)
+            #update_outchannels(scell, cycle.manager(), cycle.origin_task)
+            args = (scell, cycle.manager(), cycle.origin_task)
+            cycle.to_update.append(args)
         return
 
     if new_state == "devalued+":
@@ -223,9 +244,11 @@ def resolve_complex_scell(cycle, scell):
         return
 
     if new_state == "void":
-        if scell._data._void:
+        if scell._data._void and not post_join:
             return
         if scell._auth_invalid:
+            reason = StatusReasonEnum.INVALID
+        elif scell._exception is not None and scell.buffer._checksum is not None:
             reason = StatusReasonEnum.INVALID
         else:
             reason = scell._data._status_reason
@@ -239,12 +262,14 @@ def resolve_complex_scell(cycle, scell):
         scell._equilibrated = False
         if scell not in cycle.to_join:
             cycle.to_join.append(scell)
+        return
 
     if new_state == "equilibrium":
-        if not has_joins:
+        if (not has_joins) or post_join:
             if not scell._equilibrated:
-                _update_outchannels(scell, cycle.manager(), cycle.origin_task)
-                scell._equilibrated = True
+                #update_outchannels(scell, cycle.manager(), cycle.origin_task)
+                args = (scell, cycle.manager(), cycle.origin_task)
+                cycle.to_update.append(args)
         return
 
     raise ValueError(new_state)
