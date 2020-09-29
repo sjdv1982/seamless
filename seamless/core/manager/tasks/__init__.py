@@ -148,11 +148,10 @@ class Task:
         await asyncio.shield(communion_server.startup)
         while len(taskmanager.synctasks):
             await asyncio.sleep(0.001)
-        if isinstance(self, StructuredCellJoinTask):
+        if isinstance(self, StructuredCellAuthTask):
             scell = self.dependencies[0]
-            if scell._modified_auth or scell._modified_schema:
-                # for efficiency, just wait a few msec, since we often get re-triggered
-                await asyncio.sleep(0.01)
+            # for efficiency, just wait a few msec, since we often get re-triggered
+            await asyncio.sleep(0.005)
         self._started = True
         return await self._run()
 
@@ -235,6 +234,6 @@ from .checksum import CellChecksumTask, CalculateChecksumTask
 from .cell_update import CellUpdateTask
 from .get_buffer import GetBufferTask
 from .upon_connection import UponConnectionTask, UponBiLinkTask
-from .structured_cell import StructuredCellJoinTask
+from .structured_cell import StructuredCellAuthTask
 from ..manager import Manager
 from ....communion_server import communion_server

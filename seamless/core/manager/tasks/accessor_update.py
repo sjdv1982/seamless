@@ -7,6 +7,7 @@ class AccessorUpdateTask(Task):
         super().__init__(manager)
         self._dependencies.append(accessor)
 
+        # assertion
         target = accessor.write_accessor.target()
         if isinstance(target, MacroPath):
             target = target._cell
@@ -14,6 +15,7 @@ class AccessorUpdateTask(Task):
                 return
         if isinstance(target, Cell):
             assert not target._void, accessor
+        #
 
     async def _run(self):
         manager = self.manager()
@@ -32,7 +34,6 @@ class AccessorUpdateTask(Task):
                 accessor, void=True,
                 origin_task=self
             )
-            import sys; sys.exit()
             return
 
         livegraph = manager.livegraph
@@ -41,6 +42,7 @@ class AccessorUpdateTask(Task):
         assert not accessor._void
         path = accessor.write_accessor.path
         target = accessor.write_accessor.target()
+        # assertion
         if not isinstance(target, MacroPath):
             if isinstance(target, Cell):
                 cell = target
@@ -56,25 +58,29 @@ class AccessorUpdateTask(Task):
                         assert inchannel._checksum is None, (sc, cell, path)
                     except:
                         import traceback; traceback.print_exc()
+                        """
                         from seamless.core.manager.complex_structured_cell import get_scell_state
                         get_scell_state(sc, True)
                         inchannel = sc.inchannels[path]
                         print(accessor._void, inchannel._void)
                         import asyncio; await asyncio.sleep(3)
                         import sys; sys.exit()
-
+                        """
+        #
         expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()
 
-        # If the expression result is None, do an accessor void cancellation
-        #  but only if the accessor has not been softened.
-        # Softening is done by structured cell joins, to indicate that the accessor may have a result later
         if expression_result_checksum is None:
-            if accessor._soften:
-                unvoid_accessor(accessor, manager.livegraph)
-                manager.cancel_accessor(accessor, void=False, origin_task=self)
+            if expression.exception is None:
+                reason = StatusReasonEnum.UPSTREAM
             else:
-                accessor._status_reason = StatusReasonEnum.INVALID
-                manager.cancel_accessor(accessor, void=True, origin_task=self)
+                reason = StatusReasonEnum.INVALID
+            manager.cancel_accessor(accessor, void=True, origin_task=self, reason=reason)
+
+            target = accessor.write_accessor.target()
+            if isinstance(target, MacroPath):
+                target = target._cell
+            if isinstance(target, Cell):
+                livegraph.cell_parsing_exceptions[target] = expression.exception
             return
 
         accessor._checksum = expression_result_checksum

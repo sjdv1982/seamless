@@ -7,6 +7,7 @@ class CellUpdateTask(Task):
         super().__init__(manager)
         self._dependencies.append(cell)
 
+        # assertion
         accessors = manager.livegraph.cell_to_downstream[cell]
         for accessor in accessors:
             target = accessor.write_accessor.target()
@@ -16,6 +17,7 @@ class CellUpdateTask(Task):
                     continue
             if isinstance(target, Cell):
                 assert not target._void, accessor
+        #
 
     async def _run(self):
         """Updates the downstream dependencies (accessors) of a cell"""

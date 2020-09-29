@@ -29,10 +29,12 @@ class EvaluateExpressionTask(Task):
         manager = self.manager()
         cachemanager = self.manager().cachemanager
 
+        """
         if not self.fingertip_mode:
             livegraph = manager.livegraph
             if expression not in livegraph.expression_to_accessors:
                 raise CancelledError  # No idea why this could happen, and I am not sure it does
+        """
 
         locknr = await acquire_evaluation_lock(self)
         try:

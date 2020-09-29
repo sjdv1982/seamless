@@ -17,8 +17,7 @@ class UnboundManager:
         self._registered = set()
         self.commands = []
         self.cells = {}
-        self.join_structured_cells = set()
-        self.unvoid_structured_cells = set()
+        self.trigger_structured_cells = set()
 
     def register_cell(self, cell):
         self._registered.add(cell)
@@ -47,19 +46,15 @@ class UnboundManager:
         assert cell in self._registered
         self.commands.append(("set cell", (cell, value)))
 
-    def structured_cell_join(self, sc, updated_auth):
+    def structured_cell_trigger(self, sc, updated_auth):
         assert sc in self._registered
-        if (sc, True) in self.join_structured_cells:
+        if (sc, True) in self.trigger_structured_cells:
             return
         elif updated_auth:
-            self.join_structured_cells.discard((sc, False))
-            self.join_structured_cells.add((sc, True))
+            self.trigger_structured_cells.discard((sc, False))
+            self.trigger_structured_cells.add((sc, True))
         else:
-            self.join_structured_cells.add((sc, False))
-
-    def unvoid_scell(self, sc):
-        assert sc in self._registered
-        self.unvoid_structured_cells.add(sc)
+            self.trigger_structured_cells.add((sc, False))
 
     def connect(self, source, source_subpath, target, target_subpath):
         from .macro import Path
@@ -403,16 +398,13 @@ class UnboundContext(SeamlessBase):
                 manager.register_structured_cell(reg)
         ctx._root()._cache_paths()
         self._bind_stage2(ctx._get_manager())
-        join_structured_cells = self._realmanager.join_structured_cells
-        unvoid_structured_cells = self._realmanager.unvoid_structured_cells
+        trigger_structured_cells = self._realmanager.trigger_structured_cells
         for reg in self._realmanager._registered:
             if isinstance(reg, StructuredCell):
-                if reg in unvoid_structured_cells:
-                    manager.unvoid_scell(reg)
-                if (reg, True) in join_structured_cells:
-                    manager.structured_cell_join(reg, True)
-                elif (reg, False) in join_structured_cells:
-                    manager.structured_cell_join(reg, False)
+                if (reg, True) in trigger_structured_cells:
+                    manager.structured_cell_trigger(reg, True)
+                elif (reg, False) in trigger_structured_cells:
+                    manager.structured_cell_trigger(reg, False)
 
     def destroy(self, *, from_del=False):
         if self._bound:

@@ -9,7 +9,6 @@ class ReadAccessor(Accessor):
     _status_reason = None
     _new_macropath = False # if source or target is a newly bound macropath
     _prelim = False # if accessor represents a preliminary result
-    _soften = False # Structured cell join tasks may set this to True. If the expression evaluates to None, don't void the accessor.
     def __init__(self, source, manager, path, celltype, *, hash_pattern):
         self.source = source
         self.manager = weakref.ref(manager)

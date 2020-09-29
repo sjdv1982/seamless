@@ -1,3 +1,7 @@
+import logging
+logging.basicConfig()
+logging.getLogger("seamless").setLevel(logging.DEBUG)
+
 # adapted from simple-channels.py
 from seamless.core import context, cell, StructuredCell
 

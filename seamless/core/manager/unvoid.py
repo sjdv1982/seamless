@@ -1,3 +1,22 @@
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
+
 
 def unvoid_cell(cell, livegraph):
     if cell._structured_cell is not None:
@@ -9,7 +28,7 @@ def unvoid_cell(cell, livegraph):
     if not cell._void:
         return
     cell._void = False
-    #print("UNVOID", cell)
+    print_debug("!!!UNVOID!!!: %s" % cell)
     accessors = livegraph.cell_to_downstream.get(cell, None)
     if accessors is None:
         return
@@ -19,6 +38,24 @@ def unvoid_cell(cell, livegraph):
     for accessor in accessors:
         unvoid_accessor(accessor, livegraph)
 
+def unvoid_scell_all(scell, livegraph):
+    if scell._data._void:
+        print_debug("!!!UNVOID!!!: %s" % scell)
+    scell._exception = None
+    manager = livegraph.manager()
+    manager._set_cell_checksum(
+        scell._data, None,
+        void=False, unvoid=False
+    )
+    if scell.auth is not None:
+        scell.auth._void = False
+    if scell.buffer is not None:
+        scell.buffer._void = False
+    all_accessors = livegraph.paths_to_downstream.get(scell.buffer, {})
+    for path in all_accessors:
+        for accessor in all_accessors[path]:
+            unvoid_accessor(accessor, livegraph)
+
 def unvoid_scell_inpath(scell, livegraph, inpath):
     cell = scell._data
     if cell._destroyed:
@@ -27,42 +64,9 @@ def unvoid_scell_inpath(scell, livegraph, inpath):
     if not cell._void:
         return
 
-    scell._equilibrated = False
-    scell._exception = None
-    cell._void = False
-
-    if scell.auth is not None:
-        scell.auth._void = False
-    if scell.buffer is not None:
-        scell.buffer._void = False
-
     manager = livegraph.manager()
     manager.cancel_scell_inpath(scell, inpath, void=False)
 
-def unvoid_scell(scell, livegraph):
-    cell = scell._data
-    if cell._destroyed:
-        return
-
-    state = get_scell_state(scell)
-    if state == "void":
-        return
-    assert state in ("pending+" "devalued+"), (scell, state)
-
-    scell._equilibrated = False
-    scell._exception = None
-    cell._void = False
-    #print("UNVOID", scell, state)
-
-    if scell.auth is not None:
-        scell.auth._void = False
-    if scell.buffer is not None:
-        scell.buffer._void = False
-
-    all_accessors = livegraph.paths_to_downstream.get(cell, {})
-    for accessors in all_accessors.values():
-        for accessor in accessors:
-            unvoid_accessor(accessor, livegraph)
 
 def unvoid_transformer(transformer, livegraph):
     if not transformer._void:
@@ -82,7 +86,7 @@ def unvoid_transformer(transformer, livegraph):
             transformer._status_reason = StatusReasonEnum.UPSTREAM
             return
 
-    #print("UNVOID", transformer)
+    print_debug("!!!UNVOID!!!: %s" % transformer)
     transformer._void = False
     accessors = livegraph.transformer_to_downstream.get(transformer, None)
     if accessors is None:
@@ -129,7 +133,7 @@ def unvoid_reactor(reactor, livegraph):
             reactor._status_reason = StatusReasonEnum.UPSTREAM
             return
 
-    #print("UNVOID", reactor)
+    print_debug("!!!UNVOID!!!: %s" % reactor)
     reactor._void = False
 
     outputpins = [pinname for pinname in reactor._pins \
@@ -151,7 +155,7 @@ def unvoid_macro(macro, livegraph):
         if accessor._void: #upstream error
             macro._status_reason = StatusReasonEnum.UPSTREAM
             return
-    #print("UNVOID", macro)
+    print_debug("!!!UNVOID!!!: %s" % macro)
     macro._void = False
 
 def unvoid_accessor(accessor, livegraph):
@@ -195,7 +199,6 @@ def unvoid_accessor(accessor, livegraph):
         if not ic._void:
             return
         #print("UNVOID INCHANNEL", ic)
-        ic._void = False
         unvoid_scell_inpath(scell, livegraph, path)
     elif isinstance(target, Transformer):
         unvoid_transformer(target, livegraph)
@@ -216,5 +219,5 @@ from ..transformer import Transformer
 from ..reactor import Reactor
 from ..macro import Macro, Path as MacroPath
 from ..status import StatusReasonEnum
-from ..manager.complex_structured_cell import get_scell_state
+from ..manager.cancel import get_scell_state
 from ..manager.tasks.structured_cell import StructuredCellJoinTask

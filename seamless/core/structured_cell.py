@@ -45,8 +45,7 @@ class Outchannel:
 class StructuredCell(SeamlessBase):
     _celltype = "structured"
     _exception = None
-    _equilibrated = True   # no more computation, unless an inchannel, auth or schema gets changed.
-    _forward_cancel = True  # whenever the scell becomes pending, cancel all outchannels
+    _mode = None # SCModeEnum
     def __init__(self, data, *,
         auth=None,
         schema=None,
@@ -109,7 +108,8 @@ class StructuredCell(SeamlessBase):
         self._validate_channels(inchannels, outchannels)
         self._modified_auth = False
         self._modified_schema = False
-        self._old_modified = False  # True if a join was aborted because of pending inchannels, while _modified_auth or _modified_schema
+        self._auth_joining = False  #  an auth task is ongoing
+        self._joining = False  #  a join task is ongoing
 
         self._auth_value = None
         self._auth_invalid = False
@@ -238,9 +238,7 @@ class StructuredCell(SeamlessBase):
             return
         self.auth._set_checksum(None, from_structured_cell=True)
         self._modified_auth = True
-        manager.unvoid_scell(self)
-        manager.cancel_scell_soft(self)
-        manager.structured_cell_join(self, True)
+        manager.structured_cell_trigger(self)
 
     def _get_schema_path(self, path):
         if self.schema._destroyed:

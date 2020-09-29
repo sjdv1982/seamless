@@ -41,7 +41,7 @@ direct_celltypes = (
 )
 
 def set_structured_cell_from_checksum(cell, checksum):
-    join = False
+    trigger = False
     """
     if "temp" in checksum:
         assert len(checksum) == 1, checksum.keys()
@@ -53,7 +53,7 @@ def set_structured_cell_from_checksum(cell, checksum):
             )
             temp_checksum = temp_cs2.hex()
         cell.auth._set_checksum(temp_checksum, initial=True, from_structured_cell=False)
-        join = True
+        trigger = True
     else:
     """
     if "value" in checksum:
@@ -64,7 +64,7 @@ def set_structured_cell_from_checksum(cell, checksum):
             from_structured_cell=True,
             initial=True
         )
-        join = True
+        trigger = True
         """
 
     if "buffer" in checksum:
@@ -75,7 +75,7 @@ def set_structured_cell_from_checksum(cell, checksum):
             from_structured_cell=True,
             initial=True
         )
-        join = True
+        trigger = True
         """
 
     if "auth" in checksum:
@@ -89,7 +89,7 @@ def set_structured_cell_from_checksum(cell, checksum):
                 initial=True
             )
             cell._modified_auth = True
-            join = True
+            trigger = True
 
     if "schema" in checksum:
         cell.schema._set_checksum(
@@ -98,9 +98,10 @@ def set_structured_cell_from_checksum(cell, checksum):
             initial=True
         )
         cell._modified_schema = True
+        trigger = True
 
-    if join:
-        cell._get_manager().structured_cell_join(cell, True)
+    if trigger:
+        cell._get_manager().structured_cell_trigger(cell)
 
 
 

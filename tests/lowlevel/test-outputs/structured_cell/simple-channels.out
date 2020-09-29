@@ -1,2 +1,15 @@
-1 None None
-10 {'x': 20} [1, 2, 3]
+Status: OK Status: upstream Status: upstream 1 None None
+Status: OK Status: OK Status: OK 10 {'x': 20} [1, 2, 3]
+None 483a8e5b50fd3a764330e1c7b9f298bfb53851ba6299f266b0c35235e60cf55e 483a8e5b50fd3a764330e1c7b9f298bfb53851ba6299f266b0c35235e60cf55e
+Status: invalid Status: OK Status: OK
+Traceback (most recent call last):
+  File "/seamless/seamless/core/manager/tasks/evaluate_expression.py", line 115, in _run
+    use_cache=True
+  File "/seamless/seamless/core/manager/tasks/__init__.py", line 135, in run
+    await asyncio.shield(self.future)
+  File "/seamless/seamless/core/manager/tasks/__init__.py", line 156, in _run0
+    return await self._run()
+  File "/seamless/seamless/core/manager/tasks/serialize_buffer.py", line 30, in _run
+    raise type(exc)(exc) from None
+TypeError: int() argument must be a string, a bytes-like object or a number, not 'list'
+

@@ -82,6 +82,12 @@ class StructuredCellAuthTask(StructuredCellTask):
             sc._auth_invalid = False
         finally:
             release_evaluation_lock(locknr)
+            sc._auth_joining = False
+            taskmanager = manager.taskmanager
+            taskmanager.add_synctask(
+                manager.structured_cell_trigger, (sc,), {}, False
+            )
+
 
 class StructuredCellJoinTask(StructuredCellTask):
 
@@ -100,28 +106,11 @@ class StructuredCellJoinTask(StructuredCellTask):
             return
 
 
-        for inchannel in sc.inchannels.values():
-            if inchannel._checksum is None and not inchannel._void:
-                # Refuse to join while pending.
-                #
-                # We could implement it for non-complex scells,
-                #  (since we know the inchannel-outchannel relationship)
-                # But writing out only the fully known outchannels
-                #  would be mostly pointless.
-                # Alternatively, we could write out partially known
-                #  outchannels with a prelim status,
-                #  but this will make the system much harder to debug,
-                #  as a lot of tasks will be launched and canceled and relaunched.
-                if sc._modified_auth or sc._modified_schema:
-                    sc._old_modified = True
-                sc._modified_auth = False
-                sc._modified_schema = False
-
-                # manager.cancel_scell_post_join(sc, self)  # Don't call it directly; better to finish the join task first
-                manager.taskmanager.add_synctask(manager.cancel_scell_post_join, (sc, self), {}, False)
-                manager.taskmanager.cancel_structured_cell(sc, True, no_auth=True, origin_task=self)
-
-                return
+        if sc._mode != SCModeEnum.FORCE_JOINING:
+            for inchannel in sc.inchannels.values():
+                if inchannel._checksum is None and not inchannel._void:
+                    # Refuse to join while pending.
+                    return
 
         locknr = await acquire_evaluation_lock(self)
         #print("JOIN", sc)
@@ -301,8 +290,6 @@ class StructuredCellJoinTask(StructuredCellTask):
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
 
-            modified = sc._modified_auth or sc._modified_schema or sc._old_modified
-
             for inchannel in sc.inchannels.values():
                 if inchannel._checksum is None and not inchannel._void:
                     # We have become pending. Return
@@ -329,19 +316,11 @@ class StructuredCellJoinTask(StructuredCellTask):
 
                     for out_path in sc.outchannels:
                         for accessor in downstreams[out_path]:
-                            accessor._soften = True
-
                             #print("!SC VALUE", sc, out_path, accessor._void)
                             taskmanager.cancel_accessor(accessor)
                             accessor.build_expression(livegraph, cs)
                             accessor._prelim = prelim[out_path]
                             AccessorUpdateTask(manager, accessor).launch()
-                sc._forward_cancel = True
-
-            sc._modified_auth = False
-            sc._modified_schema = False
-            sc._old_modified = False
-            sc._equilibrated = False
 
             if ok:
                 if has_auth or has_inchannel:
@@ -349,24 +328,17 @@ class StructuredCellJoinTask(StructuredCellTask):
                 if sc._data is not sc.auth:
                     sc._data._set_checksum(checksum, from_structured_cell=True)
                 sc._exception = None
-            else:
-                sc._data._void = True # just temporary, to avoid errors
-
 
             for inchannel in sc.inchannels.values():
                 inchannel._save_state()
 
-            new_state = get_scell_state(sc)
-            if new_state == "void":
-                if ok and (has_auth or has_inchannel):
-                    print("WARNING: join for %s went ok, but new status is void" % sc)
-
-            # manager.cancel_scell_post_join(sc, self)  # Don't call it directly; better to finish the join task first
-            manager.taskmanager.add_synctask(manager.cancel_scell_post_join, (sc, self), {}, False)
-            manager.taskmanager.cancel_structured_cell(sc, True, no_auth=True, origin_task=self)
-
         finally:
             release_evaluation_lock(locknr)
+            sc._joining = False
+            taskmanager = manager.taskmanager
+            taskmanager.add_synctask(
+                manager.structured_cell_trigger, (sc,), {}, False
+            )
 
 from .serialize_buffer import SerializeToBufferTask
 from .deserialize_buffer import DeserializeBufferTask
@@ -377,6 +349,6 @@ from .upon_connection import UponConnectionTask
 from ...cache import CacheMissError
 from ...cache.buffer_cache import buffer_cache
 from ....silk.Silk import Silk, ValidationError
-from ..complex_structured_cell import get_scell_state, scell_is_complex
+from ..cancel import get_scell_state, SCModeEnum
 from ...protocol.expression import get_subpath, set_subpath, set_subpath_checksum, access_hash_pattern
 from . import acquire_evaluation_lock, release_evaluation_lock

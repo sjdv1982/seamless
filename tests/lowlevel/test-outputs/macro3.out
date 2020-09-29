@@ -23,8 +23,8 @@ r                    r0
 macro rr             r0
 
 Status: {
-  "e": "unconnected",
-  "e2": "unconnected"
+  "e": "undefined",
+  "e2": "undefined"
 }
 Change to 2
 macro a              1002
@@ -71,8 +71,7 @@ r                    r1
 macro rr             r1
 
 Status: {
-  "e": "unconnected",
-  "e2": "unconnected"
+  "e": "unconnected"
 }
 Change to 3
 macro a              1003
