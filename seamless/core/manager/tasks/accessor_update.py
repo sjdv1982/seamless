@@ -201,6 +201,5 @@ from ...cache import CacheMissError
 from ...cache.buffer_cache import buffer_cache
 from ...protocol.deep_structure import access_hash_pattern, apply_hash_pattern, value_to_deep_structure
 from ...protocol.expression import get_subpath
-from ..unvoid import unvoid_accessor
 from . import acquire_evaluation_lock, release_evaluation_lock
 from ...macro import Path as MacroPath

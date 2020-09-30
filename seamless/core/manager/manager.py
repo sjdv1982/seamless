@@ -34,6 +34,7 @@ def with_cancel_cycle(func):
             manager.cancel_cycle.resolve()
         finally:
             manager.cancel_cycle._clear()
+        return result
     functools.update_wrapper(func2, func)
     return func2
 
@@ -145,6 +146,8 @@ class Manager:
   (This is done from the command line, usually at graph loading)
   initial=True in case of graph loading; from_structured_cell=True when triggered from StructuredCell)
 
+  NOTE: Seamless tasks must not call this function, unless they check afterwards that they were not cancelled because of it.
+
   If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph)
   If "from_structured_cell" is True, the function is triggered by StructuredCell state maintenance routines
   In both cases, the caller is responsible for bookkeeping, such as incref/decref of checksums inside a deep structure
@@ -160,7 +163,6 @@ class Manager:
   Else:
     If old checksum is not None, do a cell cancellation.
     Set the cell as being non-void, set the checksum (direct attribute access), and launch a cell update task.
-
         """
         sc_data = self.livegraph.datacells.get(cell)
         sc_buf = self.livegraph.buffercells.get(cell)
@@ -298,7 +300,8 @@ class Manager:
         if sc._destroyed:
             return
         cachemanager = self.cachemanager
-        assert not (inchannel._void and (inchannel._checksum is not None))
+        if not sc._cyclic:
+            assert not (inchannel._void and (inchannel._checksum is not None))
         old_checksum = inchannel._checksum
         if old_checksum is not None and old_checksum != checksum:
             cachemanager.decref_checksum(old_checksum, inchannel, False, False)
@@ -581,6 +584,10 @@ If origin_task is provided, that task is not cancelled."""
             reason = StatusReasonEnum.UPSTREAM
         self.cancel_cycle.cancel_macro(macro, void=void, reason=reason)
 
+    @with_cancel_cycle
+    def force_join(self,cyclic_scells):
+        return self.cancel_cycle.force_join(cyclic_scells)
+
     ##########################################################################
     # API section IV: Connection support
     ##########################################################################
@@ -706,7 +713,7 @@ from ..protocol.calculate_checksum import checksum_cache
 from ..protocol.deserialize import deserialize_cache, deserialize_sync
 from ..protocol.get_buffer import get_buffer
 from ..cache.buffer_cache import buffer_cache
-from .unvoid import unvoid_cell, unvoid_scell_inpath
+from .unvoid import unvoid_cell
 from ..cell import Cell
 from ..worker import Worker
 from ..transformer import Transformer

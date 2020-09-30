@@ -88,7 +88,6 @@ class TransformerUpdateTask(Task):
         await transformation_cache.update_transformer(
             transformer, celltypes, inputpins, outputpin
         )
-        return None
 
 class TransformerResultUpdateTask(Task):
     def __init__(self, manager, transformer):

@@ -46,6 +46,7 @@ class StructuredCell(SeamlessBase):
     _celltype = "structured"
     _exception = None
     _mode = None # SCModeEnum
+    _cyclic = False  # the cell is part of a cyclic dependency. Don't forward inchannel cancels until it is resolved
     def __init__(self, data, *,
         auth=None,
         schema=None,

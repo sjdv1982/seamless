@@ -1,4 +1,3 @@
-# coding: utf-8
 from seamless.highlevel import Context
 ctx = Context()
 ctx.filesystem = {"test.txt": """
@@ -17,9 +16,7 @@ ctx.compute()
 print(ctx.result.value)
 print("START")
 ctx.filesystem["result.txt"] = ctx.result
-ctx.compute(1)
-print(ctx.result.value)
-print(ctx.filesystem.value)
 ctx.compute()
+print(ctx.result.value)
 print(ctx.filesystem.value)
 print(ctx.status)

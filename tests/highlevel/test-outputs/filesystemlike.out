@@ -10,5 +10,4 @@ a OK!
 test OK!
  >
 <Silk: {'result.txt': 'This OK!\nis OK!\na OK!\ntest OK!\n', 'test.txt': '\nThis\nis\na\ntest\n'} >
-<Silk: {'result.txt': 'This OK!\nis OK!\na OK!\ntest OK!\n', 'test.txt': '\nThis\nis\na\ntest\n'} >
 Status: OK

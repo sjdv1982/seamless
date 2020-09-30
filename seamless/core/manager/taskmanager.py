@@ -321,6 +321,8 @@ class TaskManager:
             return tasks
 
         ptasks = select_pending_tasks()
+        if not len(ptasks):
+            ptasks = [None]  # enter the loop at least once
         def print_report(verbose=True):
             running = set()
             #print("TASKS", ptasks)
@@ -378,6 +380,11 @@ class TaskManager:
                 remaining = timeout_time - time.time()
                 if remaining < 0:
                     break
+            if get_tasks_func is None:
+                if not (len(self.tasks) or len(self.launching_tasks) or len(self.synctasks)):
+                    if manager.livegraph.force_join():
+                        self.loop.run_until_complete(asyncio.sleep(1))
+                        ptasks = [None]  # just to prevent the loop from breaking
         return print_report(verbose=False)
 
     async def computation(self, timeout, report, get_tasks_func=None):
@@ -398,6 +405,8 @@ class TaskManager:
             return tasks
 
         ptasks = select_pending_tasks()
+        if not len(ptasks):
+            ptasks = [None]  # enter the loop at least once
         def print_report(verbose=True):
             running = set()
             #print("TASKS", ptasks)
@@ -448,6 +457,12 @@ class TaskManager:
                 remaining = timeout_time - time.time()
                 if remaining < 0:
                     break
+            if get_tasks_func is None:
+                if not (len(self.tasks) or len(self.launching_tasks) or len(self.synctasks)):
+                    if manager.livegraph.force_join():
+                        await asyncio.sleep(1)
+                        ptasks = [None]  # just to prevent the loop from breaking
+
         return print_report(verbose=False)
 
     def cancel_task(self, task):

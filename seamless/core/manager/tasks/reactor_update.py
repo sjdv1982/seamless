@@ -68,8 +68,8 @@ class ReactorUpdateTask(Task):
                 return
 
         if status_reason is not None:
-            print("WARNING: transformer %s is void, shouldn't happen during transformer update" % transformer)
-            manager.cancel_transformer(transformer, True, status_reason)
+            print("WARNING: reactor %s is void, shouldn't happen during reactor update" % reactor)
+            manager.cancel_reactor(reactor, True, status_reason)
             return
 
         for pinname, accessor in upstreams.items():

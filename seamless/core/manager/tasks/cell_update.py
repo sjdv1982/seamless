@@ -59,6 +59,10 @@ class CellUpdateTask(Task):
                         assert not target._void, accessor
                     if accessor._new_macropath:
                         manager.cancel_cell(target, void=False)
+
+                        # Chance that the above line cancels our own task
+                        if self._canceled:
+                            return
                     else:
                         taskmanager = manager.taskmanager
                         taskmanager.cancel_accessor(accessor)

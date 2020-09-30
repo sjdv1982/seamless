@@ -296,12 +296,13 @@ class StructuredCellJoinTask(StructuredCellTask):
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
 
-            for inchannel in sc.inchannels.values():
-                if inchannel._checksum is None and not inchannel._void:
-                    # We have become pending. Return
-                    if not sc._auth_invalid:
-                        sc._exception = None
-                    return
+            if sc._mode != SCModeEnum.FORCE_JOINING:
+                for inchannel in sc.inchannels.values():
+                    if inchannel._checksum is None and not inchannel._void:
+                        # We have become pending. Return
+                        if not sc._auth_invalid:
+                            sc._exception = None
+                        return
 
             if ok:
                 if len(sc.outchannels):
@@ -319,6 +320,10 @@ class StructuredCellJoinTask(StructuredCellTask):
                                 accessors_to_cancel.append(accessor)
                     if len(accessors_to_cancel):
                         manager.cancel_accessors(accessors_to_cancel, False, origin_task=self)
+
+                    # Chance that the above line cancels our own task
+                    if self._canceled:
+                        return
 
                     for out_path in sc.outchannels:
                         for accessor in downstreams[out_path]:

@@ -144,7 +144,7 @@ class StructuredCellCancellation:
         self.has_propagated = False
         self.canceled_inchannels = {}
         livegraph = cycle.manager().livegraph
-        if not len(livegraph._destroying) and not scell._destroyed:
+        if not len(livegraph._destroying) and not scell._destroyed and not scell._cyclic:
             try:
                 assert (self.state == "void") == scell._data._void, (scell, scell._data._void, self.state)
             except:
@@ -173,6 +173,8 @@ class StructuredCellCancellation:
 
         if inpath is not None:
             if self.mode not in (SCModeEnum.VOID, SCModeEnum.EQUILIBRIUM, SCModeEnum.JOINING):
+                return
+            if scell._cyclic:
                 return
         if self.has_propagated:
             return
@@ -263,7 +265,7 @@ class StructuredCellCancellation:
             self.clear_sc_data()
             self.launch_auth_task(taskmanager)
 
-        #print("RESOLVE", scell, old_state, new_state, self.mode)
+        #print("RESOLVE", scell, old_state, new_state, self.mode, scell._data._checksum is None)
         if new_state == "void":
             if self.mode == SCModeEnum.VOID:
                 pass
@@ -279,8 +281,13 @@ class StructuredCellCancellation:
                     reason = StatusReasonEnum.UNDEFINED
                 self.cycle().to_void.append((scell, reason))
             elif self.mode in (SCModeEnum.JOINING, SCModeEnum.AUTH_JOINING, SCModeEnum.FORCE_JOINING):
-                # The join task went wrong
-                assert scell._data._checksum is None, (scell, old_state, new_state, self.mode)
+                if self.mode != SCModeEnum.FORCE_JOINING:
+                    # The join task went wrong
+                    assert scell._data._checksum is None, (scell, old_state, new_state, self.mode)
+                else:
+                    # The forced join task might have gone wrong;
+                    # or it succeeded, but later on, all valid inchannels were voided
+                    pass
                 if scell._exception is not None:
                     reason = StatusReasonEnum.INVALID
                 else:
@@ -310,6 +317,16 @@ class StructuredCellCancellation:
             scell._mode = SCModeEnum.VOID
             return
 
+        if new_state == "pending" and self.mode == SCModeEnum.FORCE_JOINING:
+            # Special case; we have been in force join, so we are doing joins while we still have pending inchannels.
+            # Don't go into pending
+            return
+
+        if new_state == "pending" and scell._cyclic:
+            # Special case; we have been marked as part of a cyclic dependency (and previously had forced joins)
+            # Don't go into pending until we are unmarked
+            return
+
         if new_state == "joining":
             assert self.mode in (SCModeEnum.JOINING, SCModeEnum.FORCE_JOINING), (scell, old_state, new_state, self.mode)
             # Nothing to do; wait until the join task will finish, disable "joining", and trigger us
@@ -319,7 +336,7 @@ class StructuredCellCancellation:
             if self.mode not in (SCModeEnum.PENDING, SCModeEnum.AUTH_JOINING):
                 if self.mode == SCModeEnum.VOID:
                     self.cycle().to_unvoid.append(scell)
-                elif self.mode in (SCModeEnum.JOINING, SCModeEnum.FORCE_JOINING):
+                elif self.mode == SCModeEnum.JOINING:
                     taskmanager.cancel_structured_cell(scell, no_auth=True)
                     scell._joining = False
                     self.clear_sc_data()
@@ -356,7 +373,10 @@ class StructuredCellCancellation:
                 # or: we were already in this state (probably a trigger cancel)
                 assert old_state == "join", (scell, old_state, new_state, self.mode)
             if scell._mode is not None:   # or: if auth is set from initial translation
-                assert self.mode in (SCModeEnum.PENDING, SCModeEnum.JOINING, SCModeEnum.AUTH_JOINING, SCModeEnum.EQUILIBRIUM), (old_state, new_state, scell._mode)
+                if scell._cyclic and self.mode == SCModeEnum.VOID:
+                    self.cycle().to_unvoid.append(scell)
+                else:
+                    assert self.mode in (SCModeEnum.PENDING, SCModeEnum.JOINING, SCModeEnum.AUTH_JOINING, SCModeEnum.EQUILIBRIUM, SCModeEnum.FORCE_JOINING), (old_state, new_state, scell._mode)
             taskmanager.cancel_structured_cell(scell, no_auth=True)
             scell._joining = True
             StructuredCellJoinTask(taskmanager.manager, scell).launch()
@@ -367,8 +387,15 @@ class StructuredCellCancellation:
         if new_state == "equilibrium":
             if self.mode == SCModeEnum.EQUILIBRIUM:
                 pass
-            elif self.mode in (SCModeEnum.JOINING, SCModeEnum.FORCE_JOINING, SCModeEnum.AUTH_JOINING):
+            elif self.mode in (SCModeEnum.JOINING, SCModeEnum.AUTH_JOINING):
                 print_debug("***CANCEL***: in equilibrium: %s" % scell)
+            elif self.mode == SCModeEnum.FORCE_JOINING:
+                # We got finally rid of all pending inchannels. Do another join, hopefully the final one
+                self.clear_sc_data()
+                scell._joining = True
+                StructuredCellJoinTask(taskmanager.manager, scell).launch()
+                scell._mode = SCModeEnum.JOINING
+                return
             elif self.mode == SCModeEnum.VOID:
                 # Can't happen, because:
                 # From void to equilibrium, you need to pass through X-joining
@@ -443,6 +470,7 @@ class CancellationCycle:
         self.to_cancel = deque()
         self.nested_resolve = 0
         self.origin_task = None
+        self.cyclic_checksums = weakref.WeakKeyDictionary()
 
     def _clear(self):
         self.cells = {}  # => void, reason
@@ -545,12 +573,15 @@ class CancellationCycle:
         if scell._destroyed:
             return
         if void:
-            assert not update_schema
-            if not scell._data._void:
-                print_debug("***CANCEL***: voided %s" % scell)
-                manager = self.manager()
-                manager._set_cell_checksum(scell._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
-
+            if scell._mode == SCModeEnum.FORCE_JOINING:
+                # To be expected... but we refuse to become void as long as we have pending inchannels
+                pass
+            else:
+                assert not update_schema
+                if not scell._data._void:
+                    print_debug("***CANCEL***: voided %s" % scell)
+                    manager = self.manager()
+                    manager._set_cell_checksum(scell._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
         else:
             if scell._data._void:
                 if scell._modified_auth:
@@ -885,6 +916,8 @@ class CancellationCycle:
                         if scell.buffer is not None:
                             scell.buffer._void = False
                         for inchannel in scell.inchannels.values():
+                            if scell._cyclic and not inchannel._void:
+                                continue
                             manager._set_inchannel_checksum(
                                 inchannel,
                                 None, void=False, from_cancel_system=True
@@ -906,6 +939,57 @@ class CancellationCycle:
             self.origin_task = None
 
         #print("/CYCLE2")
+
+    def force_join(self, cyclic_scells):
+        old_cyclic_cells = []
+        pending_cells = []
+        for scell in cyclic_scells:
+            if get_scell_state(scell) == "pending":
+                pending_cells.append(scell)
+            elif scell._cyclic:
+                old_cyclic_cells.append(scell)
+            else:
+                raise ValueError(scell)  # neither cyclic nor pending
+
+        if len(pending_cells):
+            msg = "Possible cyclic dependencies detected. Force-joining %d structured cells" % len(pending_cells)
+            if len(pending_cells) <= 5:
+                msg += ":\n"
+                for pending_cell in pending_cells:
+                    msg += "   " + str(pending_cell) + "\n"
+            else:
+                msg += "..."
+            print_info(msg)
+            to_join = pending_cells
+        else:
+            # We did a force join cycle already
+            # Now let's see if we can un-cycle
+            to_join = []
+            for scell in old_cyclic_cells:
+                checksum = scell._data._checksum
+                if scell not in self.cyclic_checksums:
+                    print_info("Cyclic, retry", scell)
+                    to_join.append(scell)
+                elif self.cyclic_checksums[scell] != checksum:
+                    print_debug("Cyclic, retry", scell)
+                    to_join.append(scell)
+                else:
+                    print_info("Cyclic => uncyclic", scell)
+                    scell._cyclic = False # good, this cell seems to be stable, no change
+        manager = self.manager()
+        livegraph = manager.livegraph
+        for scell in to_join:
+            if scell._cyclic and get_scell_state(scell) != "pending":
+                self.cyclic_checksums[scell] = scell._data._checksum
+            else:
+                self.cyclic_checksums.pop(scell, None)
+            unvoid_scell_all(scell, livegraph)
+            scell._cyclic = True
+            scell._joining = True
+            StructuredCellJoinTask(manager, scell).launch()
+            scell._mode = SCModeEnum.FORCE_JOINING
+        return len(to_join)  # there will be change
+
 
 from ..utils import overlap_path
 from ..manager.accessor import Accessor

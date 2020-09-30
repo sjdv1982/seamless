@@ -224,9 +224,19 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                 assert source in source2._paths
             else:
                 manager.cancel_accessor(accessor, True, origin_task=self, reason=StatusReasonEnum.UNCONNECTED)
+
+                # Chance that the above line cancels our own task
+                if self._canceled:
+                    return
+
             source = source2
         else:
             raise TypeError(type(source))
+
+        # Chance that the livegraph invocation cancels our own task
+        if self._canceled:
+            return
+
 
         if accessor is not None and source is not None:
             if isinstance(source, Cell):
@@ -234,21 +244,46 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                     taskmanager = manager.taskmanager
                     unvoid_accessor(accessor, manager.livegraph)
                     manager.cancel_accessor(accessor, void=False, origin_task=self)
+
+                    # Chance that the above lines cancels our own task
+                    if self._canceled:
+                        return
+
                     accessor.build_expression(manager.livegraph, source._checksum)
                     if source._checksum is not None:
                         AccessorUpdateTask(manager, accessor).launch()
             elif isinstance(source, Transformer):
                 if source._void:
                     unvoid_transformer(source, manager.livegraph)  # result connection may unvoid the transformer, which will launch a task
+
+                    # Chance that the above lines cancels our own task
+                    if self._canceled:
+                        return
+
                 else:
                     unvoid_accessor(accessor, manager.livegraph)
+
+                    # Chance that the above lines cancels our own task
+                    if self._canceled:
+                        return
+
                     if source._checksum is not None:
                         TransformerUpdateTask(manager, source).launch()
             elif isinstance(source, Reactor):
                 if source._void:
                     unvoid_reactor(source, manager.livegraph)  # result connection may unvoid the reactor, which will launch a task
+
+                    # Chance that the above lines cancels our own task
+                    if self._canceled:
+                        return
+
                 else:
                     unvoid_accessor(accessor, manager.livegraph)
+
+                    # Chance that the above lines cancels our own task
+                    if self._canceled:
+                        return
+
                     if source._checksum is not None:
                         ReactorUpdateTask(manager, source).launch()
             else:
