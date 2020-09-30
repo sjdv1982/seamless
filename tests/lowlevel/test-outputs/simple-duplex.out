@@ -15,7 +15,6 @@ TF DUPLEX Status: executing, 20.0 %
 RESULT        0.300 Status: preliminary
 RESULT DUPLEX 0.300 Status: preliminary
 
-Hard cancel: Seamless transformer: .tf
 TF        Status: error
 TF DUPLEX Status: error
 RESULT        None Status: upstream
@@ -97,12 +96,12 @@ TF DUPLEX Status: executing, 80.0 %
 RESULT        2.100 Status: preliminary
 RESULT DUPLEX 2.100 Status: preliminary
 
-TF        Status: executing, 80.0 %
-TF DUPLEX Status: executing, 80.0 %
-RESULT        2.100 Status: preliminary
-RESULT DUPLEX 2.100 Status: preliminary
-
 PROGRESS 9
+TF        Status: executing, 90.0 %
+TF DUPLEX Status: executing, 90.0 %
+RESULT        2.700 Status: preliminary
+RESULT DUPLEX 2.700 Status: preliminary
+
 TF        Status: executing, 90.0 %
 TF DUPLEX Status: executing, 90.0 %
 RESULT        2.700 Status: preliminary

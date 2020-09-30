@@ -30,18 +30,17 @@ Status: preliminary
 0.4
 
 Server CANCEL
-Hard cancel: Seamless transformer: .tf
 Status: error , exception: seamless.core.cache.transformation_cache.HardCancelError: HardCancelError
 
 None
-Status: preliminary
-0.5
+Status: upstream
+None
 
 STEP 1
-Status: error , exception: None
-0.5
-Status: preliminary
-0.5
+Status: executing , exception: None
+None
+Status: pending
+None
 
 Server
 STEP 2

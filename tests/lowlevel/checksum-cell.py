@@ -3,6 +3,7 @@ from seamless.core import cell, context
 ctx = context(toplevel=True)
 ctx.c1 = cell("int").set(12)
 ctx.c1a = cell("mixed").set(12)
+ctx.compute()
 print(ctx.c1.value, ctx.c1.checksum)
 print(ctx.c1a.value, ctx.c1a.checksum)
 print()

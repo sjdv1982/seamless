@@ -35,7 +35,6 @@ OK
 12 25
 300
 VALIDATE 12 25
-VALIDATE 12 25
 {'methods': {'__add__': {'code': 'def adder(self, other):\n'
                                  '    return other + self.x\n',
                          'language': 'python'},
@@ -67,7 +66,6 @@ VALIDATE 12 25
                                       'language': 'python'}]}},
  'type': 'object'}
 VALIDATE 12 25
-VALIDATE 12 25
 [1, 2, 3, 10]
 VALIDATE 12 25
 [1, 2, 3, 10, 5, 1, 2, 3, 10, 5]
@@ -78,7 +76,6 @@ VALIDATE 12 25
 5
 True True
 True False
-VALIDATE 12 25
 lis
 x
 y
@@ -90,6 +87,7 @@ z
 10
 5
 
+VALIDATE 12 25
 6
 6
 6
@@ -102,7 +100,7 @@ z
 <class 'numpy.float64'> <class 'numpy.float64'>
 array
 5.0
-{'x': 10, 'arr': array([1., 2., 3.])}
+{'arr': array([1., 2., 3.]), 'x': 10}
 START
 [5. 2. 3.]
 FAIL
@@ -131,7 +129,7 @@ Failed validating 'validators' in schema:
                      'language': 'python'}]}
 
 On instance:
-    {'x': 1.0, 'z': 0.0, 'y': 1.0}
+    {'x': 1.0, 'y': 1.0, 'z': 0.0}
 
 {'x': 0.0, 'y': 0.0, 'z': 1.0}
 {'x': 1.0, 'y': 0.0, 'z': 0.0}

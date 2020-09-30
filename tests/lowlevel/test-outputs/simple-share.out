@@ -12,7 +12,6 @@ WS ECHO ["update", ["cell1", "bfb3843fc9199b316e2567251596f33f70784b6003b88d198b
 OK2 ctx
 WS ECHO ["Seamless share update server", "0.01"]
 WS ECHO ["sharelist", ["self"]]
-Execute Seamless macro: .macro
 WS ECHO ["sharelist", ["macro/ctx/a", "macro/ctx/a0", "param_a", "self"]]
 WS ECHO ["update", ["macro/ctx/a0", "a4654c74202cb987505719dc98609c3c46582d384f45f54659736280c66223f4", 1]]
 WS ECHO ["update", ["param_a", "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3", 1]]
@@ -25,7 +24,6 @@ OK3
 WS ECHO ["update", ["param_a", "5d5a3c73da8e376d31a96613e450d0cad333ebcf496acbc0eb9fa6c1ab8c42fa", 2]]
 2
 OK3a
-Execute Seamless macro: .macro
 43
 OK3b
 WS ECHO ["update", ["macro/ctx/a", "108cbc2435f5f35785d868b38892c9df7420159806175b336eaa62957d6c71ec", 2]]
