@@ -45,7 +45,7 @@ def unvoid_scell_all(scell, livegraph):
     manager = livegraph.manager()
     manager._set_cell_checksum(
         scell._data, None,
-        void=False, unvoid=False
+        void=False
     )
     if scell.auth is not None:
         scell.auth._void = False
@@ -59,9 +59,6 @@ def unvoid_scell_all(scell, livegraph):
 def unvoid_scell_inpath(scell, livegraph, inpath):
     cell = scell._data
     if cell._destroyed:
-        return
-
-    if not cell._void:
         return
 
     manager = livegraph.manager()
@@ -198,7 +195,7 @@ def unvoid_accessor(accessor, livegraph):
         ic = scell.inchannels[path]
         if not ic._void:
             return
-        #print("UNVOID INCHANNEL", ic)
+        #print("UNVOID INCHANNEL", scell, path)
         unvoid_scell_inpath(scell, livegraph, path)
     elif isinstance(target, Transformer):
         unvoid_transformer(target, livegraph)

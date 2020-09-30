@@ -48,4 +48,7 @@ temprefmanager = TempRefManager()
 
 coro = temprefmanager.loop()
 import asyncio
-asyncio.ensure_future(coro)
+task = asyncio.ensure_future(coro)
+
+import atexit
+atexit.register(lambda  *args, **kwargs: task.cancel())

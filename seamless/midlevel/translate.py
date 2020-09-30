@@ -88,7 +88,7 @@ def set_structured_cell_from_checksum(cell, checksum):
                 from_structured_cell=True,
                 initial=True
             )
-            cell._modified_auth = True
+            cell._data._void = False
             trigger = True
 
     if "schema" in checksum:
@@ -97,7 +97,6 @@ def set_structured_cell_from_checksum(cell, checksum):
             from_structured_cell=True,
             initial=True
         )
-        cell._modified_schema = True
         trigger = True
 
     if trigger:

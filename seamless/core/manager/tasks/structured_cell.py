@@ -19,6 +19,8 @@ class StructuredCellTask(Task):
         taskmanager = manager.taskmanager
         tasks = []
         for task in taskmanager.tasks:
+            if task is self:
+                continue
             if not isinstance(task, UponConnectionTask):
                 if sc not in task.dependencies:
                     continue
@@ -42,7 +44,7 @@ class StructuredCellTask(Task):
             if not len(futures):
                 await asyncio.sleep(0.05)
             else:
-                await asyncio.wait(futures)
+                await asyncio.wait(futures, timeout=0.2)  # sometimes, this goes wrong, which is why the timeout is needed
             await self.await_sc_tasks(auth, _iter=_iter+1)
 
 
@@ -82,11 +84,15 @@ class StructuredCellAuthTask(StructuredCellTask):
             sc._auth_invalid = False
         finally:
             release_evaluation_lock(locknr)
-            sc._auth_joining = False
-            taskmanager = manager.taskmanager
-            taskmanager.add_synctask(
-                manager.structured_cell_trigger, (sc,), {}, False
-            )
+            if not self._canceled:
+                taskmanager = manager.taskmanager
+                ok = (not sc._auth_invalid)
+                def func():
+                    sc._auth_joining = False
+                    manager.structured_cell_trigger(sc, void=(not ok))
+                taskmanager.add_synctask(
+                    func , (), {}, False
+                )
 
 
 class StructuredCellJoinTask(StructuredCellTask):
@@ -331,14 +337,16 @@ class StructuredCellJoinTask(StructuredCellTask):
 
             for inchannel in sc.inchannels.values():
                 inchannel._save_state()
-
         finally:
             release_evaluation_lock(locknr)
-            sc._joining = False
-            taskmanager = manager.taskmanager
-            taskmanager.add_synctask(
-                manager.structured_cell_trigger, (sc,), {}, False
-            )
+            if not self._canceled:
+                taskmanager = manager.taskmanager
+                def func():
+                    sc._joining = False
+                    manager.structured_cell_trigger(sc, void=(not ok))
+                taskmanager.add_synctask(
+                    func , (), {}, False
+                )
 
 from .serialize_buffer import SerializeToBufferTask
 from .deserialize_buffer import DeserializeBufferTask

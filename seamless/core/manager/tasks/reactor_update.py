@@ -75,7 +75,7 @@ class ReactorUpdateTask(Task):
         for pinname, accessor in upstreams.items():
             assert not accessor._void, (reactor, pinname)
             if accessor._checksum is None: #pending; a legitimate use case, but we can't proceed
-                print_debug("ABORT", self.__class__.__name__, hex(id(self)), self.dependencies)
+                print_debug("ABORT", self.__class__.__name__, hex(id(self)), self.dependencies, " <= pinname", pinname)
                 reactor._pending = True
                 return
 

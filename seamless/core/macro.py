@@ -369,7 +369,7 @@ class Path:
         if cell is None:
             return
         if cell._structured_cell:
-            raise Exception("Macro paths for structured cells are currently not supported")
+            raise NotImplementedError("Macro paths for structured cells are currently not supported")
         """
         if cell._hash_pattern:
             raise Exception("Macro paths for deep cells are currently not supported")

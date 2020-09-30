@@ -48,14 +48,16 @@ class AccessorUpdateTask(Task):
                 cell = target
                 if path is None:
                     assert not cell._void, cell
-                    assert cell._checksum is None, cell
+                    if not cell._prelim:
+                        assert cell._checksum is None, cell
                 else:
                     sc = target._structured_cell
                     try:
                         assert not target._void, (sc, cell, path)
                         inchannel = sc.inchannels[path]
                         assert not inchannel._void, (sc, cell, path)
-                        assert inchannel._checksum is None, (sc, cell, path)
+                        if not inchannel._prelim:
+                            assert inchannel._checksum is None, (sc, cell, path)
                     except:
                         import traceback; traceback.print_exc()
                         """

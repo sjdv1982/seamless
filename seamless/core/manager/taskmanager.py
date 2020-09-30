@@ -4,6 +4,8 @@ from asyncio import CancelledError
 from functools import partial
 import threading
 import time
+from collections import deque
+import traceback
 from bisect import bisect_left
 
 import logging
@@ -104,7 +106,6 @@ class TaskManager:
                 result = callback(*args, **kwargs)
             except Exception:
                 result = None
-                import traceback
                 print_error(traceback.format_exc())
             if event is not None:
                 event.custom_result_value = result # hackish
@@ -115,7 +116,6 @@ class TaskManager:
             try:
                 self._run_synctasks()
             except Exception:
-                import traceback
                 print_error(traceback.format_exc())
             await asyncio.sleep(0.05)
 
@@ -234,7 +234,6 @@ class TaskManager:
                 if not isinstance(exc, CancelledError):
                     if task._awaiting:
                         continue
-                    import traceback
                     print_debug(traceback.format_exc())
                 task._awaiting = True
                 # If anything goes wrong in another task, consider this a cancel
@@ -307,6 +306,17 @@ class TaskManager:
             for task in ptasks:
                 if task.future is None:
                     continue
+                if logger.isEnabledFor(logging.DEBUG):
+                    if task._runner is not None:
+                        msg = "\n******\n"
+                        msg += "WAIT FOR {} {} {}\n".format(task.__class__.__name__, hex(id(task)), task.dependencies)
+                        frame = task._runner.cr_frame
+                        stack = "   " + "\n   ".join(traceback.format_stack(frame))
+                        msg += stack
+                        msg += "******"
+                        print_debug(msg)
+                else:
+                    print_debug("WAIT FOR", task.__class__.__name__, hex(id(task)), task.dependencies)
                 for dep in task.dependencies:
                     if isinstance(dep, SeamlessBase):
                         running.add(dep)
@@ -324,7 +334,7 @@ class TaskManager:
                 print(objs)
             return result, True
 
-        while len(ptasks) or len(self.launching_tasks):
+        while len(ptasks) or len(self.launching_tasks) or len(self.synctasks):
             if timeout is not None:
                 if report is not None and report > 0:
                     curr_timeout=min(remaining, report)
@@ -390,7 +400,7 @@ class TaskManager:
                 print(objs)
             return result, True
 
-        while len(ptasks) or len(self.launching_tasks):
+        while len(ptasks) or len(self.launching_tasks) or len(self.synctasks):
             if timeout is not None:
                 if report is not None and report > 0:
                     curr_timeout=min(remaining, report)
@@ -401,7 +411,11 @@ class TaskManager:
                     curr_timeout = report
                 else:
                     curr_timeout = None
-            await asyncio.sleep(0.0001)
+            if len(ptasks):
+                futures = [ptask.future for ptask in ptasks]
+                await asyncio.wait(futures, timeout=0.2)  # this can go wrong, hence the timeout
+            else:
+                await asyncio.sleep(0.001)
             ptasks = select_pending_tasks()
             if curr_timeout is not None:
                 curr_time = time.time()
@@ -440,7 +454,6 @@ class TaskManager:
                 try:
                     self._clean_dep(dep, task)
                 except Exception:
-                    import traceback
                     print("ERROR in", task, task.dependencies)
                     traceback.print_exc()
             refkey = self.rev_reftasks.pop(task, None)
@@ -607,6 +620,14 @@ If origin_task is provided, that task is not cancelled."""
                 a = [aa for aa in a.keys() if not isinstance(aa, BackgroundTask)]
             if len(a):
                 print_error(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                if len(a) <= 5:
+                    for task in a:
+                        print("*" * 30)
+                        print("Task:", task)
+                        for dep in task.dependencies:
+                            print("Depends on:", dep)
+                        print("*" * 30)
+                        print()
                 ok = False
         return ok
 

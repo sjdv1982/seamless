@@ -46,15 +46,9 @@ class UnboundManager:
         assert cell in self._registered
         self.commands.append(("set cell", (cell, value)))
 
-    def structured_cell_trigger(self, sc, updated_auth):
+    def structured_cell_trigger(self, sc):
         assert sc in self._registered
-        if (sc, True) in self.trigger_structured_cells:
-            return
-        elif updated_auth:
-            self.trigger_structured_cells.discard((sc, False))
-            self.trigger_structured_cells.add((sc, True))
-        else:
-            self.trigger_structured_cells.add((sc, False))
+        self.trigger_structured_cells.add(sc)
 
     def connect(self, source, source_subpath, target, target_subpath):
         from .macro import Path
@@ -401,10 +395,7 @@ class UnboundContext(SeamlessBase):
         trigger_structured_cells = self._realmanager.trigger_structured_cells
         for reg in self._realmanager._registered:
             if isinstance(reg, StructuredCell):
-                if (reg, True) in trigger_structured_cells:
-                    manager.structured_cell_trigger(reg, True)
-                elif (reg, False) in trigger_structured_cells:
-                    manager.structured_cell_trigger(reg, False)
+                manager.structured_cell_trigger(reg)
 
     def destroy(self, *, from_del=False):
         if self._bound:

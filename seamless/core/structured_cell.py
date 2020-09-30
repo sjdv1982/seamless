@@ -107,7 +107,6 @@ class StructuredCell(SeamlessBase):
 
         self._validate_channels(inchannels, outchannels)
         self._modified_auth = False
-        self._modified_schema = False
         self._auth_joining = False  #  an auth task is ongoing
         self._joining = False  #  a join task is ongoing
 
@@ -263,6 +262,12 @@ class StructuredCell(SeamlessBase):
             set_subpath(self._schema_value, None, path, value)
 
     def _join_schema(self):
+        """ NOTE: This is an inefficient way of updating a schema value
+        (re-calculate the checksum on every modification)
+
+        But there shouldn't be any risk of data loss (no async operations)
+        and schemas are small and rarely updated
+        """
         if self.schema._destroyed:
             return
         buf = serialize(self._schema_value, "plain")
@@ -347,8 +352,7 @@ class StructuredCell(SeamlessBase):
         # i.e. does NOT use the StructuredCellBackend, but DefaultBackend
         value = self._data.value
         schema = None
-        if self.schema is not None:
-            schema = self.schema.value
+        schema = self.get_schema()
         return Silk(data=value, schema=schema)
 
     def get_schema(self):
@@ -358,6 +362,7 @@ class StructuredCell(SeamlessBase):
         if schema is None:
             if self.schema._checksum is not None:
                 schema = self.schema.value
+                self._schema_value = schema
         return schema
 
     @property

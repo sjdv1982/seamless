@@ -64,6 +64,7 @@ class Task:
     _started = False
     _cleaned = False
     _cached_root = None
+    _runner = None
     future = None
     caller_count = None
 
@@ -153,7 +154,8 @@ class Task:
             # for efficiency, just wait a few msec, since we often get re-triggered
             await asyncio.sleep(0.005)
         self._started = True
-        return await self._run()
+        self._runner = self._run()
+        return await self._runner
 
     def _launch(self):
         manager = self.manager()

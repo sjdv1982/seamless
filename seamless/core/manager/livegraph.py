@@ -272,8 +272,13 @@ class LiveGraph:
             path=None,
             hash_pattern=target._hash_pattern
         )
-        read_accessor.write_accessor = write_accessor
         assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], worker)
+
+        # Right before connecting, void-cancel the target (without propagation)
+        manager.taskmanager.cancel_cell(target, full=False)
+        manager._set_cell_checksum(target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED)
+
+        read_accessor.write_accessor = write_accessor
         self.accessor_to_upstream[read_accessor] = worker
         to_downstream.append(read_accessor)
         self.cell_to_upstream[target] = read_accessor
@@ -362,8 +367,13 @@ class LiveGraph:
             path=None,
             hash_pattern=target._hash_pattern
         )
-        read_accessor.write_accessor = write_accessor
         assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
+        read_accessor.write_accessor = write_accessor
+
+        # Right before connecting, void-cancel the target (without propagation)
+        manager.taskmanager.cancel_cell(target, full=False)
+        manager._set_cell_checksum(target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED)
+
         self.accessor_to_upstream[read_accessor] = source
         self.cell_to_downstream[source].append(read_accessor)
         self.cell_to_upstream[target] = read_accessor
@@ -397,8 +407,13 @@ class LiveGraph:
             path=None,
             hash_pattern=target._hash_pattern
         )
-        read_accessor.write_accessor = write_accessor
         assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source, source_path)
+        read_accessor.write_accessor = write_accessor
+
+        # Right before connecting, void-cancel the target (without propagation)
+        manager.taskmanager.cancel_cell(target, full=False)
+        manager._set_cell_checksum(target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED)
+
         self.accessor_to_upstream[read_accessor] = source
         self.paths_to_downstream[source][source_path].append(read_accessor)
         self.cell_to_upstream[target] = read_accessor
@@ -473,8 +488,13 @@ class LiveGraph:
             path=None,
             hash_pattern=target._hash_pattern
         )
-        read_accessor.write_accessor = write_accessor
         assert self.accessor_to_upstream.get(read_accessor) is None, (self.accessor_to_upstream[read_accessor], source)
+        read_accessor.write_accessor = write_accessor
+
+        # Right before connecting, void-cancel the target (without propagation)
+        manager.taskmanager.cancel_cell(target, full=False)
+        manager._set_cell_checksum(target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED)
+
         self.accessor_to_upstream[read_accessor] = source
         self.macropath_to_downstream[source].append(read_accessor)
         self.cell_to_upstream[target] = read_accessor

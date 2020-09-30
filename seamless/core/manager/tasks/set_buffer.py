@@ -40,6 +40,7 @@ class SetCellBufferTask(Task):
                     checksum, cell._celltype, cell._subcelltype,
                     str(cell)
                 )
+                manager.cancel_cell(cell, void=False, origin_task=self)
                 checksum_cache[checksum] = buffer
                 buffer_cache.cache_buffer(checksum, buffer)
                 manager._set_cell_checksum(self.cell, checksum, False)

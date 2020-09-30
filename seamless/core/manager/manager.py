@@ -25,6 +25,7 @@ def with_cancel_cycle(func):
         manager = args[0]
         if manager._destroyed:
             return
+        taskmanager = manager.taskmanager
         if not manager.cancel_cycle.cleared:
             print("ERROR: manager cancel cycle was not cleared")
         try:
@@ -194,8 +195,7 @@ class Manager:
         self._set_cell_checksum(
             cell, checksum,
             (checksum is None), status_reason=reason,
-            trigger_bilinks=trigger_bilinks,
-            unvoid=False
+            trigger_bilinks=trigger_bilinks
         )
         if not from_structured_cell: # also for initial...
             if cell._structured_cell is not None and cell._structured_cell.auth is cell:
@@ -214,7 +214,7 @@ class Manager:
             self.taskmanager.add_synctask(update_schema, (), {}, False)
 
     def _set_cell_checksum(self,
-        cell, checksum, void, status_reason=None, prelim=False, trigger_bilinks=True, unvoid=True
+        cell, checksum, void, status_reason=None, prelim=False, trigger_bilinks=True
     ):
         """
         NOTE: Any cell task depending on the old checksum must have been canceled already
@@ -225,20 +225,12 @@ class Manager:
         """
         if cell._destroyed:
             return
-        #print("SET CELL CHECKSUM", cell, checksum is None, void, "UNVOID", unvoid)
-        #import traceback; traceback.print_stack()
         assert checksum is None or isinstance(checksum, bytes), checksum
         assert isinstance(void, bool), void
 
         if void:
             assert status_reason is not None
             assert checksum is None
-        try:
-            if unvoid and not void:
-                unvoid_cell(cell, self.livegraph)
-        except Exception:
-            traceback.print_stack()
-            traceback.print_exc()
 
         livegraph = self.livegraph
         if len(livegraph.schemacells[cell]):
@@ -381,8 +373,7 @@ class Manager:
             if sc is structured_cell:
                 continue
             sc._schema_value = deepcopy(value)
-            sc._modified_schema = True
-            self.structured_cell_trigger(sc)
+            self.structured_cell_trigger(sc, update_schema=True)
 
     @run_in_mainthread
     def set_cell_buffer(self, cell, buffer, checksum):
@@ -531,11 +522,8 @@ If origin_task is provided, that task is not cancelled."""
         self.cancel_cycle.cancel_scell_inpath(sc, path, void=void, reason=reason)
 
     @with_cancel_cycle
-    def structured_cell_trigger(self, scell):
-        if scell._modified_auth:
-            if scell._data._void:
-                self._set_cell_checksum(scell._data, None, void=False, unvoid=False)
-        self.cancel_cycle.trigger_scell(scell)
+    def structured_cell_trigger(self, scell, *, update_schema=False, void=False):
+        self.cancel_cycle.trigger_scell(scell, update_schema=update_schema, void=void)
 
 
     @with_cancel_cycle
