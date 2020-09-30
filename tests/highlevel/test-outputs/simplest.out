@@ -35,7 +35,7 @@ None
             'type': 'cell'}],
  'params': {'share_namespace': 'ctx'}}
 RUN VALIDATION <Silk: test >
-{'validators': [{'code': 'def validation(self):\n    print("RUN VALIDATION", self)\n    assert self != "test"\n', 'language': 'python', 'name': 'validation'}]}
+{'validators': [{'code': 'def validation(self):\n    print("RUN VALIDATION", self)\n    assert self != "test"\n', 'language': 'python'}]}
 
 simplest.py EXCEPTION:
 Traceback (most recent call last):
@@ -44,7 +44,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
+  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 3, in validation
     assert self != "test"
@@ -56,8 +56,7 @@ Failed validating 'validators' in schema:
     {'validators': [{'code': 'def validation(self):\n'
                              '    print("RUN VALIDATION", self)\n'
                              '    assert self != "test"\n',
-                     'language': 'python',
-                     'name': 'validation'}]}
+                     'language': 'python'}]}
 
 On instance:
     'test'
@@ -69,8 +68,7 @@ On instance:
  'nodes': [{'celltype': 'structured',
             'checksum': {'auth': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
                          'buffer': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
-                         'schema': '7a8e8e6fb89d23912b1bba61afba23226aed9bfb6e31543833267455c4ac9261',
-                         'value': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783'},
+                         'schema': '5aba891d3a360d296451ef841bf014f109084314ce839b16867588e554ec8afc'},
             'datatype': 'mixed',
             'hash_pattern': None,
             'path': ('a',),

@@ -1,4 +1,4 @@
-TaskManager, tasks: 1 undestroyed
+TaskManager, tasks: 3 undestroyed
 
 *********************************************************************************************
 Transformation checksum:  b578b8fc1ba69f34265c6dc6860e0fdd66904965765956417ff47adb52809e06
@@ -25,7 +25,6 @@ TRANSFORMATION PROGRESS 2 9
 TRANSFORMATION PROGRESS 2 10
 100.0 57ddf2d8004c548ca211637c5a227891378ea12871dcebd80444a19ff8cfec9b
 6f1e21084c21cb95ea6d17d3f5d2aff5d92965b6c8702b49e28990894bc7859c
-buffer cache, 5 buffers undestroyed
 
 *********************************************************************************************
 Result checksum: 6f1e21084c21cb95ea6d17d3f5d2aff5d92965b6c8702b49e28990894bc7859c
@@ -58,7 +57,6 @@ TRANSFORMATION PROGRESS 2 9
 TRANSFORMATION PROGRESS 2 10
 100.0 57ddf2d8004c548ca211637c5a227891378ea12871dcebd80444a19ff8cfec9b
 6f1e21084c21cb95ea6d17d3f5d2aff5d92965b6c8702b49e28990894bc7859c
-buffer cache, 5 buffers undestroyed
 Result checksum: 6f1e21084c21cb95ea6d17d3f5d2aff5d92965b6c8702b49e28990894bc7859c
 Re-run 3...
 6f1e21084c21cb95ea6d17d3f5d2aff5d92965b6c8702b49e28990894bc7859c

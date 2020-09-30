@@ -1,4 +1,5 @@
 START
+Execute Seamless macro: .macro
 Initial param 0
 Should be non-existent for .d
 Should be None for .e, .e2
@@ -17,16 +18,17 @@ y                    y0
 macro z              z
 q                    q0
 macro q              q0
-macro q_unilink      q0
+macro q_unilink         q0
 macro qq             q0
 r                    r0
 macro rr             r0
 
 Status: {
-  "e": "undefined",
-  "e2": "undefined"
+  "e": "unconnected",
+  "e2": "unconnected"
 }
 Change to 2
+Execute Seamless macro: .macro
 macro a              1002
 macro b              2002
 macro result         3004
@@ -41,7 +43,7 @@ y                    y2
 macro z              z
 q                    q2
 macro q              q2
-macro q_unilink      q2
+macro q_unilink         q2
 macro qq             q2
 r                    r2
 macro rr             r2
@@ -51,6 +53,7 @@ Change to 1
 Should change to non-existent for .d
 Should change to None for .e, .e2
 
+Execute Seamless macro: .macro
 macro a              1001
 macro b              2001
 macro result         3002
@@ -65,15 +68,17 @@ y                    y1
 macro z              z
 q                    q1
 macro q              q1
-macro q_unilink      q1
+macro q_unilink         q1
 macro qq             q1
 r                    r1
 macro rr             r1
 
 Status: {
-  "e": "unconnected"
+  "e": "unconnected",
+  "e2": "unconnected"
 }
 Change to 3
+Execute Seamless macro: .macro
 macro a              1003
 macro b              2003
 macro result         3006
@@ -88,13 +93,14 @@ y                    y3
 macro z              z
 q                    q3
 macro q              q3
-macro q_unilink      q3
+macro q_unilink         q3
 macro qq             q3
 r                    r3
 macro rr             r3
 
 Status: OK
 Change to 4
+Execute Seamless macro: .macro
 macro a              1004
 macro b              2004
 macro result         3008
@@ -109,7 +115,7 @@ y                    y4
 macro z              z
 q                    q4
 macro q              q4
-macro q_unilink      q4
+macro q_unilink         q4
 macro qq             q4
 r                    r4
 macro rr             r4

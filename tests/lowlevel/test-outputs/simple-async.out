@@ -18,4 +18,4 @@ None Status: {
 ...
 -12 Status: OK
 Task was destroyed but it is pending!
-task: <Task pending coro=<TempRefManager.loop() running at /seamless/seamless/core/cache/tempref.py:34>>
+task: <Task pending coro=<TempRefManager.loop() running at /seamless/seamless/core/cache/tempref.py:32>>

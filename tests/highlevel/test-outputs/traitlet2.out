@@ -1,13 +1,13 @@
 start
 ['1AVX', '1ACB']
-OBS {'name': 'value', 'old': ['1AVX', '1ACB'], 'new': ['1ZZZ'], 'owner': <seamless.highlevel.SeamlessTraitlet.SeamlessTraitlet object at 0x7f146e8c1da0>, 'type': 'change'}
+OBS {'name': 'value', 'old': ['1AVX', '1ACB'], 'new': ['1ZZZ'], 'owner': <seamless.highlevel.SeamlessTraitlet.SeamlessTraitlet object at 0x7fbe7f2c5cc0>, 'type': 'change'}
 ['1ZZZ']
 <Silk: ['1ZZZ'] >
 #2
-OBS {'name': 'value', 'old': ['1ZZZ'], 'new': ['1AAA'], 'owner': <seamless.highlevel.SeamlessTraitlet.SeamlessTraitlet object at 0x7f146e8c1da0>, 'type': 'change'}
+OBS {'name': 'value', 'old': ['1ZZZ'], 'new': ['1AAA'], 'owner': <seamless.highlevel.SeamlessTraitlet.SeamlessTraitlet object at 0x7fbe7f2c5cc0>, 'type': 'change'}
 ['1AAA']
 <Silk: ['1AAA'] >
 #3
-OBS {'name': 'value', 'old': ['1AAA'], 'new': ['1QQQ'], 'owner': <seamless.highlevel.SeamlessTraitlet.SeamlessTraitlet object at 0x7f146e8c1da0>, 'type': 'change'}
+OBS {'name': 'value', 'old': ['1AAA'], 'new': ['1QQQ'], 'owner': <seamless.highlevel.SeamlessTraitlet.SeamlessTraitlet object at 0x7fbe7f2c5cc0>, 'type': 'change'}
 ['1QQQ']
 <Silk: ['1QQQ'] >
