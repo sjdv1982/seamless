@@ -327,17 +327,21 @@ class ShareNamespace:
         await asyncio.gather(*coros)
 
     async def computation(self, timeout):
-        assert self._share_evaluate
-        manager = self.manager()
-        if manager is None or manager._destroyed:
-            return
-        result = []
-        for ctx in self.manager().contexts:
-            if ctx._destroyed:
-                continue
-            waiting, background = await ctx.computation(timeout)
-            result += sorted(list(waiting))
-        return result
+        try:
+            assert self._share_evaluate
+            manager = self.manager()
+            if manager is None or manager._destroyed:
+                return
+            result = []
+            for ctx in self.manager().contexts:
+                if ctx._destroyed:
+                    continue
+                waiting, background = await ctx.computation(timeout)
+                result += sorted(list(waiting))
+            return result
+        except Exception as exc:
+            traceback.print_exc()
+            raise exc from None
 
 class ShareServer(object):
     DEFAULT_ADDRESS = '127.0.0.1'

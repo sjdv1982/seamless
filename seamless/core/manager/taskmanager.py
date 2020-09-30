@@ -413,7 +413,7 @@ class TaskManager:
                     curr_timeout = None
             if len(ptasks):
                 futures = [ptask.future for ptask in ptasks]
-                await asyncio.wait(futures, timeout=0.2)  # this can go wrong, hence the timeout
+                await asyncio.wait(futures, timeout=0.05)  # this can go wrong, hence the timeout
             else:
                 await asyncio.sleep(0.001)
             ptasks = select_pending_tasks()

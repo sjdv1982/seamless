@@ -13,8 +13,8 @@ print_ORIGINAL = print
 
 def print(*args):
     if not len(args):
-        print_ORIGINAL()   
-        return 
+        print_ORIGINAL()
+        return
     args = [str(arg) for arg in args]
     elapsed_time = time.time() - start_time
     print_ORIGINAL("Time: %.1f ms," % (1000 * elapsed_time), *args)
@@ -36,6 +36,7 @@ ctx.txt1.set(value_json)
 print()
 
 print("*** Stage 1a ***")
+ctx.compute()
 value = ctx.txt1.data
 print("ctx.txt1", value)
 
@@ -44,6 +45,7 @@ ctx.txt2.set(value)
 ctx.txt3.set(value)
 
 print("*** Stage 1c ***")
+ctx.compute()
 print("ctx.txt2", ctx.txt2.data)
 print("ctx.txt3", ctx.txt3.data)
 print()

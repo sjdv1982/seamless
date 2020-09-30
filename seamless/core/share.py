@@ -129,13 +129,13 @@ class ShareManager:
     _last_run = None
     _stop = False
     _future_run = None
+    _current_run = None
     def __init__(self, latency):
         self.latency = latency
         self.shares = {}
         self.cell_updates = {}
         self.share_updates = set()
         self.share_value_updates = {}
-        self._tick = False
         self.paths = {}
         self.cached_shares = {} # key: namespace, file path; value: (deletion time, share.Share)
 
@@ -266,19 +266,20 @@ class ShareManager:
             mod_time, share = self.cached_shares.pop(npath)
             share.destroy()
 
-        self._tick = True
-
     async def _run(self):
         try:
             self._running = True
             while not self._stop:
                 t = time.time()
                 try:
-                    await self.run_once()
+                    if self._current_run is None:
+                        self._current_run = asyncio.ensure_future(self.run_once())
+                    await self._current_run
                 except Exception:
-                    self._tick = True
                     import traceback
                     traceback.print_exc()
+                finally:
+                    self._current_run = None
                 while time.time() - t < self.latency:
                     await asyncio.sleep(0.05)
         finally:
@@ -301,14 +302,16 @@ class ShareManager:
         asyncio.get_event_loop().run_until_complete(fut)
 
     async def tick_async(self):
-        self._tick = False
-        while self._running and not self._tick:
-            await asyncio.sleep(0.01)
+        """Waits until one iteration of the run() loop has finished"""
+        if self._current_run is None:
+            self._current_run = asyncio.ensure_future(self.run_once())
+        await self._current_run
 
     def tick(self):
         """Waits until one iteration of the run() loop has finished"""
-        fut = asyncio.ensure_future(self.tick_async())
-        asyncio.get_event_loop().run_until_complete(fut)
+        if self._current_run is None:
+            self._current_run = asyncio.ensure_future(self.run_once())
+        asyncio.get_event_loop().run_until_complete(self._current_run)
 
 sharemanager = ShareManager(0.2)
 

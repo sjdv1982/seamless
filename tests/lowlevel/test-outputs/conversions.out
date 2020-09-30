@@ -1,28 +1,28 @@
-Time: 0.5 ms, *** Start ***
-Time: 0.9 ms, None
+Time: 0.4 ms, *** Start ***
+Time: 0.4 ms, None
 
-Time: 0.9 ms, *** Stage 0 ***
+Time: 0.5 ms, *** Stage 0 ***
 
-Time: 1.0 ms, *** Stage 1a ***
-Time: 2.0 ms, ctx.txt1 [42, "test", {"mykey": "myvalue"}, true]
-Time: 2.1 ms, *** Stage 1b ***
-Time: 2.2 ms, *** Stage 1c ***
-Time: 3.5 ms, ctx.txt2 [42, "test", {"mykey": "myvalue"}, true]
-Time: 3.8 ms, ctx.txt3 [42, "test", {"mykey": "myvalue"}, true]
+Time: 0.6 ms, *** Stage 1a ***
+Time: 3.2 ms, ctx.txt1 [42, "test", {"mykey": "myvalue"}, true]
+Time: 3.3 ms, *** Stage 1b ***
+Time: 3.4 ms, *** Stage 1c ***
+Time: 5.0 ms, ctx.txt2 [42, "test", {"mykey": "myvalue"}, true]
+Time: 5.3 ms, ctx.txt3 [42, "test", {"mykey": "myvalue"}, true]
 
-Time: 3.9 ms, *** Stage 2 ***
-Time: 208.9 ms, ctx.txt4 [42, "test", {"mykey": "myvalue"}, true]
+Time: 5.3 ms, *** Stage 2 ***
+Time: 7.9 ms, ctx.txt4 [42, "test", {"mykey": "myvalue"}, true]
 
-Time: 209.1 ms, *** Stage 3 ***
-Time: 412.5 ms, ctx.plain [42, "test", {"mykey": "myvalue"}, true]
-Time: 412.7 ms, *** Stage 3a ***
-Time: 616.6 ms, ctx.plain2 [42, "test", {"mykey": "myvalue"}, true]
-Time: 616.7 ms, *** Stage 3b ***
-Time: 821.3 ms, ctx.mixed [42, "test", {"mykey": "myvalue"}, true]
-Time: 821.4 ms, *** Stage 4 ***
-Time: 4366.8 ms, ctx.py get_ipython().run_cell_magic('timeit', '', 'x = 42')
+Time: 7.9 ms, *** Stage 3 ***
+Time: 10.8 ms, ctx.plain [42, "test", {"mykey": "myvalue"}, true]
+Time: 10.9 ms, *** Stage 3a ***
+Time: 13.2 ms, ctx.plain2 [42, "test", {"mykey": "myvalue"}, true]
+Time: 13.3 ms, *** Stage 3b ***
+Time: 15.9 ms, ctx.mixed [42, "test", {"mykey": "myvalue"}, true]
+Time: 16.0 ms, *** Stage 4 ***
+Time: 283.1 ms, ctx.py get_ipython().run_cell_magic('timeit', '', 'x = 42')
 
-Time: 4366.8 ms, *** Stage 5 ***
-Time: 4562.2 ms, ctx.plain3 Test string!! b'"Test string!!"\n'
-Time: 4564.1 ms, ctx.text Test string!! b'Test string!!\n'
-Time: 4565.8 ms, ctx.str Test string!! b'"Test string!!"\n'
+Time: 283.2 ms, *** Stage 5 ***
+Time: 288.1 ms, ctx.plain3 Test string!! b'"Test string!!"\n'
+Time: 288.3 ms, ctx.text Test string!! b'Test string!!\n'
+Time: 288.6 ms, ctx.str Test string!! b'"Test string!!"\n'
