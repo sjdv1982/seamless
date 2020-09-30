@@ -36,6 +36,8 @@ class TaskManager:
         self.manager = weakref.ref(manager)
         self.loop = asyncio.get_event_loop()
         self.tasks = []
+        self.barriers = set()  # list of taskids. Only the tasks with an id up to the barrier taskid may execute.
+                               # Once all of them have been executed, the barrier is lifted
         self.launching_tasks = set()
         self.task_ids = []
         self.synctasks = []
@@ -63,6 +65,25 @@ class TaskManager:
     async def await_active(self):
         while not self._active:
             await asyncio.sleep(0.05)
+
+    async def await_barrier(self, taskid):
+        while 1:
+            for barrier in self.barriers:
+                if taskid > barrier:
+                    break
+            else:
+                break
+            if taskid == self.task_ids[0]:
+                for barrier in list(self.barriers):
+                    if barrier <= taskid:
+                        self.barriers.discard(barrier)
+                break
+            await asyncio.sleep(0.001)
+
+    def add_barrier(self):
+        if self._task_id_counter == 0:
+            return
+        self.barriers.add(self._task_id_counter)
 
     def register_cell(self, cell):
         assert cell not in self.cell_to_task
@@ -430,6 +451,7 @@ class TaskManager:
         return print_report(verbose=False)
 
     def cancel_task(self, task):
+        self.barriers.discard(task.taskid)
         if task.future is None or task.future.cancelled():
             self._clean_task(task, task.future)
             return
@@ -440,6 +462,7 @@ class TaskManager:
             self._clean_task(task, task.future, manual=True)
 
     def _clean_task(self, task, future, manual=False):
+        self.barriers.discard(task.taskid)
         if manual and task._cleaned:
             return
         cleaned = task._cleaned

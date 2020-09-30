@@ -370,16 +370,10 @@ class Path:
             return
         if cell._structured_cell:
             raise NotImplementedError("Macro paths for structured cells are currently not supported")
-        """
-        if cell._hash_pattern:
-            raise Exception("Macro paths for deep cells are currently not supported")
-        """
         cell_authority = cell.has_authority()
         if not cell_authority and not self_authority:
             msg = "Cannot bind %s to %s: both have no authority"
             raise Exception(msg % (cell, self))
-        if cell_authority and not self_authority:  # bound cell loses authority
-            manager.cancel_cell(cell, void=False)
         for path in cell._paths:
             assert path is not self, self._path
         cell._paths.add(self)
@@ -392,7 +386,7 @@ class Path:
                         manager.cancel_accessor(accessor, void=False)
                 if cell._checksum is not None:
                     CellUpdateTask(manager, cell).launch()
-            else:
+            if not self_authority:
                 up_accessor = livegraph.macropath_to_upstream[self]
                 assert up_accessor is not None  # if no up accessor, how could we have no authority?
                 upstream_cell = livegraph.accessor_to_upstream[up_accessor]
@@ -402,6 +396,9 @@ class Path:
                 assert isinstance(upstream_cell, Cell)
                 if upstream_cell._checksum is not None:
                     CellUpdateTask(manager, upstream_cell).launch()
+        else:
+            if cell_authority and not self_authority:  # bound cell loses authority
+                manager.cancel_cell(cell, void=False)
 
 
     def __str__(self):

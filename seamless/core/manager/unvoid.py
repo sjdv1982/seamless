@@ -105,6 +105,7 @@ def unvoid_reactor(reactor, livegraph):
 
     for pinname, accessor in upstreams.items():
         if accessor is None: #unconnected
+            #print("NOT UNVOID UNCON", reactor, pinname)
             reactor._status_reason = StatusReasonEnum.UNCONNECTED
             return
 
@@ -116,11 +117,13 @@ def unvoid_reactor(reactor, livegraph):
     all_downstreams = livegraph.reactor_to_downstream[reactor]
     for outputpin in outputpins:
         if not len(all_downstreams.get(outputpin, [])):
+            #print("NOT UNVOID UNCON", reactor, pinname)
             reactor._status_reason = StatusReasonEnum.UNCONNECTED
             return
 
     for pinname, accessor in upstreams.items():
         if accessor._void:
+            #print("NOT UNVOID UP", reactor, pinname)
             reactor._status_reason = StatusReasonEnum.UPSTREAM
             return
 

@@ -9,21 +9,21 @@ Traceback (most recent call last):
     self._data.set(value)
   File "/seamless/seamless/mixed/__init__.py", line 56, in set
     self._monitor.set_path(self._path, value)
-  File "/seamless/seamless/mixed/Monitor.py", line 95, in set_path
+  File "/seamless/seamless/mixed/Monitor.py", line 126, in set_path
     self.backend.set_path(path, subdata)
-  File "/seamless/seamless/mixed/Backend.py", line 76, in set_path
-    self._set_path(path, data)
-  File "/seamless/seamless/mixed/Backend.py", line 321, in _set_path
+  File "/seamless/seamless/mixed/Backend.py", line 65, in set_path
+    result = self._set_path(path, data)
+  File "/seamless/seamless/mixed/Backend.py", line 355, in _set_path
     sc._set_auth_path((), data)
-  File "/seamless/seamless/core/structured_cell.py", line 203, in _set_auth_path
+  File "/seamless/seamless/core/structured_cell.py", line 226, in _set_auth_path
     set_subpath(self._auth_value, self.hash_pattern, path, value)
-  File "/seamless/seamless/core/protocol/expression.py", line 148, in set_subpath_sync
+  File "/seamless/seamless/core/protocol/expression.py", line 141, in set_subpath_sync
     subvalue, sub_hash_pattern
-  File "/seamless/seamless/core/protocol/deep_structure.py", line 398, in value_to_deep_structure_sync
+  File "/seamless/seamless/core/protocol/deep_structure.py", line 418, in value_to_deep_structure_sync
     asyncio.get_event_loop().run_until_complete(fut)
   File "/opt/conda/lib/python3.7/asyncio/base_events.py", line 584, in run_until_complete
     return future.result()
-  File "/seamless/seamless/core/protocol/deep_structure.py", line 369, in value_to_deep_structure
+  File "/seamless/seamless/core/protocol/deep_structure.py", line 389, in value_to_deep_structure
     raise DeepStructureError(hash_pattern, value) from None
 seamless.core.protocol.deep_structure.DeepStructureError: 
   Invalid deep structure: 20

@@ -252,10 +252,10 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                 elif source._checksum is not None:
                     TransformerUpdateTask(manager, source).launch()
             elif isinstance(source, Reactor):
-                if not source._void:
-                    if source._checksum is not None:
-                        # TODO: will not normally work...
-                        ReactorUpdateTask(manager, source).launch()
+                if source._void:
+                    unvoid_reactor(source, manager.livegraph)  # result connection may unvoid the reactor, which will launch a task
+                elif source._checksum is not None:
+                    ReactorUpdateTask(manager, source).launch()
             else:
                 raise TypeError(source)
 
@@ -304,4 +304,4 @@ from ...reactor import Reactor
 from ...macro_mode import curr_macro
 from ...macro import Macro, Path as MacroPath
 from ...status import StatusReasonEnum
-from ..unvoid import unvoid_accessor, unvoid_transformer
+from ..unvoid import unvoid_accessor, unvoid_transformer, unvoid_reactor

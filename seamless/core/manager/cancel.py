@@ -285,6 +285,7 @@ class StructuredCellCancellation:
                     reason = StatusReasonEnum.INVALID
                 else:
                     reason = StatusReasonEnum.UNDEFINED
+                print_debug("***CANCEL***: marked for void %s (from joining)" % scell)
                 self.cycle().to_void.append((scell, reason))
             elif self.mode == SCModeEnum.PENDING:
                 # The last pending inchannel got void-canceled
@@ -293,6 +294,7 @@ class StructuredCellCancellation:
                     reason = StatusReasonEnum.INVALID
                 else:
                     reason = StatusReasonEnum.UNDEFINED
+                print_debug("***CANCEL***: marked for void (from pending) %s" % scell)
                 self.cycle().to_void.append((scell, reason))
             elif self.mode == SCModeEnum.EQUILIBRIUM:
                 # The last valued inchannel got void-canceled
@@ -301,6 +303,7 @@ class StructuredCellCancellation:
                     reason = StatusReasonEnum.INVALID
                 else:
                     reason = StatusReasonEnum.UNDEFINED
+                print_debug("***CANCEL***: marked for void (from equilibrium) %s" % scell)
                 self.cycle().to_void.append((scell, reason))
             else:
                 raise ValueError((scell, old_state, new_state, self.mode))
@@ -375,7 +378,11 @@ class StructuredCellCancellation:
                 # 1. In pending mode, _data._checksum must be None;
                 # 2. In equilibrium mode, _data._checksum must not be None;
                 # 3. Only join/auth tasks may set _data._checksum to not-None.
-                raise ValueError((scell, old_state, new_state, self.mode, scell._data._checksum is None))
+                if scell._data is scell.auth:
+                    # Special case
+                    pass
+                else:
+                    raise ValueError((scell, old_state, new_state, self.mode, scell._data._checksum is None))
             scell._mode = SCModeEnum.EQUILIBRIUM
             return
 
@@ -540,9 +547,9 @@ class CancellationCycle:
         if void:
             assert not update_schema
             if not scell._data._void:
-                print_debug("***CANCEL***: unvoided %s" % scell)
+                print_debug("***CANCEL***: voided %s" % scell)
                 manager = self.manager()
-                manager._set_cell_checksum(scell._data, None, void=False)
+                manager._set_cell_checksum(scell._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
 
         else:
             if scell._data._void:
@@ -564,7 +571,8 @@ class CancellationCycle:
                 return
         else:
             if (not accessor._void) and accessor._checksum is None:
-                return
+                if not accessor._new_macropath:
+                    return
         assert not self.cleared
         if accessor in self.accessors:
             void0, reason0 = self.accessors[accessor]
@@ -682,7 +690,7 @@ class CancellationCycle:
                     self.to_void.append((transformer, reason))
                 else:
                     curr_reason = transformer._status_reason
-                    if curr_reason.value > reason.value:
+                    if curr_reason.value != reason.value:
                         transformer._status_reason = reason
                     return
             else:
@@ -694,6 +702,8 @@ class CancellationCycle:
                 void_reason = void_worker(upstreams)
                 if not void_reason:
                     self.to_unvoid.append(transformer)
+                else:
+                    transformer._status_reason = void_reason
                 return
             else:
                 if not fired_unvoid:
@@ -723,7 +733,7 @@ class CancellationCycle:
                     self.to_void.append((reactor, reason))
                 else:
                     curr_reason = reactor._status_reason
-                    if curr_reason.value > reason.value:
+                    if curr_reason.value != reason.value:
                         reactor._status_reason = reason
                     return
             else:
@@ -735,7 +745,9 @@ class CancellationCycle:
                 void_reason = void_worker(upstreams)
                 if not void_reason:
                     self.to_unvoid.append(reactor)
-                    return
+                else:
+                    reactor._status_reason = void_reason
+                return
             else:
                 if not fired_unvoid:
                     print_debug("***CANCEL***: marked for re-cancel %s" % reactor)
@@ -778,7 +790,9 @@ class CancellationCycle:
                 void_reason = void_worker(upstreams)
                 if not void_reason:
                     self.to_unvoid.append(macro)
-                    return
+                else:
+                    macro._status_reason = void_reason
+                return
 
     def resolve(self):
         try:

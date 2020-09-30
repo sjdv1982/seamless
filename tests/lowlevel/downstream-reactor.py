@@ -14,7 +14,7 @@ with macro_mode_on():
 time.sleep(2)
 a = aa""")
     ctx.code.connect(ctx.tf.code)
-    ctx.a = cell()    
+    ctx.a = cell()
     ctx.tf.a.connect(ctx.a)
 
     ctx.b = cell().set(2)
@@ -46,7 +46,7 @@ print(ctx.result.value)
 ctx.aa.set(10)
 ctx.compute(1)
 print(ctx.status)
-print(ctx.result.value)
+print(ctx.result.value)  # None, not 3!
 ctx.compute()
 print(ctx.status)
 print(ctx.result.value)

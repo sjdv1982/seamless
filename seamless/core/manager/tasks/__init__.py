@@ -149,11 +149,14 @@ class Task:
         await asyncio.shield(communion_server.startup)
         while len(taskmanager.synctasks):
             await asyncio.sleep(0.001)
+        if not isinstance(self, UponConnectionTask):
+            await taskmanager.await_barrier(self.taskid)
         if isinstance(self, StructuredCellAuthTask):
             scell = self.dependencies[0]
             # for efficiency, just wait a few msec, since we often get re-triggered
             await asyncio.sleep(0.005)
         self._started = True
+        print_debug("RUN", self.__class__.__name__, hex(id(self)), self.dependencies)
         self._runner = self._run()
         return await self._runner
 
@@ -167,7 +170,6 @@ class Task:
         if self._canceled:
             taskmanager.launching_tasks.discard(self)
             return
-        print_debug("LAUNCH", self.__class__.__name__, hex(id(self)), self.dependencies)
         awaitable = self._run0(taskmanager)
         self.future = asyncio.ensure_future(awaitable)
         taskmanager.add_task(self)
@@ -210,18 +212,20 @@ class Task:
     def cancel(self):
         if self._canceled:
             return
+        manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
+        taskmanager = manager.taskmanager
+
         self._canceled = True
         print_debug("CANCEL", self.__class__.__name__, hex(id(self)), self.dependencies)
         realtask = self._realtask
         if realtask is not None:
             return realtask.cancel_refholder(self)
-        manager = self.manager()
+
         if self.future is not None:
             if not self.future.cancelled():
                 self.future.cancel()
-            if manager is None or manager._destroyed:
-                return
-            taskmanager = manager.taskmanager
             taskmanager.launching_tasks.discard(self)
             taskmanager.cancel_task(self)
 

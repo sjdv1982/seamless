@@ -340,6 +340,25 @@ class UnboundContext(SeamlessBase):
                 continue
         for comnr, (com, args) in enumerate(self._realmanager.commands):
             if com == "set cell":
+                pass  # for stage 3
+            elif com == "connect cell":
+                cell, cell_subpath, other, other_subpath = args
+                manager.connect(cell, cell_subpath, other, other_subpath)
+            elif com == "connect pin":
+                pin, cell = args
+                manager.connect(pin, None, cell, None)
+            elif com == "bilink":
+                cell, other = args
+                cell.bilink(other)
+            elif com == "set cell checksum":
+                pass  # for stage 3
+            else:
+                raise ValueError(com)
+
+    def _bind_stage3(self, manager):
+        macro = self._macro
+        for comnr, (com, args) in enumerate(self._realmanager.commands):
+            if com == "set cell":
                 cell, value = args
                 supersede = False
                 for com2, args2 in self._realmanager.commands[comnr+1:]:
@@ -356,14 +375,11 @@ class UnboundContext(SeamlessBase):
                     continue
                 manager.set_cell(cell, value)
             elif com == "connect cell":
-                cell, cell_subpath, other, other_subpath = args
-                manager.connect(cell, cell_subpath, other, other_subpath)
+                pass  # Done in stage 2
             elif com == "connect pin":
-                pin, cell = args
-                manager.connect(pin, None, cell, None)
+                pass  # Done in stage 2
             elif com == "bilink":
-                cell, other = args
-                cell.bilink(other)
+                pass  # Done in stage 2
             elif com == "set cell checksum":
                 cell, checksum, initial, from_structured_cell, trigger_bilinks = args
                 cell._initial_checksum = None
@@ -391,7 +407,9 @@ class UnboundContext(SeamlessBase):
             elif isinstance(reg, StructuredCell):
                 manager.register_structured_cell(reg)
         ctx._root()._cache_paths()
-        self._bind_stage2(ctx._get_manager())
+        self._bind_stage2(manager)
+        manager.taskmanager.add_barrier()
+        self._bind_stage3(manager)
         trigger_structured_cells = self._realmanager.trigger_structured_cells
         for reg in self._realmanager._registered:
             if isinstance(reg, StructuredCell):
