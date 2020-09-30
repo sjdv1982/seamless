@@ -189,15 +189,6 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
         """
 
     async def _run(self):
-        """Perform actions upon connection.
-
-- Cancel any set-cell-value tasks on the target (if a cell)
-- Await all other UponConnectionTasks
-  Inform authoritymanager, caches etc., returning an accessor.
-  This accessor will automatically be updated if anything modifies the source
-  (even if it is already running, but not finished, now)
-- Launch an accessor update task
-"""
         manager = self.manager()
         taskmanager = manager.taskmanager
 
@@ -249,13 +240,17 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
             elif isinstance(source, Transformer):
                 if source._void:
                     unvoid_transformer(source, manager.livegraph)  # result connection may unvoid the transformer, which will launch a task
-                elif source._checksum is not None:
-                    TransformerUpdateTask(manager, source).launch()
+                else:
+                    unvoid_accessor(accessor, manager.livegraph)
+                    if source._checksum is not None:
+                        TransformerUpdateTask(manager, source).launch()
             elif isinstance(source, Reactor):
                 if source._void:
                     unvoid_reactor(source, manager.livegraph)  # result connection may unvoid the reactor, which will launch a task
-                elif source._checksum is not None:
-                    ReactorUpdateTask(manager, source).launch()
+                else:
+                    unvoid_accessor(accessor, manager.livegraph)
+                    if source._checksum is not None:
+                        ReactorUpdateTask(manager, source).launch()
             else:
                 raise TypeError(source)
 

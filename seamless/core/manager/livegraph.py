@@ -276,7 +276,10 @@ class LiveGraph:
 
         # Right before connecting, void-cancel the target (without propagation)
         manager.taskmanager.cancel_cell(target, full=False)
-        manager._set_cell_checksum(target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED)
+        if not target._void:
+            manager._set_cell_checksum(target, None, void=True, status_reason=StatusReasonEnum.UNDEFINED)
+        else:
+            target._status_reason = StatusReasonEnum.UNDEFINED
 
         read_accessor.write_accessor = write_accessor
         self.accessor_to_upstream[read_accessor] = worker
