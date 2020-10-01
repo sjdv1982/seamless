@@ -32,14 +32,12 @@ class ReadAccessor(Accessor):
         return self._prelim
 
     def build_expression(self, livegraph, checksum):
-        """Returns if expression has changed"""
-        self._harden = False
         celltype = self.celltype
         if isinstance(celltype, MacroPath):
             macropath = celltype
             if macropath._cell is None:
                 self.clear_expression(livegraph)
-                return False
+                return
             celltype = macropath._cell._celltype
             hash_pattern = macropath._cell._hash_pattern
         else:
@@ -50,7 +48,7 @@ class ReadAccessor(Accessor):
             macropath = target_celltype
             if macropath._cell is None:
                 self.clear_expression(livegraph)
-                return False
+                return
             target_celltype = macropath._cell._celltype
             target_subcelltype = macropath._cell._subcelltype
         target = self.write_accessor.target
@@ -62,11 +60,10 @@ class ReadAccessor(Accessor):
         )
         if self.expression is not None:
             if expression == self.expression:
-                return False
+                return
             livegraph.decref_expression(self.expression, self)
         self.expression = expression
         livegraph.incref_expression(expression, self)
-        return True
 
     def clear_expression(self, livegraph):
         if self.expression is None:

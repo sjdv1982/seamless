@@ -204,16 +204,25 @@ class ReactorResultTask(Task):
             reactor._last_outputs = {}
         reactor._last_outputs[pinname] = checksum
         downstreams = livegraph.reactor_to_downstream[reactor][pinname]
+
+        if checksum is None:
+            manager.cancel_accessors(downstreams, True)
+            return
+
+        accessors_to_cancel = []
         for accessor in downstreams:
-            #- construct (not compute!) their expression using the cell checksum
-            #  Constructing a downstream expression increfs the cell checksum
-            changed = accessor.build_expression(livegraph, checksum)
-            # TODO: prelim? tricky for a reactor...
-            #- launch an accessor update task
-            if changed:
-                taskmanager = manager.taskmanager
-                taskmanager.cancel_accessor(accessor)
-                AccessorUpdateTask(manager, accessor).launch()
+            if accessor._void or accessor._checksum is not None:
+                accessors_to_cancel.append(accessor)
+
+        manager.cancel_accessors(accessors_to_cancel, False)
+
+        # Chance that the above line cancels our own task
+        if self._canceled:
+            return
+
+        for accessor in downstreams:
+            accessor.build_expression(livegraph, checksum)
+            AccessorUpdateTask(manager, accessor).launch()
 
         return None
 

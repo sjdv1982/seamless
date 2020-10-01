@@ -35,35 +35,40 @@ class CellUpdateTask(Task):
         locknr = await acquire_evaluation_lock(self)
         try:
             checksum = cell._checksum
+            assert checksum is not None, cell
             assert not cell._structured_cell # cell update is not for StructuredCell cells
             livegraph = manager.livegraph
             accessors = livegraph.cell_to_downstream[cell]
             for path in cell._paths:
                 path_accessors = livegraph.macropath_to_downstream[path]
                 accessors = accessors + path_accessors
-            for accessor in accessors:
-                #- construct (not compute!) their expression using the cell checksum
-                #  Constructing a downstream expression increfs the cell checksum
-                changed = accessor.build_expression(livegraph, checksum)
-                if cell._prelim != accessor._prelim:
-                    accessor._prelim = cell._prelim
-                    changed = True
-                #- launch an accessor update task
-                if changed or accessor._new_macropath:
-                    target = accessor.write_accessor.target()
-                    if isinstance(target, MacroPath):
-                        target = target._cell
-                        if target is None:
-                            continue
-                    manager.cancel_accessor(accessor, void=False)
-                    if isinstance(target, Cell):
-                        assert not target._void, accessor
 
-                    # Chance that the above line cancels our own task
-                    if self._canceled:
-                        return
-                    task = AccessorUpdateTask(manager, accessor)
-                    task.launch()
+            accessors_to_cancel = []
+
+            for accessor in accessors:
+                if accessor._void or accessor._checksum is not None:
+                    accessors_to_cancel.append(accessor)
+
+            if len(accessors_to_cancel):
+                manager.cancel_accessors(accessors_to_cancel, False)
+
+            # Chance that the above line cancels our own task
+            if self._canceled:
+                return
+
+            for accessor in accessors:
+                #- launch an accessor update task
+                target = accessor.write_accessor.target()
+                if isinstance(target, MacroPath):
+                    target = target._cell
+                    if target is None:
+                        continue
+                if isinstance(target, Cell):
+                    assert not target._void, accessor
+
+                accessor.build_expression(livegraph, checksum)
+                task = AccessorUpdateTask(manager, accessor)
+                task.launch()
             for editpin in livegraph.cell_to_editpins[cell]:
                 reactor = editpin.worker_ref()
                 ReactorUpdateTask(manager, reactor).launch()

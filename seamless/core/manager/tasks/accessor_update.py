@@ -3,6 +3,10 @@ from . import Task
 class AccessorUpdateTask(Task):
     def __init__(self, manager, accessor):
         assert isinstance(accessor, ReadAccessor)
+
+        expression = accessor.expression
+        assert expression is not None, accessor
+
         self.accessor = accessor
         super().__init__(manager)
         self._dependencies.append(accessor)
@@ -24,17 +28,8 @@ class AccessorUpdateTask(Task):
 
         accessor = self.accessor
 
-        # Get the expression. If it is None, do an accessor void cancellation
         expression = accessor.expression
-
-        if expression is None:
-            accessor._status_reason = StatusReasonEnum.UNDEFINED
-            accessor._new_macropath = False
-            manager.cancel_accessor(
-                accessor, void=True,
-                origin_task=self
-            )
-            return
+        assert expression is not None, accessor
 
         livegraph = manager.livegraph
         assert expression in livegraph.expression_to_accessors

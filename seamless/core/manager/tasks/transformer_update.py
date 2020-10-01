@@ -103,22 +103,28 @@ class TransformerResultUpdateTask(Task):
             return
         manager = self.manager()
         livegraph = manager.livegraph
-        accessors = livegraph.transformer_to_downstream[transformer]
+        downstreams = livegraph.transformer_to_downstream[transformer]
         checksum = transformer._checksum
-        preliminary = transformer.preliminary
-        for accessor in accessors:
-            #- construct (not compute!) their expression using the cell checksum
-            #  Constructing a downstream expression increfs the cell checksum
-            changed = accessor.build_expression(livegraph, checksum)
-            if accessor._prelim != preliminary:
-                accessor._prelim = preliminary
-                changed = True
-            #- launch an accessor update task
-            if changed:
-                taskmanager = manager.taskmanager
-                taskmanager.cancel_accessor(accessor)
-                AccessorUpdateTask(manager, accessor).launch()
-        return None
+
+        if checksum is None:
+            manager.cancel_accessors(downstreams, True)
+            return
+
+        accessors_to_cancel = []
+        for accessor in downstreams:
+            if accessor._void or accessor._checksum is not None:
+                accessors_to_cancel.append(accessor)
+
+        manager.cancel_accessors(accessors_to_cancel, False)
+
+        # Chance that the above line cancels our own task
+        if self._canceled:
+            return
+
+        for accessor in downstreams:
+            accessor.build_expression(livegraph, checksum)
+            AccessorUpdateTask(manager, accessor).launch()
+
 
 from .accessor_update import AccessorUpdateTask
 from ...status import StatusReasonEnum

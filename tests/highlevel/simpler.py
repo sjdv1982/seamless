@@ -23,7 +23,7 @@ ctx.transform = triple_it
 ctx.transform.debug = True
 ctx.transform.a = 1
 print("START")
-ctx.translate()
+ctx.compute()
 print(ctx.transform.inp.value, ctx.transform.result.value)
 ctx.transform.a = ctx.a
 ctx.transform.example.a = 99

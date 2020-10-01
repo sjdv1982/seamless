@@ -313,13 +313,13 @@ class StructuredCellJoinTask(StructuredCellTask):
                     expression_to_result_checksum = cachemanager.expression_to_result_checksum
                     taskmanager = manager.taskmanager
 
-                    accessors_to_cancel = []  # shouldn't happen, since we can normally predict void states, and we cancel before join
+                    accessors_to_cancel = []
                     for out_path in sc.outchannels:
                         for accessor in downstreams[out_path]:
                             if accessor._void or accessor._checksum is not None:
                                 accessors_to_cancel.append(accessor)
                     if len(accessors_to_cancel):
-                        manager.cancel_accessors(accessors_to_cancel, False, origin_task=self)
+                        manager.cancel_accessors(accessors_to_cancel, False)
 
                     # Chance that the above line cancels our own task
                     if self._canceled:
@@ -328,7 +328,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                     for out_path in sc.outchannels:
                         for accessor in downstreams[out_path]:
                             #print("!SC VALUE", sc, out_path, accessor._void)
-                            taskmanager.cancel_accessor(accessor)
+                            #  manager.cancel_accessor(accessor)  # already done above
                             accessor.build_expression(livegraph, cs)
                             accessor._prelim = prelim[out_path]
                             AccessorUpdateTask(manager, accessor).launch()

@@ -252,6 +252,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                     accessor.build_expression(manager.livegraph, source._checksum)
                     if source._checksum is not None:
                         AccessorUpdateTask(manager, accessor).launch()
+
             elif isinstance(source, Transformer):
                 if source._void:
                     unvoid_transformer(source, manager.livegraph)  # result connection may unvoid the transformer, which will launch a task
