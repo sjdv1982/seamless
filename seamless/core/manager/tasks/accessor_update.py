@@ -56,18 +56,10 @@ class AccessorUpdateTask(Task):
                         assert not target._void, (sc, cell, path)
                         inchannel = sc.inchannels[path]
                         assert not inchannel._void, (sc, cell, path)
-                        if not inchannel._prelim:
+                        if not sc._cyclic:
                             assert inchannel._checksum is None, (sc, cell, path)
                     except:
                         import traceback; traceback.print_exc()
-                        """
-                        from seamless.core.manager.complex_structured_cell import get_scell_state
-                        get_scell_state(sc, True)
-                        inchannel = sc.inchannels[path]
-                        print(accessor._void, inchannel._void)
-                        import asyncio; await asyncio.sleep(3)
-                        import sys; sys.exit()
-                        """
         #
         expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()
 

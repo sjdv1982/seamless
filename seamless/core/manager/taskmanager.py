@@ -329,21 +329,22 @@ class TaskManager:
             for task in ptasks:
                 if task.future is None:
                     continue
-                if logger.isEnabledFor(logging.DEBUG):
-                    if task._runner is not None:
-                        msg = "\n******\n"
-                        msg += "WAIT FOR {} {} {}\n".format(task.__class__.__name__, hex(id(task)), task.dependencies)
-                        frame = task._runner.cr_frame
-                        stack = "   " + "\n   ".join(traceback.format_stack(frame))
-                        msg += stack
-                        msg += "******"
-                        print_debug(msg)
-                else:
-                    print_debug("WAIT FOR", task.__class__.__name__, hex(id(task)), task.dependencies)
-                for dep in task.dependencies:
-                    if isinstance(dep, SeamlessBase):
-                        running.add(dep)
-                        #print("TASK",task)
+                if verbose:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        if task._runner is not None:
+                            msg = "\n******\n"
+                            msg += "WAIT FOR {} {} {}\n".format(task.__class__.__name__, hex(id(task)), task.dependencies)
+                            frame = task._runner.cr_frame
+                            stack = "   " + "\n   ".join(traceback.format_stack(frame))
+                            msg += stack
+                            msg += "******"
+                            print_debug(msg)
+                    else:
+                        print_debug("WAIT FOR", task.__class__.__name__, hex(id(task)), task.dependencies)
+                    for dep in task.dependencies:
+                        if isinstance(dep, SeamlessBase):
+                            running.add(dep)
+                            #print("TASK",task)
             if not len(running):
                 if not len(ptasks):
                     return [], False
@@ -382,10 +383,18 @@ class TaskManager:
                     break
             if get_tasks_func is None:
                 if not (len(self.tasks) or len(self.launching_tasks) or len(self.synctasks)):
-                    if manager.livegraph.force_join():
-                        self.loop.run_until_complete(asyncio.sleep(0.1))
-                        ptasks = [None]  # just to prevent the loop from breaking
-        return print_report(verbose=False)
+                    cyclic_scells = manager.livegraph.get_cyclic()
+                    if len(cyclic_scells):
+                        changed = manager.force_join(cyclic_scells)
+                        if changed:
+                            self.loop.run_until_complete(asyncio.sleep(0.1))
+                            ptasks = [None]  # just to prevent the loop from breaking
+        waitfor, background = print_report(verbose=False)
+        if not len(waitfor) and get_tasks_func is None:
+            cyclic_scells = manager.livegraph.get_cyclic()
+            return cyclic_scells, background
+        else:
+            return waitfor, background
 
     async def computation(self, timeout, report, get_tasks_func=None):
         manager = self.manager()
@@ -411,12 +420,24 @@ class TaskManager:
             running = set()
             #print("TASKS", ptasks)
             for task in ptasks:
-                for dep in task.dependencies:
-                    if task.future is None:
-                        continue
-                    if isinstance(dep, SeamlessBase):
-                        running.add(dep)
-                        #print("TASK",task)
+                if task.future is None:
+                    continue
+                if verbose:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        if task._runner is not None:
+                            msg = "\n******\n"
+                            msg += "WAIT FOR {} {} {}\n".format(task.__class__.__name__, hex(id(task)), task.dependencies)
+                            frame = task._runner.cr_frame
+                            stack = "   " + "\n   ".join(traceback.format_stack(frame))
+                            msg += stack
+                            msg += "******"
+                            print_debug(msg)
+                    else:
+                        print_debug("WAIT FOR", task.__class__.__name__, hex(id(task)), task.dependencies)
+                    for dep in task.dependencies:
+                        if isinstance(dep, SeamlessBase):
+                            running.add(dep)
+                            #print("TASK",task)
             if not len(running):
                 if not len(ptasks):
                     return [], False
@@ -459,11 +480,19 @@ class TaskManager:
                     break
             if get_tasks_func is None:
                 if not (len(self.tasks) or len(self.launching_tasks) or len(self.synctasks)):
-                    if manager.livegraph.force_join():
-                        await asyncio.sleep(0.1)
-                        ptasks = [None]  # just to prevent the loop from breaking
+                    cyclic_scells = manager.livegraph.get_cyclic()
+                    if len(cyclic_scells):
+                        changed = manager.force_join(cyclic_scells)
+                        if changed:
+                            self.loop.run_until_complete(asyncio.sleep(0.1))
+                            ptasks = [None]  # just to prevent the loop from breaking
+        waitfor, background = print_report(verbose=False)
+        if not len(waitfor) and get_tasks_func is None:
+            cyclic_scells = manager.livegraph.get_cyclic()
+            return cyclic_scells, background
+        else:
+            return waitfor, background
 
-        return print_report(verbose=False)
 
     def cancel_task(self, task):
         self.barriers.discard(task.taskid)

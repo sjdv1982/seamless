@@ -873,21 +873,17 @@ class LiveGraph:
                     traceback.print_exc()
 
 
-    def force_join(self):
-        """Assume that no running tasks are left.
-        Detect if any structured cells are pending, and force a join on them"""
+    def get_cyclic(self):
         manager = self.manager()
         if manager is None or manager._destroyed:
             return
         cyclic_scells = []
         for cell in self.datacells:
             scell = cell._structured_cell
-            state = get_scell_state(scell)
-            if state == "pending" or scell._cyclic:
+            any_pending = scell_any_pending(scell)
+            if any_pending or scell._cyclic:
                 cyclic_scells.append(scell)
-        if len(cyclic_scells):
-            return manager.force_join(cyclic_scells)
-        return False
+        return cyclic_scells
 
 
 
@@ -900,4 +896,4 @@ from ..cell import Cell
 from ..worker import EditPin
 from ..runtime_reactor import RuntimeReactor
 from .tasks.upon_connection import UponBiLinkTask
-from .cancel import get_scell_state
+from .cancel import get_scell_state, scell_any_pending

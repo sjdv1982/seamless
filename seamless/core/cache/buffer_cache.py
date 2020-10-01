@@ -229,6 +229,8 @@ class BufferCache:
     def get_buffer(self, checksum):
         if checksum is None:
             return None
+        if isinstance(checksum, str):
+            checksum = bytes.fromhex(checksum)
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
             assert isinstance(buffer, bytes)

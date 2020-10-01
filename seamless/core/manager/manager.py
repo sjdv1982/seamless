@@ -299,6 +299,13 @@ class Manager:
         sc = inchannel.structured_cell()
         if sc._destroyed:
             return
+
+        """
+        if not void:
+            print("UNVO", sc, inchannel.subpath)
+            traceback.print_stack(limit=5)
+        """
+
         cachemanager = self.cachemanager
         if not sc._cyclic:
             assert not (inchannel._void and (inchannel._checksum is not None))

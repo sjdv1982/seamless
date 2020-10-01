@@ -52,6 +52,11 @@ def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
 
+def scell_any_pending(scell):
+    for ic in scell.inchannels.values():
+        if ic._checksum is None and not ic._void:
+            return True
+    return False
 
 def get_scell_state(scell, verbose=False):
     """Returns the state for a structured cell.
@@ -135,6 +140,8 @@ def get_scell_state(scell, verbose=False):
 class StructuredCellCancellation:
     _inconsistent = False
     def __init__(self, scell, cycle, trigger=False):
+        if scell in cycle.to_unvoid:
+            cycle._unvoid_structured_cell(scell)
         self.cycle = weakref.ref(cycle)
         self.scell = weakref.ref(scell)
         self.state = get_scell_state(scell)
@@ -250,6 +257,11 @@ class StructuredCellCancellation:
                 print_debug("***CANCEL***: unvoided %s, inchannel %s" % (scell, path))
             elif void and not ic._void:
                 print_debug("***CANCEL***: voided %s, inchannel %s" % (scell, path))
+            elif not void and ic._checksum is not None:
+                if scell._cyclic:
+                    print_debug("***CANCEL***: refused to clear cyclic %s, inchannel %s" % (scell, path))
+                    continue
+                print_debug("***CANCEL***: cleared %s, inchannel %s" % (scell, path))
             if reason is None and void:
                 reason = StatusReasonEnum.UPSTREAM
             manager._set_inchannel_checksum(
@@ -281,7 +293,7 @@ class StructuredCellCancellation:
                     reason = StatusReasonEnum.UNDEFINED
                 self.cycle().to_void.append((scell, reason))
             elif self.mode in (SCModeEnum.JOINING, SCModeEnum.AUTH_JOINING, SCModeEnum.FORCE_JOINING):
-                if self.mode != SCModeEnum.FORCE_JOINING:
+                if self.mode != SCModeEnum.FORCE_JOINING and not scell._cyclic:
                     # The join task went wrong
                     assert scell._data._checksum is None, (scell, old_state, new_state, self.mode)
                 else:
@@ -901,27 +913,7 @@ class CancellationCycle:
                         unvoid_macro(item, livegraph)
                     elif isinstance(item, StructuredCell):
                         scell = item
-                        if scell._exception is not None:
-                            print_debug("***CANCEL***: cleared exception for %s" % scell)
-                            scell._exception = None
-                        if scell._data._void:
-                            print_debug("***CANCEL***: unvoided %s" % scell)
-                            manager._set_cell_checksum(
-                                scell._data, None,
-                                void=False
-                            )
-                        if get_scell_state(scell) == "auth_joining":
-                            if scell.auth is not None:
-                                scell.auth._void = False
-                        if scell.buffer is not None:
-                            scell.buffer._void = False
-                        for inchannel in scell.inchannels.values():
-                            if scell._cyclic and not inchannel._void:
-                                continue
-                            manager._set_inchannel_checksum(
-                                inchannel,
-                                None, void=False, from_cancel_system=True
-                            )
+                        self._unvoid_structured_cell(scell)
                         unvoid_scell_all(scell, livegraph)
                     else:
                         raise TypeError(item)
@@ -940,55 +932,98 @@ class CancellationCycle:
 
         #print("/CYCLE2")
 
+    def _unvoid_structured_cell(self, scell):
+        manager = self.manager()
+        if scell._exception is not None:
+            print_debug("***CANCEL***: cleared exception for %s" % scell)
+            scell._exception = None
+        if scell._data._void:
+            print_debug("***CANCEL***: unvoided %s" % scell)
+            manager._set_cell_checksum(
+                scell._data, None,
+                void=False
+            )
+        if get_scell_state(scell) == "auth_joining":
+            if scell.auth is not None:
+                scell.auth._void = False
+        if scell.buffer is not None:
+            scell.buffer._void = False
+
     def force_join(self, cyclic_scells):
         old_cyclic_cells = []
-        pending_cells = []
+        new_cyclic_cells = []
         for scell in cyclic_scells:
-            if get_scell_state(scell) == "pending":
-                pending_cells.append(scell)
-            elif scell._cyclic:
+            if scell._cyclic:
                 old_cyclic_cells.append(scell)
+            elif scell_any_pending(scell):
+                new_cyclic_cells.append(scell)
             else:
                 raise ValueError(scell)  # neither cyclic nor pending
 
-        if len(pending_cells):
-            msg = "Possible cyclic dependencies detected. Force-joining %d structured cells" % len(pending_cells)
-            if len(pending_cells) <= 5:
+        if len(new_cyclic_cells):
+            msg = "Possible cyclic dependencies detected, involving %d cells" % len(new_cyclic_cells)
+            if len(new_cyclic_cells) <= 5:
                 msg += ":\n"
-                for pending_cell in pending_cells:
-                    msg += "   " + str(pending_cell) + "\n"
+                for scell in new_cyclic_cells:
+                    msg += "   " + str(scell) + "\n"
             else:
                 msg += "..."
-            print_info(msg)
-            to_join = pending_cells
-        else:
-            # We did a force join cycle already
-            # Now let's see if we can un-cycle
-            to_join = []
-            for scell in old_cyclic_cells:
-                checksum = scell._data._checksum
-                if scell not in self.cyclic_checksums:
-                    print_info("Cyclic, retry", scell)
-                    to_join.append(scell)
-                elif self.cyclic_checksums[scell] != checksum:
-                    print_debug("Cyclic, retry", scell)
-                    to_join.append(scell)
-                else:
-                    print_info("Cyclic => uncyclic", scell)
-                    scell._cyclic = False # good, this cell seems to be stable, no change
-        manager = self.manager()
-        livegraph = manager.livegraph
-        for scell in to_join:
-            if scell._cyclic and get_scell_state(scell) != "pending":
-                self.cyclic_checksums[scell] = scell._data._checksum
+            print_warning(msg)
+
+        stable = (len(new_cyclic_cells) == 0)
+        stable_cells = []
+        for scell in old_cyclic_cells:
+            checksum = scell._data._checksum
+            if scell not in self.cyclic_checksums:
+                print_info("cyclic, retry", scell)
+                stable = False
+            elif self.cyclic_checksums[scell] != checksum:
+                print_info("cyclic, retry", scell)
+                stable = False
             else:
-                self.cyclic_checksums.pop(scell, None)
-            unvoid_scell_all(scell, livegraph)
-            scell._cyclic = True
-            scell._joining = True
-            StructuredCellJoinTask(manager, scell).launch()
-            scell._mode = SCModeEnum.FORCE_JOINING
-        return len(to_join)  # there will be change
+                stable_cells.append(scell)
+
+        """
+        if stable:
+            for scell in cyclic_scells:
+                if scell_any_pending(scell):
+                    for inchannel in scell.inchannels.values():
+                        if inchannel._checksum is None and not inchannel._void:
+                            print_info("cyclic => void pending inchannels", scell)
+                            inchannel._void = False
+                            inchannel._status_reason = None
+                    stable_cells.remove(scell)
+        """
+
+        if not stable:
+            for scell in stable_cells:
+                print_info("cyclic => cyclic (because of other cyclic cells)", scell)
+
+        if stable:
+            for scell in cyclic_scells:
+                print_info("cyclic => uncyclic", scell)
+                scell._cyclic = False
+            self.cyclic_checksums.clear()
+            return False  # no change
+        else:
+            manager = self.manager()
+            livegraph = manager.livegraph
+            for scell in cyclic_scells:
+                """
+                from seamless.core.cache.buffer_cache import buffer_cache
+                print("CYCLIC", scell, buffer_cache.get_buffer(scell.checksum), scell.exception)
+                get_scell_state(scell, True)
+                """
+                if scell._cyclic:
+                    self.cyclic_checksums[scell] = scell._data._checksum
+                else:
+                    scell._cyclic = True
+                unvoid_scell_all(scell, livegraph)
+                scell._joining = True
+                StructuredCellJoinTask(manager, scell).launch()
+                scell._mode = SCModeEnum.FORCE_JOINING
+            return True  # change
+
 
 
 from ..utils import overlap_path
