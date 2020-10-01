@@ -17,6 +17,11 @@ Stage 6
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': -4, 'f': 20} >
 Stage 7
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 108, 'f': 20} >
+Possible cyclic dependencies detected, involving 3 cells:
+   Seamless StructuredCell: .tf2.result
+   Seamless StructuredCell: .qq
+   Seamless StructuredCell: .tf2.inp
+
 <Silk: None >
 <Silk: None >
 Traceback (most recent call last):
@@ -25,7 +30,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in validator
     assert self.f > self.d
@@ -40,13 +45,17 @@ Failed validating 'validators' in schema:
                              '    print("VALIDATE", self)\n'
                              '    assert self.g > self.c + self.f\n'
                              '    assert self.f > self.d\n',
-                     'language': 'python'}]}
+                     'language': 'python',
+                     'name': 'validator'}]}
 
 On instance:
     {'g': 50, 'c': 8, 'd': 108, 'f': 20}
 
 Stage 8
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 88, 'f': 20} >
+Possible cyclic dependencies detected, involving 1 cells:
+   Seamless StructuredCell: .tf2.inp
+
 <Silk: None >
 <Silk: None >
 Traceback (most recent call last):
@@ -55,7 +64,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in validator
     assert self.f > self.d
@@ -70,7 +79,8 @@ Failed validating 'validators' in schema:
                              '    print("VALIDATE", self)\n'
                              '    assert self.g > self.c + self.f\n'
                              '    assert self.f > self.d\n',
-                     'language': 'python'}]}
+                     'language': 'python',
+                     'name': 'validator'}]}
 
 On instance:
     {'g': 50, 'c': 8, 'd': 88, 'f': 20}
