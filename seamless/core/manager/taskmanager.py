@@ -383,7 +383,7 @@ class TaskManager:
             if get_tasks_func is None:
                 if not (len(self.tasks) or len(self.launching_tasks) or len(self.synctasks)):
                     if manager.livegraph.force_join():
-                        self.loop.run_until_complete(asyncio.sleep(1))
+                        self.loop.run_until_complete(asyncio.sleep(0.1))
                         ptasks = [None]  # just to prevent the loop from breaking
         return print_report(verbose=False)
 
@@ -441,8 +441,8 @@ class TaskManager:
                     curr_timeout = report
                 else:
                     curr_timeout = None
-            if len(ptasks):
-                futures = [ptask.future for ptask in ptasks]
+            if len(ptasks) and ptasks != [None]:
+                futures = [ptask.future for ptask in ptasks if ptask]
                 await asyncio.wait(futures, timeout=0.05)  # this can go wrong, hence the timeout
             else:
                 await asyncio.sleep(0.001)
@@ -460,7 +460,7 @@ class TaskManager:
             if get_tasks_func is None:
                 if not (len(self.tasks) or len(self.launching_tasks) or len(self.synctasks)):
                     if manager.livegraph.force_join():
-                        await asyncio.sleep(1)
+                        await asyncio.sleep(0.1)
                         ptasks = [None]  # just to prevent the loop from breaking
 
         return print_report(verbose=False)
