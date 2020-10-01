@@ -84,8 +84,8 @@ TRANSFORMER EXCEPTION Traceback (most recent call last):
 TypeError: unsupported operand type(s) for +: 'int' and 'str'
 
 START3
-<Silk: None >
+<Silk: 39 >
 TRANSFORMER INPUT STATUS Status: OK
-TRANSFORMER STATUS *tf*: Status: upstream => code undefined
+TRANSFORMER STATUS Status: OK
 {'properties': {'a': {'type': 'integer'}, 'b': {'type': 'string'}}, 'type': 'object'}
 {'a': 13, 'b': 'testing'}
