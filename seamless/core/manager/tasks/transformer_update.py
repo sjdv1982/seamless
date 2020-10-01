@@ -85,6 +85,7 @@ class TransformerUpdateTask(Task):
             output_subcelltype = first_output._subcelltype
         outputpin = outputname, output_celltype, output_subcelltype
         self.waiting_for_job = True
+        from seamless.core.cache.buffer_cache import buffer_cache
         await transformation_cache.update_transformer(
             transformer, celltypes, inputpins, outputpin
         )

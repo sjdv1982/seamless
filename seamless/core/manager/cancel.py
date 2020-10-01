@@ -659,6 +659,8 @@ class CancellationCycle:
             accessor.clear_expression(manager.livegraph)
         accessor._checksum = None  #  accessors do not hold references to their checksums. Expressions do.
         accessor._void = void
+        if not void:
+            accessor.exception = None
 
     def _cancel_worker(self, worker, *, void, reason):
         # Always fire along void

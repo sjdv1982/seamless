@@ -4,6 +4,12 @@ a OK!
 test OK!
  >
 START
+Possible cyclic dependencies detected, involving 4 cells:
+   Seamless StructuredCell: .job.inp
+   Seamless StructuredCell: .job.result
+   Seamless StructuredCell: .filesystem
+   Seamless StructuredCell: .result
+
 <Silk: This OK!
 is OK!
 a OK!

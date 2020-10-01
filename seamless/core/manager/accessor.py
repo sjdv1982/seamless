@@ -9,6 +9,7 @@ class ReadAccessor(Accessor):
     _status_reason = None
     _new_macropath = False # if source or target is a newly bound macropath
     _prelim = False # if accessor represents a preliminary result
+    exception = None
     def __init__(self, source, manager, path, celltype, *, hash_pattern):
         self.source = source
         self.manager = weakref.ref(manager)

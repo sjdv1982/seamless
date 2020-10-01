@@ -117,6 +117,9 @@ class Cell(Base):
             hcell = self._get_hcell()
         except Exception:
             return
+        if hcell.get("UNTRANSLATED"):
+            print("WARNING: ignored value update for %s, because celltype changed" % self)
+            return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop("value", None)
@@ -132,6 +135,9 @@ class Cell(Base):
             hcell = self._get_hcell()
         except Exception:
             return
+        if hcell.get("UNTRANSLATED"):
+            print("WARNING: ignored value update for %s, because celltype changed" % self)
+            return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop("auth", None)
@@ -146,6 +152,9 @@ class Cell(Base):
         try:
             hcell = self._get_hcell()
         except Exception:
+            return
+        if hcell.get("UNTRANSLATED"):
+            print("WARNING: ignored value update for %s, because celltype changed" % self)
             return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
@@ -591,15 +600,12 @@ class Cell(Base):
         if value == "code" and "language" not in hcell:
             hcell["language"] = "python"
         hcell.pop("checksum", None)
-        if cellvalue is not None and not hcell.get("UNTRANSLATED"):
-            self._parent()._do_translate(force=True) # This needs to be kept!
-            try:
-                self.set(cellvalue)
-            except Exception:
-                pass
-        else:
-            if self._parent() is not None:
-                self._parent()._translate()
+        hcell["UNTRANSLATED"] = True
+        if cellvalue is not None:
+            hcell["TEMP"] = cellvalue
+            hcell.pop("checksum", None)
+        if self._parent() is not None:
+            self._parent()._translate()
 
     @property
     def mimetype(self):

@@ -152,7 +152,7 @@ class Transformer(Worker):
         from .transformation import RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError
         if not self._void:
             return None
-        if self._status_reason == StatusReasonEnum.UPSTREAM:
+        if self._status_reason == StatusReasonEnum.INVALID:
             livegraph = self._get_manager().livegraph
             upstreams = livegraph.transformer_to_upstream.get(self)
             exceptions = {}
@@ -160,10 +160,7 @@ class Transformer(Worker):
                 for pinname, accessor in upstreams.items():
                     if accessor is None: #unconnected
                         continue
-                    expression = accessor.expression
-                    if expression is None:
-                        continue
-                    exc = expression.exception
+                    exc = accessor.exception
                     if exc is not None:
                         exceptions[pinname] = exc
             if not len(exceptions):

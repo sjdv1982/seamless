@@ -163,6 +163,7 @@ def unvoid_accessor(accessor, livegraph):
         return
     #print("UNVOID ACCESSOR", accessor)
     accessor._void = False
+    accessor.exception = None
     target = accessor.write_accessor.target()
     if target is None:
         return

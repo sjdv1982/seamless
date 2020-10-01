@@ -55,17 +55,13 @@ class CellUpdateTask(Task):
                         target = target._cell
                         if target is None:
                             continue
+                    manager.cancel_accessor(accessor, void=False)
                     if isinstance(target, Cell):
                         assert not target._void, accessor
-                    if accessor._new_macropath:
-                        manager.cancel_cell(target, void=False)
 
-                        # Chance that the above line cancels our own task
-                        if self._canceled:
-                            return
-                    else:
-                        taskmanager = manager.taskmanager
-                        taskmanager.cancel_accessor(accessor)
+                    # Chance that the above line cancels our own task
+                    if self._canceled:
+                        return
                     task = AccessorUpdateTask(manager, accessor)
                     task.launch()
             for editpin in livegraph.cell_to_editpins[cell]:
