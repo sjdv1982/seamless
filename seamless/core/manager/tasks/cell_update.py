@@ -48,9 +48,10 @@ class CellUpdateTask(Task):
             for accessor in accessors:
                 if accessor._void or accessor._checksum is not None:
                     accessors_to_cancel.append(accessor)
+                else:
+                    manager.taskmanager.cancel_accessor(accessor)
 
-            if len(accessors_to_cancel):
-                manager.cancel_accessors(accessors_to_cancel, False)
+            manager.cancel_accessors(accessors_to_cancel, False)
 
             # Chance that the above line cancels our own task
             if self._canceled:

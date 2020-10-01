@@ -29,6 +29,7 @@ y = ctx.lib.subtract
 print(y._path)
 print(y._constructor)
 print(len(y._graph))
+print(len(y._graph["nodes"]))
 z = stdlib.subtract
 print(z.constructor)
 print(len(z._graph))

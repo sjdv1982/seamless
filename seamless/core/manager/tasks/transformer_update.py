@@ -114,6 +114,8 @@ class TransformerResultUpdateTask(Task):
         for accessor in downstreams:
             if accessor._void or accessor._checksum is not None:
                 accessors_to_cancel.append(accessor)
+            else:
+                manager.taskmanager.cancel_accessor(accessor)
 
         manager.cancel_accessors(accessors_to_cancel, False)
 

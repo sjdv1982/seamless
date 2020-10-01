@@ -596,8 +596,17 @@ class CancellationCycle:
                     manager._set_cell_checksum(scell._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
         else:
             if scell._data._void:
-                if scell._modified_auth:
+                unvoid_by_schema = False
+                if update_schema and not scell._auth_invalid:
+                    valid_inchannels = {k for k,ic in scell.inchannels.items() if not ic._void}
+                    has_auth = scell.auth is not None and scell.auth._checksum is not None
+                    if has_auth or valid_inchannels:
+                        unvoid_by_schema = True
+                if scell._modified_auth or unvoid_by_schema:
                     print_debug("***CANCEL***: unvoided %s" % scell)
+                    scell._exception = None
+                    if scell._modified_auth:
+                        scell._auth_invalid = False
                     manager = self.manager()
                     manager._set_cell_checksum(scell._data, None, void=False)
             elif update_schema and scell._data._checksum is not None:

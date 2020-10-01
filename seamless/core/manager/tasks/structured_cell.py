@@ -318,6 +318,9 @@ class StructuredCellJoinTask(StructuredCellTask):
                         for accessor in downstreams[out_path]:
                             if accessor._void or accessor._checksum is not None:
                                 accessors_to_cancel.append(accessor)
+                            else:
+                                taskmanager.cancel_accessor(accessor)
+
                     if len(accessors_to_cancel):
                         manager.cancel_accessors(accessors_to_cancel, False)
 
