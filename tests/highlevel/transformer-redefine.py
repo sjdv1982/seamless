@@ -29,6 +29,8 @@ extern "C" int transform(int a, int b, double *result) {
 }"""
 ctx.compute()
 print(ctx.result.value)
+print(ctx.status)
+print(ctx.transform.exception)
 
 del ctx.transform  # required!
                    # else, the following line

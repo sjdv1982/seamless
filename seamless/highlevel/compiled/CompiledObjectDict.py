@@ -38,7 +38,7 @@ class CompiledObjectDict:
             if main_module is None:
                 return None
             # TODO: in case of link_options, return a wrapper that triggers ctx.translate() upon modification
-            return main_module.get(attr)            
+            return main_module.get(attr)
 
         return CompiledObjectWrapper(self._worker(), attr)
 

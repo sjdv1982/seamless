@@ -160,7 +160,7 @@ class StructuredCellCancellation:
                 incon = (self.state, scell._data._void)
                 if known_inconsistency is None or known_inconsistency != incon:
                     traceback.print_exc()
-                    traceback.print_stack()
+                    ###traceback.print_stack()
                     get_scell_state(scell, verbose=True)
                     cycle._known_inconsistencies[scell.path] = incon
             else:
@@ -277,7 +277,10 @@ class StructuredCellCancellation:
             self.clear_sc_data()
             self.launch_auth_task(taskmanager)
 
-        #print("RESOLVE", scell, old_state, new_state, self.mode, scell._data._checksum is None)
+        """
+        print("RESOLVE", scell, old_state, new_state, self.mode, scell._data._checksum is None)
+        get_scell_state(scell, verbose=True)
+        """
         if new_state == "void":
             if self.mode == SCModeEnum.VOID:
                 pass
@@ -434,6 +437,7 @@ class StructuredCellCancellation:
             if self.mode != SCModeEnum.EQUILIBRIUM:
                 raise ValueError((scell, old_state, new_state, self.mode, scell._data._checksum is None))
             taskmanager.cancel_structured_cell(scell, no_auth=True)
+            self.clear_sc_data()
             scell._joining = True
             StructuredCellJoinTask(taskmanager.manager, scell).launch()
             scell._mode = SCModeEnum.JOINING
@@ -613,9 +617,9 @@ class CancellationCycle:
                 print_debug("***CANCEL***: cleared %s" % scell)
                 manager = self.manager()
                 manager._set_cell_checksum(scell._data, None, void=False)
-            if scell not in self.scells:
-                print_debug("***CANCEL***: trigger %s" % scell)
-                self.scells[scell] = StructuredCellCancellation(scell, self)
+        if scell not in self.scells:
+            print_debug("***CANCEL***: trigger %s" % scell)
+            self.scells[scell] = StructuredCellCancellation(scell, self)
 
     def cancel_accessor(self, accessor, *, void, reason):
         if void:

@@ -55,18 +55,20 @@ class StructuredCellAuthTask(StructuredCellTask):
         await self.await_sc_tasks(auth=True)
 
         value = sc._auth_value
-        if value is None:
-            return
 
         locknr = await acquire_evaluation_lock(self)
         try:
-            auth_buf = await SerializeToBufferTask(
-                manager, value, "mixed",
-                use_cache=False  # the auth_value object can be modified by Silk at any time
-            ).run()
-            auth_checksum = await CalculateChecksumTask(manager, auth_buf).run()
-            buffer_cache.cache_buffer(auth_checksum, auth_buf)
-            auth_checksum = auth_checksum.hex()
+            if value is None:
+                sc._auth_invalid = True
+                auth_checksum = None
+            else:
+                auth_buf = await SerializeToBufferTask(
+                    manager, value, "mixed",
+                    use_cache=False  # the auth_value object can be modified by Silk at any time
+                ).run()
+                auth_checksum = await CalculateChecksumTask(manager, auth_buf).run()
+                buffer_cache.cache_buffer(auth_checksum, auth_buf)
+                auth_checksum = auth_checksum.hex()
             sc.auth._set_checksum(auth_checksum, from_structured_cell=True)
         except CancelledError as exc:
             if self._canceled:
@@ -81,7 +83,8 @@ class StructuredCellAuthTask(StructuredCellTask):
             sc._auth_invalid = True
         else:
             sc._auth_value = None
-            sc._auth_invalid = False
+            if auth_checksum is not None:
+                sc._auth_invalid = False
         finally:
             release_evaluation_lock(locknr)
             if not self._canceled:

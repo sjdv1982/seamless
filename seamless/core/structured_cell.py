@@ -192,7 +192,7 @@ class StructuredCell(SeamlessBase):
             return
 
         if self._auth_value is None:
-            if self._auth_invalid:
+            if self._auth_invalid and self._exception is not None:
                 raise AttributeError(path)
             self._auth_value = deepcopy(self.auth.data) # not .value, because of hash pattern
 

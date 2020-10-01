@@ -181,7 +181,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     main_module_checksum = checksum.get("main_module",
       'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c' # {}
     )
-    ctx.main_module.auth._set_checksum(main_module_checksum, initial=True)
+    set_structured_cell_from_checksum(ctx.main_module, {"auth": main_module_checksum})
     inp_checksum = convert_checksum_dict(checksum, "input")
     set_structured_cell_from_checksum(inp, inp_checksum)
     namespace[node["path"] + ("code",), True] = ctx.code, node
