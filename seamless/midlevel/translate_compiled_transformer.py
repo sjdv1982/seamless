@@ -110,7 +110,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     all_inchannels = set(inchannels)
     pin_cells = {}
     for pin in list(node["pins"].keys()):
-        pin_cell_name = pin + "_INCHANNEL"
+        pin_cell_name = pin + "_PIN"
         assert pin_cell_name not in all_inchannels
         assert pin_cell_name not in node["pins"]
         pin_cell = cell("mixed")
@@ -122,6 +122,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
       ctx, input_name, inchannels, [()],
       fingertip_no_remote=node.get("fingertip_no_remote", False),
       fingertip_no_recompute=node.get("fingertip_no_recompute", False),
+      hash_pattern= node.get("hash_pattern"),
       return_context=True
     )
 
@@ -164,7 +165,9 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
 
     # Transformer itself
     ctf = ctx.tf = context()
-    debug = node["debug"]
+    debug = node["debug"] or node.get("compiled_debug")
+    if debug is None:
+        debug = False
     _init_from_graph(ctf, debug)
 
     ctx.code = cell("text")
@@ -178,16 +181,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     main_module_checksum = checksum.get("main_module",
       'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c' # {}
     )
-    ctx.main_module.auth._set_checksum(main_module_checksum, initial=True)
-    inp_checksum = {}
-    for k in checksum:
-        if k == "schema":
-            inp_checksum[k] = checksum[k]
-            continue
-        if not k.startswith("input"):
-            continue
-        k2 = "value" if k == "input" else k[len("input_"):]
-        inp_checksum[k2] = checksum[k]
+    set_structured_cell_from_checksum(ctx.main_module, {"auth": main_module_checksum})
+    inp_checksum = convert_checksum_dict(checksum, "input")
     set_structured_cell_from_checksum(inp, inp_checksum)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
@@ -232,3 +227,4 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     namespace[node["path"], False] = result, node
 
 from .util import get_path, as_tuple, build_structured_cell, cell_setattr, STRUC_ID
+from .convert_checksum_dict import convert_checksum_dict

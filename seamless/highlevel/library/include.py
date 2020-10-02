@@ -1,16 +1,6 @@
 from copy import deepcopy
 from inspect import Signature, Parameter
 
-def get_argument_value(name, value):
-    if isinstance(value, Cell):
-        if value._get_hcell().get("constant"):
-            value = value.value
-        else:
-            raise TypeError("'%s' is a value argument, you cannot pass a cell unless it is constant" % name)
-    elif isinstance(value, Base):
-        raise TypeError("'%s' must be value or constant cell, not '%s'" % (name, type(value)))
-    return RichValue(value).value
-
 class IncludedLibraryContainer:
     def __init__(self, ctx, path):
         assert isinstance(ctx, Context)
@@ -58,44 +48,16 @@ class IncludedLibrary:
 
     def __call__(self, *args, **kwargs):
         arguments0 = self._signature.bind(*args, **kwargs)
-        arguments0.apply_defaults()        
-        arguments = {}        
+        arguments0.apply_defaults()
+        arguments = {}
         for argname, argvalue in arguments0.arguments.items():
             par = self._params[argname]
-            if par["type"] == "value":
-                value = get_argument_value(argname, argvalue)
-            elif par["type"] == "context":
-                if not isinstance(argvalue, (Context, SubContext)):
-                    msg = "%s must be Context, not '%s'"
-                    raise TypeError(msg % (argname, type(argvalue)))
-                value = argvalue._path
-            elif par["type"] == "cell":
-                if not isinstance(argvalue, Cell):
-                    msg = "%s must be Cell, not '%s'"
-                    raise TypeError(msg % (argname, type(argvalue)))
-                value = argvalue._path
-            else:  # par["type"] == "celldict":
-                try:
-                    argvalue.items()
-                except Exception:
-                    raise TypeError((argname, type(argvalue))) from None
-                value = {}
-                for k, v in argvalue.items(): 
-                    if not isinstance(k, str):
-                        msg = "%s must contain string keys, not '%s'"
-                        raise TypeError(msg % (argname, type(k)))
-                    if not isinstance(v, Cell):
-                        msg = "%s['%s'] must be Cell, not '%s'"
-                        raise TypeError(msg % (argname, k, type(v)))
-                    value[k] = v._path
-            arguments[argname] = value
+            arguments[argname] = parse_argument(argname, argvalue, par)
 
-        libmacro = LibMacro(self._ctx, libpath=self._path, arguments=arguments)
-        return libmacro
+        libinstance = LibInstance(self._ctx, libpath=self._path, arguments=arguments)
+        return libinstance
 
 from ...core.cached_compile import cached_compile
-from .libmacro import LibMacro        
-from ..Base import Base
-from ..Cell import Cell
-from ..Context import Context, SubContext
-from ...silk.Silk import RichValue
+from .libinstance import LibInstance
+from .argument import parse_argument
+from ..Context import Context

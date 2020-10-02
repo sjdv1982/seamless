@@ -7,9 +7,26 @@ from ...mixed.io import deserialize as mixed_deserialize
 
 from .calculate_checksum import lrucache2
 
-deserialize_cache = lrucache2(100)
+import logging
+logger = logging.getLogger("seamless")
+
+deserialize_cache = lrucache2(10)
+
+def validate_checksum(v):
+    if isinstance(v, str):
+        bytes.fromhex(v)
+    elif isinstance(v, list):
+        for vv in v:
+            validate_checksum(vv)
+    elif isinstance(v, dict):
+        for vv in v.values():
+            validate_checksum(vv)
+    else:
+        raise TypeError(v)
 
 def _deserialize(buffer, checksum, celltype):
+    assert isinstance(checksum, bytes), type(checksum)
+    logger.debug("DESERIALIZE: buffer of length {}, checksum {}".format(len(buffer), checksum.hex()))
     if celltype in text_types2:
         s = buffer.decode()
         assert s.endswith("\n")
@@ -31,7 +48,7 @@ def _deserialize(buffer, checksum, celltype):
         assert s.endswith("\n")
         try:
             value = json.loads(s)
-        except json.JSONDecodeError:            
+        except json.JSONDecodeError:
             raise ValueError(s) from None
         if not isinstance(value, str):
             raise ValueError(value)
@@ -48,21 +65,26 @@ def _deserialize(buffer, checksum, celltype):
         assert s.endswith("\n")
         value = literal_eval(s)
         if isinstance(value, (int, bool)):
-            value = float(value)        
+            value = float(value)
         if not isinstance(value, float):
             raise ValueError(value)
     elif celltype == "bool":
         s = buffer.decode()
         assert s.endswith("\n")
         try:
-            value = literal_eval(s.replace("true", "True").replace("false", "False"))        
+            value = literal_eval(s.replace("true", "True").replace("false", "False"))
         except ValueError:
             raise ValueError(s) from None
         if not isinstance(value, bool):
             raise ValueError(value)
+    elif celltype == "checksum":
+        value, storage = mixed_deserialize(buffer)
+        if storage != "pure-plain":
+            raise TypeError
+        validate_checksum(value)
     else:
         raise TypeError(celltype)
-    
+
     return value
 
 
@@ -75,17 +97,19 @@ async def deserialize(buffer, checksum, celltype, copy):
     if buffer is None:
         return None
     value = deserialize_cache.get((checksum, celltype))
+    ###
+    copy = True # Apparently, sometimes the promise of not modifying the value is violated... for now, enforce a copy
+    ###
     if value is not None:
         if copy:
             newvalue = deepcopy(value)
-            id_newvalue = id(newvalue)
-            serialize_cache[id_newvalue, celltype] = buffer, newvalue
             return newvalue
         else:
             return value
-            
-    # ProcessPool is too slow, but ThreadPool works
-    if len(buffer) > 1000000:
+
+
+    # ProcessPool is too slow, but ThreadPool works... do experiment with later
+    if 0:
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor() as executor:
             value = await loop.run_in_executor(
@@ -97,28 +121,32 @@ async def deserialize(buffer, checksum, celltype, copy):
         value = _deserialize(buffer, checksum, celltype)
     if celltype not in text_types2:
         deserialize_cache[checksum, celltype] = value
+        if copy:
+            value = deepcopy(value)
     evaluation_cache_1.add((checksum, celltype))
-    id_value = id(value)
-    serialize_cache[id_value, celltype] = buffer, value
+    if not copy:
+        id_value = id(value)
+        serialize_cache[id_value, celltype] = buffer, value
     return value
 
 def deserialize_sync(buffer, checksum, celltype, copy):
     """Deserializes a buffer into a value
     First, it is attempted to retrieve the value from cache.
     In case of a cache hit, a copy is returned only if copy=True
-    In case of a cache miss, deserialization is performed 
+    In case of a cache miss, deserialization is performed
     (and copy is irrelevant).
-    
-    
+
+
     This function can be executed if the asyncio event loop is already running"""
     if buffer is None:
         return None
+    ###
+    copy = True # Apparently, sometimes the promise of not modifying the value is violated... for now, enforce a copy
+    ###
     value = deserialize_cache.get((checksum, celltype))
     if value is not None:
         if copy:
             newvalue = deepcopy(value)
-            id_newvalue = id(newvalue)
-            serialize_cache[id_newvalue, celltype] = buffer, newvalue
             return newvalue
         else:
             return value
@@ -126,9 +154,12 @@ def deserialize_sync(buffer, checksum, celltype, copy):
     value = _deserialize(buffer, checksum, celltype)
     if celltype not in text_types2:
         deserialize_cache[checksum, celltype] = value
+        if copy:
+            value = deepcopy(value)
     evaluation_cache_1.add((checksum, celltype))
-    id_value = id(value)
-    serialize_cache[id_value, celltype] = buffer, value
+    if not copy:
+        id_value = id(value)
+        serialize_cache[id_value, celltype] = buffer, value
     return value
 
 

@@ -2,14 +2,16 @@ import asyncio, traceback
 loop = asyncio.get_event_loop()
 
 import sys
-from seamless.core.cache import buffer_cache, CacheMissError
-buffer_cache.TEMP_KEEP_ALIVE = 0.001
-buffer_cache.TEMP_KEEP_ALIVE_SMALL = 0.001
-import seamless.core.protocol.calculate_checksum 
-calculate_checksum = sys.modules["seamless.core.protocol.calculate_checksum"]
+from seamless.core.cache.buffer_cache import buffer_cache, CacheMissError
+buffer_cache.LIFETIME_TEMP = 0.01
+buffer_cache.LIFETIME_TEMP_SMALL = 0.01
+buffer_cache.LOCAL_MODE_FULL_PERSISTENCE = False
+from seamless.core.protocol import calculate_checksum_module as calculate_checksum
 calculate_checksum.checksum_cache.disable()
 
 from seamless.core import context, cell, transformer
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
 
 ctx = context(toplevel=True)
 manager = ctx._get_manager()
@@ -23,7 +25,8 @@ ctx.aa = cell("int")
 ctx.tf.aa.connect(ctx.aa)
 ctx.compute()
 checksum = ctx.aa.checksum
-print(ctx._get_manager().resolve(checksum), checksum)
+print(checksum)
+print(ctx.aa.value)
 ctx.a.set(5)
 print("START")
 ctx.compute()
@@ -35,7 +38,6 @@ ctx.aa._fingertip_recompute = False
 
 print(ctx.aa.checksum, checksum)
 try:
-    #print(manager.resolve(checksum))
     print(ctx.aa.value)
 except CacheMissError as exc:
     traceback.print_exception(type(exc), exc, None)

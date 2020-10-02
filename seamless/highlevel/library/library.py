@@ -27,7 +27,7 @@ def validate_params(params):
             "io": io,
             "default": default
         }
-    return result 
+    return result
 
 def get_library(path):
     graph, zip, constructor, params = _libraries[path]
@@ -53,13 +53,13 @@ class LibraryContainer:
             return get_library(path)
         except KeyError:
             return LibraryContainer(path)
-    def __setattr__(self, attr, value): 
+    def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
         libctx = value
         if not isinstance(libctx, Context):
             raise TypeError(type(libctx))
-        path = self._path + (attr,)        
+        path = self._path + (attr,)
         graph = libctx.get_graph()
         zip = libctx.get_zip()
         set_library(path, graph, zip, None, None)
@@ -77,9 +77,9 @@ class Library:
             return super().__setattr__(attr, value)
         if attr == "ctx":
             self._graph = ctx.get_graph()
-            self._zip = ctx.get_zip()            
+            self._zip = ctx.get_zip()
             set_library(
-                self._path, 
+                self._path,
                 self._graph, self._zip,
                 self._constructor, self._params
             )
@@ -91,7 +91,7 @@ class Library:
                 constructor = code
             self._constructor = constructor
             set_library(
-                self._path, 
+                self._path,
                 self._graph, self._zip,
                 self._constructor, self._params
             )
@@ -102,7 +102,7 @@ class Library:
                 raise TypeError(type(value))
             self._params = params
             set_library(
-                self._path, 
+                self._path,
                 self._graph, self._zip,
                 self._constructor, self._params
             )
@@ -123,8 +123,8 @@ class Library:
                 raise AttributeError(attr)
             ctx = Context()
             ctx._weak = True
-            ctx.set_graph(graph)
             ctx.add_zip(self._zip)
+            ctx.set_graph(graph)
             ctx.compute()
             return ctx
         elif attr == "constructor":
@@ -139,7 +139,7 @@ class Library:
             return MixedDict(monitor, ())
         else:
             raise AttributeError(attr)
-    
+
     def include(self, ctx, full_path=False):
         assert self.constructor is not None
         assert self.params is not None
@@ -147,16 +147,16 @@ class Library:
         lib = {
             "graph": self._graph,
             "path": list(path),
-            "constructor":self._constructor, 
+            "constructor": self._constructor,
             "params": self._params,
             "language": "python",
             "api": "pyseamless"
-        }        
+        }
         IncludedLibrary(ctx, **lib)   # to validate the arguments
         s = json.dumps(lib)
         lib = json.loads(s)
         ctx.add_zip(self._zip)
-        ctx._graph.lib[path] = lib
+        ctx._set_lib(path, lib)
 
     def include_zip(self, ctx):
         ctx.add_zip(self._zip)

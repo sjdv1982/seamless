@@ -1,0 +1,29 @@
+host: 0.0.0.0  # all IPs
+port: 5522
+
+redis:
+    host: 172.17.0.1  # bridge IP
+    port: 6379
+
+flatfile:
+    directory: /data
+
+
+backends: # backends are queried sequentially, in order; you probably want to define cache sources before non-cache sources
+-
+    type: source    # can be source or sink
+    backend: redis  # one of:  redis, flatfile
+
+-
+    type: sink
+    backend: redis
+    cache: True     # if True, values retrieved from (other) sources are written in here
+
+-
+    type: source
+    backend: flatfile
+
+-
+    type: sink
+    backend: flatfile
+    cache: False

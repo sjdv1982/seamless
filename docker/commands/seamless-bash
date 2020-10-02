@@ -2,7 +2,12 @@ set -u -e
 
 [ $(id -u) != 1000 ] && echo 'WARNING: The Seamless container will run as user jovyan (ID 1000), which is not the same as your current user ID '$(id -u)'. When reading/writing fails for /cwd, check that '$(pwd) 'gives enough file permissions.' >> /dev/stderr
 
-gdbflags='--cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined'
+###
+# The following does not currently work (Ubuntu 18.04.3, Docker 19.03.12); not even --privileged works, unless we are root:
+# gdbflags='--cap-add SYS_PTRACE --security-opt=seccomp:unconfined --security-opt=apparmor:unconfined'
+gdbflags='' ###
+
+
 docker run --rm \
   $gdbflags \
   --network=host \

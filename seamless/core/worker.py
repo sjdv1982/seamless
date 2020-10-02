@@ -2,7 +2,7 @@ import weakref
 from . import SeamlessBase
 from .status import StatusReasonEnum
 
-def _cell_from_pin(self, celltype):    
+def _cell_from_pin(self, celltype):
     assert isinstance(self, (InputPin, EditPin))
     worker = self.worker_ref()
     if worker is None:
@@ -48,7 +48,7 @@ class Worker(SeamlessBase):
         else:
             return self._pins[attr]
 
-    
+
     def __dir__(self):
         return object.__dir__(self) + list(self._pins.keys())
 
@@ -116,7 +116,7 @@ class InputPin(InputPinBase):
     def set(self, *args, **kwargs):
         """Sets the value of the connected cell"""
         return self.cell().set(*args, **kwargs)
-        
+
 
 class OutputPin(OutputPinBase):
     """Connects the output of workers (transformers and reactors) to cells
@@ -184,14 +184,14 @@ class OutputPin(OutputPinBase):
             assert my_cell._context() is ctx
             manager.connect(self, None, my_cell, None)
         elif l == 1:
-            # TODO: take subpath into account? construct some kind of proxy?           
+            # TODO: take subpath into account? construct some kind of proxy?
             my_cell, subpath = my_cells[0]
         elif l > 1:
             raise TypeError("cell() is ambiguous, multiple cells are connected")
         return my_cell
 
     def cells(self):
-        """Returns all cell/subpath tuples connected to the outputpin"""        
+        """Returns all cell/subpath tuples connected to the outputpin"""
         manager = self._get_manager()
         my_cells = manager.cell_from_pin(self)
         # TODO: take subpath (c[1]) into account? construct some kind of proxy?
@@ -234,9 +234,9 @@ class EditPin(EditPinBase):
         from .reactor import Reactor
         from .macro import Macro, Path
         from .unilink import UniLink
-        
+
         manager = self._get_manager()
-        
+
         if isinstance(target, UniLink):
             target = target.get_linked()
 
@@ -272,7 +272,7 @@ class EditPin(EditPinBase):
         worker = self.worker_ref()
         if isinstance(worker, Transformer):
             upstreams = livegraph.transformer_to_upstream[worker]
-            accessor = upstreams[self.name]        
+            accessor = upstreams[self.name]
         else:
             raise NotImplementedError # reactor, macro accessor status
         stat = status_accessor(accessor)

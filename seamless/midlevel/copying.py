@@ -1,40 +1,65 @@
+import sys
 from ..mixed import MixedBase
 from copy import deepcopy
 import inspect, asyncio
+from ..core.cache.buffer_cache import buffer_cache
+from ..core.protocol.deserialize import deserialize_sync as deserialize
 from ..core.protocol.serialize import serialize_sync as serialize
 from ..core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
-from ..core.protocol.deep_structure import apply_hash_pattern_sync
+from ..core.protocol.deep_structure import apply_hash_pattern_sync, deep_structure_to_checksums
 
 def get_checksums(nodes):
-    # TODO: deep cells
+    def add_checksum(node, checksum, subpath=None):
+        if checksum is None:
+            return
+        checksums.add(checksum)
+        hash_pattern = None
+        if node["type"] == "cell" and subpath != "schema":
+            hash_pattern = node.get("hash_pattern")
+        elif node["type"] == "transformer":
+            if subpath is not None and subpath.startswith("input") and not subpath.endswith("schema"):
+                hash_pattern = node.get("hash_pattern")
+        elif node["type"] == "macro":
+            if subpath is not None and subpath.startswith("param") and not subpath.endswith("schema"):
+                hash_pattern = {"*": "#"}
+        else:
+            pass
+        if hash_pattern is not None:
+            buffer = buffer_cache.get_buffer(bytes.fromhex(checksum))
+            if buffer is None:
+                print("WARNING: could not get checksums for deep structures in {}".format(node["path"]))
+                return
+            deep_structure = deserialize(buffer, bytes.fromhex(checksum), "plain", copy=False)
+            deep_checksums = deep_structure_to_checksums(deep_structure, hash_pattern)
+            checksums.update(deep_checksums)
     checksums = set()
-    for p, node in nodes.items():
+    for node in nodes:
         if node["type"] in ("link", "context"):
             continue
         untranslated = node.get("UNTRANSLATED")
-        assert not untranslated, p
+        if untranslated:
+            continue
         checksum = node.get("checksum")
         if checksum is None:
             continue
         elif isinstance(checksum, str):
-            checksums.add(checksum)
+            add_checksum(node, checksum)
         else:
             for k,v in checksum.items():
                 if v is not None:
-                    checksums.add(v)
+                    add_checksum(node, v, k)
     return checksums
 
 async def get_buffer_dict(manager, checksums):
     from ..core.protocol.get_buffer import get_buffer
     result = {}
     cachemanager = manager.cachemanager
-    buffer_cache = cachemanager.buffer_cache
     coros = []
     checksums = list(checksums)
     async def get_buf(checksum):
         return await cachemanager.fingertip(checksum)
-        return get_buffer(bytes.fromhex(checksum), buffer_cache)
-    for checksum in checksums:    
+        return get_buffer(bytes.fromhex(checksum))
+    for checksum in checksums:
         coro = get_buf(checksum)
         coros.append(coro)
     buffers = await asyncio.gather(*coros, return_exceptions=True)
@@ -54,12 +79,11 @@ def get_buffer_dict_sync(manager, checksums):
         fut = asyncio.ensure_future(coro)
         asyncio.get_event_loop().run_until_complete(fut)
         return fut.result()
-    
+
     result = {}
-    buffer_cache = manager.cachemanager.buffer_cache    
     checksums = list(checksums)
     for checksum in checksums:
-        buffer = get_buffer(bytes.fromhex(checksum), buffer_cache)
+        buffer = get_buffer(bytes.fromhex(checksum))
         result[checksum] = buffer
     return result
 
@@ -67,9 +91,10 @@ def add_zip(manager, zipfile):
     """
     Caches all checksum-to-buffer entries in zipfile
     All "file names" in the zipfile must be checksum hexes
-    Note that caching without Redis only lasts 20 seconds 
+
+    Note that caching is temporary and entries will be removed after some time
+     if no element (cell, expression, or high-level library) holds their checksum
     """
-    buffer_cache = manager.cachemanager.buffer_cache
     for checksum in zipfile.namelist():
         checksum2 = bytes.fromhex(checksum)
         buffer = zipfile.read(checksum)
@@ -80,8 +105,10 @@ def fill_checksum(manager, node, temp_path, composite=True):
     from ..core.cell import celltypes
     checksum = None
     subcelltype = None
+    hash_pattern = None
     if node["type"] == "cell":
         celltype = node["celltype"]
+        hash_pattern = node.get("hash_pattern")
     elif node["type"] == "transformer":
         if temp_path == "code":
             datatype = "code"
@@ -94,6 +121,8 @@ def fill_checksum(manager, node, temp_path, composite=True):
             celltype = "plain"
         else:
             celltype = "structured"
+            if temp_path.startswith("input") and not temp_path.endswith("schema"):
+                hash_pattern = node.get("hash_pattern")
     elif node["type"] == "reactor":
         raise NotImplementedError ### livegraph branch, feature E2
     elif node["type"] == "macro":
@@ -106,6 +135,8 @@ def fill_checksum(manager, node, temp_path, composite=True):
                 celltype = "text"
         else:
             celltype = "structured"
+            if temp_path.startswith("param") and not temp_path.endswith("schema"):
+                hash_pattern = {"*": "#"}
     else:
         raise TypeError(node["type"])
     if celltype == "structured":
@@ -125,39 +156,53 @@ def fill_checksum(manager, node, temp_path, composite=True):
     temp_value = node.get("TEMP")
     if composite:
         if isinstance(temp_value, dict):
-            temp_value = temp_value.get(temp_path)            
+            temp_value = temp_value.get(temp_path)
         elif temp_value is None:
             pass
         else:
             raise TypeError(temp_value)
     if temp_value is None:
         return
-        
+
     if datatype == "python":
         if inspect.isfunction(temp_value):
             code = inspect.getsource(temp_value)
             code = strip_source(code)
             temp_value = code
     buf = serialize(temp_value, datatype, use_cache=False)
-    checksum = calculate_checksum(buf)    
+    checksum = calculate_checksum(buf)
 
     if checksum is None:
         return
-    if node.get("hash_pattern") is not None:
-        hash_pattern = node["hash_pattern"]
-        checksum = apply_hash_pattern_sync(
-            checksum, hash_pattern
-        )
+    buffer_cache.cache_buffer(checksum, buf)
+    if hash_pattern is not None:
+        try:
+            checksum = apply_hash_pattern_sync(
+                checksum, hash_pattern
+            )
+        except:
+            msg = "WARNING {}:{} : hash pattern encoding expected, not found (legacy Seamless version?)"
+            print(msg.format(node["path"], temp_path), file=sys.stderr)
     checksum = checksum.hex()
     if temp_path is None:
         temp_path = "value"
     if "checksum" not in node:
         node["checksum"] = {}
-    temp_path = temp_path.lstrip("_")  
+    temp_path = temp_path.lstrip("_")
     node["checksum"][temp_path] = checksum
-        
+
+def get_graph_checksums(graph, with_libraries):
+    nodes0 = graph["nodes"]
+    nodes = [node for node in nodes0 if "scratch" not in node]
+    checksums = get_checksums(nodes)
+    if with_libraries:
+        for lib in graph["lib"]:
+            lib_checksums = get_graph_checksums(lib["graph"], with_libraries=True)
+            checksums.update(lib_checksums)
+    return checksums
+
 def fill_checksums(mgr, nodes, *, path=None):
-    """Fills checksums in the nodes from TEMP, if untranslated 
+    """Fills checksums in the nodes from TEMP, if untranslated
     """
     from ..core.structured_cell import StructuredCell
     first_exc = None

@@ -1,4 +1,4 @@
-#use with jobslave-noredis.py
+#use with jobslave-nodatabase.py
 
 import os
 os.environ["SEAMLESS_COMMUNION_ID"] = "simple-pi-remote"
@@ -43,4 +43,3 @@ ctx.doubleit.code = lambda a: 2 * a
 ctx.compute()
 print(ctx.pi.value)
 print(ctx.twopi.value)
-

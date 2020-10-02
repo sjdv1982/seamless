@@ -10,7 +10,7 @@ import json
 
 validation_cache = set()
 
-async def validate_subcelltype(checksum, celltype, subcelltype, codename, buffer_cache):
+async def validate_subcelltype(checksum, celltype, subcelltype, codename):
     if celltype != "python":
         if celltype == "plain" and subcelltype == "module":
             pass
@@ -18,20 +18,20 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename, buffer
             return
 
     if codename is None:
-        codename = "<Unknown>"        
+        codename = "<Unknown>"
     key = (checksum, celltype, subcelltype)
     if key in validation_cache:
         return
     try:
-        buffer = get_buffer(checksum, buffer_cache)
+        buffer = get_buffer(checksum)
     except CacheMissError:
         return # TODO: for now, tolerate cache misses. In the future, try to get validation cache remotely
     value = buffer.decode()
-    
+
     if celltype == "plain" and subcelltype == "module":
         v = json.loads(value)
         await build_module_async(v)
-    else:    
+    else:
         tree = ast.parse(value, filename=codename)
 
         if subcelltype in ("reactor", "macro"):
@@ -41,7 +41,7 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename, buffer
                 raise SyntaxError((codename, err))
 
     validation_cache.add(key)
-    
+
 from .get_buffer import get_buffer, CacheMissError
 from ..cached_compile import analyze_code
 from ..build_module import build_module, build_module_async

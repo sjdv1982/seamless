@@ -18,6 +18,7 @@ class Macro(Worker):
         self.namespace = {}
         self.input_dict = {}  #pinname-to-accessor
         self._paths = {} #Path objects
+        self._void = True
         super().__init__()
         forbidden = ("code",)
         for p in sorted(macro_params.keys()):
@@ -68,6 +69,7 @@ class Macro(Worker):
         return cachemanager.macro_exceptions[self]
 
     def _execute(self, code, values, module_workspace):
+        from .HighLevelContext import HighLevelContext
         from .context import Context
         manager = self._get_manager()
         ok = False
@@ -85,6 +87,8 @@ class Macro(Worker):
                 self.namespace["__name__"] = "macro"
                 self.namespace.update(keep)
                 self.namespace.update( self.default_namespace.copy())
+                self.namespace["HighLevelContext"] = HighLevelContext
+                self.namespace["HighlevelContext"] = HighLevelContext
                 self.namespace["ctx"] = unbound_ctx
                 self.namespace.update(values)
                 inputs = ["ctx"] +  list(values.keys())
@@ -92,6 +96,9 @@ class Macro(Worker):
                 if len(str_self) > 80:
                     str_self = str_self[:35] + "..%d.." % (len(str_self)-70) + str_self[-35:]
                 #print("Execute", str_self)
+                hctx = self._root()._root_highlevel_context
+                if hctx is not None:
+                    hctx._destroy_path(self.path + ("ctx",), runtime=True)
                 identifier = str(self)
                 if len(module_workspace):
                     with injector.active_workspace(module_workspace, self.namespace):
@@ -335,7 +342,7 @@ class Path:
         for accessor in livegraph.macropath_to_downstream[self]:
             manager.cancel_accessor(
                 accessor, True,
-                from_unconnected_cell=True
+                reason=StatusReasonEnum.UNCONNECTED
             )
         if not oldcell._destroyed:
             if not self_authority:
@@ -345,7 +352,6 @@ class Path:
                 )
 
     def _bind(self, cell, trigger):
-        from .manager.propagate import propagate_cell
         from .manager.tasks.cell_update import CellUpdateTask
         from .manager.tasks.accessor_update import AccessorUpdateTask
         if self._destroyed:
@@ -363,36 +369,36 @@ class Path:
         if cell is None:
             return
         if cell._structured_cell:
-            raise Exception("Macro paths for structured cells are currently not supported")
-        if cell._hash_pattern:
-            raise Exception("Macro paths for deep cells are currently not supported")
+            raise NotImplementedError("Macro paths for structured cells are currently not supported")
         cell_authority = cell.has_authority()
         if not cell_authority and not self_authority:
             msg = "Cannot bind %s to %s: both have no authority"
             raise Exception(msg % (cell, self))
-        if cell_authority and not self_authority:
-            manager.cancel_cell(cell, void=False)
         for path in cell._paths:
             assert path is not self, self._path
         cell._paths.add(self)
         self._cell = cell
-        propagate_cell(livegraph, cell)
         if trigger:
             if self_authority:
                 for accessor in livegraph.macropath_to_downstream[self]:
-                    accessor._new_macropath = True
-                    AccessorUpdateTask(manager, accessor).launch()
-                if not cell._void:
+                    if not cell._void:
+                        accessor._new_macropath = True
+                        manager.cancel_accessor(accessor, void=False)
+                if cell._checksum is not None:
                     CellUpdateTask(manager, cell).launch()
-            else:
+            if not self_authority:
                 up_accessor = livegraph.macropath_to_upstream[self]
-                assert up_accessor is not None  # if no up accessor, how could we have authority?
-                up_accessor._new_macropath = True
-                AccessorUpdateTask(manager, up_accessor).launch()
+                assert up_accessor is not None  # if no up accessor, how could we have no authority?
                 upstream_cell = livegraph.accessor_to_upstream[up_accessor]
-                assert isinstance(upstream_cell, Cell)
                 if not upstream_cell._void:
+                    up_accessor._new_macropath = True
+                    manager.cancel_accessor(up_accessor, void=False)
+                assert isinstance(upstream_cell, Cell)
+                if upstream_cell._checksum is not None:
                     CellUpdateTask(manager, upstream_cell).launch()
+        else:
+            if cell_authority and not self_authority:  # bound cell loses authority
+                manager.cancel_cell(cell, void=False)
 
 
     def __str__(self):
@@ -478,6 +484,8 @@ names = ("cell", "transformer", "context", "unilink",
 names += ("StructuredCell",)
 names = names + ("macro", "path")
 Macro.default_namespace = {n:globals()[n] for n in names}
+Macro.default_namespace["HighLevelContext"] = None   # import later to avoid circular imports
+Macro.default_namespace["HighlevelContext"] = None   # future alias for HighLevelContext
 
 from .cell import Cell
 from .unilink import UniLink

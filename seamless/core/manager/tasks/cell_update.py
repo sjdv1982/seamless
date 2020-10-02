@@ -2,64 +2,98 @@ from . import Task
 
 class CellUpdateTask(Task):
     def __init__(self, manager, cell):
-        assert not cell._structured_cell, cell # cell update is not for StructuredCell cells
+        assert cell._structured_cell is None or cell._structured_cell.schema is cell, cell # cell update is not for StructuredCell cells, unless schema
         self.cell = cell
         super().__init__(manager)
-        self.dependencies.append(cell)
+        self._dependencies.append(cell)
+
+        # assertion
+        livegraph = manager.livegraph
+        accessors = livegraph.cell_to_downstream[cell]
+        for path in cell._paths:
+            path_accessors = livegraph.macropath_to_downstream[path]
+            accessors = accessors + path_accessors
+        for accessor in accessors:
+            target = accessor.write_accessor.target()
+            if isinstance(target, MacroPath):
+                target = target._cell
+                if target is None:
+                    continue
+            if isinstance(target, Cell):
+                assert not target._void, accessor
+        #
 
     async def _run(self):
-        """
-        - If the cell's void attribute is True, log a warning and return.
-        - Await cell checksum task
-        - If the checksum is None, for each output accessor:
-            - do a void cancellation
-          Else, for each output read accessor:
-            - construct (not compute!) their expression using the cell checksum 
-            Constructing a downstream expression increfs the cell checksum
-            - launch an accessor update task
-        """
+        """Updates the downstream dependencies (accessors) of a cell"""
         cell = self.cell
         if cell._void:
             print("WARNING: cell %s is void, shouldn't happen during cell update" % cell)
             return
-        from . import CellChecksumTask
         manager = self.manager()
+        taskmanager = manager.taskmanager
         cell = self.cell
-        await CellChecksumTask(manager, cell).run()
-        checksum = cell._checksum
-        assert not cell._structured_cell # cell update is not for StructuredCell cells        
-        livegraph = manager.livegraph
-        accessors = livegraph.cell_to_downstream[cell]
-        for path in cell._paths:            
-            path_accessors = livegraph.macropath_to_downstream[path]
-            accessors = accessors + path_accessors
-        for accessor in accessors:
-            #- construct (not compute!) their expression using the cell checksum 
-            #  Constructing a downstream expression increfs the cell checksum
-            changed = accessor.build_expression(livegraph, checksum)
-            if cell._prelim != accessor._prelim:
-                accessor._prelim = cell._prelim
-                changed = True
-            #- launch an accessor update task
-            if changed or accessor._new_macropath:
+
+        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
+        await taskmanager.await_cell(cell, self.taskid, self._root())
+
+        locknr = await acquire_evaluation_lock(self)
+        try:
+            checksum = cell._checksum
+            assert checksum is not None, cell
+            assert not cell._structured_cell # cell update is not for StructuredCell cells
+            livegraph = manager.livegraph
+            accessors = livegraph.cell_to_downstream[cell]
+            for path in cell._paths:
+                path_accessors = livegraph.macropath_to_downstream[path]
+                accessors = accessors + path_accessors
+
+            accessors_to_cancel = []
+
+            for accessor in accessors:
+                if accessor._void or accessor._checksum is not None:
+                    accessors_to_cancel.append(accessor)
+                else:
+                    manager.taskmanager.cancel_accessor(accessor)
+
+            manager.cancel_accessors(accessors_to_cancel, False)
+
+            # Chance that the above line cancels our own task
+            if self._canceled:
+                return
+
+            for accessor in accessors:
+                #- launch an accessor update task
+                target = accessor.write_accessor.target()
+                if isinstance(target, MacroPath):
+                    target = target._cell
+                    if target is None:
+                        continue
+                if isinstance(target, Cell):
+                    assert not target._void, accessor
+
+                accessor.build_expression(livegraph, checksum)
                 task = AccessorUpdateTask(manager, accessor)
                 task.launch()
-        for editpin in livegraph.cell_to_editpins[cell]:
-            reactor = editpin.worker_ref()
-            ReactorUpdateTask(manager, reactor).launch()        
-        sc = cell._structured_cell
-        if sc is not None:
-            if sc.schema is not cell:
-                print("WARNING: cell %s has a structured cell but is not its schema, shouldn't happen during cell update" % cell)
-            buffer = await GetBufferTask(manager, checksum).run()
-            value = await DeserializeBufferTask(
-                manager, buffer, checksum, cell.celltype, copy=True
-            )
-            manager.update_schema_cell(cell, value, None)
-
-        return None
+            for editpin in livegraph.cell_to_editpins[cell]:
+                reactor = editpin.worker_ref()
+                ReactorUpdateTask(manager, reactor).launch()
+            sc = cell._structured_cell
+            if sc is not None:
+                if sc.schema is not cell:
+                    print("WARNING: cell %s has a structured cell but is not its schema, shouldn't happen during cell update" % cell)
+                buffer = await GetBufferTask(manager, checksum).run()
+                value = await DeserializeBufferTask(
+                    manager, buffer, checksum, cell.celltype, copy=True
+                )
+                manager.update_schema_cell(cell, value, None)
+            return None
+        finally:
+            release_evaluation_lock(locknr)
 
 from .accessor_update import AccessorUpdateTask
 from .reactor_update import ReactorUpdateTask
 from .get_buffer import GetBufferTask
 from .deserialize_buffer import DeserializeBufferTask
+from . import acquire_evaluation_lock, release_evaluation_lock
+from ...macro import Path as MacroPath
+from ...cell import Cell

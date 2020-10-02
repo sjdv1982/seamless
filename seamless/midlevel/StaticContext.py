@@ -1,7 +1,6 @@
 from zipfile import ZipFile
 from io import BytesIO
 from ..core import context, cell
-from ..core.protocol.calculate_checksum import checksum_cache
 from . import copying
 from copy import deepcopy
 
@@ -21,7 +20,7 @@ class StaticContext:
         self._nodes = nodes
         self._connections = connections
         self._params = params
-        if manager is not None:            
+        if manager is not None:
             assert isinstance(manager, Manager), type(manager)
             self._manager = manager
         else:
@@ -44,10 +43,10 @@ class StaticContext:
         elif isinstance(zip, ZipFile):
             zipfile = zip
         else:
-            raise TypeError(type(zip))        
+            raise TypeError(type(zip))
         return copying.add_zip(self._manager, zipfile)
 
-    
+
     def __getattr__(self, attr):
         parent_path = self._parent_path
         if parent_path is None:
@@ -64,7 +63,7 @@ class StaticContext:
                     self._manager, node
                 )
             else:
-                checksum = node.get("checksum", {}).get("value")                
+                checksum = node.get("checksum", {}).get("value")
                 return SimpleCellWrapper(
                     self._manager, node,
                     node["celltype"], checksum
@@ -75,12 +74,12 @@ class StaticContext:
                 if len(p) < l:
                     return False
                 return p[:l] == path
-            nodes = { k:v for k,v in self._nodes.items() if in_path(k)}            
+            nodes = { k:v for k,v in self._nodes.items() if in_path(k)}
             connections = [c for c in self._connections \
                 if in_path(c["source"]) or in_path(c["target"])
             ]
             result = StaticContext(
-                nodes, connections, 
+                nodes, connections,
                 manager=self._manager
             )
             result._parent_path = path
@@ -123,22 +122,21 @@ class SimpleCellWrapper(WrapperBase):
         if checksum is None:
             return None
         checksum = bytes.fromhex(checksum)
-        buffer_cache = self._manager.cachemanager.buffer_cache
-        return get_buffer(checksum, buffer_cache)
+        return get_buffer(checksum)
 
     @property
-    def value(self):        
+    def value(self):
         from ..core.protocol.deserialize import deserialize_sync
         from ..core.protocol.expression import get_subpath_sync
         checksum = self._checksum
         celltype = self._celltype
         buffer = self.buffer
         if buffer is None:
-            return None        
+            return None
 
         celltype = self._celltype
         if celltype == "mixed":
-            value = deserialize_sync(buffer, checksum, "mixed", copy=True)
+            value = deserialize_sync(buffer,  bytes.fromhex(checksum), "mixed", copy=True)
             hash_pattern = self._node.get("hash_pattern")
             if hash_pattern is None:
                 return value
@@ -151,7 +149,7 @@ class SimpleCellWrapper(WrapperBase):
                 ct = "text"
         else:
             ct = celltype
-        value = deserialize_sync(buffer, checksum, ct, copy=True)
+        value = deserialize_sync(buffer, bytes.fromhex(checksum), ct, copy=True)
         return value
 
     def cell(self):
@@ -171,14 +169,14 @@ class SimpleCellWrapper(WrapperBase):
         if self._checksum is not None:
             checksum = bytes.fromhex(self._checksum)
         result._initial_checksum = checksum, True, False
-        return result       
+        return result
 
 class StructuredCellWrapper(WrapperBase):
     def __init__(self, manager, node):
         assert node["type"] == "cell"
         assert node["celltype"] == "structured"
         super().__init__(manager, node)
-    
+
     @property
     def auth(self):
         checksum = self._node.get("checksum", {}).get("auth")
@@ -204,12 +202,12 @@ class TransformerWrapper(WrapperBase):
     def __init__(self, manager, node):
         assert node["type"] == "transformer"
         super().__init__(manager, node)
-    
+
     @property
     def code(self):
         checksum = self._node.get("checksum", {}).get("code")
         lang = self._node["language"]
-        celltype = lang if lang in ("python", "ipython") else "text"            
+        celltype = lang if lang in ("python", "ipython") else "text"
         return SimpleCellWrapper(self._manager, {}, celltype, checksum)
 
     def __getattr__(self, attr):
@@ -224,7 +222,7 @@ class TransformerWrapper(WrapperBase):
     def __dir__(self):
         node = self._node
         return ("code", node["INPUT"], node["RESULT"])
-    
+
     def _inp(self):
         mapping = {
             "input": "value",
@@ -238,7 +236,7 @@ class TransformerWrapper(WrapperBase):
             if k in checksums:
                 cs[v] = checksums[k]
         return StructuredCellWrapper(
-            self._manager, 
+            self._manager,
             {"checksum": cs, "type": "cell", "celltype": "structured"}
         )
 
@@ -254,10 +252,8 @@ class TransformerWrapper(WrapperBase):
             if k in checksums:
                 cs[v] = checksums[k]
         return StructuredCellWrapper(
-            self._manager, 
+            self._manager,
             {"checksum": cs, "type": "cell", "celltype": "structured"}
         )
 
 from ..core.manager.tasks import GetBufferTask, DeserializeBufferTask
-from ..core.protocol.deserialize import deserialize_cache
-

@@ -55,7 +55,10 @@ class SubCell(Cell):
         if cellvalue.unsilk is None:
             raise ValueError
         for attr in self._subpath:
-            cellvalue = getattr(cellvalue, attr)
+            if isinstance(attr, int):
+                cellvalue = cellvalue[attr]
+            else:
+                cellvalue = getattr(cellvalue, attr)
         return cellvalue
 
     def set(self, value):
@@ -82,5 +85,3 @@ class SubCell(Cell):
 
     def __str__(self):
         return "Seamless SubCell: %s" % ".".join(self._path)
-
-

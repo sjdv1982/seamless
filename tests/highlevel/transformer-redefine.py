@@ -17,17 +17,20 @@ ctx.result.celltype = "plain"
 ctx.transform.result.example = 0.0 #example, just to fill the schema
 ctx.transform.language = "cpp"
 ctx.compute()
+print(ctx.transform.exception)
 print("*" * 80)
 print(ctx.transform.header.value)
 print("*" * 80)
 ctx.code >> ctx.transform.code
 ctx.code = """
-extern "C" int transform(int a, int b, *double result) {
+extern "C" int transform(int a, int b, double *result) {
     *result = a + b;
     return 0;
 }"""
 ctx.compute()
 print(ctx.result.value)
+print(ctx.status)
+print(ctx.transform.exception)
 
 del ctx.transform  # required!
                    # else, the following line

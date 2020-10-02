@@ -5,7 +5,7 @@ class MixedObject(MixedBase, MutableMapping, MutableSequence):
     def _proxy(self):
         proxy = self._monitor.get_path(self._path)
         if isinstance(proxy, MixedObject):
-            raise AttributeError
+            raise AttributeError(self._path)
         return proxy
     def _proxy2(self, item):
         proxy = self._monitor.get_path(self._path)

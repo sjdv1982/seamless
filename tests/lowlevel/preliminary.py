@@ -39,25 +39,25 @@ with macro_mode_on():
     ctx.tf1.limit.cell().set(9)
     ctx.tf1.factor.cell().set(1000)
     ctx.tf1.delay.cell().set(1.5)
-    ctx.tf1.offset.cell().set(0)    
+    ctx.tf1.offset.cell().set(0)
     ctx.tf1_result = ctx.tf1.result.cell()
-    
+
     ctx.tf2.limit.cell().set(15)
     ctx.tf2.factor.cell().set(10)
     ctx.tf2.delay.cell().set(0.7)
     ctx.tf2.offset.cell().set(0)
     ctx.tf2_result = ctx.tf2.result.cell()
-    
+
     ctx.tf3.limit.cell().set(9)
     ctx.tf3.factor.cell().set(1)
     ctx.tf3.delay.cell().set(0.5)
     ctx.tf3_result = ctx.tf3.result.cell()
-    
+
     ctx.tf4.limit.cell().set(1)
     ctx.tf4.factor.cell().set(9)
     ctx.tf4.delay.cell().set(0.1)
     ctx.tf4_result = ctx.tf4.result.cell()
-    
+
     ctx.add = transformer(add_params)
     ctx.add.code.set("result = a + b")
     ctx.tf1.result.connect(ctx.add.a.cell())
@@ -69,7 +69,7 @@ state = {}
 oldstate = {}
 start = time.time()
 while 1:
-    waitfor, background = ctx.compute(0.01, report=None)
+    waitfor, background = ctx.compute(0.2, report=None)
     state["status"] = {"tf1": ctx.tf1.status, "tf2": ctx.tf2.status, "tf3": ctx.tf3.status, "tf4": ctx.tf4.status}
     state["status"]["tf1-result"] = ctx.tf1_result.status
     state["status"]["tf2-result"] = ctx.tf2_result.status
@@ -89,6 +89,5 @@ while 1:
         pprint(state)
         print()
         oldstate = state.copy()
-    if not len(waitfor) and not background:        
+    if not len(waitfor) and not background:
         break
-    

@@ -1,0 +1,10 @@
+What would be needed to port the Seamless high level API to the browser
+
+node["TEMP"] refers to a literal (i.e. Python) construction value. Low-level cells are needed to
+  parse this to a serializable value. Right now, the mid-level does this on the first translation pass, then pops the TEMP.
+  This is very ugly. mid-level should be configured to invoke remote parsing, and remote parsing should be invokable without
+  translation. This way, the translate.py can be disconnected, and the remaining mid-and-high-level routines could run in
+  the browser (under Pyodide; Transcrypt is probably less useful since we would want a Python REPL). If *all* of the state
+  is in the graph (i.e. Python Context, Cell etc are just thin wrappers), then the graph could be manipulated in parallel
+  by JS, e.g. manipulating the position of the node on a visualization canvas).
+  Right now this is not exactly the case: there is context._graph but ALSO context._children.

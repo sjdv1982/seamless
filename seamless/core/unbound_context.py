@@ -5,7 +5,7 @@ from . import SeamlessBase
 
 class DummyTaskManager:
     @staticmethod
-    def run_synctasks():
+    def _run_synctasks():
         pass
 
 class UnboundManager:
@@ -17,7 +17,7 @@ class UnboundManager:
         self._registered = set()
         self.commands = []
         self.cells = {}
-        self.join_structured_cells = set()
+        self.trigger_structured_cells = set()
 
     def register_cell(self, cell):
         self._registered.add(cell)
@@ -46,9 +46,9 @@ class UnboundManager:
         assert cell in self._registered
         self.commands.append(("set cell", (cell, value)))
 
-    def structured_cell_join(self, sc):
+    def structured_cell_trigger(self, sc):
         assert sc in self._registered
-        self.join_structured_cells.add(sc)
+        self.trigger_structured_cells.add(sc)
 
     def connect(self, source, source_subpath, target, target_subpath):
         from .macro import Path
@@ -79,14 +79,16 @@ class UnboundManager:
             assert cell in self._registered
         self.commands.append(("bilink", (cell, other)))
 
-    def set_cell_checksum(self, 
+    def set_cell_checksum(self,
         cell, checksum, initial, from_structured_cell, trigger_bilinks
     ):
         assert cell._get_manager() is self
         assert cell in self._registered
+        if initial:
+            assert checksum is not None
         self.commands.append(
-            ("set cell checksum", 
-                (cell, checksum, initial, 
+            ("set cell checksum",
+                (cell, checksum, initial,
                 from_structured_cell, trigger_bilinks)
             )
         )
@@ -126,16 +128,18 @@ class UnboundContext(SeamlessBase):
 
     _name = None
     _children = {}
-    _boundmanager = None    
+    _boundmanager = None
     _auto = None
     _toplevel = False
-    _naming_pattern = "ctx"    
+    _naming_pattern = "ctx"
     _bound = None
     _context = None
     _realmanager = None
+    _root_highlevel_context = None
+    _synth_highlevel_context = None
 
     def __init__(
-        self, *, 
+        self, *,
         root=None,
         toplevel=False,
         macro=False,
@@ -156,7 +160,7 @@ class UnboundContext(SeamlessBase):
             root = Context(toplevel=True, manager=manager)
             self._root_ = root
             self._realmanager = UnboundManager(self)
-            if manager is not None:                
+            if manager is not None:
                 root._realmanager = manager
         elif macro:
             assert manager is None
@@ -167,11 +171,11 @@ class UnboundContext(SeamlessBase):
             self._realmanager = manager
         else:
             assert manager is None
+            self._root_ = root
         if root is None:
             assert not toplevel and not macro
         else:
             assert isinstance(root, Context), root
-        self._root_ = root
         if toplevel:
             register_toplevel(self)
 
@@ -197,6 +201,7 @@ class UnboundContext(SeamlessBase):
         assert isinstance(ctx, Context) #unbound
 
     def _add_child(self, childname, child):
+        from .HighLevelContext import HighLevelContext
         classes = (UnboundContext, Worker, Cell, UniLink, StructuredCell)
         assert isinstance(child, classes), type(child)
         if isinstance(child, UnboundContext):
@@ -208,6 +213,11 @@ class UnboundContext(SeamlessBase):
             self._children[childname] = child
             for subchildname, subchild in child._children.items():
                 subchild._set_context(child, subchildname)
+            if isinstance(child, HighLevelContext):
+                highlevel_context = None
+                if self._root_ is not None:
+                    highlevel_context = self._root_._root_highlevel_context
+                child._translate(highlevel_context)
         else:
             self._children[childname] = child
             if self._realmanager is not None:
@@ -281,7 +291,7 @@ class UnboundContext(SeamlessBase):
         manager = ctx._get_manager()
 
         def register(child):
-            if not isinstance(child, 
+            if not isinstance(child,
                 (Cell, Reactor, Transformer, Macro)
             ):
                 return
@@ -299,9 +309,10 @@ class UnboundContext(SeamlessBase):
             if isinstance(child, UnboundContext):
                 bound_ctx = Context()
                 bound_ctx._macro = curr_macro()
-                child._bound = bound_ctx                
+                child._bound = bound_ctx
                 setattr(ctx, childname, bound_ctx)
                 ctxmap[childname] = bound_ctx
+
         for childname, child in self._children.items():
             if isinstance(child, UnboundContext):
                 continue
@@ -315,9 +326,10 @@ class UnboundContext(SeamlessBase):
                 if self._realmanager is not child._realmanager:
                     self._realmanager.commands += child._realmanager.commands
                     child._realmanager.commands.clear()
-                child._bind_stage1(bound_ctx)                
+                child._bind_stage1(bound_ctx)
         ctx._auto = self._auto
-        self._bound = ctx        
+        self._bound = ctx
+        ctx._synth_highlevel_context = self._synth_highlevel_context
 
     def _bind_stage2(self, manager):
         macro = self._macro
@@ -326,12 +338,31 @@ class UnboundContext(SeamlessBase):
                 manager.register_structured_cell(child)
             else:
                 continue
-        for comnr, (com, args) in enumerate(self._realmanager.commands):            
-            if com == "set cell":                
+        for comnr, (com, args) in enumerate(self._realmanager.commands):
+            if com == "set cell":
+                pass  # for stage 3
+            elif com == "connect cell":
+                cell, cell_subpath, other, other_subpath = args
+                manager.connect(cell, cell_subpath, other, other_subpath)
+            elif com == "connect pin":
+                pin, cell = args
+                manager.connect(pin, None, cell, None)
+            elif com == "bilink":
+                cell, other = args
+                cell.bilink(other)
+            elif com == "set cell checksum":
+                pass  # for stage 3
+            else:
+                raise ValueError(com)
+
+    def _bind_stage3(self, manager):
+        macro = self._macro
+        for comnr, (com, args) in enumerate(self._realmanager.commands):
+            if com == "set cell":
                 cell, value = args
                 supersede = False
                 for com2, args2 in self._realmanager.commands[comnr+1:]:
-                    if com2 == "set cell":         
+                    if com2 == "set cell":
                         cell2, _ = args2
                     elif com2 == "set cell checksum":
                         cell2, _, _, _, _ = args2
@@ -343,21 +374,18 @@ class UnboundContext(SeamlessBase):
                 if supersede:
                     continue
                 manager.set_cell(cell, value)
-            elif com == "connect cell":                
-                cell, cell_subpath, other, other_subpath = args
-                manager.connect(cell, cell_subpath, other, other_subpath)
+            elif com == "connect cell":
+                pass  # Done in stage 2
             elif com == "connect pin":
-                pin, cell = args
-                manager.connect(pin, None, cell, None)
+                pass  # Done in stage 2
             elif com == "bilink":
-                cell, other = args
-                cell.bilink(other)
+                pass  # Done in stage 2
             elif com == "set cell checksum":
                 cell, checksum, initial, from_structured_cell, trigger_bilinks = args
                 cell._initial_checksum = None
                 manager.set_cell_checksum(
-                    cell, checksum, 
-                    initial=initial, 
+                    cell, checksum,
+                    initial=initial,
                     from_structured_cell=from_structured_cell,
                     trigger_bilinks=trigger_bilinks
                 )
@@ -367,9 +395,11 @@ class UnboundContext(SeamlessBase):
     def _bind(self, ctx):
         from .context import Context
         from .macro import Path
-        if ctx._toplevel:       
-            assert self._toplevel        
-        self._bind_stage1(ctx)        
+        pseudo_connections = getattr(self, "_pseudo_connections", None)
+        highlevel_context = self._root_._root_highlevel_context
+        set_pseudo_connections(highlevel_context, ctx.path, pseudo_connections)
+
+        self._bind_stage1(ctx)
         manager = ctx._get_manager()
         for reg in self._realmanager._registered:
             if isinstance(reg, Path):
@@ -377,13 +407,14 @@ class UnboundContext(SeamlessBase):
             elif isinstance(reg, StructuredCell):
                 manager.register_structured_cell(reg)
         ctx._root()._cache_paths()
-        self._bind_stage2(ctx._get_manager())
-        join_structured_cells = self._realmanager.join_structured_cells
+        self._bind_stage2(manager)
+        manager.taskmanager.add_barrier()
+        self._bind_stage3(manager)
+        trigger_structured_cells = self._realmanager.trigger_structured_cells
         for reg in self._realmanager._registered:
             if isinstance(reg, StructuredCell):
-                if reg in join_structured_cells:
-                    reg._join()
-    
+                manager.structured_cell_trigger(reg)
+
     def destroy(self, *, from_del=False):
         if self._bound:
             return self._bound.destroy(from_del=from_del)
@@ -404,6 +435,11 @@ class UnboundContext(SeamlessBase):
         else:
             return super().__dir__()
 
+    def __getitem__(self, attr):
+        if not isinstance(attr, str):
+            raise KeyError(attr)
+        return getattr(self, attr)
+
 from .unilink import UniLink
 from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
@@ -414,3 +450,4 @@ from .structured_cell import StructuredCell
 from .context import Context
 from .macro_mode import curr_macro, register_toplevel
 from .mount import MountItem, is_dummy_mount
+from .pseudo_connections import set_pseudo_connections

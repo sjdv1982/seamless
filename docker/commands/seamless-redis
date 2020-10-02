@@ -5,8 +5,9 @@ set -u -e
 
 docker run \
   --rm \
+  -d \
   -p 6379:6379 \
-  --name redis-container \
+  --name seamless-redis-container \
   -v ~/.seamless/redis:/data \
   -u `id -u`:`id -g` \
-  redis redis-server --appendonly yes
+  redis redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy volatile-ttl

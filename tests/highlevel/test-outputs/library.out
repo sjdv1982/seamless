@@ -6,17 +6,18 @@ def constructor(ctx, libctx):
     ctx.set_graph(graph)
 
 4
+4
 def constructor(ctx, libctx):
     graph = libctx.get_graph()
     ctx.set_graph(graph)
 
 4
-1092
-<seamless.highlevel.Context.Context object at 0x7f453c81f978>
+1221
+<seamless.highlevel.Context.Context object at 0x7fd97c61c588>
 Seamless Cell: x
 8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad
 <Silk: 20 >
-<seamless.highlevel.library.libmacro.LibMacroContextWrapper object at 0x7f453c713160>
+<seamless.highlevel.synth_context.SynthContext object at 0x7fd97c509b00>
 ['minus', 'result', 'x', 'y']
 Seamless Cell: subtract1.ctx.x
 <Silk: 20 >

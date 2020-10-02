@@ -1,4 +1,4 @@
-# run scripts/jobslave-noredis.py 
+# run scripts/jobslave-nodatabase.py
 
 import os
 os.environ["SEAMLESS_COMMUNION_ID"] = "compile-run-remote"

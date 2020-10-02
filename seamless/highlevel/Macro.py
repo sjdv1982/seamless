@@ -62,7 +62,14 @@ class Macro(Base):
         if self._temp_pins is not None:
             assert pins is None
             pins = self._temp_pins
-        node = new_macro(parent, path, code, pins)
+        try:
+            assert code is None
+            assert pins is None
+            node = self._get_node()
+        except:
+            node = None
+        if node is None:
+            node = new_macro(parent, path, code, pins)
         parent._children[path] = self
 
     @property
@@ -75,6 +82,10 @@ class Macro(Base):
         if mctx is None:
             return None
         return mctx.macro.ctx
+
+    @property
+    def macro(self):
+        return self
 
     @property
     def schema(self):
@@ -204,7 +215,10 @@ class Macro(Base):
         try:
             p = parent._gen_context
             for subpath in self._path:
-                p = getattr(p, subpath)
+                p2 = getattr(p, subpath)
+                if isinstance(p2, SynthContext) and p2._context is not None:
+                    p2 = p2._context()
+                p = p2
             if not isinstance(p, CoreContext):
                 raise AttributeError
             return True
@@ -219,7 +233,10 @@ class Macro(Base):
             return None
         p = parent._gen_context
         for subpath in self._path:
-            p = getattr(p, subpath)
+            p2 = getattr(p, subpath)
+            if isinstance(p2, SynthContext) and p2._context is not None:
+                p2 = p2._context()
+            p = p2
         assert isinstance(p, CoreContext)
         return p
 
@@ -559,3 +576,5 @@ class Macro(Base):
         std = ["code", "pins", node["PARAM"], "exception", "status"]
         pins = list(node["pins"].keys())
         return sorted(d + pins + std)
+
+from .synth_context import SynthContext

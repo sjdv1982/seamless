@@ -25,27 +25,33 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
             pinname2 = as_tuple(pinname)
             interchannels.append(pinname2)
             if pinname2 in inchannels:
-                param_inchannels.append(pinname2)           
+                param_inchannels.append(pinname2)
         elif pin["io"] in ("input", "output"):
             pin_cell_name = pinname
         else:
-            raise ValueError((pin["io"], pinname))        
-        pin_cell = cell(pin.get("celltype", "mixed"))
+            raise ValueError((pin["io"], pinname))
+        pin_hash_pattern = pin.get("hash_pattern")
+        celltype = pin.get("celltype", "mixed")
+        if celltype == "mixed":
+            pin_cell = cell(celltype, hash_pattern=pin_hash_pattern)
+        else:
+            pin_cell = cell(celltype)
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pinname] = pin_cell
         if pin["io"] != "parameter":
             pin_mpaths0[pinname] = (pin["io"] == "input")
-        
-    mount = node.get("mount", {})    
+
+    mount = node.get("mount", {})
     param, param_ctx = build_structured_cell(
       ctx, param_name, param_inchannels, interchannels,
       return_context=True,
       fingertip_no_remote=False,
       fingertip_no_recompute=False,
+      hash_pattern={"*": "#"}
     )
 
     setattr(ctx, param_name, param)
-    namespace[node["path"] + ("SCHEMA",), False] = param.schema, node    
+    namespace[node["path"] + ("SCHEMA",), False] = param.schema, node
     if "param_schema" in mount:
         param_ctx.schema.mount(**mount["param_schema"])
 
@@ -75,16 +81,7 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    param_checksum = {}
-    for k in checksum:
-        if k == "schema":
-            param_checksum[k] = checksum[k]
-            continue
-        if not k.startswith("param"):
-            continue
-        k2 = "value" if k == "param" else k[len("param_"):]
-        param_checksum[k2] = checksum[k]
-
+    param_checksum = convert_checksum_dict(checksum, "param")
     set_structured_cell_from_checksum(param, param_checksum)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
@@ -109,3 +106,4 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
 
 
 from .util import get_path, as_tuple, build_structured_cell, cell_setattr
+from .convert_checksum_dict import convert_checksum_dict

@@ -51,9 +51,9 @@ VALIDATE! 11
 Traceback (most recent call last):
   File "test-meta.py", line 49, in <module>
     c.validate()
-  File "/seamless/seamless/silk/Silk.py", line 926, in validate
+  File "/seamless/seamless/silk/Silk.py", line 928, in validate
     self._validate()
-  File "/seamless/seamless/silk/Silk.py", line 896, in _validate
+  File "/seamless/seamless/silk/Silk.py", line 898, in _validate
     schema_validator(schema).validate(data)
   File "/opt/conda/lib/python3.7/site-packages/jsonschema/validators.py", line 353, in validate
     raise error
@@ -62,7 +62,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in ok
     assert self.a < 11

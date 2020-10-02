@@ -1,0 +1,45 @@
+DATA [{'a': 5, 'b': 6}, {'a': -2, 'b': 8}, {'a': 3, 'b': 14}, {'a': 12, 'b': 7}]
+Exception: None
+11
+6
+[11, 6, 17, 19]
+['3147dbedb6618cf418dc2a4e6e46b7f598ce62d3e346f8043e507b6626b9c9c6', '0f91abf611686bc372fc850fbe9023f44922ec730400d7e17452d927d9970eb2', 'dd5c7f50a7977e65c52dc937487cc197bff445a1c9b19184b2fd8206a0325cb9', '20c8d9b1b6e28faa747008703cbc94830bdcacce877cb231f740c0ac1dc79a0c']
+
+[11, 6, 17, 19]
+['3147dbedb6618cf418dc2a4e6e46b7f598ce62d3e346f8043e507b6626b9c9c6', '0f91abf611686bc372fc850fbe9023f44922ec730400d7e17452d927d9970eb2', 'dd5c7f50a7977e65c52dc937487cc197bff445a1c9b19184b2fd8206a0325cb9', '20c8d9b1b6e28faa747008703cbc94830bdcacce877cb231f740c0ac1dc79a0c']
+{'!': '#'}
+
+<Silk: [11, 6, 17, 19] >
+['3147dbedb6618cf418dc2a4e6e46b7f598ce62d3e346f8043e507b6626b9c9c6', '0f91abf611686bc372fc850fbe9023f44922ec730400d7e17452d927d9970eb2', 'dd5c7f50a7977e65c52dc937487cc197bff445a1c9b19184b2fd8206a0325cb9', '20c8d9b1b6e28faa747008703cbc94830bdcacce877cb231f740c0ac1dc79a0c']
+Status: OK
+Status: OK
+Status: OK
+Status: OK
+
+DATA [{'a': 12, 'b': -123}, {'a': 182, 'b': -83}]
+
+Exception: None
+-111
+[-111, 99]
+<Silk: [-111, 99] >
+DATA [{'a': 12, 'b': -123}, {'a': 182, 'b': -83}]
+
+Exception: None
+-111
+[-111, 99]
+<Silk: [-111, 99] >
+
+[('data',),
+ ('graph',),
+ ('m',),
+ ('result',),
+ ('m', 'macro', 'ctx', 'subctx1'),
+ ('m', 'macro', 'ctx', 'subctx1', 'a'),
+ ('m', 'macro', 'ctx', 'subctx1', 'add'),
+ ('m', 'macro', 'ctx', 'subctx1', 'b'),
+ ('m', 'macro', 'ctx', 'subctx1', 'result'),
+ ('m', 'macro', 'ctx', 'subctx2'),
+ ('m', 'macro', 'ctx', 'subctx2', 'a'),
+ ('m', 'macro', 'ctx', 'subctx2', 'add'),
+ ('m', 'macro', 'ctx', 'subctx2', 'b'),
+ ('m', 'macro', 'ctx', 'subctx2', 'result')]

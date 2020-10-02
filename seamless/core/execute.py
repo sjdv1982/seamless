@@ -20,6 +20,8 @@ import wurlitzer
 from .cached_compile import exec_code
 from .protocol.serialize import _serialize as serialize
 
+DIRECT_PRINT = False
+
 def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
     if not inspect.isclass(exctype):
@@ -91,9 +93,11 @@ def _execute(name, code,
         except SeamlessStreamTransformationError as exc:
             exc = str(exc) + "\n"
             return (10, exc)
-        except Exception:
+        except Exception as exc:
             exc = traceback.format_exc()
             return (1, exc)
+        except SystemExit:
+            raise SystemExit() from None
         else:
             if output_name is None:
                 return (0, None)
@@ -128,41 +132,56 @@ class FakeStdStream:
 def execute(name, code,
       injector, module_workspace,
       identifier, namespace,
-      inputs, output_name, celltype, result_queue
+      inputs, output_name, celltype, result_queue,
+      python_debug = None
     ):
+    if python_debug:
+        direct_print = True
+    else:
+        direct_print = DIRECT_PRINT
     assert identifier is not None
+    _exiting = False
     try:
-        old_stdio = sys.stdout, sys.stderr
-        stdout, stderr = FakeStdStream(sys.stdout), FakeStdStream(sys.stderr)
-        sys.stdout, sys.stderr = stdout, stderr
-        with wurlitzer.pipes() as (stdout2, stderr2):
+        ok = False
+        if direct_print:
             result = _execute(name, code,
                 injector, module_workspace,
                 identifier, namespace,
                 inputs, output_name, celltype, result_queue
             )
+        else:
+            old_stdio = sys.stdout, sys.stderr
+            stdout, stderr = FakeStdStream(sys.stdout), FakeStdStream(sys.stderr)
+            sys.stdout, sys.stderr = stdout, stderr
+            with wurlitzer.pipes() as (stdout2, stderr2):
+                result = _execute(name, code,
+                    injector, module_workspace,
+                    identifier, namespace,
+                    inputs, output_name, celltype, result_queue
+                )
 
         msg_code, msg = result
         if msg_code == 2: # SeamlessTransformationError, propagate
             result_queue.put((1, msg))
         elif msg_code in (1, 10):
             std = ""
-            sout = stdout.read() + stdout2.read()
-            sys.stdout, sys.stderr = old_stdio
-            if len(sout):
-                if not len(std):
-                    std = "\n"
-                std += """*************************************************
+            if not direct_print:
+                sout = stdout.read() + stdout2.read()
+                sys.stdout, sys.stderr = old_stdio
+                if len(sout):
+                    if not len(std):
+                        std = "\n"
+                    std += """*************************************************
 * Standard output
 *************************************************
 {}
 *************************************************
 """.format(sout)
-            serr = stderr.read() + stderr2.read()
-            if len(serr):
-                if not len(std):
-                    std += "\n"
-                std +="""*************************************************
+                serr = stderr.read() + stderr2.read()
+                if len(serr):
+                    if not len(std):
+                        std += "\n"
+                    std +="""*************************************************
 * Standard error
 *************************************************
 {}
@@ -172,21 +191,48 @@ def execute(name, code,
                 msg = std + msg
             result_queue.put((1, msg))
         else:
-            sys.stdout.write(stdout.read() + stdout2.read())
-            sys.stderr.write(stderr.read() + stderr2.read())
+            if not direct_print:
+                """ # does not normally work...
+                sys.stdout.write(stdout.read() + stdout2.read())
+                sys.stderr.write(stderr.read() + stderr2.read())
+                """
+                content = stdout.read() + stdout2.read()
+                if len(content):
+                    result_queue.put((4, (0, content)))
+                content = stderr.read() + stderr2.read()
+                if len(content):
+                    result_queue.put((4, (1, content)))
             result_queue.put(result)
-    finally:
-        sys.stdout, sys.stderr = old_stdio
+        ok = True
+    except SystemExit:
+        _exiting = True
         if USE_PROCESSES:
-            result_queue.close()
-        result_queue.join()
+            signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        raise SystemExit() from None
+    except Exception:
+        traceback.print_exc()
+    finally:
+        if not direct_print:
+            sys.stdout, sys.stderr = old_stdio
+        if not _exiting:
+            try:
+                if USE_PROCESSES:
+                    result_queue.close()
+                if ok:
+                    result_queue.join()
+            except Exception:
+                traceback.print_exc()
+
 
 def execute_debug(name, code,
       injector, module_workspace,
       identifier, namespace,
-      inputs, output_name, celltype, result_queue
+      inputs, output_name, celltype, result_queue,
+      **args
     ):
+    _exiting = False
     try:
+        ok = False
         old_stdio = sys.stdout, sys.stderr
         sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
@@ -210,8 +256,22 @@ def execute_debug(name, code,
             inputs, output_name, celltype, result_queue
         )
         result_queue.put(result)
-    finally:
-        sys.stdout, sys.stderr = old_stdio
+        ok = True
+    except SystemExit:
+        _exiting = True
         if USE_PROCESSES:
-            result_queue.close()
-        result_queue.join()
+            signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        raise SystemExit() from None
+    except Exception:
+        traceback.print_exc()
+    finally:
+        if not direct_print:
+            sys.stdout, sys.stderr = old_stdio
+        if not _exiting:
+            try:
+                if USE_PROCESSES:
+                    result_queue.close()
+                if ok:
+                    result_queue.join()
+            except Exception:
+                traceback.print_exc()

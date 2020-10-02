@@ -1,6 +1,9 @@
 import seamless
 from seamless.core import context, cell, transformer, unilink
 
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)
 ctx.cell2 = cell("int").set(2)

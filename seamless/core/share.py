@@ -23,7 +23,7 @@ class ShareItem:
     _initialized = False
     _initializing = False
     share = None
-    def __init__(self, cell, path, readonly, mimetype=None):        
+    def __init__(self, cell, path, readonly, mimetype=None):
         self.path = path
         self.celltype = cell._celltype
         self.cell = ref(cell)
@@ -42,7 +42,7 @@ class ShareItem:
         if cell is None:
             return
         if cell._destroyed:
-            return        
+            return
         if not self.readonly:
             assert cell.has_authority(), cell # mount read mode only for authoritative cells
         self._initializing = True
@@ -55,6 +55,7 @@ class ShareItem:
             self._namespace = name
 
             cell_checksum = cell._checksum
+            cell_pending = manager.taskmanager.is_pending(cell)
             cell_empty = (cell_checksum is None)
             _, cached_share = sharemanager.cached_shares.get((name, self.path), (None, None))
             from_cache = False
@@ -77,12 +78,12 @@ class ShareItem:
                     celltype, self.mimetype
                 )
             self.share.bind(self)
-            if from_cache:
+            if from_cache and not cell_pending:
                 self.update(cell_checksum)
         finally:
             self._initialized = True
             self._initializing = False
-                    
+
     async def write(self):
         cell = self.cell()
         if cell is None:
@@ -92,20 +93,25 @@ class ShareItem:
         while self._initializing:
             await asyncio.sleep(0.01)
         if self.share is not None:
-            self.share.set_checksum(cell._checksum)
+            manager = cell._get_manager()
+            cell_pending = manager.taskmanager.is_pending(cell)
+            if not cell_pending:
+                # If the cell is pending, a running task will later call manager._set_cell_checksum,
+                #   which will call sharemanager.add_cell_update, which will call us again
+                self.share.set_checksum(cell._checksum)
 
-    def update(self, checksum):        
+    def update(self, checksum):
         # called by shareserver, or from init
-        assert checksum is None or isinstance(checksum, bytes)        
+        assert checksum is None or isinstance(checksum, bytes)
         if not self.readonly:
             sharemanager.share_value_updates[self] = checksum
 
     def destroy(self):
         if self._destroyed:
-            return        
+            return
         self._destroyed = True
         if self.share is not None:
-            self.share.unbind()            
+            self.share.unbind()
             now = time.time()
             sharemanager.cached_shares[self._namespace, self.path] = (now, self.share)
 
@@ -123,13 +129,13 @@ class ShareManager:
     _last_run = None
     _stop = False
     _future_run = None
+    _current_run = None
     def __init__(self, latency):
         self.latency = latency
         self.shares = {}
         self.cell_updates = {}
         self.share_updates = set()
         self.share_value_updates = {}
-        self._tick = False
         self.paths = {}
         self.cached_shares = {} # key: namespace, file path; value: (deletion time, share.Share)
 
@@ -151,7 +157,7 @@ class ShareManager:
         if not share_item._destroyed:
             paths = self.paths[manager]
             path = share_item.path
-            paths.discard(path)            
+            paths.discard(path)
             share_item.destroy()
 
     def update_share(self, cell):
@@ -166,7 +172,7 @@ class ShareManager:
 
     async def run_once(self):
 
-        for cell in self.share_updates:            
+        for cell in self.share_updates:
             if cell._destroyed:
                 continue
             share_params = cell._share
@@ -219,14 +225,13 @@ class ShareManager:
             from_buffer = False
             if checksum is not None and cell._celltype in ("plain", "mixed"):
                 try:
-                    buffer = get_buffer(checksum, buffer_cache)
+                    buffer = get_buffer(checksum)
                 except CacheMissError:
                     buffer = await get_buffer_remote(
-                        checksum, 
-                        buffer_cache,
+                        checksum,
                         None
                     )
-                if buffer is not None:                    
+                if buffer is not None:
                     try:
                         checksum = await convert(checksum, buffer, "cson", "plain")
                     except ValueError:
@@ -238,17 +243,19 @@ class ShareManager:
                     checksum = checksum.hex()
                 cell.set_checksum(checksum)
         self.share_value_updates.clear()
-        
+
         for cell, checksum in cell_updates.items():
             if cell._destroyed:
                 continue
-            try:                
+            try:
                 share_item = self.shares[cell]
-                share_item.init()
-                await share_item.write()
+                if not share_item._initialized:
+                    share_item.init()
+                else:
+                    await share_item.write()
             except:
                 traceback.print_exc()
-            
+
         now = time.time()
         to_destroy = []
         for npath, value in self.cached_shares.items():
@@ -259,19 +266,20 @@ class ShareManager:
             mod_time, share = self.cached_shares.pop(npath)
             share.destroy()
 
-        self._tick = True
-
     async def _run(self):
         try:
             self._running = True
             while not self._stop:
                 t = time.time()
                 try:
-                    await self.run_once()
+                    if self._current_run is None:
+                        self._current_run = asyncio.ensure_future(self.run_once())
+                    await self._current_run
                 except Exception:
-                    self._tick = True
                     import traceback
                     traceback.print_exc()
+                finally:
+                    self._current_run = None
                 while time.time() - t < self.latency:
                     await asyncio.sleep(0.05)
         finally:
@@ -294,14 +302,16 @@ class ShareManager:
         asyncio.get_event_loop().run_until_complete(fut)
 
     async def tick_async(self):
-        self._tick = False
-        while self._running and not self._tick:
-            await asyncio.sleep(0.01)
+        """Waits until one iteration of the run() loop has finished"""
+        if self._current_run is None:
+            self._current_run = asyncio.ensure_future(self.run_once())
+        await self._current_run
 
     def tick(self):
         """Waits until one iteration of the run() loop has finished"""
-        fut = asyncio.ensure_future(self.tick_async())
-        asyncio.get_event_loop().run_until_complete(fut)
+        if self._current_run is None:
+            self._current_run = asyncio.ensure_future(self.run_once())
+        asyncio.get_event_loop().run_until_complete(self._current_run)
 
 sharemanager = ShareManager(0.2)
 
@@ -309,4 +319,3 @@ from ..shareserver import shareserver
 from .protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
 from .protocol.conversion import convert
 from .protocol.calculate_checksum import calculate_checksum
-from .cache.buffer_cache import buffer_cache

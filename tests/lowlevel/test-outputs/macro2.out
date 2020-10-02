@@ -1,27 +1,21 @@
-Execute Seamless macro: .mymacro
 Executing 'mymacro'...
-Execute Seamless macro: .mymacro.ctx.submacro
 Executing 'submacro, param = 1'...
 INPUT!!!
 10
 ************************************************************
 Stage 1
 ************************************************************
-Execute Seamless macro: .mymacro.ctx.submacro
 Executing 'submacro, param = 1'...
 INP!!!
 20
 ************************************************************
 Stage 2
 ************************************************************
-Execute Seamless macro: .mymacro
 Executing 'mymacro'...
-Execute Seamless macro: .mymacro.ctx.submacro
 Executing 'submacro, param = 2'...
 INP!!!
 ************************************************************
 Stage 3
 ************************************************************
-Execute Seamless macro: .mymacro.ctx.submacro
 Executing 'submacro, param = 2'...
 INP2!!!

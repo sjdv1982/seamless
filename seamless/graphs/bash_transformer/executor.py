@@ -10,9 +10,19 @@ from seamless.core.transformation import SeamlessTransformationError
 from seamless.mixed.get_form import get_form
 from seamless import subprocess
 from subprocess import PIPE
+import psutil
+import signal
+
 env = os.environ.copy()
 
 resultfile = "RESULT"
+
+def sighandler(signal, frame):
+    if process is not None:
+        subprocess.kill_children(process)
+    os.chdir(old_cwd)
+    shutil.rmtree(tempdir, ignore_errors=True)
+    raise SystemExit()
 
 def read_data(data):
     try:
@@ -30,15 +40,17 @@ def read_data(data):
 
 old_cwd = os.getcwd()
 try:
+    process = None
     tempdir = tempfile.mkdtemp(prefix="seamless-bash-transformer")
     os.chdir(tempdir)
+    signal.signal(signal.SIGTERM, sighandler)
     for pin in pins_:
         v = globals()[pin]
         if isinstance(v, Silk):
             v = v.unsilk
         storage, form = get_form(v)
         if storage.startswith("mixed"):
-            raise TypeError("pin '%s' has mixed data" % pin)
+            raise TypeError("pin '%s' has '%s' data" % (pin, storage))
         if storage == "pure-plain":
             if isinstance(form, str):
                 vv = str(v)
@@ -61,13 +73,21 @@ try:
                 with open(pin, "bw") as pinf:
                     np.save(pinf,v,allow_pickle=False)
     try:
-        bashcode2 = "set -u -e -o pipefail\n" + bashcode
+        bash_header = """set -u -e
+trap 'jobs -p | xargs -r kill' EXIT
+"""
+        bashcode2 = bash_header + bashcode
         process = subprocess.run(
             bashcode2, capture_output=True, shell=True, check=True,
             executable='/bin/bash',
             env=env
         )
     except subprocess.CalledProcessError as exc:
+        stdout = exc.stdout
+        try:
+            stdout = stdout.decode()
+        except:
+            pass
         stderr = exc.stderr
         try:
             stderr = stderr.decode()
@@ -84,11 +104,17 @@ Bash transformer exception
 *************************************************
 
 *************************************************
+* Standard output
+*************************************************
+{}
+*************************************************
+
+*************************************************
 * Standard error
 *************************************************
 {}
 *************************************************
-""".format(bashcode, stderr)) from None
+""".format(bashcode, stdout, stderr)) from None
     if not os.path.exists(resultfile):
         msg = """
 Bash transformer exception
@@ -102,6 +128,14 @@ Bash transformer exception
 Error: Result file RESULT does not exist
 """.format(bashcode)
         try:
+            stdout = process.stdout.decode()
+            if len(stdout):
+                msg += """*************************************************
+* Standard output
+*************************************************
+{}
+*************************************************
+""".format(stdout)
             stderr = process.stderr.decode()
             if len(stderr):
                 msg += """*************************************************
@@ -110,10 +144,28 @@ Error: Result file RESULT does not exist
 {}
 *************************************************
 """.format(stderr)
+
         except:
             pass
 
         raise SeamlessTransformationError(msg)
+    else:
+        stdout = process.stdout
+        try:
+            stdout = stdout.decode()
+        except:
+            pass
+        if len(stdout):
+            print(stdout)
+
+        stderr = process.stderr
+        try:
+            stderr = stderr.decode()
+        except:
+            pass
+        if len(stderr):
+            print(stderr, file=sys.stderr)
+
     try:
         tar = tarfile.open(resultfile)
         result = {}
@@ -126,5 +178,7 @@ Error: Result file RESULT does not exist
             resultdata = f.read()
         result = read_data(resultdata)
 finally:
+    if process is not None:
+        subprocess.kill_children(process)
     os.chdir(old_cwd)
     shutil.rmtree(tempdir, ignore_errors=True)

@@ -1,44 +1,87 @@
 import weakref
 from ..cache.buffer_cache import buffer_cache
-from .. import destroyer
 
-import sys
 import json
 import asyncio
 
-def log(*args, **kwargs):
-    print(*args, **kwargs, file=sys.stderr)
+import logging
+logger = logging.getLogger("seamless")
 
-RECOMPUTE_OVER_REMOTE = 1000000 # after this threshold, better to recompute than to download remotelt
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
+
+RECOMPUTE_OVER_REMOTE = int(100e6) # after this threshold, better to recompute than to download remotely
                                 # TODO: have some dynamic component based on:
                                 # - stored recomputation time from provenance server
                                 # - internet connection speed
+
+_deep_buffer_coro_count = 0
+def new_deep_buffer_coro_id():
+    global _deep_buffer_coro_count
+    _deep_buffer_coro_count += 1
+    return _deep_buffer_coro_count
+
+deep_buffer_coros = []
+
+
+async def decref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
+    while deep_buffer_coros[0] != deep_buffer_coro_id:
+        await asyncio.sleep(0.01)
+    try:
+        deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
+        sub_checksums = deep_structure_to_checksums(
+            deep_structure, hash_pattern
+        )
+        for sub_checksum in sub_checksums:
+            buffer_cache.decref(bytes.fromhex(sub_checksum))
+    finally:
+        deep_buffer_coros.pop(0)
+
+async def incref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
+    while deep_buffer_coros[0] != deep_buffer_coro_id:
+        await asyncio.sleep(0.01)
+    try:
+        deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
+        sub_checksums = deep_structure_to_checksums(
+            deep_structure, hash_pattern
+        )
+        for sub_checksum in sub_checksums:
+            buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)
+    finally:
+        deep_buffer_coros.pop(0)
 
 class CacheManager:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
         self.checksum_refs = {}
-        self.buffer_cache = buffer_cache
+
         self.cell_to_ref = {}
+        self.inactive_expressions = set()
         self.expression_to_ref = {}
-        self.transformer_to_ref = {}
+        self.expression_to_result_checksum = {}
+        self.transformer_to_result_checksum = {}
         self.reactor_to_refs = {}
         self.inchannel_to_ref = {}
         self.macro_exceptions = {}
         self.reactor_exceptions = {}
 
-        # Quick local expression cache
-        # Hang onto this indefinitely
-        # No expression cache at the level of communion_server or redis
-        #  (if expressions are really long to compute, use deepcells)
-        self.expression_to_checksum = {} 
-        
         # for now, just a single global transformation cache
         from ..cache.transformation_cache import transformation_cache
         self.transformation_cache = transformation_cache
 
-        self._destroying = set()
-        
     def register_cell(self, cell):
         assert cell not in self.cell_to_ref
         self.cell_to_ref[cell] = None
@@ -48,13 +91,37 @@ class CacheManager:
             self.inchannel_to_ref[inchannel] = None
 
     def register_expression(self, expression):
-        expression = expression
-        assert expression not in self.expression_to_ref
-        self.expression_to_ref[expression] = None
+        # Special case, since we never actually clear expression caches,
+        #  we just inactivate them if not referenced
+        if expression in self.inactive_expressions:
+            self.inactive_expressions.remove(expression)
+            checksum = self.expression_to_ref.get(expression)
+            if checksum is not None:
+                self.incref_checksum(
+                    checksum,
+                    expression,
+                    False,
+                    False
+                )
+            checksum = self.expression_to_result_checksum.get(expression)
+            if checksum is not None:
+                self.incref_checksum(
+                    checksum,
+                    expression,
+                    False,
+                    True
+                )
+            return True
+        else:
+            assert expression not in self.expression_to_ref
+            self.expression_to_ref[expression] = None
+            assert expression not in self.expression_to_result_checksum
+            self.expression_to_result_checksum[expression] = None
+            return False
 
     def register_transformer(self, transformer):
-        assert transformer not in self.transformer_to_ref
-        self.transformer_to_ref[transformer] = None
+        assert transformer not in self.transformer_to_result_checksum
+        self.transformer_to_result_checksum[transformer] = None
         self.transformation_cache.register_transformer(transformer)
 
     def register_macro(self, macro):
@@ -69,43 +136,71 @@ class CacheManager:
         self.reactor_to_refs[reactor] = refs
         self.reactor_exceptions[reactor] = None
 
-    def incref_checksum(self, checksum, refholder, authority):        
+    def incref_checksum(self, checksum, refholder, authoritative, result):
+        """
+        NOTE: incref/decref must happen within one async step
+        Therefore, the direct or indirect call of _sync versions of coroutines
+        (e.g. deserialize_sync, which launches coroutines and waits for them)
+        IS NOT ALLOWED
+        """
         if checksum is None:
             return
-        #print("INCREF CHECKSUM", checksum, refholder)
-        if checksum not in self.checksum_refs:
-            self.buffer_cache.incref(checksum)
-            self.checksum_refs[checksum] = []
+        #print("INCREF CHECKSUM", checksum.hex(), refholder, result)
+        incref_hash_pattern = False
         if isinstance(refholder, Cell):
+            assert not result
             assert self.cell_to_ref[refholder] is None
-            self.cell_to_ref[refholder] = (checksum, authority) 
+            self.cell_to_ref[refholder] = (checksum, authoritative)
             cell = refholder
             if cell._hash_pattern is not None:
-                deep_buffer = self.buffer_cache.get_buffer(checksum)
-                deep_structure = deserialize(deep_buffer, checksum, "mixed", False)
-                sub_checksums = deep_structure_to_checksums(
-                    deep_structure, cell._hash_pattern
-                )
-                for sub_checksum in sub_checksums:
-                    #print("INCREF SUB-CHECKSUM", sub_checksum, cell)
-                    self.buffer_cache.incref(bytes.fromhex(sub_checksum))
+                incref_hash_pattern = True
         elif isinstance(refholder, Expression):
-            assert self.expression_to_ref[refholder] is None
-            self.expression_to_ref[refholder] = (checksum, authority) 
+            #print("INCREF EXPRESSION", refholder._get_hash(), result)
+            assert not authoritative
+            assert refholder not in self.inactive_expressions
+            if not result:
+                v = self.expression_to_ref[refholder]
+                assert v is None or v == checksum, refholder
+                self.expression_to_ref[refholder] = checksum
+            else:
+                assert checksum != refholder.checksum
+                v = self.expression_to_result_checksum[refholder]
+                assert v is None or v == checksum, refholder
+                self.expression_to_result_checksum[refholder] = checksum
         elif isinstance(refholder, Transformer):
-            assert not authority
-            assert self.transformer_to_ref[refholder] is None
-            self.transformer_to_ref[refholder] = checksum
+            assert not authoritative
+            assert result
+            assert self.transformer_to_result_checksum[refholder] is None
+            self.transformer_to_result_checksum[refholder] = checksum
         elif isinstance(refholder, Inchannel):
-            assert not authority
+            assert not authoritative
+            assert not result
             assert self.inchannel_to_ref[refholder] is None
             self.inchannel_to_ref[refholder] = checksum
         elif isinstance(refholder, Library):
             pass
         else:
             raise TypeError(type(refholder))
-        self.checksum_refs[checksum].append((refholder, authority))
-        #print(self, "INCREF", checksum.hex(), self.checksum_refs[checksum])
+
+        refh = refholder
+        if checksum not in self.checksum_refs:
+            self.checksum_refs[checksum] = set()
+            try:
+                buffer_cache.incref(checksum, authoritative)
+            finally:
+                item = (refh, result)
+                self.checksum_refs[checksum].add(item)
+        else:
+            item = (refh, result)
+            self.checksum_refs[checksum].add(item)
+        #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
+        if incref_hash_pattern:
+            deep_buffer = buffer_cache.get_buffer(checksum)
+            deep_buffer_coro_id = new_deep_buffer_coro_id()
+            deep_buffer_coros.append(deep_buffer_coro_id)
+            coro = incref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
+            asyncio.ensure_future(coro)
+
 
     async def fingertip(self, checksum, *, must_have_cell=False):
         """Tries to put the checksum's corresponding buffer 'at your fingertips'
@@ -115,38 +210,40 @@ class CacheManager:
          one or both strategies may be skipped, or they are reversed
 
         If must_have_cell is True, then there must be a cell that holds the checksum,
-         else no fingertip strategy is performed
+         else no fingertip strategy is performed; this is a security feature used by
+         the shareserver, which makes it safe to re-compute a checksum-to-buffer
+         request dynamically, without allowing arbitrary computation
         """
 
         from ..cache import CacheMissError
         from ..cache.transformation_cache import calculate_checksum
-        from .tasks.evaluate_expression import EvaluateExpressionTask        
+        from .tasks.evaluate_expression import EvaluateExpressionTask
         if checksum is None:
             return
         if isinstance(checksum, str):
             checksum = bytes.fromhex(checksum)
         assert isinstance(checksum, bytes), checksum
-        buffer = self.buffer_cache.get_buffer(checksum)
+        buffer = buffer_cache.get_buffer(checksum)
         if buffer is not None:
             return buffer
 
         coros = []
         manager = self.manager()
         tf_cache = self.transformation_cache
-        
-        async def fingertip_transformation(transformation, tf_checksum):            
+
+        async def fingertip_transformation(transformation, tf_checksum):
             coros = []
             for pinname in transformation:
                 if pinname.startswith("__"):
                     continue
-                celltype, subcelltype, sem_checksum = transformation[pinname]                
+                celltype, subcelltype, sem_checksum = transformation[pinname]
                 sem2syn = tf_cache.semantic_to_syntactic_checksums
                 semkey = (sem_checksum, celltype, subcelltype)
                 checksum2 = sem2syn.get(semkey, [sem_checksum])[0]
                 coros.append(self.fingertip(checksum2))
             await asyncio.gather(*coros)
             job = tf_cache.run_job(transformation, tf_checksum)
-            if job is not None:                
+            if job is not None:
                 await asyncio.shield(job.future)
 
         async def fingertip_expression(expression):
@@ -159,7 +256,7 @@ class CacheManager:
         rmap = {True: 2, None: 1, False: 0}
         remote, recompute= 2, 2 # True, True
         has_cell = False
-        for refholder, auth in self.checksum_refs.get(checksum, []):
+        for refholder, result in self.checksum_refs.get(checksum, set()):
             if isinstance(refholder, Cell):
                 cell = refholder
                 has_cell = True
@@ -176,7 +273,6 @@ class CacheManager:
             if buffer_length is None:
                 buffer_length = await get_buffer_length_remote(
                     checksum,
-                    buffer_cache, 
                     remote_peer_id=None
                 )
             if buffer_length is not None:
@@ -186,41 +282,61 @@ class CacheManager:
         if remote > recompute:
             try:
                 buffer = await get_buffer_remote(
-                    checksum, 
-                    buffer_cache,
+                    checksum,
                     None
                 )
                 if buffer is not None:
                     return buffer
             except CacheMissError:
                 pass
-        
-        for refholder, auth in self.checksum_refs.get(checksum, []):
+
+        for refholder, result in self.checksum_refs.get(checksum, set()):
+            if not result:
+                continue
             if isinstance(refholder, Expression):
-                if refholder.checksum != checksum:
-                    if self.expression_to_checksum[refholder] == checksum:                    
-                        coros.append(fingertip_expression(refholder))
+                coros.append(fingertip_expression(refholder))
             elif isinstance(refholder, Transformer) and recompute:
                 tf_checksum = tf_cache.transformer_to_transformations[refholder]
                 transformation = tf_cache.transformations[tf_checksum]
-                cs = tf_cache.transformation_results.get(tf_checksum, (None, None))[0]
-                if cs == checksum:
-                    coros.append(fingertip_transformation(transformation, tf_checksum))
-            
-        tasks = [asyncio.ensure_future(c) for c in coros]
-        while len(tasks):
-            _, tasks  = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-            buffer = self.buffer_cache.get_buffer(checksum)
-            if buffer is not None:
-                for task in tasks:
+                coros.append(fingertip_transformation(transformation, tf_checksum))
+
+        async def buffer_from_syn2sem(checksum, syn_checksum, celltype, subcelltype):
+            await syntactic_to_semantic(syn_checksum, celltype, subcelltype, "fingertip")
+            return buffer_cache.get_buffer(checksum)
+
+        sem2syn = self.transformation_cache.semantic_to_syntactic_checksums
+        for (semkey, celltype, subcelltype), syn_checksums in sem2syn.items():
+            if semkey == checksum:
+                for syn_checksum in syn_checksums:
+                    coro = buffer_from_syn2sem(checksum, syn_checksum, celltype, subcelltype)
+                    coros.append(coro)
+
+        all_tasks = [asyncio.ensure_future(c) for c in coros]
+        try:
+            tasks = all_tasks
+            while len(tasks):
+                _, tasks  = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+                buffer = buffer_cache.get_buffer(checksum)
+                if buffer is not None:
+                    return buffer
+        finally:
+            for task in all_tasks:
+                if task.done():
+                    try:
+                        task.result()
+                    except Exception:
+                        pass
+                else:
                     task.cancel()
-                return buffer       
+
+        buffer = buffer_cache.get_buffer(checksum)
+        if buffer is not None:
+            return buffer
 
         if remote > 0 and remote <= recompute:
             try:
                 buffer = await get_buffer_remote(
-                    checksum, 
-                    buffer_cache,
+                    checksum,
                     None
                 )
                 if buffer is not None:
@@ -229,34 +345,45 @@ class CacheManager:
                 pass
 
         raise CacheMissError(checksum.hex())
-        
 
-    def decref_checksum(self, checksum, refholder, authority, *, destroying=False):
-        if checksum is None:
-            if isinstance(refholder, Expression):
-                if refholder in self.expression_to_ref:
-                    assert self.expression_to_ref[refholder] is None
-                    self.expression_to_ref.pop(refholder)
+
+    def decref_checksum(self, checksum, refholder, authoritative, result, *, destroying=False):
+        """
+        NOTE: incref/decref must happen within one async step
+        Therefore, the direct or indirect call of _sync versions of coroutines
+        (e.g. deserialize_sync, which launches coroutines and waits for them)
+        IS NOT ALLOWED
+        """
+        #print("DECREF", refholder, checksum.hex())
+        if checksum not in self.checksum_refs:
+            if checksum is None:
+                cs = "<None>"
+            else:
+                cs = checksum.hex()
+            print_warning("cachemanager: cannot decref unknown checksum {}".format(cs))
             return
         if isinstance(refholder, Cell):
-            assert self.cell_to_ref[refholder] is not None
+            assert self.cell_to_ref[refholder] is not None, refholder
             self.cell_to_ref[refholder] = None
             cell = refholder
-            if not destroying and cell._hash_pattern is not None:
-                deep_buffer = self.buffer_cache.get_buffer(checksum)
-                deep_structure = deserialize(deep_buffer, checksum, "mixed", False)
-                sub_checksums = deep_structure_to_checksums(
-                    deep_structure, cell._hash_pattern
-                )
-                for sub_checksum in sub_checksums:
-                    self.buffer_cache.decref(bytes.fromhex(sub_checksum))
+            if cell._hash_pattern is not None:
+                deep_buffer = buffer_cache.get_buffer(checksum)
+                deep_buffer_coro_id = new_deep_buffer_coro_id()
+                deep_buffer_coros.append(deep_buffer_coro_id)
+                coro = decref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
+                asyncio.ensure_future(coro)
 
         elif isinstance(refholder, Expression):
-            assert self.expression_to_ref[refholder] is not None
-            self.expression_to_ref.pop(refholder)
+            # Special case, since we never actually clear expression caches,
+            #  we just inactivate them if not referenced
+            #print("DECREF EXPRESSION", refholder._get_hash(), result)
+            if result:
+                assert self.expression_to_result_checksum[refholder] is not None
+            else:
+                assert self.expression_to_ref[refholder] is not None
         elif isinstance(refholder, Transformer):
-            assert self.transformer_to_ref[refholder] is not None
-            self.transformer_to_ref[refholder] = None
+            assert self.transformer_to_result_checksum[refholder] is not None
+            self.transformer_to_result_checksum[refholder] = None
         elif isinstance(refholder, Inchannel):
             assert self.inchannel_to_ref[refholder] is not None
             self.inchannel_to_ref[refholder] = None
@@ -264,78 +391,91 @@ class CacheManager:
             pass
         else:
             raise TypeError(type(refholder))
-        #print("cachemanager DECREF", checksum.hex())
         try:
-            self.checksum_refs[checksum].remove((refholder, authority))        
-        except ValueError:
-            self.checksum_refs[checksum][:] = \
-              [l for l in self.checksum_refs[checksum] if l[0] is not refholder]
+            refh = refholder
+            self.checksum_refs[checksum].remove((refh, result))
+        except Exception:
+            print_warning("""cachemanager: cannot remove unknown checksum ref:
+checksum: {}
+refholder: {}
+is authoritative: {}
+is result: {}
+""".format(checksum.hex(), refholder, authoritative, result))
+            return
+        #print("cachemanager DECREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if len(self.checksum_refs[checksum]) == 0:
-            self.buffer_cache.decref(checksum)
-            self.checksum_refs.pop(checksum)        
+            buffer_cache.decref(checksum)
+            self.checksum_refs.pop(checksum)
 
-    @destroyer
     def destroy_cell(self, cell):
         ref = self.cell_to_ref[cell]
         if ref is not None:
-            checksum, authority = ref
-            if checksum is not None and cell._hash_pattern is not None:
-                buffer = self.buffer_cache.get_buffer(checksum)
-                if buffer is not None:
-                    deep_structure = json.loads(buffer) # non-standard, but we could be in precarious territory
-                    sub_checksums = deep_structure_to_checksums(deep_structure, cell._hash_pattern)
-                    for sub_checksum in sub_checksums:
-                        self.buffer_cache.decref(bytes.fromhex(sub_checksum))
-            self.decref_checksum(checksum, cell, authority, destroying=True)
+            checksum, authoritative = ref
+            self.decref_checksum(checksum, cell, authoritative, False, destroying=True)
         self.cell_to_ref.pop(cell)
 
-    @destroyer
     def destroy_structured_cell(self, sc):
         for inchannel in sc.inchannels.values():
             ref = self.inchannel_to_ref[inchannel]
             if ref is not None:
                 checksum = ref
-                self.decref_checksum(checksum, inchannel, False)
+                self.decref_checksum(checksum, inchannel, False, False)
             self.inchannel_to_ref.pop(inchannel)
 
-    @destroyer
     def destroy_transformer(self, transformer):
-        ref = self.transformer_to_ref[transformer]
+        ref = self.transformer_to_result_checksum[transformer]
         if ref is not None:
             checksum = ref
-            self.decref_checksum(checksum, transformer, False)
-        self.transformer_to_ref.pop(transformer)
+            self.decref_checksum(checksum, transformer, False, True)
+        self.transformer_to_result_checksum.pop(transformer)
         self.transformation_cache.destroy_transformer(transformer)
 
-    @destroyer
     def destroy_macro(self, macro):
         self.macro_exceptions.pop(macro)
 
-    @destroyer
     def destroy_reactor(self, reactor):
         refs = self.reactor_to_refs.pop(reactor)
         for pinname in reactor.outputs:
             ref = refs[pinname]
             if ref is not None:
                 checksum = ref
-                self.decref_checksum(checksum, reactor, False)
+                self.decref_checksum(checksum, reactor, False, False)
         self.reactor_exceptions.pop(reactor)
 
-    def check_destroyed(self):        
+    def destroy_expression(self, expression):
+        # Special case, since we never actually clear expression caches,
+        #  we just inactivate them if not referenced
+        assert expression not in self.inactive_expressions
+        ref = self.expression_to_ref[expression]
+        if ref is not None:
+            checksum = ref
+            self.decref_checksum(checksum, expression, False, False)
+        ref = self.expression_to_result_checksum[expression]
+        if ref is not None:
+            checksum = ref
+            self.decref_checksum(checksum, expression, False, True)
+        self.inactive_expressions.add(expression)
+
+    def check_destroyed(self):
         attribs = (
-            "checksum_refs", 
-            "cell_to_ref", 
+            "checksum_refs",
+            "cell_to_ref",
             "expression_to_ref",
-            "transformer_to_ref",
+            "expression_to_result_checksum",
+            "transformer_to_result_checksum",
             "reactor_to_refs"
         )
-        name = self.__class__.__name__        
+        ok = True
+        name = self.__class__.__name__
         for attrib in attribs:
             a = getattr(self, attrib)
             if attrib == "checksum_refs":
-                a = [aa for aa in a.values() if aa != []]
-            if len(a):                
-                log(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                a = [list(aa) for aa in a.values() if len(aa)]
+            elif attrib.startswith("expression_to"):
+                a = [aa for aa in a if aa not in self.inactive_expressions]
+            if len(a):
+                print_warning(name + ", " + attrib + ": %d undestroyed"  % len(a))
+                ok = False
 
 from ..cell import Cell
 from ..transformer import Transformer
@@ -343,7 +483,8 @@ from ..structured_cell import Inchannel
 from ..reactor import Reactor
 from .expression import Expression
 from ..protocol.deep_structure import deep_structure_to_checksums
-from ..protocol.deserialize import deserialize_sync as deserialize
+from ..protocol.deserialize import deserialize
 from ..protocol.get_buffer import (
     get_buffer_remote, get_buffer_length_remote, CacheMissError
 )
+from ..cache.transformation_cache import syntactic_to_semantic

@@ -1,6 +1,19 @@
-#forked from Python's standard lib subprocess, but with mapping stdin and stdout
-# Slash seems to require this atm
+# Forked from Python's standard lib subprocess, but with mapping stdin and stdout
+# In addition, it kills all subprocesses spawned by the process
 from subprocess import *
+import psutil
+
+def kill_children(process):
+    children = []
+    try:
+        children = psutil.Process(process.pid).children(recursive=True)
+    except:
+        pass
+    for child in children:
+        try:
+            child.kill()
+        except:
+            pass
 
 def run(*popenargs,
         input=None, capture_output=False, timeout=None, check=False, **kwargs):
@@ -43,6 +56,7 @@ def run(*popenargs,
             stdout = process._fileobj2output[process.stdout]
             stderr = process._fileobj2output[process.stderr]
         except TimeoutExpired:
+            kill_children(process)
             process.kill()
             stdout, stderr = process.communicate()
             stdout = process._fileobj2output[process.stdout]
@@ -50,6 +64,7 @@ def run(*popenargs,
             raise TimeoutExpired(process.args, timeout, output=stdout,
                                  stderr=stderr)
         except:  # Including KeyboardInterrupt, communicate handled that.
+            kill_children(process)
             process.kill()
             # We don't call process.wait() as .__exit__ does that for us.
             raise

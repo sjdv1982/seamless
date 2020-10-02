@@ -6,8 +6,8 @@ from seamless.silk import Silk, ValidationError
 from seamless.core import context, cell, StructuredCell
 
 ctx = None
-hash_pattern = {"*": "#"}
-#hash_pattern = None
+#hash_pattern = {"*": "#"}
+hash_pattern = None
 def reset_backend(share_schemas=True, with_hash_pattern=True):
     hp = hash_pattern if with_hash_pattern else None
     global ctx, s, s2, s3
@@ -50,7 +50,7 @@ def reset_backend(share_schemas=True, with_hash_pattern=True):
         buffer=ctx.buffer3,
         data=ctx.data3,
         schema=schema3,
-        hash_pattern=hp3 
+        hash_pattern=hp3
     )
     s3 = ctx.sc3.handle
 
@@ -150,7 +150,7 @@ print(s.lis*2)
 """
 for a in s.lis[1:3]:  # slices not yet supported by monitor
     print(a.data)
-"""    
+"""
 for a in s.lis:
     print(a.data)
 print(hasattr(s, "lis"), "lis" in s)
@@ -227,25 +227,25 @@ ctx.compute()
 try:
     s.y = 1.0   #  would fail
     ctx.compute() # to ensure that ctx.sc.exception is set
-    s.validate()    
+    s.validate()
 except ValidationError:
     print("FAIL")
     print(ctx.sc.exception)
     s.y = 0
 #pprint(s.schema.value)
-ctx.compute()    
+ctx.compute()
 
 #print("set")
 s.x = 0.0
 s.y = 0.0
 s.z = 1.0
-ctx.compute()    
+ctx.compute()
 print(s.data)
 
 s.x = 1.0
 s.y = 0.0
 s.z = 0.0
-ctx.compute()    
+ctx.compute()
 print(s.data)
 
 import numpy as np
@@ -322,12 +322,12 @@ ctx.sc = StructuredCell(
 )
 
 Test = ctx.sc.handle # singleton
-""" 
+"""
 # will never work for a singleton backed up by a structured cell
 def __init__(self, a, b):
     self.a = a
     self.b = b
-"""    
+"""
 def __call__(self, c):
     return self.a + self.b + c
 #Test.__init__ = __init__

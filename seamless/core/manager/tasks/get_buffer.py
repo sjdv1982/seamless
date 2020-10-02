@@ -1,11 +1,11 @@
-from . import Task
+from . import BackgroundTask
 
-class GetBufferTask(Task):
+class GetBufferTask(BackgroundTask):
     @property
     def refkey(self):
         return self.checksum
 
-    def __init__(self, 
+    def __init__(self,
         manager, checksum
     ):
         self.checksum = checksum

@@ -2,7 +2,8 @@ import seamless
 from seamless.core import context, cell, transformer, unilink
 
 try:
-    redis_sink = seamless.RedisSink()
+    seamless.database_sink.connect()
+    seamless.database_cache.connect()
 except Exception:
     pass
 
@@ -22,7 +23,7 @@ async def main():
         "c": "output"
     })
     ctx.cell1_unilink = unilink(ctx.cell1)
-    ctx.cell1_unilink.connect(ctx.tf.a)    
+    ctx.cell1_unilink.connect(ctx.tf.a)
     ctx.cell2.connect(ctx.tf.b)
     ctx.code_copy = cell("transformer")
     ctx.code.connect(ctx.code_copy)

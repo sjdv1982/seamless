@@ -2,8 +2,8 @@ from functools import partial
 
 status_callbacks = {}
 
-OBSERVE_GRAPH_DELAY = 0.5
-OBSERVE_STATUS_DELAY = 2
+OBSERVE_GRAPH_DELAY = 0.23 # 23 is not a multiple of 100
+OBSERVE_STATUS_DELAY = 1
 
 def status_callback(ctx, ctx2, path, status):
     if ctx._gen_context is None or ctx2._gen_context is None:
@@ -16,14 +16,7 @@ def status_callback(ctx, ctx2, path, status):
 
 def observe_graph(ctx, ctx2, graph):
     from copy import deepcopy
-    # Workaround
-    from seamless.core.protocol.calculate_checksum import calculate_checksum_sync
-    from seamless.core.protocol.serialize import _serialize
-    buffer = _serialize(deepcopy(graph), ctx2.graph.celltype)
-    checksum = calculate_checksum_sync(buffer).hex()
-    ###ctx2.graph.set(deepcopy(graph))
-    # /workaround
-    ctx2.graph.set_checksum(checksum)
+    ctx2.graph.set(deepcopy(graph))
     paths_to_delete = set(status_callbacks.keys())
     for node in graph["nodes"]:
         path = tuple(node["path"])
@@ -34,7 +27,7 @@ def observe_graph(ctx, ctx2, graph):
                 path,
                 path + (node["INPUT"],),
             ]
-        else: # TODO: libmacro, macro, reactor
+        else: # TODO: macro, reactor
             continue
         for path in paths:
             if path in status_callbacks:
@@ -53,8 +46,8 @@ def observe_graph(ctx, ctx2, graph):
         #print("DELETE", dpath)
         observers = status_callbacks.pop(dpath)
         for subpath, observer in observers.items():
-            status_callback(ctx, ctx2, subpath, None)
             observer.destroy()
+            status_callback(ctx, ctx2, subpath, None)
     #print("DONE")
 
 def bind_status_graph(ctx, status_graph, *, zips=None, mounts=False, shares=True):
@@ -63,7 +56,7 @@ def bind_status_graph(ctx, status_graph, *, zips=None, mounts=False, shares=True
 The context is loaded from status_graph, which must be a graph in JSON format.
 It uses the same manager as ctx.
 The status graph's underlying buffers must be available already
-(from add_zip or via Redis)
+(from add_zip or via Seamless database)
 The status graph must have a cell called "graph",
  and normally, also a cell shared as "index.html"
 The status graph will receive the share namespace "status"
@@ -99,7 +92,7 @@ async def bind_status_graph_async(ctx, status_graph, *, zips=None, mounts=False,
 The context is loaded from status_graph, which must be a graph in JSON format.
 It uses the same manager as ctx.
 The status graph's underlying buffers must be available already
-(from add_zip or via Redis)
+(from add_zip or via database)
 The status graph must have a cell called "graph",
  and normally, also a cell shared as "index.html"
 The status graph will receive the share namespace "status"
@@ -122,7 +115,7 @@ They will be passed to ctx.add_zip before the graph is loaded
     )
     assert "graph" in ctx2.children()
     observe_graph_bound = partial(
-        observe_graph, ctx, ctx2
+        observe_graph, ctx, ctx2,
     )
     await ctx2.translation()
     params = {"runtime": True}

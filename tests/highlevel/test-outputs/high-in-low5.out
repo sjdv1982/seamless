@@ -1,0 +1,137 @@
+5
+CS-DATA ['e549d710ff556b1244ad6c44923bdf3e74bc555d4ec78011abfa5c87973dd877', '2e3a3f31267995c9e29bc7bef6d5b13d7d52af19303d46738b9d8c0ed23f28d2', 'eab994728ab34f5cbab4068fdffdfead5b8da98449289808aa222b6f6c923a5b', '09bb414f9a44dca9c05a10ff3a1a91a6f4347aa055aa09d0548b401e52b021f9']
+Exception: None
+<Silk: [11, 6, 17, 19] >
+11
+6
+[11, 6, 17, 19]
+<Silk: [11, 6, 17, 19] >
+<Silk: [11, 6, 17, 19] >
+CS-DATA ['43dceac4624340dc5f4a088935b0f7acba19421e825d86f9d2b37890df757b6d', '91e22ba81966651ff932108572fc66d1bdaaee1939314026fc055a12a9155ea7']
+
+Exception: None
+<Silk: [-111, 99] >
+-111
+99
+[-111, 99]
+<Silk: [-111, 99] >
+<Silk: [-111, 99] >
+CS-DATA ['43dceac4624340dc5f4a088935b0f7acba19421e825d86f9d2b37890df757b6d', '91e22ba81966651ff932108572fc66d1bdaaee1939314026fc055a12a9155ea7']
+
+Exception: None
+<Silk: [135, 265] >
+135
+265
+[135, 265]
+<Silk: [135, 265] >
+<Silk: [135, 265] >
+
+[('adder',),
+ ('adder', 'a'),
+ ('adder', 'add'),
+ ('adder', 'b'),
+ ('adder', 'inp'),
+ ('adder', 'inp2'),
+ ('adder', 'result'),
+ ('data',),
+ ('inst',),
+ ('inst', 'ctx'),
+ ('inst', 'ctx', 'cs_data'),
+ ('inst', 'ctx', 'data'),
+ ('inst', 'ctx', 'm'),
+ ('inst', 'ctx', 'result'),
+ ('result',),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'a'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'add'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'b'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'inp'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'inp2'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'result'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'a'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'add'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'b'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'inp'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'inp2'),
+ ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'result')]
+
+[{'source': ('adder', 'inp'),
+  'target': ('adder', 'inp2'),
+  'type': 'connection'},
+ {'source': ('adder', 'inp2', 'a'),
+  'target': ('adder', 'a'),
+  'type': 'connection'},
+ {'source': ('adder', 'inp2', 'b'),
+  'target': ('adder', 'b'),
+  'type': 'connection'},
+ {'source': ('adder', 'a'),
+  'target': ('adder', 'add', 'a'),
+  'type': 'connection'},
+ {'source': ('adder', 'b'),
+  'target': ('adder', 'add', 'b'),
+  'type': 'connection'},
+ {'source': ('adder', 'add'),
+  'target': ('adder', 'result'),
+  'type': 'connection'},
+ {'source': ('data',), 'target': ('inst', 'ctx', 'data'), 'type': 'connection'},
+ {'source': ('inst', 'ctx', 'result'),
+  'target': ('result',),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'data'),
+  'target': ('inst', 'ctx', 'cs_data'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'cs_data'),
+  'target': ('inst', 'ctx', 'm', 'cs_data'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'result'),
+  'target': ('inst', 'ctx', 'result'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'inp'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'inp2'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'inp2', 'a'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'a'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'inp2', 'b'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'b'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'a'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'add', 'a'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'b'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'add', 'b'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'add'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'result'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'inp'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'inp2'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'inp2', 'a'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'a'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'inp2', 'b'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'b'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'a'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'add', 'a'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'b'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'add', 'b'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'add'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'result'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'data'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'inp'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx1', 'result'),
+  'target': ('inst', 'ctx', 'result'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'data'),
+  'target': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'inp'),
+  'type': 'connection'},
+ {'source': ('inst', 'ctx', 'm', 'macro', 'ctx', 'subctx2', 'result'),
+  'target': ('inst', 'ctx', 'result'),
+  'type': 'connection'}]

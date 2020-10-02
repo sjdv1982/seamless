@@ -13,6 +13,10 @@ from seamless.core.transformation import SeamlessTransformationError
 
 resultfile = "RESULT"
 
+_creating_container = False
+_to_exit = False
+_sys_exit = False
+
 def read_data(data):
     try:
         npdata = BytesIO(data)
@@ -27,11 +31,36 @@ def read_data(data):
         except ValueError:
             return sdata
 
+def sighandler(signal, frame):
+    global _creating_container, _to_exit, _sys_exit
+    if _creating_container:
+        _to_exit = True
+        return
+    if container is not None:
+        try:
+            container.stop(timeout=10)
+        except:
+            pass
+        try:
+            container.remove()
+        except:
+            pass
+    try:
+        os.chdir(old_cwd)
+        shutil.rmtree(tempdir, ignore_errors=True)
+    except:
+        pass
+    _sys_exit = True
+    raise SystemExit() from None
+
 old_cwd = os.getcwd()
 try:
+    import signal
     import docker as docker_module
     tempdir = tempfile.mkdtemp(prefix="seamless-docker-transformer")
     os.chdir(tempdir)
+    container = None
+    signal.signal(signal.SIGTERM, sighandler)
     options = docker_options.copy()
     if "environment" in options:
         env = options["environment"].copy()
@@ -44,7 +73,7 @@ try:
             v = v.unsilk
         storage, form = get_form(v)
         if storage.startswith("mixed"):
-            raise TypeError("pin '%s' has mixed data" % pin)
+            raise TypeError("pin '%s' has '%s' data" % (pin, storage))
         if storage == "pure-plain":
             if isinstance(form, str):
                 vv = str(v)
@@ -74,21 +103,40 @@ try:
     if "working_dir" not in options:
         options["working_dir"] = "/run"
     with open("DOCKER-COMMAND","w") as f:
-        f.write("set -u -e -o pipefail\n")
+        bash_header = """set -u -e
+""" # don't add "trap 'jobs -p | xargs -r kill' EXIT" as it gives serious problems
+
+        f.write(bash_header)
         f.write(docker_command)
     full_docker_command = "bash DOCKER-COMMAND"
     try:
-        container = docker_client.containers.create(
-            docker_image,
-            full_docker_command,
-            **options
-        )
+        try:
+            _creating_container = True
+            container = docker_client.containers.create(
+                docker_image,
+                full_docker_command,
+                **options
+            )
+            if _to_exit:
+                raise SystemExit() from None
+        finally:
+            _creating_container = False
         try:
             container.start()
             exit_status = container.wait()['StatusCode']
 
+            stdout = container.logs(stdout=True, stderr=False)
+            try:
+                stdout = stdout.decode()
+            except:
+                pass
+            stderr = container.logs(stdout=False, stderr=True)
+            try:
+                stderr = stderr.decode()
+            except:
+                pass
+
             if exit_status != 0:
-                stderr = container.logs(stdout=False, stderr=True).decode()
                 raise SeamlessTransformationError("""
 Docker transformer exception
 ============================
@@ -100,11 +148,15 @@ Docker transformer exception
 *************************************************
 Exit code: {}
 *************************************************
+* Standard output
+*************************************************
+{}
+*************************************************
 * Standard error
 *************************************************
 {}
 *************************************************
-""".format(docker_command, exit_status, stderr)) from None
+""".format(docker_command, exit_status, stdout, stderr)) from None
         except ConnectionError as exc:
             msg = "Unknown connection error"
             if len(exc.args) == 1:
@@ -134,7 +186,23 @@ Docker transformer exception
 Error: Result file RESULT does not exist
 """.format(docker_command)
             try:
-                stderr = container.logs(stdout=False, stderr=True).decode()
+                stdout = container.logs(stdout=True, stderr=False)
+                try:
+                    stdout = stdout.decode()
+                except Exception:
+                    pass
+                if len(stdout):
+                    msg += """*************************************************
+* Standard output
+*************************************************
+{}
+*************************************************
+""".format(stdout)
+                stderr = container.logs(stdout=False, stderr=True)
+                try:
+                    stderr = stderr.decode()
+                except Exception:
+                    pass
                 if len(stderr):
                     msg += """*************************************************
 * Standard error
@@ -142,12 +210,22 @@ Error: Result file RESULT does not exist
 {}
 *************************************************
 """.format(stderr)
-            except:
+            except Exception:
                 pass
 
             raise SeamlessTransformationError(msg)
+        else:
+            if len(stdout):
+                print(stdout)
+            if len(stderr):
+                print(stderr, file=sys.stderr)
     finally:
-        container.remove()
+        if not _sys_exit:
+            try:
+                container.remove()
+            except:
+                pass
+
 
     try:
         tar = tarfile.open(resultfile)
@@ -161,5 +239,18 @@ Error: Result file RESULT does not exist
             resultdata = f.read()
         result = read_data(resultdata)
 finally:
-    os.chdir(old_cwd)
-    shutil.rmtree(tempdir, ignore_errors=True)
+    if not _sys_exit:
+        if container is not None:
+            try:
+                container.stop(timeout=10)
+            except:
+                pass
+            try:
+                container.remove()
+            except:
+                pass
+        try:
+            os.chdir(old_cwd)
+            shutil.rmtree(tempdir, ignore_errors=True)
+        except:
+            pass

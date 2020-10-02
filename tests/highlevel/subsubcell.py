@@ -1,6 +1,10 @@
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
 from seamless.highlevel import Context
 ctx = Context()
 ctx.a = {}
+ctx.translate()
 ctx.a.b = {}
 ctx.a.b.c = {}
 ctx.a.b.c.d = 10

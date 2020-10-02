@@ -22,7 +22,7 @@ def get_path_link(root, path, namespace, is_target):
 def get_path(root, path, namespace, is_target,
   *, until_structured_cell=False,
   return_node=False
- ):    
+ ):
     if namespace is not None:
         hit = namespace.get((path, is_target))
         if hit is None:
@@ -85,9 +85,9 @@ def find_channels(path, connection_paths):
 def cell_setattr(node, ctx, name, c):
     setattr(ctx, name, c)
     if node.get("fingertip_no_recompute"):
-        c._fingertip_recompute = False            
+        c._fingertip_recompute = False
     if node.get("fingertip_no_remote"):
-        c._fingertip_remote = False    
+        c._fingertip_remote = False
 
 def build_structured_cell(
   ctx, name,
@@ -106,10 +106,10 @@ def build_structured_cell(
     c.data._hash_pattern = hash_pattern
     c.auth = core_cell("mixed")
     c.auth._hash_pattern = hash_pattern
-    c.schema = core_cell("plain")        
+    c.schema = core_cell("plain")
     c.buffer = core_cell("mixed")
     c.buffer._hash_pattern = hash_pattern
-            
+
     sc = StructuredCell(
         data=c.data,
         auth=c.auth,

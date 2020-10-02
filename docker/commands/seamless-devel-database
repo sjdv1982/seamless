@@ -1,0 +1,28 @@
+#!/bin/bash
+
+database_config=$1
+: ${database_config:=/seamless/tools/default-config.yaml}
+
+set -u -e
+
+[ ! -d ~/.seamless/database ] && mkdir -p ~/.seamless/database
+
+seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
+
+echo "Starting container seamless-database-container"
+echo 'Running Seamless database adapter with' $database_config
+docker run \
+  --rm \
+  -d \
+  -p 5522:5522 \
+  --name seamless-database-container \
+  -v ~/.seamless/database:/data \
+  -v $seamlessdir:/seamless \
+  -e "PYTHONPATH=/seamless" \
+  -u jovyan \
+  -v /tmp:/tmp \
+  -v `pwd`:/cwd \
+  --workdir /cwd \
+  seamless-devel \
+  python3 -u /seamless/tools/database.py \
+  $database_config

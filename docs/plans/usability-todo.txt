@@ -3,6 +3,5 @@ as a Mobyle replacement.
 Details are/will be documented elsewhere in various plans.
 
 - Automatic generation of web form GUIs
-- Logging error messages, cache misses, network traffic, progress bars
-- Job/cache control (canceling, job database)
-- Better control of execution details (execution options, reactor start/stop side effects, execute Docker transformer as bash transformer)
+- Logging error messages, cache misses, network traffic, progress bars (Cloudless)
+- Job/cache control (canceling, job database) (Cloudless)

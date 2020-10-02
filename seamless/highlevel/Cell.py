@@ -12,8 +12,9 @@ from ..mime import get_mime, language_to_mime, ext_to_mime
 
 celltypes = (
     "structured", "text", "code", "plain", "mixed", "binary",
-    "cson", "yaml", "str", "bytes", "int", "float", "bool"
-)    
+    "cson", "yaml", "str", "bytes", "int", "float", "bool",
+    "checksum"
+)
 
 def get_new_cell(path):
     return {
@@ -28,7 +29,7 @@ def get_new_cell(path):
 class Cell(Base):
     """Cell class. Contains a piece of data in Seamless.
 
-    See http://sjdv1982.github.io/seamless/sphinx/html/cell.html for documentation    
+    See http://sjdv1982.github.io/seamless/sphinx/html/cell.html for documentation
     """
 
     _virtual_path = None
@@ -59,7 +60,7 @@ class Cell(Base):
                     return False
         return True
 
-    def get_links(self):        
+    def get_links(self):
         result = []
         path = self._path
         lp = len(path)
@@ -73,7 +74,10 @@ class Cell(Base):
     def _get_cell_subpath(self, cell, subpath):
         p = cell
         for path in subpath:
-            p = getattr(p, path)
+            p2 = getattr(p, path)
+            if isinstance(p2, SynthContext) and p2._context is not None:
+                p2 = p2._context()
+            p = p2
         return p
 
     def _get_cell(self):
@@ -85,7 +89,10 @@ class Cell(Base):
             raise ValueError
         if len(self._path):
             pp = self._path[0]
-            p = getattr(p, pp)
+            p2 = getattr(p, pp)
+            if isinstance(p2, SynthContext) and p2._context is not None:
+                p2 = p2._context()
+            p = p2
         return self._get_cell_subpath(p, self._path[1:])
 
     def _get_hcell(self):
@@ -110,6 +117,9 @@ class Cell(Base):
             hcell = self._get_hcell()
         except Exception:
             return
+        if hcell.get("UNTRANSLATED"):
+            print("WARNING: ignored value update for %s, because celltype changed" % self)
+            return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop("value", None)
@@ -125,6 +135,9 @@ class Cell(Base):
             hcell = self._get_hcell()
         except Exception:
             return
+        if hcell.get("UNTRANSLATED"):
+            print("WARNING: ignored value update for %s, because celltype changed" % self)
+            return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop("auth", None)
@@ -139,6 +152,9 @@ class Cell(Base):
         try:
             hcell = self._get_hcell()
         except Exception:
+            return
+        if hcell.get("UNTRANSLATED"):
+            print("WARNING: ignored value update for %s, because celltype changed" % self)
             return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
@@ -171,7 +187,7 @@ class Cell(Base):
         hcell = self._get_hcell()
         if not hcell["celltype"] == "structured":
             raise AttributeError(item)
-        parent = self._parent()        
+        parent = self._parent()
         readonly = False ### TODO
         path = self._subpath + (attr,)
         return SubCell(
@@ -209,7 +225,7 @@ class Cell(Base):
         return self._get_subcell(attr)
 
     def mount(self, path=None, mode="rw", authority="cell", persistent=True):
-        """Mounts the cell to the file system. 
+        """Mounts the cell to the file system.
         Mounting is only supported for non-structured cells.
 
         Arguments
@@ -217,7 +233,7 @@ class Cell(Base):
         - path
           The file path on disk
         - mode
-          "r" (read), "w" (write) or "rw". 
+          "r" (read), "w" (write) or "rw".
           The mode can only contain "r" if the cell is authoritative.
           Default: "rw"
         - authority
@@ -227,7 +243,7 @@ class Cell(Base):
           If False, the file is deleted from disk when the Cell is destroyed
         """
         assert self.celltype != "structured"
-        hcell = self._get_hcell2()            
+        hcell = self._get_hcell2()
         if path is None:
             hcell.pop("mount", None)
         else:
@@ -261,11 +277,7 @@ class Cell(Base):
 
         hcell = self._get_hcell()
         if hcell.get("UNTRANSLATED"):
-            self._parent().translate(force=True)
-            hcell = self._get_hcell()
-            if hcell.get("UNTRANSLATED"):
-                raise AttributeError(attr)
-            return self._setattr(attr, value)
+            raise Exception("Cell has not yet been translated")
 
         assign_to_subcell(self, (attr,), value)
 
@@ -284,24 +296,22 @@ class Cell(Base):
         if isinstance(item, str):
             return setattr(self, item, value)
         elif isinstance(item, int):
-            raise NotImplementedError # TODO: should work, but need to adapt __setattr__
-        elif isinstance(item, slice):
-            raise NotImplementedError  # TODO: x[min:max] inchannels
+            return self._setattr(item, value)
         else:
             raise TypeError(item)
 
 
     def traitlet(self):
         """Creates an traitlet object with its value linked to the cell.
-        
-        A traitlet is derived from ``traitlets.HasTraits``, 
+
+        A traitlet is derived from ``traitlets.HasTraits``,
          and can be linked to other traitlet objects, such as ipywidgets.
 
         Examples
         ========
         - See basic-example.ipynb and datatables.ipynb
           in https://github.com/sjdv1982/seamless/tree/master/examples
-        - See traitlets.ipynb, traitlet.py and traitlet2.py 
+        - See traitlets.ipynb, traitlet.py and traitlet2.py
           in https://github.com/sjdv1982/seamless/tree/master/tests/highlevel
 
         """
@@ -311,7 +321,7 @@ class Cell(Base):
 
     def output(self, layout=None):
         """Returns an output widget that tracks the cell value.
-        
+
         The widget is a wrapper around an ``ipywidgets.Output``
         and is to be used in Jupyter.
 
@@ -329,13 +339,13 @@ class Cell(Base):
     @property
     def value(self):
         """Returns the value of the cell, if translated
-        
-        If the cell is not authoritative, 
-         the value is None if an upstream dependency 
+
+        If the cell is not authoritative,
+         the value is None if an upstream dependency
          is undefined or has an error.
 
-        For structured cells, the value is also None if the 
-        schema is violated. 
+        For structured cells, the value is also None if the
+        schema is violated.
         """
         parent = self._parent()
         hcell = self._get_hcell()
@@ -374,7 +384,7 @@ class Cell(Base):
     @property
     def example(self):
         """For a structured cell, return a dummy Silk handle.
-        
+
         The handle does not store any values, but has type inference,
          i.e. schema properties are inferred from what is assigned to it.
 
@@ -391,12 +401,12 @@ class Cell(Base):
 
     def add_validator(self, validator, name):
         """Adds a validator function (in Python) to the schema.
-        
+
         The validator must take a single argument, the (buffered) value of the cell
-        It is expected to raise an exception (e.g. an AssertionError) 
+        It is expected to raise an exception (e.g. an AssertionError)
         if the value is invalid.
 
-        If a previous validator with the same name exists, 
+        If a previous validator with the same name exists,
         that validator is overwritten.
         """
         return self.handle.add_validator(validator, name=name)
@@ -407,7 +417,7 @@ class Cell(Base):
 
         For non-structured cells, this exception was raised during parsing.
         For structured cells, it may also have been raised during validation"""
-        
+
         if self._get_hcell().get("UNTRANSLATED"):
             return None
         cell = self._get_cell()
@@ -416,8 +426,8 @@ class Cell(Base):
     @property
     def checksum(self):
         """Contains the checksum of the cell, as SHA3-256 hash.
-        
-        The checksum defines the value of the cell. 
+
+        The checksum defines the value of the cell.
         If the cell is defined, the checksum is available, even if
         the value may not be.
         """
@@ -439,9 +449,9 @@ class Cell(Base):
     def observe(self, attr, callback, polling_interval, observe_none=False):
         """Adds an observer that monitors ``getattr(Cell, attr)``.
 
-        This value is polled every `polling_interval` seconds, 
+        This value is polled every `polling_interval` seconds,
         and if changed, ``callback(value)`` is invoked.
-        
+
         If `observe_none`, None is considered as a separate value.
         (Default: False)
 
@@ -451,7 +461,7 @@ class Cell(Base):
         Instead, it is recommended to use this to observe changes
         in status and exception.
         """
-        
+
         if isinstance(attr, str):
             attr = (attr,)
         path = self._path + attr
@@ -498,12 +508,15 @@ class Cell(Base):
     def handle(self):
         assert self.celltype == "structured"
         cell = self._get_cell()
-        return cell.handle_no_inference
+        if self.hash_pattern is not None:
+            return cell.handle_hash
+        else:
+            return cell.handle_no_inference
 
     @property
     def data(self):
         """Returns the data of the cell
-        
+
         This is normally the same as the value,
         but must not be modified"""
         cell = self._get_cell()
@@ -520,6 +533,17 @@ class Cell(Base):
             cell.set_no_inference(value)
         else:
             cell.set(value)
+
+    def set_checksum(self, checksum):
+        from ..core.structured_cell import StructuredCell
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            raise NotImplementedError
+        cell = self._get_cell()
+        if isinstance(cell, StructuredCell):
+            cell.set_auth_checksum(checksum)
+        else:
+            cell.set_checksum(checksum)
 
     @property
     def status(self):
@@ -541,7 +565,7 @@ class Cell(Base):
     @property
     def celltype(self):
         """The type of the cell is by default "structured".
-        
+
         Non-structured celltypes are:
 
         - "plain": contains any JSON-serializable data
@@ -551,7 +575,7 @@ class Cell(Base):
         - "text", "cson", "yaml"
         - "str", "bytes", "int", "float", "bool"
         """
-        
+
         hcell = self._get_hcell2()
         return hcell["celltype"]
 
@@ -576,31 +600,28 @@ class Cell(Base):
         if value == "code" and "language" not in hcell:
             hcell["language"] = "python"
         hcell.pop("checksum", None)
-        if cellvalue is not None and not hcell.get("UNTRANSLATED"):
-            self._parent()._do_translate(force=True) # This needs to be kept!
-            try:
-                self.set(cellvalue)
-            except Exception:
-                pass
-        else:
-            if self._parent() is not None:
-                self._parent()._translate()
+        hcell["UNTRANSLATED"] = True
+        if cellvalue is not None:
+            hcell["TEMP"] = cellvalue
+            hcell.pop("checksum", None)
+        if self._parent() is not None:
+            self._parent()._translate()
 
     @property
     def mimetype(self):
         """The mimetype of the cell.
-        
-        Can be set directly according to the MIME specification, 
+
+        Can be set directly according to the MIME specification,
          or as a file extension.
 
         If not set, the default value depends on the celltype:
 
         - For structured cells, it is derived from the datatype attribute
         - For mixed cells, it is "seamless/mixed"
-        - For code cells, it is derived from the language attribute        
+        - For code cells, it is derived from the language attribute
         - For plain cells and int/float/bool cells, it is "application/json"
         - For text cells and str cells, it is "text/plain"
-        - For other cells, it is derived from their default file extension.        
+        - For other cells, it is derived from their default file extension.
         """
         hcell = self._get_hcell2()
         mimetype = hcell.get("mimetype")
@@ -751,18 +772,18 @@ class Cell(Base):
 
     def share(self, path=None, readonly=True):
         """Shares a cell over HTTP.
-        
+
         Typically, the cell is available under
         http://localhost:5813/ctx/<path>.
 
-        If path is None (default), Cell.path is used, 
+        If path is None (default), Cell.path is used,
         with dots replaced by slashes.
 
         If readonly is True, only GET requests are supported.
-        Else, the cell can also be modified using PUT requests 
+        Else, the cell can also be modified using PUT requests
         using the Seamless JS client (js/seamless-client.js)
-        
-        Cells with mimetype 'application/json' 
+
+        Cells with mimetype 'application/json'
         (the default for plain cells)
         also support subcell GET requests,
         e.g. ``http://.../ctx/a/x/0`` for a cell ``ctx.a``
@@ -790,38 +811,38 @@ class Cell(Base):
         except Exception:
             pass
         return result
-    
+
     def _set_observers(self):
         from ..core.cell import Cell as CoreCell
         from ..core.structured_cell import StructuredCell
         cell = self._get_cell()
         if not isinstance(cell, (CoreCell, StructuredCell)):
-            raise Exception(cell)        
+            raise Exception(cell)
         if self.celltype == "structured":
             if cell.auth is not None:
                 cell.auth._set_observer(self._observe_auth)
             cell._data._set_observer(self._observe_cell)
             cell.buffer._set_observer(self._observe_buffer)
             if cell.schema is not None:
-                cell.schema._set_observer(self._observe_schema)            
+                cell.schema._set_observer(self._observe_schema)
         else:
-            cell._set_observer(self._observe_cell)        
+            cell._set_observer(self._observe_cell)
 
     def __str__(self):
         path = ".".join(self._path) if self._path is not None else None
         return "Seamless Cell: %s" % path
 
 def cell_binary_method(self, other, name):
-    h = self.handle 
+    h = self.handle
     method = getattr(h, name)
     if method is NotImplemented:
         return NotImplemented
     return method(other)
- 
+
 
 def Constant(*args, **kwargs):
     cell = Cell(*args, **kwargs)
-    cell._get_hcell2()["constant"] = True 
+    cell._get_hcell2()["constant"] = True
 
 from functools import partialmethod
 from ..silk.SilkBase import binary_special_method_names
@@ -835,3 +856,4 @@ from .SubCell import SubCell
 from .SchemaWrapper import SchemaWrapper
 from .proxy import Proxy
 from ..midlevel.util import STRUC_ID
+from .synth_context import SynthContext

@@ -87,7 +87,7 @@ START
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/silk/validation/validators.py", line 230, in validator_validators
+  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in func
     assert abs(np.sum(arr**2) - 1) < 0.01

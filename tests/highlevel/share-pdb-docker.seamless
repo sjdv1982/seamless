@@ -115,14 +115,17 @@
       "SCHEMA": null,
       "checksum": {
         "code": "0cd230ffdbd4b753e46cfe93ec2c6d9a063cdfec2d21377e2b107fcb3e770a3b",
-        "input": "e0def1c1ff7eb0d41ce636339960d154445c6d6b21c689e379952d2bad6cb8cf",
-        "input_auth": "2dba31dad17256fcc4681ef400b600d81ea593961fd02e53c02a2998672557f7",
-        "input_buffer": "e0def1c1ff7eb0d41ce636339960d154445c6d6b21c689e379952d2bad6cb8cf",
-        "result": null
+        "input": "f8965fa517601f66e890dacd407cdacfd292721fd9d7fc026abc72ef47a07612",
+        "input_auth": "9f27e123619b82e6da57155b9f921fb8c16918ffaf74864eb9a18823041a03b9",
+        "input_buffer": "f8965fa517601f66e890dacd407cdacfd292721fd9d7fc026abc72ef47a07612",
+        "result": "e8787d65a4c4e417d25e2b4361538db8d180dcbf7ab971b525bc51b2c8d0e322"
       },
       "compiled": false,
       "debug": false,
       "file_extension": "sh",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "docker",
       "path": [
         "filter_pdb"
@@ -142,7 +145,9 @@
     },
     {
       "celltype": "text",
-      "checksum": {},
+      "checksum": {
+        "value": "0abdae680fce2bd5d018783f68199e742a41e14032f75c26eb67df60048a91f1"
+      },
       "datatype": "mixed",
       "path": [
         "filtered_pdb"
@@ -159,14 +164,17 @@
       "SCHEMA": null,
       "checksum": {
         "code": "6f50cd3864e495284ac230b9ee999636cb8cd3c526ed3662d1137d10119d3791",
-        "input": "2dba31dad17256fcc4681ef400b600d81ea593961fd02e53c02a2998672557f7",
-        "input_auth": "2dba31dad17256fcc4681ef400b600d81ea593961fd02e53c02a2998672557f7",
-        "input_buffer": "2dba31dad17256fcc4681ef400b600d81ea593961fd02e53c02a2998672557f7",
-        "result": null
+        "input": "899c31da5ee1a0e7094df98b6cc47d3baa70df02b9711a3fd3ce27515e9c5ef3",
+        "input_auth": "9f27e123619b82e6da57155b9f921fb8c16918ffaf74864eb9a18823041a03b9",
+        "input_buffer": "899c31da5ee1a0e7094df98b6cc47d3baa70df02b9711a3fd3ce27515e9c5ef3",
+        "result": "f9bfa4063e178413cae39d9adc3e1788db9d3fa0057fe806b14121030ec5040f"
       },
       "compiled": false,
       "debug": false,
       "file_extension": "sh",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "docker",
       "path": [
         "fix_pdb"
@@ -224,7 +232,9 @@
     },
     {
       "celltype": "text",
-      "checksum": {},
+      "checksum": {
+        "value": "1df240195c402a07197389036df6e84805d049455514727f917d144036793908"
+      },
       "datatype": "mixed",
       "path": [
         "pdb"

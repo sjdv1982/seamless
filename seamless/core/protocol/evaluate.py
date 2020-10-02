@@ -29,7 +29,7 @@ For example: "'2'" (text) can be converted to "2" (int), but this has a differen
 evaluation_cache_3 = {}
 
 
-def needs_buffer_evaluation(checksum, celltype, target_celltype):
+def needs_buffer_evaluation(checksum, celltype, target_celltype, fingertip_mode=False):
     if celltype == target_celltype:
         return False
     if (checksum, celltype) not in evaluation_cache_1:
@@ -42,10 +42,16 @@ def needs_buffer_evaluation(checksum, celltype, target_celltype):
         return False
     key = (checksum, celltype, target_celltype)
     if (celltype, target_celltype) in conversion_reinterpret:
-        return key not in evaluation_cache_2 
+        if fingertip_mode:
+            return True
+        return key not in evaluation_cache_2
     elif (celltype, target_celltype) in conversion_reformat:
+        if fingertip_mode:
+            return True
         return key not in evaluation_cache_3
     elif (celltype, target_celltype) in conversion_possible:
+        if fingertip_mode:
+            return True
         return key not in evaluation_cache_3
     elif (celltype, target_celltype) in conversion_forbidden:
         raise TypeError((celltype, target_celltype))
@@ -74,25 +80,27 @@ async def evaluate_from_checksum(checksum, celltype, target_celltype):
     else:
         raise TypeError((celltype, target_celltype)) # should never happen
 
-async def evaluate_from_buffer(checksum, buffer, celltype, target_celltype, buffer_cache):
+async def evaluate_from_buffer(checksum, buffer, celltype, target_celltype, fingertip_mode=False):
     if (celltype, target_celltype) in conversion_equivalent:
         celltype, target_celltype = conversion_equivalent[celltype, target_celltype]
-    if celltype == target_celltype:
-        return checksum
-    if (celltype, target_celltype) in conversion_trivial:
+    if celltype == target_celltype or (celltype, target_celltype) in conversion_trivial:
+        if fingertip_mode:
+            buffer_cache.cache_buffer(checksum, buffer)
         return checksum
 
     key = (checksum, celltype, target_celltype)
-    if (celltype, target_celltype) in conversion_reinterpret:        
+    if (celltype, target_celltype) in conversion_reinterpret:
         await reinterpret(checksum, buffer, celltype, target_celltype)
         evaluation_cache_2.add(key)
+        if fingertip_mode:
+            buffer_cache.cache_buffer(checksum, buffer)
         return checksum
     elif (celltype, target_celltype) in conversion_reformat:
-        result = await reformat(checksum, buffer, celltype, target_celltype)
+        result = await reformat(checksum, buffer, celltype, target_celltype, fingertip_mode=fingertip_mode)
         evaluation_cache_3[key] = result
         return result
     elif (celltype, target_celltype) in conversion_possible:
-        result = await convert(checksum, buffer, celltype, target_celltype)
+        result = await convert(checksum, buffer, celltype, target_celltype, fingertip_mode=fingertip_mode)
         evaluation_cache_3[key] = result
         return result
     elif (celltype, target_celltype) in conversion_forbidden:
@@ -101,7 +109,7 @@ async def evaluate_from_buffer(checksum, buffer, celltype, target_celltype, buff
         raise TypeError((celltype, target_celltype)) # should never happen
 
 from .conversion import (
-    conversion_trivial, 
+    conversion_trivial,
     conversion_reformat,
     conversion_reinterpret,
     conversion_possible,
@@ -110,4 +118,6 @@ from .conversion import (
     reinterpret,
     reformat,
     convert
-)    
+)
+
+from ..cache.buffer_cache import buffer_cache

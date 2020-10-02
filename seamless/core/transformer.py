@@ -17,6 +17,7 @@ class Transformer(Worker):
     _prelim_result = False
     _progress = 0.0
     debug = False
+    python_debug = False
 
     def __init__(self, transformer_params, *,  stream_params=None):
         self.code = InputPin(self, "code", "python", "transformer")
@@ -98,7 +99,7 @@ class Transformer(Worker):
 
     def get_transformation(self):
         import asyncio
-        assert nest_asyncio is not None or not asyncio.get_event_loop().is_running()
+        assert not asyncio.get_event_loop().is_running()
         from .manager.tasks.transformer_update import TransformerUpdateTask
         manager = self._get_manager()
         taskmanager = manager.taskmanager
@@ -151,7 +152,7 @@ class Transformer(Worker):
         from .transformation import RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError
         if not self._void:
             return None
-        if self._status_reason == StatusReasonEnum.UPSTREAM:
+        if self._status_reason == StatusReasonEnum.INVALID:
             livegraph = self._get_manager().livegraph
             upstreams = livegraph.transformer_to_upstream.get(self)
             exceptions = {}
@@ -159,10 +160,7 @@ class Transformer(Worker):
                 for pinname, accessor in upstreams.items():
                     if accessor is None: #unconnected
                         continue
-                    expression = accessor.expression
-                    if expression is None:
-                        continue
-                    exc = expression.exception
+                    exc = accessor.exception
                     if exc is not None:
                         exceptions[pinname] = exc
             if not len(exceptions):
@@ -188,6 +186,16 @@ class Transformer(Worker):
         return "".join(s)
 
     @property
+    def logs(self):
+        manager = self._get_manager()
+        transformation_cache = manager.cachemanager.transformation_cache
+        transformation = transformation_cache.transformer_to_transformations.get(self)
+        if transformation is None:
+            return None
+        logs = transformation_cache.transformation_logs.get(transformation)
+        return logs
+
+    @property
     def void(self):
         return self._void
 
@@ -195,8 +203,7 @@ class Transformer(Worker):
         from .protocol.get_buffer import get_buffer
         if self._checksum is None:
             return None
-        buffer_cache = self._get_manager().cachemanager.buffer_cache
-        buffer = get_buffer(self._checksum, buffer_cache)
+        buffer = get_buffer(self._checksum)
         return buffer
 
     async def _get_buffer(self):
@@ -276,5 +283,3 @@ class Transformer(Worker):
 def transformer(params, *, stream_params=None):
     """TODO: port documentation from 0.1"""
     return Transformer(params, stream_params=stream_params)
-
-from .. import nest_asyncio

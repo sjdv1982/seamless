@@ -3,15 +3,16 @@ from seamless.core import context, cell, transformer, unilink
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell().set(1)
-ctx.cell2 = cell().set(2)    
+ctx.cell2 = cell().set(2)
 ctx.result = cell()
 ctx.tf = transformer({
     "a": "input",
     "b": "input",
     "c": "output"
 })
+ctx.tf.python_debug = True
 ctx.cell1_unilink = unilink(ctx.cell1)
-ctx.cell1_unilink.connect(ctx.tf.a)    
+ctx.cell1_unilink.connect(ctx.tf.a)
 ctx.cell2.connect(ctx.tf.b)
 ctx.code = cell("transformer").set("a + b")
 ctx.code.connect(ctx.tf.code)

@@ -5,14 +5,18 @@ In the future, this will be adapted to use highlevel Module objects
 (see feature issue E5)
 """
 
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
 tf_code = '''
+print(__name__)
 print(testmodule)
 print(testmodule.q)
 from .testmodule import q
 print(q)
 import sys
 print([m for m in sys.modules if m.find("testmodule") > -1])
-c = a + b
+result = a + b
 '''
 
 from seamless.highlevel import Transformer, Cell, Context

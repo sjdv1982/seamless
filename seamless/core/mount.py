@@ -132,7 +132,7 @@ class MountItem:
         from_garbage = (mountmanager.garbage.pop(self.path, None) is not None)
         if not from_cache:
             from_garbage = False
-        if cell_empty:     
+        if cell_empty:
             cell_checksum, cell_buffer = cache_cell_checksum, cache_cell_buffer
             cell_empty = (cell_checksum is None)
             if not cell_empty:
@@ -165,7 +165,7 @@ class MountItem:
                             if cell_checksum is not None:
                                 print(cell_checksum.hex())
                             print("Warning: File path '%s' has a different value, overwriting cell" % self.path) #TODO: log warning
-                    self._after_read(file_checksum)                
+                    self._after_read(file_checksum)
                 if update_file:
                     self.set(file_buffer, checksum=file_checksum)
             elif self.authority == "file-strict":
@@ -197,8 +197,8 @@ class MountItem:
                     self.set(file_buffer, checksum=file_checksum)
 
         self._initialized = True
- 
-    def set(self, file_buffer, checksum):        
+
+    def set(self, file_buffer, checksum):
         if self._destroyed:
             return
         cell = self.cell()
@@ -206,7 +206,7 @@ class MountItem:
             return
         if cell._celltype == "plain":
             if "w" in self.mode:
-                try:                
+                try:
                     c = cson2json(file_buffer.decode())
                     j1 = (json.dumps(c, sort_keys=True, indent=2) + "\n").encode()
                     old_checksum = checksum
@@ -226,7 +226,7 @@ class MountItem:
 
     def _from_cache(self):
         cache = mountmanager.cached_checksums.pop(self.path, (None, None) )
-        cached_time, cached_checksum = cache        
+        cached_time, cached_checksum = cache
         buffer = buffer_cache.get_buffer(cached_checksum)
         if buffer is not None:
             self.last_mtime = cached_time
@@ -235,7 +235,7 @@ class MountItem:
     def _read(self):
         if self._destroyed:
             return
-        #print("read", self.cell())                
+        #print("read", self.cell())
         binary = self.kwargs["binary"]
         encoding = self.kwargs.get("encoding")
         filemode = "rb" if binary else "r"
@@ -286,7 +286,7 @@ class MountItem:
             return
         cell = self.cell()
         if cell is None:
-            return        
+            return
         if checksum is None:
             if not with_none:
                 return
@@ -322,9 +322,9 @@ class MountItem:
             file_checksum = None
             if self.last_mtime is None or mtime > self.last_mtime:
                 file_buffer0 = self._read()
-                file_buffer = adjust_buffer(file_buffer0, cell._celltype)                
+                file_buffer = adjust_buffer(file_buffer0, cell._celltype)
                 file_checksum = calculate_checksum(file_buffer)
-                self._after_read(file_checksum, mtime=mtime)                
+                self._after_read(file_checksum, mtime=mtime)
         cell_checksum = self.cell_checksum
         if file_checksum is not None and file_checksum != cell_checksum:
             if "r" in self.mode:
@@ -338,7 +338,7 @@ class MountItem:
 
     def destroy(self):
         if self._destroyed:
-            return        
+            return
         self._destroyed = True
         if self.dummy:
             return
@@ -457,7 +457,7 @@ class MountManager:
         if not mount_item._destroyed:
             paths = self.paths[root]
             path = cell_or_unilink._mount["path"]
-            paths.discard(path)            
+            paths.discard(path)
             mount_item.destroy()
 
     @lockmethod
@@ -499,9 +499,9 @@ class MountManager:
                 self.contexts.add(context)
         else:
             if path in paths:
-                assert context in self.contexts, (path, context)        
+                assert context in self.contexts, (path, context)
 
-    def _check_context(self, context, as_parent):        
+    def _check_context(self, context, as_parent):
         mount = context._mount
         assert not is_dummy_mount(mount), context
         in_garbage = self.garbage_dirs.get(mount["path"], None)
@@ -516,13 +516,13 @@ class MountManager:
             os.mkdir(dirpath)
         if in_garbage is None and persistent != True:
             self.garbage_dirs[dirpath] = time.time(), mount["persistent"]
-            
+
 
     @lockmethod
     def add_cell_update(self, cell, checksum, buffer):
         if self._mounting:
             return
-        root =cell._root()
+        root = cell._root()
         if root is not None and root not in mountmanager.paths:
             return
         assert cell in self.mounts, (cell, hex(id(cell)))
@@ -571,7 +571,7 @@ class MountManager:
             if now > mod_time + self.GARBAGE_DELAY:
                 to_destroy.append((dirpath, persistent))
         for dirpath, persistent in to_destroy:
-            # if persistent is None, directory stays in garbage, for a cache hit            
+            # if persistent is None, directory stays in garbage, for a cache hit
             if persistent == False:
                 self.garbage_dirs.pop(dirpath)
                 self._destroy_garbage_dir(dirpath)
@@ -650,7 +650,7 @@ class MountManager:
         self.garbage.clear()
 
         dirpaths = sorted(
-            self.garbage_dirs.keys(), 
+            self.garbage_dirs.keys(),
             key=lambda k:-len(k.split(os.sep))
         )
         for dirpath in dirpaths:
@@ -719,7 +719,7 @@ def scan(ctx_or_cell):
             result = None
             cc = c
             if isinstance(c, UniLink):
-                cc = c.get_linked()      
+                cc = c.get_linked()
             if isinstance(cc, (Context, Cell)):
                 result = find_mount(parent, as_parent=True,child=c)
             elif isinstance(cc, Macro):
@@ -733,7 +733,7 @@ def scan(ctx_or_cell):
             result["autopath"] = True
             if isinstance(child, Context) and child._context is None and child._macro is not None:
                 result["path"] += "/" + child._macro.name
-            else:    
+            else:
                 result["path"] += "/" + child.name
             if isinstance(child, UniLink):
                 child = child.get_linked()
@@ -755,7 +755,7 @@ def scan(ctx_or_cell):
                 extension = get_extension(child)
             result["path"] += extension
         return result
-    
+
     def enumerate_context(cctx):
         contexts.add(cctx)
         for child in cctx._children.values():
@@ -807,7 +807,7 @@ def scan(ctx_or_cell):
             persistent = True
         if isinstance(c, Context):
             if c._toplevel:
-                return                
+                return
         parent = c._context
         if isinstance(c, Context) and c._context is None and c._macro is not None:
             parent = c._macro._context
@@ -838,7 +838,7 @@ def scan(ctx_or_cell):
             object.__setattr__(unilink, "_mount", mount) #not in macro mode
             mount_links.append(unilink)
 
-    ctx_to_mount = sorted(contexts_to_mount, key=lambda l:len(l.path))    
+    ctx_to_mount = sorted(contexts_to_mount, key=lambda l:len(l.path))
     for ctx in ctx_to_mount:
         as_parent = contexts_to_mount[ctx]
         mountmanager._check_context(ctx, as_parent)

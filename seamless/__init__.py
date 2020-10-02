@@ -3,8 +3,6 @@
 Copyright 2016-2020, Sjoerd de Vries
 """
 
-VERBOSE = False
-
 import sys
 import time
 import functools
@@ -12,16 +10,8 @@ import traceback
 
 import asyncio
 
-nest_asyncio = None
-
-
-"""
-# Jupyter notebook; DISABLED, as it does not work properly!
-
-if asyncio.get_event_loop().is_running(): 
-    import nest_asyncio
-    nest_asyncio.apply()
-"""
+import logging
+logger = logging.getLogger("seamless")
 
 from abc import abstractmethod
 class Wrapper:
@@ -69,8 +59,6 @@ if "get_ipython" in sys.modules["__main__"].__dict__:
                 ipython_instance.enable_gui("asyncio")
             elif asyncio.get_event_loop().is_running(): # Jupyter notebook
                 running_in_jupyter = True
-                if nest_asyncio is not None: 
-                    ipython_instance.magic("autoawait False")
 
 def verify_sync_translate():
     if running_in_jupyter:
@@ -117,8 +105,9 @@ from .silk import Silk
 from .shareserver import shareserver
 from .communion_server import communion_server
 from .core.transformation import set_ncores
+from .core.manager.tasks import set_parallel_evaluations
 from .get_hash import get_hash, get_dict_hash
-from .core.cache.redis_client import RedisSink, RedisCache
+from .core.cache.database_client import database_sink, database_cache
 from . import debugger
 """
 from . import pandeval

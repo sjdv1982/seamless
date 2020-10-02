@@ -5,7 +5,7 @@ import contextlib
 
 class Link(object):
     """Link traits from different objects together so they remain in sync.
-    
+
     Adapted from the link class in from the traitlets package.
     Will not update on None values
 
@@ -23,17 +23,17 @@ class Link(object):
     updating = False
 
     def __init__(self, source, target, bidirectional):
-        _validate_link(source, target)        
+        _validate_link(source, target)
         self.source, self.target = source, target
         self.bidirectional = bidirectional
         source_value = getattr(source[0], source[1])
         try:
             if source_value is not None:
                 setattr(target[0], target[1], source_value)
-        finally:            
+        finally:
             source[0].observe(
                 self._update_target, names=source[1]
-            )            
+            )
             if bidirectional:
                 target[0].observe(
                     self._update_source, names=target[1]
@@ -54,7 +54,7 @@ class Link(object):
         if new_value is None:
             return
         with self._busy_updating():
-            setattr(self.target[0], self.target[1], 
+            setattr(self.target[0], self.target[1],
                     new_value)
 
     def _update_source(self, change):
@@ -64,7 +64,7 @@ class Link(object):
         if new_value is None:
             return
         with self._busy_updating():
-            setattr(self.source[0], self.source[1], 
+            setattr(self.source[0], self.source[1],
                     new_value)
 
     def unlink(self):
@@ -130,7 +130,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
                     link.unlink()
                     self.links.remove(link)
 
-    def receive_update(self, checksum): 
+    def receive_update(self, checksum):
         if self._destroyed:
             return
         assert checksum is not None
@@ -139,7 +139,6 @@ class SeamlessTraitlet(traitlets.HasTraits):
         if cell._destroyed:
             return
         manager = self.parent()._manager
-        buffer_cache = manager.cachemanager.buffer_cache
         buffer = buffer_cache.get_buffer(checksum)
         celltype = cell._celltype
         value = deserialize_sync(
@@ -202,12 +201,12 @@ class SeamlessTraitlet(traitlets.HasTraits):
         target_expr = (target, target_attr)
         source_expr = (self, "value")
         return Link(source_expr, target_expr, bidirectional)
-    
+
     def _newlink(self, link):
         if self.links is None:
             self.links = []
         self.links.append(link)
-            
+
     def connect(self, target, target_attr="value"):
         link = self._connect_traitlet(target, target_attr, False)
         self._newlink(link)
@@ -235,3 +234,4 @@ from ..core.structured_cell import StructuredCell
 from ..core.cell import Cell as core_cell
 from ..core.protocol.deserialize import deserialize_sync
 from ..core.protocol.expression import get_subpath
+from ..core.cache.buffer_cache import buffer_cache

@@ -1,8 +1,16 @@
 class SeamlessInvalidValueError(ValueError):
-    pass
+    def __str__(self):
+        s = type(self).__name__
+        if len(self.args):
+            s += ":" +  " ".join([str(a) for a in self.args])
+        return s
 
 class SeamlessUndefinedError(ValueError):
-    pass
+    def __str__(self):
+        s = type(self).__name__
+        if len(self.args):
+            s += ":" +  " ".join([str(a) for a in self.args])
+        return s
 
 import json
 from enum import Enum
@@ -258,6 +266,11 @@ def format_context_status(stat):
     from .context import Context
     result = {}
     for childname, value in stat.items():
+        if isinstance(value, (str, dict)):
+            if value == "Status: OK":
+                continue
+            result[childname] = value
+            continue
         child, childstat = value
         if not isinstance(child, Context):
             if childstat[0] == StatusEnum.VOID:

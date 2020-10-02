@@ -1,5 +1,6 @@
 # In general, run with:
 #   seamless-devel python3 -u TEST.py > test-outputs/TEST.out 2>&1
+#   Best also to test using "ipython3 TEST.py", since re-translation may work differently
 bytes-conversion.py
 mime.py
 test-html.py
@@ -7,8 +8,9 @@ schema.py
 subcell.py
 subsubcell.py
 inchannel-conflict.py
-deepcell-simple.py: As of Seamless 0.2, prints out double decref warnings at the end
-filesystemlike.py: As of Seamless 0.2, this test FAILS (issue 3)
+logs.py
+deepcell-simple.py
+filesystemlike.py
 context.py
 context2.py
 scratch.py
@@ -18,10 +20,11 @@ simple-missing.py
 simpler-listpin.py
 simpler-result.py
 simpler.py
-simpler-deepcell.py: As of Seamless 0.2, prints out double decref warnings at the end
+simpler-deepcell.py
 simpler-ipython.py: Run with ipython --no-term-title (not -i). Output is approximate, depends on exact timings.
-module-simplified.py
-bash.py
+delay.py
+module-simplified.py [1]
+bash.py [2]
 docker_.py
 docker2.py
 expression-exceptions.py
@@ -32,27 +35,43 @@ simple.py
 simple-deepcell.py
 simple-pi.py: Also creates twopi.seamless, twopi-result.seamless, twopi-result.zip
 simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-result.seamless, twopi-deepcell-result.zip
-simple-pi-redis.py: requires redis to run as a Sink
-simple-pi-remote.py: run with jobslave-noredis
-simple-pi-remote-redis.py: run with jobslave; makes no assumptions about them Redis contents
+simple-pi-remote.py: run with jobslave-nodatabase
+simple-pi-remote-database.py: run with jobslave; makes no assumptions about the database contents
 subcontext.py
 reassign-transformer.py
+cascade.py
 transformer-compiled.py
 transformer-redefine.py
 transformer-compiled-error.py
 transformer-compiled-module.py
-twopi-graph-redis.sh: run with redis; delete job results (e.g. redis-cli flushall)
-                      run as i=twopi-graph-redis; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
+twopi-graph-database.sh: run with Seamless database; delete job results (e.g. redis-cli flushall && rm -f ~/.seamless/database/*-*)
+                      run as i=twopi-graph-database; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
 twopi-graph-service.sh: same as above; run as i=twopi-graph-service
 load-graph.py
 load-graph-static.py
 library.py
 library2.py
+high-in-low.py
+high-in-low2.py
+high-in-low3.py
+high-in-low4.py
+high-in-low5.py
+high-in-low6.py
+high-in-low4-memory.py    # Quite long test.
+                          # Creates 5.6 GB of buffer cache in /tmp/dummy-db
+                          # Run with rm -rf /tmp/dummy-db  && mkdir -p /tmp/dummy-db && seamless-devel-database dummydb-config.yaml
+                          # Time is ~120 seconds, or ~60 seconds when re-executed
+                          # Re-executing the test is faster, because the transformation results and input buffers are cached
+                          # Exact output will depend on timings
+                          # After the test, "rm -rf /tmp/dummy-db && docker stop seamless-database-container"
+high-in-low6-memory.py    # See above. Time is ~90 seconds, or ~40 seconds when re-executed
 
 Non-automatic tests
 =========================
-add.py
+docker-kill.py    The output is not important. Important is that "docker ps -a" reveals no remaining orphaned "ubuntu" Docker containers.
+bash-kill.py      The output is not important. Important is that the script finishes in 3.5-4 sec, and that 'ps -ef' reveals no remaining orphaned "sleep" processes
+add.py:           Run with ipython -i, then change mounts
 simpler-share.py: Run with ipython -i, then do "curl localhost:5813/ctx/myresult".
                   IPython values printed should be 36 then 39 (Silk); curl should return 39
                   change ctx.a to get 3*a as the result
@@ -64,7 +83,6 @@ python-debugging: Run with ipython -i, then continue in interactive mode.
 observe-graph.ipynb: Run "jupyter-seamless-devel" and then open /cwd in the browser
 traitlets.ipynb: same as above
 share-pdb.py: open with seamless-devel-ipython -i, Open in http://localhost:5813/ctx/index.html
-visualize-graph/visualize-graph.py, Open in http://localhost:5813/ctx/index.html
 share-pdb-docker.seamless/.zip: to test using:
       seamless-devel python3 /home/jovyan/seamless-scripts/serve-graph.py \
       share-pdb-docker.seamless share-pdb-docker.zip
@@ -74,3 +92,8 @@ share-pdb-docker.seamless/.zip: to test using:
       --status-graph /seamless/seamless/graphs/status-visualization.seamless \
       --add-zip /seamless/seamless/graphs/status-visualization.zip
     In that case, open also http://localhost:5813/status/index.html
+
+NOTES
+=====
+[1] Be sure to test this in a Docker container, as it doesn't work with Python3.6.9 or 3.7.6, but it does work for 3.7.3
+[2] Be sure to test this in a Docker container or with Python3.7, as it doesn't work with Python3.6 (subprocess API too old)

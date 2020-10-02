@@ -19,7 +19,7 @@ default_pin = {
   "celltype": "mixed",
 }
 
-def new_transformer(ctx, path, code, pins):
+def new_transformer(ctx, path, code, pins, hash_pattern):
     if pins is None:
         pins = []
     if isinstance(pins, (list, tuple)):
@@ -35,6 +35,7 @@ def new_transformer(ctx, path, code, pins):
         "compiled": False,
         "language": "python",
         "pins": pins,
+        "hash_pattern": hash_pattern,
         "RESULT": "result",
         "INPUT": "inp",
         "SCHEMA": None, #the result schema can be exposed as an input pin to the transformer under this name
@@ -82,7 +83,7 @@ class Transformer(Base):
     """
     _temp_code = None
     _temp_pins = None
-    def __init__(self, *, parent=None, path=None, code=None, pins=None):
+    def __init__(self, *, parent=None, path=None, code=None, pins=None, hash_pattern={"*": "#"}):
         assert (parent is None) == (path is None)
         if parent is not None:
             self._init(parent, path, code, pins)
@@ -90,7 +91,7 @@ class Transformer(Base):
             self._temp_code = code
             self._temp_pins = pins
 
-    def _init(self, parent, path, code=None, pins=None):
+    def _init(self, parent, path, code=None, pins=None, hash_pattern={"*": "#"}):
         super().__init__(parent, path)
         if self._temp_code is not None:
             assert code is None
@@ -98,8 +99,16 @@ class Transformer(Base):
         if self._temp_pins is not None:
             assert pins is None
             pins = self._temp_pins
-        htf = new_transformer(parent, path, code, pins)
         parent._children[path] = self
+        try:
+            assert code is None
+            assert pins is None
+            assert hash_pattern == {"*": "#"}
+            node = self._get_htf()
+        except:
+            node = None
+        if node is None:
+            htf = new_transformer(parent, path, code, pins, hash_pattern)
 
     @property
     def self(self):
@@ -187,6 +196,10 @@ class Transformer(Base):
             htf["fingertip_no_recompute"] = True
         else:
             htf.pop("fingertip_no_recompute", None)
+
+    def clear_exception(self):
+        tf = self._get_tf(force=True)
+        tf.tf.clear_exception()
 
     @property
     def hash_pattern(self):
@@ -386,6 +399,7 @@ class Transformer(Base):
                 tf = self._get_tf(force=True)
                 if callable(value):
                     value, _, _ = parse_function_code(value)
+                check_libinstance_subcontext_binding(parent, self._path)
                 tf.code.set(value)
         elif attr == htf["INPUT"]:
             target_path = self._path
@@ -444,7 +458,11 @@ class Transformer(Base):
         try:
             p = parent._gen_context
             for subpath in self._path:
-                p = getattr(p, subpath)
+                p2 = getattr(p, subpath)
+                if isinstance(p2, SynthContext) and p2._context is not None:
+                    p2 = p2._context()
+                p = p2
+
             if not isinstance(p, CoreContext):
                 raise AttributeError
             return True
@@ -459,7 +477,11 @@ class Transformer(Base):
             return None
         p = parent._gen_context
         for subpath in self._path:
-            p = getattr(p, subpath)
+            p2 = getattr(p, subpath)
+            if isinstance(p2, SynthContext) and p2._context is not None:
+                p2 = p2._context()
+            p = p2
+
         assert isinstance(p, CoreContext)
         return p
 
@@ -565,6 +587,15 @@ class Transformer(Base):
         return exc
 
     @property
+    def logs(self):
+        """Returns the stdout/stderr logs of the transformer, if any"""
+        htf = self._get_htf()
+        if htf.get("UNTRANSLATED"):
+            return None
+        tf = self._get_tf(force=True).tf
+        return tf.logs
+
+    @property
     def status(self):
         """The status of the transformer, analogous to Cell.status.
 
@@ -588,6 +619,8 @@ class Transformer(Base):
                 htf["RESULT"]
             )
         for k in attrs:
+            pending = False
+            upstream = False
             if k in (htf["INPUT"], htf["RESULT"]):
                 cell = getattr(self, k)
                 status = cell.status
@@ -599,7 +632,16 @@ class Transformer(Base):
                 tf = self._get_tf(force=True).tf
                 status = getattr(tf, k).status
             if not status.endswith("OK"):
-                return "*" + k + "*: " + status
+                if status.endswith(" pending"):
+                    pending = True
+                elif status.endswith(" upstream"):
+                    upstream = True
+                else:
+                    return "*" + k + "*: " + status
+        if upstream:
+            return "Status: upstream"
+        elif pending:
+            return "Status: pending"
         return "Status: OK"
 
     def __getattribute__(self, attr):
@@ -987,7 +1029,7 @@ class Transformer(Base):
         schemacell = resultcell.schema
         schemacell._set_observer(self._observe_result_schema)
         if htf["compiled"]:
-            tf.main_module._data._set_observer(self._observe_main_module)
+            tf.main_module.auth._set_observer(self._observe_main_module)
 
 
     def __delattr__(self, attr):
@@ -1002,3 +1044,10 @@ class Transformer(Base):
             std += list(("main_module", "header"))
         pins = list(htf["pins"].keys())
         return sorted(d + pins + std)
+
+    def __str__(self):
+        path = ".".join(self._path) if self._path is not None else None
+        return "Seamless Transformer: %s" % path
+
+from .synth_context import SynthContext
+from .assign import check_libinstance_subcontext_binding

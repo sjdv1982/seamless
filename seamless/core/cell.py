@@ -46,9 +46,12 @@ class Cell(SeamlessBase):
     If "fingertip_remote" is None or True:
     - Verify that the buffer is locally or remotely available;
         if remotely, download it.
-    If "fingertip_remote" is True and "fingertip_recompute" is None, remote download will
+    If "fingertip_recompute" is True and "fingertip_remote" is None, recomputation will
         be tried before recomputation.
     If both values are True or None, recomputation is tried first
+
+    But there is a buffer size lower limit RECOMPUTE_OVER_REMOTE;
+      below the limit, remote download is preferred
     """
 
     _fingertip_remote = None
@@ -81,6 +84,10 @@ class Cell(SeamlessBase):
             checksum, initial, from_structured_cell = self._initial_checksum
             self._set_checksum(checksum.hex(), initial, from_structured_cell)
             self._initial_checksum = None
+
+    @property
+    def celltype(self):
+        return self._celltype
 
     def __hash__(self):
         return self._counter
@@ -134,7 +141,6 @@ class Cell(SeamlessBase):
             checksum,
             self._celltype,
             self._subcelltype,
-            manager.cachemanager.buffer_cache,
             str(self)
         )
         return sem_checksum.hex()
@@ -400,10 +406,10 @@ class Cell(SeamlessBase):
             return
         self.unshare()
         super().destroy(from_del=from_del)
+        self._unmount()
         self._get_manager()._destroy_cell(self)
         for path in list(self._paths):
             path._bind(None, trigger=True)
-        self._unmount()
 
     def _unmount(self, from_del=False):
         from .macro import Macro
@@ -568,6 +574,13 @@ class BoolCell(TextCell):
     """A cell containing a bool. Buffer ends with a newline"""
     _celltype = "bool"
 
+class ChecksumCell(TextCell):
+    """A cell that contains a checksum hex, or a deep (Merkle-like) structure
+
+    Checksum cells do not hold references to the checksum value(s) they contain
+    """
+    _celltype = "checksum"
+
 cellclasses = {
     "text": TextCell,
     "python": PythonCell,
@@ -585,6 +598,7 @@ cellclasses = {
     "int": IntCell,
     "float": FloatCell,
     "bool": BoolCell,
+    "checksum": ChecksumCell
 }
 
 def cell(celltype="plain", **kwargs):

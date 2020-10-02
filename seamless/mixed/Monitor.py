@@ -7,6 +7,7 @@ from .Backend import Backend
 import json
 from copy import deepcopy
 from .. import Wrapper
+from numpy import ndarray, void
 
 class Monitor:
     def __init__(self, backend):
@@ -15,9 +16,29 @@ class Monitor:
 
     def get_instance(self, subform, path):
         if subform is None:
-            if len(path):
+            if self.backend.formless:
+                dataclass = None
+                if len(path) == 0:
+                    dataclass = self.backend.toplevel_dataclass
+                if dataclass is None:
+                    data = self._get_data(path)
+                    dataclass = type(data)
+                if dataclass is None:
+                    raise KeyError(path)
+                if issubclass(dataclass, dict):
+                    return MixedDict(self, path)
+                elif issubclass(dataclass, list):
+                    return MixedList(self, path)
+                elif issubclass(dataclass, void):
+                    return MixedNumpyStruct(self, path)
+                elif issubclass(dataclass, ndarray):
+                    return MixedNumpyArray(self, path)
+                else:
+                    return MixedScalar(self, path)
+            else:
+                if not len(path):
+                    return MixedObject(self, path)
                 raise KeyError(path)
-            return MixedObject(self, path)
         if isinstance(subform, str):
             type_ = subform
         else:
@@ -37,22 +58,23 @@ class Monitor:
         else:
             raise TypeError(type_)
 
-    def _get_path(self, path):
-        subdata = self.backend.get_path(path)
-        subform = self.backend.get_subform(path)
-        return subdata, subform
-
     def get_path(self, path=()):
-        subdata, subform = self._get_path(path)
+        subform = self._get_form(path)
         return self.get_instance(subform, path)
 
-    def get_data(self, path=()):
-        subdata, subform = self._get_path(path)
+    def _get_data(self, path):
+        subdata = self.backend.get_path(path)
         return subdata
 
-    def get_form(self, path=()):
-        subdata, subform = self._get_path(path)
+    def get_data(self, path=()):
+        return self._get_data(path)
+
+    def _get_form(self, path):
+        subform = self.backend.get_subform(path)
         return subform
+
+    def get_form(self, path=()):
+        return self._get_form(path)
 
     def get_storage(self, path=()):
         if not len(path):
@@ -60,22 +82,31 @@ class Monitor:
         if len(path) == 1:
             parent_storage = self.backend.get_storage()
             if parent_storage is None:
-                raise AttributeError(path)
+                if not self.backend.formless:
+                    raise AttributeError(path)
         else:
-            parent_subdata, parent_subform = self._get_path(path[:-1])
+            parent_subdata = self._get_data(path[:-1])
+            parent_subform = self._get_form(path[:-1])
             if parent_subform is None:
-                raise AttributeError(path)
-            parent_storage = parent_subform.get("storage")
-            if parent_storage is None:
-                if isinstance(parent_subdata, (void, ndarray)):
-                    parent_storage = "pure-binary"
+                if not self.backend.formless:
+                    raise AttributeError(path)
                 else:
-                    parent_storage = "pure-plain"
-        subdata, subform = self._get_path(path)
+                    parent_storage = None
+            else:
+                parent_storage = parent_subform.get("storage")
+                if parent_storage is None:
+                    if isinstance(parent_subdata, (void, ndarray)):
+                        parent_storage = "pure-binary"
+                    else:
+                        parent_storage = "pure-plain"
+        subdata = self._get_data(path)
+        subform = self._get_form(path)
         storage = None
         if isinstance(subform, dict):
             storage = subform.get("storage")
         if storage is None:
+            if parent_storage is None:
+                return None
             if parent_storage.endswith("binary"):
                 return "pure-binary"
             else:

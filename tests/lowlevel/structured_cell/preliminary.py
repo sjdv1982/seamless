@@ -158,6 +158,8 @@ with macro_mode_on():
     ctx.add.result.cell().connect(ctx.params.inchannels[tf3 + ("offset",)])
     ctx.add.result.cell().connect(ctx.params.inchannels[tf4 + ("offset",)])
 
+ctx.compute()
+print("START")
 
 ctx.params.handle.set({
     "tf1": {},
@@ -166,10 +168,14 @@ ctx.params.handle.set({
     "tf4": {},
 })
 
+ctx.compute()
+print("START2")
+
 first = channel_names[0][0]
 h = ctx.params_example.handle
 h.report = report
 h[first] = {}
+
 hh = h[first]
 hh.subreport = subreport
 hh.limit = 0
@@ -186,35 +192,33 @@ for tf in channel_names[1:]:
     hh = h[tf[0]]
     hh.schema.set(h[channel_names[0][0]].schema)
 
-
 hh = ctx.params.handle.tf1
 hh.limit = 9
 hh.factor = 1000
 hh.delay = 1.5
-hh.offset = 0
+hh.offset = 0.0
 
 hh = ctx.params.handle.tf2
 hh.limit = 15
 hh.factor = 10
 hh.delay = 0.7
-hh.offset = 0
+hh.offset = 0.0
 
 hh = ctx.params.handle.tf3
 hh.limit = 9
 hh.factor = 1
 hh.delay = 0.5
-#hh.offset = 0
+#hh.offset = 0.0
 
 hh = ctx.params.handle.tf4
 hh.limit = 1
 hh.factor = 9
 hh.delay = 0.1
-#hh.offset = 0
+#hh.offset = 0.0
 
 ctx.compute(0.1)
 ctx.params.handle.report()
 ctx.params.handle.tf1.validate()
-
 
 for c in (ctx.stf1, ctx.stf2, ctx.stf3, ctx.stf4):
     h = c.example.handle
@@ -262,10 +266,9 @@ while 1:
         if exc is not None:
             print(exc)
         print()
-        #ctx.params.value.report()
         oldstate = state.copy()
     if not len(waitfor) and not background:
         break
 
 ctx.params.value.report()
-print(ctx.params.value.tf3)
+print(ctx.result.value)

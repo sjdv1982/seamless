@@ -12,8 +12,8 @@ parser.add_argument(
     type=argparse.FileType('rb')
 )
 parser.add_argument(
-    "--redis",
-    help="Connect to a Redis instance",
+    "--database",
+    help="Connect to a Seamless database server",
     action="store_true"
 )
 parser.add_argument("--communion_id",type=str,default="serve-graph")
@@ -25,8 +25,10 @@ parser.add_argument(
 )
 parser.add_argument(
     "--debug",
+    help="Serve graph in debugging mode. Turns on asyncio debugging, and sets the Seamless logger to DEBUG",
     action="store_true"
 )
+
 parser.add_argument(
     "--status-graph",
     help="Bind a graph that reports the status of the main graph",
@@ -57,15 +59,25 @@ parser.add_argument(
     type=bool
 )
 
+parser.add_argument(
+    "--no-lru",
+    dest="no_lru",
+    help="Disable LRU caches for checksum-to-buffer, value-to-checksum, value-to-buffer, and buffer-to-value",
+    action="store_true"
+)
+
 args = parser.parse_args()
 
-if args.zipfile is None and not args.redis:
-    print("If no zipfile is specified, --redis must be enabled", file=sys.stderr)
+if args.zipfile is None and not args.database:
+    print("If no zipfile is specified, --database must be enabled", file=sys.stderr)
     sys.exit(1)
 
 if args.debug:
     import asyncio
     asyncio.get_event_loop().set_debug(True)
+    import logging
+    logging.basicConfig()
+    logging.getLogger("seamless").setLevel(logging.DEBUG)
 
 env = os.environ
 
@@ -74,8 +86,18 @@ if args.communion_incoming is not None:
     env["SEAMLESS_COMMUNION_INCOMING"] = args.communion_incoming
 
 
-import seamless, seamless.shareserver
+import seamless
 
+if args.no_lru:
+    from seamless.core.protocol.calculate_checksum import calculate_checksum_cache, checksum_cache
+    from seamless.core.protocol.deserialize import deserialize_cache
+    from seamless.core.protocol.serialize import serialize_cache
+    calculate_checksum_cache.disable()
+    checksum_cache.disable()
+    deserialize_cache.disable()
+    serialize_cache.disable()
+
+import seamless.shareserver
 from seamless import communion_server
 
 communion_server.configure_master({
@@ -89,7 +111,7 @@ communion_server.configure_master({
 
 """
 # will not work until load_graph will be much smarter
-if args.redis:
+if args.database:
     communion_server.configure_servant({
         "buffer": False,
         "buffer_status": False,
@@ -125,16 +147,16 @@ else:
     for zipf in args.add_zip:
         ctx.add_zip(zipf)
     ctx.set_graph(graph, mounts=args.mounts, shares=args.shares)
-if args.redis:
+if args.database:
     params = {}
-    redis_host = env.get("REDIS_HOST")
-    if redis_host is not None:
-        params["host"] = redis_host
-    redis_port = env.get("REDIS_PORT")
-    if redis_port is not None:
-        params["port"] = redis_port
-    redis_sink = seamless.RedisSink(**params)
-    redis_cache = seamless.RedisCache(**params)
+    db_host = env.get("SEAMLESS_DATABASE_HOST")
+    if db_host is not None:
+        params["host"] = db_host
+    db_port = env.get("SEAMLESS_DATABASE_PORT")
+    if db_port is not None:
+        params["port"] = db_port
+    seamless.database_sink.connect(**params)
+    seamless.database_cache.connect(**params)
 ctx.translate()
 
 if args.status_graph:

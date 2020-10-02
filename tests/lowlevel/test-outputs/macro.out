@@ -1,5 +1,4 @@
 START
-Execute Seamless macro: .mymacro
 TRANSFORM
 1001
 2001
@@ -7,18 +6,16 @@ False
 None
 3002
 Change 0
-Execute Seamless macro: .mymacro
 TRANSFORM
-Waiting for: Seamless transformer: .mymacro.ctx.tf 
+Waiting for: Seamless transformer: .mymacro.ctx.tf
 Seamless context: .mymacro.ctx
 990
 1990
 False
 2980
 Change 1
-Execute Seamless macro: .mymacro
 TRANSFORM
-Waiting for: Seamless transformer: .mymacro.ctx.tf 
+Waiting for: Seamless transformer: .mymacro.ctx.tf
 Seamless context: .mymacro.ctx
 1002
 2002
@@ -26,27 +23,23 @@ True
 42
 3004
 Change 2
-Execute Seamless macro: .mymacro
 Change 3
 ctx.mymacro.ctx is undefined
 Change 4
-Execute Seamless macro: .mymacro
 1002
 2002
 True
 42
 3004
 Change 5
-Execute Seamless macro: .mymacro
 TRANSFORM
 1000
 2000
 False
 3000
 Change 6
-Execute Seamless macro: .mymacro
 Traceback (most recent call last):
-  File "/seamless/seamless/core/macro.py", line 100, in _execute
+  File "/seamless/seamless/core/macro.py", line 107, in _execute
     exec_code(code, identifier, self.namespace, inputs, None)
   File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code
     exec(code_obj, namespace)

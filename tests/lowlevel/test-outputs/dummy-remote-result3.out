@@ -1,15 +1,33 @@
 Server
+STEP 1
+Status: executing
+None
+Status: pending
+None
+
 Server PROGRESS 10
 Server PRELIM 0.1
+STEP 2
+Status: executing, 10.0 %
+0.1
+Status: preliminary
+0.1
+
+STEP 3
+Status: executing, 10.0 %
+0.1
+Status: preliminary
+0.1
+
 Server PROGRESS 20
 Server PRELIM 0.2
-STEP 1
+STEP 4
 Status: executing, 20.0 %
 0.2
 Status: preliminary
 0.2
 
-STEP 2
+STEP 5
 Status: executing, 20.0 %
 0.2
 Status: preliminary
@@ -17,13 +35,13 @@ Status: preliminary
 
 Server PROGRESS 30
 Server PRELIM 0.30000000000000004
-STEP 3
+STEP 6
 Status: executing, 30.0 %
 0.30000000000000004
 Status: preliminary
 0.30000000000000004
 
-STEP 4
+STEP 7
 Status: executing, 30.0 %
 0.30000000000000004
 Status: preliminary
@@ -31,7 +49,13 @@ Status: preliminary
 
 Server PROGRESS 40
 Server PRELIM 0.4
-STEP 5
+STEP 8
+Status: executing, 40.0 %
+0.4
+Status: preliminary
+0.4
+
+STEP 9
 Status: executing, 40.0 %
 0.4
 Status: preliminary
@@ -39,13 +63,13 @@ Status: preliminary
 
 Server PROGRESS 50
 Server PRELIM 0.5
-STEP 6
+STEP 10
 Status: executing, 50.0 %
 0.5
 Status: preliminary
 0.5
 
-STEP 7
+STEP 11
 Status: executing, 50.0 %
 0.5
 Status: preliminary
@@ -53,13 +77,13 @@ Status: preliminary
 
 Server PROGRESS 60
 Server PRELIM 0.6000000000000001
-STEP 8
+STEP 12
 Status: executing, 60.0 %
 0.6000000000000001
 Status: preliminary
 0.6000000000000001
 
-STEP 9
+STEP 13
 Status: executing, 60.0 %
 0.6000000000000001
 Status: preliminary
@@ -67,7 +91,13 @@ Status: preliminary
 
 Server PROGRESS 70
 Server PRELIM 0.7000000000000001
-STEP 10
+STEP 14
+Status: executing, 70.0 %
+0.7000000000000001
+Status: preliminary
+0.7000000000000001
+
+STEP 15
 Status: executing, 70.0 %
 0.7000000000000001
 Status: preliminary
@@ -75,13 +105,13 @@ Status: preliminary
 
 Server PROGRESS 80
 Server PRELIM 0.8
-STEP 11
+STEP 16
 Status: executing, 80.0 %
 0.8
 Status: preliminary
 0.8
 
-STEP 12
+STEP 17
 Status: executing, 80.0 %
 0.8
 Status: preliminary
@@ -89,7 +119,13 @@ Status: preliminary
 
 Server PROGRESS 90
 Server PRELIM 0.9
-STEP 13
+STEP 18
+Status: executing, 90.0 %
+0.9
+Status: preliminary
+0.9
+
+STEP 19
 Status: executing, 90.0 %
 0.9
 Status: preliminary
@@ -97,42 +133,6 @@ Status: preliminary
 
 Server PROGRESS 100
 Server PRELIM 1.0
-STEP 14
-Status: OK
-1.0
-Status: OK
-1.0
-
-STEP 15
-Status: OK
-1.0
-Status: OK
-1.0
-
-STEP 16
-Status: OK
-1.0
-Status: OK
-1.0
-
-STEP 17
-Status: OK
-1.0
-Status: OK
-1.0
-
-STEP 18
-Status: OK
-1.0
-Status: OK
-1.0
-
-STEP 19
-Status: OK
-1.0
-Status: OK
-1.0
-
 STEP 20
 Status: OK
 1.0

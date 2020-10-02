@@ -1,0 +1,47 @@
+Redis containers running
+Stage 1
+Database server running
+OK
+1 True
+42
+
+
+Database keys:
+Database 1
+nbf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+
+Database 2
+
+
+Server log
+Press Ctrl+C to end
+
+Stage 2
+Database server running
+42
+
+
+Database keys:
+Database 1
+nbf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+
+Database 2
+nbf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+
+Stage 2a
+OK
+42
+
+
+Database keys:
+Database 1
+buf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+
+Database 2
+buf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+
+Server log
+Press Ctrl+C to end
+
+redis-dummy1
+redis-dummy2

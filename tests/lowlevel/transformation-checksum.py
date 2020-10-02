@@ -5,8 +5,7 @@ from seamless import communion_server
 
 from seamless.core import context, cell, transformer
 
-from seamless import RedisSink
-sink = RedisSink()
+seamless.database_sink.connect()
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)
@@ -38,6 +37,8 @@ def report():
     print("RESULT       ", v1, ctx.result.status)
     print()
 
+import asyncio
+asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.1))
 print(ctx.tf.get_transformation())
 
 """

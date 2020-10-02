@@ -4,69 +4,84 @@ class Accessor:
     pass
 
 class ReadAccessor(Accessor):
-    _checksum = None
+    _checksum = None  # accessors do not hold references to their checksums. Expressions do.
     _void = True
     _status_reason = None
     _new_macropath = False # if source or target is a newly bound macropath
     _prelim = False # if accessor represents a preliminary result
-    def __init__(self, manager, path, celltype, *, hash_pattern):
+    exception = None
+    def __init__(self, source, manager, path, celltype, *, hash_pattern):
+        self.source = source
         self.manager = weakref.ref(manager)
         self.path = path
         assert celltype in celltypes or isinstance(celltype, MacroPath)
         self.reactor_pinname = None
-        self.celltype = celltype   
+        self.celltype = celltype
         self.write_accessor = None
         self.expression = None
         self._status_reason = StatusReasonEnum.UNDEFINED
-        if hash_pattern is not None:
-            assert celltype == "mixed"
-        self.hash_pattern = hash_pattern
-    
+        if isinstance(celltype, MacroPath):
+            assert hash_pattern is None
+        else:
+            if hash_pattern is not None:
+                assert celltype == "mixed"
+            self.hash_pattern = hash_pattern
+
     @property
     def preliminary(self):
         return self._prelim
-    
+
     def build_expression(self, livegraph, checksum):
-        """Returns if expression has changed"""
         celltype = self.celltype
         if isinstance(celltype, MacroPath):
             macropath = celltype
             if macropath._cell is None:
-                self._clear_expression(livegraph)
-                return False
+                self.clear_expression(livegraph)
+                return
             celltype = macropath._cell._celltype
+            hash_pattern = macropath._cell._hash_pattern
+        else:
+            hash_pattern = self.hash_pattern
         target_celltype = self.write_accessor.celltype
         target_subcelltype = self.write_accessor.subcelltype
         if isinstance(target_celltype, MacroPath):
             macropath = target_celltype
             if macropath._cell is None:
-                self._clear_expression(livegraph)
-                return False
+                self.clear_expression(livegraph)
+                return
             target_celltype = macropath._cell._celltype
             target_subcelltype = macropath._cell._subcelltype
         target = self.write_accessor.target
         expression = Expression(
             checksum, self.path, celltype,
             target_celltype,
-            target_subcelltype, 
-            hash_pattern=self.hash_pattern,
+            target_subcelltype,
+            hash_pattern=hash_pattern,
         )
         if self.expression is not None:
             if expression == self.expression:
-                return False
+                return
             livegraph.decref_expression(self.expression, self)
         self.expression = expression
         livegraph.incref_expression(expression, self)
-        return True
 
-    def _clear_expression(self, livegraph):
+    def clear_expression(self, livegraph):
         if self.expression is None:
             return
         livegraph.decref_expression(self.expression, self)
         self.expression = None
 
+    def __repr__(self):
+        result = "Accessor: " + str(self.source)
+        if self.write_accessor is not None:
+            result += " => " + str(self.write_accessor.target())
+        return result
+
+    def _root(self):
+        return self.source._root()
+
 class WriteAccessor(Accessor):
-    def __init__(self, read_accessor, 
+    def __init__(self, read_accessor,
             target, celltype, subcelltype, pinname, path, *,
             hash_pattern
         ):
@@ -79,7 +94,7 @@ class WriteAccessor(Accessor):
         self.target = weakref.ref(target)
         assert celltype in celltypes or isinstance(celltype, MacroPath), celltype
         self.celltype = celltype
-        assert subcelltype is None or subcelltype in subcelltypes 
+        assert subcelltype is None or subcelltype in subcelltypes
         self.subcelltype = subcelltype
         self.pinname = pinname
         self.path = path

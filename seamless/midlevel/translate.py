@@ -15,17 +15,36 @@ from seamless.core import (cell as core_cell,
 from . import copying
 from .util import as_tuple, get_path, get_path_link, find_channels, build_structured_cell
 
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
+
 direct_celltypes = (
     "text", "plain", "mixed", "binary",
-    "cson", "yaml", "str", "bytes", "int", "float", "bool"
+    "cson", "yaml", "str", "bytes", "int", "float", "bool",
+    "checksum"
 )
 
 def set_structured_cell_from_checksum(cell, checksum):
-    join = False
+    trigger = False
     """
     if "temp" in checksum:
         assert len(checksum) == 1, checksum.keys()
-        cell.modified.add_auth_path(()))
         temp_checksum = checksum["temp"]
         if cell.hash_pattern is not None:
             temp_cs = bytes.fromhex(temp_checksum)
@@ -34,7 +53,7 @@ def set_structured_cell_from_checksum(cell, checksum):
             )
             temp_checksum = temp_cs2.hex()
         cell.auth._set_checksum(temp_checksum, initial=True, from_structured_cell=False)
-        join = True
+        trigger = True
     else:
     """
     if "value" in checksum:
@@ -45,9 +64,8 @@ def set_structured_cell_from_checksum(cell, checksum):
             from_structured_cell=True,
             initial=True
         )
-        join = True
+        trigger = True
         """
-        cell._data._void = False
 
     if "buffer" in checksum:
         # not done! value calculated anew...
@@ -57,13 +75,10 @@ def set_structured_cell_from_checksum(cell, checksum):
             from_structured_cell=True,
             initial=True
         )
-        join = True
+        trigger = True
         """
-        cell.buffer._void = False
-        cell._data._void = False
 
     if "auth" in checksum:
-        cell.modified.add_auth_path(())
         if cell.auth is None:
             msg = "Warning: %s has no authority, but an auth checksum is present"
             print(msg % cell)
@@ -73,9 +88,9 @@ def set_structured_cell_from_checksum(cell, checksum):
                 from_structured_cell=True,
                 initial=True
             )
-            join = True
-            cell.buffer._void = False
             cell._data._void = False
+            cell._data._status_reason = None
+            trigger = True
 
     if "schema" in checksum:
         cell.schema._set_checksum(
@@ -83,9 +98,11 @@ def set_structured_cell_from_checksum(cell, checksum):
             from_structured_cell=True,
             initial=True
         )
-        join = True
-    if join:
-        cell._join()
+        trigger = True
+
+    if trigger:
+        cell._get_manager().structured_cell_trigger(cell)
+
 
 
 def translate_py_reactor(node, root, namespace, inchannels, outchannels):
@@ -205,7 +222,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         if ct == "structured":
             set_structured_cell_from_checksum(child, checksum)
         else:
-            if "value" in checksum:
+            if "value" in checksum and not len(inchannels):
                 child._set_checksum(checksum["value"], initial=True)
             """
             if "temp" in checksum:
@@ -249,8 +266,11 @@ def translate_connection(node, namespace, ctx):
             con_name = "CONNECTION_" + str(n)
             if con_name not in ctx._children:
                 break
-        intermediate = core_cell("mixed")
-        intermediate._fingertip_remote = False
+        hash_pattern = source.hash_pattern
+        if isinstance(source, Outchannel):
+            if hash_pattern is not None:
+                hash_pattern = access_hash_pattern(hash_pattern, source.subpath)
+        intermediate = core_cell("mixed", hash_pattern=hash_pattern)
         setattr(ctx, con_name, intermediate)
         source.connect(intermediate)
         intermediate.connect(target)
@@ -298,7 +318,10 @@ def import_before_translate(graph):
                 from .translate_docker_transformer import translate_docker_transformer
 
 def translate(graph, ctx):
-    ###import traceback; stack = traceback.extract_stack(); print("TRANSLATE:"); print("".join(traceback.format_list(stack[:3])))
+    from ..core.macro_mode import curr_macro
+    if curr_macro() is None:
+        print_info("*" * 30 + "TRANSLATE" + "*" * 30)
+    #import traceback; stack = traceback.extract_stack(); print("TRANSLATE:"); print("".join(traceback.format_list(stack[:3])))
     nodes, connections = graph["nodes"], graph["connections"]
     contexts = {con["path"]: con for con in nodes if con["type"] == "context"}
     for path in sorted(contexts.keys(), key=lambda k:len(k)):
@@ -348,8 +371,8 @@ def translate(graph, ctx):
         elif t == "cell":
             inchannels, outchannels = find_channels(path, connection_paths)
             translate_cell(node, ctx, namespace, inchannels, outchannels)
-        elif t == "libmacro":
-            msg = "Libmacro '%s' was not removed during pre-translation, or is a nested libmacro"
+        elif t == "libinstance":
+            msg = "Libinstance '%s' was not removed during pre-translation, or is a nested libinstance"
             raise TypeError(msg % path)
         else:
             raise TypeError(t)
@@ -373,4 +396,4 @@ from .translate_bash_transformer import translate_bash_transformer
 from .translate_docker_transformer import translate_docker_transformer
 from .translate_compiled_transformer import translate_compiled_transformer
 '''
-from ..core.protocol.deep_structure import apply_hash_pattern_sync
+from ..core.protocol.deep_structure import apply_hash_pattern_sync, access_hash_pattern

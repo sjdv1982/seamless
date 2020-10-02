@@ -3,23 +3,23 @@ import sys
 def pretranslate(ctx, graph):
     assert isinstance(ctx, Context)
     nodes, connections = graph["nodes"], graph["connections"]
-    libmacros = []
+    libinstances = []
     for node in nodes:
-        if node["type"] == "libmacro":
+        if node["type"] == "libinstance":
              path = tuple(node["path"])
-             libmacros.append(path)
-    if not len(libmacros):
+             libinstances.append(path)
+    if not len(libinstances):
         return graph
     nodedict = {tuple(node["path"]): node for node in nodes}
     overlay_nodedict = {}
-    overlay_connections = []    
-    for path in libmacros:
-        libmacro = LibMacro(ctx, path=path)
+    overlay_connections = []
+    for path in libinstances:
+        libinstance = LibInstance(ctx, path=path)
         try:
-            result = libmacro._run()
+            result = libinstance._run()
         except Exception as exc:
             import traceback
-            print("LibMacro:", path, file=sys.stderr)
+            print("LibInstance:", path, file=sys.stderr)
             traceback.print_exc()
             continue
         curr_graph, curr_nodes, curr_connections = result
@@ -34,10 +34,10 @@ def pretranslate(ctx, graph):
         for con in curr_graph["connections"]:
             con["source"] = path2 + tuple(con["source"])
             con["target"] = path2 + tuple(con["target"])
-            overlay_connections.append(con)        
-    libmacro_nodedict = overlay_nodedict.copy()
+            overlay_connections.append(con)
+    runtime_graph_nodedict = overlay_nodedict.copy()
     for nodename, node in nodedict.items():
-        if nodename in libmacros:
+        if nodename in libinstances:
             continue
         overlay_node = overlay_nodedict.get(nodename)
         if overlay_node is not None:
@@ -46,33 +46,33 @@ def pretranslate(ctx, graph):
             if "checksum" in overlay_node:
                 if overlay_node["checksum"] is None:
                     newnode.pop("checksum")
-            libmacro_nodedict[nodename] = newnode
+            runtime_graph_nodedict[nodename] = newnode
         else:
-            libmacro_nodedict[nodename] = node
-    for path in libmacros:
-        libmacro_nodedict[path] = {
+            runtime_graph_nodedict[nodename] = node
+    for path in libinstances:
+        runtime_graph_nodedict[path] = {
             "type": "context",
             "path": path,
-        } 
+        }
         path2 = path + ("ctx",)
-        libmacro_nodedict[path2] = {
+        runtime_graph_nodedict[path2] = {
             "type": "context",
             "path": path2,
-        } 
-    libmacro_nodes = [
-        v for k,v in sorted(libmacro_nodedict.items(), 
+        }
+    runtime_graph_nodes = [
+        v for k,v in sorted(runtime_graph_nodedict.items(),
         key=lambda kv: kv[0])
     ]
-    libmacro_connections = connections + overlay_connections
-    libmacro_graph = {
-        "nodes": libmacro_nodes, 
-        "connections": libmacro_connections, 
+    runtime_graph_connections = connections + overlay_connections
+    runtime_graph = {
+        "nodes": runtime_graph_nodes,
+        "connections": runtime_graph_connections,
         "params": graph["params"],
         "lib": graph["lib"],
     }
-    return libmacro_graph
-    
+    return runtime_graph
+
 
 from ..highlevel.Context import Context, Graph
-from ..highlevel.library.libmacro import LibMacro
-from ..highlevel.assign import under_libmacro_control
+from ..highlevel.library.libinstance import LibInstance
+from ..highlevel.assign import under_libinstance_control

@@ -4,10 +4,10 @@ from ..midlevel.StaticContext import StaticContext
 
 import seamless
 seamless_dir = os.path.dirname(seamless.__file__)
-graphfile = os.path.join(seamless_dir, 
+graphfile = os.path.join(seamless_dir,
     "graphs", "bash_transformer.seamless"
 )
-zipfile = os.path.join(seamless_dir, 
+zipfile = os.path.join(seamless_dir,
     "graphs", "bash_transformer.zip"
 )
 graph = json.load(open(graphfile))
@@ -62,7 +62,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
         p = {"io": "input"}
         p.update(pin)
         all_pins[pinname] = p
-    all_pins[result_name] = {"io": "output"}    
+    all_pins[result_name] = {"io": "output"}
     if node["SCHEMA"]:
         raise NotImplementedError
         all_pins[node["SCHEMA"]] = {
@@ -81,15 +81,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    inp_checksum = {}
-    for k in checksum:
-        if k == "schema":
-            inp_checksum[k] = checksum[k]
-            continue
-        if not k.startswith("input"):
-            continue
-        k2 = "value" if k == "input" else k[len("input_"):]
-        inp_checksum[k2] = checksum[k]
+    inp_checksum = convert_checksum_dict(checksum, "input")
     set_structured_cell_from_checksum(inp, inp_checksum)
 
     ctx.executor_code = sctx.executor_code.cell()
@@ -102,7 +94,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
         target = getattr(ctx.tf, pinname)
         celltype = pin.get("celltype", "mixed")
         if celltype == "code":
-            celltype = "text"        
+            celltype = "text"
         intermediate_cell = cell(celltype)
         cell_setattr(node, ctx, pin_intermediate[pinname], intermediate_cell)
         inp.outchannels[(pinname,)].connect(intermediate_cell)
@@ -121,7 +113,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
 
     setattr(ctx, result_name, result)
 
-    result_pin = getattr(ctx.tf, result_name)        
+    result_pin = getattr(ctx.tf, result_name)
     result_cell = cell("mixed")
     cell_setattr(node, ctx, result_cell_name, result_cell)
     result_pin.connect(result_cell)
@@ -129,7 +121,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
     if node["SCHEMA"]:
         schema_pin = getattr(ctx.tf, node["SCHEMA"])
         result.schema.connect(schema_pin)
-    result_checksum = {}        
+    result_checksum = {}
     for k in checksum:
         if not k.startswith("result"):
             continue
@@ -141,3 +133,4 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
     namespace[node["path"], False] = result, node
 
 from .util import get_path, as_tuple, build_structured_cell, cell_setattr
+from .convert_checksum_dict import convert_checksum_dict

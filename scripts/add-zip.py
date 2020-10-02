@@ -1,5 +1,5 @@
 import seamless
-redis_sink = seamless.RedisSink()
+seamless.database_sink.connect()
 
 # TODO: proper command line options (also for mounts)
 import sys

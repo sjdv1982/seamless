@@ -6,13 +6,51 @@ import sys
 import traceback
 import functools
 import time
+import atexit
 
 from .execute import Queue, Executor, execute, execute_debug
 from .run_multi_remote import run_multi_remote, run_multi_remote_pair
 from .injector import transformer_injector as injector
 from .build_module import build_module_async
 
-DEBUG = False
+import logging
+logger = logging.getLogger("seamless")
+
+forked_processes = weakref.WeakKeyDictionary()
+def _kill_processes():
+    for process, termination_time in forked_processes.items():
+        if not process.is_alive():
+            continue
+        kill_time = termination_time + 15  # "docker stop" has 10 secs grace, add 5 secs margin
+        ctime = time.time()
+        while kill_time > ctime:
+            print("Waiting for transformer process to terminate...")
+            time.sleep(2)
+            if not process.is_alive():
+                break
+            ctime = time.time()
+        if not process.is_alive():
+            continue
+        print("Killing transformer process... cleanup will not have happened!")
+        process.kill()
+
+atexit.register(_kill_processes)
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
 
 class SeamlessTransformationError(Exception):
     pass
@@ -66,8 +104,9 @@ class TransformationJob:
     start = None
     def __init__(self,
         checksum, codename,
-        buffer_cache, transformation,
-        semantic_cache, debug
+        transformation,
+        semantic_cache, debug,
+        python_debug
     ):
         self.checksum = checksum
         assert codename is not None
@@ -79,17 +118,17 @@ class TransformationJob:
         outputpin = transformation["__output__"]
         outputname, celltype, subcelltype = outputpin
         self.outputpin = outputpin
-        self.buffer_cache = weakref.ref(buffer_cache)
         self.job_id = TransformationJob._job_id_counter + 1
         TransformationJob._job_id_counter += 1
         self.transformation = transformation
         self.semantic_cache = semantic_cache
         self.debug = debug
+        self.python_debug = python_debug
         self.executor = None
         self.future = None
         self.remote = False
         self.restart = False
-
+        self.n_restarted = 0
 
     async def _probe_remote(self, clients):
         if not len(clients):
@@ -112,11 +151,11 @@ class TransformationJob:
             )
             for fut in done:
                 if fut.exception() is not None:
-                    if DEBUG:
-                        try:
-                            fut.result()
-                        except:
-                            traceback.print_exc()
+                    try:
+                        fut.result()
+                    except:
+                        exc = traceback.format_exc()
+                        print_debug("Transformation {}: {}".format(self.checksum.hex(), exc))
                     continue
                 try:
                     result = "<unknown>"
@@ -127,9 +166,8 @@ class TransformationJob:
                     else:
                         status, response = result
                 except:
-                    if DEBUG:
-                        print("STATUS RESULT", result)
-                        traceback.print_exc()
+                    print_debug("STATUS RESULT", result)
+                    print_debug(traceback.format_exc())
                     continue
                 if not isinstance(status, int):
                     continue
@@ -191,24 +229,28 @@ class TransformationJob:
             await asyncio.sleep(0.05)
         clients = list(communion_client_manager.clients["transformation"])
         await self._probe_remote(clients)
-        if self.remote:
+        if self.remote and not self.debug and not self.python_debug:
             self.remote_futures = None
             try:
                 result = await self._execute_remote(
                     prelim_callback, progress_callback
                 )
+                logs = None
             finally:
                 self.remote_futures = None
         else:
-            result = await self._execute_local(
+            result, logs = await self._execute_local(
                 prelim_callback, progress_callback
             )
         if self.restart:
+            self.n_restarted += 1
+            if self.n_restarted > 100:
+                raise SeamlessTransformationError("Restarted transformation 100 times")
             self.restart = False
-            result = await self._execute(
+            result, logs = await self._execute(
                 prelim_callback, progress_callback
             )
-        return result
+        return result, logs
 
     async def _execute_remote(self,
         prelim_callback, progress_callback
@@ -269,18 +311,18 @@ class TransformationJob:
             go_on = (len(pending) > 0)
             for future in done:
                 if future.exception() is not None:
-                    if DEBUG:
-                        try:
-                            future.result()
-                        except:
-                            traceback.print_exc()
+                    try:
+                        fut.result()
+                    except:
+                        exc = traceback.format_exc()
+                        print_debug("Transformation {}: {}".format(self.checksum.hex(), exc))
                     continue
                 try:
                     result = future.result()
                     status = result[0]
                 except:
-                    if DEBUG:
-                        traceback.print_exc()
+                    exc = traceback.format_exc()
+                    print_debug("Transformation {}: {}".format(self.checksum.hex(), exc))
                     continue
                 if not isinstance(status, int):
                     continue
@@ -323,12 +365,13 @@ class TransformationJob:
     async def _execute_local(self,
         prelim_callback, progress_callback
     ):
-        buffer_cache = self.buffer_cache()
         values = {}
         module_workspace = {}
         namespace = {"__name__": "transformer"}
         inputs = []
         code = None
+        logs = [None, None]
+        lock = await acquire_lock(self.checksum)
         for pinname in self.transformation:
             if pinname == "__output__":
                 continue
@@ -343,7 +386,7 @@ class TransformationJob:
                 values[pinname] = None
                 continue
             # fingertipping must have happened before
-            buffer = get_buffer(checksum, buffer_cache)
+            buffer = get_buffer(checksum)
             assert buffer is not None
             try:
                 value = await deserialize(buffer, checksum, celltype, False)
@@ -386,20 +429,19 @@ class TransformationJob:
 
         assert code is not None
 
-        async def get_result_checksum(result):
-            if result is None:
+        async def get_result_checksum(result_buffer):
+            if result_buffer is None:
                 return None
             try:
                 await validate_subcelltype(
-                    result, celltype, subcelltype,
-                    self.codename, buffer_cache
+                    result_buffer, celltype, subcelltype,
+                    self.codename
                 )
-                result_checksum = await calculate_checksum(result)
+                result_checksum = await calculate_checksum(result_buffer)
             except Exception:
                 raise SeamlessInvalidValueError(result)
             return result_checksum
 
-        lock = await acquire_lock(self.checksum)
         self.start = time.time()
         running = False
         try:
@@ -411,8 +453,9 @@ class TransformationJob:
                 self.codename,
                 namespace, inputs, outputname, celltype, queue
             )
+            kwargs = {"python_debug": self.python_debug}
             execute_command = execute_debug if self.debug else execute
-            self.executor = Executor(target=execute_command,args=args, daemon=True)
+            self.executor = Executor(target=execute_command,args=args, kwargs=kwargs, daemon=True)
             self.executor.start()
             running = True
             result = None
@@ -423,18 +466,33 @@ class TransformationJob:
                     status, msg = queue.get()
                     queue.task_done()
                     if status == 0:
-                        result = msg
+                        result_buffer = msg
                         done = True
                         break
                     elif status == 1:
                         raise SeamlessTransformationError(msg)
                     elif status == 2:
-                        prelim = msg
-                        prelim_checksum = await get_result_checksum(prelim)
+                        prelim_buffer = msg
+                        prelim_checksum = await get_result_checksum(prelim_buffer)
+                        buffer_cache.cache_buffer(prelim_checksum, prelim_buffer)
                         prelim_callback(self, prelim_checksum)
                     elif status == 3:
                         progress = msg
                         progress_callback(self, progress)
+                    elif status == 4:
+                        is_stderr, content = msg
+                        try:
+                            content = str(content)
+                        except:
+                            pass
+                        else:
+                            if len(content) > 10000:
+                                skipped = len(content)-5000-4960
+                                content2 = content[:4960]
+                                content2 += "\n...(skipped %d characters)...\n" % skipped
+                                content2 += content[-5000:]
+                                content = content2
+                            logs[is_stderr] = content
                     else:
                         raise Exception("Unknown return status {}".format(status))
                 if not self.executor.is_alive():
@@ -442,19 +500,41 @@ class TransformationJob:
                         raise SeamlessTransformationError(
                           "Transformation exited with code %s\n" % self.executor.exitcode
                         )
-                    done = True
+                    if not done:
+                        raise SeamlessTransformationError("Transformation exited without result")
                 if done:
                     break
-                await asyncio.sleep(0.001)
+                await asyncio.sleep(0.01)
             if not self.executor.is_alive():
                 self.executor = None
         except asyncio.CancelledError:
             if running:
                 self.executor.terminate()
+                forked_processes[self.executor] = time.time()
+            raise asyncio.CancelledError from None
         finally:
             release_lock(lock)
-        result_checksum = await get_result_checksum(result)
-        return result_checksum
+        result_checksum = await get_result_checksum(result_buffer)
+        buffer_cache.cache_buffer(result_checksum, result_buffer)
+
+        if logs[0] is None and logs[1] is None:
+            logstr = None
+        elif logs[0] is not None and logs[1] is None:
+            logstr = logs[0]
+        elif logs[0] is None and logs[1] is not None:
+            logstr = logs[1]
+        else:
+            logstr = """*************************************************
+* Standard output
+*************************************************
+{}
+*************************************************
+*************************************************
+* Standard error
+*************************************************
+{}
+""".format(logs[0], logs[1])
+        return result_checksum, logstr
 
 
 
@@ -464,6 +544,7 @@ from .protocol.serialize import serialize
 from .protocol.calculate_checksum import calculate_checksum
 from .protocol.validate_subcelltype import validate_subcelltype
 from .cache import CacheMissError
+from .cache.buffer_cache import buffer_cache
 from .cache.transformation_cache import transformation_cache, syntactic_is_semantic
 from .status import SeamlessInvalidValueError
 from ..silk import Silk, Scalar

@@ -105,7 +105,7 @@ def macro_code(ctx, param_a):
     ctx.a0 = cell().set(999)
     ctx.a0.share()
 
-def define_ctx2():    
+def define_ctx2():
     ctx.macro = macro({"param_a": "int"})
     ctx.macro.code.cell().set(macro_code)
     ctx.param_a = cell().set(42)
@@ -115,7 +115,7 @@ def define_ctx2():
 define_ctx2()
 import asyncio; asyncio.get_event_loop().run_until_complete(asyncio.ensure_future(asyncio.sleep(1)))
 r = thread(
-    requests.patch, 'http://localhost:5813/ctx/compute', 
+    requests.patch, 'http://localhost:5813/ctx/compute',
     json={"timeout": None}
 )
 print(r.text)
@@ -143,3 +143,4 @@ ctx.compute()
 print(ctx.param_a.value)
 print(ctx.macro.ctx.a.value)
 
+import asyncio; asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.5))  # to get the update message

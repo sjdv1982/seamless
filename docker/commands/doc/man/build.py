@@ -10,7 +10,6 @@ result_cache = "seamless-result-cache.dat"
 import glob, os
 from seamless.highlevel import Context, Transformer, Cell
 import seamless
-seamless.VERBOSE = True
 
 docfiles0 = glob.glob("{}/*.md".format(docdir))
 docfiles = [os.path.splitext(
@@ -39,7 +38,7 @@ ctx.pandoc = """
 ln -s inputfile input.md
 pandoc --standalone --to man input.md -o /dev/stdout
 """
-for f in docfiles:    
+for f in docfiles:
     setattr(ctx, f, Context())
     sctx = getattr(ctx, f)
     md = "{}/{}.md".format(docdir, f)
@@ -66,8 +65,8 @@ with open(result_cache, "w") as result_cache:
     ):
         if not prelim:
             print(
-                tf_checksum.hex(), 
+                tf_checksum.hex(),
                 result_checksum.hex(),
                 file=result_cache
             )
-# / TODO    
+# / TODO

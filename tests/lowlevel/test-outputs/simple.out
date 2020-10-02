@@ -1,4 +1,3 @@
-STOP
 1 Seamless int cell: .cell1 Status: OK
 2 Seamless int cell: .cell2 Status: OK
 a + b Seamless Python transformer code cell: .code Status: OK
@@ -17,3 +16,5 @@ None Status: {
 }
 ...
 -12 Status: OK
+None
+STOP

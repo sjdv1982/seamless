@@ -13,21 +13,51 @@ class UponConnectionTask(Task):
         self.current_macro = curr_macro()
         super().__init__(manager)
         if isinstance(source, (OutputPin, EditPin) ):
-            self.dependencies.append(source.worker_ref())
+            self._dependencies.append(source.worker_ref())
         elif isinstance(source, Cell):
-            self.dependencies.append(source)
+            self._dependencies.append(source)
         elif isinstance(source, Path):
-            self.dependencies.append(source)
+            self._dependencies.append(source)
         else:
             raise TypeError(source)
         if isinstance(target, (InputPin, EditPin) ):
-            self.dependencies.append(target.worker_ref())
+            self._dependencies.append(target.worker_ref())
         elif isinstance(target, Cell):
-            self.dependencies.append(target)
+            self._dependencies.append(target)
         elif isinstance(target, Path):
-            self.dependencies.append(target)
+            self._dependencies.append(target)
         else:
             raise TypeError(target)
+
+
+        taskmanager = manager.taskmanager
+        cancel_tasks = []
+        if isinstance(target, Cell):
+            for task in taskmanager.cell_to_task[target]:
+                if isinstance(task, SetCellValueTask):
+                    cancel_tasks.append(task)
+        elif isinstance(target, MacroPath):
+            cancel_tasks = taskmanager.macropath_to_task[target]
+        elif isinstance(target, PinBase):
+            worker = target.worker_ref()
+            if isinstance(worker, Transformer):
+                cancel_tasks = taskmanager.transformer_to_task[worker]
+            elif isinstance(worker, Reactor):
+                cancel_tasks = taskmanager.reactor_to_task[worker]
+            elif isinstance(worker, Macro):
+                cancel_tasks = taskmanager.macro_to_task[worker]
+            else:
+                raise TypeError(type(worker))
+        else:
+            raise TypeError(type(target))
+        for task in cancel_tasks:
+            if isinstance(task, UponConnectionTask):
+                continue
+            task.cancel()
+
+        source = self.source
+        target = self.target
+
 
     def _connect_cell_cell(self):
         source, target, source_subpath, target_subpath = (
@@ -145,110 +175,122 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
         )
 
     def _connect_editpin(self, pin, cell):
+        raise NotImplementedError
         assert isinstance(pin, EditPin)
         assert isinstance(cell, Cell)
         reactor = pin.worker_ref()
+        """
         assert reactor._void # safe assumption, as long as must_be_defined is enforced to be True
         manager = self.manager()
         livegraph = manager.livegraph
         assert livegraph.editpin_to_cell[reactor][pin.name] is None, (reactor, pin.name) # editpin can connect only to one cell
         livegraph.editpin_to_cell[reactor][pin.name] = cell
         livegraph.cell_to_editpins[cell].append(pin)
-        ReactorUpdateTask(manager, reactor).launch()
+        """
 
     async def _run(self):
-        """Perform actions upon connection.
-
-- Cancel any set-cell-value tasks on the target (if a cell)
-- Await all other UponConnectionTasks
-  Inform authoritymanager, caches etc., returning an accessor.
-  This accessor will automatically be updated if anything modifies the source
-  (even if it is already running, but not finished, now)
-- Launch an accessor update task
-"""
         manager = self.manager()
         taskmanager = manager.taskmanager
 
+        source = self.source
         target = self.target
-        cancel_tasks = []
-        if isinstance(target, Cell):
-            for task in taskmanager.cell_to_task[target]:
-                if isinstance(task, SetCellValueTask):
-                    cancel_tasks.append(task)
-        elif isinstance(target, MacroPath):
-            cancel_tasks = taskmanager.macropath_to_task[target]
-        elif isinstance(target, PinBase):
-            worker = target.worker_ref()
-            if isinstance(worker, Transformer):
-                cancel_tasks = taskmanager.transformer_to_task[worker]
-            elif isinstance(worker, Reactor):
-                cancel_tasks = taskmanager.reactor_to_task[worker]
-            elif isinstance(worker, Macro):
-                cancel_tasks = taskmanager.macro_to_task[worker]
-            else:
-                raise TypeError(type(worker))
-        else:
-            raise TypeError(type(target))
-        for task in cancel_tasks:
-            if isinstance(task, UponConnectionTask):
-                continue
-            task.cancel()
 
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
+        accessor = None
 
-        source = self.source
         if isinstance(source, Cell):
-            accessor = self._connect_cell()
             if isinstance(target, EditPin):
-                return self._connect_editpin(target, source)
-            assert accessor is not None
-            if not source._void:
-                sc = source._structured_cell
-                if sc is not None:
-                    assert sc._data is source, (sc._data, source)
-                    sc._new_outgoing_connections = True
-                    manager.structured_cell_join(sc)
-                else:
-                    CellUpdateTask(manager, source).launch()
+                accessor = self._connect_editpin(target, source)
+                assert accessor is not None and isinstance(accessor, ReadAccessor), type(accessor)
+            else:
+                accessor = self._connect_cell()
+                assert accessor is not None and isinstance(accessor, ReadAccessor), type(accessor)
         elif isinstance(source, EditPin):
             assert isinstance(target, (Cell, MacroPath))
-            return self._connect_editpin(source, target)
+            accessor = self._connect_editpin(source, target)
+            assert accessor is not None and isinstance(accessor, ReadAccessor), type(accessor)
+            source = target
+            if isinstance(source, MacroPath):
+                source = source._cell
         elif isinstance(source, PinBase):
             accessor = self._connect_pin_cell()
-            assert accessor is not None
-            worker = source.worker_ref()
-            if isinstance(worker, Transformer):
-                TransformerUpdateTask(manager, worker).launch()
-            elif isinstance(worker, Reactor):
-                reactor = worker
-                last_outputs = reactor._last_outputs
-                checksum = None
-                if last_outputs is not None:
-                    checksum = last_outputs.get(pinname)
-                if checksum is not None:
-                    downstreams = livegraph.reactor_to_downstream[reactor][pinname]
-                    for accessor in downstreams:
-                        #- construct (not compute!) their expression using the cell checksum
-                        #  Constructing a downstream expression increfs the cell checksum
-                        changed = accessor.build_expression(livegraph, checksum)
-                        # TODO: prelim? tricky for a reactor...
-                        #- launch an accessor update task
-                        if changed:
-                            AccessorUpdateTask(manager, accessor).launch()
-            elif isinstance(worker, Macro):
-                MacroUpdateTask(manager, worker).launch()
-            else:
-                raise TypeError(type(worker))
+            assert accessor is not None and isinstance(accessor, ReadAccessor), type(accessor)
+            source = source.worker_ref()
         elif isinstance(source, MacroPath):
             accessor = self._connect_macropath()
-            assert accessor is not None
+            assert accessor is not None and isinstance(accessor, ReadAccessor), type(accessor)
             source2 = source._cell
             if source2 is not None:
                 assert source in source2._paths
-                if not source2._void:
-                    CellUpdateTask(manager, source2).launch()
+            else:
+                manager.cancel_accessor(accessor, True, origin_task=self, reason=StatusReasonEnum.UNCONNECTED)
+
+                # Chance that the above line cancels our own task
+                if self._canceled:
+                    return
+
+            source = source2
         else:
             raise TypeError(type(source))
+
+        # Chance that the livegraph invocation cancels our own task
+        if self._canceled:
+            return
+
+
+        if accessor is not None and source is not None:
+            if isinstance(source, Cell):
+                if not source._void:
+                    taskmanager = manager.taskmanager
+                    unvoid_accessor(accessor, manager.livegraph)
+                    manager.cancel_accessor(accessor, void=False, origin_task=self)
+
+                    # Chance that the above lines cancels our own task
+                    if self._canceled:
+                        return
+
+                    accessor.build_expression(manager.livegraph, source._checksum)
+                    if source._checksum is not None:
+                        AccessorUpdateTask(manager, accessor).launch()
+
+            elif isinstance(source, Transformer):
+                if source._void:
+                    unvoid_transformer(source, manager.livegraph)  # result connection may unvoid the transformer, which will launch a task
+
+                    # Chance that the above lines cancels our own task
+                    if self._canceled:
+                        return
+
+                else:
+                    unvoid_accessor(accessor, manager.livegraph)
+
+                    # Chance that the above lines cancels our own task
+                    if self._canceled:
+                        return
+
+                    if source._checksum is not None:
+                        TransformerUpdateTask(manager, source).launch()
+            elif isinstance(source, Reactor):
+                if source._void:
+                    unvoid_reactor(source, manager.livegraph)  # result connection may unvoid the reactor, which will launch a task
+
+                    # Chance that the above lines cancels our own task
+                    if self._canceled:
+                        return
+
+                else:
+                    unvoid_accessor(accessor, manager.livegraph)
+
+                    # Chance that the above lines cancels our own task
+                    if self._canceled:
+                        return
+
+                    if source._checksum is not None:
+                        ReactorUpdateTask(manager, source).launch()
+            else:
+                raise TypeError(source)
+
+        #print("/UPON")
 
 class UponBiLinkTask(UponConnectionTask):
     def __init__(self, manager, source, target):
@@ -260,8 +302,8 @@ class UponBiLinkTask(UponConnectionTask):
             raise TypeError(type(source))
         if not isinstance(target, Cell):
             raise TypeError(type(target))
-        self.dependencies.append(source)
-        self.dependencies.append(target)
+        self._dependencies.append(source)
+        self._dependencies.append(target)
 
     async def _run(self):
         manager = self.manager()
@@ -280,15 +322,17 @@ class UponBiLinkTask(UponConnectionTask):
 
 
 from .cell_update import CellUpdateTask
-from .checksum import CellChecksumTask
 from .accessor_update import AccessorUpdateTask
 from .transformer_update import TransformerUpdateTask
 from .reactor_update import ReactorUpdateTask
-from .macro_update import MacroUpdateTask
 from .set_value import SetCellValueTask
+from ..accessor import ReadAccessor
 from ...cell import Cell
+from ...structured_cell import Inchannel
 from ...worker import PinBase, EditPin
 from ...transformer import Transformer
 from ...reactor import Reactor
 from ...macro_mode import curr_macro
 from ...macro import Macro, Path as MacroPath
+from ...status import StatusReasonEnum
+from ..unvoid import unvoid_accessor, unvoid_transformer, unvoid_reactor

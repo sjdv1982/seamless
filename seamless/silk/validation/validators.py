@@ -6,7 +6,7 @@ from jsonschema.exceptions import FormatError, ValidationError
 from jsonschema._validators import items as validator_items_ORIGINAL
 try:
     from jsonschema._validators import type as validator_type_ORIGINAL
-except ImportError:    
+except ImportError:
     from jsonschema._validators import type_draft4 as validator_type_ORIGINAL
 
 from jsonschema._utils import indent
@@ -34,19 +34,21 @@ def validator_items(validator, items, instance, schema):
        and .form.ndim present.
     - The data is in mixed-binary form
     """
-    assert isinstance(instance, FormWrapper), type(instance)    
+    assert isinstance(instance, FormWrapper), type(instance)
     data = instance._wrapped
     if isinstance(data, np.ndarray):
         numpy_schema = is_numpy_structure_schema(schema)
         if numpy_schema:
             storage, form = instance._storage, instance._form
             if storage != "mixed-binary":
-                return    
+                return
     for error in validator_items_ORIGINAL(validator, items, instance, schema):
         yield error
 
 def _validator_storage(storage, instance_storage, form_str=None):
     #TODO: raise proper ValidationErrors
+    if instance_storage is None:
+        return
     storages = ("pure-plain", "mixed-plain", "pure-binary", "mixed-binary")
     assert instance_storage in storages, (instance_storage, storages)
     msg = None
@@ -233,4 +235,3 @@ def validator_validators(validator, validators, instance, schema):
             stars = "*" * 72 + "\n"
             msg2 = "\n" + stars + "*  Silk validation error\n" + stars + msg + stars
             yield ValidationError(msg2)
-

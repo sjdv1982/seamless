@@ -1,0 +1,7 @@
+Waiting for: Seamless transformer: .tf1.tf
+Waiting for: Seamless transformer: .tf2.tf
+Status: OK {'docker_image': 'ubuntu', 'docker_options': {}}
+Waiting for: Seamless transformer: .tf1.tf
+Status: {'tf1': '*tf*: Status: error', 'tf2': '*tf*: Status: upstream => a undefined', 'tf1_result': 'Status: undefined'} {'docker_image': 'ubuntu', 'docker_options': {}}
+Waiting for: Seamless transformer: .tf1.tf
+Status: OK {'docker_image': 'ubuntu', 'docker_options': {}}

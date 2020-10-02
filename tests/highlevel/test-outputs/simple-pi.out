@@ -31,6 +31,9 @@
       },
       "compiled": false,
       "debug": false,
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "python",
       "path": [
         "doubleit"
@@ -77,6 +80,6 @@
 
 <Silk: 3.141592653589793 >
 <Silk: 6.283185307179586 >
-89fb4991dff5528a716ef8934cb29013  twopi.seamless
-4b5ffbae62d260e708f94bb2f0960e1c  twopi-result.seamless
-47e6e762fa18176935e1bf44e9132012  twopi-result.zip
+d89a78eede0f535003eae21099499943  twopi.seamless
+956e1f34a0047ad5f53dea731af782bd  twopi-result.seamless
+451bdd61cb25a941aaafbf186c3e7f8c  twopi-result.zip

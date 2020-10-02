@@ -10,8 +10,6 @@ communion_server.configure_master(
     transformation_status=True,
 )
 
-#redis_cache = seamless.RedisCache()
-
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.cell1 = cell().set(2)
@@ -24,7 +22,7 @@ with macro_mode_on():
     })
     ctx.cell1.connect(ctx.tf.a)
     ctx.cell2.connect(ctx.tf.b)
-    ctx.code = cell("transformer")    
+    ctx.code = cell("transformer")
     ctx.code.connect(ctx.tf.code)
     ctx.tf.c.connect(ctx.result)
 

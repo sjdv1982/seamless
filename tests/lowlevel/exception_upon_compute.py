@@ -4,8 +4,6 @@ from seamless.core import context, cell, transformer, unilink
 import sys
 
 code = "print('TEST'); raise Exception(a)"
-if len(sys.argv) == 2 and sys.argv[1] == "1":
-    code = "result = a"
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.cell1 = cell().set(1)
@@ -17,6 +15,12 @@ with macro_mode_on():
     ctx.cell1.connect(ctx.tf.a)
     ctx.tf.code.set(code)
     ctx.tf.b.cell()
-ctx.compute(1)
+    ctx.tf.b.connect(ctx.result)
+ctx.compute()
 print(ctx.status)
 print(ctx.tf.exception)
+ctx.tf.code.set("'OK'")
+ctx.compute()
+print(ctx.status)
+print(ctx.tf.exception)
+print(ctx.result.value)

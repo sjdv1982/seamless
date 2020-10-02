@@ -2,8 +2,8 @@ import seamless
 from seamless.core import context, cell, transformer, unilink
 
 try:
-    redis_sink = seamless.RedisSink()
-    redis_cache = seamless.RedisCache()
+    seamless.database_sink.connect()
+    seamless.database_cache.connect()
 except Exception:
     pass
 
@@ -22,7 +22,7 @@ ctx.tf = transformer({
     "c": "output"
 })
 ctx.cell1_unilink = unilink(ctx.cell1)
-ctx.cell1_unilink.connect(ctx.tf.a)    
+ctx.cell1_unilink.connect(ctx.tf.a)
 ctx.cell2.connect(ctx.tf.b)
 ctx.code_copy = cell("transformer")
 ctx.code.connect(ctx.code_copy)
@@ -32,7 +32,6 @@ ctx.tf.c.connect(ctx.result_unilink)
 ctx.result_copy = cell("int")
 ctx.result.connect(ctx.result_copy)
 ctx.compute(1)
-print("STOP")
 print(ctx.cell1.value, ctx.cell1, ctx.cell1.status)
 print(ctx.cell2.value, ctx.cell2, ctx.cell2.status)
 print(ctx.code.value, ctx.code, ctx.code.status)
@@ -57,3 +56,5 @@ print(ctx.result.value, ctx.status)
 print("...")
 ctx.compute()
 print(ctx.result.value, ctx.status)
+print(ctx.tf.exception)
+print("STOP")

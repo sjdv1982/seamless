@@ -14,6 +14,7 @@ print(ctx.a.value)
 print("*" * 80)
 
 ctx.a = 12
+ctx.compute()
 ctx.a.celltype = "str"
 ctx.b = ctx.a
 ctx.b.celltype = "int"
@@ -41,7 +42,8 @@ ctx.c.celltype = "float"
 ctx.translate()
 ctx.c._get_cell().set_buffer(b"'blah'\n")
 ctx.compute()
-print("c", ctx.c.exception, ctx.c.buffer)
+print("c", ctx.c.exception)
+print(ctx.c.buffer)
 
 print()
 print("*" * 80)

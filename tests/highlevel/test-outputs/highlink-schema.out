@@ -16,6 +16,17 @@ value: <Silk: None >
 data: None
 buffered: test
 {'type': 'number'}
+**************************************************
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 'test' is not of type 'number'
+
+Failed validating 'type' in schema:
+    {'type': 'number'}
+
+On instance:
+    'test'
+
+**************************************************
 {'type': 'string'}
 {'type': 'string'}
 value: <Silk: test >

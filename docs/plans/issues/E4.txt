@@ -1,6 +1,8 @@
 Seamless graphs as containers of computation results
 ====================================================
 
+UPDATE: the big data branch (elision + expression cache) has solved (will solve) this.
+
 Seamless graphs contain the checksum of the computation results. However,
  currently they are not supported enough in this regard.
 In particular, if you load a graph and do ctx.compute(), Seamless will pull in all inputs,

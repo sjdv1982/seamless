@@ -1,4 +1,4 @@
-# run scripts/jobslave-noredis.py 
+# run scripts/jobslave-nodatabase.py
 
 import os
 os.environ["SEAMLESS_COMMUNION_ID"] = "simple-remote"
@@ -18,7 +18,7 @@ from seamless.core import context, cell, transformer, unilink
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell().set(1)
-ctx.cell2 = cell().set(2)    
+ctx.cell2 = cell().set(2)
 ctx.result = cell()
 ctx.tf = transformer({
     "a": "input",
@@ -26,7 +26,7 @@ ctx.tf = transformer({
     "c": "output"
 })
 ctx.cell1_unilink = unilink(ctx.cell1)
-ctx.cell1_unilink.connect(ctx.tf.a)    
+ctx.cell1_unilink.connect(ctx.tf.a)
 ctx.cell2.connect(ctx.tf.b)
 ctx.code = cell("transformer").set("c = a + b")
 ctx.code.connect(ctx.tf.code)

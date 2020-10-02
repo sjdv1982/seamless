@@ -1,11 +1,31 @@
+import asyncio
 from . import Task
 from ...cached_compile import cached_compile
+
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
 
 class ReactorUpdateTask(Task):
     def __init__(self, manager, reactor):
         self.reactor = reactor
         super().__init__(manager)
-        self.dependencies.append(reactor)
+        self._dependencies.append(reactor)
 
     async def _run(self):
         reactor = self.reactor
@@ -14,50 +34,48 @@ class ReactorUpdateTask(Task):
         rtreactor = livegraph.rtreactors[reactor]
         taskmanager = manager.taskmanager
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
+
         editpins = rtreactor.editpins
         editpin_to_cell = livegraph.editpin_to_cell[reactor]
         upstreams = livegraph.reactor_to_upstream[reactor]
-        for pinname, accessor in upstreams.items():
-            if accessor is None: #unconnected
-                assert reactor._void
-                reactor._status_reason = StatusReasonEnum.UNCONNECTED
-                return
-        for pinname in editpins:
-            if editpin_to_cell[pinname] is None: #unconnected
-                assert reactor._void
-                reactor._status_reason = StatusReasonEnum.UNCONNECTED
-                return
+        outputpins = [pinname for pinname in reactor._pins \
+            if reactor._pins[pinname].io == "output" ]
+        all_downstreams = livegraph.reactor_to_downstream[reactor]
 
-        upstream = False
         status_reason = None
         for pinname, accessor in upstreams.items():
-            if accessor._void:                
-                if not reactor._void:
-                    print("WARNING: reactor %s is not yet void, shouldn't happen during reactor update" % reactor)
-                    manager.cancel_reactor(reactor, void=True)
-                    return
-                reactor._status_reason = StatusReasonEnum.UPSTREAM
-                return        
+            if accessor is None: #unconnected
+                status_reason = StatusReasonEnum.UNCONNECTED
+                break
+        else:
+            for pinname, accessor in upstreams.items():
+                if accessor._void: #upstream error
+                    status_reason = StatusReasonEnum.UPSTREAM
+        for pinname in outputpins:
+            downstreams = all_downstreams.get(pinname, [])
+            if not len(downstreams):
+                status_reason = StatusReasonEnum.UNCONNECTED
 
         for pinname in editpins:
             cell = editpin_to_cell[pinname]
-            if cell._void:
-                if not reactor._void:
-                    print("WARNING: reactor %s is not yet void, shouldn't happen during reactor update" % reactor)
-                    manager.cancel_reactor(reactor, void=True)
-                    return
+            if cell is None:
+                reactor._status_reason = StatusReasonEnum.UNCONNECTED
+
+        for pinname in editpins:
+            cell = editpin_to_cell[pinname]
+            if cell._void: # TODO: allow them to be void? By definition, these cells have authority
                 reactor._status_reason = StatusReasonEnum.UPSTREAM
-                return        
+                return
 
-        if reactor._void:
-            for downstreams in livegraph.reactor_to_downstream[reactor].values():
-                for accessor in downstreams:
-                    propagate_accessor(livegraph, accessor, False)
+        if status_reason is not None:
+            print("WARNING: reactor %s is void, shouldn't happen during reactor update" % reactor)
+            manager.cancel_reactor(reactor, True, status_reason)
+            return
 
-        reactor._void = False
-        
         for pinname, accessor in upstreams.items():
-            if accessor._checksum is None:
+            assert not accessor._void, (reactor, pinname)
+            if accessor._checksum is None: #pending; a legitimate use case, but we can't proceed
+                print_debug("ABORT", self.__class__.__name__, hex(id(self)), self.dependencies, " <= pinname", pinname)
                 reactor._pending = True
                 return
 
@@ -66,9 +84,8 @@ class ReactorUpdateTask(Task):
             cell = editpin_to_cell[pinname]
             checksum = cell._checksum
             if checksum is None:
-                reactor._pending = True
-                return
-            editpin_checksums[pinname] = checksum            
+                raise Exception # authoritative cell cannot be non-void and no checksum
+            editpin_checksums[pinname] = checksum
 
         reactor._pending = False
 
@@ -96,7 +113,7 @@ class ReactorUpdateTask(Task):
             new_inputs2[pinname] = cell._celltype, cell._subcelltype
 
         reactor._last_inputs = new_inputs
-        
+
         if not len(updated):
             return
 
@@ -115,7 +132,7 @@ class ReactorUpdateTask(Task):
             if checksum is None:
                 values[pinname] = None
                 continue
-            
+
             buffer = await GetBufferTask(manager, checksum).run()
             assert buffer is not None
             value = await DeserializeBufferTask(
@@ -125,7 +142,7 @@ class ReactorUpdateTask(Task):
                 raise CacheMissError(pinname, reactor)
             if pinname in ("code_start", "code_update", "code_stop"):
                 code_obj = cached_compile(value, str(reactor))
-                values[pinname] = code_obj                
+                values[pinname] = code_obj
             elif (celltype, subcelltype) == ("plain", "module"):
                 mod = await build_module_async(value)
                 module_workspace[pinname] = mod[1]
@@ -140,13 +157,13 @@ class ReactorUpdateTask(Task):
 
 class ReactorResultTask(Task):
     def __init__(self,
-        manager, reactor, 
+        manager, reactor,
         pinname, value,
         celltype, subcelltype
     ):
         self.reactor = reactor
         super().__init__(manager)
-        self.dependencies.append(reactor)
+        self._dependencies.append(reactor)
         self.pinname = pinname
         self.value = value
         self.celltype = celltype
@@ -161,44 +178,58 @@ class ReactorResultTask(Task):
         manager = self.manager()
         livegraph = manager.livegraph
         accessors = livegraph.reactor_to_downstream[reactor][self.pinname]
-        celltype, subcelltype = self.celltype, self.subcelltype        
+        celltype, subcelltype = self.celltype, self.subcelltype
         pinname = self.pinname
         checksum = None
-        if self.value is not None:        
+        if self.value is not None:
             try:
                 buffer = await SerializeToBufferTask(
                     manager, self.value, celltype,
                     use_cache=True
                 ).run()
                 checksum = await CalculateChecksumTask(manager, buffer).run()
+            except asyncio.CancelledError as exc:
+                if not self._canceled:
+                    manager._set_reactor_exception(reactor, pinname, exc)
+                raise exc from None
             except Exception as exc:
                 manager._set_reactor_exception(reactor, pinname, exc)
-                raise
+                raise exc from None
         if checksum is not None:
-            buffer_cache = manager.cachemanager.buffer_cache
             await validate_subcelltype(
-                checksum, celltype, subcelltype, 
-                str(reactor) + ":" + pinname, 
-                buffer_cache
+                checksum, celltype, subcelltype,
+                str(reactor) + ":" + pinname
             )
         if reactor._last_outputs is None:
             reactor._last_outputs = {}
         reactor._last_outputs[pinname] = checksum
         downstreams = livegraph.reactor_to_downstream[reactor][pinname]
+
+        if checksum is None:
+            manager.cancel_accessors(downstreams, True)
+            return
+
+        accessors_to_cancel = []
         for accessor in downstreams:
-            #- construct (not compute!) their expression using the cell checksum 
-            #  Constructing a downstream expression increfs the cell checksum
-            changed = accessor.build_expression(livegraph, checksum)
-            # TODO: prelim? tricky for a reactor...
-            #- launch an accessor update task
-            if changed:
-                AccessorUpdateTask(manager, accessor).launch()
+            if accessor._void or accessor._checksum is not None:
+                accessors_to_cancel.append(accessor)
+            else:
+                manager.taskmanager.cancel_accessor(accessor)
+
+        manager.cancel_accessors(accessors_to_cancel, False)
+
+        # Chance that the above line cancels our own task
+        if self._canceled:
+            return
+
+        for accessor in downstreams:
+            accessor.build_expression(livegraph, checksum)
+            AccessorUpdateTask(manager, accessor).launch()
 
         return None
 
 from ...status import StatusReasonEnum
 from .accessor_update import AccessorUpdateTask
-from ..propagate import propagate_accessor
 from .deserialize_buffer import DeserializeBufferTask
 from .serialize_buffer import SerializeToBufferTask
 from .checksum import CalculateChecksumTask

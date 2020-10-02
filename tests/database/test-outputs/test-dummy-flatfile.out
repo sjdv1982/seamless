@@ -1,0 +1,31 @@
+Redis container running
+Database server running
+OK
+1 True
+42
+
+
+Database keys:
+nbf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+
+File system:
+/tmp/seamless-db/buf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+42
+
+
+Stage 2
+OK
+42
+
+
+Database keys:
+buf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+
+File system:
+/tmp/seamless-db/buf-fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+42
+
+Server log
+Press Ctrl+C to end
+
+redis-dummy1

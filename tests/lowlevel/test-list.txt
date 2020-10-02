@@ -1,6 +1,8 @@
 # In general, run with:
 #   seamless-devel python3 -u TEST.py > test-outputs/TEST.out 2>&1
 bytecell.py
+bytecell2.py
+bytecell3.py
 cachehit-semantic.py
 conversions.py: the output is approximate, depends on exact timings
 simple.py
@@ -10,7 +12,7 @@ exception_upon_compute.py
 subcontext.py
 simple-reactor.py
 downstream-reactor.py
-simple-cache.py: see instructions
+simple-cache.py: see instructions in file
 plain.py
 mixedcell.py
 preliminary.py: the output is approximate, depends on exact timings
@@ -37,21 +39,24 @@ injection3.py
 injection4.py: the output is approximate, depends on exact timings, see also [1]
 injection5.py: see above
 simple-share.py
-transformation-checksum.sh: run with Redis
+transformation-checksum.sh: run with Seamless database
 simple-duplex.py
 simple-duplex-remote.py: run together with:
-     python3 -u ../../scripts/jobslave-noredis.py --time 40 > test-outputs/simple-duplex-remote-jobslave.out 2>&1
-simple-remote.py: run together with scripts/jobslave-noredis.py
+     python3 -u ../../scripts/jobslave-nodatabase.py --time 40 --direct-print > test-outputs/simple-duplex-remote-jobslave.out 2>&1
+simple-remote.py: run together with scripts/jobslave-nodatabase.py
 simple-remote2.py: run together with:
-     python3 -u ../../scripts/jobslave-noredis.py --time 20 > test-outputs/simple-remote2-jobslave.out 2>&1
-compile-run-remote.py: run together with scripts/jobslave-noredis.py
+     python3 -u ../../scripts/jobslave-nodatabase.py --time 30 --direct-print > test-outputs/simple-remote2-jobslave.out 2>&1
+compile-run-remote.py: run together with scripts/jobslave-nodatabase.py --direct-print . [2]
      The jobslave output should include "ADD 8.141592979431152"
 macro.py
 macro2.py
 macro3.py
+checksum-cell.py
 structured_cell/simple-deepcell.py
 structured_cell/channels-deepcell.py
 structured_cell/schema.py
+structured_cell/schema-deepcell.py
+structured_cell/channels-morph.py
 collatz.py: the output is approximate, depends on exact timings
 structured_cell/preliminary.py: the output is approximate, depends on exact timings
 
@@ -68,24 +73,29 @@ mount-cson.py:
      - then open /tmp/test.cson and /tmp/test.json, manipulate resp. monitor them
 mount-plain.py: see above, minus the .cson
 
-simple-communion: run simple-communion-slave.py,
-     then simple-communion-master.py in a different terminal,
+simple-communion: run "python3 -u simple-communion-slave.py > test-outputs/simple-communion-slave.out 2>&1"
+     then "python3 -u simple-communion-master.py > test-outputs/simple-communion-master.out 2>&1" in a different terminal,
      then Ctrl-C simple-communion-slave.py
      The output is available in simple-communion-[master/slave].out
 simple-debug.py
 mount.ipynb
-collatz-heisenbug.sh: is in fact automatic, but takes a looong time to run
-communion-peer[12].sh: run communion-peer1.sh,
-     then communion-peer2.sh in a different terminal,
+communion-peer[12].sh: run communion-peer1.sh > test-outputs/communion-peer1.out 2>&1,
+     then run "communion-peer2.sh > test-outputs/communion-peer2.out 2>&1" in a different terminal,
      then Ctrl-C communion-peer1.sh
      The output is available in communion-peer[12].out
 compile-debug.py
-     - Run with ipython3 -i
+     - Run with ipython3 -i . Run gdb from a second shell into the container
+     To make this work, you will need to do one of the following:
+     - run the gdb shell as root, i.e. as "docker exec -u root -it container_name bash"
+     OR
+     - disable kernel hardening in your host (/proc/sys/kernel/yama/ptrace_scope, set the value to 0)
 
-Notes
+
+NOTES
 =====
 [1] This test is about Cython and can also run non-automatically.
 - Run with ipython3 -i
 - Open cell-ipython.html in the browser and cell-ipython*.ipy in a text editor
 - Interpolate cell-ipython.ipy between ORIGINAL and OPTIMIZED,
   and observe the HTML and timings.
+[2] Be sure to test the jobslave in a Docker container, as it doesn't work with Python3.6.9 or 3.7.6, but it does work for 3.7.3

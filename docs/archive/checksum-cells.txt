@@ -1,0 +1,15 @@
+- Checksum cells
+Contain a checksum in hex value.
+Can be trivially converted to text, str. Can be re-interpreted from text, str.
+All other conversions are based on re-interpretation (see below)
+If connected from a non-deep cell, the value is equal to that cell's checksum attribute.
+If connected from a deep cell, the value is equal to that cell's deep structure (as dict/list).
+Likewise, when connecting from a checksum cell:
+- A non-deep cell checks that the checksum is a single checksum, and accepts that as its own checksum
+- A deep cell checks that the deep structure is correct, and accepts that deep structure as its own.
+Since checksum cells can be bound to macro paths, and deep cells (being structured cells) cannot, this is currently the only way
+ to connect deep cells inside a macro to the outside.
+
+UPDATE: implementation done, but not quite in this way.
+Conversion is to plain, not text/str. No re-interpretation at all, plain is all you can get for now.
+Deep cells inside a macro can be connected to the outside world already.

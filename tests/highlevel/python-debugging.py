@@ -1,25 +1,22 @@
 """
 EXPERIENCES IN DEBUGGING PYTHON TRANSFORMERS
 ============================================
-1. The transformer must be in a thread; a process will not work
+1. All debuggers (pdb, ipdb and pdb-clone) require the transformer to be run
+  as a thread, except ForkedPdb, which runs fine as thread or as process
 2. When the transformer code invokes the debugger, Seamless cannot be run in Jupyter
    but pdb/ipdb work when invoked *directly* from a Jupyter cell (i.e. not a transformer)
-3. All debuggers (pdb, ipdb and pdb-clone) require the transformer to be run
-  as a thread, except ForkedPdb, which runs fine as thread or as process
-4. Seamless *can* be run in IPython, but the debugger and IPython compete for keystrokes,
-   so the result is not pleasant. Before the script ends, there is no problem
-5. All debuggers work well if Seamless is run with Python
+3. Seamless *can* be run in IPython, but the debugger and IPython compete for keystrokes,
+   so the result is not pleasant. Before the script ends (i.e. ipython -i), there is no problem
+4. All debuggers work well if Seamless is run with Python:
+   python3 -i, and ctx.compute(report=False) after changing something.
    However, ipdb gives an error message on exit (SQLite programming error)
-   In addition, ipb does not like to be killed, so don't change the
+   In addition, ipdb does not like to be killed, so don't change the
     transformer source while ipdb is running
 
 Conclusion:
 - ForkedPdb is the best; added to Seamless as seamless.pdb
 - In Jupyter, transformer code must be copy-pasted into a Jupyter cell and then
   be debugged non-reactively.
-  Alternatively, the notebook can be converted to .py, with seamless.mainloop()
-   appended, and then run in Python. The mounted cells can then be edited
-   reactively using a text editor.
 
 Finally, it is possible to use a headless debugger that connects to an IDE
 I have studied ptvsd, for Visual Studio Code, which can be installed as a Python module.
@@ -75,6 +72,7 @@ def triple_it(a):
     return 3 * a
 
 ctx.transform = triple_it
+ctx.transform.debug = True
 ctx.code >> ctx.transform.code
 ctx.code.mount("triple_it.py")
 ctx.transform.a = ctx.a

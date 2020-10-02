@@ -59,6 +59,7 @@ macro_params = {
     "macro_code": ("python", "macro")
 }
 ctx.macro_params = cell().set(macro_params)
+ctx.compute()
 m = ctx.macro = macro(ctx.macro_params.value)
 ctx.start.connect(m.value)
 ctx.code.connect(m.code)

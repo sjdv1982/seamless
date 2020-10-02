@@ -1,6 +1,6 @@
 """
-Retrieval of buffers and computation results from Redis cache
-First run simple.py with Redis running
+Retrieval of buffers and computation results from database cache
+First run simple.py with Seamless database running
 """
 
 import seamless
@@ -8,7 +8,7 @@ from seamless.core import context, cell, transformer, unilink
 
 seamless.set_ncores(0) # Forbids Seamless to add 1 and 2 by itself
 
-redis_cache = seamless.RedisCache()
+seamless.database_cache.connect()
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set_checksum(
@@ -27,7 +27,7 @@ ctx.tf = transformer({
     "c": "output"
 })
 ctx.cell1_unilink = unilink(ctx.cell1)
-ctx.cell1_unilink.connect(ctx.tf.a)    
+ctx.cell1_unilink.connect(ctx.tf.a)
 ctx.cell2.connect(ctx.tf.b)
 ctx.code_copy = cell("transformer")
 ctx.code.connect(ctx.code_copy)
@@ -37,11 +37,11 @@ ctx.tf.c.connect(ctx.result_unilink)
 ctx.result_copy = cell("int")
 ctx.result.connect(ctx.result_copy)
 ctx.compute()
-print(ctx.cell1, ctx.cell1.value)  # Retrieved from Redis value cache
-print(ctx.cell2, ctx.cell2.value)  # Retrieved from Redis value cache
-print(ctx.code, ctx.code.value)    # Retrieved from Redis value cache
-print(ctx.result.checksum) #  checksum from Redis transformer result cache
+print(ctx.cell1, ctx.cell1.value)  # Retrieved from database value cache
+print(ctx.cell2, ctx.cell2.value)  # Retrieved from database value cache
+print(ctx.code, ctx.code.value)    # Retrieved from database value cache
+print(ctx.result.checksum) #  checksum from database transformer result cache
 print(ctx.result.value)    #  3 is the value that corresponds to a3b..27e
-                           #  This is also retrieved from Redis value cache
+                           #  This is also retrieved from database value cache
 print(ctx.tf.status)
 print(ctx.status)

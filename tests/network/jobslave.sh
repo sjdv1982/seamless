@@ -1,5 +1,5 @@
- # first run redis
- 
+ # first run Seamless-database
+
 set -u -e
 
 # - Current directory is mounted to /cwd, and the command is executed there
@@ -11,7 +11,7 @@ seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__fil
 
 bridge_ip=$(docker network inspect bridge \
   | python3 -c '''
-import json, sys 
+import json, sys
 bridge = json.load(sys.stdin)
 print(bridge[0]["IPAM"]["Config"][0]["Gateway"])
 ''')
@@ -21,7 +21,7 @@ docker run --rm \
   --name $name \
   -v $seamlessdir:/seamless \
   -e "PYTHONPATH=/seamless" \
-  -e "REDIS_HOST="$bridge_ip \
+  -e "SEAMLESS_DATABASE_HOST="$bridge_ip \
   -e SEAMLESS_COMMUNION_OUTGOING_ADDRESS=0.0.0.0 \
   -p 8602:8602 \
   -v /var/run/docker.sock:/var/run/docker.sock \

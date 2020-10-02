@@ -37,6 +37,8 @@ class Context(SeamlessBase):
     _unmounted = False
     _macro = None # The macro that created this context
     _macro_root = None
+    _root_highlevel_context = None
+    _synth_highlevel_context = None
 
     def __init__(
         self, *,
@@ -159,7 +161,11 @@ name: str
 
     def __getattr__(self, attr):
         if attr in self._children:
-            return self._children[attr]
+            result = self._children[attr]
+            if isinstance(result, Context) and result._synth_highlevel_context is not None:
+                from ..highlevel.synth_context import SynthContext
+                return SynthContext(result._synth_highlevel_context, self.path + (attr,), context=result)
+            return result
         raise AttributeError(attr)
 
     def _hasattr(self, attr):
@@ -250,6 +256,10 @@ name: str
                 continue
             if childname in self._auto:
                 continue
+            if isinstance(child, Context) and child._synth_highlevel_context is not None:
+                child = getattr(self, childname)
+                status[childname] = child.status
+                continue
             status[childname] = (child, child._get_status())
         return status
 
@@ -320,6 +330,15 @@ name: str
                 toplevel=self._toplevel
             )
 
+    @property
+    def exception(self):
+        return None
+
+    def __getitem__(self, attr):
+        if not isinstance(attr, str):
+            raise KeyError(attr)
+        return getattr(self, attr)
+
     def __del__(self):
         if self._destroyed:
             return
@@ -380,5 +399,4 @@ from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .structured_cell import StructuredCell
 
 from .manager import Manager
-from .. import nest_asyncio
 Macro = None # import later

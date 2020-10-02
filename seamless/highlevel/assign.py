@@ -3,6 +3,21 @@ from copy import deepcopy
 import json
 import weakref
 
+
+def check_libinstance_subcontext_binding(ctx, path):
+    for node in ctx._graph.nodes.values():
+        if node["type"] == "libinstance":
+            libpath = node["libpath"]
+            lib = ctx._get_lib(tuple(libpath))
+            params = lib["params"]
+            for argname, par in params.items():
+                if par["type"] == "context":
+                    argvalue = node["arguments"].get(argname)
+                    if argvalue is not None:
+                        if path[:len(argvalue)] == argvalue:
+                            ctx._translate()
+                            return
+
 from . import ConstantTypes
 from ..mixed import MixedBase
 from ..silk import Silk
@@ -20,7 +35,7 @@ from .compiled import CompiledObjectDict, CompiledObjectWrapper
 from .SchemaWrapper import SchemaWrapper
 
 
-def under_libmacro_control(nodedict, path):
+def under_libinstance_control(nodedict, path):
     lp = len(path)
     if path in nodedict:
         longest_path = path
@@ -43,13 +58,9 @@ def under_libmacro_control(nodedict, path):
         if longest_path is None:
             return False
     node = nodedict[longest_path]
-    return node["type"] == "libmacro"
+    return node["type"] == "libinstance"
 
 def assign_constant(ctx, path, value):
-    ###if isinstance(value, (Silk, MixedBase)):
-    ###    raise NotImplementedError
-    #TODO: run it through Silk or something, to check that there aren't lists/dicts/tuples-of-whatever-custom-classes
-    # not sure if tuple is natively accepted too
     old = None
     if path in ctx._children:
         old = ctx._children[path]
@@ -72,7 +83,7 @@ def assign_constant(ctx, path, value):
         cell = old._get_hcell()
     if callable(value):
         code, _, _ = parse_function_code(value)
-        if old is None: 
+        if old is None:
             cell.celltype = "python"
             value = code
         elif old.celltype in ("python", "ipython"):
@@ -110,7 +121,7 @@ def assign_transformer(ctx, path, func):
     if existing_transformer is not None:
         old_pins = list(existing_transformer.pins)
         for old_pin in old_pins:
-            if old_pin not in parameters:                
+            if old_pin not in parameters:
                 existing_transformer.pins[old_pin] = None
                 ctx._translate()
         for pname in parameters:
@@ -120,25 +131,25 @@ def assign_transformer(ctx, path, func):
         existing_transformer.code = code
     else:
         tf = Transformer(
-            parent=ctx, 
-            path=path, 
-            code=code, 
+            parent=ctx,
+            path=path,
+            code=code,
             pins=parameters
         ) #inserts itself as child
         assert ctx._children[path] is tf
         ctx._translate()
 
-def assign_libmacro(ctx, path, libmacro):
-    libmacro._bind(ctx, path)
+def assign_libinstance(ctx, path, libinstance):
+    libinstance._bind(ctx, path)
 
 
 def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     nodedict = ctx._graph[0]
-    if under_libmacro_control(nodedict, source):
-        msg = "Cannot connect from path under libmacro control: {}"
+    if under_libinstance_control(nodedict, source):
+        msg = "Cannot connect from path under libinstance control: {}"
         raise Exception(msg.format(source))
-    if under_libmacro_control(nodedict, target):
-        msg = "Cannot connect to path under libmacro control: {}"
+    if under_libinstance_control(nodedict, target):
+        msg = "Cannot connect to path under libinstance control: {}"
         raise Exception(msg.format(target))
     if standalone_target:
         if target not in ctx._children:
@@ -160,7 +171,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
             second = con["second"]
             if second[:lt] == target:
                 return False
-            return True            
+            return True
         ctarget = con["target"]
         if ctarget[:lt] != target:
             return True
@@ -205,7 +216,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
               and attr == source_parent.RESULT:
                 source = source_parent_path
                 s = None
-            elif attr in source_parent.pins:                
+            elif attr in source_parent.pins:
                 pin = source_parent.pins[attr]
                 if isinstance(source_parent, Macro):
                     assert pin["io"] == "output", (source, pin["io"])
@@ -227,38 +238,14 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     }
     ctx._graph[1].append(connection)
 
-
-def copy_checksums(node, old_ctx, new_ctx):
-    if old_ctx is new_ctx:
-        return
-    if "checksum" not in node:
-        return
-    nchecksum = node["checksum"]
-    if isinstance(nchecksum, str):
-        checksums = [(None, nchecksum)]
-    else:
-        checksums = nchecksum.items()
-    old_mgr, new_mgr = old_ctx._get_manager(), new_ctx._get_manager()
-    old_vcache, new_vcache = old_mgr.buffer_cache, new_mgr.buffer_cache 
-    for k,checksum0 in checksums:
-        checksum = bytes.fromhex(checksum0)
-        buffer = old_vcache._buffer_cache.get(checksum)
-        if buffer is not None:
-            buffer = buffer[2]
-        if buffer is not None:
-            new_vcache.incref(checksum, buffer, has_auth=True)
-        
-
-def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
+def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
     from .Context import Context
     from .Cell import Cell
     from .Transformer import Transformer
     assert isinstance(ctx, Context)
-    '''
-    old_core_ctx = old_ctx._gen_context
-    new_core_ctx = ctx._gen_context
-    '''
     nodes, connections, _, _ = ctx._graph
+    if runtime:
+        nodes, connections, _, _ = ctx._runtime_graph
     for p in list(nodes.keys()):
         if p[:len(path)] == path:
             nodes.pop(p)
@@ -270,7 +257,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
             if target[:len(path)] != path:
                 continue
             connections.remove(con)
-    ctx._graph[0][path] = {
+    nodes[path] = {
         "path": path,
         "type": "context"
     }
@@ -284,7 +271,9 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
         pp = path + old_path
         node["path"] = pp
         nodetype = node["type"]
-        node["UNTRANSLATED"] = True
+        nodes[pp] = node
+        if not runtime:
+            node["UNTRANSLATED"] = True
         remove_checksum = []
         if nodetype == "cell":
             Cell(parent=ctx, path=pp)
@@ -293,7 +282,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
                 remove_checksum.append("value")
                 remove_checksum.append("buffer")
             else: # simple cell, can be targeted at most once
-                if old_path in targets: 
+                if old_path in targets:
                     remove_checksum.append("value")
         elif nodetype == "transformer":
             Transformer(parent=ctx, path=pp)
@@ -302,13 +291,17 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
             for pot in potential:
                 if old_path + (pot,) in targets:
                     remove_checksum.append(pot)
+            if runtime:
+                node.pop("UNTRANSLATED", None)
         elif nodetype == "macro":
-            Macro(ctx, pp)
+            Macro(parent=ctx, path=pp)
             remove_checksum += ["param_temp", "param", "param_buffer"]
             potential = ("code", "schema")
             for pot in potential:
                 if old_path + (pot,) in targets:
                     remove_checksum.append(pot)
+            if runtime:
+                node.pop("UNTRANSLATED", None)
         elif nodetype == "context":
             pass
         else:
@@ -317,24 +310,29 @@ def _assign_context2(ctx, new_nodes, new_connections, path, old_ctx):
             cs = node["checksum"]
             for item in remove_checksum:
                 cs.pop(item, None)
-        nodes[pp] = node
     for con in new_connections:
         con["source"] = path + con["source"]
         con["target"] = path + con["target"]
         connections.append(con)
 
-def _assign_context(ctx, new_nodes, new_connections, path, old_ctx):
-    ctx._destroy_path(path)
-    _assign_context2(ctx, new_nodes, new_connections, path, old_ctx)
-    subctx = ctx._graph.nodes[path]
+def _assign_context(ctx, new_nodes, new_connections, path, runtime):
+    if runtime:
+        old_graph = deepcopy(ctx._graph)
+    ctx._destroy_path(path, runtime=runtime)
+    _assign_context2(ctx, new_nodes, new_connections, path, runtime)
+    graph = ctx._runtime_graph if runtime else ctx._graph
+    subctx = graph.nodes[path]
     assert subctx["type"] == "context", path
-    ctx._translate()
+    if runtime:
+        graph2 = deepcopy(ctx._graph)
+        assert old_graph == graph2
+    else:
+        ctx._translate()
 
 def assign_context(ctx, path, value):
-    old_ctx = value
-    graph = old_ctx.get_graph()
+    graph = value.get_graph()
     new_nodes, new_connections = graph["nodes"], graph["connections"]
-    _assign_context(ctx, new_nodes, new_connections, path, old_ctx)
+    _assign_context(ctx, new_nodes, new_connections, path, runtime=False)
 
 def assign_to_subcell(cell, path, value):
     from ..core.structured_cell import StructuredCell
@@ -344,33 +342,39 @@ def assign_to_subcell(cell, path, value):
     if hcell["celltype"] != "structured":
         raise TypeError("Can only assign directly to properties of structured cells")
     ctx = cell._parent()
-    if isinstance(value, Cell):        
+    if isinstance(value, Cell):
         assert value._parent() is ctx #no connections between different (toplevel) contexts
         assign_connection(ctx, value._path, cell._path + path, False)
         ctx._translate()
     elif isinstance(value, ConstantTypes):
-        sc = cell._get_cell()
-        assert isinstance(sc, StructuredCell)
+        check_libinstance_subcontext_binding(ctx, path)
         removed = ctx._remove_connections(cell._path + path)
         if removed:
             ctx._translate()
-        handle = sc.handle_no_inference
+        handle = cell.handle
         for p in path[:-1]:
-            handle = getattr(handle, p)
-        setattr(handle, path[-1], value)
+            if isinstance(p, int):
+                handle = handle[p]
+            else:
+                handle = getattr(handle, p)
+        p = path[-1]
+        if isinstance(p, int):
+            handle[p] = value
+        else:
+            setattr(handle, p, value)
     else:
         raise TypeError(value)
 
 
 def assign(ctx, path, value):
     from .Context import Context, SubContext
-    from .library.libmacro import LibMacro
+    from .library.libinstance import LibInstance
     from .library import Library, LibraryContainer
     from .library.include import IncludedLibrary, IncludedLibraryContainer
     from .proxy import Proxy
     nodedict = ctx._graph[0]
-    if under_libmacro_control(nodedict, path):
-        msg = "Cannot assign to path under libmacro control: {}"
+    if under_libinstance_control(nodedict, path):
+        msg = "Cannot assign to path under libinstance control: {}"
         raise Exception(msg.format(path))
     if isinstance(value, (Library, LibraryContainer)):
         raise TypeError("Library must be included first")
@@ -403,6 +407,8 @@ def assign(ctx, path, value):
         new_cell = assign_constant(ctx, path, v)
         if new_cell:
             ctx._translate()
+        else:
+            check_libinstance_subcontext_binding(ctx, path)
         if isinstance(value, Resource):
             node = ctx._graph.nodes[path]
             node["mount"] = {
@@ -414,15 +420,17 @@ def assign(ctx, path, value):
     elif isinstance(value, (Context, SubContext)):
         assign_context(ctx, path, value)
         ctx._translate()
-    elif isinstance(value, LibMacro):
-        assign_libmacro(ctx, path, value)
+    elif isinstance(value, LibInstance):
+        assign_libinstance(ctx, path, value)
         ctx._translate()
     elif callable(value):
         if path in ctx._children:
             old = ctx._children[path]
             if isinstance(old, Cell):
                 if old.celltype == "code":
-                    return assign_constant(ctx, path, value)
+                    result = assign_constant(ctx, path, value)
+                    check_libinstance_subcontext_binding(ctx, path)
+                    return result
         assign_transformer(ctx, path, value)
     elif isinstance(value, (Proxy, SchemaWrapper)):
         assert value._parent()._parent() is ctx
@@ -432,6 +440,7 @@ def assign(ctx, path, value):
             ctx._graph[0][path] = node
         #TODO: break links and connections from ctx._children[path]
         assign_connection(ctx, value._virtual_path, path, False)
+        check_libinstance_subcontext_binding(ctx, path)
         ctx._translate()
     elif isinstance(value, Link):
         value._init(ctx, path)

@@ -1,0 +1,16 @@
+host: localhost
+port: 5522
+
+redis:
+    host: localhost
+    port: 6380
+
+backends: # backends are queried sequentially, in order; you probably want to define cache sources before non-cache sources
+-
+    type: source    # can be source or sink
+    backend: redis  # one of:  redis, flatfile
+
+-
+    type: sink
+    backend: redis
+    cache: False

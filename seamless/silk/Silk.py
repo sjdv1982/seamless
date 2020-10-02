@@ -54,7 +54,7 @@ class RichValue:
             self._form = value._form
             self._storage = value._storage
             value = value._wrapped
-            self._has_form = True            
+            self._has_form = True
         elif need_form:
             self._storage, self._form = get_form(value)
             self._has_form = True
@@ -89,10 +89,10 @@ class Silk(SilkBase):
     ]
 
     def __init__(self, *,
-        data=None, schema=None, 
+        data=None, schema=None,
         parent=None, _parent_attr=None,
         default_policy=None,
-        _self_mode=False, 
+        _self_mode=False,
     ):
         assert parent is None or isinstance(parent, Silk)
         self._parent = parent
@@ -106,7 +106,7 @@ class Silk(SilkBase):
           or isinstance(schema, Wrapper)
         self._schema = schema
         self._default_policy = default_policy
-        self._self_mode = _self_mode        
+        self._self_mode = _self_mode
 
     def __call__(self, *args, **kwargs):
         data = self._data
@@ -116,7 +116,7 @@ class Silk(SilkBase):
         if data is None:
             constructor_code = methods.get("__init__", None)
             if constructor_code is None:
-                raise AttributeError("__init__")            
+                raise AttributeError("__init__")
             name = "Silk __init__"
             try:
                 constructor = compile_function(constructor_code, name)
@@ -148,9 +148,9 @@ class Silk(SilkBase):
         policy = RichValue(policy).value
         if policy is None or not len(policy):
             #TODO: implement lookup hierarchy wrapper that also looks at parent
-            if default_policy is None:                
+            if default_policy is None:
                 if self._default_policy is not None:
-                    default_policy = self._default_policy                    
+                    default_policy = self._default_policy
                 else:
                     default_policy = silk_default_policy
             policy = default_policy
@@ -276,7 +276,7 @@ class Silk(SilkBase):
                 pass
 
     def _infer_array(self, schema, policy, rich_value):
-        assert isinstance(rich_value, RichValue)        
+        assert isinstance(rich_value, RichValue)
         value = rich_value.value
         self._infer_type(schema, policy, value)
         value_schema = rich_value.schema
@@ -429,7 +429,7 @@ class Silk(SilkBase):
             self._data.set(value)
         else:
             self._data = value
-    
+
     def _set_value_dict(self, value):
         assert self._parent is None or self._parent_attr is not None
         if self._parent is not None:
@@ -443,7 +443,7 @@ class Silk(SilkBase):
             raw_data = self._raw_data()
             is_none = (raw_data is None)
         except ValueError:
-            is_none = True                      
+            is_none = True
         if is_none or not isinstance(raw_data, dict) or not isinstance(value, dict):
             self._set_value_simple(value)
         else:
@@ -477,7 +477,7 @@ class Silk(SilkBase):
             raw_data = self._raw_data()
             is_none = (raw_data is None)
         except ValueError:
-            is_none = True              
+            is_none = True
         if isinstance(value, Scalar):
             self._set_value_simple(value)
             if not lowlevel:
@@ -493,7 +493,7 @@ class Silk(SilkBase):
             data = self._data
             if isinstance(data, Wrapper):
                 data.set(value)
-            else:                
+            else:
                 data[:] = value
             if is_empty and not lowlevel:
                 self._infer_array(schema, policy, rich_value)
@@ -513,12 +513,12 @@ class Silk(SilkBase):
                 self._infer_object(schema, policy, rich_value)
         else:
             raise TypeError(type(value))
-        
+
     def set(self, value):
         self._set(value, lowlevel=False)
         return self
 
-    def _setitem(self, attr, value, value_schema):        
+    def _setitem(self, attr, value, value_schema):
         data = self._data
         schema = self._schema
         policy = self._get_policy(schema)
@@ -527,8 +527,9 @@ class Silk(SilkBase):
         except ValueError:
             raw_data = None
         if raw_data is None:
-            self._set_value_simple({})
-            self._infer_type(schema, policy, {})
+            base = [] if isinstance(attr, int) else {}
+            self._set_value_simple(base)
+            self._infer_type(schema, policy, base)
             data = self._data
         data[attr] = value
         if isinstance(attr, int):
@@ -687,10 +688,10 @@ class Silk(SilkBase):
             for validator in validators:
                 if name is None or validator.get("name") != name:
                     new_validators.append(validator)
-        
+
         new_validators.append(v)
         schema["validators"] = new_validators
-        
+
 
     #***************************************************
     #*  methods for getting
@@ -718,7 +719,7 @@ class Silk(SilkBase):
                         parent = self._parent,
                         default_policy=self._default_policy,
                         _parent_attr=self._parent_attr
-                    
+
                    )
 
         if self._self_mode:
@@ -732,7 +733,7 @@ class Silk(SilkBase):
                 getter = m.get("getter", None)
                 if getter is not None:
                     mm = {"code": getter, "language": m["language"]}
-                    name = "Silk .%s getter" % attr                    
+                    name = "Silk .%s getter" % attr
                     try:
                         fget = compile_function(mm, name, "property-getter")
                         result = fget(self)
@@ -772,7 +773,7 @@ class Silk(SilkBase):
         except (TypeError, KeyError, AttributeError, IndexError) as exc:
             if attr.startswith("_"):
                 raise AttributeError(attr) from None
-            if hasattr(type(self), attr):                
+            if hasattr(type(self), attr):
                 return super().__getattribute__(attr)
             if attr in ("data", "schema", "unsilk"):
                 if attr == "unsilk":
@@ -795,24 +796,24 @@ class Silk(SilkBase):
             except (TypeError, KeyError, AttributeError, IndexError):
                 if proto_ok:
                     return Silk(
-                        data=from_proto, 
+                        data=from_proto,
                         default_policy=self._default_policy
                     )
                 raise AttributeError(attr) from None
             except Exception:
                 if proto_ok:
                     return Silk(
-                        data=from_proto, 
+                        data=from_proto,
                         default_policy=self._default_policy
                     )
                 raise exc from None
-    
+
     def __iter__(self):
-        data = RichValue(self._data).value        
+        data = RichValue(self._data).value
         if isinstance(data, (list, tuple, np.ndarray)):
             data_iter = range(len(data)).__iter__()
             return SilkIterator(self, data_iter)
-        else:            
+        else:
             data_iter = data.__iter__()
             return data_iter
 
@@ -842,7 +843,7 @@ class Silk(SilkBase):
                 data=d,
                 schema=schema,
                 default_policy=self._default_policy,
-                _parent_attr=item,                
+                _parent_attr=item,
             )
 
         if isinstance(item, int):
@@ -884,19 +885,13 @@ class Silk(SilkBase):
         else:
             return self._getitem(item)
 
-    def _get_data_value(self):
-        data = self._data
-        if isinstance(data, Wrapper):
-            data = data._unwrap()
-        return data
-
     def _validate(self):
         need_form = True # TODO: detect "form" in schema, i.e. if validator_form will ever be triggered
-        rich_value = RichValue(self._data, need_form)        
+        rich_value = RichValue(self._data, need_form)
         data = FormWrapper(
             rich_value.value,
             rich_value.form,
-            rich_value.storage 
+            rich_value.storage
         )
         schema = RichValue(self._schema).value
         schema = AlmostDict(schema)

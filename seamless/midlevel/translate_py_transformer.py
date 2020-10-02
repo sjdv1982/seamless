@@ -3,7 +3,7 @@ from seamless.core import cell, \
 
 def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     from .translate import set_structured_cell_from_checksum
-    #TODO: simple translation, without a structured cell    
+    #TODO: simple translation, without a structured cell
 
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
@@ -22,15 +22,15 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     all_inchannels = set(inchannels)
     pin_cells = {}
     for pin in list(node["pins"].keys()):
-        pin_cell_name = pin + "_INCHANNEL"
+        pin_cell_name = pin + "_PIN"
         assert pin_cell_name not in all_inchannels
         assert pin_cell_name not in node["pins"]
         pin_cell = cell("mixed")
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pin] = pin_cell
-        
+
     interchannels = [as_tuple(pin) for pin in node["pins"]]
-    mount = node.get("mount", {})    
+    mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, inchannels, interchannels,
       fingertip_no_remote=node.get("fingertip_no_remote", False),
@@ -40,7 +40,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     )
 
     setattr(ctx, input_name, inp)
-    namespace[node["path"] + ("SCHEMA",), False] = inp.schema, node    
+    namespace[node["path"] + ("SCHEMA",), False] = inp.schema, node
     if "input_schema" in mount:
         inp_ctx.schema.mount(**mount["input_schema"])
     for inchannel in inchannels:
@@ -60,6 +60,8 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         }
     ctx.tf = transformer(all_pins)
     if node["debug"]:
+        ctx.tf.python_debug = True
+    if node.get("compiled_debug"):
         ctx.tf.debug = True
     if node["language"] == "ipython":
         ctx.code = cell("ipython")
@@ -72,20 +74,13 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    inp_checksum = {}
-    for k in checksum:
-        if k == "schema":
-            inp_checksum[k] = checksum[k]
-            continue
-        if not k.startswith("input"):
-            continue
-        k2 = "value" if k == "input" else k[len("input_"):]
-        inp_checksum[k2] = checksum[k]
+    inp_checksum = convert_checksum_dict(checksum, "input")
     """
     print("INP CHECKSUM", inp_checksum)
     from ..core.context import Context
     print("INP VALUE", Context(toplevel=True)._get_manager().resolve(inp_checksum["auth"]))
     """
+
     set_structured_cell_from_checksum(inp, inp_checksum)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
@@ -109,7 +104,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
 
     setattr(ctx, result_name, result)
 
-    result_pin = getattr(ctx.tf, result_name)        
+    result_pin = getattr(ctx.tf, result_name)
     result_cell = cell("mixed")
     cell_setattr(node, ctx, result_cell_name, result_cell)
     result_pin.connect(result_cell)
@@ -117,7 +112,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     if node["SCHEMA"]:
         schema_pin = getattr(ctx.tf, node["SCHEMA"])
         result.schema.connect(schema_pin)
-    result_checksum = {}        
+    result_checksum = {}
     for k in checksum:
         if not k.startswith("result"):
             continue
@@ -129,3 +124,4 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     namespace[node["path"], False] = result, node
 
 from .util import get_path, as_tuple, build_structured_cell, cell_setattr
+from .convert_checksum_dict import convert_checksum_dict

@@ -3,16 +3,17 @@ import json
 
 # 0
 ctx = Context()
+### ctx.mount("/tmp/mount-test")  # not implemented, maybe never
 
 # 1
 ctx.a = 10
 ctx.a.celltype = "int"
-ctx.translate()
+ctx.compute()
 print("1", ctx.a.value)
 
 # 1a
 ctx.a = 12
-ctx.translate()
+ctx.compute()
 print("1a", ctx.a.value)
 
 # 2
@@ -44,7 +45,7 @@ ctx.tfcode >> ctx.transform.code
 def triple_it2(a, b):
     return 3 * a + b
 ctx.tfcode = triple_it2
-ctx.translate()
+ctx.compute()
 print("5 (should be None)", ctx.myresult.value)
 
 # 6
@@ -61,4 +62,5 @@ graph = ctx.get_graph()
 json.dump(graph, open("simple-graph.json", "w"), sort_keys=True, indent=2)
 
 inp = ctx.transform.inp
+print(inp.value.unsilk)
 print(inp.data)
