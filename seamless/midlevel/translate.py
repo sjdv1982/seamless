@@ -89,6 +89,7 @@ def set_structured_cell_from_checksum(cell, checksum):
                 initial=True
             )
             cell._data._void = False
+            cell._data._status_reason = None
             trigger = True
 
     if "schema" in checksum:

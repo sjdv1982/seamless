@@ -28,10 +28,9 @@ def unvoid_cell(cell, livegraph):
     if not cell._void:
         return
     cell._void = False
+    cell._status_reason = None
     print_debug("!!!UNVOID!!!: %s" % cell)
-    accessors = livegraph.cell_to_downstream.get(cell, None)
-    if accessors is None:
-        return
+    accessors = livegraph.cell_to_downstream.get(cell, [])
     for path in cell._paths:
         path_accessors = livegraph.macropath_to_downstream[path]
         accessors = accessors + path_accessors
@@ -49,8 +48,10 @@ def unvoid_scell_all(scell, livegraph):
     )
     if scell.auth is not None:
         scell.auth._void = False
+        scell.auth._status_reason = None
     if scell.buffer is not None:
         scell.buffer._void = False
+        scell.buffer._status_reason = None
     all_accessors = livegraph.paths_to_downstream.get(scell.buffer, {})
     for path in all_accessors:
         for accessor in all_accessors[path]:
@@ -185,7 +186,7 @@ def unvoid_accessor(accessor, livegraph):
                     sreason = sc.inchannels[()]._status_reason
             else:
                 sreason = source._status_reason
-            if sreason == StatusReasonEnum.UNCONNECTED:
+            if source._void and sreason == StatusReasonEnum.UNCONNECTED:
                 from_unconnected_cell = True
         if from_unconnected_cell:
             livegraph.manager().cancel_accessor(

@@ -8,7 +8,11 @@ class CellUpdateTask(Task):
         self._dependencies.append(cell)
 
         # assertion
-        accessors = manager.livegraph.cell_to_downstream[cell]
+        livegraph = manager.livegraph
+        accessors = livegraph.cell_to_downstream[cell]
+        for path in cell._paths:
+            path_accessors = livegraph.macropath_to_downstream[path]
+            accessors = accessors + path_accessors
         for accessor in accessors:
             target = accessor.write_accessor.target()
             if isinstance(target, MacroPath):

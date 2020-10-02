@@ -961,8 +961,10 @@ class CancellationCycle:
         if get_scell_state(scell) == "auth_joining":
             if scell.auth is not None:
                 scell.auth._void = False
+                scell.auth._status_reason = None
         if scell.buffer is not None:
             scell.buffer._void = False
+            scell.buffer._status_reason = None
 
     def force_join(self, cyclic_scells):
         old_cyclic_cells = []

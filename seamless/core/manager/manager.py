@@ -233,6 +233,8 @@ class Manager:
         if void:
             assert status_reason is not None
             assert checksum is None
+        else:
+            status_reason = None
 
         livegraph = self.livegraph
         if len(livegraph.schemacells[cell]):

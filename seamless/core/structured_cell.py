@@ -238,6 +238,7 @@ class StructuredCell(SeamlessBase):
             return
         self.auth._set_checksum(None, from_structured_cell=True)
         self.auth._void = False
+        self.auth._status_reason = None
         self._modified_auth = True
         manager.structured_cell_trigger(self)
 

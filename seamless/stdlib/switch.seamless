@@ -1,6 +1,6 @@
 {
   "connections": [],
-  "lib": {},
+  "lib": [],
   "nodes": [
     {
       "celltype": "code",
