@@ -231,6 +231,7 @@ class StructuredCell(SeamlessBase):
 
 
     def _join_auth(self):
+        from .manager.cancel import get_scell_state
         if self.buffer._destroyed:
             return
         manager = self._get_manager()
@@ -240,6 +241,8 @@ class StructuredCell(SeamlessBase):
         self.auth._void = False
         self.auth._status_reason = None
         self._modified_auth = True
+        if get_scell_state(self) == "void" and self._data is not self.auth:
+            manager._set_cell_checksum(self._data, None, void=True, status_reason=StatusReasonEnum.UNDEFINED)
         manager.structured_cell_trigger(self)
 
     def _get_schema_path(self, path):

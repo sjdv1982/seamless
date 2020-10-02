@@ -203,6 +203,8 @@ class Manager:
             if cell._structured_cell is not None and cell._structured_cell.auth is cell:
                 scell = cell._structured_cell
                 scell._modified_auth = True
+                if get_scell_state(scell) == "void" and scell.auth is not scell._data:
+                    self._set_cell_checksum(scell._data, None, void=True, status_reason=reason)
                 self.structured_cell_trigger(scell)
             else:
                 if checksum is not None:
@@ -733,3 +735,4 @@ from ..structured_cell import StructuredCell
 from .tasks.structured_cell import StructuredCellJoinTask, StructuredCellAuthTask
 from ..utils import overlap_path
 from ..protocol.deep_structure import DeepStructureError
+from .cancel import get_scell_state

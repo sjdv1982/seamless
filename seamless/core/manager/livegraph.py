@@ -876,7 +876,7 @@ class LiveGraph:
     def get_cyclic(self):
         manager = self.manager()
         if manager is None or manager._destroyed:
-            return
+            return []
         cyclic_scells = []
         for cell in self.datacells:
             scell = cell._structured_cell
