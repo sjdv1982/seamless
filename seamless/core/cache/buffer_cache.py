@@ -41,9 +41,11 @@ class BufferCache:
     """
 
 
-    LIFETIME_TEMP = 20.0 # buffer_cache keeps buffer values alive for 20 secs
-    LIFETIME_TEMP_SMALL = 3600.0 # buffer_cache keeps small buffer values (< 10 000 bytes) alive for an hour
-    LOCAL_MODE_FULL_PERSISTENCE = True # If true, all buffers are persistent in local mode, i.e. when there is no database. Else, only persistent buffers are.
+    LIFETIME_TEMP = 20.0 # buffer_cache keeps unreferenced/non-persistent buffer values alive for 20 secs
+    LIFETIME_TEMP_SMALL = 3600.0 # buffer_cache keeps unreferenced/non-persistent small buffer values (< 10 000 bytes) alive for an hour
+    LOCAL_MODE_FULL_PERSISTENCE = True # If true, all non-authoritative buffers are persistent in local mode, i.e. when there is no database.
+                                       # Else, only authoritative buffers are persistent.
+                                       # Unreferenced buffers are never persistent.
 
     def __init__(self):
         self.buffer_cache = {} #local cache, checksum-to-buffer
