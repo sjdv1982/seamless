@@ -1,9 +1,9 @@
 # Forked from Python's standard lib subprocess, but with mapping stdin and stdout
 # In addition, it kills all subprocesses spawned by the process
 from subprocess import *
-import psutil
 
 def kill_children(process):
+    import psutil
     children = []
     try:
         children = psutil.Process(process.pid).children(recursive=True)
