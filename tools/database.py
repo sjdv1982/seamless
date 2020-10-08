@@ -168,6 +168,13 @@ class DatabaseServer:
                 if has_key:
                     return "1"
             return "0"
+        elif type == "filename":
+            filename = None
+            for source, source_config in self.db_sources:
+                filename = await source.get_filename(checksum)
+                if filename is not None:
+                    break
+            return filename
         elif type == "buffer":
             key1 = "buf-" + checksum
             key2 = "nbf-" + checksum

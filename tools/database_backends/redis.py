@@ -96,6 +96,9 @@ class RedisSource:
         members = r.smembers(key)
         return members
 
+    async def get_filename(self, key):
+        return None
+
 _connections = {}
 
 def _get_connection(host, port):

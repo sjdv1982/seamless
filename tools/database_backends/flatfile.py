@@ -138,7 +138,14 @@ class FlatFileSource(FlatFileBase):
             syn_checksums = set()
         return syn_checksums
 
-
+    async def get_filename(self, key):
+        if isinstance(key, bytes):
+            key = key.decode()
+        filename = self._filename(key)
+        if os.path.exists(filename):
+            return filename
+        else:
+            return None
 
 def get_source(config):
     directory = config["directory"]

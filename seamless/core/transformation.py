@@ -309,6 +309,7 @@ class TransformationJob:
                 return_when=asyncio.FIRST_COMPLETED
             )
             go_on = (len(pending) > 0)
+            status = None
             for future in done:
                 if future.exception() is not None:
                     try:

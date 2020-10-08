@@ -547,7 +547,9 @@ class TransformationCache:
 
         if exc is not None:
             if isinstance(exc,SeamlessTransformationError):
-                exc_str = exc.args[0]
+                exc_str = None
+                if len(exc.args):
+                    exc_str = exc.args[0]
                 if exc_str is not None:
                     h = SeamlessTransformationError.__module__
                     h += "." + SeamlessTransformationError.__name__
