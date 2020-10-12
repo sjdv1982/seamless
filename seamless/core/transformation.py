@@ -313,7 +313,7 @@ class TransformationJob:
             for future in done:
                 if future.exception() is not None:
                     try:
-                        fut.result()
+                        future.result()
                     except:
                         exc = traceback.format_exc()
                         print_debug("Transformation {}: {}".format(self.checksum.hex(), exc))

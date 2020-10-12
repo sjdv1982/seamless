@@ -24,7 +24,8 @@ types = (
     "buffer length",
     "semantic-to-syntactic",
     "compile result",
-    "transformation result"
+    "transformation result",
+    "filename"
 )
 
 class DatabaseError(Exception):
@@ -170,11 +171,17 @@ class DatabaseServer:
             return "0"
         elif type == "filename":
             filename = None
+            key1 = "buf-" + checksum
+            key2 = "nbf-" + checksum
             for source, source_config in self.db_sources:
-                filename = await source.get_filename(checksum)
+                filename = await source.get_filename(key1)
+                if filename is not None:
+                    break
+                filename = await source.get_filename(key2)
                 if filename is not None:
                     break
             return filename
+
         elif type == "buffer":
             key1 = "buf-" + checksum
             key2 = "nbf-" + checksum
