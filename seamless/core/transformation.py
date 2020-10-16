@@ -165,6 +165,8 @@ class TransformationJob:
                         status, _, _ = result
                     else:
                         status, response = result
+                        if status == 0:
+                            exception = response
                 except:
                     print_debug("STATUS RESULT", result)
                     print_debug(traceback.format_exc())
@@ -191,6 +193,7 @@ class TransformationJob:
                 self.remote = True
                 if best_status == 0:
                     self.remote_status = 0
+                    self.remote_result = exception
                     return
                 if best_status == 1:
                     client = clients[best_client]

@@ -115,7 +115,14 @@ class DatabaseServer:
             status = 200
             try:
                 try:
-                    rq, _ = deserialize(data)
+                    if data[:len(b"SEAMLESS_COMPACT")] == b"SEAMLESS_COMPACT":
+                        buffer_compact = True
+                        data = data[len(b"SEAMLESS_COMPACT"):]
+                        rq = {"type": "buffer", "persistent": False}
+                        rq["checksum"] = data[:32].hex()
+                        rq["value"] = np.frombuffer(data[32:], dtype=np.uint8)
+                    else:
+                        rq, _ = deserialize(data)
                 except:
                     raise DatabaseError("Malformed request") from None
                 try:
