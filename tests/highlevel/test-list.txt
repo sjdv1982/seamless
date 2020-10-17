@@ -38,6 +38,7 @@ simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-resu
 simple-pi-remote.py: run with jobslave-nodatabase
 simple-pi-remote-database.py: run with jobslave; makes no assumptions about the database contents
 subcontext.py
+joincache.py
 reassign-transformer.py
 cascade.py
 transformer-compiled.py

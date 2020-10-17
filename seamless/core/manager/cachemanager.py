@@ -1,5 +1,7 @@
 import weakref
+import copy
 from ..cache.buffer_cache import buffer_cache
+from ... import get_dict_hash
 
 import json
 import asyncio
@@ -77,6 +79,8 @@ class CacheManager:
         self.inchannel_to_ref = {}
         self.macro_exceptions = {}
         self.reactor_exceptions = {}
+        self.join_cache = {}
+        self.rev_join_cache = {}
 
         # for now, just a single global transformation cache
         from ..cache.transformation_cache import transformation_cache
@@ -218,6 +222,9 @@ class CacheManager:
         from ..cache import CacheMissError
         from ..cache.transformation_cache import calculate_checksum
         from .tasks.evaluate_expression import EvaluateExpressionTask
+        from .tasks.deserialize_buffer import DeserializeBufferTask
+        from .tasks.serialize_buffer import SerializeToBufferTask
+
         if checksum is None:
             return
         if isinstance(checksum, str):
@@ -252,6 +259,50 @@ class CacheManager:
                 manager, expression, fingertip_mode=True
             )
             await task.run()
+
+        async def fingertip_join(checksum, join_dict):
+            hash_pattern = join_dict["hash_pattern"]
+            inchannels0 = join_dict["inchannels"]
+            inchannels = {}
+            for path0, cs in inchannels0.items():
+                path = json.loads(path0)
+                if isinstance(path, list):
+                    path = tuple(path)
+                inchannels[path] = cs
+            paths = sorted(list(inchannels.keys()))
+            if "auth" in join_dict:
+                auth_checksum = bytes.fromhex(join_dict["auth"])
+                auth_buffer = await self.fingertip(auth_checksum)
+                value = await DeserializeBufferTask(
+                    manager, auth_buffer, auth_checksum, "mixed", copy=True
+                ).run()
+            else:
+                if isinstance(paths[0], int):
+                    value = []
+                elif isinstance(paths[0], (list, tuple)) and len(paths[0]) and isinstance(paths[0][0], int):
+                    value = []
+                else:
+                    value = None
+                    if hash_pattern is not None:
+                        if isinstance(hash_pattern, dict):
+                            for k in hash_pattern:
+                                if k.startswith("!"):
+                                    value = []
+                                    break
+                    if value is None:
+                        value = {}
+            for path in paths:
+                subchecksum = bytes.fromhex(inchannels[path])
+                sub_buffer = None
+                if hash_pattern is None or access_hash_pattern(hash_pattern, path) != "#":
+                    sub_buffer = await self.fingertip(subchecksum)
+                await set_subpath_checksum(value, hash_pattern, path, subchecksum, sub_buffer)
+            buf = await SerializeToBufferTask(
+                manager, value, "mixed",
+                use_cache=True
+            ).run()
+            buffer_cache.cache_buffer(checksum, buf)
+            return
 
         rmap = {True: 2, None: 1, False: 0}
         remote, recompute= 2, 2 # True, True
@@ -311,6 +362,11 @@ class CacheManager:
                     coro = buffer_from_syn2sem(checksum, syn_checksum, celltype, subcelltype)
                     coros.append(coro)
 
+        if checksum in self.rev_join_cache:
+            join_dict = self.rev_join_cache[checksum]
+            coro = fingertip_join(checksum, join_dict)
+            coros.append(coro)
+
         all_tasks = [asyncio.ensure_future(c) for c in coros]
         try:
             tasks = all_tasks
@@ -325,6 +381,7 @@ class CacheManager:
                     try:
                         task.result()
                     except Exception:
+                        import traceback; traceback.print_exc()
                         pass
                 else:
                     task.cancel()
@@ -477,6 +534,17 @@ is result: {}
                 print_warning(name + ", " + attrib + ": %d undestroyed"  % len(a))
                 ok = False
 
+    def get_join_cache(self, join_dict):
+        checksum = get_dict_hash(join_dict)
+        return copy.deepcopy(self.join_cache.get(checksum))
+
+    def set_join_cache(self, join_dict, result_checksum):
+        if isinstance(result_checksum, str):
+            result_checksum = bytes.fromhex(result_checksum)
+        checksum = get_dict_hash(join_dict)
+        self.join_cache[checksum] = result_checksum
+        self.rev_join_cache[result_checksum] = join_dict
+
 from ..cell import Cell
 from ..transformer import Transformer
 from ..structured_cell import Inchannel
@@ -488,3 +556,4 @@ from ..protocol.get_buffer import (
     get_buffer_remote, get_buffer_length_remote, CacheMissError
 )
 from ..cache.transformation_cache import syntactic_to_semantic
+from ..protocol.expression import set_subpath_checksum, access_hash_pattern
