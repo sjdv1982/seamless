@@ -484,7 +484,7 @@ class TaskManager:
                     if len(cyclic_scells):
                         changed = manager.force_join(cyclic_scells)
                         if changed:
-                            self.loop.run_until_complete(asyncio.sleep(0.1))
+                            await asyncio.sleep(0.1)
                             ptasks = [None]  # just to prevent the loop from breaking
         waitfor, background = print_report(verbose=False)
         if not len(waitfor) and get_tasks_func is None:

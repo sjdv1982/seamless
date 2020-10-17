@@ -218,7 +218,9 @@ class CacheManager:
          the shareserver, which makes it safe to re-compute a checksum-to-buffer
          request dynamically, without allowing arbitrary computation
         """
+        return await self._fingertip(checksum, must_have_cell=must_have_cell, done=set())
 
+    async def _fingertip(self, checksum, *, must_have_cell, done):
         from ..cache import CacheMissError
         from ..cache.transformation_cache import calculate_checksum
         from .tasks.evaluate_expression import EvaluateExpressionTask
@@ -233,7 +235,10 @@ class CacheManager:
         buffer = buffer_cache.get_buffer(checksum)
         if buffer is not None:
             return buffer
+        if checksum in done:
+            return
 
+        done.add(checksum)
         coros = []
         manager = self.manager()
         tf_cache = self.transformation_cache
@@ -247,14 +252,14 @@ class CacheManager:
                 sem2syn = tf_cache.semantic_to_syntactic_checksums
                 semkey = (sem_checksum, celltype, subcelltype)
                 checksum2 = sem2syn.get(semkey, [sem_checksum])[0]
-                coros.append(self.fingertip(checksum2))
+                coros.append(self._fingertip(checksum2, must_have_cell=False, done=done))
             await asyncio.gather(*coros)
             job = tf_cache.run_job(transformation, tf_checksum)
             if job is not None:
                 await asyncio.shield(job.future)
 
         async def fingertip_expression(expression):
-            await self.fingertip(expression.checksum)
+            await self._fingertip(expression.checksum, must_have_cell=False, done=done)
             task = EvaluateExpressionTask(
                 manager, expression, fingertip_mode=True
             )
@@ -272,7 +277,7 @@ class CacheManager:
             paths = sorted(list(inchannels.keys()))
             if "auth" in join_dict:
                 auth_checksum = bytes.fromhex(join_dict["auth"])
-                auth_buffer = await self.fingertip(auth_checksum)
+                auth_buffer = await self._fingertip(auth_checksum, must_have_cell=False, done=done)
                 value = await DeserializeBufferTask(
                     manager, auth_buffer, auth_checksum, "mixed", copy=True
                 ).run()
@@ -295,7 +300,7 @@ class CacheManager:
                 subchecksum = bytes.fromhex(inchannels[path])
                 sub_buffer = None
                 if hash_pattern is None or access_hash_pattern(hash_pattern, path) != "#":
-                    sub_buffer = await self.fingertip(subchecksum)
+                    sub_buffer = await self._fingertip(subchecksum, must_have_cell=False, done=done)
                 await set_subpath_checksum(value, hash_pattern, path, subchecksum, sub_buffer)
             buf = await SerializeToBufferTask(
                 manager, value, "mixed",
@@ -381,7 +386,7 @@ class CacheManager:
                     try:
                         task.result()
                     except Exception:
-                        import traceback; traceback.print_exc()
+                        #import traceback; traceback.print_exc()
                         pass
                 else:
                     task.cancel()

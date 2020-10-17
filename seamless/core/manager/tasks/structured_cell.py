@@ -110,7 +110,6 @@ class StructuredCellJoinTask(StructuredCellTask):
         from ...status import StatusReasonEnum
         sc = self.structured_cell
         await self.await_sc_tasks(auth=False)
-        task_canceled = False
 
         if sc._data is not sc.auth and sc._data._checksum is not None:
             print("{} should have been canceled!".format(sc), file=sys.stderr)
@@ -239,7 +238,6 @@ class StructuredCellJoinTask(StructuredCellTask):
                                         if self._canceled:
                                             raise exc from None
                                         ok = False
-                                        task_canceled = True
                                         break
                                     except CacheMissError:
                                         sc._exception = traceback.format_exc(limit=0)
@@ -290,7 +288,6 @@ class StructuredCellJoinTask(StructuredCellTask):
                         if self._canceled:
                             raise exc from None
                         ok = False
-                        task_canceled = True
                     except CacheMissError:  # shouldn't happen; checksum is fresh
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
@@ -344,7 +341,6 @@ class StructuredCellJoinTask(StructuredCellTask):
                     cachemanager = manager.cachemanager
                     downstreams = livegraph.paths_to_downstream[sc._data]
                     cs = bytes.fromhex(checksum)
-                    expression_to_result_checksum = cachemanager.expression_to_result_checksum
                     taskmanager = manager.taskmanager
 
                     accessors_to_cancel = []
@@ -367,7 +363,10 @@ class StructuredCellJoinTask(StructuredCellTask):
                             #print("!SC VALUE", sc, out_path, accessor._void)
                             #  manager.cancel_accessor(accessor)  # already done above
                             accessor.build_expression(livegraph, cs)
-                            accessor._prelim = prelim[out_path]
+                            if from_cache:
+                                accessor._prelim = False
+                            else:
+                                accessor._prelim = prelim[out_path]
                             AccessorUpdateTask(manager, accessor).launch()
 
             if ok:
