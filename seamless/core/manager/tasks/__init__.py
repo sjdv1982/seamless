@@ -155,6 +155,14 @@ class Task:
             scell = self.dependencies[0]
             # for efficiency, just wait a few msec, since we often get re-triggered
             await asyncio.sleep(0.005)
+        if isinstance(self, StructuredCellJoinTask):
+            scell = self.dependencies[0]
+            # for joining, also wait a bit, but this is a kludge;
+            # for some reason, joins are more often launched than they should
+            #   (see highlevel/tests/joincache.py)
+            # TODO: look more into it
+            await asyncio.sleep(0.001)
+
         self._started = True
         print_debug("RUN", self.__class__.__name__, hex(id(self)), self.dependencies)
         self._runner = self._run()
@@ -240,6 +248,6 @@ from .checksum import CellChecksumTask, CalculateChecksumTask
 from .cell_update import CellUpdateTask
 from .get_buffer import GetBufferTask
 from .upon_connection import UponConnectionTask, UponBiLinkTask
-from .structured_cell import StructuredCellAuthTask
+from .structured_cell import StructuredCellAuthTask, StructuredCellJoinTask
 from ..manager import Manager
 from ....communion_server import communion_server

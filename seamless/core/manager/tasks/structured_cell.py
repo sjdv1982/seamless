@@ -107,8 +107,6 @@ class StructuredCellAuthTask(StructuredCellTask):
 class StructuredCellJoinTask(StructuredCellTask):
 
     async def _run(self):
-        from ...status import StatusReasonEnum
-        manager = self.manager()
         sc = self.structured_cell
         await self.await_sc_tasks(auth=False)
         task_canceled = False
@@ -126,6 +124,12 @@ class StructuredCellJoinTask(StructuredCellTask):
                 if inchannel._checksum is None and not inchannel._void:
                     # Refuse to join while pending.
                     return
+        await self._run2()
+
+    async def _run2(self):
+        from ...status import StatusReasonEnum
+        manager = self.manager()
+        sc = self.structured_cell
 
         locknr = await acquire_evaluation_lock(self)
         #print("JOIN", sc)
