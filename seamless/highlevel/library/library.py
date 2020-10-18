@@ -140,7 +140,7 @@ class Library:
         else:
             raise AttributeError(attr)
 
-    def include(self, ctx, full_path=False):
+    def include(self, ctx, full_path=False, add_zip=True):
         assert self.constructor is not None
         assert self.params is not None
         path = self._path if full_path else self._path[-1:]
@@ -155,7 +155,8 @@ class Library:
         IncludedLibrary(ctx, **lib)   # to validate the arguments
         s = json.dumps(lib)
         lib = json.loads(s)
-        ctx.add_zip(self._zip)
+        if add_zip:
+            ctx.add_zip(self._zip)
         ctx._set_lib(path, lib)
 
     def include_zip(self, ctx):

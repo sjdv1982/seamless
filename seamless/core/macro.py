@@ -240,7 +240,8 @@ class Path:
                 _global_paths[self._root()] = gpaths
             gpaths[path] = self
         else:
-            assert path not in macro._paths, path
+            if path in macro._paths:
+                return macro._paths[path]
             macro._paths[path] = self
         manager.register_macropath(self)
         return self

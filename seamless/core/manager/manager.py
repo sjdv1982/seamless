@@ -173,7 +173,6 @@ class Manager:
                     assert cell._structured_cell is not None
             else:
                 assert cell._structured_cell is None
-                assert cell._hash_pattern is None
                 assert sc_data is None and sc_buf is None
                 if sc_schema is None:
                     assert cell.has_authority()
@@ -303,12 +302,6 @@ class Manager:
         sc = inchannel.structured_cell()
         if sc._destroyed:
             return
-
-        """
-        if not void:
-            print("UNVO", sc, inchannel.subpath)
-            traceback.print_stack(limit=5)
-        """
 
         cachemanager = self.cachemanager
         if not sc._cyclic:

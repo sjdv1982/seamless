@@ -687,7 +687,7 @@ If origin_task is provided, that task is not cancelled."""
                 a = [aa for aa in a.keys() if not isinstance(aa, BackgroundTask)]
             if len(a):
                 print_error(name + ", " + attrib + ": %d undestroyed"  % len(a))
-                if len(a) <= 5:
+                if attrib.endswith("tasks") and len(a) <= 5:
                     print("*" * 30)
                     for task in a:
                         print("Task:", task)

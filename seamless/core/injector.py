@@ -23,7 +23,8 @@ class Injector:
                 old_modules[mname] = sys_modules[mname]
         try:
             sys_modules[self.topmodule_name] = self.topmodule
-            namespace[self.topmodule_name] = self.topmodule
+            if self.topmodule_name != "macro":
+                namespace[self.topmodule_name] = self.topmodule
             for modname, mod in workspace.items():
                 mname = self.topmodule_name + "." + modname
                 sys_modules[mname] = mod
