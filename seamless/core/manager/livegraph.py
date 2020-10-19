@@ -62,6 +62,9 @@ class LiveGraph:
         self.macro_to_upstream = {} # input pin to read accessor
         self.macropath_to_upstream = {}
         self.macropath_to_downstream = {}
+        self.macro_elision = {}
+        self.cell_to_macro_elision = {}
+        self.cell_from_macro_elision = {}
 
         self.datacells = {}
         self.buffercells = {}
@@ -691,6 +694,9 @@ class LiveGraph:
 
     @destroyer
     def destroy_macro(self, manager, macro):
+        if macro in self.macro_elision:
+            elision = self.macro_elision[macro]
+            elision.destroy()
         up_accessors = self.macro_to_upstream.pop(macro)
         for up_accessor in up_accessors.values():
             if up_accessor is not None:
@@ -773,6 +779,14 @@ class LiveGraph:
                     up_accessors = up_accessors[1:]
 
         else:
+            if cell in self.cell_to_macro_elision:
+                elisions = self.cell_to_macro_elision[cell]
+                for elision in list(elisions):
+                    elision.destroy()
+            if cell in self.cell_from_macro_elision:
+                elision = self.cell_from_macro_elision[cell]
+                elision.destroy()
+
             self.temp_auth[cell] = cell.has_authority()
             up_accessor = self.cell_to_upstream[cell]
             if up_accessor is not None:

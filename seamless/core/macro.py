@@ -7,6 +7,8 @@ class ExecError(Exception): pass
 from .worker import Worker, InputPin, OutputPin
 class Macro(Worker):
     injected_modules = None
+    allow_elision = False  # Do we honor elision keys?
+                    # NOTE: for nested macros, allow_elision is determined by the top macro
     def __init__(self, macro_params, *, lib=None):
         self._gen_context = None
         self._unbound_gen_context = None
@@ -19,6 +21,7 @@ class Macro(Worker):
         self.input_dict = {}  #pinname-to-accessor
         self._paths = {} #Path objects
         self._void = True
+        self._in_elision = False
         super().__init__()
         forbidden = ("code",)
         for p in sorted(macro_params.keys()):
@@ -56,7 +59,7 @@ class Macro(Worker):
         from .status import format_worker_status
         status = self._get_status()
         statustxt = format_worker_status(status)
-        return "Status: " + str(statustxt )
+        return "Status: " + str(statustxt)
 
     @property
     def exception(self):
@@ -102,9 +105,15 @@ class Macro(Worker):
                 identifier = str(self)
                 if len(module_workspace):
                     with injector.active_workspace(module_workspace, self.namespace):
-                        exec_code(code, identifier, self.namespace, inputs, None)
+                        if callable(code):
+                            code(unbound_ctx, self.namespace)
+                        else:
+                            exec_code(code, identifier, self.namespace, inputs, None)
                 else:
-                    exec_code(code, identifier, self.namespace, inputs, None)
+                    if callable(code):
+                        code(unbound_ctx, self.namespace)
+                    else:
+                        exec_code(code, identifier, self.namespace, inputs, None)
                 if self.namespace["ctx"] is not unbound_ctx:
                     raise Exception("Macro must return ctx")
 
@@ -370,7 +379,7 @@ class Path:
         if cell is None:
             return
         if cell._structured_cell:
-            raise NotImplementedError("Macro paths for structured cells are currently not supported")
+            raise NotImplementedError("Macro paths for structured cells are not supported")
         cell_authority = cell.has_authority()
         if not cell_authority and not self_authority:
             msg = "Cannot bind %s to %s: both have no authority"

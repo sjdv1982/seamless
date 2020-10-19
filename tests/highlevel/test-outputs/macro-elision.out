@@ -1,0 +1,23 @@
+RUN MACRO 20
+<Silk: 200 >
+Status: OK None
+re-translate
+<Silk: 200 >
+Status: OK None
+change b to 10
+RUN MACRO 10
+<Silk: 100 >
+Status: OK None
+change b back to 20
+<Silk: 200 >
+Status: OK None
+change a to 8
+RUN MACRO 20
+<Silk: 160 >
+Status: OK None
+change a back to 10
+<Silk: 200 >
+Status: OK None
+change a again to 8
+<Silk: 160 >
+Status: OK None

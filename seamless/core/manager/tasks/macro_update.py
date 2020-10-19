@@ -69,9 +69,17 @@ class MacroUpdateTask(Task):
         for pinname, accessor in upstreams.items():
             inputpins[pinname] = accessor._checksum
         if is_equal(inputpins, macro._last_inputs):
-            return
+            if not macro._in_elision:
+                return
 
         macro._last_inputs = inputpins.copy()
+
+        if elide(macro, inputpins):
+            macro._in_elision = True
+            return
+
+        macro._in_elision = False
+
         cachemanager = manager.cachemanager
 
         code = None
@@ -110,4 +118,5 @@ from ...protocol.get_buffer import get_buffer
 from ...protocol.deserialize import deserialize
 from . import is_equal
 from ...status import StatusReasonEnum
+from ...cache.elision import elide
 from ...cache import CacheMissError

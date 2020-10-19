@@ -287,7 +287,12 @@ class Manager:
                     self.livegraph.activate_bilink(cell, checksum)
                 except Exception:
                     traceback.print_exc()
-
+            if (void or checksum is not None) and not len(livegraph._destroying):
+                if cell in livegraph.cell_from_macro_elision:
+                    elision = livegraph.cell_from_macro_elision[cell]
+                    if elision.macro.ctx is not None and not elision.macro.ctx._destroyed:
+                        #print("UP!", cell, void, checksum.hex() if checksum is not None else None)
+                        elision.update()
 
     def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, *,
       prelim=False, from_cancel_system=False
@@ -486,6 +491,10 @@ class Manager:
         except asyncio.CancelledError:
             return None
         return value
+
+    def set_elision(self, macro, input_cells, output_cells):
+        from ..cache.elision import Elision
+        Elision(self.livegraph, macro, input_cells, output_cells)
 
     ##########################################################################
     # API section III: Cancellation

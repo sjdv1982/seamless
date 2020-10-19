@@ -37,6 +37,7 @@ def new_macro(ctx, path, code, pins):
         "pins": pins,
         "PARAM": "parameter",
         "UNTRANSLATED": True,
+        "elision": False,
     }
     if code is not None:
         macro["TEMP"] = {"code": code}
@@ -106,6 +107,17 @@ class Macro(Base):
     @example.setter
     def example(self, value):
         return self.example.set(value)
+
+    @property
+    def elision(self):
+        node = self._get_node()
+        return node["elision"]
+
+    @elision.setter
+    def elision(self, value):
+        assert isinstance(value, bool)
+        node = self._get_node()
+        node["elision"] = value
 
     def add_validator(self, validator, name):
         """Adds a validator to the input, analogous to Cell.add_validator"""

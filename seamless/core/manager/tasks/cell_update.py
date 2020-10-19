@@ -86,6 +86,13 @@ class CellUpdateTask(Task):
                     manager, buffer, checksum, cell.celltype, copy=True
                 )
                 manager.update_schema_cell(cell, value, None)
+
+            if cell in livegraph.cell_to_macro_elision:
+                for elision in livegraph.cell_to_macro_elision[cell]:
+                    macro = elision.macro
+                    if macro._in_elision:
+                        MacroUpdateTask(manager, macro).launch()
+
             return None
         finally:
             release_evaluation_lock(locknr)
@@ -94,6 +101,7 @@ from .accessor_update import AccessorUpdateTask
 from .reactor_update import ReactorUpdateTask
 from .get_buffer import GetBufferTask
 from .deserialize_buffer import DeserializeBufferTask
+from .macro_update import MacroUpdateTask
 from . import acquire_evaluation_lock, release_evaluation_lock
 from ...macro import Path as MacroPath
 from ...cell import Cell

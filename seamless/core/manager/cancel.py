@@ -534,6 +534,11 @@ class CancellationCycle:
                 accessor, void=void,
                 reason=accessor_reason
             )
+        if cell in livegraph.cell_to_macro_elision:
+            for elision in livegraph.cell_to_macro_elision[cell]:
+                macro = elision.macro
+                if macro._in_elision:
+                    self.cancel_macro(macro, void=void, reason=StatusReasonEnum.UPSTREAM)
 
     def _resolve_cell(self, taskmanager, manager, cell, void, reason):
         if void and cell._void:

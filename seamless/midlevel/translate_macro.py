@@ -63,15 +63,25 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
         p.update(pin)
         param_pins[pinname] = p
     ctx.macro = macro(param_pins)
+    if node.get("elision"):
+        ctx.macro.allow_elision = True
 
+    elision = {
+        "macro": ctx.macro,
+        "input_cells": {},
+        "output_cells": {}
+    }
     for pinname in pin_mpaths0:
         is_input = pin_mpaths0[pinname]
         pin_mpath = getattr(core_path(ctx.macro.ctx), pinname)
         pin_cell = pin_cells[pinname]
         if is_input:
             pin_cell.connect(pin_mpath)
+            elision["input_cells"][pin_cell] = pin_mpath
         else:
             pin_mpath.connect(pin_cell)
+            elision["output_cells"][pin_cell] = pin_mpath
+    ctx._get_manager().set_elision(**elision)
 
     ctx.code = cell("macro")
     if "code" in mount:

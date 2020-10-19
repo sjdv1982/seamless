@@ -46,6 +46,9 @@ class UnboundManager:
         assert cell in self._registered
         self.commands.append(("set cell", (cell, value)))
 
+    def set_elision(self, macro, input_cells, output_cells):
+        self.commands.append(("set elision", (macro, input_cells, output_cells)))
+
     def structured_cell_trigger(self, sc):
         assert sc in self._registered
         self.trigger_structured_cells.add(sc)
@@ -341,6 +344,8 @@ class UnboundContext(SeamlessBase):
         for comnr, (com, args) in enumerate(self._realmanager.commands):
             if com == "set cell":
                 pass  # for stage 3
+            elif com == "set elision":
+                pass  # for stage 3
             elif com == "connect cell":
                 cell, cell_subpath, other, other_subpath = args
                 manager.connect(cell, cell_subpath, other, other_subpath)
@@ -374,6 +379,9 @@ class UnboundContext(SeamlessBase):
                 if supersede:
                     continue
                 manager.set_cell(cell, value)
+            elif com == "set elision":
+                macro, input_cells, output_cells = args
+                manager.set_elision(macro, input_cells, output_cells)
             elif com == "connect cell":
                 pass  # Done in stage 2
             elif com == "connect pin":
