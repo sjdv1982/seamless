@@ -1,0 +1,18 @@
+*macro*: Status: ('macro ctx =>', {'x': 'undefined', 'y': 'undefined'}) None
+Status: {
+  "x": "undefined",
+  "y": "undefined"
+}
+Status: undefined
+None
+Status: upstream => x undefined
+Status: undefined None
+
+Status: OK None
+Status: OK
+Status: OK
+2
+Status: OK
+Status: OK 202
+Status: OK <Silk: 202 >
+
