@@ -33,13 +33,14 @@ True
 3004
 Change 5
 TRANSFORM
+Waiting for: Seamless transformer: .mymacro.ctx.tf
 1000
 2000
 False
 3000
 Change 6
 Traceback (most recent call last):
-  File "/seamless/seamless/core/macro.py", line 107, in _execute
+  File "/seamless/seamless/core/macro.py", line 116, in _execute
     exec_code(code, identifier, self.namespace, inputs, None)
   File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code
     exec(code_obj, namespace)
