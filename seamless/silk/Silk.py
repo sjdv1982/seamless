@@ -766,7 +766,7 @@ class Silk(SilkBase):
         raise AttributeError(attr)
 
     def __getattribute__(self, attr):
-        if attr in type(self).__slots__:
+        if attr == "__class__" or attr in type(self).__slots__:
             return super().__getattribute__(attr)
         try:
             return super().__getattribute__("_get_special")(attr)

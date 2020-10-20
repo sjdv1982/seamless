@@ -75,7 +75,7 @@ for name in unary_special_method_names_optional:
 
 
 def silk_binary_method(self, other, name):
-    method = self._get_special(name)    
+    method = self._get_special(name)
     if method is NotImplemented:
         if name.startswith("__i"):
             name2 = "__" + name[3:]
@@ -155,7 +155,7 @@ def compile_function_(code, name, mode):
         "ValidationError": ValidationError,
     }
     if isinstance(func, ast.FunctionDef):
-        func_name = ast_tree.body[0].name        
+        func_name = ast_tree.body[0].name
         ast_tree.body[0].decorator_list.clear()
         code = compile(ast_tree, name, "exec")
         exec(code, namespace)

@@ -22,6 +22,21 @@ from .protocol.serialize import _serialize as serialize
 
 DIRECT_PRINT = False
 
+def unsilk(value):
+    if isinstance(value, Silk):
+        return unsilk(value.unsilk)
+    elif isinstance(value, list):
+        return [unsilk(v) for v in value]
+    elif isinstance(value, dict):
+        result = {}
+        for k, v in value.items():
+            kk = unsilk(k)
+            vv = unsilk(v)
+            result[kk] = vv
+        return result
+    else:
+        return value
+
 def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
     if not inspect.isclass(exctype):
@@ -104,6 +119,7 @@ def _execute(name, code,
             else:
                 try:
                     result = namespace[output_name]
+                    result = unsilk(result)
                     result_buffer = serialize(result, celltype)
                     return (0, result_buffer)
                 except KeyError:
@@ -275,3 +291,5 @@ def execute_debug(name, code,
                     result_queue.join()
             except Exception:
                 traceback.print_exc()
+
+from ..silk import Silk
