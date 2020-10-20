@@ -31,6 +31,7 @@ class TaskManager:
     _destroyed = False
     _active = True
     _task_id_counter = 0
+    _last_task = 0
 
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
@@ -66,6 +67,10 @@ class TaskManager:
         while not self._active:
             await asyncio.sleep(0.05)
 
+    def declare_task_finished(self, taskid):
+        if self._last_task < taskid:
+            self._last_task = taskid
+
     async def await_barrier(self, taskid):
         while 1:
             for barrier in self.barriers:
@@ -81,7 +86,7 @@ class TaskManager:
             await asyncio.sleep(0.001)
 
     def add_barrier(self):
-        if self._task_id_counter == 0:
+        if self._task_id_counter == self._last_task:
             return
         self.barriers.add(self._task_id_counter)
 
@@ -507,6 +512,7 @@ class TaskManager:
 
     def _clean_task(self, task, future, manual=False):
         self.barriers.discard(task.taskid)
+        self.declare_task_finished(task.taskid)
         if manual and task._cleaned:
             return
         cleaned = task._cleaned

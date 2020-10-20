@@ -74,16 +74,17 @@ class Task:
         assert isinstance(manager, Manager)
         self._dependencies = []
         taskmanager = manager.taskmanager
+        reftask = None
         if self.refkey is not None:
             reftask = taskmanager.reftasks.get(self.refkey)
             if reftask is not None:
                 self.set_realtask(reftask)
-                return
             else:
                 taskmanager.reftasks[self.refkey] = self
                 taskmanager.rev_reftasks[self] = self.refkey
         self.manager = weakref.ref(manager)
-        self.refholders = [self] # tasks that are value-identical to this one,
+        if reftask is None:
+            self.refholders = [self] # tasks that are value-identical to this one,
                                 # of which this one is the realtask
 
         taskmanager._task_id_counter += 1
@@ -138,7 +139,7 @@ class Task:
             if self.caller_count != -999:
                 self.caller_count -= 1
                 if self.caller_count == 0:
-                    print_debug("CANCELING", self.__class__.__name__, hex(id(self)))
+                    print_debug("CANCELING", self.__class__.__name__, self.taskid)
                     self.cancel()
             raise CancelledError from None
         return self.future.result()
@@ -149,7 +150,7 @@ class Task:
         await asyncio.shield(communion_server.startup)
         while len(taskmanager.synctasks):
             await asyncio.sleep(0.001)
-        if not isinstance(self, UponConnectionTask):
+        if not isinstance(self, (UponConnectionTask, EvaluateExpressionTask, GetBufferTask, BackgroundTask)):
             await taskmanager.await_barrier(self.taskid)
         if isinstance(self, StructuredCellAuthTask):
             scell = self.dependencies[0]
@@ -164,7 +165,7 @@ class Task:
             await asyncio.sleep(0.001)
 
         self._started = True
-        print_debug("RUN", self.__class__.__name__, hex(id(self)), self.dependencies)
+        print_debug("RUN", self.__class__.__name__, self.taskid, self.dependencies)
         self._runner = self._run()
         return await self._runner
 
@@ -176,6 +177,7 @@ class Task:
         if self.future is not None:
             return taskmanager
         if self._canceled:
+            taskmanager.declare_task_finished(self.taskid)
             taskmanager.launching_tasks.discard(self)
             return
         awaitable = self._run0(taskmanager)
@@ -226,7 +228,7 @@ class Task:
         taskmanager = manager.taskmanager
 
         self._canceled = True
-        print_debug("CANCEL", self.__class__.__name__, hex(id(self)), self.dependencies)
+        print_debug("CANCEL", self.__class__.__name__, self.taskid, self.dependencies)
         realtask = self._realtask
         if realtask is not None:
             return realtask.cancel_refholder(self)
@@ -236,6 +238,9 @@ class Task:
                 self.future.cancel()
             taskmanager.launching_tasks.discard(self)
             taskmanager.cancel_task(self)
+
+    def __str__(self):
+        return(self.__class__.__name__ + " " + str(self.taskid))
 
 class BackgroundTask(Task):
     pass
@@ -249,5 +254,7 @@ from .cell_update import CellUpdateTask
 from .get_buffer import GetBufferTask
 from .upon_connection import UponConnectionTask, UponBiLinkTask
 from .structured_cell import StructuredCellAuthTask, StructuredCellJoinTask
+from .evaluate_expression import EvaluateExpressionTask
+from .get_buffer import GetBufferTask
 from ..manager import Manager
 from ....communion_server import communion_server
