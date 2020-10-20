@@ -1,11 +1,12 @@
 """
-Version of high-in-low6 with nested invocation
+Version of high-in-low6 with nested invocation, and elision
 """
 
 from seamless.highlevel import Context, Cell, Macro
 from seamless.highlevel.library import LibraryContainer
 
 def map_list_N(ctx, inp_prefix, graph, inp):
+    print("map_list_N", inp)
     from seamless.core import Cell as CoreCell
     from seamless.core import cell
     from seamless.core.structured_cell import StructuredCell
@@ -79,6 +80,7 @@ libctx.map_list_N = Cell("code").set(map_list_N)
 def main(ctx, inp_prefix, graph, map_list_N_code, **inp):
     first_k = list(inp.keys())[0]
     length = len(inp[first_k])
+    print("MAIN", length)
     first_k = first_k[len(inp_prefix):]
     for k0 in inp:
         k = k0[len(inp_prefix):]
@@ -121,6 +123,12 @@ def main(ctx, inp_prefix, graph, map_list_N_code, **inp):
             """
 
             m = macro(macro_params)
+            elision = {
+                "macro": m,
+                "input_cells": {},
+                "output_cells": {}
+            }
+
             setattr(ctx, "m{}".format(chunk_index), m)
             ctx.macro_code.connect(m.code)
             ctx.inp_prefix.connect(m.inp_prefix)
@@ -131,6 +139,8 @@ def main(ctx, inp_prefix, graph, map_list_N_code, **inp):
             subresults[subr] = subresult
             result_path = path(m.ctx).result
             result_path.connect(subresult)
+            elision["output_cells"][subresult] = result_path
+            ctx._get_manager().set_elision(**elision)
 
         transformer_params = {}
         for subr in subresults:
@@ -168,8 +178,9 @@ def main(ctx, inp_prefix, graph, map_list_N_code, **inp):
 libctx.main = Cell("code").set(main)
 
 
-def constructor(ctx, libctx, context_graph, inp, result):
+def constructor(ctx, libctx, context_graph, inp, result, elision):
     m = ctx.m = Macro()
+    m.elision = elision
     m.graph = context_graph
     m.pins.result = {"io": "output", "celltype": "mixed", "hash_pattern": {"!": "#"}}
 
@@ -215,6 +226,7 @@ lib_params = {
         "type": "cell",
         "io": "output"
     },
+    "elision": "value",
 }
 libctx.lib_params = lib_params
 mylib = LibraryContainer("mylib")
@@ -259,20 +271,31 @@ data = [
         "b": 7,
     },
 ]
-data_a = [v["a"] for v in data]
-data_b = [v["b"] for v in data]
+ctx.data = Cell().set(data)
+
+def get_data_a(data):
+    return [v["a"] for v in data]
+ctx.get_data_a = get_data_a
+ctx.get_data_a.debug = True
+
+def get_data_b(data):
+    return [v["b"] for v in data]
+ctx.get_data_b = get_data_b
+
+ctx.get_data_a.data = ctx.data
+ctx.get_data_b.data = ctx.data
 
 ctx.data_a = Cell()
 ctx.data_a.hash_pattern = {"!": "#"}
+ctx.data_a = ctx.get_data_a
 #ctx.compute()
 #ctx.data_a.example.... # bad idea... validation forces full value construction
-ctx.data_a.set(data_a)
 
 ctx.data_b = Cell()
 ctx.data_b.hash_pattern = {"!": "#"}
 #ctx.compute()
 #ctx.data_b.example.... # bad idea... validation forces full value construction
-ctx.data_b.set(data_b)
+ctx.data_b = ctx.get_data_b
 
 ctx.result = Cell()
 ctx.result.hash_pattern = {"!": "#"}
@@ -283,28 +306,23 @@ ctx.include(mylib.map_list_N)
 ctx.inst = ctx.lib.map_list_N(
     context_graph = ctx.adder,
     inp = {"a": ctx.data_a, "b": ctx.data_b},
-    result = ctx.result
+    result = ctx.result,
+    elision = True,
 )
 ctx.translate(force=True)
 ctx.compute()
 
+print(ctx.result.value)
 print(ctx.inst.ctx.m.exception)
-print(ctx.inst.ctx.m.ctx.m1.ctx.result.value)
-print(ctx.inst.ctx.m.ctx.subresult1.value)
-print(ctx.inst.ctx.m.ctx.m2.ctx.result.value)
-print(ctx.inst.ctx.m.ctx.subresult2.value)
-print(ctx.inst.ctx.m.ctx.merge_subresults.result.cell().value)
-print(ctx.inst.ctx.m.ctx.result.value)
 
-def sub(a,b):
-    return a-b
-sctx.add.code = sub
+print("START1")
+ctx.translate(force=True)
 ctx.compute()
-print()
+print(ctx.result.value)
+print("START2")
+ctx.data.handle.append({"a": 9, "b": 0})
+ctx.compute(2)
+
+print(ctx.result.value)
 print(ctx.inst.ctx.m.exception)
-print(ctx.inst.ctx.m.ctx.m1.ctx.result.value)
-print(ctx.inst.ctx.m.ctx.subresult1.value)
-print(ctx.inst.ctx.m.ctx.m2.ctx.result.value)
-print(ctx.inst.ctx.m.ctx.subresult2.value)
-print(ctx.inst.ctx.m.ctx.merge_subresults.result.cell().value)
-print(ctx.inst.ctx.m.ctx.result.value)
+print(ctx.inst.ctx.m.ctx.status)

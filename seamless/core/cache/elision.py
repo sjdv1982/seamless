@@ -15,14 +15,18 @@ class Elision:
         self.livegraph = weakref.ref(livegraph)
         input_cells2 = {}
         output_cells2 = {}
+        mpath = macro.path
+        mmacro = macro._get_macro()
+        if mmacro is not None:
+            mpath = mpath[len(mmacro.path)+1:]
         for cells, cells2 in [(input_cells, input_cells2),(output_cells, output_cells2)]:
             for c, p in cells.items():
                 assert isinstance(c, Cell)
                 assert isinstance(p, Path)
                 assert p._macro is macro._get_macro(), (p._macro, macro)
                 path0 = p._path
-                assert path0[:len(macro.path)] == macro.path, (path0, macro, macro.path)
-                path = path0[len(macro.path):]
+                assert path0[:len(mpath)] == mpath, (path0, macro, mpath)
+                path = path0[len(mpath):]
                 assert path[0] == "ctx", path0
                 path = path[1:]
                 cells2[c] = path
@@ -87,6 +91,7 @@ class Elision:
             path = upstream.source
             cc = path._cell
             celltype = None
+            hash_pattern = None
             if cc is None:
                 checksum = None
             else:
@@ -95,10 +100,12 @@ class Elision:
                     return
             if checksum is not None:
                 celltype = cc._celltype
+                if celltype == "mixed":
+                    hash_pattern = cc._hash_pattern
             if checksum is not None:
                 checksum = checksum.hex()
             pp = json.dumps(tuple(p))
-            elision_result[pp] = celltype, checksum
+            elision_result[pp] = celltype, hash_pattern, checksum
         # TODO: record pseudo-connections
         #print("ELISION-RESULT", elision_result)
         return elision_result
@@ -152,14 +159,18 @@ def elide(macro, inputpins):
         macro._gen_context = None
     def callback(ctx, namespace):
         for c,p in elision.output_cells.items():
-            sub_celltype, sub_checksum = elision_result[p]
+            sub_celltype, sub_hash_pattern, sub_checksum = elision_result[p]
             sub = ctx
             for pp in p[:-1]:
                 if not hasattr(sub, pp):
                     setattr(sub, pp, context(toplevel=False))
                 sub = getattr(sub, pp)
-            setattr(sub, p[-1], cell(sub_celltype))
-            getattr(sub, p[-1]).set_checksum(sub_checksum)
+            if sub_celltype == "mixed":
+                cc = cell(sub_celltype, hash_pattern=sub_hash_pattern)
+            else:
+                cc = cell(sub_celltype)
+            setattr(sub, p[-1], cc)
+            cc.set_checksum(sub_checksum)
             # TODO: restore pseudo-connections
     macro._execute(callback, {}, [])
     return True
