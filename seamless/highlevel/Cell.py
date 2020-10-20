@@ -513,6 +513,10 @@ class Cell(Base):
         else:
             return cell.handle_no_inference
 
+    @handle.setter
+    def handle(self, value):
+        self.handle.set(value)
+
     @property
     def data(self):
         """Returns the data of the cell
