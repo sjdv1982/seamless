@@ -63,6 +63,7 @@ high-in-low4.py
 high-in-low5.py
 high-in-low6.py
 high-in-low7.py
+high-in-low8.py
 high-in-low4-memory.py    # Quite long test.
                           # Creates 5.6 GB of buffer cache in /tmp/dummy-db
                           # Run with rm -rf /tmp/dummy-db  && mkdir -p /tmp/dummy-db && seamless-devel-database dummydb-config.yaml
