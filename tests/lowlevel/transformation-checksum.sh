@@ -1,7 +1,7 @@
 #!/bin/bash
 set -u -e
 tempfile=$(mktemp)
-tf_checksum=$(python3 transformation-checksum.py)
+tf_checksum=$(python3 transformation-checksum.py 2> /dev/null)
 echo ''
 echo '*********************************************************************************************'
 echo "Transformation checksum: " $tf_checksum

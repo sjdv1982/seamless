@@ -694,13 +694,13 @@ If origin_task is provided, that task is not cancelled."""
             if len(a):
                 print_error(name + ", " + attrib + ": %d undestroyed"  % len(a))
                 if attrib.endswith("tasks") and len(a) <= 5:
-                    print("*" * 30)
+                    print_error("*" * 30)
                     for task in a:
-                        print("Task:", task)
+                        print_error("Task:", task)
                         for dep in task.dependencies:
-                            print("Depends on:", dep)
-                        print("*" * 30)
-                    print()
+                            print_error("Depends on:", dep)
+                        print_error("*" * 30)
+                    print_error()
                 ok = False
         return ok
 

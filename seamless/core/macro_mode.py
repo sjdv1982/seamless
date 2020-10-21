@@ -27,10 +27,12 @@ def unregister_toplevel(ctx):
     _toplevel_registered.discard(ctx)
 
 def _destroy_toplevels():
+    from .cache.tempref import temprefmanager
     for manager in list(_toplevel_managers):
         manager.destroy(from_del=True)
         if not isinstance(manager, UnboundManager):
             manager.temprefmanager.purge_all()
+    temprefmanager.purge_all()
     for ctx in list(_toplevel_registered):
         ###unregister_all(ctx)
         manager = ctx._get_manager()

@@ -309,9 +309,14 @@ class TransformationCache:
         tf_checksum = calculate_checksum_sync(tf_buffer)
         #print("DECREF", tf_checksum.hex(), transformer)
         assert tf_checksum in self.transformations
-        transformers = self.transformations_to_transformers[tf_checksum]
-        assert transformer in transformers
-        transformers.remove(transformer)
+        if not isinstance(transformer, DummyTransformer):
+            dummy = False
+            transformers = self.transformations_to_transformers[tf_checksum]
+            assert transformer in transformers
+            transformers.remove(transformer)
+        else:
+            dummy = True
+            transformers = []
         debug = any([tf.debug for tf in transformers])
         if not debug:
             self.debug.discard(tf_checksum)
@@ -321,22 +326,24 @@ class TransformationCache:
             if job is not None and job.start is not None and \
               time.time() - job.start > TF_ALIVE_THRESHOLD:
                 delay = TF_KEEP_ALIVE_MAX
-            tempref = functools.partial(self.destroy_transformation, transformation)
+            tempref = functools.partial(self.destroy_transformation, transformation, dummy)
             temprefmanager.add_ref(tempref, delay, on_shutdown=True)
 
-    def destroy_transformation(self, transformation):
+    def destroy_transformation(self, transformation, dummy):
         tf_buffer = tf_get_buffer(transformation)
         tf_checksum = calculate_checksum_sync(tf_buffer)
-        if tf_checksum in self.transformations_to_transformers:
-            if len(self.transformations_to_transformers[tf_checksum]):
-                return # A new transformer was registered in the meantime
-        else:
-            return
+        if not dummy:
+            if tf_checksum in self.transformations_to_transformers:
+                if len(self.transformations_to_transformers[tf_checksum]):
+                    return # A new transformer was registered in the meantime
+            else:
+                return
         if tf_checksum not in self.transformations:
             print("WARNING: cannot destroy unknown transformation %s" % tf_checksum.hex())
             return
         self.transformations.pop(tf_checksum)
-        self.transformations_to_transformers.pop(tf_checksum)
+        if not dummy:
+            self.transformations_to_transformers.pop(tf_checksum)
         for pinname in transformation:
             if pinname == "__output__":
                 continue
