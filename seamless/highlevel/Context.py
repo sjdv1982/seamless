@@ -8,7 +8,8 @@ import asyncio, concurrent
 import inspect
 import functools
 from functools import partial
-from zipfile import ZipFile
+import zipfile
+from zipfile import ZipFile, ZipInfo
 from io import BytesIO
 import json
 
@@ -100,6 +101,17 @@ def _destroy_contexts():
 import atexit
 atexit.register(_destroy_contexts)
 
+
+def get_zip(buffer_dict):
+    archive = BytesIO()
+    with ZipFile(archive, mode="w", compression=zipfile.ZIP_DEFLATED) as zipfile:
+        for checksum in sorted(list(buffer_dict.keys())):
+            buffer = buffer_dict[checksum]
+            info = ZipInfo(checksum, date_time=(1980, 1, 1, 0, 0, 0))
+            zipfile.writestr(info, buffer)
+    result = archive.getvalue()
+    archive.close()
+    return result
 
 class Context(Base):
     """Context class. Organizes cells and workers hierarchically.
@@ -514,7 +526,7 @@ class Context(Base):
 
         The cache is returned as zipped bytes
         """
-        # TODO: option to follow deep cell checksums
+        # TODO: option to not follow deep cell checksums (currently, they are always followed)
         force = (self._gen_context is None)
         self._wait_for_auth_tasks("the graph buffers are obtained for zip")
         self._do_translate(force=force)
@@ -522,20 +534,14 @@ class Context(Base):
         checksums = copying.get_graph_checksums(graph, with_libraries)
         manager = self._manager
         buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
-        archive = BytesIO()
-        with ZipFile(archive, mode="w") as zipfile:
-            for checksum, buffer in buffer_dict.items():
-                zipfile.writestr(checksum, buffer)
-        result = archive.getvalue()
-        archive.close()
-        return result
+        return get_zip(buffer_dict)
 
     async def get_zip_async(self, with_libraries=True):
         """Obtain the checksum-to-buffer cache for the current graph
 
         The cache is returned as zipped bytes
         """
-        # TODO: option to follow deep cell checksums
+        # TODO: option to not follow deep cell checksums (currently, they are always followed)
         force = (self._gen_context is None)
         await self._wait_for_auth_tasks_async("the graph buffers are obtained for zip")
         self._do_translate(force=force)
@@ -543,13 +549,7 @@ class Context(Base):
         checksums = copying.get_graph_checksums(graph, with_libraries)
         manager = self._manager
         buffer_dict = await copying.get_buffer_dict(manager, checksums)
-        archive = BytesIO()
-        with ZipFile(archive, mode="w") as zipfile:
-            for checksum, buffer in buffer_dict.items():
-                zipfile.writestr(checksum, buffer)
-        result = archive.getvalue()
-        archive.close()
-        return result
+        return get_zip(buffer_dict)
 
     def save_zip(self, filename):
         """Save the checksum-to-buffer cache for the current graph
