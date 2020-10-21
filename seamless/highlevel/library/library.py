@@ -98,6 +98,8 @@ class Library:
             return
         elif attr == "params":
             params = value
+            if isinstance(params, Silk):
+                params = params.unsilk
             if not isinstance(params, dict):
                 raise TypeError(type(value))
             self._params = params

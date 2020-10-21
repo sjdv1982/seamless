@@ -62,12 +62,15 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "17e536a1a738815bbb1b32021e0edac9ba177c9a3f71e8f33ea57ce328fea004",
-        "input": "15c343fa5cba7e48633ac74f32a2fda0ebf3488e3951ba891c5caf6d8423e194",
-        "input_buffer": "15c343fa5cba7e48633ac74f32a2fda0ebf3488e3951ba891c5caf6d8423e194"
+        "code": "ea4be6d2f69a0b0dd008ac66de7ad65da4ab4b64d30747263e4c343403038451",
+        "input": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
+        "input_buffer": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf"
       },
       "compiled": false,
       "debug": false,
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "python",
       "mount": {
         "code": {
