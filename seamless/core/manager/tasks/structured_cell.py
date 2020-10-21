@@ -94,7 +94,7 @@ class StructuredCellAuthTask(StructuredCellTask):
                 def func():
                     if self._canceled:
                         return
-                    if sc.auth._checksum is None and not sc._modified_auth:
+                    if sc.auth._checksum is None and not sc._modified_auth and value is not None:
                         # Not quite sure why this happens, but it does, occasionally,
                         #  for status_ctx.status_ when monitoring a large graph
                         return

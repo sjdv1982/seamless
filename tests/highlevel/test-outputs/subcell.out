@@ -17,11 +17,6 @@ Stage 6
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': -4, 'f': 20} >
 Stage 7
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 108, 'f': 20} >
-Possible cyclic dependencies detected, involving 3 cells:
-   Seamless StructuredCell: .tf2.result
-   Seamless StructuredCell: .qq
-   Seamless StructuredCell: .tf2.inp
-
 <Silk: None >
 <Silk: None >
 Traceback (most recent call last):
@@ -53,9 +48,6 @@ On instance:
 
 Stage 8
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 88, 'f': 20} >
-Possible cyclic dependencies detected, involving 1 cells:
-   Seamless StructuredCell: .tf2.inp
-
 <Silk: None >
 <Silk: None >
 Traceback (most recent call last):

@@ -13,11 +13,11 @@ def constructor(ctx, libctx):
 
 4
 1221
-<seamless.highlevel.Context.Context object at 0x7fd97c61c588>
+<seamless.highlevel.Context.Context object at 0x7f39e6e31cc0>
 Seamless Cell: x
 8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad
 <Silk: 20 >
-<seamless.highlevel.synth_context.SynthContext object at 0x7fd97c509b00>
+<seamless.highlevel.synth_context.SynthContext object at 0x7f39e6d88630>
 ['minus', 'result', 'x', 'y']
 Seamless Cell: subtract1.ctx.x
 <Silk: 20 >

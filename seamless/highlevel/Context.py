@@ -104,11 +104,11 @@ atexit.register(_destroy_contexts)
 
 def get_zip(buffer_dict):
     archive = BytesIO()
-    with ZipFile(archive, mode="w", compression=zipfile.ZIP_DEFLATED) as zipfile:
+    with ZipFile(archive, mode="w", compression=zipfile.ZIP_DEFLATED) as zipf:
         for checksum in sorted(list(buffer_dict.keys())):
             buffer = buffer_dict[checksum]
             info = ZipInfo(checksum, date_time=(1980, 1, 1, 0, 0, 0))
-            zipfile.writestr(info, buffer)
+            zipf.writestr(info, buffer)
     result = archive.getvalue()
     archive.close()
     return result

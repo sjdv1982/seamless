@@ -391,7 +391,10 @@ class StructuredCellCancellation:
                 if scell._cyclic and self.mode == SCModeEnum.VOID:
                     self.cycle().to_unvoid.append(scell)
                 else:
-                    assert self.mode in (SCModeEnum.PENDING, SCModeEnum.JOINING, SCModeEnum.AUTH_JOINING, SCModeEnum.EQUILIBRIUM, SCModeEnum.FORCE_JOINING), (old_state, new_state, scell._mode)
+                    if old_state == "join" and self.mode == SCModeEnum.VOID:
+                        pass
+                    else:
+                        assert self.mode in (SCModeEnum.PENDING, SCModeEnum.JOINING, SCModeEnum.AUTH_JOINING, SCModeEnum.EQUILIBRIUM, SCModeEnum.FORCE_JOINING), (old_state, new_state, scell._mode)
             taskmanager.cancel_structured_cell(scell, no_auth=True)
             scell._joining = True
             StructuredCellJoinTask(taskmanager.manager, scell).launch()
