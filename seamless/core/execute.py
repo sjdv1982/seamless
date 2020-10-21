@@ -247,6 +247,7 @@ def execute_debug(name, code,
       **args
     ):
     _exiting = False
+    direct_print = DIRECT_PRINT
     try:
         ok = False
         old_stdio = sys.stdout, sys.stderr

@@ -20,12 +20,13 @@ ctx.c1 = cell("int").set(1)
 ctx.c2 = cell("int").set(2)
 ctx.c3 = cell("transformer").set("a + b")
 
-print(ctx.c1, ctx.c1.checksum) 
-print(ctx.c2, ctx.c2.checksum) 
-print(ctx.c3, ctx.c3.checksum) 
+ctx.compute(0.05)
+print(ctx.c1, ctx.c1.checksum)
+print(ctx.c2, ctx.c2.checksum)
+print(ctx.c3, ctx.c3.checksum)
 
 loop = asyncio.get_event_loop()
-if len(sys.argv) > 1:    
+if len(sys.argv) > 1:
     run_time = float(sys.argv[1])
     loop.call_later(run_time, sys.exit)
 loop.run_forever()

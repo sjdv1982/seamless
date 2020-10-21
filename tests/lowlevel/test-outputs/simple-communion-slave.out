@@ -10,7 +10,7 @@ REMOVE SERVANT buffer
 REMOVE SERVANT buffer_length
 REMOVE SERVANT semantic_to_syntactic
 Traceback (most recent call last):
-  File "simple-communion-slave.py", line 31, in <module>
+  File "simple-communion-slave.py", line 32, in <module>
     loop.run_forever()
   File "/opt/conda/lib/python3.7/asyncio/base_events.py", line 539, in run_forever
     self._run_once()

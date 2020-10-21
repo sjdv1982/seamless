@@ -80,7 +80,7 @@ simple-communion: run "python3 -u simple-communion-slave.py > test-outputs/simpl
 simple-debug.py
 mount.ipynb
 communion-peer[12].sh: run communion-peer1.sh > test-outputs/communion-peer1.out 2>&1,
-     then run "communion-peer2.sh > test-outputs/communion-peer2.out 2>&1" in a different terminal,
+     then run "./communion-peer2.sh > test-outputs/communion-peer2.out 2>&1" in a different terminal,
      then Ctrl-C communion-peer1.sh
      The output is available in communion-peer[12].out
 compile-debug.py

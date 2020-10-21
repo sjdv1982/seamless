@@ -35,6 +35,7 @@ ctx.tf.c.connect(ctx.result_unilink)
 ctx.result_copy = cell()
 ctx.result.connect(ctx.result_copy)
 
+ctx.compute(0.1)
 print(ctx.cell1.value)
 print(ctx.code.value)
 ctx.compute()
