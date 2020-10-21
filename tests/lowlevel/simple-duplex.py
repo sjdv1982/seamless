@@ -41,8 +41,8 @@ ctx.tf_duplex.c.connect(ctx.result_duplex)
 def report():
     print("TF       ", ctx.tf.status)
     print("TF DUPLEX", ctx.tf_duplex.status)
-    v1 = "%.3f" % ctx.result.value if ctx.result.value is not None else None
-    v2 = "%.3f" % ctx.result_duplex.value \
+    v1 = ("%.3f" % ctx.result.value) if ctx.result.value is not None else None
+    v2 = ("%.3f" % ctx.result_duplex.value) \
       if ctx.result_duplex.value is not None else None
     print("RESULT       ", v1, ctx.result.status)
     print("RESULT DUPLEX", v2, ctx.result_duplex.status)
