@@ -134,6 +134,8 @@ class StructuredCellJoinTask(StructuredCellTask):
         if not sc.no_auth:
             if sc.auth._checksum is not None:
                 join_dict["auth"] = sc.auth._checksum.hex()
+        if sc.schema is not None and sc.schema._checksum is not None:
+            join_dict["schema"] = sc.schema._checksum.hex()
         if len(sc.inchannels):
             jd_inchannels = {}
             for in_path in sc.inchannels:
