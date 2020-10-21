@@ -270,8 +270,7 @@ class DatabaseServer:
                     continue
                 if not sink_config.get("cache"):
                     continue
-                for value in results:
-                    await sink.add_sem2syn(key, value)
+                await sink.add_sem2syn(key, results)
             results = [r.decode() for r in results]
             return json.dumps(list(results))
         elif type == "compile result":
