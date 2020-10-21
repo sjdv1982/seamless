@@ -125,6 +125,7 @@ class TransformerResultUpdateTask(Task):
 
         for accessor in downstreams:
             accessor.build_expression(livegraph, checksum)
+            accessor._prelim = transformer.preliminary
             AccessorUpdateTask(manager, accessor).launch()
 
 
