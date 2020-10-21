@@ -1,6 +1,6 @@
 FROM jupyter/scipy-notebook@sha256:60b6dd2bf2347d260603d6609ddd97c3dd755f4c5e9fa8842a58855faf006328
 LABEL author="Sjoerd de Vries <sjoerd.de-vries@inserm.fr>"
-LABEL version="0.3.3"
+LABEL version="0.4"
 USER root
 COPY requirements.txt requirements.txt
 RUN apt update && apt install -y gfortran curl gdb iputils-ping redis-tools
@@ -13,6 +13,6 @@ RUN rm -rf /usr/local/src/seamless/.git && \
     cp -Lr /usr/local/src/seamless/examples /home/jovyan/seamless-examples && \
     cp -Lr /usr/local/src/seamless/docker/commands /home/jovyan/seamless-docker && \
     cp -Lr /usr/local/src/seamless/scripts /home/jovyan/seamless-scripts && \
-    cp -Lr /usr/local/src/seamless/tools /home/jovyan/seamless-tools && \
+    cp -Lr /usr/local/src/seamless/tools /home/jovyan/seamless-tools
 RUN chown -R jovyan /home/jovyan && echo 'umask 000' >> /home/jovyan/.bashrc
 ENV PYTHONPATH /home/jovyan/software:$PYTHONPATH
