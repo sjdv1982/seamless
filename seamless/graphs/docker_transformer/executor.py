@@ -68,7 +68,7 @@ try:
         env = {}
     options["environment"] = env
     for pin in pins_:
-        v = globals()[pin]
+        v = PINS[pin]
         if isinstance(v, Silk):
             v = v.unsilk
         storage, form = get_form(v)
