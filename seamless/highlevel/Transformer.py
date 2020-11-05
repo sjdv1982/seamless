@@ -197,6 +197,22 @@ class Transformer(Base):
         else:
             htf.pop("fingertip_no_recompute", None)
 
+    @property
+    def scratch(self):
+        """TODO: document"""
+        htf = self._get_htf()
+        return ("scratch" in htf)
+
+    @scratch.setter
+    def scratch(self, value):
+        if value not in (True, False):
+            raise TypeError(value)
+        htf = self._get_htf()
+        if value == True:
+            htf["scratch"] = True
+        else:
+            htf.pop("scratch", None)
+
     def clear_exception(self):
         tf = self._get_tf(force=True)
         tf.tf.clear_exception()
