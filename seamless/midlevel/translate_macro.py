@@ -104,6 +104,7 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
             if pinname2 in inchannels:
                 namespace[path, True] = param.inchannels[pinname], node
             target = getattr(ctx.macro, pinname)
+            assert target is not None, pinname
             pin_cell = pin_cells[pinname]
             param.outchannels[pinname2].connect(pin_cell)
             pin_cell.connect(target)

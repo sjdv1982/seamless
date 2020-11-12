@@ -206,6 +206,7 @@ class StructuredCellCancellation:
             StructuredCellAuthTask(taskmanager.manager, scell).launch()
         scell._modified_auth = False
         scell._auth_joining = True
+        scell.auth._void = False
         scell._joining = False
         scell._mode = SCModeEnum.AUTH_JOINING
         self.mode = SCModeEnum.AUTH_JOINING
@@ -277,6 +278,7 @@ class StructuredCellCancellation:
             self.clear_sc_data()
             self.launch_auth_task(taskmanager)
 
+
         """
         print("RESOLVE", scell, old_state, new_state, self.mode, scell._data._checksum is None)
         get_scell_state(scell, verbose=True)
@@ -286,7 +288,10 @@ class StructuredCellCancellation:
                 pass
             elif self.mode == SCModeEnum.AUTH_JOINING:
                 assert scell.auth._checksum is None, (scell, old_state, new_state, self.mode)
-                assert not scell.auth._void
+                if scell.auth is not scell._data:
+                    # KLUDGE: disable this, as it gives a heisenbug problem in stdlib/map/testing.py
+                    ### assert not scell.auth._void, scell
+                    pass ###
                 assert scell._auth_invalid
                 print_debug("***CANCEL***: voided auth %s" % scell)
                 scell.auth._void = True

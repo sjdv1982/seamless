@@ -275,10 +275,6 @@ class Cell(Base):
             # TODO: implement for Transformer "code", "value", "schema", "example"
             raise NotImplementedError(value)
 
-        hcell = self._get_hcell()
-        if hcell.get("UNTRANSLATED"):
-            raise Exception("Cell has not yet been translated")
-
         assign_to_subcell(self, (attr,), value)
 
     def connect_from(self, other):

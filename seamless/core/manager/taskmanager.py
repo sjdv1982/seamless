@@ -666,7 +666,6 @@ If origin_task is provided, that task is not cancelled."""
         self.macropath_to_task.pop(macropath)
 
     def check_destroyed(self):
-        from .tasks import BackgroundTask
         attribs = (
             "tasks",
             "launching_tasks",
@@ -720,3 +719,4 @@ from .expression import Expression
 from .tasks.upon_connection import UponConnectionTask
 from .tasks.structured_cell import StructuredCellAuthTask, StructuredCellJoinTask
 from ...communion_server import communion_server
+from .tasks import BackgroundTask

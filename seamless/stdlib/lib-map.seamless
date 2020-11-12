@@ -1,0 +1,277 @@
+{
+  "connections": [],
+  "lib": [],
+  "nodes": [
+    {
+      "path": [
+        "map_dict"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "f5f825882ccb94598a2771af6585694ed4339e2b460ad3371ac6136ec8418d22"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "map_dict",
+        "constructor_code"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "c1c2950c28e0f5c6d9aea4a4b6635277ac713ab0e9931b3e030e815a5d0b32d6",
+        "buffer": "c1c2950c28e0f5c6d9aea4a4b6635277ac713ab0e9931b3e030e815a5d0b32d6",
+        "value": "c1c2950c28e0f5c6d9aea4a4b6635277ac713ab0e9931b3e030e815a5d0b32d6"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "map_dict",
+        "constructor_params"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "map_dict",
+        "static"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "bd13b5afe3d054ab56eb5bb2218dbcca18019011d6f1e659be023aeb0e2f3110"
+      },
+      "datatype": "mixed",
+      "path": [
+        "map_dict",
+        "static",
+        "lib_codeblock"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "ac0396ab87a8b0ee52e76b30df9595c0bba0ee2933c4c1d52fbf8c1a9c4814ad"
+      },
+      "datatype": "mixed",
+      "path": [
+        "map_dict",
+        "static",
+        "lib_module_dict"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "map_dict_chunk"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "596f7bf1fbddf88d2c70125947d8f4b290c17a3f03e889a02df2c0297df14f9a"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "map_dict_chunk",
+        "constructor_code"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "83ef17e24cf010eca784ebfe799e20da014655eb23835b85c81d252be4b5716d",
+        "buffer": "83ef17e24cf010eca784ebfe799e20da014655eb23835b85c81d252be4b5716d",
+        "value": "83ef17e24cf010eca784ebfe799e20da014655eb23835b85c81d252be4b5716d"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "map_dict_chunk",
+        "constructor_params"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "map_dict_chunk",
+        "static"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "bd13b5afe3d054ab56eb5bb2218dbcca18019011d6f1e659be023aeb0e2f3110"
+      },
+      "datatype": "mixed",
+      "path": [
+        "map_dict_chunk",
+        "static",
+        "lib_codeblock"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "ac0396ab87a8b0ee52e76b30df9595c0bba0ee2933c4c1d52fbf8c1a9c4814ad"
+      },
+      "datatype": "mixed",
+      "path": [
+        "map_dict_chunk",
+        "static",
+        "lib_module_dict"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "map_list"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "bf141122528c5c268c8837cae9b874e3c4620d6a0454f657069c2207eac8f264"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "map_list",
+        "constructor_code"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "3e0dfd5898019b6b0db6b2fe2e094a3649533bcc6353e6a538e46306375ed16d",
+        "buffer": "3e0dfd5898019b6b0db6b2fe2e094a3649533bcc6353e6a538e46306375ed16d",
+        "value": "3e0dfd5898019b6b0db6b2fe2e094a3649533bcc6353e6a538e46306375ed16d"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "map_list",
+        "constructor_params"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "map_list",
+        "static"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "bd13b5afe3d054ab56eb5bb2218dbcca18019011d6f1e659be023aeb0e2f3110"
+      },
+      "datatype": "mixed",
+      "path": [
+        "map_list",
+        "static",
+        "lib_codeblock"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "ac0396ab87a8b0ee52e76b30df9595c0bba0ee2933c4c1d52fbf8c1a9c4814ad"
+      },
+      "datatype": "mixed",
+      "path": [
+        "map_list",
+        "static",
+        "lib_module_dict"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "map_list_N"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "b59c4a2abd4c65e97a515e7ec466db1f96c134745d1f37798a66df2a21c8be7b"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "map_list_N",
+        "constructor_code"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "0ec2a98d93e6c58887738b7bb8bf1bf29d750dab117859847696d245d6f035db",
+        "buffer": "0ec2a98d93e6c58887738b7bb8bf1bf29d750dab117859847696d245d6f035db",
+        "value": "0ec2a98d93e6c58887738b7bb8bf1bf29d750dab117859847696d245d6f035db"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "map_list_N",
+        "constructor_params"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "map_list_N",
+        "static"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "bd13b5afe3d054ab56eb5bb2218dbcca18019011d6f1e659be023aeb0e2f3110"
+      },
+      "datatype": "mixed",
+      "path": [
+        "map_list_N",
+        "static",
+        "lib_codeblock"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "ac0396ab87a8b0ee52e76b30df9595c0bba0ee2933c4c1d52fbf8c1a9c4814ad"
+      },
+      "datatype": "mixed",
+      "path": [
+        "map_list_N",
+        "static",
+        "lib_module_dict"
+      ],
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

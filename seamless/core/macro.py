@@ -9,14 +9,13 @@ class Macro(Worker):
     injected_modules = None
     allow_elision = False  # Do we honor elision keys?
                     # NOTE: for nested macros, allow_elision is determined by the top macro
-    def __init__(self, macro_params, *, lib=None):
+    def __init__(self, macro_params):
         self._gen_context = None
         self._unbound_gen_context = None
         self.code = InputPin(self, "code", "python", "macro")
         self._pins = {"code":self.code}
         self._macro_params = OrderedDict()
         self.function_expr_template = "{0}\n{1}(ctx=ctx,"
-        self.lib = lib
         self.namespace = {}
         self.input_dict = {}  #pinname-to-accessor
         self._paths = {} #Path objects
@@ -480,8 +479,8 @@ def create_path(cell):
     path._bind(cell, trigger=False)
     return path
 
-def macro(params, *, lib=None):
-    return Macro(params, lib=lib)
+def macro(params):
+    return Macro(params)
 
 from .transformer import transformer
 from .reactor import reactor

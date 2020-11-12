@@ -81,6 +81,7 @@ class Elision:
             pp = json.dumps(tuple(p))
             elision_dict["input_cells"][pp] = cs
         elision_checksum = get_dict_hash(elision_dict)
+        #print("ELISION DICT", self.macro, elision_checksum.hex(), elision_dict)
         return elision_checksum
 
 
@@ -132,19 +133,26 @@ def elide(macro, inputpins):
     if topmacro is None:
         topmacro = macro
     if not topmacro.allow_elision:
+        #print("ELISION DISABLED", macro, topmacro)
         return False
 
     livegraph = macro._get_manager().livegraph
     elision = livegraph.macro_elision.get(macro)
     if elision is None:
+        #print("NO ELISION", macro)
         return False
 
     elision_checksum = elision.get_elision_checksum()
     if elision_checksum is None:
+        #print("CACHE MISS", macro)
         return False
     cache_hit = elision_cache.get(elision_checksum)
     if cache_hit is None:
+        #print("CACHE MISS", macro, elision_checksum.hex())
         return False
+    else:
+        #print("CACHE HIT", macro, elision_checksum.hex())
+        pass
 
     elision_result = {}
     for p0,v in cache_hit.items():

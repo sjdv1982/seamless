@@ -28,10 +28,43 @@ class StaticContext:
         self.root = context(toplevel=True,manager=self._manager)
 
     def get_graph(self):
-        graph = {}
-        graph["nodes"] = deepcopy(list(self._nodes.values()))
-        graph["connections"] = deepcopy(self._connections)
-        graph["params"] = deepcopy(self._params)
+        if self._parent_path is None:
+            graph = {}
+            graph["nodes"] = deepcopy(list(self._nodes.values()))
+            graph["connections"] = deepcopy(self._connections)
+            graph["params"] = deepcopy(self._params)
+            return graph
+        nodes, connections, params  = self._nodes, self._connections, self._params
+        path = self._parent_path
+        lp = len(path)
+        newnodes = []
+        for nodepath, node in sorted(nodes.items(), key=lambda kv: kv[0]):
+            if len(nodepath) > lp and nodepath[:lp] == path:
+                newnode = deepcopy(node)
+                newnode["path"] = nodepath[lp:]
+                newnodes.append(newnode)
+        new_connections = []
+        for connection in connections:
+            if connection["type"] == "connection":
+                source, target = connection["source"], connection["target"]
+                if source[:lp] == path and target[:lp] == path:
+                    con = deepcopy(connection)
+                    con["source"] = source[lp:]
+                    con["target"] = target[lp:]
+                    new_connections.append(con)
+            elif connection["type"] == "link":
+                first, second = connection["first"], connection["second"]
+                if first[:lp] == path and second[:lp] == path:
+                    con = deepcopy(connection)
+                    con["first"] = first[lp:]
+                    con["second"] = second[lp:]
+                    new_connections.append(con)
+        params = deepcopy(params)
+        graph = {
+            "nodes": newnodes,
+            "connections": new_connections,
+            "params": params
+        }
         return graph
 
     def add_zip(self, zip):
@@ -46,6 +79,22 @@ class StaticContext:
             raise TypeError(type(zip))
         return copying.add_zip(self._manager, zipfile)
 
+
+    def children(self, type=None):
+        assert type is None, type
+        parent_path = self._parent_path
+        result = []
+        for path in self._nodes:
+            if parent_path is not None:
+                pp = path[:len(parent_path)]
+                if pp != parent_path:
+                    continue
+                child = result.append(path[len(parent_path):][0])
+            else:
+                child = path[0]
+            if child not in result:
+                result.append(child)
+        return result
 
     def __getattr__(self, attr):
         parent_path = self._parent_path
