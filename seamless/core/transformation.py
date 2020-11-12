@@ -376,6 +376,7 @@ class TransformationJob:
         code = None
         logs = [None, None]
         lock = await acquire_lock(self.checksum)
+        namespace["PINS"] = {}
         for pinname in self.transformation:
             if pinname == "__output__":
                 continue
@@ -406,6 +407,7 @@ class TransformationJob:
                 assert mod is not None # build_module_async failed
                 module_workspace[pinname] = mod[1]
             else:
+                namespace["PINS"][pinname] = value
                 namespace[pinname] = value
                 inputs.append(pinname)
         for pinname in self.transformation:
@@ -429,6 +431,7 @@ class TransformationJob:
                 data=namespace[pinname],
                 schema=schema
             )
+            namespace["PINS"][pinname] = v
             namespace[pinname] = v
 
         assert code is not None

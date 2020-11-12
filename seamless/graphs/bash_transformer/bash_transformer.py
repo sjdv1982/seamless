@@ -61,3 +61,9 @@ json.dump(graph, open(graph_filename, "w"), sort_keys=True, indent=2)
 zip_filename=os.path.join(currdir,"../bash_transformer.zip")
 with open(zip_filename, "bw") as f:
     f.write(zip)
+
+from seamless.core.cache.transformation_cache import transformation_cache
+sem_checksum = transformation_cache.syntactic_to_semantic(
+    bytes.fromhex(ctx.executor.code.checksum), "python", "transformer", ""
+)
+print("Executor semantic code checksum:", sem_checksum.hex())
