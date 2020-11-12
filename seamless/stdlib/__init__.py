@@ -16,7 +16,18 @@ for graph_file in graph_files:
         zip = f.read()
     sctx = StaticContext.from_graph(graph)
     sctx.add_zip(zip)
-    constructor = sctx.constructor_code.value
-    constructor_params = sctx.constructor_params.value
-    path = ("stdlib", graph_name)
-    set_library(path, graph, zip, constructor, constructor_params)
+    if graph_name.startswith("lib-"):
+        for child in sctx.children():
+            ssctx = getattr(sctx, child)
+            if not isinstance(ssctx, StaticContext):
+                continue
+            constructor = ssctx.constructor_code.value
+            constructor_params = ssctx.constructor_params.value
+            path = ("stdlib", graph_name[len("lib-"):], child)
+            sub_graph = ssctx.static.get_graph()
+            set_library(path, sub_graph, zip, constructor, constructor_params)
+    else:
+        constructor = sctx.constructor_code.value
+        constructor_params = sctx.constructor_params.value
+        path = ("stdlib", graph_name)
+        set_library(path, graph, zip, constructor, constructor_params)

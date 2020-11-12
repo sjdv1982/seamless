@@ -206,7 +206,7 @@ class UnboundContext(SeamlessBase):
     def _add_child(self, childname, child):
         from .HighLevelContext import HighLevelContext
         classes = (UnboundContext, Worker, Cell, UniLink, StructuredCell)
-        assert isinstance(child, classes), type(child)
+        assert isinstance(child, classes), (childname, type(child))
         if isinstance(child, UnboundContext):
             assert child._context is None
             child._realmanager = self._realmanager
