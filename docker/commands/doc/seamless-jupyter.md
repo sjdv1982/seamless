@@ -1,4 +1,4 @@
-% seamless-jupyter(1) Version 0.2 | seamless-cli Documentation
+% seamless-jupyter(1) Version 0.1 | seamless-cli Documentation
 
 NAME
 ====
@@ -8,7 +8,7 @@ NAME
 SYNOPSIS
 ========
 
-| **seamless-jupyter** \[_Jupyter notebook server arguments_] 
+| **seamless-jupyter** \[_Jupyter notebook server arguments_]
 | **seamless-jupyter** \[**-h**|**--help**]
 
 DESCRIPTION

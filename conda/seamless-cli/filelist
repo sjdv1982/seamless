@@ -1,11 +1,14 @@
 seamless
+seamless-add-zip
 seamless-bash
 seamless-bash-trusted
+seamless-checksum
+seamless-database
 seamless-ipython
 seamless-jupyter
 seamless-jupyter-console
 seamless-jupyter-console-existing
 seamless-jupyter-trusted
 seamless-redis
+seamless-serve-graph
 seamless-trusted
-seamless-checksum

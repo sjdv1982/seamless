@@ -1,4 +1,4 @@
-% seamless-ipython(1) Version 0.2 | seamless-cli Documentation
+% seamless-ipython(1) Version 0.1 | seamless-cli Documentation
 
 NAME
 ====
@@ -8,7 +8,7 @@ NAME
 SYNOPSIS
 ========
 
-| **seamless-ipython** \[_IPython arguments_] 
+| **seamless-ipython** \[_IPython arguments_]
 | **seamless-ipython** \[**-h**|**--help**]
 
 DESCRIPTION
