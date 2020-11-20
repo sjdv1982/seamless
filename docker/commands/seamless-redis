@@ -3,11 +3,12 @@ set -u -e
 
 [ ! -d ~/.seamless/redis ] && mkdir -p ~/.seamless/redis
 
+echo "Starting container seamless-redis-container"
 docker run \
-  --rm \
   -d \
   -p 6379:6379 \
   --name seamless-redis-container \
   -v ~/.seamless/redis:/data \
-  -u `id -u`:`id -g` \
+  -u `id -u` \
+  --group-add users \
   redis redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy volatile-ttl

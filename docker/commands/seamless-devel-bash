@@ -1,10 +1,10 @@
+#!/bin/bash
+
 set -u -e
 
 # Version of the seamless command that creates an interactive bash shell inside the seamless-devel image
 
 # NOTE: GIVES ACCESS TO THE DOCKER DAEMON. THIS IS A BIG SECURITY HOLE, IT CAN GIVE ROOT ACCESS TO YOUR SYSTEM
-
-[ $(id -u) != 1000 ] && echo 'WARNING: The Seamless container will run as user jovyan (ID 1000), which is not the same as your current user ID '$(id -u)'. When reading/writing fails for /cwd, check that '$(pwd) 'gives enough file permissions.' >> /dev/stderr
 
 seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
 
@@ -24,6 +24,7 @@ docker run --rm \
   --group-add $(getent group docker | cut -d: -f3) \
   --workdir /cwd \
   -it \
-  -u jovyan \
+  -u `id -u` \
+  --group-add users \
   $* \
-  seamless-devel bash
+  seamless-devel start.sh

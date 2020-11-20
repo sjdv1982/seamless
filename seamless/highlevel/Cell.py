@@ -224,7 +224,7 @@ class Cell(Base):
             return getattr(cell, attr)
         return self._get_subcell(attr)
 
-    def mount(self, path=None, mode="rw", authority="cell", persistent=True):
+    def mount(self, path, mode="rw", authority="file", persistent=True):
         """Mounts the cell to the file system.
         Mounting is only supported for non-structured cells.
 
@@ -234,15 +234,21 @@ class Cell(Base):
           The file path on disk
         - mode
           "r" (read), "w" (write) or "rw".
-          The mode can only contain "r" if the cell is authoritative.
+          If the mode contains "r", the cell is updated when the file changes on disk.
+          If the mode contains "w", the file is updated when the cell value changes.
+          The mode can only contain "r" if the cell is independent.
           Default: "rw"
         - authority
           In case of conflict between cell and file, which takes precedence.
-          Default: "cell".
+          Default: "file".
         - persistent
           If False, the file is deleted from disk when the Cell is destroyed
+          Default: True.
         """
-        assert self.celltype != "structured"
+        if self.celltype == "structured":
+            raise Exception("Mounting is only supported for non-structured cells")
+        # TODO: check for independence (has_authority)
+        # TODO, upon translation: check that there are no duplicate paths.
         hcell = self._get_hcell2()
         if path is None:
             hcell.pop("mount", None)
