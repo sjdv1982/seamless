@@ -14,5 +14,5 @@ RUN rm -rf /usr/local/src/seamless/.git && \
     cp -Lr /usr/local/src/seamless/docker/commands /home/jovyan/seamless-docker && \
     cp -Lr /usr/local/src/seamless/scripts /home/jovyan/seamless-scripts && \
     cp -Lr /usr/local/src/seamless/tools /home/jovyan/seamless-tools
-RUN chown -R jovyan /home/jovyan && echo 'umask 000' >> /home/jovyan/.bashrc
+RUN chown -R jovyan /home/jovyan && chmod -R g=u /home/jovyan
 ENV PYTHONPATH /home/jovyan/software:$PYTHONPATH
