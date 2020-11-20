@@ -10,7 +10,6 @@ gdbflags='' ###
 
 docker run --rm \
   $gdbflags \
-  -v $seamlessdir:/seamless \
   --network=host \
   -v `pwd`:/cwd \
   --workdir /cwd \
