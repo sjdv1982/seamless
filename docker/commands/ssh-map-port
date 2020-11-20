@@ -30,7 +30,7 @@ cleanup() {
 
 trap cleanup ERR
 
-if [ -z "$server2" ]        
+if [ -z "$server2" ]
 then
     ssh -f -L localhost:$port:localhost:$port -N $server1
 else
@@ -46,4 +46,3 @@ else
         -N $server2user@localhost -p $interport -t \
         -f -L localhost:$port:localhost:$port
 fi
-
