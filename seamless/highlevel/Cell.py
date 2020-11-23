@@ -228,6 +228,8 @@ class Cell(Base):
         """Mounts the cell to the file system.
         Mounting is only supported for non-structured cells.
 
+        To delete an existing mount, do `del cell.mount`
+
         Arguments
         =========
         - path
@@ -250,16 +252,13 @@ class Cell(Base):
         # TODO: check for independence (has_authority)
         # TODO, upon translation: check that there are no duplicate paths.
         hcell = self._get_hcell2()
-        if path is None:
-            hcell.pop("mount", None)
-        else:
-            mount = {
-                "path": path,
-                "mode": mode,
-                "authority": authority,
-                "persistent": persistent
-            }
-            hcell["mount"] = mount
+        mount = {
+            "path": path,
+            "mode": mode,
+            "authority": authority,
+            "persistent": persistent
+        }
+        hcell["mount"] = mount
         if self._parent() is not None:
             self._parent()._translate()
         return self
@@ -353,7 +352,7 @@ class Cell(Base):
         hcell = self._get_hcell()
         if hcell.get("UNTRANSLATED"):
             #return hcell["TEMP"]
-            raise Exception("This cell is untranslated; run 'ctx.translate()' or 'await ctx.translation()'")
+            return None
         try:
             cell = self._get_cell()
         except Exception:
@@ -421,7 +420,7 @@ class Cell(Base):
         For structured cells, it may also have been raised during validation"""
 
         if self._get_hcell().get("UNTRANSLATED"):
-            return None
+            return "This cell is untranslated; run 'ctx.translate()' or 'await ctx.translation()'"
         cell = self._get_cell()
         return cell.exception
 
@@ -559,7 +558,7 @@ class Cell(Base):
         If it is error, Cell.exception will be non-empty.
         """
         if self._get_hcell().get("UNTRANSLATED"):
-            return None
+            return "Status: error (ctx needs translation)"
         cell = self._get_cell()
         return cell.status
 
@@ -794,6 +793,8 @@ class Cell(Base):
         also support subcell GET requests,
         e.g. ``http://.../ctx/a/x/0`` for a cell ``ctx.a``
         with value ``{'x': [1,2,3] }``
+
+        To remove a share, do `del cell.share`
         """
         assert readonly or self.authoritative
         assert readonly or self.celltype != "structured"
@@ -833,6 +834,17 @@ class Cell(Base):
                 cell.schema._set_observer(self._observe_schema)
         else:
             cell._set_observer(self._observe_cell)
+
+    def __delattr__(self, attr):
+        if attr in ("share", "mount"):
+            hcell = self._get_hcell2()
+            if attr in hcell:
+                hcell.pop(attr)
+                if self._parent() is not None:
+                    self._parent()._translate()
+        else:
+            raise AttributeError(attr)
+
 
     def __str__(self):
         path = ".".join(self._path) if self._path is not None else None

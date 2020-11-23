@@ -3,9 +3,9 @@ import weakref
 
 class Proxy:
     _getter = None
-    def __init__(self, parent, path, mode, 
+    def __init__(self, parent, path, mode,
       *, pull_source=None, getter=None, dirs=None,
-      setter=None
+      setter=None, deleter=None
     ):
         self._parent = weakref.ref(parent)
         self._path = path
@@ -15,6 +15,7 @@ class Proxy:
         if mode == "r":
             assert setter is None
         self._setter = setter
+        self._deleter = deleter
         self._dirs = dirs
 
     @property
@@ -31,7 +32,7 @@ class Proxy:
     def __str__(self):
         path = self._parent()._path + self._path
         return "%s for %s" % (type(self).__name__, "." + ".".join(path))
-            
+
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
@@ -46,6 +47,11 @@ class Proxy:
         if self._getter is None:
             raise AttributeError(attr)
         return self._getter(attr)
+
+    def __delattr__(self, attr):
+        if self._deleter is None:
+            raise AttributeError
+        return self._deleter(attr)
 
     def __dir__(self):
         result = list(object.__dir__(self))

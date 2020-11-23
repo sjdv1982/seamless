@@ -833,6 +833,9 @@ class Context(Base):
             mimetype = hcell.mimetype
             cell.share(sharepath, readonly, mimetype=mimetype)
 
+    def _rename_path(self, path, newpath):
+        raise NotImplementedError
+
     def _destroy_path(self, path, runtime=False):
         graph = self._graph
         if runtime:
@@ -916,7 +919,7 @@ class Context(Base):
         return self._graph.lib[tuple(path)]
 
     def _remove_connections(self, path, keep_links=False, runtime=False):
-        """Removes all connections starting with path"""
+        """Removes all connections/links with source or target starting with path"""
         lp = len(path)
         def keep_con(con):
             if con["type"] == "link":

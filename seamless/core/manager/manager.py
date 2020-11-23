@@ -366,7 +366,7 @@ class Manager:
 
     @run_in_mainthread
     def set_cell(self, cell, value):
-        assert cell.has_authority(), cell
+        assert cell.has_authority(), "{} is not independent".format(cell)
         assert cell._structured_cell is None, cell
         reason = None
         if value is None:
@@ -390,7 +390,7 @@ class Manager:
     @run_in_mainthread
     def set_cell_buffer(self, cell, buffer, checksum):
         assert cell._hash_pattern is None
-        assert cell.has_authority(), cell
+        assert cell.has_authority(), "{} is not independent".format(cell)
         assert cell._structured_cell is None, cell
         reason = None
         if buffer is None:
