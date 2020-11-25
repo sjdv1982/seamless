@@ -738,7 +738,7 @@ class Context(Base):
                 if self._mount is not None:
                     ub_ctx._mount = self._mount.copy()
                 self._unbound_context = ub_ctx
-                ub_ctx._root_highlevel_context = self
+                ub_ctx._root_highlevel_context = weakref.ref(self)
                 translate(graph, ub_ctx)
                 nodedict = {node["path"]: node for node in graph["nodes"]}
                 nodedict0 = {node["path"]: node for node in graph0["nodes"]}
@@ -748,7 +748,7 @@ class Context(Base):
                     if node0 is not None and node is not node0:
                         node0.pop("UNTRANSLATED", None)
             self._gen_context = ub_ctx._bound
-            self._gen_context._root_highlevel_context = self
+            self._gen_context._root_highlevel_context = weakref.ref(self)
             assert self._gen_context._get_manager() is self._manager
             self._connect_share()
             ok = True
@@ -995,10 +995,16 @@ class Context(Base):
         if self._destroyed:
             return
         self._destroyed = True
+        if self._gen_context is not None:
+            self._gen_context.destroy()
         for lib in self._graph.lib.values():
             checksums = copying.get_checksums(lib["graph"]["nodes"])
             for checksum in checksums:
                 buffer_cache.decref(bytes.fromhex(checksum))
+
+    def __del__(self):
+        self._destroy()
+
 
 
 class SubContext(Base):
@@ -1120,8 +1126,6 @@ class SubContext(Base):
         l = len(self._path)
         subs = [p[l] for p in self._parent()._children if len(p) > l and p[:l] == self._path]
         return sorted(d + list(set(subs)))
-
-
 
 from .Reactor import Reactor
 from .Transformer import Transformer

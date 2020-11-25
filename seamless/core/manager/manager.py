@@ -29,11 +29,13 @@ def with_cancel_cycle(func):
         if not manager.cancel_cycle.cleared:
             print("ERROR: manager cancel cycle was not cleared")
         try:
+            taskmanager.run_all_synctasks()
             manager.cancel_cycle.cleared = False
             result = func(*args, **kwargs)
             manager.cancel_cycle.resolve()
         finally:
             manager.cancel_cycle._clear()
+            taskmanager.run_all_synctasks()
         return result
     functools.update_wrapper(func2, func)
     return func2
@@ -164,10 +166,13 @@ class Manager:
     If old checksum is not None, do a cell cancellation.
     Set the cell as being non-void, set the checksum (direct attribute access), and launch a cell update task.
         """
+        if self._destroyed or cell._destroyed:
+            return
         sc_data = self.livegraph.datacells.get(cell)
         sc_buf = self.livegraph.buffercells.get(cell)
         sc_schema = self.livegraph.schemacells.get(cell, [])
         if not initial:
+            self.taskmanager.run_all_synctasks()
             if from_structured_cell:
                 if sc_data is None and sc_buf is None and not len(sc_schema):
                     assert cell._structured_cell is not None
@@ -366,11 +371,14 @@ class Manager:
 
     @run_in_mainthread
     def set_cell(self, cell, value):
+        if self._destroyed or cell._destroyed:
+            return
         assert cell.has_authority(), "{} is not independent".format(cell)
         assert cell._structured_cell is None, cell
         reason = None
         if value is None:
             reason = StatusReasonEnum.UNDEFINED
+        self.taskmanager.run_all_synctasks()
         if value is not None and cell._void:
             unvoid_cell(cell, self.livegraph)
         else:
@@ -389,13 +397,19 @@ class Manager:
 
     @run_in_mainthread
     def set_cell_buffer(self, cell, buffer, checksum):
+        if self._destroyed or cell._destroyed:
+            return
         assert cell._hash_pattern is None
         assert cell.has_authority(), "{} is not independent".format(cell)
         assert cell._structured_cell is None, cell
         reason = None
         if buffer is None:
             reason = StatusReasonEnum.UNDEFINED
-        self.cancel_cell(cell, buffer is None, reason)
+        self.taskmanager.run_all_synctasks()
+        if buffer is not None and cell._void:
+            unvoid_cell(cell, self.livegraph)
+        else:
+            self.cancel_cell(cell, buffer is None, reason)
         task = SetCellBufferTask(self, cell, buffer, checksum)
         task.launch()
 

@@ -3,9 +3,10 @@ import asyncio
 from weakref import WeakSet
 from contextlib import contextmanager
 
+_toplevel_registered = WeakSet()
+_toplevel_managers = WeakSet()
 _toplevel_registrable = set()
-_toplevel_registered = set()
-_toplevel_managers = set()
+_toplevel_managers_temp = set()
 
 mountmanager = None # import later
 
@@ -19,11 +20,12 @@ def register_toplevel(ctx):
         _toplevel_registered.add(ctx)
     else:
         # Add toplevel manager even if unbound; else it will be destroyed!!
-        _toplevel_managers.add(manager)
+        _toplevel_managers_temp.add(manager)
         _toplevel_registrable.add(ctx)
 
 def unregister_toplevel(ctx):
     _toplevel_registrable.discard(ctx)
+    _toplevel_managers_temp.discard(ctx._get_manager())
     _toplevel_registered.discard(ctx)
 
 def _destroy_toplevels():
@@ -109,12 +111,14 @@ def macro_mode_on(macro=None):
                     new_manager = top._get_manager()
                     _toplevel_registered.add(top)
                     # we kept the unbound manager alive, now we can get rid of it...
-                    _toplevel_managers.discard(old_manager)
+                    _toplevel_managers_temp.discard(old_manager)
                     _toplevel_registered.add(top)
                     _toplevel_managers.add(new_manager)
                 else:
                     _toplevel_registered.add(ctx)
-                    _toplevel_managers.add(ctx._get_manager())
+                    mgr = ctx._get_manager()
+                    _toplevel_managers_temp.discard(mgr)
+                    _toplevel_managers.add(mgr)
                     bind_all(ctx)
             for ub_ctx in list(_toplevel_registrable):
                 if isinstance(ub_ctx, UnboundContext):

@@ -2,6 +2,7 @@ import traitlets
 from traitlets.traitlets import _validate_link
 import weakref
 import contextlib
+import asyncio
 
 class Link(object):
     """Link traits from different objects together so they remain in sync.
@@ -90,6 +91,8 @@ class SeamlessTraitlet(traitlets.HasTraits):
     links = None
     celltype = None
     mimetype = None
+    _timer_handle = None
+
     def _connect_seamless(self):
         ccell = self.parent()._children[self.path]
         if not isinstance(ccell, Cell):
@@ -151,6 +154,11 @@ class SeamlessTraitlet(traitlets.HasTraits):
                 value = get_subpath(
                     value, hash_pattern, ()
                 )
+
+        if self._timer_handle is not None:
+            self._timer_handle.cancel()
+            self._timer_handle = None
+
         #print("Traitlet RECEIVE UPDATE", self.path, value)
 
         self._updating = True
@@ -178,6 +186,17 @@ class SeamlessTraitlet(traitlets.HasTraits):
         if self.incell is None:
             return
         cell = self.incell()
+        if cell.has_authority():
+            if self._timer_handle is not None:
+                self._timer_handle.cancel()
+            self._timer_handle = asyncio.get_event_loop().call_later(
+                0.1,
+                self._cell_set,
+                cell,
+                value,
+            )
+
+    def _cell_set(self, cell, value):
         if cell.has_authority():
             cell.set(value)
 
@@ -223,6 +242,9 @@ class SeamlessTraitlet(traitlets.HasTraits):
         self._destroyed = True
         if self.links is not None:
             self.links.clear()
+        if self._timer_handle is not None:
+            self._timer_handle.cancel()
+            self._timer_handle = None
         parent = self.parent()
         traitlet = parent._traitlets[self.path]
         if traitlet is self:

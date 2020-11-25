@@ -98,7 +98,7 @@ class Macro(Worker):
                 if len(str_self) > 80:
                     str_self = str_self[:35] + "..%d.." % (len(str_self)-70) + str_self[-35:]
                 #print("Execute", str_self)
-                hctx = self._root()._root_highlevel_context
+                hctx = self._root()._root_highlevel_context()
                 if hctx is not None:
                     hctx._destroy_path(self.path + ("ctx",), runtime=True)
                 identifier = str(self)

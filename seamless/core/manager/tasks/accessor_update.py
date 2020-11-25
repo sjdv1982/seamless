@@ -55,6 +55,7 @@ class AccessorUpdateTask(Task):
                             assert inchannel._checksum is None, (sc, cell, path)
                     except:
                         import traceback; traceback.print_exc()
+                        return
         #
         expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()
 

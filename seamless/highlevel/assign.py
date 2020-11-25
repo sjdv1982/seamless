@@ -407,7 +407,7 @@ def assign(ctx, path, value):
         else:
             assert value._get_top_parent() is ctx, value
             try:
-                target = get_path(ctx, path, is_target=True)
+                target = get_path(ctx, path, namespace = None, is_target=True)
             except AttributeError:
                 target = None
             if isinstance(target, Cell):
