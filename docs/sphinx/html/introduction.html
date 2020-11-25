@@ -96,7 +96,7 @@ Seamless Docker container.</p>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Out[1]:</span> <span class="pre">&lt;Silk:</span> <span class="pre">30</span> <span class="pre">&gt;</span></code></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">+=</span> <span class="mi">5</span> 
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">+=</span> <span class="mi">5</span>
 <span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span>
 </pre></div>
@@ -106,7 +106,7 @@ Seamless Docker container.</p>
 <div class="section" id="define-schemas-and-validation-rules">
 <h2>3. Define schemas and validation rules<a class="headerlink" href="#define-schemas-and-validation-rules" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># declares that add.a must be a number</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mf">0.0</span>  
+<span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mf">0.0</span>
 
 <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span>
@@ -121,11 +121,11 @@ Seamless Docker container.</p>
 </div>
 <div class="section" id="create-an-api-for-a-seamless-cell">
 <h2>4. Create an API for a Seamless cell<a class="headerlink" href="#create-an-api-for-a-seamless-cell" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
-    <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unsilk</span> 
-    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> 
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sorry, there is no result&quot;</span><span class="p">)</span> 
-    <span class="k">else</span><span class="p">:</span> 
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unsilk</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sorry, there is no result&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The result is: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
 
 <span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">report</span> <span class="o">=</span> <span class="n">report</span>
@@ -135,8 +135,33 @@ Seamless Docker container.</p>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Out[3]:</span> <span class="pre">The</span> <span class="pre">result</span> <span class="pre">is</span> <span class="pre">35</span></code></p>
 </div>
+<div class="section" id="mount-cells-to-the-file-system">
+<h2>5. Mount cells to the file system<a class="headerlink" href="#mount-cells-to-the-file-system" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">celltype</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;/tmp/a.txt&quot;</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">celltype</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;/tmp/b.txt&quot;</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">celltype</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;/tmp/c.txt&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">code</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;/tmp/code.py&quot;</span><span class="p">)</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="share-a-cell-over-http">
+<h2>6. Share a cell over HTTP<a class="headerlink" href="#share-a-cell-over-http" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">mimetype</span> <span class="o">=</span> <span class="s2">&quot;text&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">share</span><span class="p">()</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; curl http://localhost:5813/ctx/c
+<span class="m">35</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="control-cells-from-jupyter">
-<h2>5. Control cells from Jupyter<a class="headerlink" href="#control-cells-from-jupyter" title="Permalink to this headline">¶</a></h2>
+<h2>7. Control cells from Jupyter<a class="headerlink" href="#control-cells-from-jupyter" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ipywidgets</span> <span class="kn">import</span> <span class="n">IntSlider</span><span class="p">,</span> <span class="n">IntText</span>
 
 <span class="n">a</span> <span class="o">=</span> <span class="n">IntSlider</span><span class="p">(</span><span class="nb">min</span><span class="o">=-</span><span class="mi">10</span><span class="p">,</span><span class="nb">max</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
@@ -330,31 +355,6 @@ Seamless Docker container.</p>
     "model_id": "dc3ebd64e9fb40bc9fd964e7292ed326"
 }
 </script></details></div>
-<div class="section" id="mount-cells-to-the-file-system">
-<h2>6. Mount cells to the file system<a class="headerlink" href="#mount-cells-to-the-file-system" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">celltype</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;/tmp/a.txt&quot;</span><span class="p">)</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">celltype</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;/tmp/b.txt&quot;</span><span class="p">)</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">celltype</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;/tmp/c.txt&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">code</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;/tmp/code.py&quot;</span><span class="p">)</span>
-<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="share-a-cell-over-http">
-<h2>7. Share a cell over HTTP<a class="headerlink" href="#share-a-cell-over-http" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">mimetype</span> <span class="o">=</span> <span class="s2">&quot;text&quot;</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">share</span><span class="p">()</span>
-<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
-</pre></div>
-</div>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; curl http://localhost:5813/ctx/c
-<span class="m">35</span>
-</pre></div>
-</div>
-</div>
 <div class="section" id="save-the-entire-state-of-the-context">
 <h2>8. Save the entire state of the context<a class="headerlink" href="#save-the-entire-state-of-the-context" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Graph and checksums, as JSON</span>
@@ -368,7 +368,7 @@ Seamless Docker container.</p>
 <h2>9. In a new notebook / IPython console:<a class="headerlink" href="#in-a-new-notebook-ipython-console" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">seamless.highlevel</span> <span class="kn">import</span> <span class="n">load_graph</span>
 <span class="n">ctx</span> <span class="o">=</span> <span class="n">load_graph</span><span class="p">(</span>
-    <span class="s2">&quot;basic-example.seamless&quot;</span><span class="p">,</span> 
+    <span class="s2">&quot;basic-example.seamless&quot;</span><span class="p">,</span>
     <span class="nb">zip</span><span class="o">=</span><span class="s2">&quot;basic-example.zip&quot;</span>
 <span class="p">)</span>
 <span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
@@ -424,9 +424,9 @@ Seamless Docker container.</p>
 <li><a class="reference internal" href="#set-up-a-simple-seamless-context">2. Set up a simple Seamless context</a></li>
 <li><a class="reference internal" href="#define-schemas-and-validation-rules">3. Define schemas and validation rules</a></li>
 <li><a class="reference internal" href="#create-an-api-for-a-seamless-cell">4. Create an API for a Seamless cell</a></li>
-<li><a class="reference internal" href="#control-cells-from-jupyter">5. Control cells from Jupyter</a></li>
-<li><a class="reference internal" href="#mount-cells-to-the-file-system">6. Mount cells to the file system</a></li>
-<li><a class="reference internal" href="#share-a-cell-over-http">7. Share a cell over HTTP</a></li>
+<li><a class="reference internal" href="#mount-cells-to-the-file-system">5. Mount cells to the file system</a></li>
+<li><a class="reference internal" href="#share-a-cell-over-http">6. Share a cell over HTTP</a></li>
+<li><a class="reference internal" href="#control-cells-from-jupyter">7. Control cells from Jupyter</a></li>
 <li><a class="reference internal" href="#save-the-entire-state-of-the-context">8. Save the entire state of the context</a></li>
 <li><a class="reference internal" href="#in-a-new-notebook-ipython-console">9. In a new notebook / IPython console:</a></li>
 <li><a class="reference internal" href="#additional-features">Additional features</a></li>

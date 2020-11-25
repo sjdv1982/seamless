@@ -776,7 +776,7 @@
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mount</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">ub_ctx</span><span class="o">.</span><span class="n">_mount</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mount</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_unbound_context</span> <span class="o">=</span> <span class="n">ub_ctx</span>
-                <span class="n">ub_ctx</span><span class="o">.</span><span class="n">_root_highlevel_context</span> <span class="o">=</span> <span class="bp">self</span>
+                <span class="n">ub_ctx</span><span class="o">.</span><span class="n">_root_highlevel_context</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
                 <span class="n">translate</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">ub_ctx</span><span class="p">)</span>
                 <span class="n">nodedict</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">]:</span> <span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="p">[</span><span class="s2">&quot;nodes&quot;</span><span class="p">]}</span>
                 <span class="n">nodedict0</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">]:</span> <span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph0</span><span class="p">[</span><span class="s2">&quot;nodes&quot;</span><span class="p">]}</span>
@@ -786,7 +786,7 @@
                     <span class="k">if</span> <span class="n">node0</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">node0</span><span class="p">:</span>
                         <span class="n">node0</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="o">=</span> <span class="n">ub_ctx</span><span class="o">.</span><span class="n">_bound</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">_root_highlevel_context</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">_root_highlevel_context</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
             <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">_get_manager</span><span class="p">()</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">_manager</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_connect_share</span><span class="p">()</span>
             <span class="n">ok</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1033,10 +1033,16 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_destroyed</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_destroyed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">lib</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">checksums</span> <span class="o">=</span> <span class="n">copying</span><span class="o">.</span><span class="n">get_checksums</span><span class="p">(</span><span class="n">lib</span><span class="p">[</span><span class="s2">&quot;graph&quot;</span><span class="p">][</span><span class="s2">&quot;nodes&quot;</span><span class="p">])</span>
             <span class="k">for</span> <span class="n">checksum</span> <span class="ow">in</span> <span class="n">checksums</span><span class="p">:</span>
-                <span class="n">buffer_cache</span><span class="o">.</span><span class="n">decref</span><span class="p">(</span><span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">checksum</span><span class="p">))</span></div>
+                <span class="n">buffer_cache</span><span class="o">.</span><span class="n">decref</span><span class="p">(</span><span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">checksum</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_destroy</span><span class="p">()</span></div>
+
 
 
 <span class="k">class</span> <span class="nc">SubContext</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
@@ -1158,8 +1164,6 @@
         <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">)</span>
         <span class="n">subs</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_children</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">l</span> <span class="ow">and</span> <span class="n">p</span><span class="p">[:</span><span class="n">l</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">]</span>
         <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">d</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">subs</span><span class="p">)))</span>
-
-
 
 <span class="kn">from</span> <span class="nn">.Reactor</span> <span class="kn">import</span> <span class="n">Reactor</span>
 <span class="kn">from</span> <span class="nn">.Transformer</span> <span class="kn">import</span> <span class="n">Transformer</span>
