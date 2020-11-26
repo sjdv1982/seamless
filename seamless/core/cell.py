@@ -480,16 +480,6 @@ class PythonCell(Cell):
     _subcelltype = None
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
-
-    def set(self, value):
-        """Update cell data from the command line.
-        Python function objects are converted to source code"""
-        if inspect.isfunction(value):
-            code = inspect.getsource(value)
-            code = strip_source(code)
-            value = code
-        return super().set(value)
-
     def __str__(self):
         ret = "Seamless Python cell: " + self._format_path()
         return ret
