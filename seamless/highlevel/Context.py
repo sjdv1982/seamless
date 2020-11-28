@@ -582,11 +582,16 @@ class Context(Base):
                 buffer_cache.decref(bytes.fromhex(old_checksum))
 
 
-    def add_zip(self, zip):
+    def add_zip(self, zip, incref=False):
         """Adds entries from "zip" to the checksum-to-buffer cache
 
         "zip" can be a file name, zip-compressed bytes or a Python ZipFile object.
         Normally, it has been generated with Context.save_zip / Context.get_zip
+
+        Note that caching is temporary and entries will be removed after some time
+        if no element (cell, expression, or high-level library) holds their checksum
+        This can be overridden with "incref=True" (not recommended for long-living contexts)
+
         """
         if self._gen_context is None:
             self._do_translate(force=True)
@@ -602,7 +607,7 @@ class Context(Base):
             zipfile = ZipFile(zip, "r")
         else:
             raise TypeError(type(zip))
-        return copying.add_zip(manager, zipfile)
+        return copying.add_zip(manager, zipfile, incref=incref)
 
     def include(self, lib, only_zip=False, full_path=False):
         """Include a library in the graph

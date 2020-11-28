@@ -34,8 +34,8 @@ if db_host is not None:
 db_port = env.get("SEAMLESS_DATABASE_PORT")
 if db_port is not None:
     params["port"] = db_port
-seamless.database_sink.connect()
-seamless.database_cache.connect()
+seamless.database_sink.connect(**params)
+seamless.database_cache.connect(**params)
 
 from seamless import communion_server
 
