@@ -57,7 +57,7 @@ Dependency graphs are most straightforward if you are porting a workflow of comm
 
 A transformation may wrap a single bash command that invokes a single command line tool, or a small block of commands. In Seamless, such a transformation will be either a bash transformer ([example](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py)) or a Docker transformer ([example](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py)). In both cases, the transformer will have a code cell written in bash, and the result must be written to the file `RESULT`. For multiple outputs, create a tar file and copy that to `RESULT`. Within a bash/Docker transformer, every input X is available as file X. Small inputs are also accessible as a variable $X. After execution, all files are deleted.
 
-There are two strategies to define a transformation.
+There are two strategies to define a command-line transformation.
 
 1. The best way is use a bash transformer and include the source code of every command line tool (except standard UNIX commands). This will make the transformation reproducible. The command line tool must not have any hard-coded "magic files" where it depends on. Also, if it is written in a compiled language, things become quite difficult. Seamless has compiled transformers, but they assume that data is exchanged as function arguments, and not via the file system.
 
@@ -73,17 +73,20 @@ Here, the design is implemented in Seamless.
 
 - *Monitoring* is not part of the graph. In IPython/Jupyter, you can interactively access `Context.status` ,  `Cell.status` and `Transformer.status` , as well as `Cell.exception` and `Transformer.exception`. You can monitor this in the browser by setting up a poller that assigns the statuses to the cells of a second Seamless context (see the Recipe below).
 
+In addition, you can get the stdout and stderr of a transformer using `Transformer.logs`.
+
 ### Debugging
 
 To debug your code, you can use either print statements, or a debugging session with breakpoints.
 
 #### Debugging with print statements
 
-Seamless transformations can be executed anywhere. Therefore, they do not print their stdout or stderr to any terminal. Stdout and stderr are only captured when the transformation has finished.
+Seamless transformations can be executed anywhere. Therefore, they do not print their stdout or stderr to any terminal while they execute. Stdout and stderr are only captured when the transformation has finished.
 
-For Python transformers, the transformation is aborted if an exception is raised. `Transformation.exception` will then contain the exception traceback and stderr. Else, stderr will be discarded. If you want to debug with print statements, you should raise an exception at the end.
+For Python transformers, the transformation is aborted if an exception is raised. `Transformer.exception` will then contain the exception traceback, stdout and stderr.
+If no exception is raised, stdout and stderr can be retrieved using `Transformer.logs`
 
-For bash/Docker transformers, if any launched process returns with a non-zero error code, the transformation is aborted. `Transformation.exception` will then contain the bash error message, stdout and stderr. Else, stdout/stderr will be discarded. Therefore, if you want to debug with print statements, exit with a non-zero exit code (`exit 1`).
+For bash/Docker transformers, if any launched process returns with a non-zero error code, the transformation is aborted. `Transformer.exception` will then contain the bash error message, stdout and stderr. Else, stdout/stderr will be discarded. Therefore, if you want to debug with print statements, exit with a non-zero exit code (`exit 1`).
 
 For compiled transformers (i.e. written in C/C++/Fortran/...), you should *not* do `exit(...)` with a non-zero exit code: this kills the transformation process immediately, including the machinery to capture stdout and stderr. Instead, make the main `int transform(...)` function return a non-zero value.
 
@@ -93,14 +96,15 @@ Visual Studio Code and other IDEs do not yet support Seamless transformers.
 
 ***Python transformers***
 
-***NOTE: As of Seamless 0.3, the section below does not work properly***
-
 To debug a Python transformer, you can use a slightly modified version of the pdb debugger. Add the following to your transformation code:
 ```python
 from seamless.pdb import set_trace
 set_trace()
 ```
-***/NOTE***
+
+NOTE: unfortunately, the pdb debugger only works if you execute Seamless with `python`,
+not with `ipython` or Jupyter.
+
 
 ***Compiled transformers***
 

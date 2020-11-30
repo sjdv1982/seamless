@@ -87,18 +87,24 @@ def get_buffer_dict_sync(manager, checksums):
         result[checksum] = buffer
     return result
 
-def add_zip(manager, zipfile):
+def add_zip(manager, zipfile, incref=False):
     """
     Caches all checksum-to-buffer entries in zipfile
     All "file names" in the zipfile must be checksum hexes
 
     Note that caching is temporary and entries will be removed after some time
      if no element (cell, expression, or high-level library) holds their checksum
+    This can be overridden with "incref=True" (not recommended for long-living contexts)
     """
+    result = []
     for checksum in zipfile.namelist():
         checksum2 = bytes.fromhex(checksum)
         buffer = zipfile.read(checksum)
         buffer_cache.cache_buffer(checksum2, buffer)
+        if incref:
+            buffer_cache.incref(checksum2, authoritative=False)
+        result.append(checksum)
+    return result
 
 def fill_checksum(manager, node, temp_path, composite=True):
     from ..core.utils import strip_source

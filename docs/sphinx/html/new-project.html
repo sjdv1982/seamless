@@ -4,7 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Guide for creating a new Seamless project &#8212; Seamless 0.2 documentation</title>
+    <title>Guide for creating a new Seamless project &#8212; Seamless 0.4 documentation</title>
     <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -32,7 +32,7 @@
         <li class="right" >
           <a href="cell.html" title="Cells"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.2 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.4 documentation</a> &#187;</li> 
       </ul>
     </div>  
 
@@ -82,7 +82,7 @@
 <h3>Command line workflows<a class="headerlink" href="#command-line-workflows" title="Permalink to this headline">¶</a></h3>
 <p>Dependency graphs are most straightforward if you are porting a workflow of command line tools, where all inputs and outputs are files. There several tools that specialize in such workflows, such as SnakeMake and NextFlow. You could define your concrete dependency graph using one of these tools, and then convert it to Seamless to add monitoring and visualization. For SnakeMake, there is an automatic converter (see <a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/snakemake-tutorial">example</a>).</p>
 <p>A transformation may wrap a single bash command that invokes a single command line tool, or a small block of commands. In Seamless, such a transformation will be either a bash transformer (<a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py">example</a>) or a Docker transformer (<a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py">example</a>). In both cases, the transformer will have a code cell written in bash, and the result must be written to the file <code class="docutils literal notranslate"><span class="pre">RESULT</span></code>. For multiple outputs, create a tar file and copy that to <code class="docutils literal notranslate"><span class="pre">RESULT</span></code>. Within a bash/Docker transformer, every input X is available as file X. Small inputs are also accessible as a variable $X. After execution, all files are deleted.</p>
-<p>There are two strategies to define a transformation.</p>
+<p>There are two strategies to define a command-line transformation.</p>
 <ol class="simple">
 <li><p>The best way is use a bash transformer and include the source code of every command line tool (except standard UNIX commands). This will make the transformation reproducible. The command line tool must not have any hard-coded “magic files” where it depends on. Also, if it is written in a compiled language, things become quite difficult. Seamless has compiled transformers, but they assume that data is exchanged as function arguments, and not via the file system.</p></li>
 <li><p>The alternative is to treat a command line tool as part of the environment. In that case, use a Docker transformer, where the command line tool must be installed in the Docker container. This is appropriate if the command line tool is immutable over the course of the project. You may also be forced to go this route if the assumptions above are violated. Any magic files must be installed in the Docker container.</p></li>
@@ -97,27 +97,29 @@
 <li><p><em>Code and parameters</em> are defined as cell checksums in the Seamless graph. However, during development it is common to link them to files, and let the files have priority over the graph in case of a conflict. The files should be under version control (Git).</p></li>
 <li><p><em>Monitoring</em> is not part of the graph. In IPython/Jupyter, you can interactively access <code class="docutils literal notranslate"><span class="pre">Context.status</span></code> ,  <code class="docutils literal notranslate"><span class="pre">Cell.status</span></code> and <code class="docutils literal notranslate"><span class="pre">Transformer.status</span></code> , as well as <code class="docutils literal notranslate"><span class="pre">Cell.exception</span></code> and <code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code>. You can monitor this in the browser by setting up a poller that assigns the statuses to the cells of a second Seamless context (see the Recipe below).</p></li>
 </ul>
+<p>In addition, you can get the stdout and stderr of a transformer using <code class="docutils literal notranslate"><span class="pre">Transformer.logs</span></code>.</p>
 <div class="section" id="debugging">
 <h3>Debugging<a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h3>
 <p>To debug your code, you can use either print statements, or a debugging session with breakpoints.</p>
 <div class="section" id="debugging-with-print-statements">
 <h4>Debugging with print statements<a class="headerlink" href="#debugging-with-print-statements" title="Permalink to this headline">¶</a></h4>
-<p>Seamless transformations can be executed anywhere. Therefore, they do not print their stdout or stderr to any terminal. Stdout and stderr are only captured when the transformation has finished.</p>
-<p>For Python transformers, the transformation is aborted if an exception is raised. <code class="docutils literal notranslate"><span class="pre">Transformation.exception</span></code> will then contain the exception traceback and stderr. Else, stderr will be discarded. If you want to debug with print statements, you should raise an exception at the end.</p>
-<p>For bash/Docker transformers, if any launched process returns with a non-zero error code, the transformation is aborted. <code class="docutils literal notranslate"><span class="pre">Transformation.exception</span></code> will then contain the bash error message, stdout and stderr. Else, stdout/stderr will be discarded. Therefore, if you want to debug with print statements, exit with a non-zero exit code (<code class="docutils literal notranslate"><span class="pre">exit</span> <span class="pre">1</span></code>).</p>
+<p>Seamless transformations can be executed anywhere. Therefore, they do not print their stdout or stderr to any terminal while they execute. Stdout and stderr are only captured when the transformation has finished.</p>
+<p>For Python transformers, the transformation is aborted if an exception is raised. <code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code> will then contain the exception traceback, stdout and stderr.
+If no exception is raised, stdout and stderr can be retrieved using <code class="docutils literal notranslate"><span class="pre">Transformer.logs</span></code></p>
+<p>For bash/Docker transformers, if any launched process returns with a non-zero error code, the transformation is aborted. <code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code> will then contain the bash error message, stdout and stderr. Else, stdout/stderr will be discarded. Therefore, if you want to debug with print statements, exit with a non-zero exit code (<code class="docutils literal notranslate"><span class="pre">exit</span> <span class="pre">1</span></code>).</p>
 <p>For compiled transformers (i.e. written in C/C++/Fortran/…), you should <em>not</em> do <code class="docutils literal notranslate"><span class="pre">exit(...)</span></code> with a non-zero exit code: this kills the transformation process immediately, including the machinery to capture stdout and stderr. Instead, make the main <code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">transform(...)</span></code> function return a non-zero value.</p>
 </div>
 <div class="section" id="debugging-sessions">
 <h4>Debugging sessions<a class="headerlink" href="#debugging-sessions" title="Permalink to this headline">¶</a></h4>
 <p>Visual Studio Code and other IDEs do not yet support Seamless transformers.</p>
 <p><em><strong>Python transformers</strong></em></p>
-<p><em><strong>NOTE: As of Seamless 0.3, the section below does not work properly</strong></em></p>
 <p>To debug a Python transformer, you can use a slightly modified version of the pdb debugger. Add the following to your transformation code:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">seamless.pdb</span> <span class="kn">import</span> <span class="n">set_trace</span>
 <span class="n">set_trace</span><span class="p">()</span>
 </pre></div>
 </div>
-<p><em><strong>/NOTE</strong></em></p>
+<p>NOTE: unfortunately, the pdb debugger only works if you execute Seamless with <code class="docutils literal notranslate"><span class="pre">python</span></code>,
+not with <code class="docutils literal notranslate"><span class="pre">ipython</span></code> or Jupyter.</p>
 <p><em><strong>Compiled transformers</strong></em></p>
 <p>Compiled transformers can be debugged with a debugger such as gdb.</p>
 <p>For this, set <code class="docutils literal notranslate"><span class="pre">Transformer.debug</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code> and re-translate the graph.
@@ -424,12 +426,12 @@ Click on it, then choose “Join Collaboration Session”. Enter the link that t
         <li class="right" >
           <a href="cell.html" title="Cells"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.2 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.4 documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2016-2020, Sjoerd de Vries.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
     </div>
   </body>
 </html>

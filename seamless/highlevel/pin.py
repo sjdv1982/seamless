@@ -105,7 +105,7 @@ class PinsWrapper:
         if pinname not in hpins:
             raise AttributeError(pinname)
         return PinWrapper(self._parent(), pinname)
-        
+
 
     def __setattr__(self, pinname, value):
         from .Transformer import default_pin
@@ -113,13 +113,7 @@ class PinsWrapper:
             return super().__setattr__(pinname, value)
         hpins = self._get_hpins()
         if value is None:
-            if pinname in hpins:
-                hpins.pop(pinname)
-                parent = self._parent()
-                subpath = (*parent._path, pinname)
-                ctx = parent._get_top_parent()
-                ctx._destroy_path(subpath)
-            return
+            return self.__delattr__(pinname)
         if isinstance(value, PinWrapper):
             pin = value._get_hpin()
             hpins[pinname] = pin
@@ -135,6 +129,15 @@ class PinsWrapper:
 
     def __setitem__(self, pinname, value):
         return setattr(self, pinname, value)
+
+    def __delattr__(self, pinname):
+        hpins = self._get_hpins()
+        if pinname in hpins:
+            hpins.pop(pinname)
+            parent = self._parent()
+            subpath = (*parent._path, pinname)
+            ctx = parent._get_top_parent()
+            ctx._destroy_path(subpath)
 
     def __str__(self):
         return str(self._get_hpins())

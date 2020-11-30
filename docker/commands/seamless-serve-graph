@@ -1,21 +1,18 @@
 #!/bin/bash
-
 set -u -e
+
+# - Current directory is mounted to /cwd, and the command is executed there
 
 ###
 # The following does not currently work (Ubuntu 18.04.3, Docker 19.03.12); not even --privileged works, unless we are root:
 # gdbflags='--cap-add SYS_PTRACE --security-opt=seccomp:unconfined --security-opt=apparmor:unconfined'
 gdbflags='' ###
 
-
 docker run --rm \
   $gdbflags \
   --network=host \
   -v `pwd`:/cwd \
-  -v /tmp:/tmp \
   --workdir /cwd \
-  -it \
   -u `id -u` \
   --group-add users \
-  $* \
-  rpbs/seamless start.sh
+  rpbs/seamless start.sh python3 -u /home/jovyan/seamless-scripts/serve-graph.py $*

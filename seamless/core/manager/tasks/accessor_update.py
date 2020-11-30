@@ -55,6 +55,7 @@ class AccessorUpdateTask(Task):
                             assert inchannel._checksum is None, (sc, cell, path)
                     except:
                         import traceback; traceback.print_exc()
+                        return
         #
         expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()
 
@@ -75,6 +76,11 @@ class AccessorUpdateTask(Task):
             return
         else:
             accessor.exception = None
+            target = accessor.write_accessor.target()
+            if isinstance(target, MacroPath):
+                target = target._cell
+            if isinstance(target, Cell):
+                livegraph.cell_parsing_exceptions[target] = None
         accessor._checksum = expression_result_checksum
 
         # Select the write accessor's target.

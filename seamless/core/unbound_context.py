@@ -138,8 +138,8 @@ class UnboundContext(SeamlessBase):
     _bound = None
     _context = None
     _realmanager = None
-    _root_highlevel_context = None
-    _synth_highlevel_context = None
+    _root_highlevel_context = lambda self: None
+    _synth_highlevel_context = lambda self: None
 
     def __init__(
         self, *,
@@ -219,7 +219,7 @@ class UnboundContext(SeamlessBase):
             if isinstance(child, HighLevelContext):
                 highlevel_context = None
                 if self._root_ is not None:
-                    highlevel_context = self._root_._root_highlevel_context
+                    highlevel_context = self._root_._root_highlevel_context()
                 child._translate(highlevel_context)
         else:
             self._children[childname] = child
@@ -332,7 +332,15 @@ class UnboundContext(SeamlessBase):
                 child._bind_stage1(bound_ctx)
         ctx._auto = self._auto
         self._bound = ctx
-        ctx._synth_highlevel_context = self._synth_highlevel_context
+        try:
+            del ctx._synth_highlevel_context
+        except AttributeError:
+            pass
+        synth_highlevel_context =  self._synth_highlevel_context()
+        if synth_highlevel_context is not None:
+            ctx._synth_highlevel_context = weakref.ref(
+                self._synth_highlevel_context
+            )
 
     def _bind_stage2(self, manager):
         macro = self._macro
@@ -404,7 +412,7 @@ class UnboundContext(SeamlessBase):
         from .context import Context
         from .macro import Path
         pseudo_connections = getattr(self, "_pseudo_connections", None)
-        highlevel_context = self._root_._root_highlevel_context
+        highlevel_context = self._root_._root_highlevel_context()
         set_pseudo_connections(highlevel_context, ctx.path, pseudo_connections)
 
         self._bind_stage1(ctx)

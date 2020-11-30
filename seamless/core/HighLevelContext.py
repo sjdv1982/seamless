@@ -1,4 +1,5 @@
 from .unbound_context import UnboundContext
+import weakref
 
 class HighLevelContext(UnboundContext):
     """Low-level sub-context that is a direct translation of a high-level context graph.
@@ -40,7 +41,7 @@ class HighLevelContext(UnboundContext):
             path,
             runtime=True
         )
-        self._synth_highlevel_context = highlevel_ctx
+        self._synth_highlevel_context = weakref.ref(highlevel_ctx)
 
     def __getitem__(self, attr):
         if not isinstance(attr, str):

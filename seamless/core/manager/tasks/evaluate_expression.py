@@ -132,6 +132,7 @@ class EvaluateExpressionTask(Task):
                     else:
                         fexc = traceback.format_exc()
                         expression.exception = fexc
+                    expression_result_checksum = None
                 except Exception as exc:
                     if isinstance(exc, (CacheMissError, SeamlessConversionError)):
                         expression.exception = str(exc)
@@ -140,6 +141,7 @@ class EvaluateExpressionTask(Task):
                         fexc = traceback.format_exc()
                         expression.exception = fexc
                         ###print(fexc, file=sys.stderr)
+                    expression_result_checksum = None
 
                     """
                     if isinstance(exc, (CacheMissError, SeamlessConversionError)):

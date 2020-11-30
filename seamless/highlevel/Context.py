@@ -582,11 +582,16 @@ class Context(Base):
                 buffer_cache.decref(bytes.fromhex(old_checksum))
 
 
-    def add_zip(self, zip):
+    def add_zip(self, zip, incref=False):
         """Adds entries from "zip" to the checksum-to-buffer cache
 
         "zip" can be a file name, zip-compressed bytes or a Python ZipFile object.
         Normally, it has been generated with Context.save_zip / Context.get_zip
+
+        Note that caching is temporary and entries will be removed after some time
+        if no element (cell, expression, or high-level library) holds their checksum
+        This can be overridden with "incref=True" (not recommended for long-living contexts)
+
         """
         if self._gen_context is None:
             self._do_translate(force=True)
@@ -602,7 +607,7 @@ class Context(Base):
             zipfile = ZipFile(zip, "r")
         else:
             raise TypeError(type(zip))
-        return copying.add_zip(manager, zipfile)
+        return copying.add_zip(manager, zipfile, incref=incref)
 
     def include(self, lib, only_zip=False, full_path=False):
         """Include a library in the graph
@@ -738,7 +743,7 @@ class Context(Base):
                 if self._mount is not None:
                     ub_ctx._mount = self._mount.copy()
                 self._unbound_context = ub_ctx
-                ub_ctx._root_highlevel_context = self
+                ub_ctx._root_highlevel_context = weakref.ref(self)
                 translate(graph, ub_ctx)
                 nodedict = {node["path"]: node for node in graph["nodes"]}
                 nodedict0 = {node["path"]: node for node in graph0["nodes"]}
@@ -748,7 +753,7 @@ class Context(Base):
                     if node0 is not None and node is not node0:
                         node0.pop("UNTRANSLATED", None)
             self._gen_context = ub_ctx._bound
-            self._gen_context._root_highlevel_context = self
+            self._gen_context._root_highlevel_context = weakref.ref(self)
             assert self._gen_context._get_manager() is self._manager
             self._connect_share()
             ok = True
@@ -833,6 +838,9 @@ class Context(Base):
             mimetype = hcell.mimetype
             cell.share(sharepath, readonly, mimetype=mimetype)
 
+    def _rename_path(self, path, newpath):
+        raise NotImplementedError
+
     def _destroy_path(self, path, runtime=False):
         graph = self._graph
         if runtime:
@@ -916,7 +924,7 @@ class Context(Base):
         return self._graph.lib[tuple(path)]
 
     def _remove_connections(self, path, keep_links=False, runtime=False):
-        """Removes all connections starting with path"""
+        """Removes all connections/links with source or target starting with path"""
         lp = len(path)
         def keep_con(con):
             if con["type"] == "link":
@@ -992,10 +1000,16 @@ class Context(Base):
         if self._destroyed:
             return
         self._destroyed = True
+        if self._gen_context is not None:
+            self._gen_context.destroy()
         for lib in self._graph.lib.values():
             checksums = copying.get_checksums(lib["graph"]["nodes"])
             for checksum in checksums:
                 buffer_cache.decref(bytes.fromhex(checksum))
+
+    def __del__(self):
+        self._destroy()
+
 
 
 class SubContext(Base):
@@ -1117,8 +1131,6 @@ class SubContext(Base):
         l = len(self._path)
         subs = [p[l] for p in self._parent()._children if len(p) > l and p[:l] == self._path]
         return sorted(d + list(set(subs)))
-
-
 
 from .Reactor import Reactor
 from .Transformer import Transformer

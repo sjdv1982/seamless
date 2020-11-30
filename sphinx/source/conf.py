@@ -22,7 +22,7 @@ copyright = '2016-2020, Sjoerd de Vries'
 author = 'Sjoerd de Vries'
 
 # The full version, including alpha/beta/rc tags
-release = '0.2'
+release = '0.4'
 
 
 # -- General configuration ---------------------------------------------------

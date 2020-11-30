@@ -137,6 +137,10 @@ class TaskManager:
                 event.custom_result_value = result # hackish
                 event.set()
 
+    def run_all_synctasks(self):
+        while len(self.synctasks):
+            self._run_synctasks()
+
     async def loop_run_synctasks(self):
         while not self._destroyed:
             try:

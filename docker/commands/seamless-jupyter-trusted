@@ -1,8 +1,10 @@
+#!/bin/bash
+
+set -u -e
+
 # - Seamless has access to the Docker daemon, so it can launch its own Docker
 #    containers via the Docker transformer. This works only under Linux.
 #    NOTE: THIS IS A BIG SECURITY HOLE, IT CAN GIVE ROOT ACCESS TO YOUR SYSTEM
-
-[ $(id -u) != 1000 ] && echo 'WARNING: The Seamless container will run as user jovyan (ID 1000), which is not the same as your current user ID '$(id -u)'. When reading/writing fails for /cwd, check that '$(pwd) 'gives enough file permissions.' >> /dev/stderr
 
 # add --ip='0.0.0.0' to allow connections from outside
 
@@ -20,7 +22,8 @@ docker run --rm \
   -v /tmp:/tmp \
   --hostname localhost \
   --workdir /home/jovyan \
-  -u jovyan \
+  -u `id -u` \
+  --group-add users \
   rpbs/seamless start-notebook.sh  \
   --NotebookApp.token='' --NotebookApp.password='' \
   $*

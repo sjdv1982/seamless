@@ -19,10 +19,10 @@ docker run \
   -v ~/.seamless/database:/data \
   -v $seamlessdir:/seamless \
   -e "PYTHONPATH=/seamless" \
-  -u jovyan \
+  -u `id -u` \
+  --group-add users \
   -v /tmp:/tmp \
   -v `pwd`:/cwd \
   --workdir /cwd \
-  seamless-devel \
-  python3 -u /seamless/tools/database.py \
+  seamless-devel start.sh python3 -u /seamless/tools/database.py \
   $database_config

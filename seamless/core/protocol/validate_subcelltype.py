@@ -33,6 +33,7 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename):
         await build_module_async(v)
     else:
         tree = ast.parse(value, filename=codename)
+        # cached_compile(value, codename)   # pointless; syntax error is not caught
 
         if subcelltype in ("reactor", "macro"):
             mode, _ = analyze_code(value, codename)
@@ -43,5 +44,5 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename):
     validation_cache.add(key)
 
 from .get_buffer import get_buffer, CacheMissError
-from ..cached_compile import analyze_code
+from ..cached_compile import analyze_code, cached_compile
 from ..build_module import build_module, build_module_async

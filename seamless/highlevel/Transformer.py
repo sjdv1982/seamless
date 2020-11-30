@@ -64,7 +64,7 @@ class Transformer(Base):
     of all other inputs. Those names and types of those
     values are described as input pins.
 
-    A transformer can be constructed from a Python function.
+    A transformer `ctx.tf` can be constructed from a Python function.
     In that case, the function's source code is extracted and
     set as the code pin's value. The function signature is
     inspected and each parameter becomes an input pin.
@@ -78,8 +78,13 @@ class Transformer(Base):
     a variable named "result".
 
     An input pin `foo` can be set to a value or a cell, simply with
-    `Transformer.foo = ...` . If the pin does not exist, it is created.
+    `ctx.tf.foo = ...` . If the pin does not exist, it is created.
     The type of a pin is "mixed" by default.
+
+    Pins can be changed using Transformer.pins, e.g.
+    `ctx.tf.pins.foo.celltype = "int"`
+
+    To delete a pin `foo`, do `del ctx.tf.pins.foo`
     """
     _temp_code = None
     _temp_pins = None
@@ -196,6 +201,22 @@ class Transformer(Base):
             htf["fingertip_no_recompute"] = True
         else:
             htf.pop("fingertip_no_recompute", None)
+
+    @property
+    def scratch(self):
+        """TODO: document"""
+        htf = self._get_htf()
+        return ("scratch" in htf)
+
+    @scratch.setter
+    def scratch(self, value):
+        if value not in (True, False):
+            raise TypeError(value)
+        htf = self._get_htf()
+        if value == True:
+            htf["scratch"] = True
+        else:
+            htf.pop("scratch", None)
 
     def clear_exception(self):
         tf = self._get_tf(force=True)
@@ -384,14 +405,12 @@ class Transformer(Base):
             return
 
         if attr == "code":
+            if isinstance(value, Resource):
+                value = value.data
             if isinstance(value, Cell):
                 target_path = self._path + (attr,)
                 assert value._parent() is parent
                 assign_connection(parent, value._path, target_path, False)
-                translate = True
-            elif isinstance(value, Resource):
-                tf = self._get_tf(force=True)
-                tf.code.set(value.data)
                 translate = True
             elif isinstance(value, Proxy):
                 raise AttributeError("".join(value._path))
@@ -400,7 +419,18 @@ class Transformer(Base):
                 if callable(value):
                     value, _, _ = parse_function_code(value)
                 check_libinstance_subcontext_binding(parent, self._path)
-                tf.code.set(value)
+                removed = parent._remove_connections(self._path + (attr,))
+                if removed:
+                    htf = self._get_htf()
+                    htf["UNTRANSLATED"] = True
+                    if "TEMP" not in htf or htf["TEMP"] is None:
+                        htf["TEMP"] = {}
+                    htf["TEMP"]["code"] = value
+                    if "checksum" in htf:
+                        htf["checksum"].pop("code", None)
+                    translate = True
+                else:
+                    tf.code.set(value)
         elif attr == htf["INPUT"]:
             target_path = self._path
             if isinstance(value, Cell):
@@ -542,7 +572,7 @@ class Transformer(Base):
         """
         htf = self._get_htf()
         if htf.get("UNTRANSLATED"):
-            return None
+            return "This transformer is untranslated; run 'ctx.translate()' or 'await ctx.translation()'"
         tf = self._get_tf(force=True).tf
         if htf["compiled"]:
             attrs = (
@@ -604,7 +634,7 @@ class Transformer(Base):
 
         htf = self._get_htf()
         if htf.get("UNTRANSLATED"):
-            return None
+            return "Status: error (ctx needs translation)"
         tf = self._get_tf(force=True).tf
         if htf["compiled"]:
             attrs = (
@@ -651,6 +681,7 @@ class Transformer(Base):
             return super().__getattribute__(attr)
         htf = self._get_htf()
         dirs = None
+        deleter = None
         pull_source = functools.partial(self._pull_source, attr)
         if attr in htf["pins"]:
             getter = functools.partial(self._valuegetter, attr)
@@ -660,6 +691,7 @@ class Transformer(Base):
             return PinsWrapper(self)
         elif attr == "code":
             getter = self._codegetter
+            deleter = self._code_deleter
             dirs = ["value", "mount", "mimetype", "celltype"]
             proxycls = CodeProxy
         elif attr == htf["INPUT"]:
@@ -673,7 +705,8 @@ class Transformer(Base):
             return Proxy(
               self, (attr,), "w",
               pull_source=None, getter=getter, dirs=dirs,
-              setter=setter
+              setter=setter,
+              deleter=deleter
             )
         elif attr == htf["RESULT"]:
             getter = self._resultgetter
@@ -704,7 +737,7 @@ class Transformer(Base):
           persistent=persistent
         )
 
-    def _sub_mount(self, attr, path=None, mode="rw", authority="cell", persistent=True):
+    def _sub_mount(self, attr, path=None, mode="rw", authority="file", persistent=True):
         htf = self._get_htf()
         if attr == "header":
             assert htf["compiled"]
@@ -715,6 +748,7 @@ class Transformer(Base):
                     mount.pop(attr)
                     if not len(mount):
                         htf.pop("mount")
+                    self._parent()._translate()
             return
         mount = {
             "path": path,
@@ -746,13 +780,31 @@ class Transformer(Base):
         else:
             raise AttributeError(attr)
 
+    def _code_deleter(self, attr):
+        if attr == "mount":
+            htf = self._get_htf()
+            if "mount" in htf:
+                mount = htf["mount"]
+                if "code" in mount:
+                    mount.pop("code")
+                    if not len(mount):
+                        htf.pop("mount")
+                    self._parent()._translate()
+        else:
+            raise AttributeError(attr)
+
     def _inputgetter(self, attr):
         htf = self._get_htf()
         if attr in htf["pins"]:
             return getattr(self, attr)
-        tf = self._get_tf(force=True)
-        inputcell = getattr(tf, htf["INPUT"])
+        if attr not in ("value", "status", "exception"):
+            tf = self._get_tf(force=True)
+            inputcell = getattr(tf, htf["INPUT"])
         if attr == "value":
+            if htf.get("UNTRANSLATED"):
+                return None
+            tf = self._get_tf(force=True)
+            inputcell = getattr(tf, htf["INPUT"])
             return inputcell.value
         elif attr == "data":
             return inputcell.data
@@ -770,8 +822,16 @@ class Transformer(Base):
         elif attr == "example":
             return self.example
         elif attr == "status":
+            if htf.get("UNTRANSLATED"):
+                return "This transformer is untranslated; run 'ctx.translate()' or 'await ctx.translation()'"
+            tf = self._get_tf(force=True)
+            inputcell = getattr(tf, htf["INPUT"])
             return inputcell._data.status # TODO; take into account validation, inchannel status
         elif attr == "exception":
+            if htf.get("UNTRANSLATED"):
+                return "Status: error (ctx needs translation)"
+            tf = self._get_tf(force=True)
+            inputcell = getattr(tf, htf["INPUT"])
             return inputcell.exception
         elif attr == "add_validator":
             handle = inputcell.handle_no_inference
@@ -808,6 +868,8 @@ class Transformer(Base):
 
     def _resultgetter(self, attr):
         htf = self._get_htf()
+        if htf.get("UNTRANSLATED"):
+            return None
         tf = self._get_tf(force=True)
         resultcell = getattr(tf, htf["RESULT"])
         if attr == "mount":
@@ -855,8 +917,15 @@ class Transformer(Base):
             node["mount"] = htf["mount"].pop("code")
         if isinstance(other, Cell):
             target_path = self._path + (attr,)
+            try:
+                value = getattr(self, attr).value
+            except:
+                value = None
             assign_connection(parent, other._path, target_path, False)
             set_mount(other._get_hcell2())
+            if value is not None:
+                other.set(value)
+            htf["UNTRANSLATED"] = True
             parent._translate()
             return
         assert isinstance(other, Proxy)
@@ -906,6 +975,7 @@ class Transformer(Base):
 
         target_path = self._path + (attr,)
         assign_connection(parent, other._path, target_path, False)
+        htf["UNTRANSLATED"] = True
         parent._translate()
 
     def _observe_input(self, checksum):

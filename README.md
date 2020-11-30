@@ -1,11 +1,11 @@
 Seamless: a cell-based reactive programming framework
 =====================================================
 
-Seamless is a framework to set up protocols (workflows) and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations, and all cells can be edited interactively. 
+Seamless is a framework to set up protocols (workflows) and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations, and all cells can be edited interactively.
 
-The main application domains are scientific computing, scientific web services, data visualization, and interactive development of algorithms. 
+The main application domains are scientific computing, scientific web services, data visualization, and interactive development of algorithms.
 
-Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible. Unlike other workflow systems, Seamless graphs are self-contained and do not depend on the content of external files, URLs, identifiers, version numbers, or other kinds of metadata. 
+Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible. Unlike other workflow systems, Seamless graphs are self-contained and do not depend on the content of external files, URLs, identifiers, version numbers, or other kinds of metadata.
 
 ### Documentation: <http://sjdv1982.github.io/seamless>
 
@@ -13,7 +13,7 @@ Protocols, computations and results are all represented as directed acyclic grap
 Installation
 ============
 
-Seamless is meant to run from inside a Docker container. 
+Seamless is meant to run from inside a Docker container.
 
 First, you must [install Docker](https://docs.docker.com/get-docker/)
 and [(mini)conda](https://docs.conda.io/en/latest/miniconda.html).
@@ -65,7 +65,7 @@ ctx.c.value
 ```Out[1]: <Silk: 30 >```
 
 ```python
-ctx.a += 5 
+ctx.a += 5
 await ctx.computation()
 ctx.c.value
 ```
@@ -75,7 +75,7 @@ ctx.c.value
 #### 3. Define schemas and validation rules
 ```python
 ctx.add.example.a = 0.0  # declares that add.a must be a number
-ctx.add.example.b = 0.0  
+ctx.add.example.b = 0.0
 
 def validate(self):
     assert self.a < self.b
@@ -89,11 +89,11 @@ print(ctx.add.exception)
 
 #### 4. Create an API for a Seamless cell
 ```python
-def report(self): 
-    value = self.unsilk 
-    if value is None: 
-        print("Sorry, there is no result") 
-    else: 
+def report(self):
+    value = self.unsilk
+    if value is None:
+        print("Sorry, there is no result")
+    else:
         print("The result is: {}".format(value))
 
 ctx.c.example.report = report
@@ -102,7 +102,32 @@ ctx.c.value.report()
 ```
 ```Out[3]: The result is 35```
 
-#### 5. Control cells from Jupyter
+#### 5. Mount cells to the file system
+```python
+ctx.a.celltype = "plain"
+ctx.a.mount("/tmp/a.txt")
+ctx.b.celltype = "plain"
+ctx.b.mount("/tmp/b.txt")
+ctx.c.celltype = "plain"
+ctx.c.mount("/tmp/c.txt", mode="w")
+ctx.add.code.mount("/tmp/code.py")
+await ctx.translation()
+```
+
+#### 6. Share a cell over HTTP
+
+``` python
+ctx.c.mimetype = "text"
+ctx.c.share()
+await ctx.translation()
+```
+```bash
+>>> curl http://localhost:5813/ctx/c
+35
+```
+
+
+#### 7. Control cells from Jupyter
 ```python
 from ipywidgets import IntSlider, IntText
 
@@ -306,29 +331,6 @@ display(c)
 </script>
 </details>
 
-#### 6. Mount cells to the file system
-```python
-ctx.a.celltype = "plain"
-ctx.a.mount("/tmp/a.txt")
-ctx.b.celltype = "plain"
-ctx.b.mount("/tmp/b.txt")
-ctx.c.celltype = "plain"
-ctx.c.mount("/tmp/c.txt", mode="w")
-ctx.add.code.mount("/tmp/code.py")
-await ctx.translation()
-```
-
-#### 7. Share a cell over HTTP
-
-``` python
-ctx.c.mimetype = "text"
-ctx.c.share()
-await ctx.translation()
-```
-```bash
->>> curl http://localhost:5813/ctx/c
-35
-```
 
 #### 8. Save the entire state of the context
 ```python
@@ -342,7 +344,7 @@ ctx.save_zip("basic-example.zip")
 ```python
 from seamless.highlevel import load_graph
 ctx = load_graph(
-    "basic-example.seamless", 
+    "basic-example.seamless",
     zip="basic-example.zip"
 )
 await ctx.computation()
@@ -360,9 +362,9 @@ ctx.add.code.value
 
 
 ## Additional features
-- Transformers can be written in Python, IPython, bash, or any compiled language (C, C++, ...). 
-- Bash transformers can be executed inside Docker images. 
-- IPython transformers can use IPython magics, allowing the use of languages such as Cython (tested), Matlab/Octave (untested), Julia (untested), or R (untested). 
+- Transformers can be written in Python, IPython, bash, or any compiled language (C, C++, ...).
+- Bash transformers can be executed inside Docker images.
+- IPython transformers can use IPython magics, allowing the use of languages such as Cython (tested), Matlab/Octave (untested), Julia (untested), or R (untested).
 - The use of Redis as a checksum-to-buffer cache
 - Seamless instances can communicate, serving as job slaves or result caches for transformations.
 - Interactive monitoring of status and exception messages.

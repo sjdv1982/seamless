@@ -41,8 +41,9 @@ class BufferCache:
     """
 
 
+    SMALL_BUFFER_LIMIT = 100000
     LIFETIME_TEMP = 20.0 # buffer_cache keeps unreferenced/non-persistent buffer values alive for 20 secs
-    LIFETIME_TEMP_SMALL = 3600.0 # buffer_cache keeps unreferenced/non-persistent small buffer values (< 10 000 bytes) alive for an hour
+    LIFETIME_TEMP_SMALL = 3600.0 # buffer_cache keeps unreferenced/non-persistent small buffer values (< SMALL_BUFFER_LIMIT bytes) alive for an hour
     LOCAL_MODE_FULL_PERSISTENCE = True # If true, all non-authoritative buffers are persistent in local mode, i.e. when there is no database.
                                        # Else, only authoritative buffers are persistent.
                                        # Unreferenced buffers are never persistent.
@@ -72,7 +73,7 @@ class BufferCache:
             return
         t = time.time()
         l = self.buffer_length.get(checksum, 999999999)
-        lifetime = self.LIFETIME_TEMP_SMALL if l < 10000 else self.LIFETIME_TEMP
+        lifetime = self.LIFETIME_TEMP_SMALL if l < self.SMALL_BUFFER_LIMIT else self.LIFETIME_TEMP
         last_time = self.last_time[checksum]
         curr_lifetime = t - last_time
         if curr_lifetime < lifetime:
@@ -94,7 +95,7 @@ class BufferCache:
             buffer_length = 9999999
         if checksum not in self.last_time:
             func = functools.partial(self._check_delete_buffer, checksum)
-            delay = self.LIFETIME_TEMP_SMALL if buffer_length < 10000 else self.LIFETIME_TEMP
+            delay = self.LIFETIME_TEMP_SMALL if buffer_length < self.SMALL_BUFFER_LIMIT else self.LIFETIME_TEMP
             temprefmanager.add_ref(func, delay, on_shutdown=False)
         self.last_time[checksum] = t
 

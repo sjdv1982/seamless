@@ -167,7 +167,10 @@ class DatabaseCache(DatabaseBase):
         }
         response = self.send_request(request)
         if response is not None:
-            return response.content
+            result = response.content
+            verify_checksum = get_hash(result)
+            assert checksum == verify_checksum, "Database corruption!!! Checksum {}".format(checksum.hex())
+            return result
 
     def get_buffer_length(self, checksum):
         request = {
@@ -192,3 +195,4 @@ database_sink = DatabaseSink()
 database_cache = DatabaseCache()
 
 from ...mixed.io.serialization import serialize
+from ...get_hash import get_hash

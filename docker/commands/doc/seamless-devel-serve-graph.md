@@ -1,4 +1,4 @@
-% seamless-devel-serve-graph(1) Version 0.2 | seamless-cli Documentation
+% seamless-devel-serve-graph(1) Version 0.1 | seamless-cli Documentation
 
 NAME
 ====
@@ -8,7 +8,7 @@ NAME
 SYNOPSIS
 ========
 
-| **seamless-devel-serve-graph** \[_command_] 
+| **seamless-devel-serve-graph** \[_command_]
 | **seamless-devel-serve-graph** \[**-h**|**--help**|
 
 DESCRIPTION
@@ -49,4 +49,4 @@ Sjoerd de Vries <sjdv1982@gmail.com>
 SEE ALSO
 ========
 
-**seamless-devel(1)**, **seamless-devel-serve-graph-interactive(1)**, 
+**seamless-devel(1)**, **seamless-devel-serve-graph-interactive(1)**,

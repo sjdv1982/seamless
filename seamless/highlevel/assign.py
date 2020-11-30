@@ -34,6 +34,13 @@ from .Link import Link
 from .compiled import CompiledObjectDict, CompiledObjectWrapper
 from .SchemaWrapper import SchemaWrapper
 
+def _remove_independent_mountshares(hcell):
+    if "mount" in hcell:
+        if "r" in hcell["mount"]["mode"]:
+            hcell.pop("mount")
+    if "share" in hcell:
+        if hcell["share"]["readonly"]:
+            hcell.pop("mount")
 
 def under_libinstance_control(nodedict, path):
     lp = len(path)
@@ -344,6 +351,7 @@ def assign_to_subcell(cell, path, value):
     ctx = cell._parent()
     if isinstance(value, Cell):
         assert value._parent() is ctx #no connections between different (toplevel) contexts
+        _remove_independent_mountshares(hcell)
         assign_connection(ctx, value._path, cell._path + path, False)
         ctx._translate()
     elif isinstance(value, ConstantTypes):
@@ -398,6 +406,12 @@ def assign(ctx, path, value):
             ctx._graph.nodes[path] = cellnode
         else:
             assert value._get_top_parent() is ctx, value
+            try:
+                target = get_path(ctx, path, namespace = None, is_target=True)
+            except AttributeError:
+                target = None
+            if isinstance(target, Cell):
+                _remove_independent_mountshares(target._get_hcell())
             assign_connection(ctx, value._path, path, True)
         ctx._translate()
     elif isinstance(value, (Resource, ConstantTypes)):
@@ -451,3 +465,5 @@ def assign(ctx, path, value):
         raise TypeError("Cannot assign directly to an entire module object; assign to individual elements")
     else:
         raise TypeError(str(value), type(value))
+
+from ..midlevel.util import get_path

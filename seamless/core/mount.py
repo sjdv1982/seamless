@@ -95,8 +95,10 @@ class MountItem:
         assert authority in ("cell", "file", "file-strict"), authority
         if authority == "file-strict":
             assert persistent
-        elif authority in ("file", "file-strict"):
             assert "r" in self.mode, (authority, mode)
+        elif authority == "file":
+            if "r" not in self.mode:
+                authority = "cell"
         self.authority = authority
         self.kwargs = kwargs
         self.last_checksum = None
@@ -302,7 +304,8 @@ class MountItem:
         if mtime is None:
             stat = os.stat(self.path)
             mtime = stat.st_mtime
-        self.last_mtime = mtime
+        if self.last_mtime is None or mtime > self.last_mtime:
+            self.last_mtime = mtime
 
     def conditional_read(self):
         if not self._initialized:
@@ -320,7 +323,8 @@ class MountItem:
             stat = os.stat(self.path)
             mtime = stat.st_mtime
             file_checksum = None
-            if self.last_mtime is None or mtime > self.last_mtime:
+            last_mtime = self.last_mtime
+            if last_mtime is None or mtime > last_mtime:
                 file_buffer0 = self._read()
                 file_buffer = adjust_buffer(file_buffer0, cell._celltype)
                 file_checksum = calculate_checksum(file_buffer)
@@ -414,7 +418,7 @@ class MountManager:
         self.lock = RLock()
         self.cell_updates = deque()
         self._tick = Event()
-        self.paths = {}
+        self.paths = WeakKeyDictionary()
         self.cached_checksums = {} # key: file path; value: (deletion time, checksum)
         self.garbage = {} # non-persistent mounts to delete. key = path, value = (deletion time, is_link)
         self.garbage_dirs = {} # non-persistent directories to delete. key = path, value = (deletion time, persistent).
@@ -455,9 +459,10 @@ class MountManager:
             return
         mount_item = self.mounts.pop(cell_or_unilink)
         if not mount_item._destroyed:
-            paths = self.paths[root]
-            path = cell_or_unilink._mount["path"]
-            paths.discard(path)
+            if root in self.paths:
+                paths = self.paths[root]
+                path = cell_or_unilink._mount["path"]
+                paths.discard(path)
             mount_item.destroy()
 
     @lockmethod

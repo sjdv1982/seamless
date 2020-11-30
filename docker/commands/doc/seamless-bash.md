@@ -1,4 +1,4 @@
-% seamless-bash(1) Version 0.2 | seamless-cli Documentation
+% seamless-bash(1) Version 0.1 | seamless-cli Documentation
 
 NAME
 ====
