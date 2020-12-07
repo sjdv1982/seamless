@@ -15,6 +15,7 @@ context.py
 context2.py
 scratch.py
 simpler-tf-print.py
+function_like_error.py
 simplest.py
 simple-missing.py
 simpler-listpin.py

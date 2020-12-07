@@ -1,6 +1,6 @@
 import linecache
 import functools
-from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda
+from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda, stmt as Statement
 
 @functools.lru_cache(maxsize=1000)
 def cached_compile(code, identifier, mode="exec", flags=None, \
@@ -53,8 +53,31 @@ def exec_code(code, identifier, namespace, inputs, output):
         code2 += "%s = LAMBDA(%s)" % (output, input_params)
     elif mode == "expression":
         assert output is not None
-        code2 = "%s = " % output + code 
+        code2 = "%s = " % output + code
     code_obj = cached_compile(code2, identifier)
     exec(code_obj, namespace)
-    
-    
+
+def check_function_like(code, identifier):
+    """Check if code exists of one function and some statements
+    If so, a different error message is appropriate in a transformer
+     if the code does not specify 'result'.
+
+    If the code is function-like, returns:a tuple:
+     (the name of the single function, the number of other statements)
+    Returns False otherwise
+    """
+    astree = cached_compile(code, identifier, "exec", PyCF_ONLY_AST)
+    if len(astree.body) == 1:
+        return False
+    function_name = None
+    nstatements = 0
+    for statement in astree.body:
+        if isinstance(statement, FunctionDef):
+            if function_name is not None:
+                return False  # more than 1 function
+            function_name = statement.name
+        elif isinstance(statement, Statement):
+            nstatements += 1
+    if function_name is None:
+        return False
+    return function_name, nstatements

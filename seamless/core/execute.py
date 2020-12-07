@@ -17,7 +17,7 @@ import wurlitzer
 
 # TODO: decide when to kill an execution job!
 
-from .cached_compile import exec_code
+from .cached_compile import exec_code, check_function_like
 from .protocol.serialize import _serialize as serialize
 
 DIRECT_PRINT = False
@@ -123,7 +123,22 @@ def _execute(name, code,
                     result_buffer = serialize(result, celltype)
                     return (0, result_buffer)
                 except KeyError:
-                    return (1, "Output variable name '%s' undefined" % output_name)
+                    function_like = check_function_like(code, identifier)
+                    if function_like:
+                        f, d = function_like
+                        input_params = ",".join(["{0}={0}".format(inp) for inp in sorted(list(inputs))])
+                        msg = """The transformer code contains a single function "{f}" and {d} other statement(s).
+Did you mean to:
+1. Define the transformer code as a pure function "{f}"?
+   In that case, you must put the other statements within "def {f}(...):  ".
+or
+2. Define the transformer code as a code block?
+   In that case, you must define the output variable "{output_name}", e.g. add a statement
+   "{output_name} = {f}({input_params})" at the end
+                        """.format(f=f,d=d, output_name=output_name, input_params=input_params)
+                    else:
+                        msg = "Output variable name '%s' undefined" % output_name
+                    return (1, msg)
 
 class FakeStdStream:
     def __init__(self, real):
