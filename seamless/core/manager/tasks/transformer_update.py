@@ -29,6 +29,8 @@ class TransformerUpdateTask(Task):
     async def _run(self):
         transformer = self.transformer
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         livegraph = manager.livegraph
         taskmanager = manager.taskmanager
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
@@ -97,11 +99,13 @@ class TransformerResultUpdateTask(Task):
         self._dependencies.append(transformer)
 
     async def _run(self):
+        manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         transformer = self.transformer
         if transformer._void:
             print("WARNING: transformer %s is void, shouldn't happen during transformer update" % transformer)
             return
-        manager = self.manager()
         livegraph = manager.livegraph
         downstreams = livegraph.transformer_to_downstream[transformer]
         checksum = transformer._checksum

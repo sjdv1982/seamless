@@ -30,6 +30,8 @@ class CellUpdateTask(Task):
             print("WARNING: cell %s is void, shouldn't happen during cell update" % cell)
             return
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         taskmanager = manager.taskmanager
         cell = self.cell
 

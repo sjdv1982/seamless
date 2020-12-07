@@ -23,6 +23,8 @@ class AccessorUpdateTask(Task):
 
     async def _run(self):
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         taskmanager = manager.taskmanager
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
 

@@ -30,6 +30,8 @@ class ReactorUpdateTask(Task):
     async def _run(self):
         reactor = self.reactor
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         livegraph = manager.livegraph
         rtreactor = livegraph.rtreactors[reactor]
         taskmanager = manager.taskmanager
@@ -176,6 +178,8 @@ class ReactorResultTask(Task):
             print("WARNING: reactor %s is void, shouldn't happen during reactor result task" % reactor)
             return
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         livegraph = manager.livegraph
         accessors = livegraph.reactor_to_downstream[reactor][self.pinname]
         celltype, subcelltype = self.celltype, self.subcelltype

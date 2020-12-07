@@ -15,6 +15,8 @@ class SetCellBufferTask(Task):
     async def _run(self):
         from . import DeserializeBufferTask, CalculateChecksumTask, CellUpdateTask
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         taskmanager = manager.taskmanager
         livegraph = manager.livegraph
         cell = self.cell

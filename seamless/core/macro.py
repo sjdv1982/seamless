@@ -167,7 +167,7 @@ class Macro(Worker):
                 ctx = Context(toplevel=False)
                 ctx._macro = self
                 ctx._macro_root = self._root()
-                ctx._manager = weakref.ref(self._get_manager())
+                ctx._manager = self._get_manager()
                 unbound_ctx._bind(ctx)
                 self._gen_context = ctx
                 ok = True

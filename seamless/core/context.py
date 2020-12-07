@@ -77,7 +77,7 @@ name: str
             if manager is None:
                 manager = Manager()
             manager.add_context(self)
-            self._manager = weakref.ref(manager)
+            self._manager = manager
         if mount is not None:
             mount_params = {
                 "path": mount,
@@ -113,7 +113,7 @@ name: str
         manager = self._manager
         if manager is None:
             return None
-        return manager()
+        return manager
 
     def __str__(self):
         p = self._format_path()

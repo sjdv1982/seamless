@@ -13,6 +13,8 @@ class CalculateChecksumTask(BackgroundTask):
 
     async def _run(self):
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         result = await calculate_checksum(self.buffer)
         return result
 

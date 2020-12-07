@@ -17,6 +17,8 @@ class StructuredCellTask(Task):
     async def await_sc_tasks(self, auth, _iter=0):
         sc = self.structured_cell
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         taskmanager = manager.taskmanager
         tasks = []
         for task in taskmanager.tasks:
@@ -52,6 +54,8 @@ class StructuredCellTask(Task):
 class StructuredCellAuthTask(StructuredCellTask):
     async def _run(self):
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         sc = self.structured_cell
         await self.await_sc_tasks(auth=True)
 
@@ -126,6 +130,8 @@ class StructuredCellJoinTask(StructuredCellTask):
                     return
 
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
 
         locknr = await acquire_evaluation_lock(self)
 

@@ -13,6 +13,8 @@ class SetCellValueTask(Task):
     async def _run(self):
         from . import SerializeToBufferTask, CalculateChecksumTask, CellUpdateTask
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         taskmanager = manager.taskmanager
         livegraph = manager.livegraph
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())

@@ -53,6 +53,7 @@ def run_in_mainthread(func):
 class Manager:
     _destroyed = False
     _active = True
+    _highlevel_refs = 0
     def __init__(self):
         global is_dummy_mount
         from .livegraph import LiveGraph
@@ -95,6 +96,8 @@ class Manager:
     def remove_context(self, ctx):
         assert ctx._toplevel
         self.contexts.discard(ctx)
+        if not len(self.contexts) and self._highlevel_refs < 1:
+            self.destroy()
 
     ##########################################################################
     # API section I: Registration (divide among subsystems)
@@ -725,6 +728,10 @@ If origin_task is provided, that task is not cancelled."""
         self.taskmanager.check_destroyed()
         self.taskmanager.destroy()
         self.shareserver.destroy_manager(self)
+        if not from_del:
+            from ..macro_mode import _toplevel_managers, _toplevel_managers_temp
+            _toplevel_managers.discard(self)
+            _toplevel_managers_temp.discard(self)
 
     def __del__(self):
         self.destroy(from_del=True)

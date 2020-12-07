@@ -190,6 +190,8 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
 
     async def _run(self):
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         taskmanager = manager.taskmanager
 
         source = self.source
@@ -307,6 +309,8 @@ class UponBiLinkTask(UponConnectionTask):
 
     async def _run(self):
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         taskmanager = manager.taskmanager
 
         source = self.source

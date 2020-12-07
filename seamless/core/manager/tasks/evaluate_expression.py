@@ -27,6 +27,8 @@ class EvaluateExpressionTask(Task):
             return None
 
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         cachemanager = self.manager().cachemanager
 
         """

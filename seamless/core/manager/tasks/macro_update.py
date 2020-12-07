@@ -33,6 +33,8 @@ class MacroUpdateTask(Task):
             await asyncio.sleep(0.01)
         macro = self.macro
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         livegraph = manager.livegraph
         taskmanager = manager.taskmanager
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
