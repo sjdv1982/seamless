@@ -30,53 +30,45 @@ See tests/highlevel/python-debugger.py for notes on debugging Python transformer
 it will also print out the pid and pause it until it receives SIGUSR1.
 gdb attach + signal SIGUSR1 will work, except that:
 - Visual Studio Code does not work with gdb in this manner (communication goes wrong)
-- In Ubuntu, you need to be sudo gdb to attach. This prevents gdbgui from working.
-Once you disable the sudo requirement in Ubuntu, gdbgui works fine.
-The seamless-cli Docker commands now contain optons
+- In Ubuntu, you need to be sudo gdb to attach.
 
-3) It is extremely annoying that all debuggers use breakpoints based on file names.
-When debugging, you will have to tell the debugger where to find your source files.
-This is not as easy to spoof for compiled code as it is for Python.
-For debugging, the file name is always that of the file name on disk during compilation.
-But you *can* set the file *path* with gcc option: -fdebug-prefix-map=old=new
-The original file path will be something like /tmp/<path of your transformer>
-Alternatively, you can set the directory search path in gdb to find the source.
-The code in Transformer.code will always be called "main" (main.c, main.cpp, ...).
-The code in the binary module will have the name of the object.
+UPDATE: VS code now works for C/C++.
+Best approach:
+- expose .vscode/launch.json to the Seamless Docker container: TODO let Seamless look for it in /cwd/.vscode/launch.json .c
+- TODO: Let Seamless synthesize an entry to launch.json, as follows:
+        container ID: c121bde3bd57 (is now exposed as /home/jovyan/DOCKER_CONTAINER)
+        transformer process ID: 1114
+        build dir: /tmp/seamless-extensions/seamless_module_01ec725d4bf65b54f6c807f8380e88f71713f9abd6d3579eb69593dc15ccde83
+        name of main.cpp as mounted: /tmp/code.cpp (need mount mapping; supported are either /tmp or /cwd (translated using $HOSTCWD))
 
-4) For compiled transformers, inline functions give trouble in debugging mode.
-At least on my desktop machine, it refuses to link (missing symbols).
-On my laptop, it simply segfaults. Could be a bug in distutils/cffi.
-TODO: verify that this is still the case...
-
-
-TODO?:
-  - Set virtual filenames for (non-compiled) transformers. See tests/highlevel/python-debugging.py
-    Maybe integrate with gdbgui
-
-UPDATE: gdbgui works properly (see guide)
-
-UPDATE: ptvsd / VSCode works properly, if 'Seamless transformer: .tf.tf' is soft-linked to the mounted file.
-Use "Python: Remote attach" in the debug icon.
-
-ptvsd must be installed in the Docker image.
-
-The following code needs to be run somewhere:
-
-```python
-import ptvsd
-try:
-    ptvsd.enable_attach()
-    ok = True
-except OSError:
-    ok = False
-if not ok:
-    import time
-    time.sleep(2)
-    ptvsd.enable_attach()
-ptvsd.wait_for_attach()
-```
-
-The mounted file is opened a second time, in read-only mode, which is annoying.
-I hope it will be better when the proper filename is set. Need tf.code-to-mount notification during translation!
-For modules, there should be a .mount for individual filenames, resulting to a similar module-to-mount notification.
+        {
+            "name": "ctx.tf: debug Seamless C/C++ transformer",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "/opt/conda/bin/python",
+            "processId": "1114",
+            "pipeTransport": {
+                "debuggerPath": "/usr/bin/gdb",
+                "pipeProgram": "docker",
+                "pipeArgs": ["exec", "-u", "root", "--privileged", "-i", "c121bde3bd57", "sh", "-c"],
+                "pipeCwd": ""
+            },
+            "sourceFileMap": {
+                "/tmp/seamless-extensions/seamless_module_01ec725d4bf65b54f6c807f8380e88f71713f9abd6d3579eb69593dc15ccde83/main.cpp":"/tmp/code.cpp"
+            },
+            //NOT WORKING: "skipFiles": ["/build/glibc-S7xCS9/glibc-2.27/sysdeps/unix/sysv/linux/select.c"],
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+            ]
+        },
+- In VSCode, launch the ctx.tf debugger in the debugger icon menu.
+  Then, press F6, and press Esc to ignore the "Cannot find select.c" error message
+  then press Ctrl+Shift+Y, and type "-exec break".
+  Make sure that you have some breakpoint set by now.
+  Then, type "-exec signal SIGUSR1" and press Esc to ignore the "Cannot find select.c" error message
+  Finally, press F5
