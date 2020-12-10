@@ -1,0 +1,176 @@
+{
+  "connections": [
+    {
+      "source": [
+        "a"
+      ],
+      "target": [
+        "tf",
+        "a"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "b"
+      ],
+      "target": [
+        "tf",
+        "b"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "tf"
+      ],
+      "target": [
+        "c"
+      ],
+      "type": "connection"
+    }
+  ],
+  "lib": [],
+  "nodes": [
+    {
+      "celltype": "int",
+      "checksum": {
+        "value": "6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd"
+      },
+      "datatype": "mixed",
+      "path": [
+        "a"
+      ],
+      "share": {
+        "path": null,
+        "readonly": false
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "int",
+      "checksum": {
+        "value": "8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad"
+      },
+      "datatype": "mixed",
+      "path": [
+        "b"
+      ],
+      "share": {
+        "path": null,
+        "readonly": false
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "int",
+      "checksum": {
+        "value": "c2f4cccc4cff9eae7dd14ac75a6a01d23338c2007d38fdb4d6fd127a15c773a6"
+      },
+      "datatype": "mixed",
+      "path": [
+        "c"
+      ],
+      "share": {
+        "path": null,
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "ae60ed1858c1908e22d332e28e50f7894f93b6dc2973648009044e4f9bd47fda"
+      },
+      "datatype": "mixed",
+      "file_extension": "html",
+      "mimetype": "text/html",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "index.html",
+        "persistent": true
+      },
+      "path": [
+        "html"
+      ],
+      "share": {
+        "path": "index.html",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "b571e349fc62c176cef468bd0d4c1c24cf0a024034fc20229ad62b1ed1cab58d"
+      },
+      "datatype": "mixed",
+      "file_extension": "js",
+      "mimetype": "application/javascript",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "index.js",
+        "persistent": true
+      },
+      "path": [
+        "js"
+      ],
+      "share": {
+        "path": "index.js",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "f0abdac1afdb6b57312984a526441c769d257a88fbc91ef53b0b66ab9ff79bd4"
+      },
+      "datatype": "mixed",
+      "file_extension": "js",
+      "mimetype": "application/javascript",
+      "path": [
+        "seamless_js"
+      ],
+      "share": {
+        "path": "seamless-client.js",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "b232ccbf0d25f1580bee1a9920977c5d475dcd7327b8b035c05130032b49b25b",
+        "input": "3ff12f5511ce8b2bb39a39ca0451d46a1ab8dda323bdf339771f8d0c9e63a6f7",
+        "input_buffer": "3ff12f5511ce8b2bb39a39ca0451d46a1ab8dda323bdf339771f8d0c9e63a6f7",
+        "result": "c2f4cccc4cff9eae7dd14ac75a6a01d23338c2007d38fdb4d6fd127a15c773a6"
+      },
+      "compiled": false,
+      "debug": false,
+      "hash_pattern": {
+        "*": "#"
+      },
+      "language": "python",
+      "path": [
+        "tf"
+      ],
+      "pins": {
+        "a": {
+          "celltype": "mixed"
+        },
+        "b": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}
