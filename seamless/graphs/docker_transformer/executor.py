@@ -119,6 +119,21 @@ try:
             )
             if _to_exit:
                 raise SystemExit() from None
+        except ConnectionError as exc:
+            msg = "Unknown connection error"
+            if len(exc.args) == 1:
+                exc2 = exc.args[0]
+                if isinstance(exc2, ProtocolError):
+                    if len(exc2.args) == 2:
+                        a, exc3 = exc2.args
+                        msg = "Docker gave an error: {}: {}".format(a, exc3)
+                        if a.startswith("Connection aborted"):
+                            if isinstance(exc3, FileNotFoundError):
+                                if len(exc3.args) == 2:
+                                    a1, a2 = exc3.args
+                                    if a1 == 2 or a2 == "No such file or directory":
+                                        msg = "Cannot connect to Docker; did you expose the Docker socket to Seamless?"
+            raise SeamlessTransformationError(msg) from None
         finally:
             _creating_container = False
         try:
