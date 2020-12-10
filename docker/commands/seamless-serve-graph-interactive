@@ -8,7 +8,7 @@ set -u -e
 # gdbflags='--cap-add SYS_PTRACE --security-opt=seccomp:unconfined --security-opt=apparmor:unconfined'
 gdbflags='' ###
 
-docker run --rm \
+docker run --rm -it \
   $gdbflags \
   --network=host \
   -v `pwd`:/cwd \

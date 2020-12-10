@@ -3,19 +3,21 @@
 NAME
 ====
 
-**seamless-bash** - Starts a bash shell in a new Seamless Docker container
+**seamless-bash-trusted** - Starts a bash shell in a new Seamless Docker container
 
 SYNOPSIS
 ========
 
-| **seamless-bash**
+| **seamless-bash-trusted**
 
 DESCRIPTION
 ===========
 
-Starts a bash shell in a new Seamless Docker container
+Starts a bash shell in a new Seamless Docker container.
 
 **Uses the host network for the Docker container. Will only work under Linux.**
+
+**NOTE: THIS VERSION GIVES THE CONTAINER ACCESS TO THE DOCKER DAEMON. THIS IS A BIG SECURITY HOLE, IT CAN GIVE ROOT ACCESS TO YOUR SYSTEM**
 
 The ID of the Docker container is available to the Docker container itself,
  in the file ~/DOCKER_CONTAINER.

@@ -2,25 +2,27 @@
 
 set -u -e
 
+# Version of the seamless command that creates an interactive bash shell inside the seamless-devel image
+
+seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
+HOSTCWD=`pwd`
+
 ###
 # The following does not currently work (Ubuntu 18.04.3, Docker 19.03.12); not even --privileged works, unless we are root:
 # gdbflags='--cap-add SYS_PTRACE --security-opt=seccomp:unconfined --security-opt=apparmor:unconfined'
 gdbflags='' ###
-HOSTCWD=`pwd`
 
-
-containerID=$(docker run --rm \
-  $gdbflags \
+docker run --rm \
+   $gdbflags \
+  -v $seamlessdir:/seamless \
+  -e "PYTHONPATH=/seamless" \
   --network=host \
-  -d \
   -e HOSTCWD=$HOSTCWD \
   -v $HOSTCWD:/cwd \
+  -v /tmp:/tmp \
   --workdir /cwd \
   -it \
   -u `id -u` \
   --group-add users \
   $* \
-  rpbs/seamless start.sh)
-
-echo $containerID | docker exec -i $containerID /bin/bash -c 'cat > /home/jovyan/DOCKER_CONTAINER'
-docker attach $containerID
+  seamless-devel start.sh
