@@ -25,7 +25,7 @@ def compile(binary_objects, build_dir, *,
     result = {}
     stderr = "\n"
     success = True
-    
+
     curr_dir = os.path.abspath(os.getcwd())
     build_dir = os.path.abspath(build_dir)
     all_headers = {}
@@ -44,8 +44,8 @@ def compile(binary_objects, build_dir, *,
             lock.acquire()
             lock.release()
             return compile(binary_objects, build_dir, compiler_verbose)
-        with locklock:        
-            lock = RLock()        
+        with locklock:
+            lock = RLock()
             locks[build_dir] = lock
             lock.acquire()
         try:
@@ -65,13 +65,13 @@ def compile(binary_objects, build_dir, *,
             if os.path.exists(obj_file):
                 os.remove(obj_file)
             cmd = [
-              object_["compiler_binary"], 
-              object_["compile_flag"], 
+              object_["compiler_binary"],
+              object_["compile_flag"],
               code_file,
             ]
             cmd += object_["options"]
             cmd += [
-              object_["output_flag"], 
+              object_["output_flag"],
               obj_file
             ]
             with open(code_file, "w") as f:
@@ -108,7 +108,7 @@ def compile(binary_objects, build_dir, *,
 def complete(module_definition):
     from seamless.silk import Silk
     assert module_definition["type"] == "compiled"
-    assert "public_header" in module_definition    
+    assert "public_header" in module_definition
     if isinstance(module_definition, Silk):
         module_definition = module_definition.unsilk
     m = deepcopy(module_definition)
