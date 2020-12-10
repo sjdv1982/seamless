@@ -217,6 +217,7 @@ class Context(Base):
             self._manager = manager
         else:
             self._manager = Manager()
+        self._manager._highlevel_refs += 1
         self._graph = Graph({},[],{},{})
         self._graph.params.update(deepcopy(self._default_parameters))
         self._children = {}
@@ -1000,6 +1001,7 @@ class Context(Base):
         if self._destroyed:
             return
         self._destroyed = True
+        self._manager._highlevel_refs -= 1
         if self._gen_context is not None:
             self._gen_context.destroy()
         for lib in self._graph.lib.values():
