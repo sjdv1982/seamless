@@ -11,6 +11,7 @@ defaults = {
     "float": 0.0,
     "str": "",
     "plain": {},
+    "text": "",
     "bool": False,
 }
 
@@ -22,7 +23,12 @@ def generate_webpage(webform):
     SEAMLESS_WRITE_CELLS = {k:[] for k in encodings}
     VUE_DATA = {}
 
+    order = webform.get("order", [])
     for cell in webform["cells"]:
+        if cell not in order:
+            order.append(cell)
+
+    for cell in order:
         config = webform["cells"][cell]
         default = defaults[config["celltype"]]
         VUE_DATA[cell] = default

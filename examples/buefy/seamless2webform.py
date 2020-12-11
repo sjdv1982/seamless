@@ -16,6 +16,9 @@ for node in graph["nodes"]:
         continue
     if "share" not in node:
         continue
+    path = node["share"].get("path")
+    if path is not None and len(path.split(".")[1:]) and path.split(".")[-1] in ("js", "html"):
+        continue
     celltype = node["celltype"]
     params = {}
     share = {}
@@ -23,6 +26,7 @@ for node in graph["nodes"]:
         "celltype": celltype,
     }
     cellname = node["path"][-1]
+    print(cellname, path)
     if celltype in ("float", "int"):
         share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
@@ -34,8 +38,15 @@ for node in graph["nodes"]:
         else:
             cell["component"] = "numberinput"
             params["editable"] = False
-        share["encoding"] = "json"  # also for "str", "plain".
-                                    # encoding="text" would be for celltype="text"
+        share["encoding"] = "json"  # also for "str", "plain", "bool"
+    elif celltype == "text":
+        share["read"] = True
+        params["title"] = "Cell " + cellname.capitalize()
+        if not node["share"].get("readonly", True):
+            raise NotImplementedError("writeable text cell")
+        else:
+            cell["component"] = "card"
+        share["encoding"] = "text"
     else:
         raise NotImplementedError(celltype)
     cell.update({
