@@ -1,3 +1,9 @@
+UPDATE Dec 2020
+===============
+see KNOWN-GLITCHES.txt
+Get rid of special syntax << and >>
+   => getattr shouldn't give proxies
+
 UPDATE Nov 2020
 ===============
 Current state:
