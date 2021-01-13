@@ -15,6 +15,7 @@ For the next version:
   Jobless: concept of eagerness (first-resort, last-resort backend)
   Make a jobless last-resort backend based on run-transformation. If needed, fire up database adapter on the fly.
 
+
 - At the high-level, unify bash and docker transformers. Mid-level translations remain split (and jobless as well)
   Rip docker_options.
   Allow docker_image for any transformer, not just bash. If non-bash, docker_image is interpreted as a *capability*.
@@ -25,9 +26,21 @@ For the next version:
 
 - bash/docker transformers no longer need tar. Instead, RESULT can be a directory.
 
+- Fallback mode (soft/hard), with fallback values and fallback mounts. For collaborative coding.
+
+- Shell into each Python / bash transformer. Docker image for bash transformers supported.
+Rip/subsume "debug" mode. Compiled transformer keeps debug mode, and has no shell.
+
+- At the high level, rip [getattr(Context) => Proxy].
 - At the high-level, allow descriptions/docstrings everywhere (Cell, Transformer, but also pin, subcell).
   Continue with ergonomics and user docs.
   Assimilate Reactor, implement edit pins properly.
+
+- Better highlevel API tooling. Especially:
+  - Rename a cell/transformer/context/...
+  - Copy a cell/transformer/context/... .
+    This is particularly useful for transformers, as copy() reuses topology and schema,
+    i.e. does something akin to CWL's CommandLineTool instantiation.
 
 Set up a network infrastructure at console
 ==========================================
