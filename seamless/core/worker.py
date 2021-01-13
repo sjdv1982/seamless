@@ -219,10 +219,23 @@ class EditPin(EditPinBase):
     editpin.connect(cell), cell.connect(editpin):
       connects the editpin to a cell
     editpin.cell() returns or creates a cell that is connected to the editpin
-    outputpin.disconnect(cell) breaks an existing connection
     """
 
     io = "edit"
+
+    def __init__(self, worker, name, celltype, subcelltype=None, *, must_be_defined=False):
+        super().__init__(worker, name, celltype, subcelltype=subcelltype)
+        self._must_be_defined = must_be_defined
+
+    @property
+    def must_be_defined(self):
+        return self._must_be_defined
+
+    @must_be_defined.setter
+    def must_be_defined(self, value):
+        if not isinstance(value, bool):
+            raise TypeError(type(value))
+        self._must_be_defined = value
 
     def set(self, *args, **kwargs):
         """Sets the value of the connected cell"""

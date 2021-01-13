@@ -60,8 +60,6 @@ class SynthContext:
             result = Cell()
         elif node["type"] == "transformer":
             result = Transformer()
-        elif node["type"] == "reactor":
-            result = Reactor()
         elif node["type"] == "macro":
             result = Macro()
         elif node["type"] == "context":
@@ -74,5 +72,4 @@ class SynthContext:
 from .Base import Base
 from .Cell import Cell
 from .Transformer import Transformer
-from .Reactor import Reactor
 from .Macro import Macro

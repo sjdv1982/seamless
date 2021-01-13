@@ -4,6 +4,12 @@ see KNOWN-GLITCHES.txt
 Get rid of special syntax << and >>
    => getattr shouldn't give proxies
 
+Reactor
+=======
+- Rip high-level Reactor DONE
+- implement edit pins, including must_be_defined=False
+- port WIP/build_merge.py to use low-level reactor (in high-level macro)
+
 UPDATE Nov 2020
 ===============
 Current state:
@@ -40,7 +46,6 @@ Rip/subsume "debug" mode. Compiled transformer keeps debug mode, and has no shel
 - At the high level, rip [getattr(Context) => Proxy].
 - At the high-level, allow descriptions/docstrings everywhere (Cell, Transformer, but also pin, subcell).
   Continue with ergonomics and user docs.
-  Assimilate Reactor, implement edit pins properly.
 
 - Better highlevel API tooling. Especially:
   - Rename a cell/transformer/context/...

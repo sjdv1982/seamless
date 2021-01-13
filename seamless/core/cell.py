@@ -278,7 +278,6 @@ class Cell(SeamlessBase):
         Target can be a cell, pin, inchannel or unilink"""
         from .worker import InputPin, EditPin, OutputPin
         from .transformer import Transformer
-        from .reactor import Reactor
         from .macro import Macro, Path
         from .unilink import UniLink
         manager = self._get_manager()
@@ -306,10 +305,8 @@ class Cell(SeamlessBase):
             raise TypeError("Output pins must be the source of a connection, not the target")
         elif isinstance(target, Transformer):
             raise TypeError("Transformers cannot be connected directly, select a pin")
-        elif isinstance(target, Reactor):
-            raise TypeError("Reactors cannot be connected directly, select a pin")
         elif isinstance(target, Macro):
-            raise TypeError("Reactors cannot be connected directly, select a pin")
+            raise TypeError("Macros cannot be connected directly, select a pin")
         else:
             raise TypeError(type(target))
         manager.connect(self, None, target, target_subpath)

@@ -17,13 +17,10 @@ class PinWrapper:
 
     def _get_hpin(self):
         from .Transformer import Transformer
-        from .Reactor import Reactor
         from .Macro import Macro
         parent = self._parent()
         if isinstance(parent, Transformer):
             h = parent._get_htf()
-        elif isinstance(parent, Reactor):
-            h = parent._get_hrc()
         elif isinstance(parent, Macro):
             h = parent._get_node()
         else:
@@ -62,8 +59,6 @@ class PinWrapper:
         parent = self._parent()
         if isinstance(parent, Transformer):
             assert value == "input", value
-        elif isinstance(parent, Reactor):
-            assert value in ("input", "output", "edit"), value
         elif isinstance(parent, Macro):
             assert value in ("input", "output", "parameter"), value
         else:
@@ -85,13 +80,10 @@ class PinsWrapper:
 
     def _get_hpins(self):
         from .Transformer import Transformer
-        from .Reactor import Reactor
         from .Macro import Macro
         parent = self._parent()
         if isinstance(parent, Transformer):
             h = parent._get_htf()
-        elif isinstance(parent, Reactor):
-            h = parent._get_hrc()
         elif isinstance(parent, Macro):
             h = parent._get_node()
         else:

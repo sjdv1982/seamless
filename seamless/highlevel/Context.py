@@ -276,10 +276,7 @@ class Context(Base):
         if attr in members and isinstance(members[attr], property):
             return object.__setattr__(self, attr, value)
         attr2 = (attr,)
-        if isinstance(value, Reactor):
-            value._init(self, (attr,) )
-            self._translate()
-        elif isinstance(value, (Transformer, Macro)):
+        if isinstance(value, (Transformer, Macro)):
             if value._parent is None:
                 self._graph[0][attr2] = value
                 self._children[attr2] = value
@@ -773,7 +770,7 @@ class Context(Base):
         try:
             self._translating = True
             for path, child in self._children.items():
-                if isinstance(child, (Cell, Transformer, Reactor, Macro)):
+                if isinstance(child, (Cell, Transformer, Macro)):
                     try:
                         child._set_observers()
                     except Exception:
@@ -1042,10 +1039,7 @@ class SubContext(Base):
             return object.__setattr__(self, attr, value)
         parent = self._get_top_parent()
         path = self._path + (attr,)
-        if isinstance(value, Reactor):
-            value._init(parent, path)
-            parent._translate()
-        elif isinstance(value, Transformer):
+        if isinstance(value, Transformer):
             if value._parent is None:
                 parent._graph[0][path] = value
                 parent._children[path] = value
@@ -1134,7 +1128,6 @@ class SubContext(Base):
         subs = [p[l] for p in self._parent()._children if len(p) > l and p[:l] == self._path]
         return sorted(d + list(set(subs)))
 
-from .Reactor import Reactor
 from .Transformer import Transformer
 from .Cell import Cell
 from .Link import Link
@@ -1146,7 +1139,6 @@ from .PollingObserver import PollingObserver
 nodeclasses = {
     "cell": Cell,
     "transformer": Transformer,
-    "reactor": Reactor,
     "context": SubContext,
     "macro": Macro,
 }

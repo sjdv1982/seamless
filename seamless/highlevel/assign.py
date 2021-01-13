@@ -25,7 +25,6 @@ from .Cell import Cell, get_new_cell
 from .Resource import Resource
 from .pin import PinWrapper
 from .Transformer import Transformer
-from .Reactor import Reactor
 from .Macro import Macro
 from .proxy import Proxy, CodeProxy, HeaderProxy
 from ..midlevel import copying
@@ -207,7 +206,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         if source_parent_path not in ctx._children:
             raise KeyError("Unknown path '{}'".format(source_parent_path))
         source_parent = ctx._children[source_parent_path]
-        assert isinstance(source_parent, (Transformer, Reactor, Macro)), source_parent
+        assert isinstance(source_parent, (Transformer, Macro)), source_parent
         attr = source[-1]
         ok = False
         if attr == "SCHEMA":
@@ -227,8 +226,6 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
                 pin = source_parent.pins[attr]
                 if isinstance(source_parent, Macro):
                     assert pin["io"] == "output", (source, pin["io"])
-                elif isinstance(source_parent, Reactor):
-                    assert pin["io"] in ("output", "edit"), (source, pin["io"])
             else:
                 raise TypeError("No output pin '{}'".format(attr))
     if s is not None and s._virtual_path is not None:
