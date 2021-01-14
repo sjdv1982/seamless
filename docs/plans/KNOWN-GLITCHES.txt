@@ -1,0 +1,9 @@
+Document better: share => readonly=False => celltype not structured (indicate this)
+
+Update guide so it prints out the status weblink
+
+mimetype should trigger re-translation
+
+nice error message if database can't be found
+
+borking up topology is too easy, happens when cells are destroyed that have
