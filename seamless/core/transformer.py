@@ -331,5 +331,5 @@ Parameters
                 must be "input" or "output". Only one output pin is allowed.
             - dtype: string or tuple of strings
                 Describes the type of the cell(s) connected to the pin.
-"""
+    """
     return Transformer(params, stream_params=stream_params)
