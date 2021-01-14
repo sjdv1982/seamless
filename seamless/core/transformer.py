@@ -281,5 +281,55 @@ class Transformer(Worker):
         return ret
 
 def transformer(params, *, stream_params=None):
-    """TODO: port documentation from 0.1"""
+    """Defines a transformer.
+
+Transformers transform their input cells into an output result.
+Transformers are connected to their input cells via input pins, and their
+result is connected to an output cell via an output pin. There can be only one
+output pin. The pins are declared in the `params` parameter (see below).
+
+In addition, all transformers have an implicit input pin named "code",
+which must be connected to a Python cell.
+All input values are injected directly into the code's namespace. The variable
+name of the input is the same as its pin name.
+
+Transformers are asynchronous (non-blocking),
+and they carry out their computation in a separate process
+(using ``multiprocessing``).
+
+Transformers start their computation as soon as all inputs
+(including the code) has been defined, even if no output cell has been connected.
+Whenever the input data or code changes, a new computation is performed. If the
+previous computation is still in progress, it is canceled.
+
+Inside the transformer code, preliminary values can be returned using
+``return_preliminary(value)``.
+
+Invoke ``transformer.status()`` to get the current status of the transformer.
+
+``pin.connect(cell)`` connects an outputpin to a cell.
+
+``cell.connect(pin)`` connects a cell to an inputpin.
+
+``pin.cell()`` returns or creates a cell that is connected to that pin.
+
+Parameters
+----------
+
+    params: dict
+        A dictionary containing the transformer parameters.
+
+        Each (name,value) item represents a transformer pin:
+
+        -  name: string
+            name of the pin
+
+        -  value: dict
+            with the following items:
+
+            - pin: string
+                must be "input" or "output". Only one output pin is allowed.
+            - dtype: string or tuple of strings
+                Describes the type of the cell(s) connected to the pin.
+"""
     return Transformer(params, stream_params=stream_params)
