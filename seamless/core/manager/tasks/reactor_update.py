@@ -65,9 +65,11 @@ class ReactorUpdateTask(Task):
 
         for pinname in editpins:
             cell = editpin_to_cell[pinname]
-            if cell._void: # TODO: allow them to be void? By definition, these cells have authority
-                reactor._status_reason = StatusReasonEnum.UPSTREAM
-                return
+            pin = reactor._pins[pinname]
+            if pin.must_be_defined:
+                if cell._void:
+                    reactor._status_reason = StatusReasonEnum.UPSTREAM
+                    return
 
         if status_reason is not None:
             print("WARNING: reactor %s is void, shouldn't happen during reactor update" % reactor)
@@ -85,8 +87,6 @@ class ReactorUpdateTask(Task):
         for pinname in editpins:
             cell = editpin_to_cell[pinname]
             checksum = cell._checksum
-            if checksum is None:
-                raise Exception # authoritative cell cannot be non-void and no checksum
             editpin_checksums[pinname] = checksum
 
         reactor._pending = False
@@ -108,11 +108,12 @@ class ReactorUpdateTask(Task):
         for pinname in editpins:
             old_checksum = old_checksums.get(pinname)
             new_checksum = editpin_checksums[pinname]
-            if old_checksum != new_checksum:
-                updated.add(pinname)
-            new_inputs[pinname] = new_checksum
-            cell = editpin_to_cell[pinname]
-            new_inputs2[pinname] = cell._celltype, cell._subcelltype
+            if new_checksum is not None:
+                if old_checksum != new_checksum:
+                    updated.add(pinname)
+                new_inputs[pinname] = new_checksum
+                cell = editpin_to_cell[pinname]
+                new_inputs2[pinname] = cell._celltype, cell._subcelltype
 
         reactor._last_inputs = new_inputs
 

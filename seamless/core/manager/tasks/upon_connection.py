@@ -175,18 +175,26 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
         )
 
     def _connect_editpin(self, pin, cell):
-        raise NotImplementedError
         assert isinstance(pin, EditPin)
         assert isinstance(cell, Cell)
         reactor = pin.worker_ref()
-        """
-        assert reactor._void # safe assumption, as long as must_be_defined is enforced to be True
         manager = self.manager()
         livegraph = manager.livegraph
+        rt_reactor = livegraph.rtreactors[reactor]
+        is_void = reactor._void
+        is_live = rt_reactor.live
+        if is_live:
+            rt_reactor.stop()
         assert livegraph.editpin_to_cell[reactor][pin.name] is None, (reactor, pin.name) # editpin can connect only to one cell
         livegraph.editpin_to_cell[reactor][pin.name] = cell
         livegraph.cell_to_editpins[cell].append(pin)
-        """
+        livegraph.connect_pin_cell(
+            self.current_macro, pin, cell,
+            from_upon_connection_task=self
+        )
+        unvoid_reactor(reactor, livegraph)  # result connection may unvoid the reactor
+        if is_live or (is_void and not reactor._void):
+            ReactorUpdateTask(manager, reactor).launch()
 
     async def _run(self):
         manager = self.manager()
@@ -202,18 +210,16 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
 
         if isinstance(source, Cell):
             if isinstance(target, EditPin):
-                accessor = self._connect_editpin(target, source)
-                assert accessor is not None and isinstance(accessor, ReadAccessor), type(accessor)
+                self._connect_editpin(target, source)
+                return
             else:
                 accessor = self._connect_cell()
                 assert accessor is not None and isinstance(accessor, ReadAccessor), type(accessor)
         elif isinstance(source, EditPin):
             assert isinstance(target, (Cell, MacroPath))
-            accessor = self._connect_editpin(source, target)
-            assert accessor is not None and isinstance(accessor, ReadAccessor), type(accessor)
-            source = target
-            if isinstance(source, MacroPath):
-                source = source._cell
+            if isinstance(target, MacroPath):
+                raise TypeError("Editpin '%s': illegal connection to macropath '%s'" % (source, target))
+            self._connect_editpin(source, target)
         elif isinstance(source, PinBase):
             accessor = self._connect_pin_cell()
             assert accessor is not None and isinstance(accessor, ReadAccessor), type(accessor)

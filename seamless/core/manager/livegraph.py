@@ -240,12 +240,18 @@ class LiveGraph:
         assert self._has_authority(
             target, from_upon_connection_task=from_upon_connection_task
         ), target
-        if isinstance(source, EditPin):
-            assert target._get_macro() is None # Cannot connect edit pins to cells under macro control
 
         manager = self.manager()
         pinname = source.name
         worker = source.worker_ref()
+
+        if isinstance(source, EditPin):
+            assert target._get_macro() is None # Cannot connect edit pins to cells under macro control
+            assert isinstance(worker, Reactor)
+            self.cell_to_editpins[target].append(source)
+            self.editpin_to_cell[worker][pinname] = target
+            return
+
 
         if isinstance(worker, Transformer):
             to_downstream = self.transformer_to_downstream[worker]

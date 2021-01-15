@@ -100,7 +100,7 @@ class RuntimeReactor:
             if updated is not None and pinname not in updated:
                 self.PINS[pinname].updated = False
                 continue
-            value = self.values[pinname]
+            value = self.values.get(pinname)
             if not self.live:
                 pin = ReactorEdit(self, pinname, value)
                 self.PINS[pinname] = pin
@@ -141,7 +141,6 @@ class RuntimeReactor:
             self.manager()._set_reactor_exception(self.reactor(), codename, exception)
 
     def execute(self):
-        assert len(self.updated)
         assert not self.executing
         self.manager()._set_reactor_exception(self.reactor(), None, None)
         codes = ("code_start", "code_update", "code_stop")
@@ -202,5 +201,11 @@ class RuntimeReactor:
         self.namespace.clear()
         self.PINS = PINS()
         self.live = False
+
+    def stop(self):
+        if not self.live:
+            return
+        self.run_code("code_stop")
+        self.clear()
 
 from .manager.tasks.reactor_update import ReactorResultTask
