@@ -194,6 +194,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
         )
         unvoid_reactor(reactor, livegraph)  # result connection may unvoid the reactor
         if is_live or (is_void and not reactor._void):
+            manager.cancel_reactor(reactor,void=False)
             ReactorUpdateTask(manager, reactor).launch()
 
     async def _run(self):
@@ -294,6 +295,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                         return
 
                     if source._checksum is not None:
+                        manager.cancel_reactor(reactor,void=False)
                         ReactorUpdateTask(manager, source).launch()
             else:
                 raise TypeError(source)

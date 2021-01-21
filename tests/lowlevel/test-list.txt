@@ -12,6 +12,7 @@ exception_upon_compute.py
 subcontext.py
 simple-reactor.py
 downstream-reactor.py
+reactor-edit.py
 simple-cache.py: see instructions in file
 plain.py
 mixedcell.py

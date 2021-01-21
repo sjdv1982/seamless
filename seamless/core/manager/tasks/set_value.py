@@ -4,10 +4,11 @@ import asyncio
 
 class SetCellValueTask(Task):
     # For values that come from the command line
-    def __init__(self, manager, cell, value):
+    def __init__(self, manager, cell, value, *, origin_reactor=None):
         super().__init__(manager)
         self.cell = cell
         self.value = value
+        self.origin_reactor = origin_reactor
         self._dependencies.append(cell)
 
     async def _run(self):
@@ -60,7 +61,7 @@ class SetCellValueTask(Task):
                 buffer_cache.cache_buffer(checksum, buffer)
                 manager._set_cell_checksum(self.cell, checksum, False)
                 livegraph.cell_parsing_exceptions.pop(cell, None)
-                CellUpdateTask(manager, cell).launch()
+                CellUpdateTask(manager, cell, origin_reactor=self.origin_reactor).launch()
             else:
                 manager.cancel_cell(cell, True, reason=StatusReasonEnum.UNDEFINED, origin_task=self)
         except asyncio.CancelledError as exc:

@@ -173,7 +173,7 @@ class RuntimeReactor:
             cell = livegraph.editpin_to_cell[reactor][pinname]
             if cell is None:
                 return
-            manager.set_cell(cell, value)
+            manager.set_cell(cell, value, origin_reactor=reactor)
         else:
             if preliminary:
                 raise NotImplementedError

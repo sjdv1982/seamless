@@ -105,6 +105,7 @@ class AccessorUpdateTask(Task):
                 elif isinstance(worker, Reactor):
                     manager.taskmanager.cancel_reactor(worker)
                     if not worker._void:
+                        manager.taskmanager.cancel_reactor(worker)
                         ReactorUpdateTask(manager, worker).launch()
                 elif isinstance(worker, Macro):
                     manager.taskmanager.cancel_macro(worker)

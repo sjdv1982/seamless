@@ -373,7 +373,7 @@ class Manager:
         self.cachemanager.macro_exceptions[macro] = exc
 
     @run_in_mainthread
-    def set_cell(self, cell, value):
+    def set_cell(self, cell, value, origin_reactor=None):
         if self._destroyed or cell._destroyed:
             return
         assert cell.has_authority(), "{} is not independent".format(cell)
@@ -386,7 +386,7 @@ class Manager:
             unvoid_cell(cell, self.livegraph)
         else:
             self.cancel_cell(cell, value is None, reason)
-        task = SetCellValueTask(self, cell, value)
+        task = SetCellValueTask(self, cell, value, origin_reactor=origin_reactor)
         task.launch()
 
     def update_schemacell(self, schemacell, value, structured_cell):
