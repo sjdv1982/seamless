@@ -70,19 +70,25 @@ class MacroUpdateTask(Task):
         inputpins = {}
         for pinname, accessor in upstreams.items():
             inputpins[pinname] = accessor._checksum
+
+        cachemanager = manager.cachemanager
         if is_equal(inputpins, macro._last_inputs):
             if not macro._in_elision:
+                if cachemanager.macro_exceptions.get(macro) is not None:
+                    assert macro._gen_context is None
+                    macro._void = True
                 return
 
         macro._last_inputs = inputpins.copy()
 
         if elide(macro, inputpins):
             macro._in_elision = True
+            if cachemanager.macro_exceptions.get(macro) is not None:
+                assert macro._gen_context is None
+                macro._void = True
             return
 
         macro._in_elision = False
-
-        cachemanager = manager.cachemanager
 
         code = None
         values = {}

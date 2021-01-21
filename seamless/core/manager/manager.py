@@ -362,7 +362,13 @@ class Manager:
         if exception is None:
             self.cachemanager.macro_exceptions[macro] = None
             return
-        exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
+        exc = traceback.format_exception(
+            type(exception),
+            exception,
+            exception.__traceback__,
+            chain=False
+        )
+        exc = exc[4:]
         exc = "".join(exc)
         """
         msg = "Exception in %s:\n"% str(macro) + exc
