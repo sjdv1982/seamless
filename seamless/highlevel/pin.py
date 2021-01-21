@@ -1,14 +1,6 @@
+# TODO: add validation for io, celltype, must_be_defined; both as attributes (double PinWrapper) and as dict
+
 from weakref import ref
-
-"""
-class InputPin:
-    pass
-
-class OutputPin:
-    _virtual_path = None
-    def __init__(self, parent, worker, path):
-        pass
-"""
 
 class PinWrapper:
     def __init__(self, parent, pinname):

@@ -5,16 +5,16 @@ from seamless.core import context, cell, reactor, transformer
 with macro_mode_on():
     ctx = context(toplevel=True)
 
-    ctx.a = cell().set(2)
-    ctx.b = cell().set(3)
-    ctx.c = cell()
+    ctx.x = cell("int").set(2)
+    ctx.y = cell("int").set(3)
+    ctx.c = cell("int")
     ctx.rc = reactor({
         "a": "input",
         "b": "input",
         "c": {"io": "edit", "must_be_defined": False},
     })
-    ctx.a.connect(ctx.rc.a)
-    ctx.b.connect(ctx.rc.b)
+    ctx.x.connect(ctx.rc.a)
+    ctx.y.connect(ctx.rc.b)
     ctx.code_start = cell("python").set("")
     ctx.code_start.connect(ctx.rc.code_start)
     ctx.code_update = cell("python").set("""
@@ -37,7 +37,7 @@ print(ctx.status)
 print(ctx.c.value)
 ctx.c.set(102)
 ctx.compute()
-ctx.a.set(1000)
+ctx.x.set(1000)
 print("START")
 ctx.compute(0.000001)
 print(ctx.status)

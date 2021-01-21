@@ -80,7 +80,8 @@ class CellUpdateTask(Task):
             for editpin in livegraph.cell_to_editpins[cell]:
                 reactor = editpin.worker_ref()
                 if reactor is not self.origin_reactor:
-                    ReactorUpdateTask(manager, reactor).launch()
+                    if not reactor._void:
+                        ReactorUpdateTask(manager, reactor).launch()
             sc = cell._structured_cell
             if sc is not None:
                 if sc.schema is not cell:

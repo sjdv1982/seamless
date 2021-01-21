@@ -26,7 +26,7 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
             interchannels.append(pinname2)
             if pinname2 in inchannels:
                 param_inchannels.append(pinname2)
-        elif pin["io"] in ("input", "output"):
+        elif pin["io"] in ("input", "output", "edit"):
             pin_cell_name = pinname
         else:
             raise ValueError((pin["io"], pinname))
@@ -39,17 +39,17 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pinname] = pin_cell
         if pin["io"] != "parameter":
-            pin_mpaths0[pinname] = (pin["io"] == "input")
+            pin_mpaths0[pinname] = (pin["io"] in ("input", "edit"))
 
     mount = node.get("mount", {})
     param = None
     if len(interchannels):
         param, param_ctx = build_structured_cell(
-        ctx, param_name, param_inchannels, interchannels,
-        return_context=True,
-        fingertip_no_remote=False,
-        fingertip_no_recompute=False,
-        hash_pattern={"*": "#"}
+            ctx, param_name, param_inchannels, interchannels,
+            return_context=True,
+            fingertip_no_remote=False,
+            fingertip_no_recompute=False,
+            hash_pattern={"*": "#"}
         )
 
         setattr(ctx, param_name, param)
