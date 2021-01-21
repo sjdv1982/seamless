@@ -295,6 +295,11 @@ class Macro(Base):
             elif k == node["PARAM"]:
                 if len(exc):
                     return exc
+                for pin in node["pins"].values():
+                    if pin["io"] == "parameter":
+                        break
+                else:
+                    continue
                 curr_exc = getattr(self, k).exception
             else:
                 curr_exc = getattr(macro, k).exception
@@ -321,6 +326,11 @@ class Macro(Base):
         )
         for k in attrs:
             if k == node["PARAM"]:
+                for pin in node["pins"].values():
+                    if pin["io"] == "parameter":
+                        break
+                else:
+                    continue
                 cell = getattr(self, k)
                 status = cell.status
             elif k == "code":

@@ -42,18 +42,20 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
             pin_mpaths0[pinname] = (pin["io"] == "input")
 
     mount = node.get("mount", {})
-    param, param_ctx = build_structured_cell(
-      ctx, param_name, param_inchannels, interchannels,
-      return_context=True,
-      fingertip_no_remote=False,
-      fingertip_no_recompute=False,
-      hash_pattern={"*": "#"}
-    )
+    param = None
+    if len(interchannels):
+        param, param_ctx = build_structured_cell(
+        ctx, param_name, param_inchannels, interchannels,
+        return_context=True,
+        fingertip_no_remote=False,
+        fingertip_no_recompute=False,
+        hash_pattern={"*": "#"}
+        )
 
-    setattr(ctx, param_name, param)
-    namespace[node["path"] + ("SCHEMA",), False] = param.schema, node
-    if "param_schema" in mount:
-        param_ctx.schema.mount(**mount["param_schema"])
+        setattr(ctx, param_name, param)
+        namespace[node["path"] + ("SCHEMA",), False] = param.schema, node
+        if "param_schema" in mount:
+            param_ctx.schema.mount(**mount["param_schema"])
 
     param_pins = {}
     for pinname, pin in node["pins"].items():
@@ -91,8 +93,9 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    param_checksum = convert_checksum_dict(checksum, "param")
-    set_structured_cell_from_checksum(param, param_checksum)
+    if param is not None:
+        param_checksum = convert_checksum_dict(checksum, "param")
+        set_structured_cell_from_checksum(param, param_checksum)
     namespace[node["path"] + ("code",), True] = ctx.code, node
     namespace[node["path"] + ("code",), False] = ctx.code, node
 
