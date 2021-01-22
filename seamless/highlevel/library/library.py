@@ -16,8 +16,9 @@ def validate_params(params):
         if type_ in ("value", "context"):
             assert io == "input", (k, io)
         if type_ in ("cell", "celldict"):
-            assert io in ("input", "output"), (k, io)
+            assert io in ("input", "output", "edit"), (k, io)
         default = v.get("default")
+        celltype = v.get("celltype")
         try:
             json.dumps(default)
         except:
@@ -27,6 +28,8 @@ def validate_params(params):
             "io": io,
             "default": default
         }
+        if celltype is not None:
+            result[k]["celltype"] = celltype
     return result
 
 def get_library(path):

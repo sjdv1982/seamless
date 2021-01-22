@@ -17,7 +17,7 @@ def get_path_link(root, path, namespace, is_target):
         else:
             return sc._context().result.schema
     else:
-        return get_path(root, path, namespace, cmode)
+        return get_path(root, path, namespace, is_target)
 
 def get_path(root, path, namespace, is_target,
   *, until_structured_cell=False,

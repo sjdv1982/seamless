@@ -64,6 +64,8 @@ class LibInstance:
                     raise TypeError(msg % (argname, type(value)))
                 if par["io"] == "input":
                     value = InputCellWrapper(connection_wrapper, value)
+                elif par["io"] == "edit":
+                    value = EditCellWrapper(connection_wrapper, value)
                 else: # par["io"] == "output"
                     node = value._get_hcell()
                     cellpath = value._path
@@ -91,6 +93,8 @@ class LibInstance:
                         raise TypeError(msg % (argname, k, type(vv)))
                     if par["io"] == "input":
                         vv = InputCellWrapper(connection_wrapper, vv)
+                    if par["io"] == "edit":
+                        vv = EditCellWrapper(connection_wrapper, vv)
                     else: # par["io"] == "output"
                         node = vv._get_hcell()
                         cellpath = vv._path
@@ -166,7 +170,7 @@ class LibInstance:
         arguments[attr] = parse_argument(attr, value, params[attr])
         parent._translate()
 
-from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper
+from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper, EditCellWrapper
 from ..synth_context import SynthContext
 from ..Cell import Cell
 from ..SubCell import SubCell

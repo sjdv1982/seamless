@@ -28,25 +28,18 @@ def build_labels(upstream, base, modified):
         break
     return tuple([l+str(n) for l in labels0])
 
-try:
-    subprocess.run("diff3 --help", shell=True, check=True,stdout=PIPE,stderr=PIPE)
-    has_diff3 = True
-except subprocess.CalledProcessError:
-    has_diff3 = False
-    print("ERROR: need diff3 command line tool")
-
 upstream, base, modified = None, None, None
 if PINS.conflict.defined and len(PINS.conflict.value.strip()):
-    mode = "conflict"
+    state = "conflict"
     upstream = PINS.upstream_stage.value
     base = PINS.base.value
     modified = PINS.modified.value
     labels = build_labels(upstream, base, modified)
 elif not PINS.modified.defined or PINS.modified.value == PINS.base.value:
-    mode = "passthrough"
+    state = "passthrough"
 else:
-    mode = "modify"
+    state = "modify"
 
-if mode != "conflict":
+if state != "conflict":
     PINS.conflict.set(None)
-fallback = PINS.fallback.value
+fallback_mode = PINS.fallback_mode.value
