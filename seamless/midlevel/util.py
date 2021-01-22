@@ -17,32 +17,40 @@ def get_path_link(root, path, namespace, is_target):
         else:
             return sc._context().result.schema
     else:
-        return get_path(root, path, namespace, is_target)
+        return get_path(root, path, namespace, cmode)
 
 def get_path(root, path, namespace, is_target,
   *, until_structured_cell=False,
   return_node=False
  ):
+    edit = False
     if namespace is not None:
-        hit = namespace.get((path, is_target))
+        for key in namespace:
+            assert key[1] in ("source", "target", "edit"), key
+        hit = namespace.get((path, "edit"))
         if hit is None:
-            for p, hit_is_target in namespace:
-                if hit_is_target != is_target:
+            cmode0 = "target" if is_target else "source"
+            hit = namespace.get((path, cmode0))
+        else:
+            edit = True
+        if hit is None:
+            for p, cmode in namespace:
+                if cmode != "edit" and cmode != cmode0:
                     continue
                 if path[:len(p)] == p:
-                    subroot = namespace[p, hit_is_target][0]
+                    subroot = namespace[p, cmode][0]
                     subpath = path[len(p):]
                     hit = get_path(subroot, subpath, None, None, return_node=True)
         if hit is not None:
             hit, node = hit
             if until_structured_cell:
                 if return_node:
-                    return hit, node, ()
+                    return hit, node, edit, ()
                 else:
                     return hit, ()
             else:
                 if return_node:
-                    return hit, node
+                    return hit, node, edit
                 else:
                     return hit
 
@@ -56,7 +64,7 @@ def get_path(root, path, namespace, is_target,
             except AttributeError:
                 raise AttributeError(path, p) from None
         if return_node:
-            return c, None, ()
+            return c, None, edit, ()
         else:
             return c, ()
     else:
@@ -66,7 +74,7 @@ def get_path(root, path, namespace, is_target,
             except AttributeError:
                 raise AttributeError(path, p, c, root) from None
         if return_node:
-            return c, None
+            return c, None, edit
         else:
             return c
 

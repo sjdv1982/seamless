@@ -310,12 +310,14 @@ class UponBiLinkTask(UponConnectionTask):
         Task.__init__(self, manager)
         if not isinstance(source, Cell):
             raise TypeError(type(source))
-        if not isinstance(target, Cell):
+        if not isinstance(target, (Cell, MacroPath)):
             raise TypeError(type(target))
         self._dependencies.append(source)
         self._dependencies.append(target)
 
     async def _run(self):
+        if self.target is None:
+            return
         manager = self.manager()
         if manager is None or manager._destroyed:
             return

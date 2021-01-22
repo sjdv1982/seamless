@@ -395,6 +395,12 @@ class Path:
                         manager.cancel_accessor(accessor, void=False)
                 if cell._checksum is not None:
                     CellUpdateTask(manager, cell).launch()
+            checksum = cell._checksum
+            if checksum is not None:
+                livegraph.activate_bilink(self, checksum)
+            else:
+                livegraph.rev_activate_bilink(self)
+
             if not self_authority:
                 up_accessor = livegraph.macropath_to_upstream[self]
                 assert up_accessor is not None  # if no up accessor, how could we have no authority?

@@ -127,10 +127,10 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels):
     )
     for inchannel in inchannels:
         path = node["path"] + inchannel
-        namespace[path, True] = io.inchannels[inchannel], node
+        namespace[path, "target"] = io.inchannels[inchannel], node
     for outchannel in outchannels:
         path = node["path"] + outchannel
-        namespace[path, False] = io.outchannels[outchannel], node
+        namespace[path, "source"] = io.outchannels[outchannel], node
 
     ctx.rc = reactor(node["pins"])
     for attr in ("code_start", "code_stop", "code_update"):
@@ -148,8 +148,8 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels):
             # TODO: proper logging
             traceback.print_exc()
 
-        namespace[node["path"] + (attr,), True] = c, node
-        namespace[node["path"] + (attr,), False] = c, node
+        namespace[node["path"] + (attr,), "target"] = c, node
+        namespace[node["path"] + (attr,), "source"] = c, node
 
     for pinname, pin in node["pins"].items():
         target = getattr(ctx.rc, pinname)
@@ -159,8 +159,8 @@ def translate_py_reactor(node, root, namespace, inchannels, outchannels):
         elif iomode == "output":
             io.connect_inchannel(target, (pinname,))
 
-    namespace[node["path"], True] = io, node
-    namespace[node["path"], False] = io, node
+    namespace[node["path"], "target"] = io, node
+    namespace[node["path"], "source"] = io, node
 
 def translate_cell(node, root, namespace, inchannels, outchannels):
     path = node["path"]
@@ -188,10 +188,10 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
                 if isinstance(cname, str):
                     cname = (cname,)
                 cpath = path + cname
-            namespace[cpath, True] = child.inchannels[inchannel], node
+            namespace[cpath, "target"] = child.inchannels[inchannel], node
         for outchannel in outchannels:
             cpath = path + outchannel
-            namespace[cpath, False] = child.outchannels[outchannel], node
+            namespace[cpath, "source"] = child.outchannels[outchannel], node
     else: #not structured
         for c in inchannels + outchannels:
             assert not len(c) #should have been checked by highlevel
@@ -243,13 +243,13 @@ def translate_connection(node, namespace, ctx):
     from ..core.worker import Worker, PinBase
     source_path, target_path = node["source"], node["target"]
 
-    source, source_node = get_path(
+    source, source_node, source_is_edit = get_path(
       ctx, source_path, namespace, False,
       return_node = True
     )
     if isinstance(source, StructuredCell):
         source = source.outchannels[()]
-    target, target_node = get_path(
+    target, target_node, target_is_edit = get_path(
       ctx, target_path, namespace, True,
       return_node=True
     )
@@ -257,9 +257,19 @@ def translate_connection(node, namespace, ctx):
         target = target.inchannels[()]
 
     def do_connect(source, target):
+        if source_is_edit or target_is_edit:
+            msg = "Cannot set up an edit link involving a structured cell: %s (with %s)"
+            if not isinstance(source, Cell):
+                raise Exception(msg % (source.structured_cell(), target))
+            if not isinstance(target, Cell):
+                raise Exception(msg % (target.structured_cell(), source))
+            source.bilink(target)
+            return
+
         if isinstance(source, Cell) or isinstance(target, Cell):
             source.connect(target)
             return
+
         n = 0
         while 1:
             n += 1

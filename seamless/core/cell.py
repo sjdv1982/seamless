@@ -315,9 +315,10 @@ class Cell(SeamlessBase):
     def bilink(self, target):
         """Create a bidirectional unilink between two cells"""
         from .unilink import UniLink
+        from .macro import Path
         if isinstance(target, UniLink):
             target = target.get_linked()
-        if not isinstance(target, Cell):
+        if not isinstance(target, (Cell, Path)):
             raise TypeError(type(target))
         manager = self._get_manager()
         manager.bilink(self, target)
