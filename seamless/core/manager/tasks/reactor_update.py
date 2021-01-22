@@ -200,6 +200,7 @@ class ReactorResultTask(Task):
             except Exception as exc:
                 manager._set_reactor_exception(reactor, pinname, exc)
                 raise exc from None
+
         if checksum is not None:
             await validate_subcelltype(
                 checksum, celltype, subcelltype,

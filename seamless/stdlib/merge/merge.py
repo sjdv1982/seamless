@@ -34,7 +34,7 @@ def macro_code(ctx, fallback_mode, code_start, code_update):
     ctx.conflict.connect(merge.conflict)
     ctx.merged = cell("text")
     merge.merged.connect(ctx.merged)
-    ctx.state = cell("text")
+    ctx.state = cell("str")
     merge.state.connect(ctx.state)
 
     merge.code_start.cell().set(code_start)
@@ -181,19 +181,17 @@ ctx.compute()
 print(ctx.status)
 print(ctx.merged.value)
 print(ctx.state.value)
-'''
-if not ctx.result.value.unsilk:
+if ctx.state.value != "passthrough":
     sys.exit()
 
 # 5: Save graph and zip
 
 import os, json
 currdir=os.path.dirname(os.path.abspath(__file__))
-graph_filename=os.path.join(currdir,"../instantiate.seamless")
+graph_filename=os.path.join(currdir,"../merge.seamless")
 json.dump(graph, open(graph_filename, "w"), sort_keys=True, indent=2)
 
-zip_filename=os.path.join(currdir,"../instantiate.zip")
+zip_filename=os.path.join(currdir,"../merge.zip")
 with open(zip_filename, "bw") as f:
     f.write(zip)
 print("Graph saved")
-'''
