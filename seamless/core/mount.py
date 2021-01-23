@@ -457,6 +457,9 @@ class MountManager:
         root = cell_or_unilink._root()
         if from_del and (cell_or_unilink not in self.mounts or root not in self.paths):
             return
+        if cell_or_unilink not in self.mounts or root not in self.paths:
+            # KLUDGE
+            return
         mount_item = self.mounts.pop(cell_or_unilink)
         if not mount_item._destroyed:
             if root in self.paths:
@@ -530,7 +533,10 @@ class MountManager:
         root = cell._root()
         if root is not None and root not in mountmanager.paths:
             return
-        assert cell in self.mounts, (cell, hex(id(cell)))
+        if cell not in self.mounts:
+            # KLUDGE
+            return
+        #assert cell in self.mounts, (cell, hex(id(cell)))
         self.cell_updates.append((cell, checksum, buffer))
 
     def run_once(self):
@@ -697,8 +703,8 @@ def scan(ctx_or_cell):
     def find_mount(c, as_parent=False, child=None):
         if as_parent:
             assert child is not None
-        elif multicaps(c.path):
-            return
+        #elif multicaps(c.path):
+        #    return
         if c in mounts:
             result = mounts[c]
         elif not is_dummy_mount(c._mount):
