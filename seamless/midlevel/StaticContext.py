@@ -27,6 +27,9 @@ class StaticContext:
             self._manager = Manager()
         self.root = context(toplevel=True,manager=self._manager)
 
+    def __del__(self):
+        self.root.destroy()
+
     def get_graph(self):
         if self._parent_path is None:
             graph = {}
