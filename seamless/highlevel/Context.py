@@ -936,8 +936,13 @@ class Context(Base):
                     return False
                 return True
             else:
+                csource = con["source"]
+                if csource[:lp] == path:
+                    return False
                 ctarget = con["target"]
-                return ctarget[:lp] != path
+                if ctarget[:lp] == path:
+                    return False
+                return True
         connections = self._graph[1]
         if runtime:
             connections = self._runtime_graph[1]
