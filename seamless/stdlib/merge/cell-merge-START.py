@@ -4,6 +4,8 @@ from seamless.subprocess import CalledProcessError, PIPE
 tokens = "<|>"
 labels0 = "UPSTREAM", "BASE", "MODIFIED"
 
+no_conflict = "No conflict"
+
 class SeparatorInTextError(Exception):
     pass
 
@@ -41,5 +43,5 @@ else:
     state = "modify"
 
 if state != "conflict":
-    PINS.conflict.set(None)
+    PINS.conflict.set(no_conflict)
 fallback_mode = PINS.fallback_mode.value

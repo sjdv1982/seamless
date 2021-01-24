@@ -61,7 +61,7 @@ def main():
 
         if zero_modify:
             if state == "conflict":
-                PINS.conflict.set("")
+                PINS.conflict.set("No conflict")
             state = "passthrough"
     if state == "passthrough":
         if not zero_modify:
@@ -69,14 +69,14 @@ def main():
             state = "modify"
 
     if state == "passthrough": #no modifications at all
-        if PINS.conflict.updated and PINS.conflict.value not in ("", "\n", None):
+        if PINS.conflict.updated and PINS.conflict.value.strip("\n ") not in ("", None, no_conflict):
             print("warning: edit pin 'conflict' should not be modified when there is no conflict")
         v = PINS.upstream.value
         PINS.base.set(v)
         PINS.modified.set(v)
         PINS.merged.set(v)
     elif state == "modify":
-        if PINS.conflict.updated and PINS.conflict.value not in ("", "\n", None):
+        if PINS.conflict.updated and PINS.conflict.value.strip("\n ") not in ("", None, no_conflict):
             print("warning: edit pin 'conflict' should not be modified when there is no conflict")
         upstream, base, modified = PINS.upstream.value, PINS.base.value, PINS.modified.value
         if base is None:
@@ -107,7 +107,7 @@ def main():
                 PINS.merged.set(merged)
                 PINS.modified.set(merged)
                 PINS.base.set(upstream)
-                PINS.conflict.set("")
+                PINS.conflict.set(no_conflict)
                 state = "modify"
             else:
                 PINS.conflict.set(merged)
@@ -117,7 +117,7 @@ def main():
                 PINS.merged.set(merged)
                 PINS.modified.set(merged)
                 PINS.base.set(upstream)
-                PINS.conflict.set("")
+                PINS.conflict.set(no_conflict)
                 state = "modify"
 
     if state == "conflict":
