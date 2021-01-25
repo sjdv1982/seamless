@@ -172,6 +172,7 @@ class Context(Base):
         """
         graph = deepcopy(graph)
         nodes = {}
+        self._children.clear()
         for node in graph["nodes"]:
             p = tuple(node["path"])
             if not mounts:
@@ -905,7 +906,7 @@ class Context(Base):
     def _get_lib(self, path):
         return self._graph.lib[tuple(path)]
 
-    def _remove_connections(self, path, keep_links=False, runtime=False):
+    def _remove_connections(self, path, *, keep_links=False, runtime=False, only_target=False):
         """Removes all connections/links with source or target starting with path"""
         lp = len(path)
         def keep_con(con):
@@ -921,7 +922,7 @@ class Context(Base):
                 return True
             else:
                 csource = con["source"]
-                if csource[:lp] == path:
+                if (not only_target) and csource[:lp] == path:
                     return False
                 ctarget = con["target"]
                 if ctarget[:lp] == path:
