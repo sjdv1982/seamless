@@ -224,7 +224,11 @@ class Cell(Base):
             return getattr(cell, attr)
         return self._get_subcell(attr)
 
-    def mount(self, path, mode="rw", authority="file", persistent=True):
+    def mount(
+        self, path, mode="rw", authority="file", *,
+        persistent=True,
+        as_directory=False
+    ):
         """Mounts the cell to the file system.
         Mounting is only supported for non-structured cells.
 
@@ -246,9 +250,18 @@ class Cell(Base):
         - persistent
           If False, the file is deleted from disk when the Cell is destroyed
           Default: True.
+        - as_directory
+          If True, the cell must contain a dictionary,
+          which is mounted to a directory instead of a file.
+          items that are themselves dictionaries are mounted to sub-directories.
+          Other items are cast to str upon mounting.
+          Default: False
         """
         if self.celltype == "structured":
             raise Exception("Mounting is only supported for non-structured cells")
+        if as_directory:
+            if self.celltype != "plain":
+                raise Exception("Mounting as directory is only supported for plain cells")
         # TODO: check for independence (has_authority)
         # TODO, upon translation: check that there are no duplicate paths.
         hcell = self._get_hcell2()
@@ -256,7 +269,8 @@ class Cell(Base):
             "path": path,
             "mode": mode,
             "authority": authority,
-            "persistent": persistent
+            "persistent": persistent,
+            "as_directory": as_directory
         }
         hcell["mount"] = mount
         if self._parent() is not None:

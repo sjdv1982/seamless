@@ -73,6 +73,7 @@ mount-cson.py:
      - run with ipython3 -i
      - then open /tmp/test.cson and /tmp/test.json, manipulate resp. monitor them
 mount-plain.py: see above, minus the .cson
+mount-as-directory.py: see above, minus the .cson
 
 simple-communion: run "python3 -u simple-communion-slave.py > test-outputs/simple-communion-slave.out 2>&1"
      then "python3 -u simple-communion-master.py > test-outputs/simple-communion-master.out 2>&1" in a different terminal,

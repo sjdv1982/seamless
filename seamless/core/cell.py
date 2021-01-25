@@ -340,7 +340,7 @@ class Cell(SeamlessBase):
         self._mount.update({"extension": extension})
         return self
 
-    def mount(self, path=None, mode="rw", authority="cell", persistent=True):
+    def mount(self, path=None, mode="rw", authority="file", *, persistent=True, as_directory=False):
         """Performs a "lazy mount"; cell is mounted to the file when macro mode ends
         path: file path (can be None if an ancestor context has been mounted)
         mode: "r", "w" or "rw"
@@ -364,6 +364,7 @@ class Cell(SeamlessBase):
             "mode": mode,
             "authority": authority,
             "persistent": persistent,
+            "as_directory": as_directory
         })
         self._mount.update(self._mount_kwargs)
         MountItem(None, self, dummy=True, **self._mount) #to validate parameters

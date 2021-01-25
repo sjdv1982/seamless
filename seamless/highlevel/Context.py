@@ -310,22 +310,6 @@ class Context(Base):
         self._translate()
         return traitlet
 
-    def mount(self, path=None, mode="rw", authority="cell", persistent=None):
-        raise NotImplementedError  # for now, not implemented; TODO: see issue 10
-
-        if self._parent() is not self:
-            raise NotImplementedError
-        if path is None:
-            self._mount = None
-            return
-        self._mount = {
-            "path": path,
-            "mode": mode,
-            "authority": authority,
-            "persistent": persistent
-        }
-        self._translate()
-
     def compute(self, timeout=None, report=2):
         """Block until no more computation is required.
 
@@ -1059,9 +1043,6 @@ class SubContext(Base):
         parent = self._get_top_parent()
         path = self._path + (attr,)
         parent._destroy_path(path)
-
-    def mount(self, path=None, mode="rw", authority="cell", persistent=None):
-        raise NotImplementedError # for now, not implemented; TODO: see issue 10
 
     def _get_graph(self, copy, runtime=False):
         parent = self._parent()
