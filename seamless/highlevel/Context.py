@@ -42,6 +42,7 @@ from ..core.mount import mountmanager #for now, just a single global mountmanage
 from .assign import assign
 from .proxy import Proxy
 from ..midlevel import copying
+from ..midlevel.vault import save_vault, load_vault
 
 Graph = namedtuple("Graph", ("nodes", "connections", "params", "lib"))
 
@@ -514,7 +515,7 @@ class Context(Base):
         self._wait_for_auth_tasks("the graph buffers are obtained for zip")
         self._do_translate(force=force)
         graph = self.get_graph()
-        checksums = copying.get_graph_checksums(graph, with_libraries)
+        checksums = copying.get_graph_checksums(graph, with_libraries, with_annotations=False)
         manager = self._manager
         buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
         return get_zip(buffer_dict)
@@ -529,7 +530,7 @@ class Context(Base):
         await self._wait_for_auth_tasks_async("the graph buffers are obtained for zip")
         self._do_translate(force=force)
         graph = self.get_graph()
-        checksums = copying.get_graph_checksums(graph, with_libraries)
+        checksums = copying.get_graph_checksums(graph, with_libraries, with_annotations=False)
         manager = self._manager
         buffer_dict = await copying.get_buffer_dict(manager, checksums)
         return get_zip(buffer_dict)
@@ -552,15 +553,36 @@ class Context(Base):
         with open(filename, "wb") as f:
             f.write(zip)
 
+    def save_vault(self, dirname, with_libraries=True):
+        """Save the checksum-to-buffer cache for the current graph in a vault directory
+        """
+        # TODO: option to not follow deep cell checksums (currently, they are always followed)
+        force = (self._gen_context is None)
+        self._wait_for_auth_tasks("the graph buffers are obtained for zip")
+        self._do_translate(force=force)
+        graph = self.get_graph()
+        annotated_checksums = copying.get_graph_checksums(
+            graph, with_libraries, with_annotations=True
+        )
+        manager = self._manager
+        checksums = [c[0] for c in annotated_checksums]
+        buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
+        save_vault(dirname, annotated_checksums, buffer_dict)
+
+
     def _set_lib(self, path, lib):
         old_lib = self._graph.lib.get(path)
         self._graph.lib[path] = lib
         if lib is not None:
-            checksums = copying.get_checksums(lib["graph"]["nodes"])
+            checksums = copying.get_checksums(
+                lib["graph"]["nodes"],
+                lib["graph"]["connections"],
+                with_annotations=False
+            )
             for checksum in checksums:
                 buffer_cache.incref(bytes.fromhex(checksum), True)
         if old_lib is not None:
-            old_checksums = copying.get_checksums(old_lib["graph"]["nodes"])
+            old_checksums = copying.get_checksums(old_lib["graph"]["nodes"], with_annotations=False)
             for old_checksum in old_checksums:
                 buffer_cache.decref(bytes.fromhex(old_checksum))
 
@@ -591,6 +613,21 @@ class Context(Base):
         else:
             raise TypeError(type(zip))
         return copying.add_zip(manager, zipfile, incref=incref)
+
+    def load_vault(self, vault_directory, incref=False):
+        """Loads the contents of a vault directory in the checksum-to-buffer cache
+
+        Normally, the vault has been generated with Context.save_vault
+
+        Note that caching is temporary and entries will be removed after some time
+        if no element (cell, expression, or high-level library) holds their checksum
+        This can be overridden with "incref=True" (not recommended for long-living contexts)
+
+        """
+        if self._gen_context is None:
+            self._do_translate(force=True)
+        manager = self._manager
+        return load_vault(vault_directory, incref=incref)
 
     def include(self, lib, only_zip=False, full_path=False):
         """Include a library in the graph
@@ -992,7 +1029,11 @@ class Context(Base):
         if self._gen_context is not None:
             self._gen_context.destroy()
         for lib in self._graph.lib.values():
-            checksums = copying.get_checksums(lib["graph"]["nodes"])
+            checksums = copying.get_checksums(
+                lib["graph"]["nodes"],
+                lib["graph"]["connections"],
+                with_annotations=False
+            )
             for checksum in checksums:
                 buffer_cache.decref(bytes.fromhex(checksum))
 

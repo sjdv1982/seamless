@@ -341,8 +341,16 @@ class StructuredCell(SeamlessBase):
 
     @property
     def checksum(self):
-        return self._data.checksum
-
+        checksum = self._data.checksum
+        if checksum is not None:
+            return checksum
+        if self.schema is None or self.schema.checksum is None:
+            checksum = self.buffer.checksum
+            if checksum is not None:
+                return checksum
+            if len(self.inchannels):
+                return None
+            return self.auth.checksum
     def set_auth_checksum(self, checksum):
         assert checksum is None or isinstance(checksum, str)
         assert not self.no_auth

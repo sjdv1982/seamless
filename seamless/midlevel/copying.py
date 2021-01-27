@@ -8,11 +8,14 @@ from ..core.protocol.serialize import serialize_sync as serialize
 from ..core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from ..core.protocol.deep_structure import apply_hash_pattern_sync, deep_structure_to_checksums
 
-def get_checksums(nodes):
-    def add_checksum(node, checksum, subpath=None):
+def get_checksums(nodes, connections, *, with_annotations):
+    def add_checksum(node, dependent, checksum, subpath=None):
         if checksum is None:
             return
-        checksums.add(checksum)
+        if with_annotations:
+            checksums.add((checksum, dependent))
+        else:
+            checksums.add(checksum)
         hash_pattern = None
         if node["type"] == "cell" and subpath != "schema":
             hash_pattern = node.get("hash_pattern")
@@ -31,6 +34,8 @@ def get_checksums(nodes):
                 return
             deep_structure = deserialize(buffer, bytes.fromhex(checksum), "plain", copy=False)
             deep_checksums = deep_structure_to_checksums(deep_structure, hash_pattern)
+            if with_annotations:
+                deep_checksums = [(c, dependent) for c in deep_checksums]
             checksums.update(deep_checksums)
     checksums = set()
     for node in nodes:
@@ -42,12 +47,26 @@ def get_checksums(nodes):
         checksum = node.get("checksum")
         if checksum is None:
             continue
-        elif isinstance(checksum, str):
-            add_checksum(node, checksum)
+        for connection in connections:
+            p = connection["target"]
+            if p == node["path"]:
+                dependent = True
+                break
+        else:
+            dependent = False
+        if isinstance(checksum, str):
+            add_checksum(node, dependent, checksum)
         else:
             for k,v in checksum.items():
+                dependent2 = dependent
+                if node["type"] == "transformer":
+                    if k.startswith("result"):
+                        dependent2 = True
+                elif node["type"] == "cell":
+                    if k in ("buffer", "value"):
+                        dependent2 = True
                 if v is not None:
-                    add_checksum(node, v, k)
+                    add_checksum(node, dependent2, v, k)
     return checksums
 
 async def get_buffer_dict(manager, checksums):
@@ -197,14 +216,32 @@ def fill_checksum(manager, node, temp_path, composite=True):
     temp_path = temp_path.lstrip("_")
     node["checksum"][temp_path] = checksum
 
-def get_graph_checksums(graph, with_libraries):
+def get_graph_checksums(graph, with_libraries, *, with_annotations):
     nodes0 = graph["nodes"]
     nodes = [node for node in nodes0 if "scratch" not in node]
-    checksums = get_checksums(nodes)
+    connections = graph.get("connections", [])
+    checksums = get_checksums(
+        nodes, connections,
+        with_annotations=with_annotations
+    )
     if with_libraries:
         for lib in graph["lib"]:
-            lib_checksums = get_graph_checksums(lib["graph"], with_libraries=True)
+            lib_checksums = get_graph_checksums(
+                lib["graph"],
+                with_libraries=True,
+                with_annotations=with_annotations
+            )
             checksums.update(lib_checksums)
+    if with_annotations:
+        checksums0 = checksums
+        checksums = set()
+        for c, dependent in checksums0:
+            if not dependent:
+                checksums.add((c, False))
+        for c, dependent in checksums0:
+            if dependent:
+                if (c, True) not in checksums:
+                    checksums.add((c, True))
     return checksums
 
 def fill_checksums(mgr, nodes, *, path=None):
