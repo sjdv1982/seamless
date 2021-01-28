@@ -856,7 +856,8 @@ class Context(Base):
             sharepath = shareparams["path"]
             readonly = shareparams["readonly"]
             mimetype = hcell.mimetype
-            cell.share(sharepath, readonly, mimetype=mimetype)
+            toplevel = shareparams.get("toplevel", False)
+            cell.share(sharepath, readonly, mimetype=mimetype, toplevel=toplevel)
 
     def _rename_path(self, path, newpath):
         raise NotImplementedError

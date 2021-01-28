@@ -23,13 +23,17 @@ class ShareItem:
     _initialized = False
     _initializing = False
     share = None
-    def __init__(self, cell, path, readonly, mimetype=None):
+    def __init__(self, cell, path, readonly, *,
+        mimetype=None,
+        toplevel=False  # if True, don't use the name of the namespace, but serve under the web root directly
+    ):
         self.path = path
         self.celltype = cell._celltype
         self.cell = ref(cell)
         assert isinstance(readonly, bool)
         self.readonly = readonly
         self.mimetype = mimetype
+        self.toplevel = toplevel
 
     def init(self):
         if self._initialized:
@@ -193,8 +197,10 @@ class ShareManager:
                 share_item.destroy()
             if share_params is not None:
                 mimetype = share_params.get("mimetype")
+                toplevel = share_params.get("toplevel", False)
                 new_share_item = ShareItem(
-                    cell, path, readonly, mimetype=mimetype
+                    cell, path, readonly, mimetype=mimetype,
+                    toplevel=toplevel
                 )
                 self.shares[cell] = new_share_item
                 checksum = cell._checksum

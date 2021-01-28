@@ -49,12 +49,12 @@ ctx.share_namespace = "status"
 
 ctx.index_html = Cell("text")
 ctx.index_html.mimetype = "text/html"
-ctx.index_html.share("index.html")
+ctx.index_html.share("index.html", toplevel=True)
 ctx.index_html.mount("index.html", mode="rw")
 
 ctx.index_js = Cell("text")
 ctx.index_js.mimetype = "text/javascript"
-ctx.index_js.share("index.js")
+ctx.index_js.share("index.js", toplevel=True)
 ctx.index_js.mount("index.js", mode="rw")
 
 ctx.index_html_INITIAL = ctx.webpage["index.html"]
@@ -90,7 +90,7 @@ seamless_dir = os.path.dirname(seamless.__file__)
 seamless_client = open(seamless_dir + "/js/seamless-client.js").read()
 ctx.seamless_js = Cell("text").set(seamless_client).share("seamless-client.js")
 ctx.seamless_js.mimetype="text/javascript"
-ctx.seamless_js.share("seamless-client.js")
+ctx.seamless_js.share("seamless-client.js", toplevel=True)
 
 ctx.compute()
 

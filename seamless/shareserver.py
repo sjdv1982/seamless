@@ -16,6 +16,8 @@ It opens an update websocket server, and a REST server.
 
 Shares are of the form http://<address>:<port>/<namespace>/<path>
 By default, namespace is "ctx", address is localhost, port is 5813
+Shares with toplevel=True do not share under /<namespace>/, but under
+    http://<address>:<port>/<path> instead.
 
 All GET requests have a mode URL parameter (default: "buffer"), which can have
 one of the following values.
@@ -88,7 +90,7 @@ def is_bound_port_error(exc):
 def tailsplit(tail):
     pos = tail.find("/")
     if pos == -1:
-        return tail, ""
+        return "", tail
     else:
         return tail[:pos], tail[pos+1:]
 
@@ -114,6 +116,12 @@ class Share:
 
     def unbind(self):
         self.bound = None
+
+    @property
+    def toplevel(self):
+        if self.bound is None:
+            raise AttributeError
+        return self.bound.toplevel
 
     async def read(self, marker=None):
         if marker is not None and marker <= self._marker:
@@ -482,6 +490,13 @@ class ShareServer(object):
         print("Opened the seamless share update server at port {0}".format(self.update_port))
         self._update_server_started = True
 
+    def _find_toplevel(self, key):
+        for name in sorted(list(self.namespaces.keys())):
+            namespace = self.namespaces[name]
+            share = namespace.shares.get(key)
+            if share is not None and share.toplevel:
+                return namespace
+
     async def _handle_get(self, request):
         try:
             tail = request.match_info.get('tail')
@@ -489,11 +504,7 @@ class ShareServer(object):
                 return web.Response(
                     status=404
                 )
-            if tail == "" and "ctx" in self.namespaces:
-                raise web.HTTPFound('/ctx/index.html')
             ns, key = tailsplit(tail)
-        except web.HTTPFound:
-            raise
         except:
             if DEBUG:
                 traceback.print_exc()
@@ -501,37 +512,52 @@ class ShareServer(object):
                 status=400,
                 text="Invalid request",
             )
-
-        try:
-            namespace = self.namespaces[ns]
+        if ns == "":
             if key == "":
-                raise web.HTTPFound('/{}/index.html'.format(ns))
+                raise web.HTTPFound('/index.html')
+            namespace = self._find_toplevel(key)
+            if namespace is None:
+                if key == "index.html" and "ctx" in self.namespaces:
+                    raise web.HTTPFound('/ctx/index.html')
+                else:
+                    return web.Response(
+                        status=404,
+                        body=json.dumps({'not found': 404}),
+                        content_type='application/json'
+                    )
+            share = namespace.shares[key]
+            subkey = None
+        else:
             try:
-                share = namespace.shares[key]
-                subkey = None
+                namespace = self.namespaces[ns]
+                if key == "":
+                    raise web.HTTPFound('/{}/index.html'.format(ns))
+                try:
+                    share = namespace.shares[key]
+                    subkey = None
+                except KeyError:
+                    ok = False
+                    for pos in range(len(key)-1,0,-1):
+                        if key[pos] != "/":
+                            continue
+                        key2, subkey = key[:pos], key[pos+1:]
+                        try:
+                            share = namespace.shares[key2]
+                            ok = True
+                            key = key2
+                            break
+                        except KeyError:
+                            pass
+                    if not ok:
+                        raise KeyError(key) from None
             except KeyError:
-                ok = False
-                for pos in range(len(key)-1,0,-1):
-                    if key[pos] != "/":
-                        continue
-                    key2, subkey = key[:pos], key[pos+1:]
-                    try:
-                        share = namespace.shares[key2]
-                        ok = True
-                        key = key2
-                        break
-                    except KeyError:
-                        pass
-                if not ok:
-                    raise KeyError(key) from None
-        except KeyError:
-            if DEBUG:
-                traceback.print_exc()
-            return web.Response(
-                status=404,
-                body=json.dumps({'not found': 404}),
-                content_type='application/json'
-            )
+                if DEBUG:
+                    traceback.print_exc()
+                return web.Response(
+                    status=404,
+                    body=json.dumps({'not found': 404}),
+                    content_type='application/json'
+                )
 
         mode = request.rel_url.query.get("mode", "value")
 
@@ -545,7 +571,7 @@ class ShareServer(object):
             )
 
         try:
-            result = await namespace.get(key, mode,subkey)
+            result = await namespace.get(key, mode, subkey)
             body, content_type = result
             if body is None:
                 return web.Response(
@@ -628,8 +654,34 @@ class ShareServer(object):
 
         tail = request.match_info.get('tail')
         ns, key = tailsplit(tail)
+
+        if ns == "":
+            if key == "":
+                raise web.HTTPFound('/index.html')
+            namespace = self._find_toplevel(key)
+            if namespace is None:
+                if key == "index.html" and "ctx" in self.namespaces:
+                    raise web.HTTPFound('/ctx/index.html')
+                else:
+                    return web.Response(
+                        status=404,
+                        body=json.dumps({'not found': 404}),
+                        content_type='application/json'
+                    )
+            share = namespace.shares[key]
+        else:
+            try:
+                namespace = self.namespaces[ns]
+            except KeyError:
+                if DEBUG:
+                    traceback.print_exc()
+                return web.Response(
+                    status=404,
+                    body=json.dumps({'not found': 404}),
+                    content_type='application/json'
+                )
+
         try:
-            namespace = self.namespaces[ns]
             share = namespace.shares[key]
         except KeyError:
             if DEBUG:

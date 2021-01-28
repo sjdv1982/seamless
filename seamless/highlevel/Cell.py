@@ -789,7 +789,7 @@ class Cell(Base):
         assert other._pull_source is not None
         other._pull_source(self)
 
-    def share(self, path=None, readonly=True):
+    def share(self, path=None, readonly=True, *, toplevel=False):
         """Shares a cell over HTTP.
 
         Typically, the cell is available under
@@ -797,6 +797,9 @@ class Cell(Base):
 
         If path is None (default), Cell.path is used,
         with dots replaced by slashes.
+
+        If toplevel is True, the cell is instead available under
+        http://localhost:5813/<path>.
 
         If readonly is True, only GET requests are supported.
         Else, the cell can also be modified using PUT requests
@@ -817,6 +820,8 @@ class Cell(Base):
             "path": path,
             "readonly": readonly,
         }
+        if toplevel:
+            hcell["share"]["toplevel"] = True
         if self._parent() is not None:
             self._parent()._translate()
         return self
