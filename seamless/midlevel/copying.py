@@ -48,6 +48,8 @@ def get_checksums(nodes, connections, *, with_annotations):
         if checksum is None:
             continue
         for connection in connections:
+            if connection["type"] == "link":
+                continue
             p = connection["target"]
             if p == node["path"]:
                 dependent = True
