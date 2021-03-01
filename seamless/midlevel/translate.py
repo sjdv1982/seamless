@@ -294,10 +294,10 @@ def translate_connection(node, namespace, ctx):
 
 def translate_link(node, namespace, ctx):
     first = get_path_link(
-      ctx, node["first"], namespace, True
+      ctx, node["first"], namespace
     )
     second = get_path_link(
-      ctx, node["second"], namespace, True
+      ctx, node["second"], namespace
     )
     first.bilink(second)
 

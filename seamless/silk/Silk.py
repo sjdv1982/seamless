@@ -830,6 +830,8 @@ class Silk(SilkBase):
             if isinstance(data2, FormWrapper) and item in ("form", "storage"):
                 return result
             d = result
+            if not isinstance(d, allowed_types) and not isinstance(d, (Wrapper, FormWrapper)):
+                d = data[item]
         else:
             d = data[item]
         """

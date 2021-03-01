@@ -653,7 +653,7 @@ class Cell(Base):
             return mimetype
         if celltype == "structured":
             datatype = hcell["datatype"]
-            if datatype in ("mixed", "binary"):
+            if datatype in ("mixed", "binary", "plain"):
                 mimetype = get_mime(datatype)
             else:
                 mimetype = ext_to_mime(datatype)
