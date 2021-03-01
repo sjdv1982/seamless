@@ -31,6 +31,7 @@ function seamless_update(cell, value, encoding) {
 }
 
 const app = new Vue({
+  vuetify: new Vuetify(),
   data() {
     return {{ VUE_DATA }}
   },

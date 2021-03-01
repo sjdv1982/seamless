@@ -1,0 +1,43 @@
+{
+  "properties": {
+    "headers": {
+      "items": {
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "value"
+        ],
+        "type": "object"
+      },
+      "storage": "plain",
+      "type": "array"
+    },
+    "items": {
+      "items": {
+        "type": "object"
+      },
+      "storage": "plain",
+      "type": "array"
+    }
+  },
+  "required": [
+    "headers",
+    "items"
+  ],
+  "storage": "plain",
+  "type": "object",
+  "validators": [
+    {
+      "code": "def validate(self):\n    col_names = set([h.value.unsilk for h in self.headers])\n    for item in self[\"items\"]:\n        for key in item:\n            assert key in col_names, (key, col_names)\n",
+      "language": "python",
+      "name": "validate"
+    }
+  ]
+}

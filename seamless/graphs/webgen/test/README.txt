@@ -9,6 +9,7 @@ ipython3 -i gen-initial-graph.py
 - In terminal 2, add and remove new cells, and run save()
 - In terminal 1, modify cell values in ctx_original
 - Open and modify webform.json and webform-CONFLICT.json
+  In particular, change the report component to "datatable"
 - Open and modify index.html/.js and index-CONFLICT.html/.js
 
 Cleanup:

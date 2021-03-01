@@ -16,13 +16,14 @@ for node in graph["nodes"]:
     if path is not None and len(path.split(".")[1:]) and path.split(".")[-1] in ("js", "html"):
         continue
     celltype = node["celltype"]
+    if celltype == "structured":
+        celltype = node["datatype"]
     params = {}
     share = {}
     cell = {
         "celltype": celltype,
     }
     cellname = node["path"][-1]
-    print(cellname, path)
     if celltype in ("float", "int"):
         share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
@@ -43,6 +44,11 @@ for node in graph["nodes"]:
         else:
             cell["component"] = "card"
         share["encoding"] = "text"
+    elif celltype == "plain":
+        share["read"] = True
+        params["title"] = "Cell " + cellname.capitalize()
+        cell["component"] = "card"
+        share["encoding"] = "json"
     else:
         raise NotImplementedError(celltype)
     cell.update({
