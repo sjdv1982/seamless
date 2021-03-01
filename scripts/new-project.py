@@ -111,8 +111,10 @@ async def load():
 
     Main context is "ctx"
     Web/status context is "webctx"
+
     Open http://localhost:<REST server port> to see the web page
     Open http://localhost:<REST server port>/status/status.html to see the status
+
     Run save() to save the project
     """)
 ''' % (project_name,)

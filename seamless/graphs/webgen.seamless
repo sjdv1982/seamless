@@ -133,15 +133,6 @@
         "index_js_INITIAL"
       ],
       "type": "connection"
-    },
-    {
-      "first": [
-        "js"
-      ],
-      "second": [
-        "seamless_js"
-      ],
-      "type": "link"
     }
   ],
   "lib": [
@@ -578,7 +569,8 @@
       ],
       "share": {
         "path": "seamless-client.js",
-        "readonly": true
+        "readonly": true,
+        "toplevel": true
       },
       "type": "cell"
     },
@@ -696,23 +688,6 @@
       "path": [
         "seamless2webform"
       ],
-      "type": "cell"
-    },
-    {
-      "celltype": "text",
-      "checksum": {
-        "value": "f0abdac1afdb6b57312984a526441c769d257a88fbc91ef53b0b66ab9ff79bd4"
-      },
-      "datatype": "mixed",
-      "mimetype": "text/javascript",
-      "path": [
-        "seamless_js"
-      ],
-      "share": {
-        "path": "seamless-client.js",
-        "readonly": true,
-        "toplevel": true
-      },
       "type": "cell"
     },
     {
