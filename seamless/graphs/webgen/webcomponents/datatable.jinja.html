@@ -6,6 +6,13 @@
 
                   class="elevation-1"
                 >
+                  <template v-slot:item="{ item }">
+                    <tr>
+                        <td v-for="header in {{CELL}}.headers">
+                          {{ '{{' }} item[header.value] {{ '}}' }}
+                        </td>
+                    </tr>
+                  </template>
                 </v-data-table>
                 </b-field>
               </section>
