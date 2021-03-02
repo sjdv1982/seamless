@@ -4,7 +4,7 @@ set -u -e
 # first run Seamless-database and jobslave.sh
 seamless-devel-add-zip share-pdb.zip
 
-seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
+seamlessdir=$SEAMLESSDIR
 
 bridge_ip=$(docker network inspect bridge \
   | python3 -c '''

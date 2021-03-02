@@ -7,7 +7,7 @@ set -u -e
 #    containers via the Docker transformer. This works only under Linux.
 #    NOTE: THIS IS A BIG SECURITY HOLE, IT CAN GIVE ROOT ACCESS TO YOUR SYSTEM
 
-seamlessdir=`python3 -c 'import seamless,os;print(os.path.dirname(seamless.__file__))'`/../
+seamlessdir=$SEAMLESSDIR
 
 bridge_ip=$(docker network inspect bridge \
   | python3 -c '''
