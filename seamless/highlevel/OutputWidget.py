@@ -16,21 +16,21 @@ celltype_to_DOC = {
     "structured": "JSON",
     "text": "Pretty",
     "code": ("Code", {"language": "language"}),
-    "plain": "JSON", 
-    # "mixed", 
+    "plain": "JSON",
+    # "mixed",
     "binary": "JSON",
     "cson": "Pretty",
      "yaml": "Pretty",
-    "str": "Pretty", 
+    "str": "Pretty",
     #"bytes"
-    "int": "Pretty", 
-    "float": "Pretty", 
-    "bool": "Pretty", 
+    "int": "Pretty",
+    "float": "Pretty",
+    "bool": "Pretty",
 }
 
 def json_widget(data, **kwargs):
-    """ 
-    # IPython.display.JSON does not work in notebooks 
+    """
+    # IPython.display.JSON does not work in notebooks
     # (it does work in JupyterLab)
     # TODO: somehow check if we are inside a notebook,
     #  or else monkey-patch IPython.display.JSON?
@@ -46,7 +46,9 @@ def json_widget(data, **kwargs):
 def select_DOC(celltype, mimetype):
     import IPython.display
     classname, params = None, None
-    if mimetype in mimetype_to_DOC:
+    if mimetype in ("JSON", "application/json") and celltype in celltype_to_DOC:
+        result = celltype_to_DOC[celltype]
+    elif mimetype in mimetype_to_DOC:
         result = mimetype_to_DOC[mimetype]
     elif celltype in celltype_to_DOC:
         result = celltype_to_DOC[celltype]
@@ -92,7 +94,7 @@ class OutputWidget:
         else:
             self.output_instance = Output(layout=layout)
         DOC, DOC_name, params = select_DOC(cell.celltype, cell.mimetype)
-        doc_kwargs = get_doc_kwargs(cell, params)        
+        doc_kwargs = get_doc_kwargs(cell, params)
         self.DOC = DOC
         self.DOC_name = DOC_name
         self.doc_kwargs = doc_kwargs
@@ -103,7 +105,7 @@ class OutputWidget:
         v = self.traitlet.value
         if v is not None:
             self._update(v)
-    
+
     def _update(self, value):
         from ..silk import Silk
         from ..mixed.get_form import get_form
@@ -139,7 +141,7 @@ class OutputWidget:
     def refresh(self):
         if self.value is None:
             return
-        display_object = self.DOC(data=self.value,**self.doc_kwargs)        
+        display_object = self.DOC(data=self.value,**self.doc_kwargs)
         o = self.output_instance
         if len(o.outputs):
             o.clear_output(wait=True)
@@ -161,4 +163,3 @@ class OutputWidget:
         if attr.startswith("_repr_") or attr.startswith("_ipython_"):
             return getattr(self.output_instance, attr)
         return super().__getattribute__(attr)
-            

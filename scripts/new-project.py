@@ -1,10 +1,38 @@
 import sys, os, shutil, json
 from seamless.highlevel import Context
+import argparse
+import json
 
-project_name = sys.argv[1]
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "project_name",
+    help="Name of the project",
+)
+args = parser.parse_args()
+project_name = args.project_name
 
 def pr(*args):
     print(*args, file=sys.stderr)
+
+notebook = r"""{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "%run -i load-project.py\n",
+    "await load()"
+   ]
+  }
+ ],
+ "metadata": {},
+ "nbformat": 4,
+ "nbformat_minor": 2
+}"""
 
 subpaths = [
     "web",
@@ -23,12 +51,12 @@ import seamless
 seamless_dir = os.path.dirname(seamless.__file__)
 
 empty = Context()
-empty.save_graph("graph/%s.seamless" % project_name)
+empty.save_graph("graph/{0}.seamless".format(project_name))
 del empty
 
 f = "webgen.seamless"
 source = os.path.join(seamless_dir, "graphs", f)
-dest = os.path.join("graph", "testproject-webctx.seamless")
+dest = os.path.join("graph", "{0}-webctx.seamless".format(project_name))
 shutil.copy(source, dest)
 graph = json.load(open(dest))
 
@@ -64,6 +92,8 @@ else:
 code = '''
 PROJNAME = "%s"
 
+import os, shutil
+
 from seamless.highlevel import Context, Cell, Transformer
 
 ctx = None
@@ -76,6 +106,16 @@ async def load():
 
     global ctx, webctx, save
     graph = json.load(open("graph/" + PROJNAME + ".seamless"))
+    for f in (
+        "web/index.html", "web/index.js",
+        "web/index-CONFLICT.html", "web/index-CONFLICT.js",
+        "web/webform.json", "web/webform-CONFLICT.txt"
+    ):
+        if os.path.exists(f):
+            dest = f + "-BAK"
+            if os.path.exists(dest):
+                os.remove(dest)
+            shutil.move(f, dest)
     ctx = Context()
     ctx.load_vault("vault")
     ctx.set_graph(graph, mounts=True, shares=True)
@@ -122,4 +162,21 @@ async def load():
 with open("load-project.py", "w") as f:
     f.write(code)
 
-pr("Project created. Use seamless-load-project to start up IPython")
+with open("{0}.ipynb".format(project_name), "w") as f:
+    f.write(notebook)
+
+pr("""Project {0} created.
+
+- Use seamless-load-project to start up IPython
+or:
+- Use seamless-jupyter to start up Jupyter
+  and in the Jupyter browser window,
+  open /home/jovyan/cwd/{0}.ipynb
+
+If Seamless needs to execute Docker transformers:
+- Use seamless-load-project-trusted to start up IPython
+or:
+- Use seamless-jupyter-trusted to start up Jupyter
+  and in the Jupyter browser window,
+  open /home/jovyan/cwd/{0}.ipynb
+""".format(project_name))

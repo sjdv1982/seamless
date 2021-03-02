@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -u -e
+
+# Creates a new Seamless project in the current directory
+
+seamlessdir=$SEAMLESSDIR
+
+docker run --rm \
+  -v $seamlessdir:/seamless \
+  -e "PYTHONPATH=/seamless" \
+  -v `pwd`:/cwd \
+  --workdir /cwd \
+  -u `id -u` \
+  --group-add users \
+  seamless-devel start.sh python3 -u /seamless/scripts/new-project.py $*

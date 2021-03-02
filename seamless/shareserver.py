@@ -446,7 +446,8 @@ class ShareServer(object):
     async def _serve_update(self, websocket, path):
         if path:
             path = path.lstrip("/")
-        assert path in self.namespaces, path #TODO
+        if path not in self.namespaces:
+            return
         """
         In the future, path can be empty (=> get all namespaces)
          or longer than a namespace (=> get part of a namespace)
