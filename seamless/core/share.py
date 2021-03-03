@@ -76,10 +76,9 @@ class ShareItem:
                 self.share = cached_share
             else:
                 namespace = shareserver.namespaces[name]
-                celltype = cell._celltype
                 self.share = namespace.add_share(
                     self.path, self.readonly,
-                    celltype, self.mimetype
+                    self.celltype, self.mimetype
                 )
             self.share.bind(self)
             if from_cache and not cell_pending:

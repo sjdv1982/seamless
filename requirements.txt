@@ -31,3 +31,4 @@ jupyter-console==6.1.*
 docker==3.7.*
 itables==0.2.*
 debugpy==1.2.*
+mpld3==0.5.*

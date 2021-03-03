@@ -292,7 +292,16 @@ class ShareNamespace:
         if mode == "value":
             if buffer is None:
                 return None, None
-            return buffer, content_type
+            if share.celltype == "mixed" and content_type.startswith("text"):
+                try:
+                    value0 = json.loads(buffer)
+                    if isinstance(value0, str):
+                        value = value0
+                except:
+                    pass
+            else:
+                value = buffer
+            return value, content_type
         result = {
             "checksum": checksum2,
             "marker": marker,

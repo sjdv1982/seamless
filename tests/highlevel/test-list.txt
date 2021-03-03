@@ -101,6 +101,7 @@ share-pdb-docker.seamless/.zip: to test using:
       --status-graph /seamless/seamless/graphs/status-visualization.seamless \
       --add-zip /seamless/seamless/graphs/status-visualization.zip
     In that case, open also http://localhost:5813/status/index.html
+plotting.py
 
 NOTES
 =====
