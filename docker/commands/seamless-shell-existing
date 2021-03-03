@@ -1,0 +1,24 @@
+#!/bin/bash
+set -u -e
+
+# Opens a bash shell inside an existing Seamless Docker image, as privileged root user
+
+containers=$(docker ps --filter ancestor=rpbs/seamless)
+ncontainers=$(echo "$containers" | wc -l)
+if [ $ncontainers -eq 1 ]; then
+    echo 'No running Seamless Docker containers found' 1>&2
+    exit 1
+fi
+if [ $ncontainers -gt 2 ]; then
+    echo '*****************************************************' 1>&2
+    echo '* Multiple Seamless Docker containers found' 1>&2
+    echo '*****************************************************' 1>&2
+    echo 'Do "docker ps --filter ancestor=rpbs/seamless", and look at the last field.' 1>&2
+    echo 'It will be something like "jolly_einstein". Select the one you want.' 1>&2
+    echo 'Then, do "docker exec -it --user jovyan jolly_einstein bash"' 1>&2
+    echo 'Finally, do "~/seamless-scripts/jupyter-console-existing"' 1>&2
+    exit 1
+fi
+
+container=$(echo "$containers" | tail -1 | awk '{print $NF}')
+docker exec -it -u root --privileged $container bash
