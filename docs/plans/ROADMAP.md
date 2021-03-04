@@ -7,8 +7,8 @@ Get rid of special syntax << and >>
 Reactor
 =======
 - Rip high-level Reactor DONE
-- implement edit pins, including must_be_defined=False
-- port WIP/build_merge.py to use low-level reactor (in high-level macro)
+- implement edit pins, including must_be_defined=False DONE
+- port WIP/build_merge.py to use low-level reactor (in high-level macro) DONE
 
 UPDATE Nov 2020
 ===============
