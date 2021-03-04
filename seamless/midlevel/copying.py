@@ -136,6 +136,8 @@ def fill_checksum(manager, node, temp_path, composite=True):
     if node["type"] == "cell":
         celltype = node["celltype"]
         hash_pattern = node.get("hash_pattern")
+    elif node["type"] == "module":
+        celltype = "text"
     elif node["type"] == "transformer":
         if temp_path == "code":
             datatype = "code"
@@ -150,8 +152,6 @@ def fill_checksum(manager, node, temp_path, composite=True):
             celltype = "structured"
             if temp_path.startswith("input") and not temp_path.endswith("schema"):
                 hash_pattern = node.get("hash_pattern")
-    elif node["type"] == "reactor":
-        raise NotImplementedError ### livegraph branch, feature E2
     elif node["type"] == "macro":
         if temp_path == "code":
             datatype = "code"
@@ -167,7 +167,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
     else:
         raise TypeError(node["type"])
     if celltype == "structured":
-        if node["type"] in ("reactor", "transformer", "macro"):
+        if node["type"] in ("transformer", "macro"):
             datatype = "mixed"
         else:
             datatype = node["datatype"]
@@ -212,11 +212,12 @@ def fill_checksum(manager, node, temp_path, composite=True):
             print(msg.format(node["path"], temp_path), file=sys.stderr)
     checksum = checksum.hex()
     if temp_path is None:
-        temp_path = "value"
-    if "checksum" not in node:
-        node["checksum"] = {}
-    temp_path = temp_path.lstrip("_")
-    node["checksum"][temp_path] = checksum
+        node["checksum"] = checksum
+    else:
+        if "checksum" not in node:
+            node["checksum"] = {}
+        temp_path = temp_path.lstrip("_")
+        node["checksum"][temp_path] = checksum
 
 def get_graph_checksums(graph, with_libraries, *, with_annotations):
     nodes0 = graph["nodes"]
@@ -278,17 +279,14 @@ def fill_checksums(mgr, nodes, *, path=None):
             elif node["type"] == "macro":
                 fill_checksum(mgr, node, "param_auth")
                 fill_checksum(mgr, node, "code")
-            elif node["type"] == "reactor":
-                fill_checksum(mgr, node, "io")
-                fill_checksum(mgr, node, "code_start")
-                fill_checksum(mgr, node, "code_update")
-                fill_checksum(mgr, node, "code_stop")
             elif node["type"] == "cell":
                 if node["celltype"] == "structured":
                     temp_path = "auth"
                 else:
                     temp_path = "value"
                 fill_checksum(mgr, node, temp_path, composite=False)
+            elif node["type"] == "module":
+                fill_checksum(mgr, node, None, composite=False)
             else:
                 raise TypeError(p, node["type"])
             node.pop("TEMP", None)
@@ -297,7 +295,11 @@ def fill_checksums(mgr, nodes, *, path=None):
                     node["checksum"] = old_checksum
             else:
                 if old_checksum is not None:
-                    node["checksum"].update(old_checksum)
+                    if isinstance(node["checksum"], dict):
+                        if isinstance(old_checksum, dict):
+                            for k in old_checksum:
+                                if k not in node["checksum"]:
+                                    node["checksum"][k] = old_checksum[k]
         except Exception as exc:
             if first_exc is None:
                 first_exc = exc

@@ -22,6 +22,7 @@ from . import ConstantTypes
 from ..mixed import MixedBase
 from ..silk import Silk
 from .Cell import Cell, get_new_cell
+from .Module import Module, get_new_module
 from .Resource import Resource
 from .pin import PinWrapper
 from .Transformer import Transformer
@@ -74,14 +75,23 @@ def assign_constant(ctx, path, value):
             removed = ctx._remove_connections(path, keep_links=True, only_target=True)
             if removed:
                 ctx._translate()
+                hcell["UNTRANSLATED"] = True
             hcell = old._get_hcell()
             if not hcell.get("UNTRANSLATED"):
                 cell = old._get_cell()
                 if cell.has_authority():
                     old._set(value)
                     return False
+        elif isinstance(old, Module):
+            removed = ctx._remove_connections(path, keep_links=True, only_target=True)
+            if removed:
+                ctx._translate()
+                hnode = old._get_hnode()
+                hnode["UNTRANSLATED"] = True
+            old.set(value)
+            return False
         else:
-            raise AttributeError(path) #already exists, but not a Cell
+            raise AttributeError(path) #already exists, but not a Cell or Module
     if old is None:
         child = Cell(parent=ctx, path=path) #inserts itself as child
         cell = get_new_cell(path)
@@ -161,13 +171,20 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         if target not in ctx._children:
             assign_constant(ctx, target, None)
         t = ctx._children[target]
-        assert isinstance(t, Cell)
-        hcell = t._get_hcell()
-        if "TEMP" in hcell:
-            hcell.pop("TEMP")
-        elif "checksum" in hcell:
-            hcell["checksum"].pop("value", None)
-            hcell["checksum"].pop("auth", None)
+        assert isinstance(t, (Cell, Module))
+        if isinstance(t, Cell):
+            hcell = t._get_hcell()
+            if "TEMP" in hcell:
+                hcell.pop("TEMP")
+            elif "checksum" in hcell:
+                hcell["checksum"].pop("value", None)
+                hcell["checksum"].pop("auth", None)
+        else:
+            hnode = t._get_hnode()
+            if "TEMP" in hnode:
+                hnode.pop("TEMP")
+            else:
+                hnode.pop("checksum", None)
     lt = len(target)
     def keep_con(con):
         if con["type"] == "link":
@@ -190,7 +207,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     ctx._graph[1][:] = filter(keep_con, ctx._graph[1])
     if standalone_target:
         t = ctx._children[target]
-        assert not t.get_links()
+        assert isinstance(t, Module) or not t.get_links()
     assert source in ctx._children or source[:-1] in ctx._children, source
     s = None
     if source in ctx._children:
@@ -199,6 +216,8 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
             hcell = s._get_hcell()
             if hcell.get("constant"):
                 raise TypeError("Cannot assign to constant cell")
+        elif isinstance(s, Module):
+            pass
         else:
             raise TypeError(type(s))
     else:
@@ -232,7 +251,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         source = s._virtual_path
     if standalone_target:
         t = ctx._children[target]
-        assert isinstance(t, Cell)
+        assert isinstance(t, (Cell, Module))
         if t._virtual_path is not None:
             target = t._virtual_path
     connection = {
@@ -431,6 +450,24 @@ def assign(ctx, path, value):
     elif isinstance(value, (Context, SubContext)):
         assign_context(ctx, path, value)
         ctx._translate()
+    elif isinstance(value, Module):
+        if value._parent() is None:
+            value._init(ctx, path)
+            node = deepcopy(value._node)
+            if node is None:
+                node = get_new_module(path)
+            else:
+                node["path"] = path
+            ctx._graph.nodes[path] = node
+        else:
+            assert value._get_top_parent() is ctx, value
+            try:
+                target = get_path(ctx, path, namespace = None, is_target=True)
+            except AttributeError:
+                target = None
+            if isinstance(target, Cell):
+                _remove_independent_mountshares(target._get_hcell())
+            assign_connection(ctx, value._path, path, True)
     elif isinstance(value, LibInstance):
         assign_libinstance(ctx, path, value)
         ctx._translate()

@@ -140,8 +140,6 @@ class StaticContext:
             return TransformerWrapper(
                 self._manager, node
             )
-        elif t == "reactor":
-            raise NotImplementedError(t)
         elif t == "macro":
             raise NotImplementedError(t)
         else:

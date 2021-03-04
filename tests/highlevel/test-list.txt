@@ -29,6 +29,7 @@ macro-elision.py
 reactor-edit-macro.py
 delay.py
 module-simplified.py [1]
+module.py [1]
 bash.py [2]
 docker_.py
 docker2.py

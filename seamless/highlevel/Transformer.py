@@ -3,6 +3,7 @@ import functools
 import pprint
 from copy import deepcopy
 from .Cell import Cell
+from .Module import Module
 from .Resource import Resource
 from .proxy import Proxy, CodeProxy, HeaderProxy
 from .pin import PinsWrapper
@@ -384,7 +385,7 @@ class Transformer(Base):
         if attr == "main_module" and htf["compiled"] and attr not in htf["pins"]:
             raise TypeError("Cannot assign directly all module objects; assign individual elements")
 
-        if not self._has_tf() and not isinstance(value, Cell) and attr != htf["RESULT"]:
+        if not self._has_tf() and not isinstance(value, (Cell, Module)) and attr != htf["RESULT"]:
             if isinstance(value, Resource):
                 value = value.data
             if "TEMP" not in htf or htf["TEMP"] is None:
@@ -452,9 +453,16 @@ class Transformer(Base):
             result.handle_no_inference.set(value)
         else:
             if attr not in htf["pins"]:
-                htf["pins"][attr] = default_pin.copy()
+                if isinstance(value, Module):
+                    pin = {
+                        "celltype": "plain",
+                        "subcelltype": "module",
+                    }
+                else:
+                    pin = default_pin.copy()
+                htf["pins"][attr] = pin
                 translate = True
-            if isinstance(value, Cell):
+            if isinstance(value, (Cell, Module)):
                 target_path = self._path + (attr,)
                 assert value._parent() is parent
                 assign_connection(parent, value._path, target_path, False)

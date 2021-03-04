@@ -792,7 +792,7 @@ class Context(Base):
         try:
             self._translating = True
             for path, child in self._children.items():
-                if isinstance(child, (Cell, Transformer, Macro)):
+                if isinstance(child, (Cell, Transformer, Macro, Module)):
                     try:
                         child._set_observers()
                     except Exception:
@@ -810,6 +810,7 @@ class Context(Base):
 
         finally:
             livegraph._hold_observations = False
+            print_info("*" * 30 + "TRANSLATE COMPLETE" + "*" * 30)
             self._translating = False
 
         livegraph._flush_observations()
@@ -1161,6 +1162,7 @@ from .Transformer import Transformer
 from .Cell import Cell
 from .Link import Link
 from .Macro import Macro
+from .Module import Module
 from .pin import PinWrapper
 from .library.libinstance import LibInstance
 from .PollingObserver import PollingObserver

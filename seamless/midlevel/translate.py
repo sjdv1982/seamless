@@ -103,65 +103,6 @@ def set_structured_cell_from_checksum(cell, checksum):
     if trigger:
         cell._get_manager().structured_cell_trigger(cell)
 
-
-
-def translate_py_reactor(node, root, namespace, inchannels, outchannels):
-    raise NotImplementedError ### livegraph branch, feature E2
-    skip_channels = ("code_start", "code_update", "code_stop")
-    inchannels = [ic for ic in inchannels if ic[0] not in skip_channels]
-    parent = get_path(root, node["path"][:-1], None, None)
-    name = node["path"][-1]
-    ctx = context(context=parent, name=name)
-    setattr(parent, name, ctx)
-
-    io_name = node["IO"]
-    interchannels_in = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "output"]
-    interchannels_out = [as_tuple(p) for p, pin in node["pins"].items() if pin["io"] == "input"]
-
-    all_inchannels = interchannels_in + inchannels  #highlevel must check that there are no duplicates
-    all_outchannels = interchannels_out + [p for p in outchannels if p not in interchannels_out]
-
-    build_structured_cell(
-      ctx, io_name,
-      all_inchannels, all_outchannels,
-    )
-    for inchannel in inchannels:
-        path = node["path"] + inchannel
-        namespace[path, "target"] = io.inchannels[inchannel], node
-    for outchannel in outchannels:
-        path = node["path"] + outchannel
-        namespace[path, "source"] = io.outchannels[outchannel], node
-
-    ctx.rc = reactor(node["pins"])
-    for attr in ("code_start", "code_stop", "code_update"):
-        c = core_cell(node["language"])
-        setattr(ctx, attr, c)
-        if "mount" in node and attr in node["mount"]:
-            c.mount(**node["mount"][attr])
-        c.connect(getattr(ctx.rc, attr))
-        code = node.get(attr)
-        if code is None:
-            code = node.get("cached_" + attr)
-        try:
-            cell._set_checksum(checksum, initial=True)
-        except Exception:
-            # TODO: proper logging
-            traceback.print_exc()
-
-        namespace[node["path"] + (attr,), "target"] = c, node
-        namespace[node["path"] + (attr,), "source"] = c, node
-
-    for pinname, pin in node["pins"].items():
-        target = getattr(ctx.rc, pinname)
-        iomode = pin["io"]
-        if iomode == "input":
-            io.connect_outchannel( (pinname,) ,  target)
-        elif iomode == "output":
-            io.connect_inchannel(target, (pinname,))
-
-    namespace[node["path"], "target"] = io, node
-    namespace[node["path"], "source"] = io, node
-
 def translate_cell(node, root, namespace, inchannels, outchannels):
     path = node["path"]
     parent = get_path(root, path[:-1], None, None)
@@ -373,14 +314,12 @@ def translate(graph, ctx):
                 raise NotImplementedError(node["language"])
             inchannels, outchannels = find_channels(node["path"], connection_paths)
             translate_macro(node, ctx, namespace, inchannels, outchannels)
-        elif t == "reactor":
-            if node["language"] not in ("python", "ipython"):
-                raise NotImplementedError(node["language"])
-            inchannels, outchannels = find_channels(node["path"], connection_paths)
-            translate_py_reactor(node, ctx, namespace, inchannels, outchannels)
         elif t == "cell":
             inchannels, outchannels = find_channels(path, connection_paths)
             translate_cell(node, ctx, namespace, inchannels, outchannels)
+        elif t == "module":
+            inchannels, outchannels = find_channels(path, connection_paths)
+            translate_module(node, ctx, namespace, inchannels, outchannels)
         elif t == "libinstance":
             msg = "Libinstance '%s' was not removed during pre-translation, or is a nested libinstance"
             raise TypeError(msg % path)
@@ -400,6 +339,7 @@ def translate(graph, ctx):
 
 from .translate_py_transformer import translate_py_transformer
 from .translate_macro import translate_macro
+from .translate_module import translate_module
 '''
 # imported only at need...
 from .translate_bash_transformer import translate_bash_transformer

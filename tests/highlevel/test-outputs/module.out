@@ -1,0 +1,9 @@
+interpreted
+python
+q = 10
+a=42
+a=43
+q = 9
+q = 12
+<Silk: {'code': 'q = 12', 'language': 'python', 'type': 'interpreted'} >
+<Silk: 1440 >

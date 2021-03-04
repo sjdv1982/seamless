@@ -29,9 +29,10 @@ ctx.code.set("a + b + 1000")
 ctx.compute()
 print(ctx.result.value, ctx.status)
 
-def func(a,b):
+func="""def func(a,b):
     from seamless import pdb; pdb.set_trace()
     return a + b + 2000
+"""
 ctx.code.set(func)
 ctx.compute(report=None)
 print(ctx.result.value, ctx.status)

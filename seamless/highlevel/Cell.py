@@ -511,7 +511,6 @@ class Cell(Base):
     @checksum.setter
     def checksum(self, checksum):
         """Sets the checksum of the cell, as SHA3-256 hash"""
-        from ..silk import Silk
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             hcell["checksum"] = checksum
@@ -780,8 +779,9 @@ class Cell(Base):
         old_language = hcell.get("language")
         hcell["language"] = lang
         hcell["file_extension"] = extension
-        if self._parent() is not None:
-            self._parent()._translate()
+        if lang != old_language:
+            if self._parent() is not None:
+                self._parent()._translate()
 
     def __rshift__(self, other):
         assert isinstance(other, Proxy)
