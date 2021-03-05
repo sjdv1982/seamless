@@ -47,6 +47,11 @@ Rip/subsume "debug" mode. Compiled transformer keeps debug mode, and has no shel
 - At the high-level, allow descriptions/docstrings everywhere (Cell, Transformer, but also pin, subcell).
   Continue with ergonomics and user docs.
 
+- Inside a transformer, input pins should be "mixed" by default, not silk.
+As it is, the pins are already called "mixed", but a schema is attached if
+it can be retrieved from the input schema, else an empty schema (core/transformation.py)
+Make a special pin celltype "silk" that has the current behavior
+
 - Better highlevel API tooling. Especially:
   - Rename a cell/transformer/context/...
   - Copy a cell/transformer/context/... .

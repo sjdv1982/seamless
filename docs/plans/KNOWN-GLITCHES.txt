@@ -7,3 +7,10 @@ mimetype should trigger re-translation
 nice error message if database can't be found
 
 borking up topology is too easy, happens when cells are destroyed that have
+
+When a transformer creates a dictionary where the values are numpy scalars,
+ Seamless says "Transformer exited without result"
+
+Non-reproducible computations give cache misses!
+
+Getting values from within SeamlessTraitlet observe callbacks is unstable (at least within Jupyter)
