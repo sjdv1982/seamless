@@ -14,3 +14,7 @@ When a transformer creates a dictionary where the values are numpy scalars,
 Non-reproducible computations give cache misses!
 
 Getting values from within SeamlessTraitlet observe callbacks is unstable (at least within Jupyter)
+
+Project loading with -BAK is misconceived
+
+Status graph still gives stability issues
