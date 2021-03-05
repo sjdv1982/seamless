@@ -1172,6 +1172,7 @@ nodeclasses = {
     "transformer": Transformer,
     "context": SubContext,
     "macro": Macro,
+    "module": Module
 }
 
 from ..core.manager.tasks.structured_cell import StructuredCellAuthTask
