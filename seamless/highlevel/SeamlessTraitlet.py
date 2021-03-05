@@ -238,6 +238,14 @@ class SeamlessTraitlet(traitlets.HasTraits):
         self._newlink(link)
         return link
 
+    def observe(self, handler, names=traitlets.All, type='change'):
+        super().observe(handler, names, type)
+        names = traitlets.parse_notifier_name(names)
+        if names == [traitlets.All] or "value" in names:
+            self._notify_trait("value", self.value, self.value)
+
+    observe.__doc__ = traitlets.HasTraits.observe.__doc__
+
     def destroy(self):
         self._destroyed = True
         if self.links is not None:
