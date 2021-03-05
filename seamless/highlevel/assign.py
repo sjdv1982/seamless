@@ -325,6 +325,10 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
                     remove_checksum.append(pot)
             if runtime:
                 node.pop("UNTRANSLATED", None)
+        elif nodetype == "module":
+            Module(parent=ctx, path=pp)
+            if old_path in targets:
+                node.pop("checksum")
         elif nodetype == "context":
             pass
         else:

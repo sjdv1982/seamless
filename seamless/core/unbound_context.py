@@ -339,7 +339,7 @@ class UnboundContext(SeamlessBase):
         synth_highlevel_context =  self._synth_highlevel_context()
         if synth_highlevel_context is not None:
             ctx._synth_highlevel_context = weakref.ref(
-                self._synth_highlevel_context
+                synth_highlevel_context
             )
 
     def _bind_stage2(self, manager):
