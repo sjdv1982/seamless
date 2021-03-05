@@ -99,9 +99,9 @@ class OutputWidget:
         self.DOC_name = DOC_name
         self.doc_kwargs = doc_kwargs
         self.traitlet = cell.traitlet()
-        self.traitlet.observe(self._update0)
         self.celltype = cell.celltype
         self.mimetype = cell.mimetype
+        self.traitlet.observe(self._update0)
         v = self.traitlet.value
         if v is not None:
             self._update(v)
