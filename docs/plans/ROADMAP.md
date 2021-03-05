@@ -52,6 +52,20 @@ As it is, the pins are already called "mixed", but a schema is attached if
 it can be retrieved from the input schema, else an empty schema (core/transformation.py)
 Make a special pin celltype "silk" that has the current behavior
 
+- Notebook integration: an IPython magic that execs code in a "ctx-mapped namespace",
+  so that "a[:10]" becomes "ctx.a.value.unsilk[:10]"
+  Cache ctx.a.value . Setting ctx values is not possible (ctx itself is not mapped)
+  Also make a version that doesn't unsilk.
+
+- Autoconnect method for Transformer.
+  Connect all pins to parent context cells of the same name.
+  Example:
+  def add(a, b):
+    return a+b
+  ctx.sub.tf = add
+  ctx.sub.tf.autoconnect()
+  => try to connect ctx.sub.a and ctx.sub.b, if they exist
+
 - Better highlevel API tooling. Especially:
   - Rename a cell/transformer/context/...
   - Copy a cell/transformer/context/... .
