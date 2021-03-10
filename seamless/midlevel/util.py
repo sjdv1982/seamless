@@ -111,6 +111,7 @@ def build_structured_cell(
     c = context(toplevel=False)
     setattr(ctx, name2, c)
     if mount is not None:
+        mount.pop("as_directory", None)
         c.mount(**mount)
     c.data = core_cell("mixed")
     c.data._hash_pattern = hash_pattern
