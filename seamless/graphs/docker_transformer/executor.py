@@ -156,12 +156,12 @@ try:
 Docker transformer exception
 ============================
 
+Exit code: {}
+
 *************************************************
 * Command
 *************************************************
 {}
-*************************************************
-Exit code: {}
 *************************************************
 * Standard output
 *************************************************
@@ -171,7 +171,7 @@ Exit code: {}
 *************************************************
 {}
 *************************************************
-""".format(docker_command, exit_status, stdout, stderr)) from None
+""".format(exit_status, docker_command, stdout, stderr)) from None
         except ConnectionError as exc:
             msg = "Unknown connection error"
             if len(exc.args) == 1:
@@ -193,12 +193,13 @@ Exit code: {}
 Docker transformer exception
 ============================
 
+Error: Result file RESULT does not exist
+
 *************************************************
 * Command
 *************************************************
 {}
 *************************************************
-Error: Result file RESULT does not exist
 """.format(docker_command)
             try:
                 stdout = container.logs(stdout=True, stderr=False)

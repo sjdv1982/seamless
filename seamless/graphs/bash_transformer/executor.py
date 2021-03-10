@@ -120,12 +120,13 @@ Bash transformer exception
 Bash transformer exception
 ==========================
 
+Error: Result file RESULT does not exist
+
 *************************************************
 * Command
 *************************************************
 {}
 *************************************************
-Error: Result file RESULT does not exist
 """.format(bashcode)
         try:
             stdout = process.stdout.decode()
