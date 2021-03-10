@@ -93,7 +93,7 @@ class LibInstance:
                         raise TypeError(msg % (argname, k, type(vv)))
                     if par["io"] == "input":
                         vv = InputCellWrapper(connection_wrapper, vv)
-                    if par["io"] == "edit":
+                    elif par["io"] == "edit":
                         vv = EditCellWrapper(connection_wrapper, vv)
                     else: # par["io"] == "output"
                         node = vv._get_hcell()
