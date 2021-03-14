@@ -96,11 +96,9 @@ class StructuredCellAuthTask(StructuredCellTask):
                 taskmanager = manager.taskmanager
                 ok = (not sc._auth_invalid)
                 def func():
-                    if self._canceled:
+                    if ok != (not sc._auth_invalid): # BUG!
                         return
-                    if sc.auth._checksum is None and not sc._modified_auth and value is not None:
-                        # Not quite sure why this happens, but it does, occasionally,
-                        #  for status_ctx.status_ when monitoring a large graph
+                    if self._canceled:
                         return
                     sc._auth_joining = False
                     manager.structured_cell_trigger(sc, void=(not ok))
