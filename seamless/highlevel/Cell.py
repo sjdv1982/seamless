@@ -186,7 +186,7 @@ class Cell(Base):
     def _get_subcell(self, attr):
         hcell = self._get_hcell()
         if not hcell["celltype"] == "structured":
-            raise AttributeError(item)
+            raise AttributeError(attr)
         parent = self._parent()
         readonly = False ### TODO
         path = self._subpath + (attr,)
