@@ -20,7 +20,7 @@ ctx.c1 = cell("int").set(1)
 ctx.c2 = cell("int").set(2)
 ctx.c3 = cell("transformer").set("a + b")
 
-ctx.compute(0.05)
+ctx.compute(0.1)
 print(ctx.c1, ctx.c1.checksum)
 print(ctx.c2, ctx.c2.checksum)
 print(ctx.c3, ctx.c3.checksum)
