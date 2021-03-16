@@ -35,16 +35,6 @@ Failed validating 'type' in schema['properties']['b']:
 On instance['b']:
     100
 
-<Silk: None >
-TRANSFORMER INPUT EXCEPTION Traceback (most recent call last):
-jsonschema.exceptions.ValidationError: 100 is not of type 'string'
-
-Failed validating 'type' in schema['properties']['b']:
-    {'type': 'string'}
-
-On instance['b']:
-    100
-
 {'properties': {'a': {'type': 'integer'}, 'b': {'type': 'string'}}, 'type': 'object'}
 <Silk: None >
 {'a': 1, 'b': 100}
