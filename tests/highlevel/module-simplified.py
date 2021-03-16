@@ -10,7 +10,7 @@ tf_code = '''
 print(__name__)
 print(testmodule)
 print(testmodule.q)
-from .testmodule import qz
+from .testmodule import q
 print(q)
 import sys
 print([m for m in sys.modules if m.find("testmodule") > -1])
