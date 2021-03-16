@@ -1,7 +1,8 @@
 import sys
+import textwrap
 from ..mixed import MixedBase
-from copy import deepcopy
 import inspect, asyncio
+
 from ..core.cache.buffer_cache import buffer_cache
 from ..core.protocol.deserialize import deserialize_sync as deserialize
 from ..core.protocol.serialize import serialize_sync as serialize
@@ -128,7 +129,6 @@ def add_zip(manager, zipfile, incref=False):
     return result
 
 def fill_checksum(manager, node, temp_path, composite=True):
-    from ..core.utils import strip_source
     from ..core.cell import celltypes
     checksum = None
     subcelltype = None
@@ -194,7 +194,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
     if datatype == "python":
         if inspect.isfunction(temp_value):
             code = inspect.getsource(temp_value)
-            code = strip_source(code)
+            code = textwrap.dedent(code)
             temp_value = code
     buf = serialize(temp_value, datatype, use_cache=False)
     checksum = calculate_checksum(buf)

@@ -1,5 +1,7 @@
+import inspect
+import textwrap
+
 def bootstrap(module):
-    from seamless.core.utils import strip_source
     import inspect
     result = {}
     for objname, obj in sorted(module.__dict__.items()):
@@ -13,15 +15,13 @@ def bootstrap(module):
             result[objname] = bootstrap(obj)
         elif inspect.isfunction(obj):
             code = inspect.getsource(obj)
-            code = strip_source(code)
+            code = textwrap.dedent(code)
             result[objname] = code
         else:
             continue
     return result
 
 def build_codeblock(module):
-    from seamless.core.utils import strip_source
-    import inspect
     result = ""
     for objname, obj in sorted(module.__dict__.items()):
         if objname.startswith("__"):
@@ -36,7 +36,7 @@ def build_codeblock(module):
                 result += "\n" + subresult
         elif inspect.isfunction(obj):
             code = inspect.getsource(obj)
-            code = strip_source(code)
+            code = textwrap.dedent(code)
             result += "\n" + code
         else:
             continue

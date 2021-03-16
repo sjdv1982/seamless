@@ -1,19 +1,6 @@
 from ast import FunctionDef, Return, iter_child_nodes
 from collections import OrderedDict
 
-def strip_source(source):
-    indent = None
-    for l in source.splitlines():
-        i = len(l) - len(l.lstrip())
-        if indent is None or i < indent:
-            indent = i
-    if indent is None:
-        return source
-    ret = ""
-    for l in source.splitlines():
-        ret += l[indent:] + "\n"
-    return ret
-
 def ordered_dictsort(data):
     for k, v in list(data.items()):
         if isinstance(v, OrderedDict):
