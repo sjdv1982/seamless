@@ -109,9 +109,3 @@ from .core.manager.tasks import set_parallel_evaluations
 from .get_hash import get_hash, get_dict_hash
 from .core.cache.database_client import database_sink, database_cache
 from . import debugger
-"""
-from . import pandeval
-from .pandeval.core.computation.eval import eval
-pandeval.eval = eval
-del eval
-"""
