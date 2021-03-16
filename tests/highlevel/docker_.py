@@ -7,7 +7,6 @@ ctx.code.mount("/tmp/test.bash", authority="cell")
 ctx.tf = lambda lines, testdata: None
 ctx.tf.language = "docker"
 ctx.tf.docker_image = "ubuntu"
-ctx.tf.docker_options = {"name": "ubuntu-container"}
 ctx.tf.testdata = "a \nb \nc \nd \ne \nf \n"
 ctx.tf.lines = 3
 ctx.tf.code = ctx.code
@@ -23,7 +22,7 @@ python3 -c 'import numpy as np; np.save(\"test\",np.arange(12)*3)'
 echo 'hello' > test.txt
 tar hczf RESULT test.npy test.txt
 """
-ctx.result = ctx.tf
+ctx.tf.docker_image = "rpbs/seamless"
 ctx.result.celltype = "structured"
 ctx.result_npy = ctx.result["test.npy"]
 ctx.result_txt = ctx.result["test.txt"]

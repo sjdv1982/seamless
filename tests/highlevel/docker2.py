@@ -7,7 +7,6 @@ ctx.code.mount("/tmp/test.bash")
 ctx.tf = lambda lines, testdata: None
 ctx.tf.language = "docker"
 ctx.tf.docker_image = "rpbs/seamless"
-ctx.tf.docker_options = {"name": "ubuntu-container"}
 ctx.tf.testdata = "a \nb \nc \nd \ne \nf \n"
 ctx.tf.lines = 3
 ctx.tf.code = ctx.code
