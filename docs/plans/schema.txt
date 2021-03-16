@@ -1,0 +1,2 @@
+As of Seamless 0.5, direct schema manipulation (via example) is not working well.
+The /tests/lowlevel/structured_cell/schema.py test is not working
