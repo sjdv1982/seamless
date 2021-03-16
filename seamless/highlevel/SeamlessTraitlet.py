@@ -189,6 +189,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
         if cell.has_authority():
             if self._timer_handle is not None:
                 self._timer_handle.cancel()
+                self._timer_handle = None
             self._timer_handle = asyncio.get_event_loop().call_later(
                 0.1,
                 self._cell_set,
