@@ -376,7 +376,9 @@ def assign_to_subcell(cell, path, value):
         ctx._translate()
     elif isinstance(value, ConstantTypes):
         check_libinstance_subcontext_binding(ctx, path)
-        removed = ctx._remove_connections(cell._path + path)
+        removed1 = ctx._remove_connections(cell._path, exact=True, only_target=True)
+        removed2 = ctx._remove_connections(cell._path + path, head=True)
+        removed = (removed1 or removed2)
         if removed:
             ctx._translate()
         handle = cell.handle

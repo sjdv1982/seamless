@@ -945,27 +945,55 @@ class Context(Base):
     def _get_lib(self, path):
         return self._graph.lib[tuple(path)]
 
-    def _remove_connections(self, path, *, keep_links=False, runtime=False, only_target=False):
-        """Removes all connections/links with source or target starting with path"""
+    def _remove_connections(self, path, *,
+        keep_links=False, runtime=False, only_target=False, head=False, exact=False
+    ):
+        """Removes all connections/links with source or target starting with path
+
+        if only_target, only remove connections where the target starts with path
+        if exact, only remove links/connections where the source/target path is equal to path
+        if head, only remove links/connections where the source/target path is longer than path
+        """
+        assert not (head and exact)
         lp = len(path)
         def keep_con(con):
             if con["type"] == "link":
-                if keep_links:
+                if keep_links or only_target:
                     return True
                 first = con["first"]
-                if first[:lp] == path:
-                    return False
+                if exact:
+                    if first == path:
+                        return path
+                else:
+                    if not head or len(first) > lp:
+                        if first[:lp] == path:
+                            return False
                 second = con["second"]
-                if second[:lp] == path:
-                    return False
+                if exact:
+                    if second == path:
+                        return path
+                else:
+                    if not head or len(second) > lp:
+                        if second[:lp] == path:
+                            return False
                 return True
             else:
                 csource = con["source"]
-                if (not only_target) and csource[:lp] == path:
-                    return False
+                if exact:
+                    if (not only_target) and csource == path:
+                        return False
+                else:
+                    if not head or len(csource) > lp:
+                        if (not only_target) and csource[:lp] == path:
+                            return False
                 ctarget = con["target"]
-                if ctarget[:lp] == path:
-                    return False
+                if exact:
+                    if ctarget == path:
+                        return False
+                else:
+                    if not head or len(ctarget) > lp:
+                        if ctarget[:lp] == path:
+                            return False
                 return True
         connections = self._graph[1]
         if runtime:
