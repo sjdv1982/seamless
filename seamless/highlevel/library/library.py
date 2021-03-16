@@ -1,4 +1,5 @@
 import json, inspect
+import textwrap
 
 _libraries = {}
 
@@ -90,7 +91,7 @@ class Library:
             constructor = value
             if inspect.isfunction(constructor):
                 code = inspect.getsource(constructor)
-                code = strip_source(code)
+                code = textwrap.dedent(code)
                 constructor = code
             self._constructor = constructor
             set_library(
@@ -177,6 +178,5 @@ class Library:
 
 from .include import IncludedLibrary
 from ..Context import Context
-from ...core.utils import strip_source
 from ...silk import Silk
 from ...mixed import DefaultBackend, Monitor, MixedDict

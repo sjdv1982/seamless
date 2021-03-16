@@ -1,4 +1,5 @@
 import inspect
+import textwrap
 from weakref import WeakSet
 
 from . import SeamlessBase
@@ -480,6 +481,14 @@ class PythonCell(Cell):
     _subcelltype = None
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
 
+    def set(self, value):
+        """Update cell data from authority"""
+        if callable(value):
+            value = inspect.getsource(value)
+        if value is not None:
+            value = textwrap.dedent(value)
+        return super().set(value)
+
     def __str__(self):
         ret = "Seamless Python cell: " + self._format_path()
         return ret
@@ -524,6 +533,14 @@ class IPythonCell(Cell):
     """A cell in IPython format (e.g. a Jupyter cell). Buffer ends with a newline"""
     _celltype = "ipython"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
+
+    def set(self, value):
+        """Update cell data from authority"""
+        if callable(value):
+            value = inspect.getsource(value)
+        if value is not None:
+            value = textwrap.dedent(value)
+        return super().set(value)
 
     def __str__(self):
         ret = "Seamless IPython cell: " + self._format_path()
@@ -626,7 +643,6 @@ from .mount import is_dummy_mount
 from ..mixed.get_form import get_form
 from .structured_cell import Inchannel, Outchannel
 from .macro_mode import get_macro_mode
-from .utils import strip_source
 from .share import sharemanager
 """
 TODO Documentation: only-text changes

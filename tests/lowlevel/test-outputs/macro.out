@@ -39,13 +39,6 @@ Waiting for: Seamless transformer: .mymacro.ctx.tf
 False
 3000
 Change 6
-Traceback (most recent call last):
-  File "/seamless/seamless/core/macro.py", line 116, in _execute
-    exec_code(code, identifier, self.namespace, inputs, None)
-  File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code
-    exec(code_obj, namespace)
-  File "Seamless macro: .mymacro", line 22, in <module>
-    macro_code(ctx=ctx,param=param)
   File "Seamless macro: .mymacro", line 16, in macro_code
     assert param != 999   # on purpose
 AssertionError

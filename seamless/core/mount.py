@@ -500,6 +500,10 @@ class MountManager:
                                # persistent may be None, in which case the directory is not deleted.
 
 
+    @property
+    def last_run(self):
+        return self._last_run
+
     @lockmethod
     def add_mount(self, cell, path, mode, authority, persistent, **kwargs):
         root = cell._root()
@@ -663,6 +667,7 @@ class MountManager:
                 self._destroy_garbage_dir(dirpath)
 
         self._tick.set()
+        self._last_run = time.time()
 
     def run(self):
         try:
