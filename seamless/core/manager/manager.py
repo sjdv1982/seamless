@@ -219,6 +219,8 @@ class Manager:
                 if cell._structured_cell is None or sc_schema:
                     CellUpdateTask(self, cell).launch()
         if sc_schema:
+            if from_structured_cell:
+                CellUpdateTask(self, cell).launch()
             def update_schema():
                 value = self.resolve(checksum, "plain")
                 self.update_schemacell(cell, value, None)
