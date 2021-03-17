@@ -75,6 +75,7 @@ def assign_constant(ctx, path, value):
             removed = ctx._remove_connections(path, keep_links=True, only_target=True)
             if removed:
                 ctx._translate()
+                hcell = old._get_hcell()
                 hcell["UNTRANSLATED"] = True
             hcell = old._get_hcell()
             if not hcell.get("UNTRANSLATED"):
