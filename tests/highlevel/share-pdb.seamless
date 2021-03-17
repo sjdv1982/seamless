@@ -70,7 +70,8 @@
       "language": "bash",
       "mimetype": "application/x-sh",
       "mount": {
-        "authority": "cell",
+        "as_directory": false,
+        "authority": "file",
         "mode": "rw",
         "path": "/tmp/code.bash",
         "persistent": true
@@ -94,7 +95,8 @@
       "language": "bash",
       "mimetype": "application/x-sh",
       "mount": {
-        "authority": "cell",
+        "as_directory": false,
+        "authority": "file",
         "mode": "rw",
         "path": "/tmp/filter_code.bash",
         "persistent": true
@@ -188,6 +190,7 @@
       "datatype": "mixed",
       "mimetype": "text/html",
       "mount": {
+        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "share-pdb.html",
@@ -256,6 +259,7 @@
       "datatype": "mixed",
       "mimetype": "text/javascript",
       "mount": {
+        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "pdb-representation.js",
@@ -278,6 +282,7 @@
       "datatype": "mixed",
       "mimetype": "text/javascript",
       "mount": {
+        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "vismol.js",
