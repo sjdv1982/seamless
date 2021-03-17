@@ -582,7 +582,7 @@ class Context(Base):
             for checksum in checksums:
                 buffer_cache.incref(bytes.fromhex(checksum), True)
         if old_lib is not None:
-            old_checksums = copying.get_checksums(old_lib["graph"]["nodes"], with_annotations=False)
+            old_checksums = copying.get_checksums(old_lib["graph"]["nodes"], [], with_annotations=False)
             for old_checksum in old_checksums:
                 buffer_cache.decref(bytes.fromhex(old_checksum))
 
