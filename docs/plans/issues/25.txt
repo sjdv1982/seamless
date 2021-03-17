@@ -1,0 +1,32 @@
+IPython support isn't well supported at the moment.
+IPython support exists of two parts:
+Modules with language=ipython, and low-level cells with celltype "ipython".
+Both are converted to Python (.core.protocol.conversion).
+However, this conversion normally does not always work,
+as converted line magics and cell magics rely on get_ipython(), which is missing from the namespace.
+
+- It DOES NOT work for transformations run under Python.
+  Doing "from ipython import get_ipython" will not fix the problem under Python:
+  this results in a dummy IPython that has no access to the namespace.
+- It DOES work if transformations and all of Seamless is run under IPython,
+   as IPython inserts get_ipython into the builtins module.
+- It DOES work for modules, as build_module executes the code for IPython modules under seamless.ipython.execute.
+  This creates a separate IPython kernel, so it also works under Python.
+- It CAN BE FIXED if seamless.ipython.execute is used for transformations as well.
+  Right now, transformations are executed using core.execute._execute
+  (so are macros and libinstances, but not reactors, for some reason)
+  the call stack is core.execute._execute => cached_compile.exec_code => exec
+  if exec is replaced with seamless.ipython.execute, then it works as well as modules do.
+  BUT: we don't want this for every transformer.
+  Perhaps, mark a transformer as "ipython"?
+
+In terms of tests, the following tests work under python and ipython:
+- lowlevel/injection4.py
+- lowlevel/injection5.py
+The following tests work ONLY under ipython:
+- lowlevel/simple-ipython.py
+- highlevel/simpler-ipython.py
+
+Solution: marking a transformer as "ipython"?
+This would have implications for communion, jobless and scripts/run-transformer as well.
+Save it until "environment capabilities" are being implemented.

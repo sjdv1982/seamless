@@ -55,6 +55,9 @@ def exec_code(code, identifier, namespace, inputs, output):
         assert output is not None
         code2 = "%s = " % output + code
     code_obj = cached_compile(code2, identifier)
+    # See issue 25
+    #from ..ipython import execute
+    #execute(code2, namespace)
     exec(code_obj, namespace)
 
 def check_function_like(code, identifier):

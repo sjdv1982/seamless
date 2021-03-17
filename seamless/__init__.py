@@ -37,28 +37,23 @@ from . import silk
 from . import mixed
 
 ipython_instance = None
-ipy_error = "Seamless was not imported inside IPython"
-
 running_in_jupyter = False
-if "get_ipython" in sys.modules["__main__"].__dict__:
-    try:
-        from IPython import get_ipython
-    except ImportError:
-        ipy_error = "Cannot find IPython"
-    else:
-        ipython_instance = get_ipython()
-        if ipython_instance is None:
-            ipy_error = "Seamless was not imported inside IPython"
-        else:
-            TerminalInteractiveShell = type(None)
-            try:
-                from IPython.terminal.interactiveshell import TerminalInteractiveShell
-            except ImportError:
-                pass
-            if isinstance(ipython_instance, TerminalInteractiveShell):
-                ipython_instance.enable_gui("asyncio")
-            elif asyncio.get_event_loop().is_running(): # Jupyter notebook
-                running_in_jupyter = True
+try:
+    from IPython import get_ipython
+except ImportError:
+    pass
+else:
+    ipython_instance = get_ipython()
+    if ipython_instance is not None:
+        TerminalInteractiveShell = type(None)
+        try:
+            from IPython.terminal.interactiveshell import TerminalInteractiveShell
+        except ImportError:
+            pass
+        if isinstance(ipython_instance, TerminalInteractiveShell):
+            ipython_instance.enable_gui("asyncio")
+        elif asyncio.get_event_loop().is_running(): # Jupyter notebook
+            running_in_jupyter = True
 
 def verify_sync_translate():
     if running_in_jupyter:
@@ -72,7 +67,7 @@ def verify_sync_compute():
     elif asyncio.get_event_loop().is_running():
         raise RuntimeError("'ctx.compute()' cannot be called from within a coroutine. Use 'await ctx.computation()' instead")
 
-if ipy_error is None:
+if ipython_instance is not None:
     last_exception = None
     def new_except_hook(etype, evalue, tb):
         global last_exception
@@ -84,9 +79,6 @@ if ipy_error is None:
     def patch_excepthook():
         sys.excepthook = new_except_hook
     patch_excepthook()
-
-else:
-    pass
 
 def deactivate_transformations():
     from .core.cache.transformation_cache import transformation_cache

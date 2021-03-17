@@ -16,30 +16,41 @@ class MyInProcessKernelManager(InProcessKernelManager):
         self.kernel = MyInProcessKernel(parent=self, session=self.session, user_ns = namespace)
 
 def execute(code, namespace):
-    isp = IPythonInputSplitter()
+    """Executes Python code in an IPython kernel
+
+    If the code is in IPython format (i.e. with % and %% magics),
+     run it through ipython2python first
+    """
     kernel_manager = MyInProcessKernelManager()
     kernel_manager.start_kernel(namespace)
     kernel = kernel_manager.kernel
 
-    def do_execute():
-        result = kernel.shell.run_cell(cell, False)
-        if result.error_before_exec is not None:
-            err = result.error_before_exec
-        else:
-            err = result.error_in_exec
-        if not result.success:
-            if kernel.shell._last_traceback:
-                for tb in kernel.shell._last_traceback:
-                    print(tb) #TODO: log
+    result = kernel.shell.run_cell(code, False)
+    if result.error_before_exec is not None:
+        err = result.error_before_exec
+    else:
+        err = result.error_in_exec
+    if not result.success:
+        if kernel.shell._last_traceback:
+            for tb in kernel.shell._last_traceback:
+                print(tb) #TODO: log
+    return namespace
 
+def ipython2python(code):
+    isp = IPythonInputSplitter()
+    newcode = ""
     for line in code.splitlines():
         if isp.push_accepts_more():
             isp.push(line.strip("\n"))
             continue
         cell = isp.source_reset()
-        do_execute()
+        if cell.startswith("get_ipython().run_"):
+            cell = "_ = " + cell
+        newcode += cell + "\n"
         isp.push(line.strip("\n"))
     cell = isp.source_reset()
     if len(cell):
-        do_execute()
-    return namespace
+        if cell.startswith("get_ipython().run_"):
+            cell = "_ = " + cell
+        newcode += cell
+    return newcode

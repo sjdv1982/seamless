@@ -22,7 +22,7 @@ simpler-listpin.py
 simpler-result.py
 simpler.py
 simpler-deepcell.py
-simpler-ipython.py: Run with ipython --no-term-title (not -i). Output is approximate, depends on exact timings.
+simpler-ipython.py: Run with ipython --no-term-title (not -i) (see issue 25). Output is approximate, depends on exact timings.
 macro-simple.py
 macro.py
 macro-elision.py

@@ -8,6 +8,7 @@ conversions.py: the output is approximate, depends on exact timings
 simple.py
 simple-async.py
 simple-indirect.py
+simple-ipython.py: Run with ipython --no-term-title (not -i) (see issue 25).
 exception_upon_compute.py
 subcontext.py
 simple-reactor.py
@@ -56,7 +57,7 @@ checksum-cell.py
 structured_cell/simple-deepcell.py
 structured_cell/channels-deepcell.py
 #structured_cell/schema.py: as of Seamless 0.5.2, this test does not work and is DISABLED.
-structured_cell/schema-deepcell.py: as of Seamless 0.5.2, this test does not work and is DISABLED.
+#structured_cell/schema-deepcell.py: as of Seamless 0.5.2, this test does not work and is DISABLED.
 structured_cell/channels-morph.py
 collatz.py: the output is approximate, depends on exact timings
 structured_cell/preliminary.py: the output is approximate, depends on exact timings

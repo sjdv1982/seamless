@@ -8,6 +8,8 @@ ipycode = """
 %%timeit
 def triple_it(a):
     return 3 * a
+
+result = _
 """
 ctx.transform = Transformer()
 ctx.transform.language = "ipython"

@@ -275,8 +275,8 @@ async def convert(checksum, buffer, celltype, target_celltype, fingertip_mode=Fa
             value = await deserialize(buffer, checksum, celltype, copy=False)
 
         if key == ("ipython", "python"):
-            from nbconvert.filters import ipython2python
-            value00 = ipython2python(buffer.decode()) # TODO: needs to bind get_ipython() to the user namespace!
+            from ...ipython import ipython2python
+            value00 = ipython2python(buffer.decode()) # TODO: needs to bind get_ipython() to the user namespace! see issue 25
             value0 = value00.splitlines()
             while len(value0):
                 if len(value0[0].strip()):
