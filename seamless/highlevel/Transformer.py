@@ -371,6 +371,11 @@ class Transformer(Base):
         else:
             return self._setattr(attr, value)
 
+    def __setitem__(self, item, value):
+        if not isinstance(item, str):
+            raise TypeError("item must be 'str', not '{}'".format(type(item)))
+        return self._setattr(item, value)
+
     def _setattr(self, attr, value):
         from .assign import assign_connection
         translate = False
@@ -679,6 +684,14 @@ class Transformer(Base):
             return super().__getattribute__(attr)
         if attr in type(self).__dict__ or attr in self.__dict__:
             return super().__getattribute__(attr)
+        return self._getattr(attr)
+
+    def __getitem__(self, item):
+        if not isinstance(item, str):
+            raise TypeError("item must be 'str', not '{}'".format(type(item)))
+        return self._getattr(item)
+
+    def _getattr(self, attr):
         htf = self._get_htf()
         dirs = None
         deleter = None
