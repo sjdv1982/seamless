@@ -1,6 +1,6 @@
 import seamless
 from seamless.highlevel import Context
-from seamless.silk.Silk import RichValue
+from silk.Silk import RichValue
 import json
 import numpy as np
 
@@ -24,7 +24,7 @@ def bind(file, mode):
 
 for file, mode in files:
     bind(file, mode)
-    
+
 print("Compute...")
 ctx.compute()
 print()
@@ -36,7 +36,7 @@ print(ctx.fs.status)
 print(ctx.fs.exception)
 fs = ctx.fs.value.unsilk
 assert fs is not None
-def print_file(f):    
+def print_file(f):
     v = str(fs[f])
     if len(v) > 80:
         v = v[:35] + "." * 10  + v[-35:]

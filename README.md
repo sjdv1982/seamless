@@ -35,6 +35,16 @@ Seamless Docker container.
 
 ```seamless-jupyter``` does the same for Jupyter Notebook.
 
+
+### Installation under conda
+
+conda create -n seamless
+conda activate seamless
+conda install 'python==3.7.3' pip
+pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements.txt
+pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements-extra.txt
+conda install -c rpbs silk seamless-framework
+
 Basic example
 =============
 
