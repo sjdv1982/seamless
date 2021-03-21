@@ -12,9 +12,9 @@ from ..mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
-from ..silk import Silk
+from silk import Silk
 from .compiled import CompiledObjectDict
-from ..mixed.get_form import get_form
+from silk.mixed.get_form import get_form
 
 default_pin = {
   "celltype": "mixed",

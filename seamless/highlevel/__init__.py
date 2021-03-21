@@ -4,9 +4,9 @@ from types import LambdaType
 from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda
 import textwrap
 
-from ..mixed import MixedBase
-from ..silk import Silk
-from ..silk.validation import _allowed_types
+from silk.mixed import MixedBase
+from silk import Silk
+from silk.validation import _allowed_types
 from ..core.lambdacode import lambdacode
 from ..core.cached_compile import cached_compile
 

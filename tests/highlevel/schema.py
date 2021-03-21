@@ -1,5 +1,5 @@
 '''
-from seamless.silk import Silk
+from silk import Silk
 
 buf = {}
 s = Silk(buffer=buf)

@@ -2,7 +2,7 @@
 # (and should give almost the same output)
 import sys
 from pprint import pprint
-from seamless.silk import Silk, ValidationError
+from silk import Silk, ValidationError
 from seamless.core import context, cell, StructuredCell
 
 ctx = None

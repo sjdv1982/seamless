@@ -1,6 +1,6 @@
 import sys
 from pprint import pprint
-from seamless.silk import Silk, ValidationError
+from silk import Silk, ValidationError
 
 def adder(self, other):
     return other + self.x

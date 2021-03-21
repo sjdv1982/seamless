@@ -1,6 +1,6 @@
 import sys
 import textwrap
-from ..mixed import MixedBase
+from silk.mixed import MixedBase
 import inspect, asyncio
 
 from ..core.cache.buffer_cache import buffer_cache

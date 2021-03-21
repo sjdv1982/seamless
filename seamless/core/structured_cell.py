@@ -423,11 +423,11 @@ from .protocol.serialize import _serialize as serialize
 from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from .protocol.deep_structure import validate_hash_pattern
 from .protocol.expression import get_subpath_sync as get_subpath, set_subpath_sync as set_subpath
-from ..mixed.Monitor import Monitor
-from ..mixed.Backend import StructuredCellBackend, StructuredCellSchemaBackend
-from ..mixed import MixedObject, MixedDict, MixedList
-from ..silk.Silk import Silk
-from ..silk.policy import (
+from silk.mixed.Monitor import Monitor
+from silk.mixed.Backend import StructuredCellBackend, StructuredCellSchemaBackend
+from silk.mixed import MixedObject, MixedDict, MixedList
+from silk.Silk import Silk
+from silk.policy import (
     default_policy as silk_default_policy,
     no_infer_policy as silk_no_infer_policy
 )

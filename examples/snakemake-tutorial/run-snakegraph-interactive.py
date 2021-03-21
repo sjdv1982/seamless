@@ -1,6 +1,6 @@
 import seamless
 from seamless.highlevel import Context, Transformer, Cell
-from seamless.silk.Silk import RichValue
+from silk.Silk import RichValue
 import json, os
 import numpy as np
 from functools import partial

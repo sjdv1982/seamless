@@ -306,7 +306,7 @@ from ..cell import celltypes
 from .deserialize import deserialize
 from .serialize import serialize
 from .calculate_checksum import calculate_checksum
-from ...mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED, is_numpy_buffer
+from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED, is_numpy_buffer
 from .cson import cson2json
 from ..cache.buffer_cache import buffer_cache
 

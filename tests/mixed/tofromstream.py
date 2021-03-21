@@ -2,8 +2,8 @@
 
 import sys
 import numpy as np
-from seamless.mixed.get_form import get_form
-from seamless.mixed.io import to_stream, from_stream
+from seamlesssilk.mixed.get_form import get_form
+from seamlesssilk.mixed.io import to_stream, from_stream
 
 import json
 

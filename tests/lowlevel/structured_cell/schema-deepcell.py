@@ -2,7 +2,7 @@
 # (and should give the same output, except that there will be no AttributeError upon accessing a non-existent member)
 import sys
 from pprint import pprint
-from seamless.silk import Silk, ValidationError
+from silk import Silk, ValidationError
 from seamless.core import context, cell, StructuredCell
 
 ctx = None

@@ -75,7 +75,7 @@ def convert_checksum_dict(checksum_dict, prefix):
     return result
 
 from ..core.cache.buffer_cache import buffer_cache, CacheMissError
-from ..mixed.io import deserialize as mixed_deserialize
+from silk.mixed.io import deserialize as mixed_deserialize
 from ..core.protocol.serialize import serialize_sync
 from ..core.protocol.deep_structure import value_to_deep_structure_sync
 from ..core.protocol.calculate_checksum import calculate_checksum_sync

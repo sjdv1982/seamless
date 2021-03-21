@@ -178,5 +178,5 @@ class Library:
 
 from .include import IncludedLibrary
 from ..Context import Context
-from ...silk import Silk
-from ...mixed import DefaultBackend, Monitor, MixedDict
+from silk import Silk
+from silk.mixed import DefaultBackend, Monitor, MixedDict

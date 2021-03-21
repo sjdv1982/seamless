@@ -1,7 +1,7 @@
 import sys
 from pprint import pprint
-from seamless.silk import Silk, ValidationError
-from seamless.mixed import Monitor, SilkBackend, MixedObject
+from silk import Silk, ValidationError
+from seamlesssilk.mixed import Monitor, SilkBackend, MixedObject
 
 def reset_backend(sb=None):
     if sb is None:
@@ -101,7 +101,7 @@ print(s.lis*2)
 """
 for a in s.lis[1:3]:  # slices not yet supported by monitor
     print(a.data)
-"""    
+"""
 for a in s.lis:
     print(a.data)
 print(hasattr(s, "lis"), "lis" in s)
@@ -272,12 +272,12 @@ reset_backend()
 Test = Silk(data=mixed_object) # singleton
 silk_backend.set_silk(Test)
 
-""" 
+"""
 # will never work for a singleton backed up by a mixed object
 def __init__(self, a, b):
     self.a = a
     self.b = b
-"""    
+"""
 def __call__(self, c):
     return self.a + self.b + c
 #Test.__init__ = __init__

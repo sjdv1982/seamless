@@ -442,7 +442,7 @@ class MixedCell(Cell):
 
     @property
     def storage(self):
-        from ..mixed.get_form import get_form
+        from silk.mixed.get_form import get_form
         v = super().value
         if v is None:
             return None
@@ -450,7 +450,7 @@ class MixedCell(Cell):
 
     @property
     def form(self):
-        from ..mixed.get_form import get_form
+        from silk.mixed.get_form import get_form
         v = super().value
         if v is None:
             return None
@@ -640,7 +640,7 @@ subcelltypes["module"] = None
 from .unbound_context import UnboundManager
 from .mount import MountItem
 from .mount import is_dummy_mount
-from ..mixed.get_form import get_form
+from silk.mixed.get_form import get_form
 from .structured_cell import Inchannel, Outchannel
 from .macro_mode import get_macro_mode
 from .share import sharemanager

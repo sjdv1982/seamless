@@ -1,6 +1,6 @@
 from pprint import pprint
 import jsonschema
-from seamless.silk import Silk
+from silk import Silk
 import json
 
 def validate(self):

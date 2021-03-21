@@ -308,4 +308,4 @@ def execute_debug(name, code,
             except Exception:
                 traceback.print_exc()
 
-from ..silk import Silk
+from silk import Silk

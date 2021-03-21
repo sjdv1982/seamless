@@ -2,7 +2,7 @@
 
 import sys
 import numpy as np
-from seamless.mixed.get_form import get_form
+from seamlesssilk.mixed.get_form import get_form
 import json
 
 _print = print

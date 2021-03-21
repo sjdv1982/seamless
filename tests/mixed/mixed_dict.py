@@ -1,5 +1,5 @@
 import numpy as np
-from seamless.mixed import Monitor, DefaultBackend
+from seamlesssilk.mixed import Monitor, DefaultBackend
 
 def build_mixed(data):
     backend = DefaultBackend(plain=False)

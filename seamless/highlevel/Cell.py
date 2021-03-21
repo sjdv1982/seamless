@@ -6,8 +6,8 @@ from types import LambdaType
 from .Base import Base
 from .Resource import Resource
 from ..core.lambdacode import lambdacode
-from ..silk import Silk
-from ..mixed import MixedBase
+from silk import Silk
+from silk.mixed import MixedBase
 from ..mime import get_mime, language_to_mime, ext_to_mime
 
 celltypes = (
@@ -882,7 +882,7 @@ def Constant(*args, **kwargs):
     cell._get_hcell2()["constant"] = True
 
 from functools import partialmethod
-from ..silk.SilkBase import binary_special_method_names
+from silk.SilkBase import binary_special_method_names
 for name in binary_special_method_names:
     if name in Cell.__dict__:
         continue

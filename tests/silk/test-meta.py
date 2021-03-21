@@ -1,7 +1,7 @@
 from pprint import pprint
-from seamless.silk import Silk
+from silk import Silk
 from functools import partial
-from seamless.silk.meta import meta, validator
+from silk.meta import meta, validator
 class Coordinate(metaclass=meta):
 
     a = 1 # not a class default, but a type inference!

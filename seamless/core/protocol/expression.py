@@ -1,4 +1,4 @@
-from ...mixed import _array_types
+from silk.mixed import _array_types
 def _set_subpath(value, path, subvalue):
     head = path[0]
     if len(path) == 1:

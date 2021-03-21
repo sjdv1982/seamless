@@ -48,7 +48,7 @@ def parse_argument(argname, argvalue, parameter):
             value[k] = v._path
     return value
 
-from ...silk.Silk import RichValue
+from silk.Silk import RichValue
 from ..Base import Base
 from ..Cell import Cell
 from ..Context import Context, SubContext

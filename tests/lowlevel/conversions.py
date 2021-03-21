@@ -25,7 +25,7 @@ ctx.txt3 = cell("text")
 ctx.txt4 = cell("text")
 ctx.plain = cell("plain")
 ctx.plain2 = cell("plain")
-ctx.mixed = cell("mixed")
+ctxsilk.mixed = cell("mixed")
 
 print("*** Start ***")
 print(ctx.txt1.value)
@@ -67,9 +67,9 @@ ctx.compute()
 print("ctx.plain2", ctx.plain2.data)
 
 print("*** Stage 3b ***")
-ctx.txt3.connect(ctx.mixed)
+ctx.txt3.connect(ctxsilk.mixed)
 ctx.compute()
-print("ctx.mixed", ctx.mixed.data)
+print("ctxsilk.mixed", ctxsilk.mixed.data)
 
 print("*** Stage 4 ***")
 ctx.ipy = cell("ipython").set("""

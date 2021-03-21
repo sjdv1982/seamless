@@ -1,7 +1,7 @@
 import json
 import numpy as np
-from ...mixed import MixedScalar
-from ...silk.validation import _integer_types, _float_types
+from silk.mixed import MixedScalar
+from silk.validation import _integer_types, _float_types
 
 def seamless_encoder(obj):
     from ..structured_cell import StructuredCellState

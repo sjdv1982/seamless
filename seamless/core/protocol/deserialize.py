@@ -3,7 +3,7 @@ from copy import deepcopy
 import json
 from ast import literal_eval
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from ...mixed.io import deserialize as mixed_deserialize
+from silk.mixed.io import deserialize as mixed_deserialize
 
 from .calculate_checksum import lrucache2
 

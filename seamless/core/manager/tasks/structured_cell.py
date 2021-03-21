@@ -408,7 +408,7 @@ from .accessor_update import AccessorUpdateTask
 from .upon_connection import UponConnectionTask
 from ...cache import CacheMissError
 from ...cache.buffer_cache import buffer_cache
-from ....silk.Silk import Silk, ValidationError
+from silk.Silk import Silk, ValidationError
 from ..cancel import get_scell_state, SCModeEnum
 from ...protocol.expression import get_subpath, set_subpath, set_subpath_checksum, access_hash_pattern
 from . import acquire_evaluation_lock, release_evaluation_lock

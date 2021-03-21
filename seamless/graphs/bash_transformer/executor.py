@@ -5,9 +5,9 @@ import tarfile
 import json
 import sys
 from io import BytesIO
-from seamless.silk import Silk
+from silk import Silk
 from seamless.core.transformation import SeamlessTransformationError
-from seamless.mixed.get_form import get_form
+from seamlesssilk.mixed.get_form import get_form
 from seamless import subprocess
 from subprocess import PIPE
 import psutil

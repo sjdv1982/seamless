@@ -32,10 +32,6 @@ import numpy as np
 if np.dtype(np.object).itemsize != 8:
     raise ImportError("Seamless requires a 64-bit system")
 
-#silk must be imported before mixed
-from . import silk
-from . import mixed
-
 ipython_instance = None
 running_in_jupyter = False
 try:
@@ -93,7 +89,7 @@ def run_transformation(checksum):
     return transformation_cache.run_transformation(checksum)
 
 
-from .silk import Silk
+from silk import Silk
 from .shareserver import shareserver
 from .communion_server import communion_server
 from .core.transformation import set_ncores

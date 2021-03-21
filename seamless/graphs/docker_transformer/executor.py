@@ -5,8 +5,8 @@ import tarfile
 import json
 import sys
 from io import BytesIO
-from seamless.silk import Silk
-from seamless.mixed.get_form import get_form
+from silk import Silk
+from seamlesssilk.mixed.get_form import get_form
 from requests.exceptions import ConnectionError
 from urllib3.exceptions import ProtocolError
 from seamless.core.transformation import SeamlessTransformationError

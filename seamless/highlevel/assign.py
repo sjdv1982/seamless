@@ -19,8 +19,8 @@ def check_libinstance_subcontext_binding(ctx, path):
                             return
 
 from . import ConstantTypes
-from ..mixed import MixedBase
-from ..silk import Silk
+from silk.mixed import MixedBase
+from silk import Silk
 from .Cell import Cell, get_new_cell
 from .Module import Module, get_new_module
 from .Resource import Resource

@@ -554,5 +554,5 @@ from .cache import CacheMissError
 from .cache.buffer_cache import buffer_cache
 from .cache.transformation_cache import transformation_cache, syntactic_is_semantic
 from .status import SeamlessInvalidValueError
-from ..silk import Silk, Scalar
+from silk import Silk, Scalar
 from ..communion_client import communion_client_manager

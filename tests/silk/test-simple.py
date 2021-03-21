@@ -1,5 +1,5 @@
 from jsonschema.exceptions import ValidationError
-from seamless.silk import Silk
+from silk import Silk
 
 print("START #1")
 s = Silk()
@@ -62,7 +62,7 @@ print()
 print("START #6")
 s.pop(-1)
 print("VALUE: ", s.data)
-def v(self): 
+def v(self):
     assert self > 0
 s.add_validator(v, attr=0)   #  add a validator to v[0] => to all items
 s.append(10)
