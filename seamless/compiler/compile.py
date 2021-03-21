@@ -106,7 +106,7 @@ def compile(binary_objects, build_dir, *,
     return success, result, source_files, stderr
 
 def complete(module_definition):
-    from seamless.silk import Silk
+    from silk import Silk
     assert module_definition["type"] == "compiled"
     assert "public_header" in module_definition
     if isinstance(module_definition, Silk):

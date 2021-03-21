@@ -9,11 +9,19 @@ Protocols, computations and results are all represented as directed acyclic grap
 
 ### Documentation: <http://sjdv1982.github.io/seamless>
 
+Supported platforms
+===================
 
-Installation
-============
+Seamless is meant to run from inside a Docker container. This is easy under Linux.
 
-Seamless is meant to run from inside a Docker container.
+This will not work under Mac OSX and Windows, because Docker support for networking is incomplete.
+
+Under Mac OSX, you can now install Seamless without Docker, into a conda environment (see below).
+
+Seamless does not run under Windows.
+
+Installation using Docker
+=========================
 
 First, you must [install Docker](https://docs.docker.com/get-docker/)
 and [(mini)conda](https://docs.conda.io/en/latest/miniconda.html).
@@ -34,6 +42,18 @@ The command ```seamless-ipython``` launches an IPython terminal inside a
 Seamless Docker container.
 
 ```seamless-jupyter``` does the same for Jupyter Notebook.
+
+
+### Installation under conda
+
+*Note: this is EXPERIMENTA
+
+conda create -n seamless
+conda activate seamless
+conda install 'python==3.7.3' pip
+pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements.txt
+pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements-extra.txt
+conda install -c rpbs silk seamless-framework
 
 Basic example
 =============
