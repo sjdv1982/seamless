@@ -46,8 +46,6 @@ Seamless Docker container.
 
 ### Installation under conda
 
-*Note: this is EXPERIMENTA
-
 conda create -n seamless
 conda activate seamless
 conda install 'python==3.7.3' pip
