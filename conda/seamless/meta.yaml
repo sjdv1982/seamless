@@ -1,0 +1,77 @@
+{% set name = "seamless" %}
+{% set version = "0.5.2" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+build:
+  noarch: python
+  number: 9
+
+source:
+  path: ../..
+
+requirements:
+  build:
+    - python==3.7.3
+    - numpy==1.17.*
+    - pip
+    - setuptools
+  run:
+    - python==3.7.3
+    - numpy==1.17.*
+    - requests==2.22.*
+    - cffi==1.13.*
+    - traitlets==4.3.*
+    - biopython==1.76.*
+    #- nglview==2.7.*
+    #
+    #- snakemake==5.5.*
+    #
+    #- cson==0.8.*
+    #
+    - ruamel.yaml==0.16.*
+    - ruamel.yaml.clib==0.2.*
+    #- speg==0.3.*
+    #
+    - jsonschema==3.*
+    #- websockets==8.1.*
+    #
+    - aiohttp==3.6.*
+    #- aiohttp_cors==0.7.*
+    #
+    #- async_timeout==3.0.*
+    #
+    - multidict==4.7.*
+    - wurlitzer==2.0.*
+    - yarl==1.4.*
+    #- redis==3.3.*
+    - redis
+    - pandas==0.24.*
+    - IPython==7.12.*
+    - notebook==6.0.*
+    - tornado==6.0.*
+    - ipykernel==5.1.*
+    - pyzmq==18.1.*
+    - jedi==0.15.2
+    - parso==0.5.2
+    #- jupyter-console==6.1.*
+    #
+    #- docker==3.7.*
+    #
+    #- itables==0.2.*
+    #
+    #- debugpy==1.2.*
+    #
+    - mpld3==0.5.*
+    - silk
+#test:
+#  imports:
+#    - seamless
+
+about:
+  home: https://github.com/sjdv1982/seamless.git
+  license: MIT
+  license_family: MIT
+  summary: Seamless is a framework to set up protocols (workflows) and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations, and all cells can be edited interactively.
