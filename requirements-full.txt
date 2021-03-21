@@ -8,7 +8,7 @@ attrs==19.3.0
 backcall==0.1.0
 beautifulsoup4==4.8.1
 biopython==1.76
-bleach==3.1.0
+bleach==3.3.0
 blinker==1.4
 bokeh==1.3.4
 certifi==2019.11.28
