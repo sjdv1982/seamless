@@ -408,7 +408,7 @@ wget https://raw.githubusercontent.com/sjdv1982/seamless/experimental/docker/sea
 sudo singularity build seamless.simg Singularity
 ```
 
-A bash shell in a new Seamless container can then be started using e.g. `sudo singularity run -c --cleanenv seamless.simg`.
+A bash shell in a new Seamless container can then be started using e.g. `singularity run -c --cleanenv seamless.simg`.
 If you run without `-c`, be sure to do `export PATH=/opt/conda/bin:$PATH` as the first command.
 
 
