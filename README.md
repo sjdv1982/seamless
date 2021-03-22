@@ -16,7 +16,7 @@ Seamless is meant to run from inside a Docker container. This is easy under Linu
 
 This will not work under Mac OSX and Windows, because Docker support for networking is incomplete.
 
-Under Mac OSX, you can now install Seamless without Docker, into a conda environment (see below).
+Under Mac OSX, you can now install Seamless without Docker, into a conda environment (see Alternative installations).
 
 Seamless does not run under Windows.
 
@@ -43,15 +43,6 @@ Seamless Docker container.
 
 ```seamless-jupyter``` does the same for Jupyter Notebook.
 
-
-### Installation under conda
-
-conda create -n seamless
-conda activate seamless
-conda install 'python==3.7.3' pip
-pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements.txt
-pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements-extra.txt
-conda install -c rpbs silk seamless-framework
 
 Basic example
 =============
@@ -386,6 +377,40 @@ ctx.add.code.value
 - The use of Redis as a checksum-to-buffer cache
 - Seamless instances can communicate, serving as job slaves or result caches for transformations.
 - Interactive monitoring of status and exception messages.
+
+Alternative installations
+=========================
+
+
+### Installation under conda
+
+**NOTE: this is EXPERIMENTAL**. The main application is running Seamless under OSX.
+
+```
+conda create -n seamless
+conda activate seamless
+conda install 'python==3.7.3' pip
+pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements.txt
+pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements-extra.txt
+conda install -c rpbs silk seamless-framework
+```
+
+Don't install the Seamless command line tools. Instead of commands like `seamless-bash`, `seamless-ipython`, `seamless-jupyter`, simply do `conda activate seamless` and type `python`, `ipython` or `jupyter notebook`. The source code of the Seamless command line tools is at `https://github.com/sjdv1982/seamless/tree/master/docker/commands`.
+
+
+### Installation under Singularity
+
+**NOTE: this is EXPERIMENTAL.** The main application for this is to run Seamless transformations
+and database adapters in a HPC environment. Launching e.g. Jupyter under Singularity is unlikely to work.
+
+```
+wget https://raw.githubusercontent.com/sjdv1982/seamless/experimental/docker/seamless-simple/Singularity  # or download it manually
+sudo singularity build seamless.simg Singularity
+```
+
+A bash shell in a new Seamless container can then be started using e.g. `sudo singularity run -c --cleanenv seamless.simg`.
+If you run without `-c`, be sure to do `export PATH=/opt/conda/bin:$PATH` as the first command.
+
 
 More examples
 =============
