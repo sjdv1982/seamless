@@ -6,9 +6,6 @@ Medium priority:
 - Unify docker transformer and bash transformer
 - Support more foreign languages: Julia, R, JavaScript. IPython magics, also have a look at python-bond
 
-Low priority:
-- "Fallback". During development: A value for a cell that is used if upstream-None, i.e. if someone else is working upstream.
-
 Very low priority:
 - Meta-schema for schema editing (jsonschema has it)
 

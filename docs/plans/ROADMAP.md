@@ -4,12 +4,6 @@ see KNOWN-GLITCHES.txt
 Get rid of special syntax << and >>
    => getattr shouldn't give proxies
 
-Reactor
-=======
-- Rip high-level Reactor DONE
-- implement edit pins, including must_be_defined=False DONE
-- port WIP/build_merge.py to use low-level reactor (in high-level macro) DONE
-
 UPDATE Nov 2020
 ===============
 Current state:
@@ -29,17 +23,7 @@ For the next version:
   Make a jobless last-resort backend based on run-transformation. If needed, fire up database adapter on the fly.
 
 
-- At the high-level, unify bash and docker transformers. Mid-level translations remain split (and jobless as well)
-  Rip docker_options.
-  Allow docker_image for any transformer, not just bash. If non-bash, docker_image is interpreted as a *capability*.
-  Each Seamless instance will have a list of capabilities, which means that it can execute transformers as if it were
-   running inside that Docker image (also bash).
-  If not in that Docker image, the transformer *must* be delegated by communion, else error.
-  Adapt run-transformation + jobless backend as well.
-
 - bash/docker transformers no longer need tar. Instead, RESULT can be a directory.
-
-- Fallback mode (soft/hard), with fallback values and fallback mounts. For collaborative coding.
 
 - Shell into each Python / bash transformer. Docker image for bash transformers supported.
 Rip/subsume "debug" mode. Compiled transformer keeps debug mode, and has no shell.
@@ -115,21 +99,3 @@ DaReUS-Loop/PepCyclizer example
   - Need high-level Macro structure: needs deep structure, and automatic transformer
     map/reduce has now been ripped.
   - PyPPP docker image: code is open source, but SVM model is secret
-
-More examples
-============
-- Build upon struclib
-- Build upon grid editor
-
-
-Documentation
-=============
-- Update interoperability document
-- Document more highlevel classes
-- Expand man pages
-
-Missing features
-================
-issue E2 (TODO: port these to GitHub issues)
-Link pins (see plan) may be a high priority.
-Deep cells / true map-reduce would be nice also!

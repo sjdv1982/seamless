@@ -1,5 +1,7 @@
 Document better: share => readonly=False => celltype not structured (indicate this)
 
+Changing celltype in untranslated cell clears value? What about in translated cell?
+
 Update guide so it prints out the status weblink
 
 mimetype should trigger re-translation
@@ -10,5 +12,3 @@ When a transformer creates a dictionary where the values are numpy scalars,
  Seamless says "Transformer exited without result"
 
 Non-reproducible computations give cache misses!
-
-Project loading with -BAK is misconceived
