@@ -7,7 +7,7 @@ import sys
 from io import BytesIO
 from silk import Silk
 from seamless.core.transformation import SeamlessTransformationError
-from seamlesssilk.mixed.get_form import get_form
+from silk.mixed.get_form import get_form
 from seamless import subprocess
 from subprocess import PIPE
 import psutil

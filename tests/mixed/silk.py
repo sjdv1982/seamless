@@ -1,7 +1,7 @@
 import sys
 from pprint import pprint
 from silk import Silk, ValidationError
-from seamlesssilk.mixed import Monitor, SilkBackend, MixedObject
+from silk.mixed import Monitor, SilkBackend, MixedObject
 
 def reset_backend(sb=None):
     if sb is None:

@@ -6,7 +6,7 @@ import json
 import sys
 from io import BytesIO
 from silk import Silk
-from seamlesssilk.mixed.get_form import get_form
+from silk.mixed.get_form import get_form
 from requests.exceptions import ConnectionError
 from urllib3.exceptions import ProtocolError
 from seamless.core.transformation import SeamlessTransformationError

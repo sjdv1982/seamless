@@ -1,6 +1,6 @@
 import requests, json
 import numpy as np
-from seamlesssilk.mixed.io.serialization import serialize
+from silk.mixed.io.serialization import serialize
 
 url = "http://localhost:5522"
 
