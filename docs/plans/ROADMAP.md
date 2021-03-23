@@ -19,12 +19,13 @@ Current state:
 - Cloudless has a working prototype
 
 For the next version:
-- Split off .mixed and .silk code into seamless-silk project.
+- Split off .mixed and .silk code into seamless-silk project. DONE
   Build a pypi package for it.
   Make it one of the dependencies of cloudless.
   Adapt cloudless to use it for encoding.
   => bash/docker transformers can produce multiple files that are non text
-  Jobless: concept of eagerness (first-resort, last-resort backend)
+
+- Jobless: concept of eagerness (first-resort, last-resort backend)
   Make a jobless last-resort backend based on run-transformation. If needed, fire up database adapter on the fly.
 
 
@@ -132,7 +133,3 @@ Missing features
 issue E2 (TODO: port these to GitHub issues)
 Link pins (see plan) may be a high priority.
 Deep cells / true map-reduce would be nice also!
-
-Known issues
-============
-(See issues/ folder. TODO: port these to GitHub issues)
