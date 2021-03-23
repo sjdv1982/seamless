@@ -401,7 +401,7 @@ Don't install the Seamless command line tools. Instead of commands like `seamles
 ### Installation under Singularity
 
 **NOTE: this is EXPERIMENTAL.** The main application for this is to run Seamless transformations
-and database adapters in a HPC environment. Launching e.g. Jupyter under Singularity is unlikely to work.
+and database adapters in an HPC environment. Launching e.g. Jupyter or Docker under Singularity is unlikely to work.
 
 ```
 wget https://raw.githubusercontent.com/sjdv1982/seamless/experimental/docker/seamless-simple/Singularity  # or download it manually
