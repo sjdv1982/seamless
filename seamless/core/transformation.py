@@ -8,7 +8,8 @@ import functools
 import time
 import atexit
 
-from .execute import Queue, Executor, execute, execute_debug
+from multiprocessing import Process
+from .execute import Queue, execute, execute_debug
 from .run_multi_remote import run_multi_remote, run_multi_remote_pair
 from .injector import transformer_injector as injector
 from .build_module import build_module_async
@@ -462,7 +463,7 @@ class TransformationJob:
             )
             kwargs = {"python_debug": self.python_debug}
             execute_command = execute_debug if self.debug else execute
-            self.executor = Executor(target=execute_command,args=args, kwargs=kwargs, daemon=True)
+            self.executor = Process(target=execute_command,args=args, kwargs=kwargs, daemon=True)
             self.executor.start()
             running = True
             result = None
