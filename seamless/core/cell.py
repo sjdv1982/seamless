@@ -384,7 +384,7 @@ class Cell(SeamlessBase):
         if trigger and self._checksum is not None:
             observer(self._checksum.hex())
 
-    def share(self, path=None, readonly=True, mimetype=None, *, toplevel=False):
+    def share(self, path=None, readonly=True, mimetype=None, *, toplevel=False, cellname=None):
         if not readonly:
             assert self.has_authority()
         oldshare = self._share
@@ -395,6 +395,8 @@ class Cell(SeamlessBase):
         }
         if mimetype is not None:
             self._share["mimetype"] = mimetype
+        if cellname is not None:
+            self._share["cellname"] = cellname
         if oldshare != self._share:
             sharemanager.update_share(self)
 
