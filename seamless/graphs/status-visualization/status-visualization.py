@@ -5,6 +5,7 @@ ctx2 = Context()
 ctx2.share_namespace = "status"
 ctx2.graph = {}
 ctx2.graph.celltype = "plain"
+ctx2.graph.share()
 ctx2.status_ = {}
 ctx2.status_data = ctx2.status_
 ctx2.status_data.celltype = "plain"

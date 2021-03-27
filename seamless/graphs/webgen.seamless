@@ -396,6 +396,10 @@
       "path": [
         "graph"
       ],
+      "share": {
+        "path": null,
+        "readonly": true
+      },
       "type": "cell"
     },
     {
