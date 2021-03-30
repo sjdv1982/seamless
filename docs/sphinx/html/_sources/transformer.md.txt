@@ -25,6 +25,7 @@ Transformers (re-)execute whenever any of their pins change in value. If any pin
 - Concurrently, without blocking the ipython shell, file mounting, HTTP sharing, or other transformers.
 - With no access to any variables other than the values of the pins.
 - In a separate directory, with no access to the directory where Seamless is running.
+
 Transformers that are being executed are canceled when any of their pins change.
 Seamless keeps track of the (checksum of) a transformation result, as a function of (the checksums of) the input value. If the result of a transformation is already known, it is not re-executed.
 

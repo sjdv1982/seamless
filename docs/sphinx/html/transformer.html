@@ -62,10 +62,10 @@ then <code class="docutils literal notranslate"><span class="pre">ctx.tf.x</span
 <ul class="simple">
 <li><p>Concurrently, without blocking the ipython shell, file mounting, HTTP sharing, or other transformers.</p></li>
 <li><p>With no access to any variables other than the values of the pins.</p></li>
-<li><p>In a separate directory, with no access to the directory where Seamless is running.
-Transformers that are being executed are canceled when any of their pins change.
-Seamless keeps track of the (checksum of) a transformation result, as a function of (the checksums of) the input value. If the result of a transformation is already known, it is not re-executed.</p></li>
+<li><p>In a separate directory, with no access to the directory where Seamless is running.</p></li>
 </ul>
+<p>Transformers that are being executed are canceled when any of their pins change.
+Seamless keeps track of the (checksum of) a transformation result, as a function of (the checksums of) the input value. If the result of a transformation is already known, it is not re-executed.</p>
 </div>
 <div class="section" id="transformer-result">
 <h2>Transformer result<a class="headerlink" href="#transformer-result" title="Permalink to this headline">¶</a></h2>
