@@ -39,6 +39,8 @@ The celltype of the result is always "structured". Use `ctx.tf.result.value.unsi
 The execution status of the transformater can be retrieved using `ctx.tf.status`. If it is "error", the error message can be retrieved using `ctx.tf.exception`.
 
 Transformers can print to stdout or stderr during execution.
+The printed output is only available after execution has finished.
+
 The printed output will be part of the error message if the transformation fails.
 If it succeeds, the printed output will be in `ctx.tf.logs`.
 
@@ -75,7 +77,14 @@ TODO: document preliminary and progress
 
 Bash and Docker transformers have `ctx.tf.language` set to "bash" and "docker".
 
-In both cases, `ctx.tf.code` is written in bash. The bash script will have access to every input pin stored as a file of the same name. Small inputs are also available as a bash variable of the same name. The bash code is literally executed under bash, Seamless does not perform parsing or substitution of any kind. After execution, Seamless expects that a file with the name `RESULT` has been created. This file must contain the result of the transformation. If multiple files are created (NOTE: for the next version of Seamless, `RESULT` may be a directory as well).
+In both cases, `ctx.tf.code` is written in bash.
+The bash code will have access to every input pin stored as a file of the same name.
+Small inputs are also available as a bash variable of the same name.
+The bash code is literally executed under bash, Seamless does not perform parsing or substitution of any kind.
+After execution, Seamless expects that a file with the name `RESULT` has been created.
+This file must contain the result of the transformation.
+If multiple files are created (NOTE: for the next version of Seamless, `RESULT` may be a directory as well).
+
 After execution, all files are deleted.
 
 Docker transformers are identical to bash transformers, except for the extra pin `ctx.tf.docker_image`. Note that to execute Docker transformer under standard Seamless
