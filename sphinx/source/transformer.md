@@ -66,6 +66,8 @@ ctx.tf = func
 This is because `np` is not defined inside of `func`, but outside of it,
 so the transformer will not have access to it.
 
+Python source code can be an expression, a function, or simply a block of code. For an expression or a function, the return value is the result value. A code block must define a variable named "result".
+
 TODO: document preliminary and progress
 
 ## Bash/docker transformers

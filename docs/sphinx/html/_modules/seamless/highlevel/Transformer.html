@@ -97,34 +97,7 @@
 <div class="viewcode-block" id="Transformer"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Transformer">[docs]</a><span class="k">class</span> <span class="nc">Transformer</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Transforms input values to a result value</span>
 
-<span class="sd">    One of the inputs is the code pin, containing source code</span>
-<span class="sd">    in any programming language.</span>
-
-<span class="sd">    This code is run inside a namespace populated by the values</span>
-<span class="sd">    of all other inputs. Those names and types of those</span>
-<span class="sd">    values are described as input pins.</span>
-
-<span class="sd">    A transformer `ctx.tf` can be constructed from a Python function.</span>
-<span class="sd">    In that case, the function&#39;s source code is extracted and</span>
-<span class="sd">    set as the code pin&#39;s value. The function signature is</span>
-<span class="sd">    inspected and each parameter becomes an input pin.</span>
-
-<span class="sd">    Note that the transformer does not have access to any variable</span>
-<span class="sd">    from outside the code pin&#39;s source code.</span>
-
-<span class="sd">    Python source code can be an expression, a function, or</span>
-<span class="sd">    simply a block of code. For an expression or a function,</span>
-<span class="sd">    the return value is the result value. A code block must define</span>
-<span class="sd">    a variable named &quot;result&quot;.</span>
-
-<span class="sd">    An input pin `foo` can be set to a value or a cell, simply with</span>
-<span class="sd">    `ctx.tf.foo = ...` . If the pin does not exist, it is created.</span>
-<span class="sd">    The type of a pin is &quot;mixed&quot; by default.</span>
-
-<span class="sd">    Pins can be changed using Transformer.pins, e.g.</span>
-<span class="sd">    `ctx.tf.pins.foo.celltype = &quot;int&quot;`</span>
-
-<span class="sd">    To delete a pin `foo`, do `del ctx.tf.pins.foo`</span>
+<span class="sd">    See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for documentation</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">_temp_code</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">_temp_pins</span> <span class="o">=</span> <span class="kc">None</span>

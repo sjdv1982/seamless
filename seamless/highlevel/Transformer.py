@@ -58,34 +58,7 @@ class TransformerWrapper:
 class Transformer(Base):
     """Transforms input values to a result value
 
-    One of the inputs is the code pin, containing source code
-    in any programming language.
-
-    This code is run inside a namespace populated by the values
-    of all other inputs. Those names and types of those
-    values are described as input pins.
-
-    A transformer `ctx.tf` can be constructed from a Python function.
-    In that case, the function's source code is extracted and
-    set as the code pin's value. The function signature is
-    inspected and each parameter becomes an input pin.
-
-    Note that the transformer does not have access to any variable
-    from outside the code pin's source code.
-
-    Python source code can be an expression, a function, or
-    simply a block of code. For an expression or a function,
-    the return value is the result value. A code block must define
-    a variable named "result".
-
-    An input pin `foo` can be set to a value or a cell, simply with
-    `ctx.tf.foo = ...` . If the pin does not exist, it is created.
-    The type of a pin is "mixed" by default.
-
-    Pins can be changed using Transformer.pins, e.g.
-    `ctx.tf.pins.foo.celltype = "int"`
-
-    To delete a pin `foo`, do `del ctx.tf.pins.foo`
+    See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for documentation
     """
     _temp_code = None
     _temp_pins = None

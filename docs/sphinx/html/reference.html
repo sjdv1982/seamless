@@ -600,27 +600,7 @@ schema is violated.</p>
 <dt id="seamless.highlevel.Transformer">
 <em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">seamless.highlevel.</span></code><code class="sig-name descname"><span class="pre">Transformer</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">code</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hash_pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'*':</span> <span class="pre">'#'}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transforms input values to a result value</p>
-<p>One of the inputs is the code pin, containing source code
-in any programming language.</p>
-<p>This code is run inside a namespace populated by the values
-of all other inputs. Those names and types of those
-values are described as input pins.</p>
-<p>A transformer <cite>ctx.tf</cite> can be constructed from a Python function.
-In that case, the function’s source code is extracted and
-set as the code pin’s value. The function signature is
-inspected and each parameter becomes an input pin.</p>
-<p>Note that the transformer does not have access to any variable
-from outside the code pin’s source code.</p>
-<p>Python source code can be an expression, a function, or
-simply a block of code. For an expression or a function,
-the return value is the result value. A code block must define
-a variable named “result”.</p>
-<p>An input pin <cite>foo</cite> can be set to a value or a cell, simply with
-<cite>ctx.tf.foo = …</cite> . If the pin does not exist, it is created.
-The type of a pin is “mixed” by default.</p>
-<p>Pins can be changed using Transformer.pins, e.g.
-<cite>ctx.tf.pins.foo.celltype = “int”</cite></p>
-<p>To delete a pin <cite>foo</cite>, do <cite>del ctx.tf.pins.foo</cite></p>
+<p>See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/transformer.html">http://sjdv1982.github.io/seamless/sphinx/html/transformer.html</a> for documentation</p>
 <dl class="py method">
 <dt id="seamless.highlevel.Transformer.INPUT">
 <em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">INPUT</span></code><a class="headerlink" href="#seamless.highlevel.Transformer.INPUT" title="Permalink to this definition">¶</a></dt>
