@@ -20,7 +20,7 @@ yarl==1.4.*
 redis==3.3.*
 pandas==0.24.*
 IPython==7.12.*
-notebook==6.0.*
+notebook==6.1.*
 tornado==6.0.*
 ipykernel==5.1.*
 pyzmq==18.1.*
