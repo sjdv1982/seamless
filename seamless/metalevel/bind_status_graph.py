@@ -3,6 +3,7 @@ import functools
 import time
 import weakref
 import asyncio
+from copy import deepcopy
 
 OBSERVE_GRAPH_DELAY = 0.23 # 23 is not a multiple of 50
 OBSERVE_STATUS_DELAY = 0.5
@@ -78,8 +79,7 @@ class StatusObserver:
 
 
 def observe_graph(ctx, ctx2, graph):
-    from copy import deepcopy
-    ctx2.graph.set(deepcopy(graph))
+    ctx2.graph_rt.set(deepcopy(graph))
     for status_observer in status_observers:
         if status_observer.ctx() is ctx and status_observer.ctx2() is ctx2:
             break
@@ -143,6 +143,9 @@ They will be passed to ctx.add_zip before the graph is loaded
     ctx2.translate()
     params = {"runtime": True}
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
+    def observe2(graph):
+        ctx2.graph.set(deepcopy(graph))
+    ctx.observe(("get_graph",), observe2, OBSERVE_GRAPH_DELAY)
     return ctx2
 
 async def bind_status_graph_async(ctx, status_graph, *, zips=None, mounts=False, shares=True):
@@ -179,6 +182,9 @@ They will be passed to ctx.add_zip before the graph is loaded
     await ctx2.translation()
     params = {"runtime": True}
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
+    def observe2(graph):
+        ctx2.graph.set(deepcopy(graph))
+    ctx.observe(("get_graph",), observe2, OBSERVE_GRAPH_DELAY)
     return ctx2
 
 from seamless.highlevel import Cell

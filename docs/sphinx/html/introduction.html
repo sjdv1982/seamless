@@ -4,14 +4,14 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Seamless: a cell-based reactive programming framework &#8212; Seamless 0.5 documentation</title>
-    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Contexts" href="context.html" />
@@ -24,12 +24,16 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="context.html" title="Contexts"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Welcome to Seamless’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.5 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Seamless: a cell-based reactive programming framework</a></li> 
       </ul>
     </div>  
 
@@ -47,9 +51,15 @@
 <h2>Documentation: <a class="reference external" href="http://sjdv1982.github.io/seamless">http://sjdv1982.github.io/seamless</a><a class="headerlink" href="#documentation-http-sjdv1982-github-io-seamless" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
-<div class="section" id="installation">
-<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<p>Seamless is meant to run from inside a Docker container.</p>
+<div class="section" id="supported-platforms">
+<h1>Supported platforms<a class="headerlink" href="#supported-platforms" title="Permalink to this headline">¶</a></h1>
+<p>Seamless is meant to run from inside a Docker container. This is easy under Linux.</p>
+<p>This will not work under Mac OSX and Windows, because Docker support for networking is incomplete.</p>
+<p>Under Mac OSX, you can now install Seamless without Docker, into a conda environment (see Alternative installations).</p>
+<p>Seamless does not run under Windows.</p>
+</div>
+<div class="section" id="installation-using-docker">
+<h1>Installation using Docker<a class="headerlink" href="#installation-using-docker" title="Permalink to this headline">¶</a></h1>
 <p>First, you must <a class="reference external" href="https://docs.docker.com/get-docker/">install Docker</a>
 and <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">(mini)conda</a>.</p>
 <p>Then, installation is as follows:</p>
@@ -394,6 +404,33 @@ Seamless Docker container.</p>
 </ul>
 </div>
 </div>
+<div class="section" id="alternative-installations">
+<h1>Alternative installations<a class="headerlink" href="#alternative-installations" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="installation-under-conda">
+<h2>Installation under conda<a class="headerlink" href="#installation-under-conda" title="Permalink to this headline">¶</a></h2>
+<p><strong>NOTE: this is EXPERIMENTAL</strong>. The main application is running Seamless under OSX.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">seamless</span>
+<span class="n">conda</span> <span class="n">activate</span> <span class="n">seamless</span>
+<span class="n">conda</span> <span class="n">install</span> <span class="s1">&#39;python==3.7.3&#39;</span> <span class="n">pip</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">raw</span><span class="o">.</span><span class="n">githubusercontent</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">sjdv1982</span><span class="o">/</span><span class="n">seamless</span><span class="o">/</span><span class="n">experimental</span><span class="o">/</span><span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">raw</span><span class="o">.</span><span class="n">githubusercontent</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">sjdv1982</span><span class="o">/</span><span class="n">seamless</span><span class="o">/</span><span class="n">experimental</span><span class="o">/</span><span class="n">requirements</span><span class="o">-</span><span class="n">extra</span><span class="o">.</span><span class="n">txt</span>
+<span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">rpbs</span> <span class="n">silk</span> <span class="n">seamless</span><span class="o">-</span><span class="n">framework</span>
+</pre></div>
+</div>
+<p>Don’t install the Seamless command line tools. Instead of commands like <code class="docutils literal notranslate"><span class="pre">seamless-bash</span></code>, <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code>, <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>, simply do <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code> and type <code class="docutils literal notranslate"><span class="pre">python</span></code>, <code class="docutils literal notranslate"><span class="pre">ipython</span></code> or <code class="docutils literal notranslate"><span class="pre">jupyter</span> <span class="pre">notebook</span></code>. The source code of the Seamless command line tools is at <code class="docutils literal notranslate"><span class="pre">https://github.com/sjdv1982/seamless/tree/master/docker/commands</span></code>.</p>
+</div>
+<div class="section" id="installation-under-singularity">
+<h2>Installation under Singularity<a class="headerlink" href="#installation-under-singularity" title="Permalink to this headline">¶</a></h2>
+<p><strong>NOTE: this is EXPERIMENTAL.</strong> The main application for this is to run Seamless transformations
+and database adapters in an HPC environment. Launching e.g. Jupyter or Docker under Singularity is unlikely to work.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">wget</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">raw</span><span class="o">.</span><span class="n">githubusercontent</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">sjdv1982</span><span class="o">/</span><span class="n">seamless</span><span class="o">/</span><span class="n">experimental</span><span class="o">/</span><span class="n">docker</span><span class="o">/</span><span class="n">seamless</span><span class="o">-</span><span class="n">simple</span><span class="o">/</span><span class="n">Singularity</span>  <span class="c1"># or download it manually</span>
+<span class="n">sudo</span> <span class="n">singularity</span> <span class="n">build</span> <span class="n">seamless</span><span class="o">.</span><span class="n">simg</span> <span class="n">Singularity</span>
+</pre></div>
+</div>
+<p>A bash shell in a new Seamless container can then be started using e.g. <code class="docutils literal notranslate"><span class="pre">singularity</span> <span class="pre">run</span> <span class="pre">-c</span> <span class="pre">--cleanenv</span> <span class="pre">seamless.simg</span></code>.
+If you run without <code class="docutils literal notranslate"><span class="pre">-c</span></code>, be sure to do <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PATH=/opt/conda/bin:$PATH</span></code> as the first command.</p>
+</div>
+</div>
 <div class="section" id="more-examples">
 <h1>More examples<a class="headerlink" href="#more-examples" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/master/examples">https://github.com/sjdv1982/seamless/tree/master/examples</a></p>
@@ -401,6 +438,7 @@ Seamless Docker container.</p>
 </div>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
@@ -412,7 +450,8 @@ Seamless Docker container.</p>
 <li><a class="reference internal" href="#documentation-http-sjdv1982-github-io-seamless">Documentation: http://sjdv1982.github.io/seamless</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#installation">Installation</a><ul>
+<li><a class="reference internal" href="#supported-platforms">Supported platforms</a></li>
+<li><a class="reference internal" href="#installation-using-docker">Installation using Docker</a><ul>
 <li><a class="reference internal" href="#getting-started">Getting started</a></li>
 </ul>
 </li>
@@ -427,6 +466,11 @@ Seamless Docker container.</p>
 <li><a class="reference internal" href="#save-the-entire-state-of-the-context">8. Save the entire state of the context</a></li>
 <li><a class="reference internal" href="#in-a-new-notebook-ipython-console">9. In a new notebook / IPython console:</a></li>
 <li><a class="reference internal" href="#additional-features">Additional features</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#alternative-installations">Alternative installations</a><ul>
+<li><a class="reference internal" href="#installation-under-conda">Installation under conda</a></li>
+<li><a class="reference internal" href="#installation-under-singularity">Installation under Singularity</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#more-examples">More examples</a></li>
@@ -466,17 +510,21 @@ Seamless Docker container.</p>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="context.html" title="Contexts"
              >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Welcome to Seamless’s documentation!"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.5 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Seamless: a cell-based reactive programming framework</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2016-2021, Sjoerd de Vries.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.2.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.3.
     </div>
   </body>
 </html>

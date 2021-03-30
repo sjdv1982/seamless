@@ -410,12 +410,7 @@ class Context(Base):
         return self._live_share_namespace
 
     def _get_graph(self, copy):
-        from ..core.manager.tasks.structured_cell import StructuredCellAuthTask
-        from ..core.manager.tasks import SetCellValueTask, SetCellBufferTask
-        auth_task_types = (
-            SetCellValueTask, SetCellBufferTask, StructuredCellAuthTask
-        )
-
+        self._wait_for_auth_tasks("the graph is being obtained")
         try:
             self._translating = True
             manager = self._manager
@@ -484,19 +479,6 @@ class Context(Base):
             "params": params,
             "lib": lib,
         }
-        return graph
-
-        nodes = []
-        for node in graph["nodes"]:
-            node["path"] = tuple(node["path"])
-            nodes.append(node)
-        for con in graph["connections"]:
-            if con["type"] == "connection":
-                con["source"] = tuple(con["source"])
-                con["target"] = tuple(con["target"])
-            elif con["type"] == "link":
-                con["first"] = tuple(con["first"])
-                con["second"] = tuple(con["second"])
         return graph
 
     def save_graph(self, filename):
