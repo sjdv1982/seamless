@@ -879,7 +879,11 @@
             <span class="n">readonly</span> <span class="o">=</span> <span class="n">shareparams</span><span class="p">[</span><span class="s2">&quot;readonly&quot;</span><span class="p">]</span>
             <span class="n">mimetype</span> <span class="o">=</span> <span class="n">hcell</span><span class="o">.</span><span class="n">mimetype</span>
             <span class="n">toplevel</span> <span class="o">=</span> <span class="n">shareparams</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;toplevel&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-            <span class="n">cell</span><span class="o">.</span><span class="n">share</span><span class="p">(</span><span class="n">sharepath</span><span class="p">,</span> <span class="n">readonly</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="n">mimetype</span><span class="p">,</span> <span class="n">toplevel</span><span class="o">=</span><span class="n">toplevel</span><span class="p">)</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">share</span><span class="p">(</span>
+                <span class="n">sharepath</span><span class="p">,</span> <span class="n">readonly</span><span class="p">,</span>
+                <span class="n">mimetype</span><span class="o">=</span><span class="n">mimetype</span><span class="p">,</span> <span class="n">toplevel</span><span class="o">=</span><span class="n">toplevel</span><span class="p">,</span>
+                <span class="n">cellname</span><span class="o">=</span><span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_rename_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">newpath</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
