@@ -7,7 +7,7 @@ Ideas that are superfluous. Keep them here, just in case...
   (In general, look at __dir__ in the context of Silk, mixed, and cells)
   (NOTE: This has nothing to do with services. Services determine private and public based on
   what connects into the serviced context.)
-  
+
 - Mid-level: There will be a special library contexts of low-level macros that recognize mid-level graph constructs
   and return low-level contexts. UPDATE: just macros should do
   These contexts are expected to accept connections straightforwardly, and to have hook registration configured.
@@ -28,7 +28,7 @@ Ideas that are superfluous. Keep them here, just in case...
   The runtime API can be done automatically, if all mid-level-to-low-level core macros defines cell-to-cell correspondences. These core macros understand all mid-level nodes. It will "just work" for embedded low-level macro nodes too.
   Authoritative cells can be set directly from the mid-level. Setting non-authoritative cells will generate the usual warning. Setting cells that control (low-level) macros will re-execute them (with proper caching).
   UPDATE: better to have the mid-level contain explicit pointers to low-level authoritative data. This way, modifying the low level
-    auto-modifies the mid level.  
+    auto-modifies the mid level.
 - There will be an option to sync cells to a file. This must be done in macro mode.
   The sync can be one-way or two-way (only for authoritative cells). When a cell is updated from a file, it is as if it was done using .set()
   A context can be synced to a directory.
@@ -270,7 +270,7 @@ A web server can serve the static publisher directly. The dynamic publisher shou
 
 Workers and memory
 ==================
-COMPLETELY OUTDATED: Seamless now works already like this! 
+COMPLETELY OUTDATED: Seamless now works already like this!
   (still some relevance for reactors. are discussed elsewhere)
 
 By default, workers keep all of their values buffered. This may eat up a lot of
@@ -363,13 +363,13 @@ Semi-pure reactors are not normally shut down, because of performance.
   - Pure and semi-pure reactors can be executed async, just like transformers.
   - Because of this, they can be cached and submitted as remote jobs.
     Reactcache could be set up similar to transformcache.
-    Better: generalize transformcache into async_cache to include pure reactors and graphs.  
+    Better: generalize transformcache into async_cache to include pure reactors and graphs.
 - Remote interactive mode execution.
   Semi-pure reactors can be remotely executed in interactive mode. Deltas are sent,
   and responses are received. The state itself must be labeled with an increasing ID,
   just as for shareserver. (Semi-)pure graphs can be executed in the same way.
 - Graph remote execution. Only for pure graphs, i.e. that contain no impure reactors.
-  They can be executed non-interactively (as if a transformer) or interactively 
+  They can be executed non-interactively (as if a transformer) or interactively
   (as if a semi-pure reactor).
 - This is all orthogonal to collaborative mode, which deals with graphs but allows dynamic
   modification of the entire graph (whereas interactive mode is just the value of pins/cells).
@@ -395,7 +395,7 @@ Semi-pure reactors are not normally shut down, because of performance.
 - Services proof-of-principle
   Low-level services (non-interactive transformer)
 
-Plugin-socket connection system 
+Plugin-socket connection system
 ===============================
 (YAGNI, because at odds with reproducibility. In any case, the shareserver can do much of this.
 Traitlets and observers can help, too).
@@ -418,12 +418,12 @@ Use cases:
 Plugins/sockets will be named by keys. You can hard-code the keys or send them as cells.
 This system is obviously only for impure reactors. They are allowed to modify editpins as a result,
  but never outputpins.
-Signals and callbacks will be implemented as part of the same system. 
+Signals and callbacks will be implemented as part of the same system.
 
 From an old roadmap... do we ever need interactive transformers???
 ==================================================================
   Low-level services (non-interactive transformer) will have been done
-  Other possible services: interactive transformer, pure reactor (non-interactive or interactive)  
+  Other possible services: interactive transformer, pure reactor (non-interactive or interactive)
 
 
 
@@ -437,8 +437,13 @@ From an old roadmap... do we ever need interactive transformers???
   If they maintain their purity, a pure object is an independent caching unit. A hit in the
   computation checksum server will avoid the pure object to be (re-)translated at all.
   Also for the purpose of low-level caching, pure objects are a single dependency unit (a "virtual transformer"),
-   so the low-level must be informed.  
+   so the low-level must be informed.
   UPDATE: everything is pure now
 
 
   - Signals. UPDATE: make them a special case of plugin-socket (see below). Probably delay this until long-term
+
+- API to construct transformations without low-level contexts, launch them, and to check for cache hits.
+  Application 1: to implement efficient non-deterministic execution that gives a deterministic result.
+  Examples are: reduce or sort on deep cells that arrive piece-meal, or where the data may be near or far.
+  Application 2: cyclic dependencies.
