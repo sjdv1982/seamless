@@ -11,10 +11,12 @@ Welcome to Seamless's documentation!
    :caption: Contents:
 
    introduction
+
    context
    cell
    transformer
    new-project
+
    reference
 
 Indices and tables
