@@ -425,6 +425,7 @@ class Transformer(Base):
                     translate = True
                 inp.handle_no_inference.set(value)
         elif attr == htf["RESULT"]:
+            tf = self._get_tf(force=True)
             result = getattr(tf, htf["RESULT"])
             # Example-based programming to set the schema
             # TODO: suppress inchannel warning

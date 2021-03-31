@@ -44,6 +44,8 @@ The printed output is only available after execution has finished.
 The printed output will be part of the error message if the transformation fails.
 If it succeeds, the printed output will be in `ctx.tf.logs`.
 
+To assign a transformer result to a cell `ctx.c`, do `ctx.c = ctx.tf`, or `ctx.c = ctx.tf.result`.
+
 ## Python transformers
 
 Python transformers have `ctx.tf.language = "python"`, which is the default. Python transformers can also be directly created from a Python function:
