@@ -13,7 +13,7 @@ then `ctx.tf.x = 10` creates a new pin `x` with the value 10. If it does have a 
 
 There is one special pin that always exists: `ctx.tf.code`. This pin defined the source code of the transformer, in the programming language defined by `ctx.tf.language`. Depending on the programming language, other special pins may exist as well (see below).
 
-Pins can be accessed using `ctx.tf.pins.x`. The celltype of a pin can be changed using `ctx.tf.pins.celltype` . Pins can be deleted using `del ctx.tf.pins.x` (the next version of Seamless will support `del ctx.tf.x`).
+Pin attributes can be accessed using `ctx.tf.pins`, e.g `ctx.tf.pins.x` for pin `x`. The celltype of a pin `x` can be changed using `ctx.tf.pins.x.celltype` . Pin `x` can be deleted using `del ctx.tf.pins.x` (the next version of Seamless will support `del ctx.tf.x`).
 
 Pins can be mounted to files, just like cells can. The same restrictions apply regarding dependent values and celltype. See the documentation of Cell for more details.
 
