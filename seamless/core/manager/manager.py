@@ -206,6 +206,7 @@ class Manager:
             (checksum is None), status_reason=reason,
             trigger_bilinks=trigger_bilinks
         )
+        updated = False
         if not from_structured_cell: # also for initial...
             if cell._structured_cell is not None and cell._structured_cell.auth is cell:
                 scell = cell._structured_cell
@@ -216,11 +217,13 @@ class Manager:
             else:
                 if checksum is not None:
                     unvoid_cell(cell, self.livegraph)
-                if cell._structured_cell is None or sc_schema:
-                    CellUpdateTask(self, cell).launch()
+                    if cell._structured_cell is None or sc_schema:
+                        CellUpdateTask(self, cell).launch()
+                        updated = True
         if sc_schema:
-            if from_structured_cell:
+            if from_structured_cell and not updated:
                 CellUpdateTask(self, cell).launch()
+                updated = True
             def update_schema():
                 value = self.resolve(checksum, "plain")
                 self.update_schemacell(cell, value, None)

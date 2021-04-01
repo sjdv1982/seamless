@@ -10,9 +10,9 @@ START
 <Silk: {'a': 12} >
 NO RESULT <Silk: None > <Silk: None >
 TRANSFORMER EXCEPTION Traceback (most recent call last):
-  File "/seamless/seamless/core/execute.py", line 104, in _execute
+  File "/seamless/seamless/core/execute.py", line 71, in _execute
     exec_code(code, identifier, namespace, inputs, output_name)
-  File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code
+  File "/seamless/seamless/core/cached_compile.py", line 61, in exec_code
     exec(code_obj, namespace)
   File "Seamless transformer: .transform.tf", line 5, in <module>
     result = triple_it_b(a=a)
@@ -48,9 +48,9 @@ RUN!
 TRANSFORMER INPUT EXCEPTION None
 TRANSFORMER STATUS *tf*: Status: error
 TRANSFORMER EXCEPTION Traceback (most recent call last):
-  File "/seamless/seamless/core/execute.py", line 104, in _execute
+  File "/seamless/seamless/core/execute.py", line 71, in _execute
     exec_code(code, identifier, namespace, inputs, output_name)
-  File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code
+  File "/seamless/seamless/core/cached_compile.py", line 61, in exec_code
     exec(code_obj, namespace)
   File "Seamless transformer: .transform.tf", line 5, in <module>
     result = triple_it_b(a=a,b=b)
@@ -63,9 +63,9 @@ START2
 TRANSFORMER INPUT EXCEPTION None
 TRANSFORMER STATUS *tf*: Status: error
 TRANSFORMER EXCEPTION Traceback (most recent call last):
-  File "/seamless/seamless/core/execute.py", line 104, in _execute
+  File "/seamless/seamless/core/execute.py", line 71, in _execute
     exec_code(code, identifier, namespace, inputs, output_name)
-  File "/seamless/seamless/core/cached_compile.py", line 58, in exec_code
+  File "/seamless/seamless/core/cached_compile.py", line 61, in exec_code
     exec(code_obj, namespace)
   File "Seamless transformer: .transform.tf", line 5, in <module>
     result = triple_it_b(a=a,b=b)

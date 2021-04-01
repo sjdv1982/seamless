@@ -3,7 +3,7 @@ from seamless.highlevel import Context
 ctx = Context()
 ctx.code = "head -$lines testdata > RESULT"
 ctx.code.celltype = "text"
-ctx.code.mount("/tmp/test.bash")
+ctx.code.mount("/tmp/test.bash", authority="cell")
 ctx.tf = lambda lines, testdata: None
 ctx.tf.language = "docker"
 ctx.tf.docker_image = "rpbs/seamless"
