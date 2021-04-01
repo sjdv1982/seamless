@@ -108,7 +108,12 @@ try:
 
         f.write(bash_header)
         f.write(docker_command)
-    full_docker_command = "bash DOCKER-COMMAND"
+    full_docker_command = """bash -c '''
+ls $(pwd) > /dev/null 2>&1 || (>&2 echo \"\"\"The Docker container cannot read the current directory.
+Most likely, the container runs under a specific user ID,
+which is neither root nor the user ID under which Seamless is running.
+Docker image user ID: $(id -u)
+Seamless user ID: {}\"\"\"; exit 126) && bash DOCKER-COMMAND'''""".format(os.getuid())
     try:
         try:
             _creating_container = True
