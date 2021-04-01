@@ -1098,8 +1098,8 @@ class Transformer(Base):
 
 
     def __delattr__(self, attr):
-        htf = self._get_htf()
-        raise NotImplementedError #remove pin
+        return delattr(self.pins, attr)
+        # TODO: self.self.pins...
 
     def __dir__(self):
         htf = self._get_htf()

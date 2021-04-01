@@ -122,6 +122,7 @@ class PinsWrapper:
             subpath = (*parent._path, pinname)
             ctx = parent._get_top_parent()
             ctx._destroy_path(subpath)
+            ctx._translate()
 
     def __str__(self):
         return str(self._get_hpins())
