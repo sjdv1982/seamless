@@ -671,6 +671,8 @@ class Cell(Base):
                 raise ValueError("Unknown extension %s" % ext) from None
             hcell["file_extension"] = ext
         hcell["mimetype"] = value
+        if self._parent() is not None:
+            self._parent()._translate()
 
     @property
     def datatype(self):
