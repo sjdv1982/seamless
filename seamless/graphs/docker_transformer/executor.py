@@ -109,7 +109,7 @@ try:
         f.write(bash_header)
         f.write(docker_command)
     full_docker_command = """bash -c '''
-ls $(pwd) > /dev/null 2>&1 || (>&2 echo \"\"\"The Docker container cannot read the current directory.
+ls $(pwd) > /dev/null 2>&1 || (>&2 echo \"\"\"The Docker container cannot read the mounted temporary directory.
 Most likely, the container runs under a specific user ID,
 which is neither root nor the user ID under which Seamless is running.
 Docker image user ID: $(id -u)
