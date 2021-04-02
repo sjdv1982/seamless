@@ -1007,7 +1007,7 @@ class Context(Base):
                 result.append(Link(self, node=node))
         return result
 
-    def children(self, type=None):
+    def get_children(self, type=None):
         """Returns all children of the context
         The type of the children can be specified as string
         If type is None, all children and descendants are returned:
@@ -1019,7 +1019,7 @@ class Context(Base):
         children00 = []
         for p,c in self._children.items():
             if isinstance(c, LibInstance) and type != "libinstance":
-                for child in c.ctx.children():
+                for child in c.ctx.get_children():
                     children00.append((child.path, child))
             else:
                 children00.append((p, c))
@@ -1031,6 +1031,10 @@ class Context(Base):
         if type == "context":
             children = [p for p in children if (p,) not in children00]
         return sorted(list(set(children)))
+
+    @property
+    def children(self):
+        return self.get_children(type=None)
 
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
@@ -1152,7 +1156,7 @@ class SubContext(Base):
     def _translate(self):
         self._parent()._translate()
 
-    def children(self, type=None):
+    def get_children(self, type=None):
         classless = ("context", "libinstance")
         assert type is None or type in classless or type in nodeclasses, (type, nodeclasses.keys())
         l = len(self._path)
@@ -1165,6 +1169,10 @@ class SubContext(Base):
         if type == "context":
             children = [p for p in children if (p,) not in children00]
         return sorted(list(set(children)))
+
+    @property
+    def children(self):
+        return self.get_children(type=None)
 
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]

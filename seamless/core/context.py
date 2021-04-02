@@ -151,6 +151,10 @@ name: str
         self._add_child(cell_name, cell)
         return cell_name
 
+    @property
+    def children(self):
+        return sorted(list(self._children.keys()))
+
     def __setattr__(self, attr, value):
         if attr.startswith("_") or hasattr(self.__class__, attr):
             return object.__setattr__(self, attr, value)

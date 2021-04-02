@@ -136,7 +136,7 @@ They will be passed to ctx.add_zip before the graph is loaded
         mounts=mounts,
         shares=shares
     )
-    assert "graph" in ctx2.children()
+    assert "graph" in ctx2.get_children()
     observe_graph_bound = partial(
         observe_graph, ctx, ctx2
     )
@@ -175,7 +175,7 @@ They will be passed to ctx.add_zip before the graph is loaded
         mounts=mounts,
         shares=shares
     )
-    assert "graph" in ctx2.children()
+    assert "graph" in ctx2.get_children()
     observe_graph_bound = partial(
         observe_graph, ctx, ctx2,
     )
