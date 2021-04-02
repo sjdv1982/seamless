@@ -5,6 +5,7 @@ import threading
 from types import LambdaType
 from .Base import Base
 from .Resource import Resource
+from .SelfWrapper import SelfWrapper
 from ..core.lambdacode import lambdacode
 from silk import Silk
 from silk.mixed import MixedBase
@@ -180,8 +181,10 @@ class Cell(Base):
     def _cell(self):
         return self
 
+    @property
     def self(self):
-        raise NotImplementedError
+        attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
+        return SelfWrapper(self, attributelist)
 
     def _get_subcell(self, attr):
         hcell = self._get_hcell()
@@ -553,6 +556,7 @@ class Cell(Base):
             cell.set(value)
 
     def set_checksum(self, checksum):
+        """Sets the cell's checksum from a SHA256 checksum"""
         from ..core.structured_cell import StructuredCell
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
