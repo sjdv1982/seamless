@@ -4,6 +4,7 @@ import pprint
 from copy import deepcopy
 from .Cell import Cell
 from .Resource import Resource
+from .SelfWrapper import SelfWrapper
 from .proxy import Proxy, CodeProxy, HeaderProxy
 from .pin import PinsWrapper
 from .Base import Base
@@ -75,7 +76,8 @@ class Macro(Base):
 
     @property
     def self(self):
-        raise NotImplementedError
+        attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
+        return SelfWrapper(self, attributelist)
 
     @property
     def ctx(self):
@@ -347,7 +349,7 @@ class Macro(Base):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         node = self._get_node()
         dirs = None
@@ -598,5 +600,12 @@ class Macro(Base):
         std = ["code", "pins", node["PARAM"], "exception", "status"]
         pins = list(node["pins"].keys())
         return sorted(d + pins + std)
+
+    def __str__(self):
+        return "Seamless Macro: " + self.path
+
+    def __repr__(self):
+        return str(self)
+
 
 from .synth_context import SynthContext

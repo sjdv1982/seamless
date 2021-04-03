@@ -45,7 +45,7 @@ class SynthContext:
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         return self._get_child(attr)
 

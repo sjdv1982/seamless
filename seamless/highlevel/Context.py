@@ -3,11 +3,10 @@ from copy import deepcopy
 from collections import namedtuple
 import weakref
 import itertools
-import threading, time
-import asyncio, concurrent
+import threading
+import asyncio
 import inspect
 import functools
-from functools import partial
 import zipfile
 from zipfile import ZipFile, ZipInfo
 from io import BytesIO
@@ -38,7 +37,6 @@ from ..core import macro_mode
 from ..core.macro_mode import macro_mode_on, get_macro_mode, until_macro_mode_off
 from ..core.context import context
 from ..core.cell import cell
-from ..core.mount import mountmanager #for now, just a single global mountmanager
 from .assign import assign
 from .proxy import Proxy
 from ..midlevel import copying
@@ -266,7 +264,7 @@ class Context(Base):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         path = (attr,)
         return self._get_path(path)
@@ -339,8 +337,10 @@ class Context(Base):
         await self.translation()
         await self._gen_context.computation(timeout, report)
 
+    @property
     def self(self):
-        raise NotImplementedError
+        attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
+        return SelfWrapper(self, attributelist)
 
     def _translate(self):
         self._needs_translation = True
@@ -1034,12 +1034,17 @@ class Context(Base):
 
     @property
     def children(self):
-        return self.get_children(type=None)
+        """Returns a wrapper for the direct children of the context
+        This includes subcontexts"""
+        children = [p[0] for p in self._children]
+        children = sorted(list(set(children)))
+        return ChildrenWrapper(self, children)
 
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
-        subs = [p[0] for p in self._children]
-        return sorted(d + list(set(subs)))
+        children = [p[0] for p in self._children]
+        children = list(set(children))
+        return sorted(d + children)
 
     def _destroy(self):
         if self._destroyed:
@@ -1056,6 +1061,16 @@ class Context(Base):
             )
             for checksum in checksums:
                 buffer_cache.decref(bytes.fromhex(checksum))
+
+    def __str__(self):
+        p = self.path
+        if p == "":
+            p = "<toplevel>"
+        ret = "Seamless Context: " + p
+        return ret
+
+    def __repr__(self):
+        return str(self)
 
     def __del__(self):
         self._destroy()
@@ -1079,7 +1094,7 @@ class SubContext(Base):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         parent = self._get_top_parent()
         path = self._path + (attr,)
@@ -1172,19 +1187,31 @@ class SubContext(Base):
 
     @property
     def children(self):
-        return self.get_children(type=None)
+        result = {}
+        parent = self._get_top_parent()
+        for k in self.get_children(type=None):
+            path = self._path + (k,)
+            child = parent._get_path(path)
+            result[k] = child
+        return result
+
+    def __str__(self):
+        ret = "Seamless SubContext: " + self.path
+        return ret
+
+    def __repr__(self):
+        return str(self)
 
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
-        l = len(self._path)
-        subs = [p[l] for p in self._parent()._children if len(p) > l and p[:l] == self._path]
-        return sorted(d + list(set(subs)))
+        return sorted(d + self.get_children())
 
 from .Transformer import Transformer
 from .Cell import Cell
 from .Link import Link
 from .Macro import Macro
 from .Module import Module
+from .SelfWrapper import SelfWrapper, ChildrenWrapper
 from .pin import PinWrapper
 from .library.libinstance import LibInstance
 from .PollingObserver import PollingObserver

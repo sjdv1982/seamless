@@ -412,7 +412,7 @@ class StructuredCell(SeamlessBase):
         return not self.no_auth
 
     def __str__(self):
-        ret = "Seamless StructuredCell: " + self._format_path()
+        ret = "Seamless structured cell: " + self._format_path()
         return ret
 
 class PathDict(dict):

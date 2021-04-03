@@ -209,7 +209,7 @@ class Cell(Base):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         if attr == "schema":
             hcell = self._get_hcell()
@@ -870,10 +870,11 @@ class Cell(Base):
         else:
             raise AttributeError(attr)
 
-
     def __str__(self):
-        path = ".".join(self._path) if self._path is not None else None
-        return "Seamless Cell: %s" % path
+        return "Seamless Cell: " + self.path
+
+    def __repr__(self):
+        return str(self)
 
 def cell_binary_method(self, other, name):
     h = self.handle

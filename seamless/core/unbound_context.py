@@ -184,7 +184,11 @@ class UnboundContext(SeamlessBase):
 
     @property
     def children(self):
-        return sorted(list(self._children.keys()))
+        result = {}
+        for k in sorted(list(self._children.keys())):
+            result[k] = self._children[k]
+        return result
+
 
     def __setattr__(self, attr, value):
         if self._bound is not None:

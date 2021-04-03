@@ -2,6 +2,7 @@ from functools import partial, update_wrapper
 
 class SelfWrapper:
     """Wraps class attributes that could be overruled by instance attributes"""
+    _ATTRIBUTES = "Attributes"
     def __init__(self, wrapped, attributelist):
         self._attributelist = attributelist
         self._wrapped = wrapped
@@ -18,3 +19,15 @@ class SelfWrapper:
             return prop.fget(self._wrapped)
         else:
             return prop
+
+    def __dir__(self):
+        return self._attributelist
+
+    def __str__(self):
+        return self._ATTRIBUTES + " of " + str(self._wrapped)
+
+    def __repr__(self):
+        return str(self)
+
+class ChildrenWrapper(SelfWrapper):
+    _ATTRIBUTES = "Children"

@@ -125,7 +125,7 @@ class LibInstance:
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         hnode = self._get_node()
         libpath = hnode["libpath"]

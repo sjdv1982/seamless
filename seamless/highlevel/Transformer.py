@@ -5,6 +5,7 @@ from copy import deepcopy
 from .Cell import Cell
 from .Module import Module
 from .Resource import Resource
+from .SelfWrapper import SelfWrapper
 from .proxy import Proxy, CodeProxy, HeaderProxy
 from .pin import PinsWrapper
 from .Base import Base
@@ -49,12 +50,6 @@ def new_transformer(ctx, path, code, pins, hash_pattern):
     ctx._graph[0][path] = transformer
     return transformer
 
-
-class TransformerWrapper:
-    #TODO: setup access to non-pins
-    def __init__(self, parent):
-        self.parent = parent
-
 class Transformer(Base):
     """Transforms input values to a result value
 
@@ -88,10 +83,6 @@ class Transformer(Base):
             node = None
         if node is None:
             htf = new_transformer(parent, path, code, pins, hash_pattern)
-
-    @property
-    def self(self):
-        return TransformerWrapper(self)
 
     @property
     def RESULT(self):
@@ -661,10 +652,15 @@ class Transformer(Base):
             return "Status: pending"
         return "Status: OK"
 
+    @property
+    def self(self):
+        attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
+        return SelfWrapper(self, attributelist)
+
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         return self._getattr(attr)
 
@@ -1111,8 +1107,10 @@ class Transformer(Base):
         return sorted(d + pins + std)
 
     def __str__(self):
-        path = ".".join(self._path) if self._path is not None else None
-        return "Seamless Transformer: %s" % path
+        return "Seamless Transformer: " + self.path
+
+    def __repr__(self):
+        return str(self)
 
 from .synth_context import SynthContext
 from .assign import check_libinstance_subcontext_binding
