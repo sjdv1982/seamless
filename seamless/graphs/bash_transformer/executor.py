@@ -168,7 +168,7 @@ Error: Result file/folder RESULT does not exist
             print(stderr, file=sys.stderr)
 
     if os.path.isdir(resultfile):
-        result = {}
+        result0 = {}
         for dirpath, _, filenames in os.walk(resultfile):
             for filename in filenames:
                 full_filename = os.path.join(dirpath, filename)
@@ -176,7 +176,11 @@ Error: Result file/folder RESULT does not exist
                 member = full_filename[len(resultfile) + 1:]
                 data = open(full_filename, "rb").read()
                 rdata = read_data(data)
-                result[member] = rdata
+                result0[member] = rdata
+        result = {}
+        for k in sorted(result0.keys()):
+            result[k] = result0[k]
+            del result0[k]
     else:
         try:
             tar = tarfile.open(resultfile)

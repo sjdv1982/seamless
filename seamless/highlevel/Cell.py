@@ -605,9 +605,14 @@ class Cell(Base):
     def celltype(self, value):
         assert value in celltypes, value
         hcell = self._get_hcell2()
+        if hcell["celltype"] == value:
+            return
         if hcell.get("UNTRANSLATED"):
             cellvalue = hcell.get("TEMP")
         else:
+            if value == "structured":
+                if "mount" in hcell:
+                    raise ValueError("Mounting is only supported for non-structured cells")
             cellvalue = self.value
         if isinstance(cellvalue, Silk):
             cellvalue = cellvalue.data
@@ -624,7 +629,8 @@ class Cell(Base):
         hcell.pop("checksum", None)
         hcell["UNTRANSLATED"] = True
         if cellvalue is not None:
-            hcell["TEMP"] = cellvalue
+            if self.authoritative:
+                hcell["TEMP"] = cellvalue
             hcell.pop("checksum", None)
         if self._parent() is not None:
             self._parent()._translate()

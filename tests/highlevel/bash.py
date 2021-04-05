@@ -11,8 +11,6 @@ ctx.tf.lines = 3
 ctx.tf.code = ctx.code
 ctx.result = ctx.tf
 ctx.result.celltype = "mixed"
-ctx.result.mount("/tmp/result", "w")
-ctx.translate(force=True)
 ctx.compute()
 print(ctx.result.value)
 ctx.code = "head -3 testdata > firstdata; mkdir -p RESULT/input; cp firstdata RESULT; cp testdata RESULT/input"
@@ -22,13 +20,15 @@ ctx.code = "python3 -c 'import numpy as np; np.save(\"test\",np.arange(12)*3)'; 
 ctx.compute()
 print(ctx.tf.result.value)
 print(ctx.tf.status)
+
+ctx.result.celltype = "structured"
+ctx.translate()
 ctx.code = """
 python3 -c 'import numpy as np; np.save(\"test\",np.arange(12)*3)'
 echo 'hello' > test.txt
-tar hczf RESULT test.npy test.txt
+mkdir RESULT
+mv test.npy test.txt RESULT
 """
-ctx.result = ctx.tf
-ctx.result.celltype = "structured"
 ctx.result_npy = ctx.result["test.npy"]
 ctx.result_txt = ctx.result["test.txt"]
 ctx.compute()

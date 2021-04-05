@@ -24,7 +24,7 @@ ctx.compute()
 print(ctx.tf.result.value)
 print(ctx.tf.status)
 print(ctx.tf.exception)
-ctx.code = "python3 -c 'import numpy as np; np.save(\"test\",np.arange(12)*3)'; echo OK > ok; tar czf RESULT ok test.npy"
+ctx.code = "python3 -c 'import numpy as np; np.save(\"test\",np.arange(12)*3)'; echo OK > ok; mkdir RESULT; mv ok test.npy RESULT"
 ctx.compute()
 print(ctx.tf.result.value)
 print(ctx.tf.status)
