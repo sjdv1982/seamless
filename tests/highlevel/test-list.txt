@@ -5,6 +5,7 @@
 bytes-conversion.py
 mime.py
 test-html.py
+auth-checksum.py
 schema.py
 subcell.py
 subsubcell.py

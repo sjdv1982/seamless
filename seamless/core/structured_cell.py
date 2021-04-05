@@ -112,6 +112,7 @@ class StructuredCell(SeamlessBase):
         self._joining = False  #  a join task is ongoing
 
         self._auth_value = None
+        self._auth_checksum = None
         self._auth_invalid = False
         self._schema_value = None
 
@@ -356,8 +357,11 @@ class StructuredCell(SeamlessBase):
             return self.auth.checksum
     def set_auth_checksum(self, checksum):
         assert checksum is None or isinstance(checksum, str)
+        if isinstance(checksum, str):
+            checksum = bytes.fromhex(checksum)
         assert not self.no_auth
         self._auth_value = None
+        self._auth_checksum = checksum
         self._join_auth()
 
     @property

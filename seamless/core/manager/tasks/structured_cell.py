@@ -60,9 +60,17 @@ class StructuredCellAuthTask(StructuredCellTask):
         await self.await_sc_tasks(auth=True)
 
         value = sc._auth_value
-
         locknr = await acquire_evaluation_lock(self)
         try:
+            if value is None:
+                auth_ch = sc._auth_checksum
+                if auth_ch is not None:
+                    buffer = await GetBufferTask(manager, auth_ch).run()
+                    if buffer is None:
+                        raise CacheMissError(auth_ch.hex())
+                    value = await DeserializeBufferTask(
+                        manager, buffer, auth_ch, "mixed", copy=True
+                    ).run()
             if value is None:
                 sc._auth_invalid = True
                 auth_checksum = None
@@ -88,6 +96,7 @@ class StructuredCellAuthTask(StructuredCellTask):
             sc._auth_invalid = True
         else:
             sc._auth_value = None
+            sc._auth_checksum = None
             if auth_checksum is not None:
                 sc._auth_invalid = False
         finally:
