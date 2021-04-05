@@ -120,7 +120,7 @@ Bash transformer exception
 Bash transformer exception
 ==========================
 
-Error: Result file RESULT does not exist
+Error: Result file/folder RESULT does not exist
 
 *************************************************
 * Command
@@ -167,17 +167,28 @@ Error: Result file RESULT does not exist
         if len(stderr):
             print(stderr, file=sys.stderr)
 
-    try:
-        tar = tarfile.open(resultfile)
+    if os.path.isdir(resultfile):
         result = {}
-        for member in tar.getnames():
-            data = tar.extractfile(member).read()
-            rdata = read_data(data)
-            result[member] = rdata
-    except (ValueError, tarfile.CompressionError, tarfile.ReadError):
-        with open(resultfile, "rb") as f:
-            resultdata = f.read()
-        result = read_data(resultdata)
+        for dirpath, _, filenames in os.walk(resultfile):
+            for filename in filenames:
+                full_filename = os.path.join(dirpath, filename)
+                assert full_filename.startswith(resultfile + "/")
+                member = full_filename[len(resultfile) + 1:]
+                data = open(full_filename, "rb").read()
+                rdata = read_data(data)
+                result[member] = rdata
+    else:
+        try:
+            tar = tarfile.open(resultfile)
+            result = {}
+            for member in tar.getnames():
+                data = tar.extractfile(member).read()
+                rdata = read_data(data)
+                result[member] = rdata
+        except (ValueError, tarfile.CompressionError, tarfile.ReadError):
+            with open(resultfile, "rb") as f:
+                resultdata = f.read()
+            result = read_data(resultdata)
 finally:
     if process is not None:
         subprocess.kill_children(process)

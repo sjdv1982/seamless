@@ -61,11 +61,8 @@ try:
     os.chdir(tempdir)
     container = None
     signal.signal(signal.SIGTERM, sighandler)
-    options = docker_options.copy()
-    if "environment" in options:
-        env = options["environment"].copy()
-    else:
-        env = {}
+    options = {}
+    env = {}
     options["environment"] = env
     for pin in pins_:
         v = PINS[pin]
@@ -96,9 +93,8 @@ try:
                 with open(pin, "bw") as pinf:
                     np.save(pinf,v,allow_pickle=False)
     docker_client = docker_module.from_env()
-    if "volumes" not in options:
-        options["volumes"] = {}
-    volumes = options["volumes"]
+    volumes = {}
+    options["volumes"] = volumes
     volumes[tempdir] = {"bind": "/run", "mode": "rw"}
     if "working_dir" not in options:
         options["working_dir"] = "/run"
@@ -198,7 +194,7 @@ Exit code: {}
 Docker transformer exception
 ============================
 
-Error: Result file RESULT does not exist
+Error: Result file/folder RESULT does not exist
 
 *************************************************
 * Command
@@ -248,17 +244,28 @@ Error: Result file RESULT does not exist
                 pass
 
 
-    try:
-        tar = tarfile.open(resultfile)
+    if os.path.isdir(resultfile):
         result = {}
-        for member in tar.getnames():
-            data = tar.extractfile(member).read()
-            rdata = read_data(data)
-            result[member] = rdata
-    except (ValueError, tarfile.CompressionError, tarfile.ReadError):
-        with open(resultfile, "rb") as f:
-            resultdata = f.read()
-        result = read_data(resultdata)
+        for dirpath, _, filenames in os.walk(resultfile):
+            for filename in filenames:
+                full_filename = os.path.join(dirpath, filename)
+                assert full_filename.startswith(resultfile + "/")
+                member = full_filename[len(resultfile) + 1:]
+                data = open(full_filename, "rb").read()
+                rdata = read_data(data)
+                result[member] = rdata
+    else:
+        try:
+            tar = tarfile.open(resultfile)
+            result = {}
+            for member in tar.getnames():
+                data = tar.extractfile(member).read()
+                rdata = read_data(data)
+                result[member] = rdata
+        except (ValueError, tarfile.CompressionError, tarfile.ReadError):
+            with open(resultfile, "rb") as f:
+                resultdata = f.read()
+            result = read_data(resultdata)
 finally:
     if not _sys_exit:
         if container is not None:

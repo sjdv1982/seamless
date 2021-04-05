@@ -233,9 +233,6 @@ class Transformer(Base):
                 if "docker_image" not in htf["pins"]:
                     htf["pins"]["docker_image"] = default_pin.copy()
                     im = True
-                if "docker_options" not in htf["pins"]:
-                    htf["pins"]["docker_options"] = default_pin.copy()
-                    self.docker_options = {}
                 """
                 if im:
                     self.docker_image = ""
@@ -243,7 +240,6 @@ class Transformer(Base):
 
         else:
             if old_language == "docker":
-                htf["pins"].pop("docker_options")
                 htf["pins"].pop("docker_image")
 
         if not has_translated:
