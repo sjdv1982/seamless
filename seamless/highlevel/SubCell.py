@@ -25,8 +25,6 @@ class SubCell(Cell):
         parent = self._parent()
         path = self._subpath + (attr,)
         assign_to_subcell(self._cell(), path, value)
-        ctx = parent._gen_context
-        parent._translate()
 
     def __getattr__(self, attr):
         if attr.startswith("_"):
@@ -63,7 +61,6 @@ class SubCell(Cell):
 
     def set(self, value):
         assert not self._readonly
-        print("UNTESTED SubCell.set")
         cell = self._cell()
         attr = self._subpath[-1]
         if len(self._subpath) == 1:

@@ -385,7 +385,7 @@ class Transformer(Base):
                 if callable(value):
                     value, _, _ = parse_function_code(value)
                 check_libinstance_subcontext_binding(parent, self._path)
-                removed = parent._remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,))
                 if removed:
                     htf = self._get_htf()
                     htf["UNTRANSLATED"] = True
@@ -407,7 +407,7 @@ class Transformer(Base):
             else:
                 tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
-                removed = parent._remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,))
                 if removed:
                     translate = True
                 inp.handle_no_inference.set(value)
@@ -436,7 +436,7 @@ class Transformer(Base):
             else:
                 tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
-                removed = parent._remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,))
                 if removed:
                     translate = True
                 setattr(inp.handle_no_inference, attr, value)

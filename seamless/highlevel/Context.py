@@ -876,7 +876,7 @@ class Context(Base):
             if not runtime:
                 self._translate()
 
-        removed = self._remove_connections(path, runtime=runtime)
+        removed = self.remove_connections(path, runtime=runtime)
         if removed and not runtime:
             self._translate()
 
@@ -931,55 +931,56 @@ class Context(Base):
     def _get_lib(self, path):
         return self._graph.lib[tuple(path)]
 
-    def _remove_connections(self, path, *,
-        keep_links=False, runtime=False, only_target=False, head=False, exact=False
+    def remove_connections(self, path, *,
+        runtime=False, endpoint="both", match="sub"
     ):
-        """Removes all connections/links with source or target starting with path
+        """Removes all connections/links with source or target matching path
 
-        if only_target, only remove connections where the target starts with path
-        if exact, only remove links/connections where the source/target path is equal to path
-        if head, only remove links/connections where the source/target path is longer than path
+        "endpoint" can be "source", "target", "connection", "link" or "all".
+        With endpoint "source", only remove connections where the source matches path. Don't remove links.
+        With endpoint "target", only remove connections where the target matches path. Don't remove links.
+        With endpoint "both", only remove connections where source or target matches path. Don't remove links.
+        With endpoint "link", remove links where "first" or "second" matches path. Don't remove connections
+
+        "match" can be "super", "exact", or "sub".
+        If "super", only paths P that are shorter or equal to "path" are matched. The start of P must be identical to "path"
+        If "exact", only paths P that are equal to "path" are matched
+        If "sub", only paths that are longer to "path" are matched. The start of "path" must be identical to P.
+        If "all", all longer and shorter paths are matched.
         """
-        assert not (head and exact)
+        assert endpoint in ("source", "target", "link", "all")
+        assert match in ("super", "sub", "exact", "all")
         lp = len(path)
+        def matches(p):
+            if match == "exact":
+                return (p == path)
+            elif match == "super":
+                return path[:len(p)] == p
+            elif match == "sub":
+                return p[:lp] == path
+            else: # all
+                return p[:lp] == path or path[:len(p)] == p
+
         def keep_con(con):
             if con["type"] == "link":
-                if keep_links or only_target:
+                if endpoint not in ("link", "all"):
                     return True
                 first = con["first"]
-                if exact:
-                    if first == path:
-                        return path
-                else:
-                    if not head or len(first) > lp:
-                        if first[:lp] == path:
-                            return False
+                if matches(first):
+                    return False
                 second = con["second"]
-                if exact:
-                    if second == path:
-                        return path
-                else:
-                    if not head or len(second) > lp:
-                        if second[:lp] == path:
-                            return False
+                if matches(second):
+                    return False
                 return True
             else:
                 csource = con["source"]
-                if exact:
-                    if (not only_target) and csource == path:
+                if endpoint in ("source", "both", "all"):
+                    if matches(csource):
                         return False
-                else:
-                    if not head or len(csource) > lp:
-                        if (not only_target) and csource[:lp] == path:
-                            return False
                 ctarget = con["target"]
-                if exact:
-                    if ctarget == path:
+                if endpoint in ("target", "both", "all"):
+                    if matches(ctarget):
                         return False
-                else:
-                    if not head or len(ctarget) > lp:
-                        if ctarget[:lp] == path:
-                            return False
                 return True
         connections = self._graph[1]
         if runtime:

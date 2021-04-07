@@ -205,7 +205,7 @@ class Macro(Base):
             else:
                 mctx = self._get_mctx(force=True)
                 param = getattr(mctx, node["PARAM"])
-                removed = parent._remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,))
                 if removed:
                     translate = True
                 setattr(param.handle_no_inference, attr, value)
