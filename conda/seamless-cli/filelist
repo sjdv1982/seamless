@@ -4,6 +4,7 @@ seamless-bash
 seamless-bash-trusted
 seamless-checksum
 seamless-database
+seamless-http-put
 seamless-ipython
 seamless-jupyter
 seamless-jupyter-console
