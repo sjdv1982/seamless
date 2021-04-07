@@ -13,6 +13,7 @@ def reset_backend(share_schemas=True, with_hash_pattern=True):
     global ctx, s, s2, s3
     if ctx is not None:
         ctx.compute() # makes no difference, but could be easier debugging
+        ctx.destroy()
     ctx = context(toplevel=True)
     ctx.data = cell("mixed", hash_pattern=hp)
     ctx.buffer = cell("mixed", hash_pattern=hp)
@@ -170,14 +171,18 @@ s2.x = 10
 s.set(5)
 inc = lambda self: self + 1
 s.x = inc
+ctx.compute()
 print(s.x())
 s.y = property(inc)
 print(s.y)
+ctx.compute()
 def setter(self,v):
     self.set(v - 1)
 s.z = property(inc, setter)
+ctx.compute()
 print(s.z)
 s.z = 10
+ctx.compute()
 print(s.data)
 print(s.z)
 ctx.compute()
@@ -187,6 +192,9 @@ s2.x = 10
 import numpy as np
 arr = np.array([1.0,2.0,3.0])
 s2.arr = arr
+ctx.compute()
+
+
 # Need .self.data or .unsilk for Numpy arrays, because Numpy arrays have a .data method
 print(s2.arr.self.data, arr)
 print(s2.arr.unsilk, arr)
@@ -252,6 +260,7 @@ import numpy as np
 reset_backend(share_schemas=False)
 a = s
 a.coor = [0.0,0.0,1.0]
+ctx.compute()
 pprint(a.coor.schema.value)
 print(a.coor.data)
 print("START")
@@ -262,23 +271,32 @@ def func(self):
     arr = np.array(self.data)
     assert abs(np.sum(arr**2) - 1) < 0.01
 a.coor.add_validator(func)
-coor_schema = a.coor.schema
+ctx.compute()
+coor_schema = a.coor.schema.value
 
 reset_backend(share_schemas=False, with_hash_pattern=False)
 c = s2
-c.set( [0.0, 0.0, 0.0] )
 c.schema.clear()
+ctx.compute()
+c.set( [0.0, 0.0, 0.0] )
+ctx.compute()
 c.schema.update(coor_schema)
+ctx.compute()
 
 def set_x(self, value):
     self[0] = value
 c.x = property(lambda self: self[0], set_x)
+ctx.compute()
+
 def set_y(self, value):
     self[1] = value
 c.y = property(lambda self: self[1], set_y)
+ctx.compute()
+
 def set_z(self, value):
     self[2] = value
 c.z = property(lambda self: self[2], set_z)
+ctx.compute()
 
 def set_xyz(self, xyz):
     x,y,z = xyz
@@ -311,6 +329,7 @@ print(c.data, c.xyz)
 pprint(c.schema.value)
 ctx.compute()
 
+ctx.destroy()
 ctx = context(toplevel=True)
 ctx.data = cell("mixed")
 ctx.buffer = cell("mixed")
