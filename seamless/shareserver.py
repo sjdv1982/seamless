@@ -50,6 +50,9 @@ Upon connection, a client receives a handshake message: ["Seamless share update 
 Then, it receives a list of share keys (normally, each share key is bound to a cell).
 Then, it receives all checksums and markers.
 
+NOTE: The shareserver has a very liberal request size limit (i.e. file upload limit) of 1GB
+In production, you will probably want to put Seamless behind a proxy server (e.g. nginx)
+that enforces more sensible values
 """
 import os
 import asyncio
@@ -58,6 +61,7 @@ import traceback
 import json
 
 from asyncio import CancelledError
+import aiohttp
 from websockets.exceptions import ConnectionClosed
 
 DEBUG = False
@@ -623,6 +627,13 @@ class ShareServer(object):
                 status=404,
                 text="Share was destroyed"
             )
+        except aiohttp.web_exceptions.HTTPClientError as exc:
+            logger.debug("shareserver._handle_get")
+            logger.debug(traceback.format_exc())
+            return web.Response(
+                status=exc.status_code,
+                text=exc.reason,
+            )
         except:
             if DEBUG:
                 traceback.print_exc()
@@ -639,6 +650,12 @@ class ShareServer(object):
             text = await request.text()
             data = json.loads(text)
             assert isinstance(data, dict)
+        except aiohttp.web_exceptions.HTTPClientError as exc:
+            logger.debug(traceback.format_exc())
+            return web.Response(
+                status=exc.status_code,
+                text=exc.reason,
+            )
         except:
             if DEBUG:
                 traceback.print_exc()
@@ -781,7 +798,10 @@ class ShareServer(object):
         global web
         from aiohttp import web
         import aiohttp_cors
-        app = web.Application(debug=DEBUG)
+        app = web.Application(
+            client_max_size=1024**3,
+            debug=DEBUG
+        )
         app.add_routes([
             web.get('/{tail:.*}', self._handle_get),
             web.put('/{tail:.*}', self._handle_put),
