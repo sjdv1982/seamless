@@ -224,10 +224,11 @@ class Manager:
             if from_structured_cell and not updated:
                 CellUpdateTask(self, cell).launch()
                 updated = True
-            def update_schema():
-                value = self.resolve(checksum, "plain")
-                self.update_schemacell(cell, value, None)
-            self.taskmanager.add_synctask(update_schema, (), {}, False)
+            else:
+                def update_schema():
+                    value = self.resolve(checksum, "plain")
+                    self.update_schemacell(cell, value, None)
+                self.taskmanager.add_synctask(update_schema, (), {}, False)
 
     def _set_cell_checksum(self,
         cell, checksum, void, status_reason=None, prelim=False, trigger_bilinks=True

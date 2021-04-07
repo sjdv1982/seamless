@@ -35,7 +35,6 @@ OK
 12 25
 300
 VALIDATE 12 25
-VALIDATE 12 25
 {'methods': {'__add__': {'code': 'def adder(self, other):\n'
                                  '    return other + self.x\n',
                          'language': 'python'},
@@ -66,9 +65,7 @@ VALIDATE 12 25
                                               '    assert self.q < self.r\n',
                                       'language': 'python'}]}},
  'type': 'object'}
-VALIDATE 12 25
 [1, 2, 3, 10]
-VALIDATE 12 25
 [1, 2, 3, 10, 5, 1, 2, 3, 10, 5]
 1
 2
@@ -82,13 +79,13 @@ x
 y
 z
 
-VALIDATE 12 25
 1
 2
 3
 10
 5
 
+VALIDATE 12 25
 6
 6
 6
@@ -111,7 +108,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/cwd/silk/silk/validation/validators.py", line 231, in validator_validators
+  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/validation/validators.py", line 231, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 2, in func
     assert abs(self.x**2+self.y**2+self.z**2 - 1) < 0.001
