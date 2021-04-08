@@ -948,7 +948,7 @@ class Context(Base):
         If "sub", only paths that are longer to "path" are matched. The start of "path" must be identical to P.
         If "all", all longer and shorter paths are matched.
         """
-        assert endpoint in ("source", "target", "link", "all")
+        assert endpoint in ("source", "target", "both", "link", "all")
         assert match in ("super", "sub", "exact", "all")
         lp = len(path)
         def matches(p):
