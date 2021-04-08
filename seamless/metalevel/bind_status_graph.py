@@ -5,6 +5,8 @@ import weakref
 import asyncio
 from copy import deepcopy
 
+from numpy.lib.arraysetops import isin
+
 OBSERVE_GRAPH_DELAY = 0.23 # 23 is not a multiple of 50
 OBSERVE_STATUS_DELAY = 0.5
 OBSERVE_STATUS_DELAY2 = 0.2
@@ -79,7 +81,14 @@ class StatusObserver:
 
 
 def observe_graph(ctx, ctx2, graph):
-    ctx2.graph_rt.set(deepcopy(graph))
+    graph_rt = ctx2.graph_rt
+    if isinstance(graph_rt, Cell):
+        graph_rt.set(deepcopy(graph))
+    else:
+        graph_cell = ctx2.graph
+        if isinstance(graph_cell, Cell):
+            graph_cell.set(deepcopy(graph))
+
     for status_observer in status_observers:
         if status_observer.ctx() is ctx and status_observer.ctx2() is ctx2:
             break
@@ -144,6 +153,9 @@ They will be passed to ctx.add_zip before the graph is loaded
     params = {"runtime": True}
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
     def observe2(graph):
+        graph_rt = ctx2.graph_rt
+        if not isinstance(graph_rt, Cell):
+            return
         ctx2.graph.set(deepcopy(graph))
     ctx.observe(("get_graph",), observe2, OBSERVE_GRAPH_DELAY)
     return ctx2
