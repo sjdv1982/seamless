@@ -81,11 +81,17 @@ class StatusObserver:
 
 
 def observe_graph(ctx, ctx2, graph):
-    graph_rt = ctx2.graph_rt
+    try:
+        graph_rt = ctx2.graph_rt
+    except AttributeError:
+        graph_rt = None
     if isinstance(graph_rt, Cell):
         graph_rt.set(deepcopy(graph))
     else:
-        graph_cell = ctx2.graph
+        try:
+            graph_cell = ctx2.graph
+        except AttributeError:
+            graph_cell = None
         if isinstance(graph_cell, Cell):
             graph_cell.set(deepcopy(graph))
 
@@ -153,7 +159,10 @@ They will be passed to ctx.add_zip before the graph is loaded
     params = {"runtime": True}
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
     def observe2(graph):
-        graph_rt = ctx2.graph_rt
+        try:
+            graph_rt = ctx2.graph_rt
+        except AttributeError:
+            graph_rt = None
         if not isinstance(graph_rt, Cell):
             return
         ctx2.graph.set(deepcopy(graph))
