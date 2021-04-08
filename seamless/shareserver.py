@@ -456,6 +456,24 @@ class ShareServer(object):
             logger.debug("shareserver._send_checksum")
             logger.debug(traceback.format_exc())
 
+
+    async def _serve_update_listen(self, websocket, path):
+        #keep connection open forever, ignore all messages
+        try:
+            async for message in websocket:
+                pass
+        except ConnectionClosed:
+            pass
+
+    async def _serve_update_ping(self, websocket, path):
+        #keep connection open forever, periodically send a ping
+        try:
+            while 1:
+                await asyncio.sleep(10)
+                await websocket.ping()
+        except ConnectionClosed:
+            pass
+
     async def _serve_update(self, websocket, path):
         if path:
             path = path.lstrip("/")
@@ -474,10 +492,14 @@ class ShareServer(object):
         except ConnectionClosed:
             return
         try:
-            async for message in websocket: #keep connection open forever, ignore all messages
-                pass
-        except ConnectionClosed:
-            pass
+            task_listen = asyncio.ensure_future(self._serve_update_listen(websocket, path))
+            task_ping = asyncio.ensure_future(self._serve_update_ping(websocket, path))
+            done, pending = await asyncio.wait(
+                [task_listen, task_ping],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            for task in pending:
+                task.cancel()
         finally:
             try:
                 namespace.update_connections.remove(websocket)
