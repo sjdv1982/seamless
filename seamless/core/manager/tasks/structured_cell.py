@@ -340,6 +340,9 @@ class StructuredCellJoinTask(StructuredCellTask):
                     except ValidationError:
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
+                    except Exception:
+                        sc._exception = traceback.format_exc()
+                        ok = False
 
             if not from_cache:
                 if sc._mode != SCModeEnum.FORCE_JOINING:
