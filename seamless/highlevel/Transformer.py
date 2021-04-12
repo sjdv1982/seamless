@@ -802,9 +802,7 @@ class Transformer(Base):
         elif attr == "handle":
             return inputcell.handle_no_inference
         elif attr == "schema":
-            #schema = inputcell.get_schema() # WRONG
-            inp_ctx = inputcell._data._context()
-            schema = inp_ctx.example.handle.schema
+            schema = inputcell.handle.schema
             return SchemaWrapper(self, schema, "SCHEMA")
         elif attr == "example":
             return self.example
@@ -870,9 +868,7 @@ class Transformer(Base):
         elif attr == "checksum":
             return resultcell.checksum
         elif attr == "schema":
-            ###schema = resultcell.get_schema() #wrong!
-            result_ctx = resultcell._data._context()
-            schema = result_ctx.example.handle.schema
+            schema = self._result_example().schema
             return SchemaWrapper(self, schema, "RESULTSCHEMA")
         elif attr == "example":
             return self._result_example()

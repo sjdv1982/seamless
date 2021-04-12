@@ -215,7 +215,7 @@ class Cell(Base):
             hcell = self._get_hcell()
             if hcell["celltype"] == "structured":
                 cell = self._get_cell()
-                schema = self.handle.schema
+                schema = self.example.schema
                 return SchemaWrapper(self, schema, "SCHEMA")
             else:
                 raise AttributeError

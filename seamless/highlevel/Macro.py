@@ -432,9 +432,7 @@ class Macro(Base):
         elif attr == "handle":
             return paramcell.handle_no_inference
         elif attr == "schema":
-            #schema = paramcell.get_schema() # WRONG
-            param_ctx = paramcell._data._context()
-            schema = param_ctx.example.handle.schema
+            schema = paramcell.handle.schema
             return SchemaWrapper(self, schema, "SCHEMA")
         elif attr == "example":
             return self.example

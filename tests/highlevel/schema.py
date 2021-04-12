@@ -32,7 +32,7 @@ ctx.a.schema.add_validator(validate, "validate")
 ctx.a.x = -1
 ctx.translate()
 print(ctx.a.value)
-print(ctx.a.buffered)
+print(ctx.a.buffered)  # rarely, the join task will complete already, but usually, this prints None
 print(ctx.a.handle)
 ctx.compute()
 print(ctx.a.value)

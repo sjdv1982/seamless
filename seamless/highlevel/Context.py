@@ -945,7 +945,7 @@ class Context(Base):
         "match" can be "super", "exact", or "sub".
         If "super", only paths P that are shorter or equal to "path" are matched. The start of P must be identical to "path"
         If "exact", only paths P that are equal to "path" are matched
-        If "sub", only paths that are longer to "path" are matched. The start of "path" must be identical to P.
+        If "sub", only paths that are longer or equal to "path" are matched. The start of "path" must be identical to P.
         If "all", all longer and shorter paths are matched.
         """
         assert endpoint in ("source", "target", "both", "link", "all")

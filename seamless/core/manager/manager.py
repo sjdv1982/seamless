@@ -224,11 +224,10 @@ class Manager:
             if from_structured_cell and not updated:
                 CellUpdateTask(self, cell).launch()
                 updated = True
-            else:
-                def update_schema():
-                    value = self.resolve(checksum, "plain")
-                    self.update_schemacell(cell, value, None)
-                self.taskmanager.add_synctask(update_schema, (), {}, False)
+            def update_schema():
+                value = self.resolve(checksum, "plain")
+                self.update_schemacell(cell, value)
+            self.taskmanager.add_synctask(update_schema, (), {}, False)
 
     def _set_cell_checksum(self,
         cell, checksum, void, status_reason=None, prelim=False, trigger_bilinks=True
@@ -401,12 +400,10 @@ class Manager:
         task = SetCellValueTask(self, cell, value, origin_reactor=origin_reactor)
         task.launch()
 
-    def update_schemacell(self, schemacell, value, structured_cell):
+    def update_schemacell(self, schemacell, value):
         livegraph = self.livegraph
         structured_cells = livegraph.schemacells[schemacell]
         for sc in structured_cells:
-            if sc is structured_cell:
-                continue
             sc._schema_value = deepcopy(value)
             self.structured_cell_trigger(sc, update_schema=True)
 

@@ -384,12 +384,12 @@ def assign_to_subcell(cell, path, value):
     elif isinstance(value, ConstantTypes):
         check_libinstance_subcontext_binding(ctx, path)
         removed1 = ctx.remove_connections(
-            cell._path,
+            cell._path + path,
             endpoint="link",
             match="all"
         )
         removed2 = ctx.remove_connections(
-            cell._path,
+            cell._path + path,
             endpoint="target",
             match="all"
         )

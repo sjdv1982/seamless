@@ -290,7 +290,6 @@ class StructuredCell(SeamlessBase):
         manager.update_schemacell(
             self.schema,
             self._schema_value,
-            self
         )
 
     def handle(self):

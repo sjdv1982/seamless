@@ -1,11 +1,11 @@
 <Silk: {'b': {'c': {'d': 10}}} >
 report <Silk: {'b': {'c': {'d': 10}}} > {'b': <Silk: {'c': {'d': 10}} >, 'c': <Silk: {'d': 10} >, 'd': 10}
 
-SCHEMA A {'type': 'object', 'properties': {'b': {'type': 'object', 'properties': {'c': {'type': 'object', 'properties': {'d': {'type': 'integer'}}}}}}}
+SCHEMA A {'properties': {'b': {'type': 'object', 'properties': {'c': {'type': 'object', 'properties': {'d': {'type': 'integer'}}}}}}, 'type': 'object'}
 SCHEMA B {'type': 'object', 'properties': {'c': {'type': 'object', 'properties': {'d': {'type': 'integer'}}}}}
 SCHEMA C {'type': 'object', 'properties': {'d': {'type': 'integer'}}}
 SCHEMA D {'type': 'integer'}
-SCHEMA A2 {'type': 'object', 'properties': {'b': {'type': 'object', 'properties': {}}}}
+SCHEMA A2 {'properties': {'b': {'type': 'object', 'properties': {}}}, 'type': 'object'}
 *tf*: Status: upstream => c undefined, d undefined
 report <Silk: {'b': {'c': {'d': 12, 'dd': 22}}} > {'b': <Silk: {'c': {'d': 12, 'dd': 22}} >, 'c': <Silk: {'d': 12, 'dd': 22} >, 'd': 12}
 Status: OK
