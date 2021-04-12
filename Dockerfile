@@ -7,7 +7,7 @@ RUN apt update && apt install -y gfortran curl gdb iputils-ping redis-tools apt-
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository \
    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
    $(lsb_release -cs) \
-   stable" && sudo apt update && sudo apt install docker-ce-cli
+   stable" && sudo apt update && sudo apt -y install docker-ce-cli
 RUN pip install -r requirements.txt && conda install -c rpbs silk && jupyter-nbextension enable nglview --py --sys-prefix
 COPY . /usr/local/src/seamless
 RUN rm -rf /usr/local/src/seamless/.git && \
