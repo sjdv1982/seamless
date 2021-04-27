@@ -125,14 +125,12 @@ async def load():
             return
     
     for f in (
-        "web/index.html", "web/index.js",
-        "web/webform.json",
         "web/index-CONFLICT.html",
         "web/index-CONFLICT.js",
         "web/webform-CONFLICT.txt",
     ):
         if os.path.exists(f):
-            if f.find("CONFLICT") > -1 and open(f).read().rstrip("\\n ") in ("", "No conflict"):
+            if open(f).read().rstrip("\\n ") in ("", "No conflict"):
                 continue
             dest = f + "-BAK"
             if os.path.exists(dest):
