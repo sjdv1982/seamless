@@ -1,3 +1,9 @@
+"""Generates a webform dict from
+The webform dict is used by generate-webpage.py to create an index.html + index.js
+
+It creates a default entry in the webform for each shared celltype
+You can modify this script to change the defaults
+"""
 # input: graph
 
 cells = {}
@@ -44,6 +50,16 @@ for node in graph["nodes"]:
         else:
             cell["component"] = "card"
         share["encoding"] = "text"
+    elif celltype == "str":
+        share["read"] = True
+        params["title"] = "Cell " + cellname.capitalize()
+        cell["component"] = "input"
+        if node["share"].get("readonly", True):
+            params["editable"] = False
+        else:
+            share["write"] = True
+            params["editable"] = True
+        share["encoding"] = "json"
     elif celltype == "plain":
         share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
