@@ -61,7 +61,7 @@ def main():
 
         if zero_modify:
             if state == "conflict":
-                PINS.conflict.set("No conflict")
+                PINS.conflict.set(no_conflict)
             state = "passthrough"
     if state == "passthrough":
         if not zero_modify:
