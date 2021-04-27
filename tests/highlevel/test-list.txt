@@ -38,6 +38,7 @@ docker_.py
 docker2.py
 expression-exceptions.py
 highlink-schema.py
+highlink-schema-tf.py
 traitlet.py
 traitlet2.py: The exact output is dependent on random memory locations
 simple.py

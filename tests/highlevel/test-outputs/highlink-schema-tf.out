@@ -1,0 +1,51 @@
+{'properties': {'a': {'type': 'integer'}}, 'type': 'object'}
+**************************************************
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 'test' is not of type 'integer'
+
+Failed validating 'type' in schema['properties']['a']:
+    {'type': 'integer'}
+
+On instance['a']:
+    'test'
+
+**************************************************
+{}
+{}
+value: <Silk: None >
+data: None
+buffered: {'a': 'test'}
+{'properties': {'a': {'type': 'number'}}, 'type': 'object'}
+**************************************************
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 'test' is not of type 'number'
+
+Failed validating 'type' in schema['properties']['a']:
+    {'type': 'number'}
+
+On instance['a']:
+    'test'
+
+**************************************************
+{'properties': {'a': {'type': 'string'}}, 'type': 'object'}
+{'properties': {'a': {'type': 'string'}}, 'type': 'object'}
+value: <Silk: {'a': 'test'} >
+
+result value: <Silk: None >
+result data: None
+result buffered: 42
+{'properties': {'a': {'type': 'string'}}, 'type': 'object'}
+**************************************************
+Traceback (most recent call last):
+jsonschema.exceptions.ValidationError: 42 is not of type 'object'
+
+Failed validating 'type' in schema:
+    {'properties': {'a': {'type': 'string'}}, 'type': 'object'}
+
+On instance:
+    42
+
+**************************************************
+{'type': 'integer'}
+{'type': 'integer'}
+<Silk: 42 >

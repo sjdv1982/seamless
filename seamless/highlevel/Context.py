@@ -1000,6 +1000,19 @@ class Context(Base):
         connections.append(link._node)
         self._translate()
 
+    def unlink(self, first, second):
+        """Removes a bidirectional link between the first and second cell
+        (if it exists)
+        Returns True if a link was removed
+        """
+        link = Link(self, first=first, second=second)
+        try:
+            link.remove()
+        except ValueError:
+            return False
+        self._translate()
+        return True
+
     def get_links(self):
         connections = self._graph.connections
         result = []
