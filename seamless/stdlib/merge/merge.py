@@ -182,6 +182,7 @@ print(ctx.status)
 print(ctx.merged.value)
 print(ctx.state.value)
 if ctx.state.value != "passthrough":
+    import sys
     sys.exit()
 
 # 5: Save graph and zip
