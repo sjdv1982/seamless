@@ -1036,8 +1036,15 @@ class Context(Base):
     @property
     def children(self):
         """Returns a wrapper for the direct children of the context
-        This includes subcontexts"""
+        This includes subcontexts and libinstances"""
         children = [p[0] for p in self._children]
+        g = self._graph[0]
+        for k in g:
+            if len(k) > 1:
+                continue
+            node = g[k]
+            if node["type"] == "libinstance":
+                children.append(k[0])
         children = sorted(list(set(children)))
         return ChildrenWrapper(self, children)
 
@@ -1045,7 +1052,15 @@ class Context(Base):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
         children = [p[0] for p in self._children]
         children = list(set(children))
-        return sorted(d + children)
+        libinstances = []
+        g = self._graph[0]
+        for k in g:
+            if len(k) > 1:
+                continue
+            node = g[k]
+            if node["type"] == "libinstance":
+                libinstances.append(k[0])
+        return sorted(d + children + libinstances)
 
     def _destroy(self):
         if self._destroyed:

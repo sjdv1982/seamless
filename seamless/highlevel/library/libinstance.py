@@ -154,6 +154,12 @@ class LibInstance:
             value = argvalue
         return value
 
+    def __dir__(self):        
+        hnode = self._get_node()
+        libpath = hnode["libpath"]
+        arguments = hnode["arguments"]
+        return list(arguments.keys()) + ["ctx", "libpath", "arguments", "status"]
+
     def __setattr__(self, attr, value):
         from .argument import parse_argument
         if attr.startswith("_"):
