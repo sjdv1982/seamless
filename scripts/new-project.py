@@ -132,8 +132,7 @@ async def load():
         "web/webform-CONFLICT.txt",
     ):
         if os.path.exists(f):
-            if f.find("CONFLICT") > -1 and open(f).read().rstrip("\\n ") == "No conflict":
-                os.remove(f)
+            if f.find("CONFLICT") > -1 and open(f).read().rstrip("\\n ") in ("", "No conflict"):
                 continue
             dest = f + "-BAK"
             if os.path.exists(dest):
