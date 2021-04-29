@@ -59,6 +59,7 @@ import asyncio
 import weakref
 import traceback
 import json
+import base64
 
 from asyncio import CancelledError
 import aiohttp
@@ -116,6 +117,18 @@ class Share:
         self.requests = []
         self.bound = None # bound ShareItem
 
+    @property
+    def binary(self):
+        if self.celltype == "mixed":
+            binary = True
+            if self.mimetype is not None and self.mimetype.startswith("text"):
+                binary = False
+        elif self.celltype in ("bytes", "binary"):
+            binary = True
+        else:
+            binary = False
+        return binary
+
     def bind(self, share_item):
         assert self.bound is None
         self.bound = share_item
@@ -172,7 +185,8 @@ class Share:
             buffer = buffer.encode()
         if not isinstance(buffer, bytes):
             raise TypeError(type(buffer))
-        buffer = buffer.rstrip(b'\n') + b'\n'
+        if not self.binary:
+            buffer = buffer.rstrip(b'\n') + b'\n'
         task = self._calc_checksum(buffer)
         task = asyncio.ensure_future(task)
         self._calc_checksum_task = task
@@ -294,7 +308,10 @@ class ShareNamespace:
         if mode == "buffer":
             if buffer is None:
                 return None, None
-            return buffer, "text/plain"
+            content_type_buffer = "text/plain"
+            if share.binary:
+                content_type_buffer = content_type
+            return buffer, content_type_buffer
         if mode == "value":
             if buffer is None:
                 return None, None
@@ -330,8 +347,12 @@ class ShareNamespace:
             if checksum is not None:
                 checksum = bytes.fromhex(checksum)
             return await share.set_checksum(checksum, marker)
-        else:
-            buffer = value
+        else:            
+            if share.binary:
+                buffer0 = value.encode("ascii")
+                buffer = base64.b64decode(buffer0)
+            else:                
+                buffer = value
             return await share.set_buffer(buffer, marker)
 
     async def put(self, key, value, mode, marker):
@@ -426,8 +447,10 @@ class ShareServer(object):
 
     async def _send_sharelist(self, namespace, websocket):
         sharelist = namespace.sharelist
+        binary = [cell for cell in sharelist if cell != "self" and namespace.shares[cell].binary]
         try:
-            return await self._send(websocket, ("sharelist", sharelist))
+            await self._send(websocket, ("sharelist", sharelist))
+            await self._send(websocket, ("binary", binary))
         except CancelledError:
             raise
         except ConnectionClosed:
@@ -486,7 +509,7 @@ class ShareServer(object):
         """
         namespace = self.namespaces[path]
         try:
-            await self._send(websocket, ("Seamless share update server", "0.01"))
+            await self._send(websocket, ("Seamless share update server", "0.02"))
             namespace.update_connections.append(websocket)
             await self._send_sharelist(namespace, websocket)
         except ConnectionClosed:
@@ -615,10 +638,15 @@ class ShareServer(object):
                     status=404,
                     text="empty",
                 )
+            if content_type is not None and content_type.startswith("text"):
+                charset = "utf-8"
+            else:
+                charset = None
             return web.Response(
                 status=200,
                 body=body,
                 content_type=content_type,
+                charset=charset
             )
         except CommunionError as exc:
             txt = exc.args[0]

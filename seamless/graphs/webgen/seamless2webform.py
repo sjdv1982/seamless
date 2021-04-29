@@ -3,15 +3,19 @@ The webform dict is used by generate-webpage.py to create an index.html + index.
 
 It creates a default entry in the webform for each shared celltype
 You can modify this script to change the defaults
+
+auto_read: the web page will download the value of the cell whenever it changes
 """
 # input: graph
 
 cells = {}
+extra_components = []
 webform = {
     "index": {
         "title": "Seamless webform",
     },
     "cells": cells,
+    "extra_components": extra_components
 }
 for node in graph["nodes"]:
     if node["type"] != "cell":
@@ -30,6 +34,10 @@ for node in graph["nodes"]:
         "celltype": celltype,
     }
     cellname = node["path"][-1]
+    if cellname.find(".") > -1:
+        params["auto_read"] = False
+    else:
+        params["auto_read"] = True
     if celltype in ("float", "int"):
         share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
@@ -46,7 +54,8 @@ for node in graph["nodes"]:
         share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
         if not node["share"].get("readonly", True):
-            raise NotImplementedError("writeable text cell")
+            cell["component"] = "fileupload"
+            share["write"] = True
         else:
             cell["component"] = "card"
         share["encoding"] = "text"
@@ -65,6 +74,15 @@ for node in graph["nodes"]:
         params["title"] = "Cell " + cellname.capitalize()
         cell["component"] = "card"
         share["encoding"] = "json"
+    elif celltype == "bytes":
+        share["read"] = True
+        params["title"] = "Cell " + cellname.capitalize()        
+        if node["share"].get("readonly", True):
+            cell["component"] = ""
+        else:
+            cell["component"] = "fileupload"
+            share["write"] = True
+        share["encoding"] = "text"
     else:
         raise NotImplementedError(celltype)
     cell.update({
@@ -73,5 +91,14 @@ for node in graph["nodes"]:
     })
     cellkey = "_".join(node["path"])
     cells[cellkey] = cell
+    if not len(extra_components):
+        extra_components.append(
+            {
+                "id": "EXAMPLE_ID",
+                "cell": cellkey,
+                "component": "",
+                "params": {},
+            }
+        )
 
 result = webform

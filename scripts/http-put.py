@@ -3,6 +3,7 @@ import requests
 import os
 import sys
 import json
+import base64
 
 parser = argparse.ArgumentParser()
 parser.add_argument("url",
@@ -22,6 +23,12 @@ parser.add_argument("--upload-file", dest="upload_file",
     help="File to upload"
 )
 
+parser.add_argument("--binary", dest="binary", action="store_true",
+    help="""The destination is a binary Seamless cell.
+Uploaded files or values are encoded as base64    
+"""
+)
+
 def err(txt):
     print("error: " + txt, file=sys.stderr)
     exit(1)
@@ -32,15 +39,28 @@ if args.value is None and args.upload_file is None:
 if args.value is not None and args.upload_file is not None:
     err("You must specify a file or a value, not both")
 
-if args.value is not None:
-    buffer = args.value
+if args.value is not None:    
+    if args.binary:
+        buf0 = args.value.encode()
+        buf = base64.b64encode(buf0)
+        buffer = buf.decode("ascii")
+    else:
+        buffer = args.value
 else:
     filename = args.upload_file
     if not os.path.exists(filename):
         err("Filename {} does not exist".format(filename))
-    with open(filename) as f:
-        buffer = f.read()
-
+    if args.binary:
+        with open(filename, "rb") as f:
+            buf0 = f.read()
+        buf = base64.b64encode(buf0)
+        buffer = buf.decode("ascii")
+    else:        
+        try:
+            with open(filename) as f:
+                buffer = f.read()
+        except UnicodeDecodeError:
+            err("File is not a text file. Did you forget the --binary option?")
 try:
     r = requests.get(args.url, params={"mode": "marker"})
     marker = r.json()["marker"]

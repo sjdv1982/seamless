@@ -1,3 +1,16 @@
+
+const blobToBase64 = blob => {
+  const reader = new FileReader();
+  reader.readAsDataURL(blob);
+  return new Promise(resolve => {
+    reader.onloadend = () => {
+      resolve(reader.result.substr(reader.result.indexOf(",")+1,))
+    }
+  })
+}
+// adapted from: https://stackoverflow.com/a/61226119
+
+
 function connect_seamless(update_server=null, rest_server=null, share_namespace="ctx"){    
   var ctx = {
     self: {
@@ -82,20 +95,29 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
       return response.json()  
     })
     .then(function(result) {
+      if (result === undefined) return
       if (result["marker"] <= ctx[key]._marker) return
       ctx[key]._marker = result["marker"]
       ctx[key].checksum = result["checksum"]  
       return result    
     })
     .then(async function(result){
-      if (ctx[key].auto_read) {
+      if (result === undefined) return    
+      if (ctx[key].auto_read && result["checksum"] != null) {
         var rq2 = ctx.self.rest_server + "/" + ctx.self.share_namespace + "/" + key + "?mode=buffer"
         //$("#error_message").text("GET:" + rq2)
         //$("#error_message").text(result)
         const response = await fetch(rq2)
-        r = await response.text()
+        if (ctx[key].binary) {
+          r = await response.blob()
+        }
+        else {
+          r = await response.text()
+        }
         //$("#error_message").text("RESP:" + r)
-        ctx[key].value = r                
+        ctx[key].value = r
+        console.log(key, response.headers.get("Content-Type"))
+        ctx[key].content_type = response.headers.get('Content-Type')
       }
     })
     .catch(function(err) {
@@ -114,13 +136,37 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
     ctx.self.oninput()
     put_value(key, value)
   }
-  function put_value(key, value) { 
-    var rq = ctx.self.rest_server + "/" + ctx.self.share_namespace + "/" + key
+  function put_value(key, value) {     
     if (ctx[key]._marker == null) ctx[key]._marker = 0
     oldmarker = ctx[key]._marker 
     newmarker = oldmarker + 1
+    if (ctx[key].binary) {
+      if (!(value instanceof Blob)) {
+        console.log(`Cannot set value for ctx['${key}'], as it is binary and the value isn't a Blob`)
+        return
+      }
+      blobToBase64(value)      
+      .then(function(text){
+        _put_value(key, text, newmarker)
+      })    
+    }
+    else {
+      if (value instanceof Blob) {
+        value.text()
+        .then(function(text){
+          _put_value(key, text, newmarker)
+        })
+      }
+      else {
+        buffer = value
+        return _put_value(key, buffer, newmarker)
+      }
+    }
+  }
+  function _put_value(key, buffer, newmarker) {
+    var rq = ctx.self.rest_server + "/" + ctx.self.share_namespace + "/" + key
     const payload = JSON.stringify({
-      "buffer":value,
+      "buffer":buffer,
       "marker":newmarker
     })
     //$("#request").text(JSON.stringify({"rq": "PUT:" + rq, "buffer": value}))
@@ -151,6 +197,7 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
     var message = JSON.parse(event.data);
     if (handshake == null) {
       handshake = message
+      protocol = handshake[1]
       //$("#error_message").text(JSON.stringify(handshake))
     }    
     else if (message[0] == "sharelist") {
@@ -162,21 +209,42 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
         }
       }
       ctx.self.sharelist = sharelist
-      for (const key of sharelist) {        
+      for (const key of sharelist) {
         if (key == "self") continue
         auto_read = (key.indexOf('.') == -1)
         ctx[key] = {
           value: null,
           _marker: null,
           initial: true,
+          binary: false,
           auto_read: auto_read,
+          content_type: null,
           set: curry_set_value(key),
           oninput: function(value) {},
           onchange: function(value) {},
         }
-        get_value(key)
       }
-      ctx.self.onsharelist(sharelist)
+      if (protocol == "0.01") {
+        ctx.self.onsharelist(sharelist)
+      }
+      for (const key of sharelist) {
+        if (key == "self") continue
+        if (protocol == "0.01") {
+          get_value(key)
+        }
+      }
+    }
+    else if (message[0] == "binary") {
+      binary_list = message[1];
+      for (const key of binary_list) {
+        cell = ctx[key]
+        if (cell === undefined)  continue
+        cell.binary = true
+      }
+      ctx.self.onsharelist(ctx.self.sharelist)
+      for (const key of ctx.self.sharelist) {
+        get_value(key)
+      }      
     }
     else if (message[0] == "update") {
       let key = message[1][0]
@@ -186,7 +254,7 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
         get_value(key)
         ctx[key].initial = false
       }
-    }
+    }    
     else {
       console.log('Seamless client websocket Error: unknown message format:', message)
       //$("#error_message").text(message) 
