@@ -326,6 +326,7 @@ def translate(graph, ctx):
         else:
             raise TypeError(t)
         node.pop("UNTRANSLATED", None)
+        node.pop("UNSHARE", None)
 
     namespace2 = OrderedDict()
     for k in sorted(namespace.keys(), key=lambda k:-len(k)):

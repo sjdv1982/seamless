@@ -18,6 +18,10 @@ webform = {
     "extra_components": extra_components
 }
 for node in graph["nodes"]:
+    if "UNTRANSLATED" in node:
+        continue
+    if "UNSHARE" in node:
+        continue
     if node["type"] != "cell":
         continue
     if "share" not in node:

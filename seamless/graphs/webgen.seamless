@@ -350,7 +350,7 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "ff53654d0b0c894c05b8dc604ffa6b4338db01483aea44ce337e76fde77e32e3",
+        "code": "6c648b0e5ae2824ef4fe8dd9002a39ff322b2374892f6262f786c30408474182",
         "input": "2a87d93425220f1a1088b84abf05651ea3142467118f938ebd15f636226ee146",
         "input_buffer": "2a87d93425220f1a1088b84abf05651ea3142467118f938ebd15f636226ee146"
       },
@@ -712,7 +712,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "ff53654d0b0c894c05b8dc604ffa6b4338db01483aea44ce337e76fde77e32e3"
+        "value": "6c648b0e5ae2824ef4fe8dd9002a39ff322b2374892f6262f786c30408474182"
       },
       "datatype": "mixed",
       "language": "python",

@@ -679,6 +679,7 @@ class Cell(Base):
                 raise ValueError("Unknown extension %s" % ext) from None
             hcell["file_extension"] = ext
         hcell["mimetype"] = value
+        hcell["UNSHARE"] = True
         if self._parent() is not None:
             self._parent()._translate()
 
@@ -832,6 +833,7 @@ class Cell(Base):
         }
         if toplevel:
             hcell["share"]["toplevel"] = True
+        hcell["UNSHARE"] = True
         if self._parent() is not None:
             self._parent()._translate()
         return self
