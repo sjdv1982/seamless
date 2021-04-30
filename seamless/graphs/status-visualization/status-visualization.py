@@ -5,12 +5,15 @@ ctx2 = Context()
 ctx2.share_namespace = "status"
 ctx2.graph = {}
 ctx2.graph.celltype = "plain"
+ctx2.graph.share()
+ctx2.graph_rt = {}
+ctx2.graph_rt.celltype = "plain"
 ctx2.status_ = {}
 ctx2.status_data = ctx2.status_
 ctx2.status_data.celltype = "plain"
 
 gvs = ctx2.gen_vis_status = Transformer()
-gvs.graph = ctx2.graph
+gvs.graph = ctx2.graph_rt
 gvs.status_ = ctx2.status_
 gvs.code.mount("gen_vis_status.py", authority="file")
 ctx2.vis_status = ctx2.gen_vis_status

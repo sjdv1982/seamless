@@ -1,6 +1,0 @@
-remote peer id
-The purpose of this is to pass around in a remote (communion) request
-the communion peer ID of the peer that issued the original request.
-This is to prevent requests from bouncing in circles.
-
-To be implemented, there is now only a stub!

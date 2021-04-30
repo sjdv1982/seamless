@@ -182,6 +182,14 @@ class UnboundContext(SeamlessBase):
         if toplevel:
             register_toplevel(self)
 
+    @property
+    def children(self):
+        result = {}
+        for k in sorted(list(self._children.keys())):
+            result[k] = self._children[k]
+        return result
+
+
     def __setattr__(self, attr, value):
         if self._bound is not None:
             return setattr(self._bound, attr, value)

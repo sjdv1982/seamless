@@ -161,7 +161,8 @@ class AccessorUpdateTask(Task):
                         target, result_checksum,
                         False, None, prelim=accessor._prelim
                     )
-                    CellUpdateTask(manager, target).launch()
+                    if result_checksum is not None:
+                        CellUpdateTask(manager, target).launch()
                 else:
                     if not target._destroyed:
                         assert expression.target_celltype == "mixed", expression.target_celltype

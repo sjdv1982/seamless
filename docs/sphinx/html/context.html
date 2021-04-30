@@ -24,6 +24,9 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="cell.html" title="Cells"
              accesskey="N">next</a> |</li>
         <li class="right" >
@@ -44,27 +47,21 @@
 cells, connections, and workers (primarily transformers). By convention, a Context is called <code class="docutils literal notranslate"><span class="pre">ctx</span></code>.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> does not exist yet, then <code class="docutils literal notranslate"><span class="pre">ctx.a</span> <span class="pre">=</span> <span class="pre">X</span></code> :</p>
 <ul class="simple">
-<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a constant. <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> will have the value X. All cell values must be either JSON-serializable, or a Numpy array, or a mixture of both.</p></li>
-<li><p>will bind X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is an cell/transformer/… that is not bound to a context.</p></li>
-<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell that is bound to a context. Then, a connection from X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> is created.</p></li>
+<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a constant. <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> will be bound to <code class="docutils literal notranslate"><span class="pre">ctx</span></code> and have the value X. All cell values must be either JSON-serializable, or a Numpy array, or a mixture of both.</p></li>
 <li><p>will create a new transformer <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a Python function. The transformer will copy the source code and function signature of X (see the documentation of the Transformer class for more details).</p></li>
+<li><p>will bind X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell, transformer or context that is not bound to a context.</p></li>
+<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell or transformer that is bound to a context. Then, a connection from X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> is created.</p></li>
 <li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a transformer. Then, a new connection from <code class="docutils literal notranslate"><span class="pre">X.result</span></code>  to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> is created.</p></li>
 </ul>
-<p>There is a special syntax <code class="docutils literal notranslate"><span class="pre">ctx.a</span> <span class="pre">&gt;&gt;</span> <span class="pre">ctx.tf.code</span></code>, which is short-hand for:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">()</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">celltype</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">code</span><span class="o">.</span><span class="n">celltype</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">code</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-<span class="n">ctx</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">a</span>
-</pre></div>
-</div>
 <p>Cell values (and the workers’ input and output values) are stored as the <em>checksums</em> of their data buffers. Therefore, the dependency graph is always well-defined, yet small in size.</p>
-<p>Seamless maintains a checksum-to-buffer cache, either in memory or in a Redis database. It can also query remotely connected Seamless instances.</p>
+<p>Seamless maintains a checksum-to-buffer cache, either in memory or in a database. It can also query remotely connected Seamless instances.</p>
 <p>The Context class can launch a <em>translation</em> of the dependency graph to
 a low-level representation that can be evaluated.</p>
-<p>During evaluation, the dependency graph is in principle constant, i.e. immutable. Modification of the graph via the Context class creates a <em>new</em>
-graph that is re-translated and re-computed.</p>
-<p>In the graph, each transformer performs a transformation from input + code to result. Seamless keeps a result cache of all transformations. Just like the checksum-to-buffer cache, Redis databases or remote Seamless instances can also be queried. Because of this, the only transformations that are performed are those that have never been performed anywhere before, or where the result value is no longer accessible.</p>
-<p>As of Seamless 0.2, automatic re-translation of modified context graphs is bugged and has been disabled. Re-translation has to be done manually with <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation()</span></code>. Changing the topology of the graph (e.g. adding a cell) or changing the cell types requires a re-translation. The modification of cell <em>values</em> does not.</p>
+<p>During evaluation, the dependency graph is in principle constant, i.e. immutable.
+Modification of the graph via the Context class creates a <em>new</em> graph that is re-translated and re-computed.</p>
+<p>In the graph, each transformer performs a transformation from input + code to result. Seamless keeps a result cache of all transformations. Just like the checksum-to-buffer cache, databases or remote Seamless instances can also be queried. Because of this, the only transformations that are performed are those that have never been performed anywhere before, or where the result value is no longer accessible.</p>
+<p>Before any computation starts, a context has to be translated (using <code class="docutils literal notranslate"><span class="pre">ctx.translate()</span></code> or <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation</span></code>). Changing the topology of the graph (e.g. adding a cell) or changing the cell types only takes effect upon re-translation. The modification of cell <em>values</em> does not require re-translation.</p>
+<p>See <code class="docutils literal notranslate"><span class="pre">http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class</span></code> for more documentation.</p>
 </div>
 
 
@@ -107,6 +104,9 @@ graph that is re-translated and re-computed.</p>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="cell.html" title="Cells"
              >next</a> |</li>
         <li class="right" >
@@ -117,7 +117,7 @@ graph that is re-translated and re-computed.</p>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2016-2021, Sjoerd de Vries.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
     </div>
   </body>
 </html>

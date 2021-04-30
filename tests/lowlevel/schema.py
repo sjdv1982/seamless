@@ -1,7 +1,7 @@
 import seamless
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer
-from seamless.silk.meta import meta
+from silk.meta import meta
 
 class MyClass(metaclass=meta):
     def get(self, item):

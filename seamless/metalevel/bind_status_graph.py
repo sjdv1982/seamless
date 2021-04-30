@@ -3,6 +3,9 @@ import functools
 import time
 import weakref
 import asyncio
+from copy import deepcopy
+
+from numpy.lib.arraysetops import isin
 
 OBSERVE_GRAPH_DELAY = 0.23 # 23 is not a multiple of 50
 OBSERVE_STATUS_DELAY = 0.5
@@ -78,8 +81,20 @@ class StatusObserver:
 
 
 def observe_graph(ctx, ctx2, graph):
-    from copy import deepcopy
-    ctx2.graph.set(deepcopy(graph))
+    try:
+        graph_rt = ctx2.graph_rt
+    except AttributeError:
+        graph_rt = None
+    if isinstance(graph_rt, Cell):
+        graph_rt.set(deepcopy(graph))
+    else:
+        try:
+            graph_cell = ctx2.graph
+        except AttributeError:
+            graph_cell = None
+        if isinstance(graph_cell, Cell):
+            graph_cell.set(deepcopy(graph))
+
     for status_observer in status_observers:
         if status_observer.ctx() is ctx and status_observer.ctx2() is ctx2:
             break
@@ -136,13 +151,22 @@ They will be passed to ctx.add_zip before the graph is loaded
         mounts=mounts,
         shares=shares
     )
-    assert "graph" in ctx2.children()
+    assert "graph" in ctx2.get_children()
     observe_graph_bound = partial(
         observe_graph, ctx, ctx2
     )
     ctx2.translate()
     params = {"runtime": True}
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
+    def observe2(graph):
+        try:
+            graph_rt = ctx2.graph_rt
+        except AttributeError:
+            graph_rt = None
+        if not isinstance(graph_rt, Cell):
+            return
+        ctx2.graph.set(deepcopy(graph))
+    ctx.observe(("get_graph",), observe2, OBSERVE_GRAPH_DELAY)
     return ctx2
 
 async def bind_status_graph_async(ctx, status_graph, *, zips=None, mounts=False, shares=True):
@@ -172,13 +196,16 @@ They will be passed to ctx.add_zip before the graph is loaded
         mounts=mounts,
         shares=shares
     )
-    assert "graph" in ctx2.children()
+    assert "graph" in ctx2.get_children()
     observe_graph_bound = partial(
         observe_graph, ctx, ctx2,
     )
     await ctx2.translation()
     params = {"runtime": True}
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
+    def observe2(graph):
+        ctx2.graph.set(deepcopy(graph))
+    ctx.observe(("get_graph",), observe2, OBSERVE_GRAPH_DELAY)
     return ctx2
 
 from seamless.highlevel import Cell

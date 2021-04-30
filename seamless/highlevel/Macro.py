@@ -4,6 +4,7 @@ import pprint
 from copy import deepcopy
 from .Cell import Cell
 from .Resource import Resource
+from .SelfWrapper import SelfWrapper
 from .proxy import Proxy, CodeProxy, HeaderProxy
 from .pin import PinsWrapper
 from .Base import Base
@@ -11,9 +12,9 @@ from ..mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
-from ..silk import Silk
+from silk import Silk
 from .compiled import CompiledObjectDict
-from ..mixed.get_form import get_form
+from silk.mixed.get_form import get_form
 
 default_pin = {
   "io": "parameter",
@@ -75,7 +76,8 @@ class Macro(Base):
 
     @property
     def self(self):
-        raise NotImplementedError
+        attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
+        return SelfWrapper(self, attributelist)
 
     @property
     def ctx(self):
@@ -203,7 +205,7 @@ class Macro(Base):
             else:
                 mctx = self._get_mctx(force=True)
                 param = getattr(mctx, node["PARAM"])
-                removed = parent._remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,))
                 if removed:
                     translate = True
                 setattr(param.handle_no_inference, attr, value)
@@ -347,7 +349,7 @@ class Macro(Base):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         node = self._get_node()
         dirs = None
@@ -430,9 +432,7 @@ class Macro(Base):
         elif attr == "handle":
             return paramcell.handle_no_inference
         elif attr == "schema":
-            #schema = paramcell.get_schema() # WRONG
-            param_ctx = paramcell._data._context()
-            schema = param_ctx.example.handle.schema
+            schema = paramcell.handle.schema
             return SchemaWrapper(self, schema, "SCHEMA")
         elif attr == "example":
             return self.example
@@ -598,5 +598,12 @@ class Macro(Base):
         std = ["code", "pins", node["PARAM"], "exception", "status"]
         pins = list(node["pins"].keys())
         return sorted(d + pins + std)
+
+    def __str__(self):
+        return "Seamless Macro: " + self.path
+
+    def __repr__(self):
+        return str(self)
+
 
 from .synth_context import SynthContext

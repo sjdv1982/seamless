@@ -5,6 +5,7 @@ from copy import deepcopy
 from .Cell import Cell
 from .Module import Module
 from .Resource import Resource
+from .SelfWrapper import SelfWrapper
 from .proxy import Proxy, CodeProxy, HeaderProxy
 from .pin import PinsWrapper
 from .Base import Base
@@ -12,9 +13,9 @@ from ..mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
-from ..silk import Silk
+from silk import Silk
 from .compiled import CompiledObjectDict
-from ..mixed.get_form import get_form
+from silk.mixed.get_form import get_form
 
 default_pin = {
   "celltype": "mixed",
@@ -49,43 +50,10 @@ def new_transformer(ctx, path, code, pins, hash_pattern):
     ctx._graph[0][path] = transformer
     return transformer
 
-
-class TransformerWrapper:
-    #TODO: setup access to non-pins
-    def __init__(self, parent):
-        self.parent = parent
-
 class Transformer(Base):
     """Transforms input values to a result value
 
-    One of the inputs is the code pin, containing source code
-    in any programming language.
-
-    This code is run inside a namespace populated by the values
-    of all other inputs. Those names and types of those
-    values are described as input pins.
-
-    A transformer `ctx.tf` can be constructed from a Python function.
-    In that case, the function's source code is extracted and
-    set as the code pin's value. The function signature is
-    inspected and each parameter becomes an input pin.
-
-    Note that the transformer does not have access to any variable
-    from outside the code pin's source code.
-
-    Python source code can be an expression, a function, or
-    simply a block of code. For an expression or a function,
-    the return value is the result value. A code block must define
-    a variable named "result".
-
-    An input pin `foo` can be set to a value or a cell, simply with
-    `ctx.tf.foo = ...` . If the pin does not exist, it is created.
-    The type of a pin is "mixed" by default.
-
-    Pins can be changed using Transformer.pins, e.g.
-    `ctx.tf.pins.foo.celltype = "int"`
-
-    To delete a pin `foo`, do `del ctx.tf.pins.foo`
+    See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for documentation
     """
     _temp_code = None
     _temp_pins = None
@@ -115,10 +83,6 @@ class Transformer(Base):
             node = None
         if node is None:
             htf = new_transformer(parent, path, code, pins, hash_pattern)
-
-    @property
-    def self(self):
-        return TransformerWrapper(self)
 
     @property
     def RESULT(self):
@@ -269,9 +233,6 @@ class Transformer(Base):
                 if "docker_image" not in htf["pins"]:
                     htf["pins"]["docker_image"] = default_pin.copy()
                     im = True
-                if "docker_options" not in htf["pins"]:
-                    htf["pins"]["docker_options"] = default_pin.copy()
-                    self.docker_options = {}
                 """
                 if im:
                     self.docker_image = ""
@@ -279,7 +240,6 @@ class Transformer(Base):
 
         else:
             if old_language == "docker":
-                htf["pins"].pop("docker_options")
                 htf["pins"].pop("docker_image")
 
         if not has_translated:
@@ -425,7 +385,7 @@ class Transformer(Base):
                 if callable(value):
                     value, _, _ = parse_function_code(value)
                 check_libinstance_subcontext_binding(parent, self._path)
-                removed = parent._remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,))
                 if removed:
                     htf = self._get_htf()
                     htf["UNTRANSLATED"] = True
@@ -447,11 +407,12 @@ class Transformer(Base):
             else:
                 tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
-                removed = parent._remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,))
                 if removed:
                     translate = True
                 inp.handle_no_inference.set(value)
         elif attr == htf["RESULT"]:
+            tf = self._get_tf(force=True)
             result = getattr(tf, htf["RESULT"])
             # Example-based programming to set the schema
             # TODO: suppress inchannel warning
@@ -475,7 +436,7 @@ class Transformer(Base):
             else:
                 tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
-                removed = parent._remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,))
                 if removed:
                     translate = True
                 setattr(inp.handle_no_inference, attr, value)
@@ -687,10 +648,15 @@ class Transformer(Base):
             return "Status: pending"
         return "Status: OK"
 
+    @property
+    def self(self):
+        attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
+        return SelfWrapper(self, attributelist)
+
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         return self._getattr(attr)
 
@@ -836,9 +802,7 @@ class Transformer(Base):
         elif attr == "handle":
             return inputcell.handle_no_inference
         elif attr == "schema":
-            #schema = inputcell.get_schema() # WRONG
-            inp_ctx = inputcell._data._context()
-            schema = inp_ctx.example.handle.schema
+            schema = inputcell.handle.schema
             return SchemaWrapper(self, schema, "SCHEMA")
         elif attr == "example":
             return self.example
@@ -904,9 +868,7 @@ class Transformer(Base):
         elif attr == "checksum":
             return resultcell.checksum
         elif attr == "schema":
-            ###schema = resultcell.get_schema() #wrong!
-            result_ctx = resultcell._data._context()
-            schema = result_ctx.example.handle.schema
+            schema = self._result_example().schema
             return SchemaWrapper(self, schema, "RESULTSCHEMA")
         elif attr == "example":
             return self._result_example()
@@ -1124,8 +1086,8 @@ class Transformer(Base):
 
 
     def __delattr__(self, attr):
-        htf = self._get_htf()
-        raise NotImplementedError #remove pin
+        return delattr(self.pins, attr)
+        # TODO: self.self.pins...
 
     def __dir__(self):
         htf = self._get_htf()
@@ -1137,8 +1099,10 @@ class Transformer(Base):
         return sorted(d + pins + std)
 
     def __str__(self):
-        path = ".".join(self._path) if self._path is not None else None
-        return "Seamless Transformer: %s" % path
+        return "Seamless Transformer: " + self.path
+
+    def __repr__(self):
+        return str(self)
 
 from .synth_context import SynthContext
 from .assign import check_libinstance_subcontext_binding

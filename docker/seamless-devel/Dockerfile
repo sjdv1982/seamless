@@ -6,8 +6,8 @@ RUN apt update && apt install -y gfortran curl gdb iputils-ping redis-tools apt-
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository \
    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
    $(lsb_release -cs) \
-   stable" && sudo apt update && sudo apt install docker-ce-cli
-RUN pip install -r requirements.txt && jupyter-nbextension enable nglview --py --sys-prefix
+   stable" && sudo apt update && sudo apt install -y docker-ce-cli
+RUN pip install -r requirements.txt && conda install -c rpbs silk && jupyter-nbextension enable nglview --py --sys-prefix
 RUN mkdir /home/jovyan/software && \
     ln -s /seamless/seamless /home/jovyan/software/seamless && \
     ln -s /seamless/tests /home/jovyan/seamless-tests && \

@@ -1,9 +1,0 @@
-Do a bit of code cleanup
-
-Have a look at all Python files. Move in-code TODOs etc. to documentation
-
-Start to reorganize some code, rename some APIs, etc.
-
-Perhaps a bit more formal unit tests
-
-Have a look at what it would take to go to PEP8 compliance.

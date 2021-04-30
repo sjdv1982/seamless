@@ -1,7 +1,0 @@
-Bucket list of things that make Seamless easier to work with
-as a Mobyle replacement.
-Details are/will be documented elsewhere in various plans.
-
-- Automatic generation of web form GUIs
-- Logging error messages, cache misses, network traffic, progress bars (Cloudless)
-- Job/cache control (canceling, job database) (Cloudless)

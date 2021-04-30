@@ -1,9 +1,11 @@
 # In general, run with:
-#   seamless-devel python3 -u TEST.py > test-outputs/TEST.out 2>&1
+#   python3 -u TEST.py > test-outputs/TEST.out 2>&1
 #   Best also to test using "ipython3 TEST.py", since re-translation may work differently
+#   Before each release, the test set must be run under seamless-devel AND under the Conda environment!
 bytes-conversion.py
 mime.py
 test-html.py
+auth-checksum.py
 schema.py
 subcell.py
 subsubcell.py

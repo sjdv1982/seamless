@@ -65,6 +65,8 @@ import aiohttp
 from websockets.exceptions import ConnectionClosed
 
 DEBUG = False
+import logging
+logger = logging.getLogger("seamless")
 
 def get_subkey(buffer, subkey):
     value = json.loads(buffer)
@@ -434,9 +436,8 @@ class ShareServer(object):
             except ValueError:
                 pass
         except Exception as exc:
-            if DEBUG:
-                print("DEBUG shareserver._send_sharelist")
-                traceback.print_exc()
+            logger.debug("shareserver._send_sharelist")
+            logger.debug(traceback.format_exc())
 
     async def _send_checksum(self, namespace, websocket, key, checksum, marker, prior=None):
         if prior is not None:
@@ -452,9 +453,26 @@ class ShareServer(object):
             except ValueError:
                 pass
         except Exception as exc:
-            if DEBUG:
-                print("DEBUG shareserver._send_checksum")
-                traceback.print_exc()
+            logger.debug("shareserver._send_checksum")
+            logger.debug(traceback.format_exc())
+
+
+    async def _serve_update_listen(self, websocket, path):
+        #keep connection open forever, ignore all messages
+        try:
+            async for message in websocket:
+                pass
+        except ConnectionClosed:
+            pass
+
+    async def _serve_update_ping(self, websocket, path):
+        #keep connection open forever, periodically send a ping
+        try:
+            while 1:
+                await asyncio.sleep(10)
+                await websocket.ping()
+        except ConnectionClosed:
+            pass
 
     async def _serve_update(self, websocket, path):
         if path:
@@ -474,10 +492,14 @@ class ShareServer(object):
         except ConnectionClosed:
             return
         try:
-            async for message in websocket: #keep connection open forever, ignore all messages
-                pass
-        except ConnectionClosed:
-            pass
+            task_listen = asyncio.ensure_future(self._serve_update_listen(websocket, path))
+            task_ping = asyncio.ensure_future(self._serve_update_ping(websocket, path))
+            done, pending = await asyncio.wait(
+                [task_listen, task_ping],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            for task in pending:
+                task.cancel()
         finally:
             try:
                 namespace.update_connections.remove(websocket)
@@ -520,8 +542,8 @@ class ShareServer(object):
                 )
             ns, key = tailsplit(tail)
         except:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug("shareserver._handle_get")
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=400,
                 text="Invalid request",
@@ -565,8 +587,8 @@ class ShareServer(object):
                     if not ok:
                         raise KeyError(key) from None
             except KeyError:
-                if DEBUG:
-                    traceback.print_exc()
+                logger.debug("shareserver._handle_get")
+                logger.debug(traceback.format_exc())
                 return web.Response(
                     status=404,
                     body=json.dumps({'not found': 404}),
@@ -577,8 +599,9 @@ class ShareServer(object):
 
         if mode not in ("buffer", "checksum", "value", "marker"):
             err = 'if specified, mode must be "buffer", "checksum", "value", or "marker"'
-            if DEBUG:
-                print("shareserver _handle.get", err, ns, key, mode)
+            msg = "shareserver._handle_get", err, ns, key, mode
+            logger.debug(" ".join([str(m) for m in msg]))
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=400,
                 text=err,
@@ -599,8 +622,7 @@ class ShareServer(object):
             )
         except CommunionError as exc:
             txt = exc.args[0]
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             if txt.startswith("CacheMissError"):
                 err = "Cache miss"
             elif txt.startswith("CanceledError"):
@@ -610,19 +632,19 @@ class ShareServer(object):
                 text=err,
             )
         except CacheMissError:
-            if DEBUG:
-                checksum = share._checksum
-                if checksum is not None:
-                    checksum = checksum.hex()
-                print("shareserver GET request, cache miss:", checksum)
+            checksum = share._checksum
+            if checksum is not None:
+                checksum = checksum.hex()
+            logger.debug("shareserver GET request, cache miss: {}".format(checksum))
+            logger.debug(traceback.format_exc())
             err = "Cache miss"
             return web.Response(
                 status=404,
                 text=err,
             )
         except CancelledError:
-            if DEBUG:
-                print("Share was destroyed", ns, key)
+            msg = "Share was destroyed", ns, key
+            logger.debug(" ".join([str(m) for m in msg]))
             return web.Response(
                 status=404,
                 text="Share was destroyed"
@@ -635,8 +657,7 @@ class ShareServer(object):
                 text=exc.reason,
             )
         except:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=500,
                 text="Unknown error"
@@ -657,8 +678,7 @@ class ShareServer(object):
                 text=exc.reason,
             )
         except:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=400,
                 text="Invalid request",
@@ -666,8 +686,7 @@ class ShareServer(object):
 
         if "buffer" in data:
             if "checksum" in data:
-                if DEBUG:
-                    print("shareserver PUT: contains buffer AND checksum")
+                logger.debug("shareserver PUT: contains buffer AND checksum")
                 return web.Response(
                     status=400,
                     text="contains buffer AND checksum",
@@ -700,8 +719,7 @@ class ShareServer(object):
             try:
                 namespace = self.namespaces[ns]
             except KeyError:
-                if DEBUG:
-                    traceback.print_exc()
+                logger.debug(traceback.format_exc())
                 return web.Response(
                     status=404,
                     body=json.dumps({'not found': 404}),
@@ -711,8 +729,7 @@ class ShareServer(object):
         try:
             share = namespace.shares[key]
         except KeyError:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=404,
                 body=json.dumps({'not found': 404}),
@@ -720,6 +737,13 @@ class ShareServer(object):
             )
 
         if share.readonly:
+            sharecell = None
+            if share.bound is not None:
+                sharecell = share.bound.cellname
+            if sharecell is not None:
+                msg = """Seamless just received a PUT request for {c}, but {c} is read-only.
+Share {c} with readonly=False to allow HTTP PUT requests"""
+                logger.warning(msg.format(c="cell " + sharecell))
             return web.Response(
                 status=405,
                 text="Refused, share is read-only",
@@ -733,15 +757,14 @@ class ShareServer(object):
                 text=newmarker,
             )
         except CancelledError:
-            if DEBUG:
-                print("Share was destroyed", ns, key)
+            msg = "Share was destroyed", ns, key
+            logger.debug(" ".join([str(m) for m in msg]))
             return web.Response(
                 status=404,
                 text="Share was destroyed"
             )
         except:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=500,
                 text="Unknown error"
@@ -758,8 +781,7 @@ class ShareServer(object):
             if timeout is not None:
                 timeout = float(timeout)
         except:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=400,
                 text="Invalid request",
@@ -787,8 +809,7 @@ class ShareServer(object):
                 content_type='application/json'
             )
         except:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=500,
                 text="Unknown error"

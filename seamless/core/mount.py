@@ -159,10 +159,13 @@ class MountItem:
                     if self._destroyed:
                         return
                     file_buffer0 = self._read()
-                    file_buffer = adjust_buffer(file_buffer0, cell._celltype)
+                    if file_buffer0 is not None:
+                        file_buffer = adjust_buffer(file_buffer0, cell._celltype)
+                    else:
+                        file_buffer = None
                     update_file = True
                     file_checksum = None
-                    if not cell_empty:
+                    if not cell_empty and file_buffer is not None:
                         file_checksum = calculate_checksum(file_buffer)
                         if file_checksum == cell_checksum:
                             update_file = False
@@ -190,12 +193,14 @@ class MountItem:
                 else:
                     self.last_checksum = cell_checksum
             elif exists:
+                update_file = False
                 with self.lock:
                     if self._destroyed:
                         return
                     file_buffer0 = self._read()
-                    file_buffer = adjust_buffer(file_buffer0, cell._celltype)
-                    update_file = True
+                    if file_buffer0 is not None:
+                        file_buffer = adjust_buffer(file_buffer0, cell._celltype)
+                        update_file = True
                     file_checksum = None
                     self._after_read(file_checksum)
                 if update_file and "r" in self.mode:
@@ -247,7 +252,10 @@ class MountItem:
                         if entry.is_file():
                             filemode = "r" # TODO: binary file for mixed cells => try to decode
                             with open(entry.path, filemode) as f:
-                                data = f.read().strip("\n")
+                                try:
+                                    data = f.read().strip("\n")
+                                except:
+                                    log("Reading error in '{}'".format(entry.path))
                             subresult[name] = data
                         elif entry.is_dir():
                             subsubresult = {}
@@ -272,7 +280,11 @@ class MountItem:
         encoding = self.kwargs.get("encoding")
         filemode = "rb" if binary else "r"
         with open(self.path, filemode, encoding=encoding) as f:
-            result = f.read()
+            try:
+                result = f.read()
+            except:
+                log("Reading error in '{}'".format(self.path))
+                return None
             if not binary:
                 result = result.encode()
         return result
@@ -401,8 +413,9 @@ class MountItem:
             file_checksum = None
             if self.last_mtime is None or mtime > self.last_mtime:
                 file_buffer0 = self._read()
-                file_buffer = adjust_buffer(file_buffer0, cell._celltype)
-                file_checksum = calculate_checksum(file_buffer)
+                if file_buffer0 is not None:
+                    file_buffer = adjust_buffer(file_buffer0, cell._celltype)
+                    file_checksum = calculate_checksum(file_buffer)
                 self._after_read(file_checksum, mtime=mtime)
         cell_checksum = self.cell_checksum
         if file_checksum is not None and file_checksum != cell_checksum:

@@ -10,12 +10,15 @@ Welcome to Seamless's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   introduction   
+   introduction
+
    context
    cell
+   transformer
    new-project
+
    reference
-   
+
 Indices and tables
 ==================
 

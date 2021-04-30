@@ -1,0 +1,28 @@
+Bootstrap: docker
+From: continuumio/miniconda3
+
+%help
+Seamless is a framework to set up protocols (workflows) and computations that respond to changes in cells.
+Cells define the input data as well as the source code of the computations, and all cells can be edited interactively.
+
+%post
+    export PATH=/opt/conda/bin:$PATH
+    git clone --depth 1 https://github.com/sjdv1982/seamless.git --branch experimental seamless-tempdir
+    cd seamless-tempdir
+    cp -r scripts /seamless-scripts
+    cp -r tools /seamless-tools
+    apt update && apt install -y gfortran gdb
+    conda install 'python==3.7.3' pip
+    pip install -r requirements.txt
+    pip install -r requirements-extra.txt
+    cd ..
+    rm -rf seamless-tempdir
+    conda install -c rpbs silk seamless-framework
+
+%labels
+    Maintainer Sjoerd de Vries <sjoerd.de-vries@inserm.fr>
+    Version 0.6
+
+%environment
+    PATH=/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    export PATH

@@ -1,8 +1,0 @@
-0.3:
-
-- Docker and bash transformers no longer obtain their result by reading STDOUT.
-Instead, they must create a file called RESULT.
-If they have a non-zero exit code, or if RESULT does not exist, this causes an exception where stdout and stderr are included.
-
-- Compiled transformers no longer return their values for basic types, nor is their return value void for complex types.
-Now, a non-zero return value indicates an error, causing stdout and stderr to be included in the exception.

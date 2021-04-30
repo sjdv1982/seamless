@@ -1,8 +1,0 @@
-injecting Python modules synthesized from source is still a bit problematic
-- If you do "from .my_module import blah" and blah is not found within my_module,
- a ModuleNotFoundError is returned, instead of an ImportError.
--  "from .my_module import blah" does not work at all under system Python3.7.6,
-   but it does work for the current Docker image (Anaconda Python 3.7.3).
-   my_module.blah always works.
-Perhaps bump the Python version all the way up to 3.9: would require some solid testing,
-especially in Jupyter if Jupyter is bumped up as well.

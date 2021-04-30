@@ -20,9 +20,12 @@ print(ctx.tf.exception)
 ctx.code = """
 python3 -c 'import numpy as np; np.save(\"test\",np.arange(12)*3)'
 echo 'hello' > test.txt
-tar hczf RESULT test.npy test.txt
+mkdir RESULT
+mv test.npy RESULT
+mv test.txt RESULT
 """
 ctx.tf.docker_image = "rpbs/seamless"
+del ctx.result.mount
 ctx.result.celltype = "structured"
 ctx.result_npy = ctx.result["test.npy"]
 ctx.result_txt = ctx.result["test.txt"]

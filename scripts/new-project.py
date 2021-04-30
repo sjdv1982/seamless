@@ -105,6 +105,16 @@ async def load():
     import json
 
     global ctx, webctx, save
+
+    try:
+        ctx
+    except NameError:
+        pass
+    else:
+        if ctx is not None:
+            print('"ctx" already exists. To reload, do "ctx = None" or "del ctx" before load()')
+            return
+
     graph = json.load(open("graph/" + PROJNAME + ".seamless"))
     for f in (
         "web/index.html", "web/index.js",

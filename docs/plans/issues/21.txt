@@ -1,4 +1,0 @@
-Now that database caching takes into account buffer authority, it is time to diffuse this further to the code,
- in particular in buffer caching and zip file calculation.
-Notes have been added to the code in some of those places
-This also relates to the issue that file loading needs to be smarter

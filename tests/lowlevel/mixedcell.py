@@ -6,7 +6,7 @@ ctx = context(toplevel=True)
 x = np.arange(10)
 y = np.log(x+1)
 cell1 = cell("mixed").set({"x": x, "y": y, "z": [1,2,"test",[3,4]]})
-cell1.mount("/tmp/mixedcell.mixed")
+cell1.mount("/tmp/mixedcellsilk.mixed")
 ctx.cell1 = cell1
 ctx.compute()
 print(ctx.cell1.value)
@@ -39,7 +39,7 @@ ctx.cell2.set(10)
 ctx.compute()
 print(ctx.result.value, ctx.status)
 
-with open("/tmp/mixedcell.mixed", "rb") as f:
+with open("/tmp/mixedcellsilk.mixed", "rb") as f:
     content = f.read()
 from seamless import get_hash
 print(get_hash(content).hex())

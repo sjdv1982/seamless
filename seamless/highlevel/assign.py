@@ -19,8 +19,8 @@ def check_libinstance_subcontext_binding(ctx, path):
                             return
 
 from . import ConstantTypes
-from ..mixed import MixedBase
-from ..silk import Silk
+from silk.mixed import MixedBase
+from silk import Silk
 from .Cell import Cell, get_new_cell
 from .Module import Module, get_new_module
 from .Resource import Resource
@@ -72,7 +72,10 @@ def assign_constant(ctx, path, value):
     if path in ctx._children:
         old = ctx._children[path]
         if isinstance(old, Cell):
-            removed = ctx._remove_connections(path, keep_links=True, only_target=True)
+            removed = ctx.remove_connections(
+                path,
+                endpoint="target"
+            )
             if removed:
                 ctx._translate()
                 hcell = old._get_hcell()
@@ -84,7 +87,10 @@ def assign_constant(ctx, path, value):
                     old._set(value)
                     return False
         elif isinstance(old, Module):
-            removed = ctx._remove_connections(path, keep_links=True, only_target=True)
+            removed = ctx.remove_connections(
+                path,
+                endpoint="all"
+            )
             if removed:
                 ctx._translate()
                 hnode = old._get_hnode()
@@ -377,8 +383,16 @@ def assign_to_subcell(cell, path, value):
         ctx._translate()
     elif isinstance(value, ConstantTypes):
         check_libinstance_subcontext_binding(ctx, path)
-        removed1 = ctx._remove_connections(cell._path, exact=True, only_target=True)
-        removed2 = ctx._remove_connections(cell._path + path, head=True)
+        removed1 = ctx.remove_connections(
+            cell._path + path,
+            endpoint="link",
+            match="all"
+        )
+        removed2 = ctx.remove_connections(
+            cell._path + path,
+            endpoint="target",
+            match="all"
+        )
         removed = (removed1 or removed2)
         if removed:
             ctx._translate()

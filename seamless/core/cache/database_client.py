@@ -194,5 +194,5 @@ class DatabaseCache(DatabaseBase):
 database_sink = DatabaseSink()
 database_cache = DatabaseCache()
 
-from ...mixed.io.serialization import serialize
+from silk.mixed.io.serialization import serialize
 from ...get_hash import get_hash

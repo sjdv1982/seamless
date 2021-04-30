@@ -1,5 +1,6 @@
 # In general, run with:
-#   seamless-devel python3 -u TEST.py > test-outputs/TEST.out 2>&1
+#   python3 -u TEST.py > test-outputs/TEST.out 2>&1
+# Before each release, the test set must be run under seamless-devel AND under the Conda environment!
 bytecell.py
 bytecell2.py
 bytecell3.py
@@ -56,8 +57,8 @@ macro3.py
 checksum-cell.py
 structured_cell/simple-deepcell.py
 structured_cell/channels-deepcell.py
-#structured_cell/schema.py: as of Seamless 0.5.2, this test does not work and is DISABLED.
-#structured_cell/schema-deepcell.py: as of Seamless 0.5.2, this test does not work and is DISABLED.
+structured_cell/schema.py
+structured_cell/schema-deepcell.py
 structured_cell/channels-morph.py
 collatz.py: the output is approximate, depends on exact timings
 structured_cell/preliminary.py: the output is approximate, depends on exact timings

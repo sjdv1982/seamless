@@ -26,7 +26,7 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels)
     result_name = node["RESULT"]
     input_name = node["INPUT"]
     result_cell_name = result_name + "_CELL"
-    forbidden = [result_name, result_cell_name, "docker_command", "docker_image", "docker_options", "pins_"]
+    forbidden = [result_name, result_cell_name, "docker_command", "docker_image", "pins_"]
     pin_intermediate = {}
     for pin in node["pins"].keys():
         pin_intermediate[pin] = input_name + "_PIN_" + pin
@@ -37,11 +37,9 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels)
     pins = node["pins"].copy()
     pins["docker_command"] = {"celltype": "str"}
     pins["docker_image"] = {"celltype": "str"}
-    pins["docker_options"] = {"celltype": "plain"}
     pins["pins_"] = {"celltype": "plain"}
     pins0 = list(pins.keys())
     pins0.remove("docker_image")
-    pins0.remove("docker_options")
     ctx.pins = cell("plain").set(pins0)
 
     interchannels = [as_tuple(pin) for pin in pins]

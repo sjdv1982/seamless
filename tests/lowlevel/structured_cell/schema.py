@@ -2,7 +2,7 @@
 # (and should give almost the same output)
 import sys
 from pprint import pprint
-from seamless.silk import Silk, ValidationError
+from silk import Silk, ValidationError
 from seamless.core import context, cell, StructuredCell
 
 ctx = None
@@ -13,6 +13,7 @@ def reset_backend(share_schemas=True, with_hash_pattern=True):
     global ctx, s, s2, s3
     if ctx is not None:
         ctx.compute() # makes no difference, but could be easier debugging
+        ctx.destroy()
     ctx = context(toplevel=True)
     ctx.data = cell("mixed", hash_pattern=hp)
     ctx.buffer = cell("mixed", hash_pattern=hp)
@@ -123,7 +124,6 @@ s.z.r = 25
 print(sz.q.data, sz.r.data)
 s.z.qr = property(lambda self: self.q * self.r)
 print(s.z.qr)
-ctx.compute()
 
 def validate_z(self):
     print("VALIDATE", self.q.data, self.r.data)
@@ -139,12 +139,8 @@ pprint(s.schema.value)
 
 s.lis = [1,2,3]
 s.lis.append(10)
-
-ctx.compute()
-
 print(s.lis.data)
 s.lis += [5]
-ctx.compute()
 print(s.lis*2)
 
 """
@@ -180,20 +176,19 @@ print(s.z)
 s.z = 10
 print(s.data)
 print(s.z)
-ctx.compute()
 
 reset_backend(share_schemas=False)
 s2.x = 10
 import numpy as np
 arr = np.array([1.0,2.0,3.0])
 s2.arr = arr
+
 # Need .self.data or .unsilk for Numpy arrays, because Numpy arrays have a .data method
 print(s2.arr.self.data, arr)
 print(s2.arr.unsilk, arr)
 print(type(s2.arr.self.data), type(arr))
 print(s2.arr[2].self.data, arr[2])
 print(type(s2.arr[2].self.data), type(arr[2]))
-ctx.compute()
 
 #s2.arr.schema["type"] = "array"  #  inferred
 print(s2.arr.schema["type"])
@@ -209,7 +204,6 @@ s2.validate()
 print(s3.data)
 print(s2.data)
 
-ctx.compute()
 print("START")
 s2.arr[0] = 5
 print(s2.arr.unsilk)
@@ -223,7 +217,6 @@ def func(self):
 s.add_validator(func)
 s.y = 0.0
 s.validate()
-ctx.compute()
 try:
     s.y = 1.0   #  would fail
     ctx.compute() # to ensure that ctx.sc.exception is set
@@ -233,25 +226,23 @@ except ValidationError:
     print(ctx.sc.exception)
     s.y = 0
 #pprint(s.schema.value)
-ctx.compute()
 
 #print("set")
 s.x = 0.0
 s.y = 0.0
 s.z = 1.0
-ctx.compute()
 print(s.data)
 
 s.x = 1.0
 s.y = 0.0
 s.z = 0.0
-ctx.compute()
 print(s.data)
 
 import numpy as np
 reset_backend(share_schemas=False)
 a = s
 a.coor = [0.0,0.0,1.0]
+ctx.compute()
 pprint(a.coor.schema.value)
 print(a.coor.data)
 print("START")
@@ -262,20 +253,22 @@ def func(self):
     arr = np.array(self.data)
     assert abs(np.sum(arr**2) - 1) < 0.01
 a.coor.add_validator(func)
-coor_schema = a.coor.schema
+coor_schema = a.coor.schema.value
 
 reset_backend(share_schemas=False, with_hash_pattern=False)
 c = s2
-c.set( [0.0, 0.0, 0.0] )
 c.schema.clear()
+c.set( [0.0, 0.0, 0.0] )
 c.schema.update(coor_schema)
 
 def set_x(self, value):
     self[0] = value
 c.x = property(lambda self: self[0], set_x)
+
 def set_y(self, value):
     self[1] = value
 c.y = property(lambda self: self[1], set_y)
+
 def set_z(self, value):
     self[2] = value
 c.z = property(lambda self: self[2], set_z)
@@ -311,6 +304,7 @@ print(c.data, c.xyz)
 pprint(c.schema.value)
 ctx.compute()
 
+ctx.destroy()
 ctx = context(toplevel=True)
 ctx.data = cell("mixed")
 ctx.buffer = cell("mixed")

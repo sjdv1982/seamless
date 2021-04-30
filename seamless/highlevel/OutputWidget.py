@@ -107,8 +107,8 @@ class OutputWidget:
             self._update(v)
 
     def _update(self, value):
-        from ..silk import Silk
-        from ..mixed.get_form import get_form
+        from silk import Silk
+        from silk.mixed.get_form import get_form
         from IPython.display import clear_output
         outdated = False
         tcelltype, tmimetype = self.traitlet.celltype, self.traitlet.mimetype

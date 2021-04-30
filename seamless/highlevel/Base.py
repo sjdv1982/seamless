@@ -24,5 +24,7 @@ class Base:
             return parent._get_parent()
 
     @property
-    def self(self):
-        return self ### TODO: proper implementation
+    def path(self):
+        if self._path is None:
+            return "<None>"
+        return "." + ".".join(self._path)

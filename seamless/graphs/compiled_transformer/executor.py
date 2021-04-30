@@ -1,5 +1,5 @@
 from seamless.core.transformation import SeamlessStreamTransformationError
-from seamless.silk import Silk
+from silk import Silk
 import numpy as np
 import operator, functools
 import sys

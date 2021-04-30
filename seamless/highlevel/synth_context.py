@@ -11,7 +11,7 @@ class SynthContext:
     @property
     def status(self):
         result = {}
-        for childname in self.children():
+        for childname in self.get_children():
             child = getattr(self, childname)
             status = child.status
             if status == "Status: OK":
@@ -22,9 +22,11 @@ class SynthContext:
         return "Status: OK"
 
     def __dir__(self):
-        return self.children()
+        return self.get_children()
 
-    def children(self):
+    def get_children(self, type=None):
+        if type is not None:
+            raise ValueError("SynthContext only supports type=None")
         path = self._path
         lp = len(path)
         parent = self._parent()
@@ -36,10 +38,14 @@ class SynthContext:
                 dirs.append(npath[lp])
         return dirs
 
+    @property
+    def children(self):
+        return self.get_children(type=None)
+
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         return self._get_child(attr)
 

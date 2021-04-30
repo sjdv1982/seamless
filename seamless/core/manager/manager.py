@@ -206,6 +206,7 @@ class Manager:
             (checksum is None), status_reason=reason,
             trigger_bilinks=trigger_bilinks
         )
+        updated = False
         if not from_structured_cell: # also for initial...
             if cell._structured_cell is not None and cell._structured_cell.auth is cell:
                 scell = cell._structured_cell
@@ -216,14 +217,16 @@ class Manager:
             else:
                 if checksum is not None:
                     unvoid_cell(cell, self.livegraph)
-                if cell._structured_cell is None or sc_schema:
-                    CellUpdateTask(self, cell).launch()
+                    if cell._structured_cell is None or sc_schema:
+                        CellUpdateTask(self, cell).launch()
+                        updated = True
         if sc_schema:
-            if from_structured_cell:
+            if from_structured_cell and not updated:
                 CellUpdateTask(self, cell).launch()
+                updated = True
             def update_schema():
                 value = self.resolve(checksum, "plain")
-                self.update_schemacell(cell, value, None)
+                self.update_schemacell(cell, value)
             self.taskmanager.add_synctask(update_schema, (), {}, False)
 
     def _set_cell_checksum(self,
@@ -397,12 +400,10 @@ class Manager:
         task = SetCellValueTask(self, cell, value, origin_reactor=origin_reactor)
         task.launch()
 
-    def update_schemacell(self, schemacell, value, structured_cell):
+    def update_schemacell(self, schemacell, value):
         livegraph = self.livegraph
         structured_cells = livegraph.schemacells[schemacell]
         for sc in structured_cells:
-            if sc is structured_cell:
-                continue
             sc._schema_value = deepcopy(value)
             self.structured_cell_trigger(sc, update_schema=True)
 

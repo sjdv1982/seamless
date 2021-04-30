@@ -37,41 +37,8 @@ def unsilk(value):
     else:
         return value
 
-def _async_raise(tid, exctype):
-    """raises the exception, performs cleanup if needed"""
-    if not inspect.isclass(exctype):
-        exctype = type(exctype)
-    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), ctypes.py_object(exctype))
-    if res == 0:
-        raise ValueError("invalid thread id")
-    elif res != 1:
-        # """if it returns a number greater than one, you're in trouble,
-        # and you should call it again with exc=NULL to revert the effect"""
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
-        raise SystemError("PyThreadState_SetAsyncExc failed")
+from multiprocessing import JoinableQueue as Queue
 
-class KillableThread(threading.Thread):
-    def kill(self, exctype=SystemError):
-        if not self.isAlive():
-            return
-        tid = self.ident
-        _async_raise(tid, exctype)
-    terminate = kill
-
-USE_PROCESSES = os.environ.get("SEAMLESS_USE_PROCESSES")
-if USE_PROCESSES is None:
-    USE_PROCESSES = True
-    if multiprocessing.get_start_method() != "fork":
-        USE_PROCESSES = False
-else:
-    if USE_PROCESSES == "0" or USE_PROCESSES.upper() == "FALSE":
-        USE_PROCESSES = False
-if USE_PROCESSES:
-    from multiprocessing import JoinableQueue as Queue
-    Executor = Process
-else:
-    from queue import Queue
-    Executor = KillableThread
 
 def return_preliminary(result_queue, celltype, value):
     #print("return_preliminary", value)
@@ -237,8 +204,7 @@ def execute(name, code,
         ok = True
     except SystemExit:
         _exiting = True
-        if USE_PROCESSES:
-            signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
         raise SystemExit() from None
     except Exception:
         traceback.print_exc()
@@ -247,8 +213,7 @@ def execute(name, code,
             sys.stdout, sys.stderr = old_stdio
         if not _exiting:
             try:
-                if USE_PROCESSES:
-                    result_queue.close()
+                result_queue.close()
                 if ok:
                     result_queue.join()
             except Exception:
@@ -291,8 +256,7 @@ def execute_debug(name, code,
         ok = True
     except SystemExit:
         _exiting = True
-        if USE_PROCESSES:
-            signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
         raise SystemExit() from None
     except Exception:
         traceback.print_exc()
@@ -301,11 +265,10 @@ def execute_debug(name, code,
             sys.stdout, sys.stderr = old_stdio
         if not _exiting:
             try:
-                if USE_PROCESSES:
-                    result_queue.close()
+                result_queue.close()
                 if ok:
                     result_queue.join()
             except Exception:
                 traceback.print_exc()
 
-from ..silk import Silk
+from silk import Silk

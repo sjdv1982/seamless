@@ -23,6 +23,9 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="new-project.html" title="Guide for creating a new Seamless project"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.5 documentation</a> &#187;</li> 
@@ -34,8 +37,687 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="reference">
-<h1>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-seamless">
+<span id="reference"></span><h1>Reference<a class="headerlink" href="#module-seamless" title="Permalink to this headline">¶</a></h1>
+<p>Seamless: framework for interoperable interactive computing</p>
+<p>Copyright 2016-2020, Sjoerd de Vries</p>
+<span class="target" id="module-seamless.highlevel"></span><dl class="py function">
+<dt id="seamless.highlevel.load_graph">
+<code class="sig-prename descclassname">seamless.highlevel.</code><code class="sig-name descname">load_graph</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">graph</span></em>, <em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">zip</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cache_ctx</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">static</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">mounts</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">shares</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel.html#load_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.load_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a Context from graph.</p>
+<p>“graph” can be a file name or a JSON dict
+Normally, it has been generated with Context.save_graph / Context.get_graph</p>
+<p>“zip” can be a file name, zip-compressed bytes or a Python ZipFile object.
+Normally, it has been generated with Context.save_zip / Context.get_zip</p>
+<p>“cache_ctx”: re-use a previous context for caching (e.g. checksum-to-buffer caching)</p>
+<p>“static”: create a StaticContext instead</p>
+<p>“mounts”: mount cells and pins to the file system, as specified in the graph.</p>
+<p>“shares”: share cells over HTTP, as specified in the graph</p>
+</dd></dl>
+
+<div class="section" id="context-class">
+<h2>Context class<a class="headerlink" href="#context-class" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="seamless.highlevel.Context">
+<em class="property">class </em><code class="sig-prename descclassname">seamless.highlevel.</code><code class="sig-name descname">Context</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">manager</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context" title="Permalink to this definition">¶</a></dt>
+<dd><p>Context class. Organizes cells and workers hierarchically.</p>
+<p>See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/context.html">http://sjdv1982.github.io/seamless/sphinx/html/context.html</a> for documentation</p>
+<dl class="py method">
+<dt id="seamless.highlevel.Context.add_zip">
+<code class="sig-name descname">add_zip</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">zip</span></em>, <em class="sig-param"><span class="n">incref</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.add_zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.add_zip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds entries from “zip” to the checksum-to-buffer cache</p>
+<p>“zip” can be a file name, zip-compressed bytes or a Python ZipFile object.
+Normally, it has been generated with Context.save_zip / Context.get_zip</p>
+<p>Note that caching is temporary and entries will be removed after some time
+if no element (cell, expression, or high-level library) holds their checksum
+This can be overridden with “incref=True” (not recommended for long-living contexts)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.children">
+<code class="sig-name descname">children</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">type</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.children"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.children" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all children of the context
+The type of the children can be specified as string
+If type is None, all children and descendants are returned:
+- SubContexts are not returned, but their children and descendants are (with full path info)
+- For LibInstance, the children and descendants of the generated SynthContext is returned</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.computation">
+<em class="property">async </em><code class="sig-name descname">computation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">report</span><span class="o">=</span><span class="default_value">2</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.computation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.computation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Block until no more computation is required.</p>
+<p>This means that all cells and transformers have either been computed,
+or they have an error, or they have unsatisfied upstream dependencies.</p>
+<p>The graph is first (re-)translated, if necessary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.compute">
+<code class="sig-name descname">compute</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">report</span><span class="o">=</span><span class="default_value">2</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.compute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.compute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Block until no more computation is required.</p>
+<p>This means that all cells and transformers have either been computed,
+or they have an error, or they have unsatisfied upstream dependencies.</p>
+<p>The graph is first (re-)translated, if necessary.</p>
+<p>This function can only be invoked if no event loop is running,
+i.e. under python or ipython, but not in a Jupyter kernel.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.from_graph">
+<em class="property">classmethod </em><code class="sig-name descname">from_graph</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">graph</span></em>, <em class="sig-param"><span class="n">manager</span></em>, <em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">mounts</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">shares</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">share_namespace</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">zip</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.from_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.from_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a Context from a graph</p>
+<p>“graph” can be a file name or a JSON dict
+Normally, it has been generated with Context.save_graph / Context.get_graph</p>
+<p>“zip” can be a file name, zip-compressed bytes or a Python ZipFile object.
+Normally, it has been generated with Context.save_zip / Context.get_zip</p>
+<p>“manager”: re-use the manager of a previous context.
+The manager controls caching and execution.</p>
+<p>“mounts”: mount cells and pins to the file system, as specified in the graph.</p>
+<p>“shares”: share cells over HTTP, as specified in the graph</p>
+<p>“share_namespace”: The namespace to use for HTTP sharing (“ctx”by default)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.get_graph">
+<code class="sig-name descname">get_graph</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">runtime</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.get_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.get_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the graph in JSON format</p>
+<p>“runtime”: The graph is returned after
+Library/LibInstance/Macro transformations of the graph.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.get_zip">
+<code class="sig-name descname">get_zip</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">with_libraries</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.get_zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.get_zip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain the checksum-to-buffer cache for the current graph</p>
+<p>The cache is returned as zipped bytes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.get_zip_async">
+<em class="property">async </em><code class="sig-name descname">get_zip_async</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">with_libraries</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.get_zip_async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.get_zip_async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain the checksum-to-buffer cache for the current graph</p>
+<p>The cache is returned as zipped bytes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.include">
+<code class="sig-name descname">include</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lib</span></em>, <em class="sig-param"><span class="n">only_zip</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">full_path</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.include"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.include" title="Permalink to this definition">¶</a></dt>
+<dd><p>Include a library in the graph</p>
+<p>A library (seamless.highlevel.Library) must be included before
+library instances (seamless.highlevel.LibInstance) can be constructed
+using ctx.lib</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.lib">
+<em class="property">property </em><code class="sig-name descname">lib</code><a class="headerlink" href="#seamless.highlevel.Context.lib" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the libraries that were included in the graph</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.link">
+<code class="sig-name descname">link</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">first</span></em>, <em class="sig-param"><span class="n">second</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a bidirectional link between the first and second cell</p>
+<p>Both cells must be authoritative</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.live_share_namespace">
+<em class="property">property </em><code class="sig-name descname">live_share_namespace</code><a class="headerlink" href="#seamless.highlevel.Context.live_share_namespace" title="Permalink to this definition">¶</a></dt>
+<dd><p>The actual namespace for sharing cells by the HTTP server</p>
+<dl class="simple">
+<dt>Cells are shared under:</dt><dd><p><a class="reference external" href="http:/">http:/</a>/&lt;shareserver URL&gt;/&lt;live_share_namespace&gt;/&lt;cell path&gt;</p>
+</dd>
+</dl>
+<p>The live share namespace is in principle equal to the share namespace,
+but if it is already taken, a number will be added to it (ctx1, ctx2, etc.)</p>
+<p>Default: “ctx”</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.load_vault">
+<code class="sig-name descname">load_vault</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vault_directory</span></em>, <em class="sig-param"><span class="n">incref</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.load_vault"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.load_vault" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the contents of a vault directory in the checksum-to-buffer cache</p>
+<p>Normally, the vault has been generated with Context.save_vault</p>
+<p>Note that caching is temporary and entries will be removed after some time
+if no element (cell, expression, or high-level library) holds their checksum
+This can be overridden with “incref=True” (not recommended for long-living contexts)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.observe">
+<code class="sig-name descname">observe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">callback</span></em>, <em class="sig-param"><span class="n">polling_interval</span></em>, <em class="sig-param"><span class="n">observe_none</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.observe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.observe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Observes attributes of the context, analogous to Cell.observe</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.resolve">
+<code class="sig-name descname">resolve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">checksum</span></em>, <em class="sig-param"><span class="n">celltype</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.resolve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.resolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the data buffer that corresponds to the checksum.
+If celltype is provided, a value is returned instead</p>
+<p>The checksum must be a SHA3-256 hash, as hex string or as bytes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.save_graph">
+<code class="sig-name descname">save_graph</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.save_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves the graph in JSON format</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.save_vault">
+<code class="sig-name descname">save_vault</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dirname</span></em>, <em class="sig-param"><span class="n">with_libraries</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_vault"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.save_vault" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the checksum-to-buffer cache for the current graph in a vault directory</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.save_zip">
+<code class="sig-name descname">save_zip</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.save_zip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the checksum-to-buffer cache for the current graph</p>
+<p>The cache is saved to “filename”, which should be a .zip file</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.save_zip_async">
+<em class="property">async </em><code class="sig-name descname">save_zip_async</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_zip_async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.save_zip_async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the checksum-to-buffer cache for the current graph</p>
+<p>The cache is saved to “filename”, which should be a .zip file</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.set_graph">
+<code class="sig-name descname">set_graph</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">graph</span></em>, <em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">mounts</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">shares</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.set_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.set_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the graph of the Context</p>
+<p>“graph” can be a file name or a JSON dict
+Normally, it has been generated with Context.save_graph / Context.get_graph</p>
+<p>“mounts”: mount cells and pins to the file system, as specified in the graph.</p>
+<p>“shares”: share cells over HTTP, as specified in the graph</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.share_namespace">
+<em class="property">property </em><code class="sig-name descname">share_namespace</code><a class="headerlink" href="#seamless.highlevel.Context.share_namespace" title="Permalink to this definition">¶</a></dt>
+<dd><p>The preferred namespace for sharing cells by the HTTP server</p>
+<dl class="simple">
+<dt>Cells are shared under:</dt><dd><p><a class="reference external" href="http:/">http:/</a>/&lt;shareserver URL&gt;/&lt;live_share_namespace&gt;/&lt;cell path&gt;</p>
+</dd>
+</dl>
+<p>The live share namespace is in principle equal to the share namespace,
+but if it is already taken, a number will be added to it (ctx1, ctx2, etc.)</p>
+<p>Default: “ctx”</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.status">
+<em class="property">property </em><code class="sig-name descname">status</code><a class="headerlink" href="#seamless.highlevel.Context.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>The computation status of the context
+Returns a dictionary containing the status of all children that are not OK.
+If all children are OK, returns “Status: OK”</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.translate">
+<code class="sig-name descname">translate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">force</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.translate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.translate" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Re-)translate the graph.
+The graph is translated to a low-level, computable form
+(seamless.core). After translation, return immediately,
+although computation will start automatically.</p>
+<p>If force=True, translation will happen even though no
+change in topology or celltype was detected.</p>
+<p>This function can only be invoked if no event loop is running,
+i.e. under python or ipython, but not in a Jupyter kernel.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.translation">
+<em class="property">async </em><code class="sig-name descname">translation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">force</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.translation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.translation" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Re-)translate the graph.
+The graph is translated to a low-level, computable form
+(seamless.core). After translation, return immediately,
+although computation will start automatically.</p>
+<p>If force=True, translation will happen even though no
+change in topology or celltype was detected.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.unobserve">
+<code class="sig-name descname">unobserve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="o">=</span><span class="default_value">()</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.unobserve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.unobserve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analogous to Cell.unobserve</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cell-class">
+<h2>Cell class<a class="headerlink" href="#cell-class" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="seamless.highlevel.Cell">
+<em class="property">class </em><code class="sig-prename descclassname">seamless.highlevel.</code><code class="sig-name descname">Cell</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">celltype</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">parent</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">path</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cell class. Contains a piece of data in Seamless.</p>
+<p>See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/cell.html">http://sjdv1982.github.io/seamless/sphinx/html/cell.html</a> for documentation</p>
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.add_validator">
+<code class="sig-name descname">add_validator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">validator</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.add_validator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.add_validator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a validator function (in Python) to the schema.</p>
+<p>The validator must take a single argument, the (buffered) value of the cell
+It is expected to raise an exception (e.g. an AssertionError)
+if the value is invalid.</p>
+<p>If a previous validator with the same name exists,
+that validator is overwritten.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.authoritative">
+<em class="property">property </em><code class="sig-name descname">authoritative</code><a class="headerlink" href="#seamless.highlevel.Cell.authoritative" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if the cell has no dependencies</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.buffered">
+<em class="property">property </em><code class="sig-name descname">buffered</code><a class="headerlink" href="#seamless.highlevel.Cell.buffered" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a structured cell, return the buffered value.</p>
+<p>The buffered value is the value before schema validation</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.celltype">
+<em class="property">property </em><code class="sig-name descname">celltype</code><a class="headerlink" href="#seamless.highlevel.Cell.celltype" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of the cell is by default “structured”.</p>
+<p>Non-structured celltypes are:</p>
+<ul class="simple">
+<li><p>“plain”: contains any JSON-serializable data</p></li>
+<li><p>“binary”: contains binary data, wrapped in a Numpy object</p></li>
+<li><p>“mixed”: an arbitrary mixture of “plain” and “binary” data</p></li>
+<li><p>“code”: source code in any language</p></li>
+<li><p>“text”, “cson”, “yaml”</p></li>
+<li><p>“str”, “bytes”, “int”, “float”, “bool”</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.checksum">
+<em class="property">property </em><code class="sig-name descname">checksum</code><a class="headerlink" href="#seamless.highlevel.Cell.checksum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains the checksum of the cell, as SHA3-256 hash.</p>
+<p>The checksum defines the value of the cell.
+If the cell is defined, the checksum is available, even if
+the value may not be.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.connect_from">
+<code class="sig-name descname">connect_from</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">other</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.connect_from"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.connect_from" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connect from another cell or transformer to this cell.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.data">
+<em class="property">property </em><code class="sig-name descname">data</code><a class="headerlink" href="#seamless.highlevel.Cell.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the data of the cell</p>
+<p>This is normally the same as the value,
+but must not be modified</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.datatype">
+<em class="property">property </em><code class="sig-name descname">datatype</code><a class="headerlink" href="#seamless.highlevel.Cell.datatype" title="Permalink to this definition">¶</a></dt>
+<dd><p>The datatype of a structured cell.
+As of Seamless 0.2, mostly an alternative for “mimetype”</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.example">
+<em class="property">property </em><code class="sig-name descname">example</code><a class="headerlink" href="#seamless.highlevel.Cell.example" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a structured cell, return a dummy Silk handle.</p>
+<dl class="simple">
+<dt>The handle does not store any values, but has type inference,</dt><dd><p>i.e. schema properties are inferred from what is assigned to it.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<ul class="simple">
+<li><p>See basic-example.ipynb
+in <a class="reference external" href="https://github.com/sjdv1982/seamless/tree/master/examples">https://github.com/sjdv1982/seamless/tree/master/examples</a></p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.exception">
+<em class="property">property </em><code class="sig-name descname">exception</code><a class="headerlink" href="#seamless.highlevel.Cell.exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the exception associated with the cell.</p>
+<p>For non-structured cells, this exception was raised during parsing.
+For structured cells, it may also have been raised during validation</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.fingertip">
+<em class="property">async </em><code class="sig-name descname">fingertip</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.fingertip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.fingertip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Puts the buffer of this cell’s checksum ‘at your fingertips’:</p>
+<ul class="simple">
+<li><p>Verify that the buffer is locally or remotely available;
+if remotely, download it.</p></li>
+<li><p>If not available, try to re-compute it using its provenance,
+i.e. re-evaluating any transformation or expression that produced it</p></li>
+<li><p>Such recomputation is done in “fingertip” mode, i.e. disallowing
+use of expression-to-checksum or transformation-to-checksum caches</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.fingertip_no_recompute">
+<em class="property">property </em><code class="sig-name descname">fingertip_no_recompute</code><a class="headerlink" href="#seamless.highlevel.Cell.fingertip_no_recompute" title="Permalink to this definition">¶</a></dt>
+<dd><p>document</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TODO</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.fingertip_no_remote">
+<em class="property">property </em><code class="sig-name descname">fingertip_no_remote</code><a class="headerlink" href="#seamless.highlevel.Cell.fingertip_no_remote" title="Permalink to this definition">¶</a></dt>
+<dd><p>document</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TODO</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.language">
+<em class="property">property </em><code class="sig-name descname">language</code><a class="headerlink" href="#seamless.highlevel.Cell.language" title="Permalink to this definition">¶</a></dt>
+<dd><p>The programming language for code cells.</p>
+<p>Default: Python</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.mimetype">
+<em class="property">property </em><code class="sig-name descname">mimetype</code><a class="headerlink" href="#seamless.highlevel.Cell.mimetype" title="Permalink to this definition">¶</a></dt>
+<dd><p>The mimetype of the cell.</p>
+<dl class="simple">
+<dt>Can be set directly according to the MIME specification,</dt><dd><p>or as a file extension.</p>
+</dd>
+</dl>
+<p>If not set, the default value depends on the celltype:</p>
+<ul class="simple">
+<li><p>For structured cells, it is derived from the datatype attribute</p></li>
+<li><p>For mixed cells, it is “seamless/mixed”</p></li>
+<li><p>For code cells, it is derived from the language attribute</p></li>
+<li><p>For plain cells and int/float/bool cells, it is “application/json”</p></li>
+<li><p>For text cells and str cells, it is “text/plain”</p></li>
+<li><p>For other cells, it is derived from their default file extension.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.mount">
+<code class="sig-name descname">mount</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">'rw'</span></em>, <em class="sig-param"><span class="n">authority</span><span class="o">=</span><span class="default_value">'file'</span></em>, <em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">persistent</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">as_directory</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.mount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.mount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mounts the cell to the file system.
+Mounting is only supported for non-structured cells.</p>
+<p>To delete an existing mount, do <cite>del cell.mount</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>-</em>) – The file path on disk</p></li>
+<li><p><strong>mode</strong> (<em>-</em>) – “r” (read), “w” (write) or “rw”.
+If the mode contains “r”, the cell is updated when the file changes on disk.
+If the mode contains “w”, the file is updated when the cell value changes.
+The mode can only contain “r” if the cell is independent.
+Default: “rw”</p></li>
+<li><p><strong>authority</strong> (<em>-</em>) – In case of conflict between cell and file, which takes precedence.
+Default: “file”.</p></li>
+<li><p><strong>persistent</strong> (<em>-</em>) – If False, the file is deleted from disk when the Cell is destroyed
+Default: True.</p></li>
+<li><p><strong>as_directory</strong> (<em>-</em>) – If True, the cell must contain a dictionary,
+which is mounted to a directory instead of a file.
+items that are themselves dictionaries are mounted to sub-directories.
+Other items are cast to str upon mounting.
+Default: False</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.observe">
+<code class="sig-name descname">observe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">attr</span></em>, <em class="sig-param"><span class="n">callback</span></em>, <em class="sig-param"><span class="n">polling_interval</span></em>, <em class="sig-param"><span class="n">observe_none</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.observe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.observe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an observer that monitors <code class="docutils literal notranslate"><span class="pre">getattr(Cell,</span> <span class="pre">attr)</span></code>.</p>
+<p>This value is polled every <cite>polling_interval</cite> seconds,
+and if changed, <code class="docutils literal notranslate"><span class="pre">callback(value)</span></code> is invoked.</p>
+<p>If <cite>observe_none</cite>, None is considered as a separate value.
+(Default: False)</p>
+<p>This method is not recommended to observe cell values,
+this is better done with traitlets.</p>
+<p>Instead, it is recommended to use this to observe changes
+in status and exception.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.output">
+<code class="sig-name descname">output</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layout</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an output widget that tracks the cell value.</p>
+<p>The widget is a wrapper around an <code class="docutils literal notranslate"><span class="pre">ipywidgets.Output</span></code>
+and is to be used in Jupyter.</p>
+<p class="rubric">Examples</p>
+<ul class="simple">
+<li><p>See basic-example.ipynb
+in <a class="reference external" href="https://github.com/sjdv1982/seamless/tree/master/examples">https://github.com/sjdv1982/seamless/tree/master/examples</a></p></li>
+<li><p>See traitlets.ipynb
+in <a class="reference external" href="https://github.com/sjdv1982/seamless/tree/master/tests/highlevel">https://github.com/sjdv1982/seamless/tree/master/tests/highlevel</a></p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.scratch">
+<em class="property">property </em><code class="sig-name descname">scratch</code><a class="headerlink" href="#seamless.highlevel.Cell.scratch" title="Permalink to this definition">¶</a></dt>
+<dd><p>document</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TODO</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.set">
+<code class="sig-name descname">set</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the value of the cell</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.share">
+<code class="sig-name descname">share</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">readonly</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">toplevel</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.share"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.share" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shares a cell over HTTP.</p>
+<p>Typically, the cell is available under
+<a class="reference external" href="http://localhost:5813/ctx">http://localhost:5813/ctx</a>/&lt;path&gt;.</p>
+<p>If path is None (default), Cell.path is used,
+with dots replaced by slashes.</p>
+<p>If toplevel is True, the cell is instead available under
+<a class="reference external" href="http://localhost:5813">http://localhost:5813</a>/&lt;path&gt;.</p>
+<p>If readonly is True, only GET requests are supported.
+Else, the cell can also be modified using PUT requests
+using the Seamless JS client (js/seamless-client.js)</p>
+<p>Cells with mimetype ‘application/json’
+(the default for plain cells)
+also support subcell GET requests,
+e.g. <code class="docutils literal notranslate"><span class="pre">http://.../ctx/a/x/0</span></code> for a cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code>
+with value <code class="docutils literal notranslate"><span class="pre">{'x':</span> <span class="pre">[1,2,3]</span> <span class="pre">}</span></code></p>
+<p>To remove a share, do <cite>del cell.share</cite></p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.status">
+<em class="property">property </em><code class="sig-name descname">status</code><a class="headerlink" href="#seamless.highlevel.Cell.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the status of the cell.</p>
+<p>The status may be undefined, error, upstream or OK
+If it is error, Cell.exception will be non-empty.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.traitlet">
+<code class="sig-name descname">traitlet</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.traitlet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.traitlet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an traitlet object with its value linked to the cell.</p>
+<dl class="simple">
+<dt>A traitlet is derived from <code class="docutils literal notranslate"><span class="pre">traitlets.HasTraits</span></code>,</dt><dd><p>and can be linked to other traitlet objects, such as ipywidgets.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<ul class="simple">
+<li><p>See basic-example.ipynb and datatables.ipynb
+in <a class="reference external" href="https://github.com/sjdv1982/seamless/tree/master/examples">https://github.com/sjdv1982/seamless/tree/master/examples</a></p></li>
+<li><p>See traitlets.ipynb, traitlet.py and traitlet2.py
+in <a class="reference external" href="https://github.com/sjdv1982/seamless/tree/master/tests/highlevel">https://github.com/sjdv1982/seamless/tree/master/tests/highlevel</a></p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.unobserve">
+<code class="sig-name descname">unobserve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">attr</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.unobserve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.unobserve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop observing <code class="docutils literal notranslate"><span class="pre">getattr(Cell,</span> <span class="pre">attr)</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Cell.value">
+<em class="property">property </em><code class="sig-name descname">value</code><a class="headerlink" href="#seamless.highlevel.Cell.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the cell, if translated</p>
+<dl class="simple">
+<dt>If the cell is not authoritative,</dt><dd><p>the value is None if an upstream dependency
+is undefined or has an error.</p>
+</dd>
+</dl>
+<p>For structured cells, the value is also None if the
+schema is violated.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="transformer-class">
+<h2>Transformer class<a class="headerlink" href="#transformer-class" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="seamless.highlevel.Transformer">
+<em class="property">class </em><code class="sig-prename descclassname">seamless.highlevel.</code><code class="sig-name descname">Transformer</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">parent</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">code</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">pins</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hash_pattern</span><span class="o">=</span><span class="default_value">{'*': '#'}</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Transformer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms input values to a result value</p>
+<p>See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/transformer.html">http://sjdv1982.github.io/seamless/sphinx/html/transformer.html</a> for documentation</p>
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.INPUT">
+<em class="property">property </em><code class="sig-name descname">INPUT</code><a class="headerlink" href="#seamless.highlevel.Transformer.INPUT" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the input attribute. Default is “inp”.</p>
+<p>This is the attribute under which the input object is available
+(i.e. Transformer.inp by default). The input object is similar
+to a (structured) Cell.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.RESULT">
+<em class="property">property </em><code class="sig-name descname">RESULT</code><a class="headerlink" href="#seamless.highlevel.Transformer.RESULT" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the result variable. Default is “result”.</p>
+<p>This is also the attribute under which the result object is available
+(i.e. Transformer.result by default). The result object is similar
+to a (structured) Cell.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.add_validator">
+<code class="sig-name descname">add_validator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">validator</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.add_validator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Transformer.add_validator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a validator to the input, analogous to Cell.add_validator</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.debug">
+<em class="property">property </em><code class="sig-name descname">debug</code><a class="headerlink" href="#seamless.highlevel.Transformer.debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a compiled transformer, if it is compiled in debug mode</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.example">
+<em class="property">property </em><code class="sig-name descname">example</code><a class="headerlink" href="#seamless.highlevel.Transformer.example" title="Permalink to this definition">¶</a></dt>
+<dd><p>The example handle of the transformer input object.</p>
+<p>See Cell.example for more details</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.exception">
+<em class="property">property </em><code class="sig-name descname">exception</code><a class="headerlink" href="#seamless.highlevel.Transformer.exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the exception associated with the transformer.</p>
+<p>The exception may be raised during one of three stages:</p>
+<ol class="arabic simple">
+<li><p>The construction of the input object (Transformer.inp).
+The input object is cell-like, see Cell.exception for more details.</p></li>
+<li><p>The execution of the transformer. For Python/IPython cells, this
+is the exception directly raised in code. For Bash/Docker cells,
+exceptions are raised upon non-zero exit codes.
+For compiled transformers, this stage is subdivided into
+generating the C header, compiling the code module, and executing
+the compiled code.</p></li>
+<li><p>The construction of the result object (Transformer.result).
+The result object is cell-like, see Cell.exception for more details.</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.header">
+<em class="property">property </em><code class="sig-name descname">header</code><a class="headerlink" href="#seamless.highlevel.Transformer.header" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a compiled transformer, the generated C header</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.language">
+<em class="property">property </em><code class="sig-name descname">language</code><a class="headerlink" href="#seamless.highlevel.Transformer.language" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the programming language of the transformer’s source code.</p>
+<p>Allowed values are: python, ipython, bash, docker
+(which is bash executed in a Docker image), or any compiled language.</p>
+<p>See seamless.compiler.languages and seamless.compile.compilers for a list</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.logs">
+<em class="property">property </em><code class="sig-name descname">logs</code><a class="headerlink" href="#seamless.highlevel.Transformer.logs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the stdout/stderr logs of the transformer, if any</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.observe">
+<code class="sig-name descname">observe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">attr</span></em>, <em class="sig-param"><span class="n">callback</span></em>, <em class="sig-param"><span class="n">polling_interval</span></em>, <em class="sig-param"><span class="n">observe_none</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.observe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Transformer.observe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Observes attributes of the result, analogous to Cell.observe</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.schema">
+<em class="property">property </em><code class="sig-name descname">schema</code><a class="headerlink" href="#seamless.highlevel.Transformer.schema" title="Permalink to this definition">¶</a></dt>
+<dd><p>The schema of the transformer input object</p>
+<p>See Cell.schema for more details</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.scratch">
+<em class="property">property </em><code class="sig-name descname">scratch</code><a class="headerlink" href="#seamless.highlevel.Transformer.scratch" title="Permalink to this definition">¶</a></dt>
+<dd><p>document</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>TODO</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.status">
+<em class="property">property </em><code class="sig-name descname">status</code><a class="headerlink" href="#seamless.highlevel.Transformer.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>The status of the transformer, analogous to Cell.status.</p>
+<p>See Transformer.exception about the different stages.
+The first stage with a non-OK status is reported.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Transformer.unobserve">
+<code class="sig-name descname">unobserve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">attr</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.unobserve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Transformer.unobserve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analogous to Cell.unobserve</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -44,6 +726,16 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Reference</a><ul>
+<li><a class="reference internal" href="#context-class">Context class</a></li>
+<li><a class="reference internal" href="#cell-class">Cell class</a></li>
+<li><a class="reference internal" href="#transformer-class">Transformer class</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="new-project.html"
                         title="previous chapter">Guide for creating a new Seamless project</a></p>
@@ -75,6 +767,9 @@
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="new-project.html" title="Guide for creating a new Seamless project"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.5 documentation</a> &#187;</li> 
@@ -82,7 +777,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2016-2021, Sjoerd de Vries.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
     </div>
   </body>
 </html>

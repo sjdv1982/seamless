@@ -4,7 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>seamless.highlevel &#8212; Seamless 0.4 documentation</title>
+    <title>seamless.highlevel &#8212; Seamless 0.5 documentation</title>
     <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -24,7 +24,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">Seamless 0.4 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Seamless 0.5 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>  
@@ -41,9 +41,9 @@
 <span class="kn">from</span> <span class="nn">ast</span> <span class="kn">import</span> <span class="n">PyCF_ONLY_AST</span><span class="p">,</span> <span class="n">FunctionDef</span><span class="p">,</span> <span class="n">Expr</span><span class="p">,</span> <span class="n">Lambda</span>
 <span class="kn">import</span> <span class="nn">textwrap</span>
 
-<span class="kn">from</span> <span class="nn">..mixed</span> <span class="kn">import</span> <span class="n">MixedBase</span>
-<span class="kn">from</span> <span class="nn">..silk</span> <span class="kn">import</span> <span class="n">Silk</span>
-<span class="kn">from</span> <span class="nn">..silk.validation</span> <span class="kn">import</span> <span class="n">_allowed_types</span>
+<span class="kn">from</span> <span class="nn">silk.mixed</span> <span class="kn">import</span> <span class="n">MixedBase</span>
+<span class="kn">from</span> <span class="nn">silk</span> <span class="kn">import</span> <span class="n">Silk</span>
+<span class="kn">from</span> <span class="nn">silk.validation</span> <span class="kn">import</span> <span class="n">_allowed_types</span>
 <span class="kn">from</span> <span class="nn">..core.lambdacode</span> <span class="kn">import</span> <span class="n">lambdacode</span>
 <span class="kn">from</span> <span class="nn">..core.cached_compile</span> <span class="kn">import</span> <span class="n">cached_compile</span>
 
@@ -93,7 +93,6 @@
 
 <span class="kn">from</span> <span class="nn">.Context</span> <span class="kn">import</span> <span class="n">Context</span>
 <span class="kn">from</span> <span class="nn">.Transformer</span> <span class="kn">import</span> <span class="n">Transformer</span>
-<span class="kn">from</span> <span class="nn">.Reactor</span> <span class="kn">import</span> <span class="n">Reactor</span>
 <span class="kn">from</span> <span class="nn">.Macro</span> <span class="kn">import</span> <span class="n">Macro</span>
 <span class="kn">from</span> <span class="nn">.Cell</span> <span class="kn">import</span> <span class="n">Cell</span>
 <span class="kn">from</span> <span class="nn">.Module</span> <span class="kn">import</span> <span class="n">Module</span>
@@ -146,7 +145,7 @@
         <span class="p">)</span></div>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;Context&quot;</span><span class="p">,</span> <span class="s2">&quot;Transformer&quot;</span><span class="p">,</span> <span class="s2">&quot;Reactor&quot;</span><span class="p">,</span> <span class="s2">&quot;Macro&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Context&quot;</span><span class="p">,</span> <span class="s2">&quot;Transformer&quot;</span><span class="p">,</span> <span class="s2">&quot;Macro&quot;</span><span class="p">,</span>
     <span class="s2">&quot;Cell&quot;</span><span class="p">,</span> <span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;Graph&quot;</span><span class="p">,</span> <span class="s2">&quot;StaticContext&quot;</span><span class="p">,</span> <span class="s2">&quot;Module&quot;</span>
     <span class="s2">&quot;load_graph&quot;</span>
 <span class="p">]</span>
@@ -180,12 +179,12 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">Seamless 0.4 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Seamless 0.5 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2016-2020, Sjoerd de Vries.
+        &#169; Copyright 2016-2021, Sjoerd de Vries.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
     </div>
   </body>

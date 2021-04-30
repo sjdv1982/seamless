@@ -17,7 +17,7 @@ for graph_file in graph_files:
     sctx = StaticContext.from_graph(graph)
     sctx.add_zip(zip)
     if graph_name.startswith("lib-"):
-        for child in sctx.children():
+        for child in sctx.get_children():
             ssctx = getattr(sctx, child)
             if not isinstance(ssctx, StaticContext):
                 continue

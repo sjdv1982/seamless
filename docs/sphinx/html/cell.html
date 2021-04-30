@@ -14,7 +14,7 @@
     <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Guide for creating a new Seamless project" href="new-project.html" />
+    <link rel="next" title="Transformers" href="transformer.html" />
     <link rel="prev" title="Contexts" href="context.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
@@ -24,7 +24,10 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="new-project.html" title="Guide for creating a new Seamless project"
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="transformer.html" title="Transformers"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="context.html" title="Contexts"
@@ -49,12 +52,12 @@ Thus, cells are always part of a Context (called <code class="docutils literal n
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">()</span>
 <span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">123</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> 
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span> <span class="c1"># or wait a few milliseconds in IPython or Jupyter</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> 
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">&lt;Silk</span> <span class="pre">123&gt;</span></code></p>
@@ -81,7 +84,12 @@ Thus, cells are always part of a Context (called <code class="docutils literal n
 <span class="o">&lt;</span><span class="n">Silk</span><span class="p">:</span> <span class="mi">12</span> <span class="o">&gt;</span>
 </pre></div>
 </div>
-<p>Using the celltype property, a cell can be changed to a non-structured cell (see the documentation of the Cell class for more details).</p>
+<p>Using the <code class="docutils literal notranslate"><span class="pre">celltype</span></code> property, a cell can be changed to a non-structured cell (see the documentation of the Cell class for more details).</p>
+<p>Cells are <em>dependent</em> if (part of) the cell’s value is computed from a dependency, i.e from a transformer or from another cell.
+Cells are <em>independent</em> if they have their own value, with no dependencies.</p>
+<p>Cells can be <em>mounted</em> to a file using <code class="docutils literal notranslate"><span class="pre">Cell.mount</span></code>. By default, mounts are both read (the cell changes its value when the file changes its value) and write (vice versa) . Only independent cells can have a read mount. Structured cells cannot be mounted.</p>
+<p>Cells can be <em>shared</em> over HTTP (via the Seamless REST API), using <code class="docutils literal notranslate"><span class="pre">Cell.share</span></code>. By default, shares are read-only (only HTTP GET requests are supported). Independent cells can also be shared as read/write (their value can be changed using HTTP PUT requests).</p>
+<p>Newly created/connected/mounted/shared cells require a re-translation of the context to take effect. This is also the case for a change in celltype.</p>
 </div>
 
 
@@ -94,8 +102,8 @@ Thus, cells are always part of a Context (called <code class="docutils literal n
   <p class="topless"><a href="context.html"
                         title="previous chapter">Contexts</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="new-project.html"
-                        title="next chapter">Guide for creating a new Seamless project</a></p>
+  <p class="topless"><a href="transformer.html"
+                        title="next chapter">Transformers</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -124,7 +132,10 @@ Thus, cells are always part of a Context (called <code class="docutils literal n
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="new-project.html" title="Guide for creating a new Seamless project"
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="transformer.html" title="Transformers"
              >next</a> |</li>
         <li class="right" >
           <a href="context.html" title="Contexts"
@@ -134,7 +145,7 @@ Thus, cells are always part of a Context (called <code class="docutils literal n
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2016-2021, Sjoerd de Vries.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
     </div>
   </body>
 </html>

@@ -5,9 +5,10 @@ import threading
 from types import LambdaType
 from .Base import Base
 from .Resource import Resource
+from .SelfWrapper import SelfWrapper
 from ..core.lambdacode import lambdacode
-from ..silk import Silk
-from ..mixed import MixedBase
+from silk import Silk
+from silk.mixed import MixedBase
 from ..mime import get_mime, language_to_mime, ext_to_mime
 
 celltypes = (
@@ -180,8 +181,10 @@ class Cell(Base):
     def _cell(self):
         return self
 
+    @property
     def self(self):
-        raise NotImplementedError
+        attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
+        return SelfWrapper(self, attributelist)
 
     def _get_subcell(self, attr):
         hcell = self._get_hcell()
@@ -206,15 +209,13 @@ class Cell(Base):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         if attr == "schema":
             hcell = self._get_hcell()
             if hcell["celltype"] == "structured":
                 cell = self._get_cell()
-                ###schema = cell.get_schema() # wrong!
-                struc_ctx = cell._data._context()
-                schema = struc_ctx.example.handle.schema
+                schema = self.example.schema
                 return SchemaWrapper(self, schema, "SCHEMA")
             else:
                 raise AttributeError
@@ -553,6 +554,7 @@ class Cell(Base):
             cell.set(value)
 
     def set_checksum(self, checksum):
+        """Sets the cell's checksum from a SHA256 checksum"""
         from ..core.structured_cell import StructuredCell
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
@@ -601,9 +603,14 @@ class Cell(Base):
     def celltype(self, value):
         assert value in celltypes, value
         hcell = self._get_hcell2()
+        if hcell["celltype"] == value:
+            return
         if hcell.get("UNTRANSLATED"):
             cellvalue = hcell.get("TEMP")
         else:
+            if value == "structured":
+                if "mount" in hcell:
+                    raise ValueError("Mounting is only supported for non-structured cells")
             cellvalue = self.value
         if isinstance(cellvalue, Silk):
             cellvalue = cellvalue.data
@@ -620,7 +627,8 @@ class Cell(Base):
         hcell.pop("checksum", None)
         hcell["UNTRANSLATED"] = True
         if cellvalue is not None:
-            hcell["TEMP"] = cellvalue
+            if self.authoritative:
+                hcell["TEMP"] = cellvalue
             hcell.pop("checksum", None)
         if self._parent() is not None:
             self._parent()._translate()
@@ -671,6 +679,8 @@ class Cell(Base):
                 raise ValueError("Unknown extension %s" % ext) from None
             hcell["file_extension"] = ext
         hcell["mimetype"] = value
+        if self._parent() is not None:
+            self._parent()._translate()
 
     @property
     def datatype(self):
@@ -864,10 +874,11 @@ class Cell(Base):
         else:
             raise AttributeError(attr)
 
-
     def __str__(self):
-        path = ".".join(self._path) if self._path is not None else None
-        return "Seamless Cell: %s" % path
+        return "Seamless Cell: " + self.path
+
+    def __repr__(self):
+        return str(self)
 
 def cell_binary_method(self, other, name):
     h = self.handle
@@ -882,7 +893,7 @@ def Constant(*args, **kwargs):
     cell._get_hcell2()["constant"] = True
 
 from functools import partialmethod
-from ..silk.SilkBase import binary_special_method_names
+from silk.SilkBase import binary_special_method_names
 for name in binary_special_method_names:
     if name in Cell.__dict__:
         continue

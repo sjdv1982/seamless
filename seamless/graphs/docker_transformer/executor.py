@@ -5,8 +5,8 @@ import tarfile
 import json
 import sys
 from io import BytesIO
-from seamless.silk import Silk
-from seamless.mixed.get_form import get_form
+from silk import Silk
+from silk.mixed.get_form import get_form
 from requests.exceptions import ConnectionError
 from urllib3.exceptions import ProtocolError
 from seamless.core.transformation import SeamlessTransformationError
@@ -61,11 +61,8 @@ try:
     os.chdir(tempdir)
     container = None
     signal.signal(signal.SIGTERM, sighandler)
-    options = docker_options.copy()
-    if "environment" in options:
-        env = options["environment"].copy()
-    else:
-        env = {}
+    options = {}
+    env = {}
     options["environment"] = env
     for pin in pins_:
         v = PINS[pin]
@@ -96,9 +93,8 @@ try:
                 with open(pin, "bw") as pinf:
                     np.save(pinf,v,allow_pickle=False)
     docker_client = docker_module.from_env()
-    if "volumes" not in options:
-        options["volumes"] = {}
-    volumes = options["volumes"]
+    volumes = {}
+    options["volumes"] = volumes
     volumes[tempdir] = {"bind": "/run", "mode": "rw"}
     if "working_dir" not in options:
         options["working_dir"] = "/run"
@@ -108,7 +104,12 @@ try:
 
         f.write(bash_header)
         f.write(docker_command)
-    full_docker_command = "bash DOCKER-COMMAND"
+    full_docker_command = """bash -c '''
+ls $(pwd) > /dev/null 2>&1 || (>&2 echo \"\"\"The Docker container cannot read the mounted temporary directory.
+Most likely, the container runs under a specific user ID,
+which is neither root nor the user ID under which Seamless is running.
+Docker image user ID: $(id -u)
+Seamless user ID: {}\"\"\"; exit 126) && bash DOCKER-COMMAND'''""".format(os.getuid())
     try:
         try:
             _creating_container = True
@@ -193,7 +194,7 @@ Exit code: {}
 Docker transformer exception
 ============================
 
-Error: Result file RESULT does not exist
+Error: Result file/folder RESULT does not exist
 
 *************************************************
 * Command
@@ -243,17 +244,32 @@ Error: Result file RESULT does not exist
                 pass
 
 
-    try:
-        tar = tarfile.open(resultfile)
+    if os.path.isdir(resultfile):
+        result0 = {}
+        for dirpath, _, filenames in os.walk(resultfile):
+            for filename in filenames:
+                full_filename = os.path.join(dirpath, filename)
+                assert full_filename.startswith(resultfile + "/")
+                member = full_filename[len(resultfile) + 1:]
+                data = open(full_filename, "rb").read()
+                rdata = read_data(data)
+                result0[member] = rdata
         result = {}
-        for member in tar.getnames():
-            data = tar.extractfile(member).read()
-            rdata = read_data(data)
-            result[member] = rdata
-    except (ValueError, tarfile.CompressionError, tarfile.ReadError):
-        with open(resultfile, "rb") as f:
-            resultdata = f.read()
-        result = read_data(resultdata)
+        for k in sorted(result0.keys()):
+            result[k] = result0[k]
+            del result0[k]
+    else:
+        try:
+            tar = tarfile.open(resultfile)
+            result = {}
+            for member in tar.getnames():
+                data = tar.extractfile(member).read()
+                rdata = read_data(data)
+                result[member] = rdata
+        except (ValueError, tarfile.CompressionError, tarfile.ReadError):
+            with open(resultfile, "rb") as f:
+                resultdata = f.read()
+            result = read_data(resultdata)
 finally:
     if not _sys_exit:
         if container is not None:

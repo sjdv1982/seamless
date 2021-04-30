@@ -384,7 +384,7 @@ class Cell(SeamlessBase):
         if trigger and self._checksum is not None:
             observer(self._checksum.hex())
 
-    def share(self, path=None, readonly=True, mimetype=None, *, toplevel=False):
+    def share(self, path=None, readonly=True, mimetype=None, *, toplevel=False, cellname=None):
         if not readonly:
             assert self.has_authority()
         oldshare = self._share
@@ -395,6 +395,8 @@ class Cell(SeamlessBase):
         }
         if mimetype is not None:
             self._share["mimetype"] = mimetype
+        if cellname is not None:
+            self._share["cellname"] = cellname
         if oldshare != self._share:
             sharemanager.update_share(self)
 
@@ -442,7 +444,7 @@ class MixedCell(Cell):
 
     @property
     def storage(self):
-        from ..mixed.get_form import get_form
+        from silk.mixed.get_form import get_form
         v = super().value
         if v is None:
             return None
@@ -450,7 +452,7 @@ class MixedCell(Cell):
 
     @property
     def form(self):
-        from ..mixed.get_form import get_form
+        from silk.mixed.get_form import get_form
         v = super().value
         if v is None:
             return None
@@ -640,7 +642,7 @@ subcelltypes["module"] = None
 from .unbound_context import UnboundManager
 from .mount import MountItem
 from .mount import is_dummy_mount
-from ..mixed.get_form import get_form
+from silk.mixed.get_form import get_form
 from .structured_cell import Inchannel, Outchannel
 from .macro_mode import get_macro_mode
 from .share import sharemanager

@@ -3,11 +3,10 @@ from copy import deepcopy
 from collections import namedtuple
 import weakref
 import itertools
-import threading, time
-import asyncio, concurrent
+import threading
+import asyncio
 import inspect
 import functools
-from functools import partial
 import zipfile
 from zipfile import ZipFile, ZipInfo
 from io import BytesIO
@@ -38,7 +37,6 @@ from ..core import macro_mode
 from ..core.macro_mode import macro_mode_on, get_macro_mode, until_macro_mode_off
 from ..core.context import context
 from ..core.cell import cell
-from ..core.mount import mountmanager #for now, just a single global mountmanager
 from .assign import assign
 from .proxy import Proxy
 from ..midlevel import copying
@@ -266,7 +264,7 @@ class Context(Base):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         path = (attr,)
         return self._get_path(path)
@@ -339,8 +337,10 @@ class Context(Base):
         await self.translation()
         await self._gen_context.computation(timeout, report)
 
+    @property
     def self(self):
-        raise NotImplementedError
+        attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
+        return SelfWrapper(self, attributelist)
 
     def _translate(self):
         self._needs_translation = True
@@ -410,12 +410,7 @@ class Context(Base):
         return self._live_share_namespace
 
     def _get_graph(self, copy):
-        from ..core.manager.tasks.structured_cell import StructuredCellAuthTask
-        from ..core.manager.tasks import SetCellValueTask, SetCellBufferTask
-        auth_task_types = (
-            SetCellValueTask, SetCellBufferTask, StructuredCellAuthTask
-        )
-
+        self._wait_for_auth_tasks("the graph is being obtained")
         try:
             self._translating = True
             manager = self._manager
@@ -484,19 +479,6 @@ class Context(Base):
             "params": params,
             "lib": lib,
         }
-        return graph
-
-        nodes = []
-        for node in graph["nodes"]:
-            node["path"] = tuple(node["path"])
-            nodes.append(node)
-        for con in graph["connections"]:
-            if con["type"] == "connection":
-                con["source"] = tuple(con["source"])
-                con["target"] = tuple(con["target"])
-            elif con["type"] == "link":
-                con["first"] = tuple(con["first"])
-                con["second"] = tuple(con["second"])
         return graph
 
     def save_graph(self, filename):
@@ -858,7 +840,11 @@ class Context(Base):
             readonly = shareparams["readonly"]
             mimetype = hcell.mimetype
             toplevel = shareparams.get("toplevel", False)
-            cell.share(sharepath, readonly, mimetype=mimetype, toplevel=toplevel)
+            cell.share(
+                sharepath, readonly,
+                mimetype=mimetype, toplevel=toplevel,
+                cellname="." + ".".join(path)
+            )
 
     def _rename_path(self, path, newpath):
         raise NotImplementedError
@@ -890,7 +876,7 @@ class Context(Base):
             if not runtime:
                 self._translate()
 
-        removed = self._remove_connections(path, runtime=runtime)
+        removed = self.remove_connections(path, runtime=runtime)
         if removed and not runtime:
             self._translate()
 
@@ -945,55 +931,56 @@ class Context(Base):
     def _get_lib(self, path):
         return self._graph.lib[tuple(path)]
 
-    def _remove_connections(self, path, *,
-        keep_links=False, runtime=False, only_target=False, head=False, exact=False
+    def remove_connections(self, path, *,
+        runtime=False, endpoint="both", match="sub"
     ):
-        """Removes all connections/links with source or target starting with path
+        """Removes all connections/links with source or target matching path
 
-        if only_target, only remove connections where the target starts with path
-        if exact, only remove links/connections where the source/target path is equal to path
-        if head, only remove links/connections where the source/target path is longer than path
+        "endpoint" can be "source", "target", "connection", "link" or "all".
+        With endpoint "source", only remove connections where the source matches path. Don't remove links.
+        With endpoint "target", only remove connections where the target matches path. Don't remove links.
+        With endpoint "both", only remove connections where source or target matches path. Don't remove links.
+        With endpoint "link", remove links where "first" or "second" matches path. Don't remove connections
+
+        "match" can be "super", "exact", or "sub".
+        If "super", only paths P that are shorter or equal to "path" are matched. The start of P must be identical to "path"
+        If "exact", only paths P that are equal to "path" are matched
+        If "sub", only paths that are longer or equal to "path" are matched. The start of "path" must be identical to P.
+        If "all", all longer and shorter paths are matched.
         """
-        assert not (head and exact)
+        assert endpoint in ("source", "target", "both", "link", "all")
+        assert match in ("super", "sub", "exact", "all")
         lp = len(path)
+        def matches(p):
+            if match == "exact":
+                return (p == path)
+            elif match == "super":
+                return path[:len(p)] == p
+            elif match == "sub":
+                return p[:lp] == path
+            else: # all
+                return p[:lp] == path or path[:len(p)] == p
+
         def keep_con(con):
             if con["type"] == "link":
-                if keep_links or only_target:
+                if endpoint not in ("link", "all"):
                     return True
                 first = con["first"]
-                if exact:
-                    if first == path:
-                        return path
-                else:
-                    if not head or len(first) > lp:
-                        if first[:lp] == path:
-                            return False
+                if matches(first):
+                    return False
                 second = con["second"]
-                if exact:
-                    if second == path:
-                        return path
-                else:
-                    if not head or len(second) > lp:
-                        if second[:lp] == path:
-                            return False
+                if matches(second):
+                    return False
                 return True
             else:
                 csource = con["source"]
-                if exact:
-                    if (not only_target) and csource == path:
+                if endpoint in ("source", "both", "all"):
+                    if matches(csource):
                         return False
-                else:
-                    if not head or len(csource) > lp:
-                        if (not only_target) and csource[:lp] == path:
-                            return False
                 ctarget = con["target"]
-                if exact:
-                    if ctarget == path:
+                if endpoint in ("target", "both", "all"):
+                    if matches(ctarget):
                         return False
-                else:
-                    if not head or len(ctarget) > lp:
-                        if ctarget[:lp] == path:
-                            return False
                 return True
         connections = self._graph[1]
         if runtime:
@@ -1021,7 +1008,7 @@ class Context(Base):
                 result.append(Link(self, node=node))
         return result
 
-    def children(self, type=None):
+    def get_children(self, type=None):
         """Returns all children of the context
         The type of the children can be specified as string
         If type is None, all children and descendants are returned:
@@ -1033,7 +1020,7 @@ class Context(Base):
         children00 = []
         for p,c in self._children.items():
             if isinstance(c, LibInstance) and type != "libinstance":
-                for child in c.ctx.children():
+                for child in c.ctx.get_children():
                     children00.append((child.path, child))
             else:
                 children00.append((p, c))
@@ -1046,10 +1033,19 @@ class Context(Base):
             children = [p for p in children if (p,) not in children00]
         return sorted(list(set(children)))
 
+    @property
+    def children(self):
+        """Returns a wrapper for the direct children of the context
+        This includes subcontexts"""
+        children = [p[0] for p in self._children]
+        children = sorted(list(set(children)))
+        return ChildrenWrapper(self, children)
+
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
-        subs = [p[0] for p in self._children]
-        return sorted(d + list(set(subs)))
+        children = [p[0] for p in self._children]
+        children = list(set(children))
+        return sorted(d + children)
 
     def _destroy(self):
         if self._destroyed:
@@ -1066,6 +1062,16 @@ class Context(Base):
             )
             for checksum in checksums:
                 buffer_cache.decref(bytes.fromhex(checksum))
+
+    def __str__(self):
+        p = self.path
+        if p == "":
+            p = "<toplevel>"
+        ret = "Seamless Context: " + p
+        return ret
+
+    def __repr__(self):
+        return str(self)
 
     def __del__(self):
         self._destroy()
@@ -1089,7 +1095,7 @@ class SubContext(Base):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         parent = self._get_top_parent()
         path = self._path + (attr,)
@@ -1166,7 +1172,7 @@ class SubContext(Base):
     def _translate(self):
         self._parent()._translate()
 
-    def children(self, type=None):
+    def get_children(self, type=None):
         classless = ("context", "libinstance")
         assert type is None or type in classless or type in nodeclasses, (type, nodeclasses.keys())
         l = len(self._path)
@@ -1180,17 +1186,33 @@ class SubContext(Base):
             children = [p for p in children if (p,) not in children00]
         return sorted(list(set(children)))
 
+    @property
+    def children(self):
+        result = {}
+        parent = self._get_top_parent()
+        for k in self.get_children(type=None):
+            path = self._path + (k,)
+            child = parent._get_path(path)
+            result[k] = child
+        return result
+
+    def __str__(self):
+        ret = "Seamless SubContext: " + self.path
+        return ret
+
+    def __repr__(self):
+        return str(self)
+
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
-        l = len(self._path)
-        subs = [p[l] for p in self._parent()._children if len(p) > l and p[:l] == self._path]
-        return sorted(d + list(set(subs)))
+        return sorted(d + self.get_children())
 
 from .Transformer import Transformer
 from .Cell import Cell
 from .Link import Link
 from .Macro import Macro
 from .Module import Module
+from .SelfWrapper import SelfWrapper, ChildrenWrapper
 from .pin import PinWrapper
 from .library.libinstance import LibInstance
 from .PollingObserver import PollingObserver
