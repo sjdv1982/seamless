@@ -2,6 +2,12 @@ a
 b 
 c 
 
-{'firstdata': 'a \nb \nc \n', 'testdata': 'a \nb \nc \nd \ne \nf \n'}
+{'firstdata': 'a \nb \nc \n', 'input/testdata': 'a \nb \nc \nd \ne \nf \n'}
 <Silk: [ 0  3  6  9 12 15 18 21 24 27 30 33] >
+Status: OK
+
+<Silk: {'test.npy': array([ 0,  3,  6,  9, 12, 15, 18, 21, 24, 27, 30, 33]), 'test.txt': 'hello\n'} >
+<Silk: [ 0  3  6  9 12 15 18 21 24 27 30 33] >
+<Silk: hello
+ >
 Status: OK

@@ -2,6 +2,19 @@ class ConnectionWrapper:
     def __init__(self, basepath):
         self.basepath = basepath
         self.connections = []
+
+    def link(self, source, target):
+        if not isinstance(source, EditCellWrapper):
+            raise TypeError(type(target))
+        if not isinstance(target, Cell):
+            raise TypeError(type(target))
+        link = {
+            "type": "link",
+            "first": source.path,
+            "second": self.basepath + target._path,
+        }
+        self.connections.append(link)
+
     def connect(self, source, target, source_subpath, target_subpath):
         if isinstance(source, InputCellWrapper):
             #assert source_subpath is None
@@ -87,7 +100,7 @@ class InputCellWrapper(CellWrapper):
         self._connection_wrapper = connection_wrapper
         self._cell = cell
         self._node = cell._get_hcell()
-    def connect(self, target, source_path=None, target_path=None):        
+    def connect(self, target, source_path=None, target_path=None):
         self._connection_wrapper.connect(
             self,
             target,
@@ -98,12 +111,26 @@ class InputCellWrapper(CellWrapper):
     def path(self):
         return self._cell._path
 
+class EditCellWrapper(CellWrapper):
+    def __init__(self, connection_wrapper, cell):
+        self._connection_wrapper = connection_wrapper
+        self._cell = cell
+        self._node = cell._get_hcell()
+    def link(self, target):
+        self._connection_wrapper.link(
+            self,
+            target
+        )
+    @property
+    def path(self):
+        return self._cell._path
+
 class OutputCellWrapper(CellWrapper):
     def __init__(self, connection_wrapper, node, path):
         self._connection_wrapper = connection_wrapper
         self._node = node
         self._path = path
-    
+
     @property
     def path(self):
         return self._path

@@ -1,0 +1,17 @@
+1 Seamless int cell: .cell1 Status: OK
+2 Seamless int cell: .cell2 Status: OK
+
+%timeit -n 10 c = a + b
+
+%timeit -n 10 c = 99
+
+%%timeit -n 10
+def func():
+    return a + b
+
+c = a + b Seamless IPython cell: .code Status: OK
+3 Seamless int cell: .result Status: OK
+3 Seamless transformer: .tf Status: OK
+Status: OK
+None
+12 Status: OK

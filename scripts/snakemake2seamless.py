@@ -317,7 +317,7 @@ for rule in rules:
         shellcmd += ";cat %s > RESULT"  % list(outdummies._dict.values())[0]
     else:
         outputs = " ".join(outdummies._dict.values())
-        shellcmd += ";tar -cf RESULT %s" % outputs
+        shellcmd += ";mkdir RESULT; for i in %s; do ii=`dirname $i`; mkdir -p $ii`; mv $i $ii; done" % outputs
     if rule._singularity_img:
         shellcmd = "bash -c '" + shellcmd + "'"
 

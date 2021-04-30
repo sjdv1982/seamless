@@ -1,5 +1,6 @@
 # In general, run with:
-#   seamless-devel python3 -u TEST.py > test-outputs/TEST.out 2>&1
+#   python3 -u TEST.py > test-outputs/TEST.out 2>&1
+# Before each release, the test set must be run under seamless-devel AND under the Conda environment!
 bytecell.py
 bytecell2.py
 bytecell3.py
@@ -8,10 +9,12 @@ conversions.py: the output is approximate, depends on exact timings
 simple.py
 simple-async.py
 simple-indirect.py
+simple-ipython.py: Run with ipython --no-term-title (not -i) (see issue 25).
 exception_upon_compute.py
 subcontext.py
 simple-reactor.py
 downstream-reactor.py
+reactor-edit.py
 simple-cache.py: see instructions in file
 plain.py
 mixedcell.py
@@ -72,6 +75,7 @@ mount-cson.py:
      - run with ipython3 -i
      - then open /tmp/test.cson and /tmp/test.json, manipulate resp. monitor them
 mount-plain.py: see above, minus the .cson
+mount-as-directory.py: see above, minus the .cson
 
 simple-communion: run "python3 -u simple-communion-slave.py > test-outputs/simple-communion-slave.out 2>&1"
      then "python3 -u simple-communion-master.py > test-outputs/simple-communion-master.out 2>&1" in a different terminal,
@@ -86,7 +90,7 @@ communion-peer[12].sh: run communion-peer1.sh > test-outputs/communion-peer1.out
 compile-debug.py
      - Run with ipython3 -i . Run gdb from a second shell into the container
      To make this work, you will need to do one of the following:
-     - run the gdb shell as root, i.e. as "docker exec -u root -it container_name bash"
+     - run the gdb shell as privileged root, i.e. as "docker exec -u root -it --privileged container_name bash"
      OR
      - disable kernel hardening in your host (/proc/sys/kernel/yama/ptrace_scope, set the value to 0)
 

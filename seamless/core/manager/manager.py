@@ -53,6 +53,7 @@ def run_in_mainthread(func):
 class Manager:
     _destroyed = False
     _active = True
+    _highlevel_refs = 0
     def __init__(self):
         global is_dummy_mount
         from .livegraph import LiveGraph
@@ -95,6 +96,8 @@ class Manager:
     def remove_context(self, ctx):
         assert ctx._toplevel
         self.contexts.discard(ctx)
+        if not len(self.contexts) and self._highlevel_refs < 1:
+            self.destroy()
 
     ##########################################################################
     # API section I: Registration (divide among subsystems)
@@ -203,6 +206,7 @@ class Manager:
             (checksum is None), status_reason=reason,
             trigger_bilinks=trigger_bilinks
         )
+        updated = False
         if not from_structured_cell: # also for initial...
             if cell._structured_cell is not None and cell._structured_cell.auth is cell:
                 scell = cell._structured_cell
@@ -213,12 +217,16 @@ class Manager:
             else:
                 if checksum is not None:
                     unvoid_cell(cell, self.livegraph)
-                if cell._structured_cell is None or sc_schema:
-                    CellUpdateTask(self, cell).launch()
+                    if cell._structured_cell is None or sc_schema:
+                        CellUpdateTask(self, cell).launch()
+                        updated = True
         if sc_schema:
+            if from_structured_cell and not updated:
+                CellUpdateTask(self, cell).launch()
+                updated = True
             def update_schema():
                 value = self.resolve(checksum, "plain")
-                self.update_schemacell(cell, value, None)
+                self.update_schemacell(cell, value)
             self.taskmanager.add_synctask(update_schema, (), {}, False)
 
     def _set_cell_checksum(self,
@@ -359,7 +367,13 @@ class Manager:
         if exception is None:
             self.cachemanager.macro_exceptions[macro] = None
             return
-        exc = traceback.format_exception(type(exception), exception, exception.__traceback__)
+        exc = traceback.format_exception(
+            type(exception),
+            exception,
+            exception.__traceback__,
+            chain=False
+        )
+        exc = exc[4:]
         exc = "".join(exc)
         """
         msg = "Exception in %s:\n"% str(macro) + exc
@@ -370,7 +384,7 @@ class Manager:
         self.cachemanager.macro_exceptions[macro] = exc
 
     @run_in_mainthread
-    def set_cell(self, cell, value):
+    def set_cell(self, cell, value, origin_reactor=None):
         if self._destroyed or cell._destroyed:
             return
         assert cell.has_authority(), "{} is not independent".format(cell)
@@ -383,15 +397,13 @@ class Manager:
             unvoid_cell(cell, self.livegraph)
         else:
             self.cancel_cell(cell, value is None, reason)
-        task = SetCellValueTask(self, cell, value)
+        task = SetCellValueTask(self, cell, value, origin_reactor=origin_reactor)
         task.launch()
 
-    def update_schemacell(self, schemacell, value, structured_cell):
+    def update_schemacell(self, schemacell, value):
         livegraph = self.livegraph
         structured_cells = livegraph.schemacells[schemacell]
         for sc in structured_cells:
-            if sc is structured_cell:
-                continue
             sc._schema_value = deepcopy(value)
             self.structured_cell_trigger(sc, update_schema=True)
 
@@ -725,6 +737,10 @@ If origin_task is provided, that task is not cancelled."""
         self.taskmanager.check_destroyed()
         self.taskmanager.destroy()
         self.shareserver.destroy_manager(self)
+        if not from_del:
+            from ..macro_mode import _toplevel_managers, _toplevel_managers_temp
+            _toplevel_managers.discard(self)
+            _toplevel_managers_temp.discard(self)
 
     def __del__(self):
         self.destroy(from_del=True)

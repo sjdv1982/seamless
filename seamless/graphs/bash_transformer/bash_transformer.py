@@ -22,7 +22,7 @@ zip = ctx.get_zip()
 
 ###ctx.mount("/tmp/seamless-test", persistent=False)
 ctx.testdata = "a\nb\nc\nd\ne\nf\n"
-ctx.bashcode = "head -$lines testdata > RESULT"
+ctx.bashcode = "head -$lines testdata > firstdata; mkdir -p RESULT/input; cp firstdata RESULT; cp testdata RESULT/input"
 ctx.executor = lambda bashcode, testdata, pins_, lines: None
 pins = ctx.executor.pins
 pins.bashcode.celltype = "text"
@@ -47,6 +47,7 @@ if ctx.result.value is None:
     print(ctx.executor_code.exception)
     print(ctx.executor.status)
     print(ctx.executor.inp.exception)
+    print(ctx.executor.exception)
     print(ctx.status)
     import sys
     sys.exit()

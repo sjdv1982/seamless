@@ -167,7 +167,7 @@ class Macro(Worker):
                 ctx = Context(toplevel=False)
                 ctx._macro = self
                 ctx._macro_root = self._root()
-                ctx._manager = weakref.ref(self._get_manager())
+                ctx._manager = self._get_manager()
                 unbound_ctx._bind(ctx)
                 self._gen_context = ctx
                 ok = True
@@ -395,6 +395,12 @@ class Path:
                         manager.cancel_accessor(accessor, void=False)
                 if cell._checksum is not None:
                     CellUpdateTask(manager, cell).launch()
+            checksum = cell._checksum
+            if checksum is not None:
+                livegraph.activate_bilink(self, checksum)
+            else:
+                livegraph.rev_activate_bilink(self)
+
             if not self_authority:
                 up_accessor = livegraph.macropath_to_upstream[self]
                 assert up_accessor is not None  # if no up accessor, how could we have no authority?

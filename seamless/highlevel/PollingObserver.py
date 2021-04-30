@@ -87,5 +87,5 @@ class PollingObserver:
             pass
 
 from .Context import Context, Base
-from ..silk.Silk import Silk
-from ..mixed import MixedObject
+from silk.Silk import Silk
+from silk.mixed import MixedObject

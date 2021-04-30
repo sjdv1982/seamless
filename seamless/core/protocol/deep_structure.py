@@ -293,7 +293,7 @@ def deep_structure_to_value_sync(deep_structure, hash_pattern, buffer_dict, copy
     value_dict = {}
     for checksum in checksums:
         assert checksum in buffer_dict
-        value = deserialize_sync(buffer_dict[checksum], checksum, "mixed", copy=copy)
+        value = deserialize_sync(buffer_dict[checksum], bytes.fromhex(checksum), "mixed", copy=copy)
         value_dict[checksum] = value
     return _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy)
 

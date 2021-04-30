@@ -127,12 +127,12 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     )
 
     setattr(ctx, input_name, inp)
-    namespace[node["path"] + ("SCHEMA",), False] = inp.schema, node
+    namespace[node["path"] + ("SCHEMA",), "source"] = inp.schema, node
     if "input_schema" in mount:
         inp_ctx.schema.mount(**mount["input_schema"])
     for inchannel in inchannels:
         path = node["path"] + inchannel
-        namespace[path, True] = inp.inchannels[inchannel], node
+        namespace[path, "target"] = inp.inchannels[inchannel], node
 
     assert result_name not in node["pins"] #should have been checked by highlevel
     assert "executor_result_" not in node["pins"] #should have been checked by highlevel
@@ -161,7 +161,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
 
     for ic in main_module_inchannels:
         icpath = node["path"] + ("_main_module",) + ic[1:]
-        namespace[icpath, True] = ctx.main_module.inchannels[ic], node
+        namespace[icpath, "target"] = ctx.main_module.inchannels[ic], node
 
     # Transformer itself
     ctf = ctx.tf = context()
@@ -184,8 +184,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     set_structured_cell_from_checksum(ctx.main_module, {"auth": main_module_checksum})
     inp_checksum = convert_checksum_dict(checksum, "input")
     set_structured_cell_from_checksum(inp, inp_checksum)
-    namespace[node["path"] + ("code",), True] = ctx.code, node
-    namespace[node["path"] + ("code",), False] = ctx.code, node
+    namespace[node["path"] + ("code",), "target"] = ctx.code, node
+    namespace[node["path"] + ("code",), "source"] = ctx.code, node
 
     result, result_ctx = build_structured_cell(
         ctx, result_name, [()],
@@ -194,7 +194,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         fingertip_no_recompute=node.get("fingertip_no_recompute", False),
         return_context=True
     )
-    namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node
+    namespace[node["path"] + ("RESULTSCHEMA",), "source"] = result.schema, node
     if "result_schema" in mount:
         result_ctx.schema.mount(**mount["result_schema"])
 
@@ -221,10 +221,10 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
 
     if "header" in mount:
         ctx.header.mount(**mount["header"])
-    namespace[node["path"] + ("header",), False] = ctx.header, node
+    namespace[node["path"] + ("header",), "source"] = ctx.header, node
 
-    namespace[node["path"], True] = inp, node
-    namespace[node["path"], False] = result, node
+    namespace[node["path"], "target"] = inp, node
+    namespace[node["path"], "source"] = result, node
 
 from .util import get_path, as_tuple, build_structured_cell, cell_setattr, STRUC_ID
 from .convert_checksum_dict import convert_checksum_dict

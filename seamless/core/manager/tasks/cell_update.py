@@ -1,9 +1,10 @@
 from . import Task
 
 class CellUpdateTask(Task):
-    def __init__(self, manager, cell):
+    def __init__(self, manager, cell, *, origin_reactor=None):
         assert cell._structured_cell is None or cell._structured_cell.schema is cell, cell # cell update is not for StructuredCell cells, unless schema
         self.cell = cell
+        self.origin_reactor = origin_reactor
         super().__init__(manager)
         self._dependencies.append(cell)
 
@@ -30,6 +31,8 @@ class CellUpdateTask(Task):
             print("WARNING: cell %s is void, shouldn't happen during cell update" % cell)
             return
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         taskmanager = manager.taskmanager
         cell = self.cell
 
@@ -76,7 +79,9 @@ class CellUpdateTask(Task):
                 task.launch()
             for editpin in livegraph.cell_to_editpins[cell]:
                 reactor = editpin.worker_ref()
-                ReactorUpdateTask(manager, reactor).launch()
+                if reactor is not self.origin_reactor:
+                    if not reactor._void:
+                        ReactorUpdateTask(manager, reactor).launch()
             sc = cell._structured_cell
             if sc is not None:
                 if sc.schema is not cell:

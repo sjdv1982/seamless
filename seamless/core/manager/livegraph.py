@@ -51,7 +51,7 @@ class LiveGraph:
         self.cell_to_upstream = {} # Mapping of simple cells to the read accessor that defines it.
         self.cell_to_downstream = {} # Mapping of simple cells to the read accessors that depend on it.
         self.cell_to_editpins = {}
-        self.cell_to_cell_bilink = {}
+        self.cell_or_path_to_bilink = {}
         self.paths_to_upstream = {} # Mapping of buffercells-to-dictionary-of-path:upstream-write-accessor.
         self.paths_to_downstream = {} # Mapping of datacells-to-dictionary-of-path:list-of-downstream-read-accessors
         self.transformer_to_upstream = {} # input pin to read accessor
@@ -84,7 +84,7 @@ class LiveGraph:
         self.cell_to_upstream[cell] = None
         self.cell_to_downstream[cell] = []
         self.cell_to_editpins[cell] = []
-        self.cell_to_cell_bilink[cell] = []
+        self.cell_or_path_to_bilink[cell] = []
         self.schemacells[cell] = []
 
     def register_transformer(self, transformer):
@@ -153,6 +153,7 @@ class LiveGraph:
     def register_macropath(self, macropath):
         self.macropath_to_upstream[macropath] = None
         self.macropath_to_downstream[macropath] = []
+        self.cell_or_path_to_bilink[macropath] = []
 
     def incref_expression(self, expression, accessor):
         if expression not in self.expression_to_accessors:
@@ -188,15 +189,29 @@ class LiveGraph:
         if source in targets:
             return
         targets.add(source)
-        for target in self.cell_to_cell_bilink[source]:
+        for target in self.cell_or_path_to_bilink[source]:
             self._get_bilink_targets(target, targets)
+        if isinstance(source, Path):
+            source2 = source._cell
+            if source2 is not None:
+                self._get_bilink_targets(source2, targets)
+        else:
+            for path in source._paths:
+                self._get_bilink_targets(path, targets)
 
     def activate_bilink(self, cell, checksum):
+        if isinstance(cell, Path):
+            cell = cell._cell
+            if cell is None:
+                return
+            return self.activate_bilink(cell, checksum)
         manager = self.manager()
         targets = set()
         self._get_bilink_targets(cell, targets)
         targets.remove(cell)
         for target in targets:
+            if isinstance(target, Path):
+                continue
             manager.set_cell_checksum(
                 target, checksum,
                 initial=False,
@@ -204,6 +219,27 @@ class LiveGraph:
                 trigger_bilinks=False
             )
         return True
+
+    def rev_activate_bilink(self, path):
+        if not isinstance(path, Path):
+            raise TypeError(type(path))
+        cell = path._cell
+        if cell is None:
+            return
+        manager = self.manager()
+        targets = set()
+        self._get_bilink_targets(cell, targets)
+        for target in targets:
+            if isinstance(target, Path):
+                continue
+            if target._checksum is not None:
+                manager.set_cell_checksum(
+                    cell, target._checksum,
+                    initial=False,
+                    from_structured_cell=False,
+                    trigger_bilinks=False
+                )
+                break
 
     def bilink(self, current_macro, source, target):
         def verify_auth(cell):
@@ -219,17 +255,21 @@ class LiveGraph:
                 raise Exception(msg % cell)
 
         verify_auth(source)
-        verify_auth(target)
-        self.cell_to_cell_bilink[source].append(target)
-        self.cell_to_cell_bilink[target].append(source)
+        if isinstance(target, Cell):
+            verify_auth(target)
+        self.cell_or_path_to_bilink[source].append(target)
+        self.cell_or_path_to_bilink[target].append(source)
         manager = self.manager()
         checksum = source._checksum
         if checksum is not None:
             self.activate_bilink(source, checksum)
         else:
-            checksum = target._checksum
-            if checksum is not None:
-                self.activate_bilink(target, checksum)
+            if isinstance(target, Path):
+                target = target._cell
+            if target is not None:
+                checksum = target._checksum
+                if checksum is not None:
+                    self.activate_bilink(target, checksum)
 
     def connect_pin_cell(
         self, current_macro, source, target,
@@ -237,15 +277,20 @@ class LiveGraph:
     ):
         """Connect a pin to a simple cell"""
         assert target._structured_cell is None
-        assert self._has_authority(
-            target, from_upon_connection_task=from_upon_connection_task
-        ), target
-        if isinstance(source, EditPin):
-            assert target._get_macro() is None # Cannot connect edit pins to cells under macro control
 
         manager = self.manager()
         pinname = source.name
         worker = source.worker_ref()
+
+        assert self._has_authority(
+            target, from_upon_connection_task=from_upon_connection_task
+        ), target
+
+        if isinstance(source, EditPin):
+            assert isinstance(worker, Reactor)
+            self.cell_to_editpins[target].append(source)
+            self.editpin_to_cell[worker][pinname] = target
+            return
 
         if isinstance(worker, Transformer):
             to_downstream = self.transformer_to_downstream[worker]
@@ -820,13 +865,14 @@ class LiveGraph:
                 self.paths_to_downstream.pop(cell)
         self.cell_to_upstream.pop(cell)
         self.cell_to_downstream.pop(cell)
-        self.cell_to_cell_bilink.pop(cell)
+        self.cell_or_path_to_bilink.pop(cell)
         self.cell_parsing_exceptions.pop(cell, None)
 
     @destroyer
     def destroy_macropath(self, macropath):
         if macropath not in self.macropath_to_upstream:
             return
+        self.cell_or_path_to_bilink.pop(macropath)
         manager = self.manager()
         up_accessor = self.macropath_to_upstream.pop(macropath)
         if up_accessor is not None:
@@ -850,7 +896,7 @@ class LiveGraph:
             "expression_to_accessors",
             "cell_to_upstream",
             "cell_to_downstream",
-            "cell_to_cell_bilink",
+            "cell_or_path_to_bilink",
             "paths_to_upstream",
             "paths_to_downstream",
             "transformer_to_upstream",

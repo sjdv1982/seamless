@@ -100,7 +100,7 @@ print("TRANSFORMER EXCEPTION", ctx.transform.exception)
 
 print("START3")
 ctx.tfcode = triple_it
-ctx.transform._get_htf()["pins"].pop("b"); ctx._translate() ### KLUDGE
+del ctx.transform.pins.b
 ctx.compute()
 print(ctx.myresult.value)
 print("TRANSFORMER INPUT STATUS", ctx.transform.inp.status)

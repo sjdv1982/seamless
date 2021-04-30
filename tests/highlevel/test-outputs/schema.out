@@ -1,4 +1,24 @@
-OK
 <Silk: None >
+None
 <Silk: {'x': -1, 'y': 88} >
 VALIDATE <Silk: {'x': -1, 'y': 88} >
+<Silk: None >
+{'x': -1, 'y': 88}
+<Silk: {'x': -1, 'y': 88} >
+VALIDATE <Silk: {'x': 2, 'y': 88} >
+<Silk: {'x': 2, 'y': 88} >
+<Silk: 2 >
+12
+
+<Silk: 100 >
+<Silk: 200 >
+VALIDATE <Silk: {'x': 2, 'y': 88, 'z': 200} >
+<Silk: 200 > <Silk: 200 >
+
+VALIDATE <Silk: {'q': 101, 'x': 2, 'y': 88, 'z': 200} >
+<Silk: 101 > <Silk: 101 > 103
+<Silk: -200 > <Silk: 200 >
+<Silk: 201 > <Silk: 101 >
+
+VALIDATE <Silk: {'b': {'c': 12, 'd': 80}, 'q': 101, 'x': 2, 'y': 88, 'z': 200} >
+<Silk: {'c': 12, 'd': 80} >

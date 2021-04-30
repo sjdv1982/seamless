@@ -1,4 +1,4 @@
-from seamless.highlevel import Context, Reactor
+from seamless.highlevel import Context
 ctx = Context()
 ctx.test = "<b>This is a test</b>"
 print("cell:")
@@ -15,15 +15,6 @@ ctx.tf = lambda a,b: 10
 print("transformer:")
 print(ctx.tf.code.mimetype)
 print()
-
-"""
-ctx.rc = Reactor()
-print("reactor:")
-print(ctx.rc.code_start.mimetype)
-print(ctx.rc.code_update.mimetype)
-print(ctx.rc.code_stop.mimetype)
-print()
-"""
 
 ctx.tf.language = "cpp"
 print("C++ transformer:")

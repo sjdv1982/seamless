@@ -1,0 +1,9 @@
+#!/bin/bash
+set -u -e
+
+docker run --rm \
+  -v `pwd`:/cwd \
+  --workdir /cwd \
+  -u `id -u` \
+  --group-add users \
+  rpbs/seamless start.sh python3 -u /home/jovyan/seamless-scripts/http-put.py $*

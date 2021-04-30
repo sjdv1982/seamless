@@ -77,7 +77,7 @@ name: str
             if manager is None:
                 manager = Manager()
             manager.add_context(self)
-            self._manager = weakref.ref(manager)
+            self._manager = manager
         if mount is not None:
             mount_params = {
                 "path": mount,
@@ -113,7 +113,7 @@ name: str
         manager = self._manager
         if manager is None:
             return None
-        return manager()
+        return manager
 
     def __str__(self):
         p = self._format_path()
@@ -150,6 +150,13 @@ name: str
         self._auto.add(cell_name)
         self._add_child(cell_name, cell)
         return cell_name
+
+    @property
+    def children(self):
+        result = {}
+        for k in sorted(list(self._children.keys())):
+            result[k] = self._children[k]
+        return result
 
     def __setattr__(self, attr, value):
         if attr.startswith("_") or hasattr(self.__class__, attr):
@@ -291,10 +298,6 @@ name: str
         return result
 
     @property
-    def self(self):
-        return _ContextWrapper(self)
-
-    @property
     def internal_children(self):
         return _InternalChildrenWrapper(self)
 
@@ -364,19 +367,6 @@ def context(**kwargs):
         ctx = Context(**kwargs)
         return ctx
 context.__doc__ = Context.__init__.__doc__
-
-class _ContextWrapper:
-    _methods = Context._methods + ["destroy"]
-    def __init__(self, wrapped):
-        super().__setattr__("_wrapped", wrapped)
-    def __getattr__(self, attr):
-        if attr not in self._methods:
-            raise AttributeError(attr)
-        return getattr(self._wrapped, attr)
-    def __dir__(self):
-        return self._methods
-    def __setattr__(self, attr, value):
-        raise AttributeError("_ContextWrapper is read-only")
 
 class _InternalChildrenWrapper:
     def __init__(self, wrapped):

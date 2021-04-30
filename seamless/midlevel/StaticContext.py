@@ -27,6 +27,9 @@ class StaticContext:
             self._manager = Manager()
         self.root = context(toplevel=True,manager=self._manager)
 
+    def __del__(self):
+        self.root.destroy()
+
     def get_graph(self):
         if self._parent_path is None:
             graph = {}
@@ -80,8 +83,9 @@ class StaticContext:
         return copying.add_zip(self._manager, zipfile)
 
 
-    def children(self, type=None):
-        assert type is None, type
+    def get_children(self, type=None):
+        if type is not None:
+            raise ValueError("StaticContext only supports type=None")
         parent_path = self._parent_path
         result = []
         for path in self._nodes:
@@ -95,6 +99,10 @@ class StaticContext:
             if child not in result:
                 result.append(child)
         return result
+
+    @property
+    def children(self):
+        return self.get_children(type=None)
 
     def __getattr__(self, attr):
         parent_path = self._parent_path
@@ -137,8 +145,6 @@ class StaticContext:
             return TransformerWrapper(
                 self._manager, node
             )
-        elif t == "reactor":
-            raise NotImplementedError(t)
         elif t == "macro":
             raise NotImplementedError(t)
         else:

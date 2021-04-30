@@ -1,0 +1,11 @@
+<Silk: 5 >
+<Silk: None >
+The transformer code contains a single function "func" and 2 other statement(s).
+Did you mean to:
+1. Define the transformer code as a pure function "func"?
+   In that case, you must put the other statements within "def func(...):  ".
+or
+2. Define the transformer code as a code block?
+   In that case, you must define the output variable "result", e.g. add a statement
+   "result = func(a=a,b=b)" at the end
+                        

@@ -20,7 +20,10 @@ class SerializeToBufferTask(BackgroundTask):
         super().__init__(manager)
 
     async def _run(self):
-        taskmanager = self.manager().taskmanager
+        manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
+        taskmanager = manager.taskmanager
         loop = taskmanager.loop
         try:
             result = await serialize(self.value, self.celltype, use_cache=self.use_cache)

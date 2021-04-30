@@ -96,7 +96,7 @@ from . import context as context_module
 from .context import Context, context
 from .worker import Worker
 from .transformer import Transformer, transformer
-from .structured_cell import StructuredCell
+from .structured_cell import StructuredCell, Inchannel, Outchannel
 from .macro import Macro, macro, path
 from .reactor import Reactor, reactor
 from .unilink import unilink

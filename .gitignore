@@ -1,4 +1,5 @@
 seamless.code-workspace
+.vscode/
 *.pyc
 build/
 dist/

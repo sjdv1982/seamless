@@ -58,7 +58,7 @@ def constructor(
             import_cell = imports[k]
             subinstance = instance
             for subpathnr, subpath in enumerate(path):
-                if subpath not in subinstance.children():
+                if subpath not in subinstance.get_children():
                     curr_path = path[:subpathnr+1]
                     raise AttributeError("Invalid path {} ({})" % (path, curr_path))
                 subinstance = getattr(subinstance, subpath)
@@ -69,7 +69,7 @@ def constructor(
             export_cell = exports[k]
             subinstance = instance
             for subpathnr, subpath in enumerate(path):
-                if subpath not in subinstance.children():
+                if subpath not in subinstance.get_children():
                     curr_path = path[:subpathnr+1]
                     raise AttributeError("Invalid path {} ({})" % (path, curr_path))
                 subinstance = getattr(subinstance, subpath)

@@ -17,6 +17,8 @@ class StructuredCellTask(Task):
     async def await_sc_tasks(self, auth, _iter=0):
         sc = self.structured_cell
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         taskmanager = manager.taskmanager
         tasks = []
         for task in taskmanager.tasks:
@@ -52,13 +54,23 @@ class StructuredCellTask(Task):
 class StructuredCellAuthTask(StructuredCellTask):
     async def _run(self):
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         sc = self.structured_cell
         await self.await_sc_tasks(auth=True)
 
         value = sc._auth_value
-
         locknr = await acquire_evaluation_lock(self)
         try:
+            if value is None:
+                auth_ch = sc._auth_checksum
+                if auth_ch is not None:
+                    buffer = await GetBufferTask(manager, auth_ch).run()
+                    if buffer is None:
+                        raise CacheMissError(auth_ch.hex())
+                    value = await DeserializeBufferTask(
+                        manager, buffer, auth_ch, "mixed", copy=True
+                    ).run()
             if value is None:
                 sc._auth_invalid = True
                 auth_checksum = None
@@ -84,6 +96,7 @@ class StructuredCellAuthTask(StructuredCellTask):
             sc._auth_invalid = True
         else:
             sc._auth_value = None
+            sc._auth_checksum = None
             if auth_checksum is not None:
                 sc._auth_invalid = False
         finally:
@@ -92,11 +105,9 @@ class StructuredCellAuthTask(StructuredCellTask):
                 taskmanager = manager.taskmanager
                 ok = (not sc._auth_invalid)
                 def func():
-                    if self._canceled:
+                    if ok != (not sc._auth_invalid): # BUG!
                         return
-                    if sc.auth._checksum is None and not sc._modified_auth and value is not None:
-                        # Not quite sure why this happens, but it does, occasionally,
-                        #  for status_ctx.status_ when monitoring a large graph
+                    if self._canceled:
                         return
                     sc._auth_joining = False
                     manager.structured_cell_trigger(sc, void=(not ok))
@@ -126,6 +137,8 @@ class StructuredCellJoinTask(StructuredCellTask):
                     return
 
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
 
         locknr = await acquire_evaluation_lock(self)
 
@@ -327,6 +340,9 @@ class StructuredCellJoinTask(StructuredCellTask):
                     except ValidationError:
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
+                    except Exception:
+                        sc._exception = traceback.format_exc()
+                        ok = False
 
             if not from_cache:
                 if sc._mode != SCModeEnum.FORCE_JOINING:
@@ -404,7 +420,7 @@ from .accessor_update import AccessorUpdateTask
 from .upon_connection import UponConnectionTask
 from ...cache import CacheMissError
 from ...cache.buffer_cache import buffer_cache
-from ....silk.Silk import Silk, ValidationError
+from silk.Silk import Silk, ValidationError
 from ..cancel import get_scell_state, SCModeEnum
 from ...protocol.expression import get_subpath, set_subpath, set_subpath_checksum, access_hash_pattern
 from . import acquire_evaluation_lock, release_evaluation_lock

@@ -44,7 +44,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
+  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/validation/validators.py", line 231, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 3, in validation
     assert self != "test"

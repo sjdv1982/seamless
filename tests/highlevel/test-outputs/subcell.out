@@ -1,5 +1,5 @@
 <Silk: {'b': 12} > {'b': 12}
-<class 'seamless.silk.Silk.Silk'> <class 'dict'>
+<class 'silk.Silk.Silk'> <class 'dict'>
 <Silk: {'b': 12} > {'b': 12} {'properties': {'b': {'type': 'number'}}, 'type': 'object'}
 <Silk: 32 >
 <Silk: {'x': 12, 'y': 20} >
@@ -25,7 +25,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
+  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/validation/validators.py", line 231, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in validator
     assert self.f > self.d
@@ -56,7 +56,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/silk/validation/validators.py", line 232, in validator_validators
+  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/validation/validators.py", line 231, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in validator
     assert self.f > self.d

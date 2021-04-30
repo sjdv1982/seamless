@@ -1,13 +1,12 @@
 d89a78eede0f535003eae21099499943  twopi.seamless
 d89a78eede0f535003eae21099499943  /tmp/twopi-database.seamless
-TaskManager, tasks: 11 undestroyed
 OUTGOING jobmaster-service jobslave
 INCOMING jobslave jobmaster-service
 ADD SERVANT buffer
-ADD SERVANT buffer_length
-ADD SERVANT semantic_to_syntactic
 ADD SERVANT buffer
 ADD SERVANT buffer_length
+ADD SERVANT buffer_length
+ADD SERVANT semantic_to_syntactic
 ADD SERVANT semantic_to_syntactic
 ADD SERVANT transformation
 Set up a communion outgoing port 8602

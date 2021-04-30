@@ -68,9 +68,7 @@ ctx.filter_pdb.language = "docker"
 ctx.translate()
 
 ctx.fix_pdb.docker_image = "ubuntu"
-ctx.fix_pdb.docker_options = {}
 ctx.filter_pdb.docker_image = "ubuntu"
-ctx.filter_pdb.docker_options = {}
 ctx.translate()
 
 ctx.save_graph("share-pdb-docker.seamless")

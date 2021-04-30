@@ -26,7 +26,7 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
             interchannels.append(pinname2)
             if pinname2 in inchannels:
                 param_inchannels.append(pinname2)
-        elif pin["io"] in ("input", "output"):
+        elif pin["io"] in ("input", "output", "edit"):
             pin_cell_name = pinname
         else:
             raise ValueError((pin["io"], pinname))
@@ -39,21 +39,23 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pinname] = pin_cell
         if pin["io"] != "parameter":
-            pin_mpaths0[pinname] = (pin["io"] == "input")
+            pin_mpaths0[pinname] = (pin["io"] in ("input", "edit"))
 
     mount = node.get("mount", {})
-    param, param_ctx = build_structured_cell(
-      ctx, param_name, param_inchannels, interchannels,
-      return_context=True,
-      fingertip_no_remote=False,
-      fingertip_no_recompute=False,
-      hash_pattern={"*": "#"}
-    )
+    param = None
+    if len(interchannels):
+        param, param_ctx = build_structured_cell(
+            ctx, param_name, param_inchannels, interchannels,
+            return_context=True,
+            fingertip_no_remote=False,
+            fingertip_no_recompute=False,
+            hash_pattern={"*": "#"}
+        )
 
-    setattr(ctx, param_name, param)
-    namespace[node["path"] + ("SCHEMA",), False] = param.schema, node
-    if "param_schema" in mount:
-        param_ctx.schema.mount(**mount["param_schema"])
+        setattr(ctx, param_name, param)
+        namespace[node["path"] + ("SCHEMA",), "source"] = param.schema, node
+        if "param_schema" in mount:
+            param_ctx.schema.mount(**mount["param_schema"])
 
     param_pins = {}
     for pinname, pin in node["pins"].items():
@@ -76,8 +78,11 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
         pin_mpath = getattr(core_path(ctx.macro.ctx), pinname)
         pin_cell = pin_cells[pinname]
         if is_input:
-            pin_cell.connect(pin_mpath)
-            elision["input_cells"][pin_cell] = pin_mpath
+            if node["pins"][pinname]["io"] == "edit":
+                pin_cell.bilink(pin_mpath)
+            else:
+                pin_cell.connect(pin_mpath)
+                elision["input_cells"][pin_cell] = pin_mpath
         else:
             pin_mpath.connect(pin_cell)
             elision["output_cells"][pin_cell] = pin_mpath
@@ -91,10 +96,11 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
-    param_checksum = convert_checksum_dict(checksum, "param")
-    set_structured_cell_from_checksum(param, param_checksum)
-    namespace[node["path"] + ("code",), True] = ctx.code, node
-    namespace[node["path"] + ("code",), False] = ctx.code, node
+    if param is not None:
+        param_checksum = convert_checksum_dict(checksum, "param")
+        set_structured_cell_from_checksum(param, param_checksum)
+    namespace[node["path"] + ("code",), "target"] = ctx.code, node
+    namespace[node["path"] + ("code",), "source"] = ctx.code, node
 
     for pinname in node["pins"]:
         path = node["path"] + as_tuple(pinname)
@@ -102,15 +108,17 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
         if pin["io"] == "parameter":
             pinname2 = as_tuple(pinname)
             if pinname2 in inchannels:
-                namespace[path, True] = param.inchannels[pinname], node
+                namespace[path, "target"] = param.inchannels[pinname], node
             target = getattr(ctx.macro, pinname)
             assert target is not None, pinname
             pin_cell = pin_cells[pinname]
             param.outchannels[pinname2].connect(pin_cell)
             pin_cell.connect(target)
+        elif pin["io"] == "edit":
+            namespace[path, "edit"] = pin_cells[pinname], node
         else:
-            is_target = (pin["io"] == "input")
-            namespace[path, is_target] = pin_cells[pinname], node
+            cmode = "target" if pin["io"] == "input" else "source"
+            namespace[path, cmode] = pin_cells[pinname], node
 
 
 

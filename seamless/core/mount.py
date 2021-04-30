@@ -82,7 +82,7 @@ class MountItem:
     _destroyed = False
     _initialized = False
     def __init__(self, parent, cell, path, mode, authority, persistent, *,
-      dummy=False, **kwargs
+      dummy=False, as_directory=False, **kwargs
     ):
         if parent is not None:
             self.parent = ref(parent)
@@ -100,6 +100,9 @@ class MountItem:
             if "r" not in self.mode:
                 authority = "cell"
         self.authority = authority
+        if as_directory:
+            assert cell.celltype == "plain", cell.celltype  # TODO: as_directory mounting of mixed cells
+        self.as_directory = as_directory
         self.kwargs = kwargs
         self.last_checksum = None
         self.last_mtime = None
@@ -156,10 +159,13 @@ class MountItem:
                     if self._destroyed:
                         return
                     file_buffer0 = self._read()
-                    file_buffer = adjust_buffer(file_buffer0, cell._celltype)
+                    if file_buffer0 is not None:
+                        file_buffer = adjust_buffer(file_buffer0, cell._celltype)
+                    else:
+                        file_buffer = None
                     update_file = True
                     file_checksum = None
-                    if not cell_empty:
+                    if not cell_empty and file_buffer is not None:
                         file_checksum = calculate_checksum(file_buffer)
                         if file_checksum == cell_checksum:
                             update_file = False
@@ -187,12 +193,14 @@ class MountItem:
                 else:
                     self.last_checksum = cell_checksum
             elif exists:
+                update_file = False
                 with self.lock:
                     if self._destroyed:
                         return
                     file_buffer0 = self._read()
-                    file_buffer = adjust_buffer(file_buffer0, cell._celltype)
-                    update_file = True
+                    if file_buffer0 is not None:
+                        file_buffer = adjust_buffer(file_buffer0, cell._celltype)
+                        update_file = True
                     file_checksum = None
                     self._after_read(file_checksum)
                 if update_file and "r" in self.mode:
@@ -234,48 +242,103 @@ class MountItem:
             self.last_mtime = cached_time
         return cached_checksum, buffer
 
+    def _read_as_directory(self):
+        result = {}
+        try:
+            def scan(path, subresult):
+                with os.scandir(path) as it:
+                    for entry in it:
+                        name = entry.name
+                        if entry.is_file():
+                            filemode = "r" # TODO: binary file for mixed cells => try to decode
+                            with open(entry.path, filemode) as f:
+                                try:
+                                    data = f.read().strip("\n")
+                                except:
+                                    log("Reading error in '{}'".format(entry.path))
+                            subresult[name] = data
+                        elif entry.is_dir():
+                            subsubresult = {}
+                            scan(entry.path, subsubresult)
+                            if len(subsubresult):
+                                subresult[name] = subsubresult
+            scan(self.path, result)
+            data = json.dumps(result, sort_keys=True, indent=2)
+            buffer = data.encode()
+            return buffer
+        except RuntimeError:
+            pass
+
+
     def _read(self):
         if self._destroyed:
             return
         #print("read", self.cell())
+        if self.as_directory:
+            return self._read_as_directory()
         binary = self.kwargs["binary"]
         encoding = self.kwargs.get("encoding")
         filemode = "rb" if binary else "r"
-        with open(self.path.replace("/", os.sep), filemode, encoding=encoding) as f:
-            result = f.read()
+        with open(self.path, filemode, encoding=encoding) as f:
+            try:
+                result = f.read()
+            except:
+                log("Reading error in '{}'".format(self.path))
+                return None
             if not binary:
                 result = result.encode()
         return result
+
+    def _write_as_directory(self, file_buffer, with_none):
+        os.makedirs(self.path, exist_ok=True)
+        if with_none and file_buffer is None:
+            return
+        data = json.loads(file_buffer)
+        if not isinstance(data, dict):
+            return
+        def write(subdata, subpath):
+            os.makedirs(os.path.join(*subpath), exist_ok=True)
+            for k,v in subdata.items():
+                subpath2 = subpath + (k,)
+                if isinstance(v, dict):
+                    write(v, subpath2)
+                else:
+                    vv = str(v)
+                    filename = os.path.join(*subpath2)
+                    with open(filename, "w") as f:
+                        f.write(vv + "\n")
+        write( data, (self.path,) )
 
     def _write(self, file_buffer, with_none=False):
         if self._destroyed:
             return
         assert "w" in self.mode
+        if self.as_directory:
+            return self._write_as_directory(file_buffer, with_none)
         binary = self.kwargs["binary"]
         encoding = self.kwargs.get("encoding")
         filemode = "wb" if binary else "w"
-        filepath = self.path.replace("/", os.sep)
         if file_buffer is None:
             if not with_none:
-                if os.path.exists(filepath):
-                    os.unlink(filepath)
+                if os.path.exists(self.path):
+                    os.unlink(self.path)
                 return
             file_buffer = b"" if binary else ""
         else:
             assert isinstance(file_buffer, bytes), type(file_buffer)
             if not binary:
                 file_buffer = file_buffer.decode()
-        with open(filepath, filemode, encoding=encoding) as f:
+        with open(self.path, filemode, encoding=encoding) as f:
             f.write(file_buffer)
 
     def _exists(self):
-        return os.path.exists(self.path.replace("/", os.sep))
+        return os.path.exists(self.path)
 
     def _after_write(self, checksum):
         self.last_checksum = checksum
         try:
-            stat = os.stat(self.path)
-            self.last_mtime = stat.st_mtime
+            mtime = self._get_mtime()
+            self.last_mtime = mtime
         except Exception:
             pass
 
@@ -302,10 +365,36 @@ class MountItem:
     def _after_read(self, checksum, *, mtime=None):
         self.last_checksum = checksum
         if mtime is None:
-            stat = os.stat(self.path)
-            mtime = stat.st_mtime
+            mtime = self._get_mtime()
         if self.last_mtime is None or mtime > self.last_mtime:
             self.last_mtime = mtime
+
+    def _get_mtime(self):
+        if self.as_directory:
+            if not os.path.exists(self.path) or not os.path.isdir(self.path):
+                return None
+            stat = os.stat(self.path)
+            mtime = stat.st_mtime
+            try:
+                def scan(path):
+                    nonlocal mtime
+                    with os.scandir(path) as it:
+                        for entry in it:
+                            if entry.is_file() or entry.is_dir():
+                                f_mtime = entry.stat().st_mtime
+                                #print(entry.path, f_mtime)
+                                if mtime is None or f_mtime > mtime:
+                                    mtime = f_mtime
+                            if entry.is_dir():
+                                scan(entry.path)
+                scan(self.path)
+            except RuntimeError:
+                pass
+            return mtime
+        else:
+            stat = os.stat(self.path)
+            mtime = stat.st_mtime
+            return mtime
 
     def conditional_read(self):
         if not self._initialized:
@@ -320,14 +409,13 @@ class MountItem:
         with self.lock:
             if self._destroyed:
                 return
-            stat = os.stat(self.path)
-            mtime = stat.st_mtime
+            mtime = self._get_mtime()
             file_checksum = None
-            last_mtime = self.last_mtime
-            if last_mtime is None or mtime > last_mtime:
+            if self.last_mtime is None or mtime > self.last_mtime:
                 file_buffer0 = self._read()
-                file_buffer = adjust_buffer(file_buffer0, cell._celltype)
-                file_checksum = calculate_checksum(file_buffer)
+                if file_buffer0 is not None:
+                    file_buffer = adjust_buffer(file_buffer0, cell._celltype)
+                    file_checksum = calculate_checksum(file_buffer)
                 self._after_read(file_checksum, mtime=mtime)
         cell_checksum = self.cell_checksum
         if file_checksum is not None and file_checksum != cell_checksum:
@@ -425,6 +513,10 @@ class MountManager:
                                # persistent may be None, in which case the directory is not deleted.
 
 
+    @property
+    def last_run(self):
+        return self._last_run
+
     @lockmethod
     def add_mount(self, cell, path, mode, authority, persistent, **kwargs):
         root = cell._root()
@@ -456,6 +548,9 @@ class MountManager:
         assert not is_dummy_mount(cell_or_unilink._mount), cell_or_unilink
         root = cell_or_unilink._root()
         if from_del and (cell_or_unilink not in self.mounts or root not in self.paths):
+            return
+        if cell_or_unilink not in self.mounts or root not in self.paths:
+            # KLUDGE
             return
         mount_item = self.mounts.pop(cell_or_unilink)
         if not mount_item._destroyed:
@@ -510,7 +605,7 @@ class MountManager:
         mount = context._mount
         assert not is_dummy_mount(mount), context
         in_garbage = self.garbage_dirs.get(mount["path"], None)
-        dirpath = mount["path"].replace("/", os.sep)
+        dirpath = mount["path"]
         persistent, authority = mount["persistent"], mount["authority"]
         if os.path.exists(dirpath):
             if authority == "cell" and not as_parent and in_garbage is None:
@@ -530,7 +625,10 @@ class MountManager:
         root = cell._root()
         if root is not None and root not in mountmanager.paths:
             return
-        assert cell in self.mounts, (cell, hex(id(cell)))
+        if cell not in self.mounts:
+            # KLUDGE
+            return
+        #assert cell in self.mounts, (cell, hex(id(cell)))
         self.cell_updates.append((cell, checksum, buffer))
 
     def run_once(self):
@@ -582,6 +680,7 @@ class MountManager:
                 self._destroy_garbage_dir(dirpath)
 
         self._tick.set()
+        self._last_run = time.time()
 
     def run(self):
         try:
@@ -621,7 +720,6 @@ class MountManager:
 
 
     def _destroy_garbage(self, filepath, is_link):
-        filepath = filepath.replace("/", os.sep)
         if is_link:
             unbroken_link = os.path.islink(filepath)
             broken_link = (os.path.lexists(filepath) and not os.path.exists(filepath))
@@ -633,7 +731,6 @@ class MountManager:
 
 
     def _destroy_garbage_dir(self, dirpath):
-        dirpath = dirpath.replace("/", os.sep)
         try:
             #print("rmdir", dirpath)
             os.rmdir(dirpath)
@@ -697,8 +794,8 @@ def scan(ctx_or_cell):
     def find_mount(c, as_parent=False, child=None):
         if as_parent:
             assert child is not None
-        elif multicaps(c.path):
-            return
+        #elif multicaps(c.path):
+        #    return
         if c in mounts:
             result = mounts[c]
         elif not is_dummy_mount(c._mount):

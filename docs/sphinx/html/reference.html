@@ -4,7 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Reference &#8212; Seamless 0.4 documentation</title>
+    <title>Reference &#8212; Seamless 0.5 documentation</title>
     <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -28,7 +28,7 @@
         <li class="right" >
           <a href="new-project.html" title="Guide for creating a new Seamless project"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.4 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.5 documentation</a> &#187;</li> 
       </ul>
     </div>  
 
@@ -64,10 +64,13 @@ Normally, it has been generated with Context.save_zip / Context.get_zip</p>
 <p>See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/context.html">http://sjdv1982.github.io/seamless/sphinx/html/context.html</a> for documentation</p>
 <dl class="py method">
 <dt id="seamless.highlevel.Context.add_zip">
-<code class="sig-name descname">add_zip</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">zip</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.add_zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.add_zip" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_zip</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">zip</span></em>, <em class="sig-param"><span class="n">incref</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.add_zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.add_zip" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds entries from “zip” to the checksum-to-buffer cache</p>
 <p>“zip” can be a file name, zip-compressed bytes or a Python ZipFile object.
 Normally, it has been generated with Context.save_zip / Context.get_zip</p>
+<p>Note that caching is temporary and entries will be removed after some time
+if no element (cell, expression, or high-level library) holds their checksum
+This can be overridden with “incref=True” (not recommended for long-living contexts)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -173,6 +176,16 @@ but if it is already taken, a number will be added to it (ctx1, ctx2, etc.)</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="seamless.highlevel.Context.load_vault">
+<code class="sig-name descname">load_vault</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vault_directory</span></em>, <em class="sig-param"><span class="n">incref</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.load_vault"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.load_vault" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the contents of a vault directory in the checksum-to-buffer cache</p>
+<p>Normally, the vault has been generated with Context.save_vault</p>
+<p>Note that caching is temporary and entries will be removed after some time
+if no element (cell, expression, or high-level library) holds their checksum
+This can be overridden with “incref=True” (not recommended for long-living contexts)</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="seamless.highlevel.Context.observe">
 <code class="sig-name descname">observe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">callback</span></em>, <em class="sig-param"><span class="n">polling_interval</span></em>, <em class="sig-param"><span class="n">observe_none</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.observe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.observe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Observes attributes of the context, analogous to Cell.observe</p>
@@ -190,6 +203,12 @@ If celltype is provided, a value is returned instead</p>
 <dt id="seamless.highlevel.Context.save_graph">
 <code class="sig-name descname">save_graph</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.save_graph" title="Permalink to this definition">¶</a></dt>
 <dd><p>Saves the graph in JSON format</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="seamless.highlevel.Context.save_vault">
+<code class="sig-name descname">save_vault</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dirname</span></em>, <em class="sig-param"><span class="n">with_libraries</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_vault"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Context.save_vault" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the checksum-to-buffer cache for the current graph in a vault directory</p>
 </dd></dl>
 
 <dl class="py method">
@@ -433,7 +452,7 @@ use of expression-to-checksum or transformation-to-checksum caches</p></li>
 
 <dl class="py method">
 <dt id="seamless.highlevel.Cell.mount">
-<code class="sig-name descname">mount</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">'rw'</span></em>, <em class="sig-param"><span class="n">authority</span><span class="o">=</span><span class="default_value">'file'</span></em>, <em class="sig-param"><span class="n">persistent</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.mount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.mount" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">mount</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">'rw'</span></em>, <em class="sig-param"><span class="n">authority</span><span class="o">=</span><span class="default_value">'file'</span></em>, <em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">persistent</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">as_directory</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.mount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.mount" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mounts the cell to the file system.
 Mounting is only supported for non-structured cells.</p>
 <p>To delete an existing mount, do <cite>del cell.mount</cite></p>
@@ -450,6 +469,11 @@ Default: “rw”</p></li>
 Default: “file”.</p></li>
 <li><p><strong>persistent</strong> (<em>-</em>) – If False, the file is deleted from disk when the Cell is destroyed
 Default: True.</p></li>
+<li><p><strong>as_directory</strong> (<em>-</em>) – If True, the cell must contain a dictionary,
+which is mounted to a directory instead of a file.
+items that are themselves dictionaries are mounted to sub-directories.
+Other items are cast to str upon mounting.
+Default: False</p></li>
 </ul>
 </dd>
 </dl>
@@ -503,12 +527,14 @@ in <a class="reference external" href="https://github.com/sjdv1982/seamless/tree
 
 <dl class="py method">
 <dt id="seamless.highlevel.Cell.share">
-<code class="sig-name descname">share</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">readonly</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.share"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.share" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">share</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">readonly</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">toplevel</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.share"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Cell.share" title="Permalink to this definition">¶</a></dt>
 <dd><p>Shares a cell over HTTP.</p>
 <p>Typically, the cell is available under
 <a class="reference external" href="http://localhost:5813/ctx">http://localhost:5813/ctx</a>/&lt;path&gt;.</p>
 <p>If path is None (default), Cell.path is used,
 with dots replaced by slashes.</p>
+<p>If toplevel is True, the cell is instead available under
+<a class="reference external" href="http://localhost:5813">http://localhost:5813</a>/&lt;path&gt;.</p>
 <p>If readonly is True, only GET requests are supported.
 Else, the cell can also be modified using PUT requests
 using the Seamless JS client (js/seamless-client.js)</p>
@@ -573,27 +599,7 @@ schema is violated.</p>
 <dt id="seamless.highlevel.Transformer">
 <em class="property">class </em><code class="sig-prename descclassname">seamless.highlevel.</code><code class="sig-name descname">Transformer</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">parent</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">code</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">pins</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hash_pattern</span><span class="o">=</span><span class="default_value">{'*': '#'}</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#seamless.highlevel.Transformer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transforms input values to a result value</p>
-<p>One of the inputs is the code pin, containing source code
-in any programming language.</p>
-<p>This code is run inside a namespace populated by the values
-of all other inputs. Those names and types of those
-values are described as input pins.</p>
-<p>A transformer <cite>ctx.tf</cite> can be constructed from a Python function.
-In that case, the function’s source code is extracted and
-set as the code pin’s value. The function signature is
-inspected and each parameter becomes an input pin.</p>
-<p>Note that the transformer does not have access to any variable
-from outside the code pin’s source code.</p>
-<p>Python source code can be an expression, a function, or
-simply a block of code. For an expression or a function,
-the return value is the result value. A code block must define
-a variable named “result”.</p>
-<p>An input pin <cite>foo</cite> can be set to a value or a cell, simply with
-<cite>ctx.tf.foo = …</cite> . If the pin does not exist, it is created.
-The type of a pin is “mixed” by default.</p>
-<p>Pins can be changed using Transformer.pins, e.g.
-<cite>ctx.tf.pins.foo.celltype = “int”</cite></p>
-<p>To delete a pin <cite>foo</cite>, do <cite>del ctx.tf.pins.foo</cite></p>
+<p>See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/transformer.html">http://sjdv1982.github.io/seamless/sphinx/html/transformer.html</a> for documentation</p>
 <dl class="py method">
 <dt id="seamless.highlevel.Transformer.INPUT">
 <em class="property">property </em><code class="sig-name descname">INPUT</code><a class="headerlink" href="#seamless.highlevel.Transformer.INPUT" title="Permalink to this definition">¶</a></dt>
@@ -766,11 +772,11 @@ The first stage with a non-OK status is reported.</p>
         <li class="right" >
           <a href="new-project.html" title="Guide for creating a new Seamless project"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.4 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.5 documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2016-2020, Sjoerd de Vries.
+        &#169; Copyright 2016-2021, Sjoerd de Vries.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
     </div>
   </body>

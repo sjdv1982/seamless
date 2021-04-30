@@ -1,4 +1,5 @@
 import json, inspect
+import textwrap
 
 _libraries = {}
 
@@ -16,8 +17,9 @@ def validate_params(params):
         if type_ in ("value", "context"):
             assert io == "input", (k, io)
         if type_ in ("cell", "celldict"):
-            assert io in ("input", "output"), (k, io)
+            assert io in ("input", "output", "edit"), (k, io)
         default = v.get("default")
+        celltype = v.get("celltype")
         try:
             json.dumps(default)
         except:
@@ -27,6 +29,8 @@ def validate_params(params):
             "io": io,
             "default": default
         }
+        if celltype is not None:
+            result[k]["celltype"] = celltype
     return result
 
 def get_library(path):
@@ -87,7 +91,7 @@ class Library:
             constructor = value
             if inspect.isfunction(constructor):
                 code = inspect.getsource(constructor)
-                code = strip_source(code)
+                code = textwrap.dedent(code)
                 constructor = code
             self._constructor = constructor
             set_library(
@@ -174,6 +178,5 @@ class Library:
 
 from .include import IncludedLibrary
 from ..Context import Context
-from ...core.utils import strip_source
-from ...silk import Silk
-from ...mixed import DefaultBackend, Monitor, MixedDict
+from silk import Silk
+from silk.mixed import DefaultBackend, Monitor, MixedDict

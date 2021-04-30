@@ -112,6 +112,7 @@ class StructuredCell(SeamlessBase):
         self._joining = False  #  a join task is ongoing
 
         self._auth_value = None
+        self._auth_checksum = None
         self._auth_invalid = False
         self._schema_value = None
 
@@ -129,11 +130,14 @@ class StructuredCell(SeamlessBase):
             return "Status: exception"
         return self._data.status
 
-    def share(self, path, readonly=True, mimetype=None):
+    def share(self, path, readonly=True, mimetype=None, *, toplevel=False, cellname=None):
         assert readonly
         if path is None:
             path = ".".join(self.path)
-        self._data.share(path, readonly=True, mimetype=mimetype)
+        self._data.share(
+            path, readonly=True, mimetype=mimetype,
+            toplevel=toplevel, cellname=cellname
+        )
 
     def _validate_channels(self, inchannels, outchannels):
         self.inchannels = PathDict()
@@ -286,7 +290,6 @@ class StructuredCell(SeamlessBase):
         manager.update_schemacell(
             self.schema,
             self._schema_value,
-            self
         )
 
     def handle(self):
@@ -341,12 +344,23 @@ class StructuredCell(SeamlessBase):
 
     @property
     def checksum(self):
-        return self._data.checksum
-
+        checksum = self._data.checksum
+        if checksum is not None:
+            return checksum
+        if self.schema is None or self.schema.checksum is None:
+            checksum = self.buffer.checksum
+            if checksum is not None:
+                return checksum
+            if len(self.inchannels):
+                return None
+            return self.auth.checksum
     def set_auth_checksum(self, checksum):
         assert checksum is None or isinstance(checksum, str)
+        if isinstance(checksum, str):
+            checksum = bytes.fromhex(checksum)
         assert not self.no_auth
         self._auth_value = None
+        self._auth_checksum = checksum
         self._join_auth()
 
     @property
@@ -401,7 +415,7 @@ class StructuredCell(SeamlessBase):
         return not self.no_auth
 
     def __str__(self):
-        ret = "Seamless StructuredCell: " + self._format_path()
+        ret = "Seamless structured cell: " + self._format_path()
         return ret
 
 class PathDict(dict):
@@ -415,11 +429,11 @@ from .protocol.serialize import _serialize as serialize
 from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from .protocol.deep_structure import validate_hash_pattern
 from .protocol.expression import get_subpath_sync as get_subpath, set_subpath_sync as set_subpath
-from ..mixed.Monitor import Monitor
-from ..mixed.Backend import StructuredCellBackend, StructuredCellSchemaBackend
-from ..mixed import MixedObject, MixedDict, MixedList
-from ..silk.Silk import Silk
-from ..silk.policy import (
+from silk.mixed.Monitor import Monitor
+from silk.mixed.Backend import StructuredCellBackend, StructuredCellSchemaBackend
+from silk.mixed import MixedObject, MixedDict, MixedList
+from silk.Silk import Silk
+from silk.policy import (
     default_policy as silk_default_policy,
     no_infer_policy as silk_no_infer_policy
 )

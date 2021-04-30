@@ -116,28 +116,48 @@ debug or not).
 
 Once the transformer executes, you will see a Process ID printed.
 
-Find out the name of your running Seamless Docker container with `docker ps`, e.g. `jolly_einstein`.
+Start a separate shell in the same Docker container using `seamless-shell-existing`
+You will be root in this shell.
 
-Start up gdbgui or gdb in the same Docker container, using `docker exec -it jolly_einstein gdbgui`.
+Type "gdb" to start a GDB terminal.
 
-In the gdb terminal, type the following (where XXX is the process ID):
+In the GDB terminal, type the following (where XXX is the process ID):
 ```
 (gdb) attach XXX
 (gdb) break main.cpp:transform
 (gdb) signal SIGUSR1
 ```
-and gdb/gdbgui will break when your main `transform` function starts.
+and gdb will break when your main `transform` function starts.
 
 If your transformer is written in C, the main file will be "main.c" instead of "main.cpp".
 
 Whenever the transformer re-executes (due to changed source code or inputs), you will have to re-attach, but your breakpoints normally remain active.
 
+NOTE: integration with Visual Studio code is currently in progress.
+
 ## Visualization phase
 
-*User experience* (UX) can be done initially using Jupyter (very quick to set up). See [this simple example](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/traitlets.ipynb), to be opened with `seamless-jupyter`.
+### Using Jupyter notebooks ###
+
+*User experience* (UX) can be done initially using Jupyter notebooks (very quick to set up). See [this simple example](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/traitlets.ipynb), to be opened with `seamless-jupyter`.
+
+### Using HTML/JS
 
 More powerful is to use UX cells (HTML, JS, CSS). These cells are shared over HTTP (read-only), so that they can be accessed via the browser. Input cells (read-write) and output cells (read-only) are also shared over HTTP, so that the UX cells (loaded in the browser) can access and manipulate them. See [this example](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/share-pdb.py), to be opened with `seamless-ipython -i`.
 
+### Web page generator
+
+As of Seamless 0.5, a Seamless project now automatically includes a web page generator.
+When you share a cell (and retranslate the graph), an entry is automatically added in
+`/web/webform.json` . These entries are used to generate the web page in `web/index.html` and `web/index.js`. The web page is available under `http://localhost:<REST server port>`, normally `http://localhost:5813`.
+
+- Each entry in `/web/webform.json` describes the web component for the cell, and its parameters. All web components are in `/web/components/`. The "component" attribute of an entry can be the name of any component in that folder. See the README for each component for the required parameters (the "params" attribute of the entry).
+
+- You can also modify or create new components in `/web/components/`, and the web page will be updated.
+
+- You can manually edit `web/index.html` and `web/index.js`. Your modifications are automatically merged with the auto-generated HTML and JS. Sometimes, this can give rise to a merge conflict. Therefore, monitor and resolve `web/index-CONFLICT.html` and `web/index-CONFLICT.js`.
+
+- Likewise, when a modified context leads to added or removed entries in `/web/webform.json`, and these are automatically merged with your modifications. Resolve `web/webform-CONFLICT.txt` in case of a conflict.
 
 ## Validation phase
 
@@ -154,6 +174,8 @@ This is also the time to create tests. A unit test should be a small Seamless co
 *TODO: expand this section*
 
 Seamless deployment is done using Cloudless (https://github.com/sjdv1982/cloudless, WIP).
+
+You will need the .seamless file, and a zip file generated with `ctx.save_zip(...)`.
 
 For configuration, it is recommended to use YAML or CSON cells (*TODO: high-level test/example*)
 
@@ -208,84 +230,10 @@ After adding the new directory, save the workspace as PROJDIR/PROJNAME, where PR
 
 1. On the host machine, make sure you have the latest version of Seamless installed, using `docker pull rpbs/seamless` and `conda install -c rpbs seamless-cli`.
 
-2. Copy the standard monitoring graph.
-    ```bash
-    seamless-bash
-    d=/home/jovyan/software/seamless/graphs
-    mkdir graph
-    PROJNAME = ...
-    cp $d/status-visualization.seamless graph/$PROJNAME-monitoring.seamless
-    cp $d/status-visualization.zip graph/$PROJNAME-monitoring.zip
-    exit
-    ```
+2. Create a new directory. Open a shell in the new directory.
+Initialize git with `git init`
 
-3. Initialize and save an empty context
-    ```python
-    seamless-ipython
-    PROJNAME = ...
-    from seamless.highlevel import Context
-    ctx = Context()
-    ctx.save_graph("graph/" + PROJNAME  + ".seamless")
-    ctx.save_zip("graph/" + PROJNAME  + ".zip")
-    exit()
-    ```
-
-4. Set up some code to load and save the entire graph from/to disk (including monitoring), at any time. The code below will make a new backup whenever you save. Copy-paste it into `init-project.py` .
-
-    ```python
-    PROJNAME = ...
-
-    from seamless.highlevel import Context, Cell, Transformer
-
-    ctx = None
-    ctx2 = None
-    save = None
-
-    async def load():
-        from seamless.metalevel.bind_status_graph import bind_status_graph_async
-        import json
-
-        global ctx, ctx2, save
-        graph = json.load(open("graph/" + PROJNAME + ".seamless"))
-        ctx = Context()
-        ctx.add_zip("graph/" + PROJNAME + ".zip")
-        ctx.set_graph(graph, mounts=True, shares=True)
-        await ctx.translation(force=True)
-
-        status_graph = json.load(open("graph/" + PROJNAME + "-monitoring.seamless"))
-
-        ctx2 = await bind_status_graph_async(
-            ctx, status_graph,
-            mounts=True,
-            shares=True,
-            zips=["graph/" + PROJNAME + "-monitoring.zip"],
-        )
-        def save():
-            import os, itertools, shutil
-
-            def backup(filename):
-                if not os.path.exists(filename):
-                    return filename
-                for n in itertools.count():
-                    n2 = n if n else ""
-                    new_filename = "{}.bak{}".format(filename, n2)
-                    if not os.path.exists(new_filename):
-                        break
-                shutil.move(filename, new_filename)
-                return filename
-
-            ctx.save_graph(backup("graph/" + PROJNAME + ".seamless"))
-            ctx2.save_graph(backup("graph/" + PROJNAME + "-monitoring.seamless"))
-            ctx.save_zip(backup("graph/" + PROJNAME + ".zip"))
-            ctx2.save_zip(backup("graph/" + PROJNAME + "-monitoring.zip"))
-
-        print("""Project loaded.
-
-        Main context is "ctx"
-        Status context is "ctx2"
-        Run save() to save the context
-        """)
-    ```
+Type `seamless-new-project PROJNAME` where `PROJNAME` is the name you choose for your project.
 
 ## C. Project implementation
 
@@ -306,13 +254,19 @@ After adding the new directory, save the workspace as PROJDIR/PROJNAME, where PR
 5. At the bottom, instead of the "Live Share" text, there will now be your GitHub name (it should still be there the next time you start Visual Studio Code).
 Click on it, then on "invite others", and paste the link in a message to the guests.
 
-6. Open a new terminal (`Ctrl-Shift-(backtick)` in Visual Studio Code). Type `seamless-jupyter-trusted`. Normally, this will print
+6. Open a new terminal (`Ctrl-Shift-(backtick)` in Visual Studio Code).
+   The following steps explain how to open your project in Jupyter.
+   If you prefer to use IPython instead, go to step 9.
+
+   Type `seamless-jupyter-trusted`. Normally, this will print
    `The Jupyter Notebook is running at: http://localhost:8888/`
    But if port 8888 is already in use, it may be 8889 or a higher number instead.
 
    If you are hosting on a remote machine, you must share this port, as well as the Seamless HTTP ports (see step 9).
 
-7. In the Jupyter window in the browser, go to `cwd` and start a new Python3 notebook. Rename it to PROJNAME. In the first cell, type:
+7. Open the Jupyter window in the browser. A notebook called PROJNAME.ipynb should already exist in `cwd`.
+
+If not, go to `cwd` and start a new Python3 notebook. Rename it to PROJNAME. In the first cell, type:
     ```ipython
     %run -i init-project.py
     await load()
@@ -322,18 +276,21 @@ Click on it, then on "invite others", and paste the link in a message to the gue
 8.  Open a second terminal and type `seamless-jupyter-console-existing` (pressing Tab for completion is recommended).
     This opens a console that connects to the same kernel as the Notebook. From here (or, if you really want, from the Notebook) you can modify `ctx` to implement the topology.
 
-9. Now you must decide now much you trust the guests.
+9. Instead of using Jupyter, you can open your project in IPython instead by typing
+`seamless-load-project-trusted`.
+
+10. Now you must decide now much you trust the guests.
 
 - If you do nothing, they can only edit files. In the case of file-mounted code cells, this still means arbitrary execution of code.
 
 - To let them see any web form, you must expose the HTTP ports used by Seamless, which are by default 5138 and 5813 (this is reported in the first Jupyter Notebook output).
-In Visual Studio Code, click again on your name on the bottom and select "Share server" and enter the port number. Once you have shared both ports, you and any guest can see the monitoring at http://localhost:5813/status/index.html
+In Visual Studio Code, click again on your name on the bottom and select "Share server" and enter the port number. Once you have shared both ports, you and any guest can see the monitoring at http://localhost:5813/status/status.html
 
 - To let them help with the topology, you must share the terminal in which the "jupyter console" command is running. Terminals can be shared in the Live Share menu. Note that you can launch arbitrary commands from within a Jupyter console.
 
 - If you want them to get full Jupyter Notebook access, you must share the Jupyter port (8888). However, Jupyter Notebooks do not really support collaborative editing, so communicate clearly. Note that Jupyter allows you to open bash shells in the browser.
 
-10. Start the implementation stage. Modify the topology  in the console terminal (do `await ctx.translation()` after modification, and type `save()` often!). Mount cells to the file system, and tell the guests to edit them. Monitor error messages in the browser.
+11. Start the implementation stage. Modify the topology  in the console terminal (do `await ctx.translation()` after modification, and type `save()` often!). Mount cells to the file system, and tell the guests to edit them. Monitor error messages in the browser.
 Then, proceed to the visualization and validation phases. You can start visualization in the Jupyter Notebook, then move on to HTML/JS. For validation, you can start with the `Cell.example` attribute, then mount the schemas to the file system for editing.
 
 ### C2. For collaborative project guests
@@ -349,4 +306,10 @@ Then, proceed to the visualization and validation phases. You can start visualiz
 5. At the bottom, instead of the "Live Share" text, there will now be your GitHub name (it should still be there the next time you start Visual Studio Code).
 Click on it, then choose "Join Collaboration Session". Enter the link that the host has provided to you.
 
-6. In the browser, open Jupyter (http://localhost:8888) and the monitoring page (http://localhost:5813/status/index.html). In Jupyter, click on "Running" and then on the notebook.
+6. In the browser, open Jupyter (http://localhost:8888) and the monitoring page (http://localhost:5813/status/status.html). In Jupyter, click on "Running" and then on the notebook.
+
+## D. Version control
+
+*TODO: expand this section*
+(Discuss `/vault` and .gitignore. The vault contains the value for each checksum in
+the graph )

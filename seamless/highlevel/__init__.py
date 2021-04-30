@@ -4,9 +4,9 @@ from types import LambdaType
 from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda
 import textwrap
 
-from ..mixed import MixedBase
-from ..silk import Silk
-from ..silk.validation import _allowed_types
+from silk.mixed import MixedBase
+from silk import Silk
+from silk.validation import _allowed_types
 from ..core.lambdacode import lambdacode
 from ..core.cached_compile import cached_compile
 
@@ -56,7 +56,6 @@ def parse_function_code(code_or_func, identifier="<None>"):
 
 from .Context import Context
 from .Transformer import Transformer
-from .Reactor import Reactor
 from .Macro import Macro
 from .Cell import Cell
 from .Module import Module
@@ -109,7 +108,7 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
         )
 
 __all__ = [
-    "Context", "Transformer", "Reactor", "Macro",
+    "Context", "Transformer", "Macro",
     "Cell", "Link", "Graph", "StaticContext", "Module"
     "load_graph"
 ]

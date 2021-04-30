@@ -1,5 +1,5 @@
 # two cascading Docker transformers, similar to share-pdb
-# Making the first one invalid, and then valid again, shouldn't disable docker_image and docker_options on the second
+# Making the first one invalid, and then valid again, shouldn't disable docker_image on the second
 
 from seamless.highlevel import Context
 ctx = Context()

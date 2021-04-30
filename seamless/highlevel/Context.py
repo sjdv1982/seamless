@@ -3,11 +3,10 @@ from copy import deepcopy
 from collections import namedtuple
 import weakref
 import itertools
-import threading, time
-import asyncio, concurrent
+import threading
+import asyncio
 import inspect
 import functools
-from functools import partial
 import zipfile
 from zipfile import ZipFile, ZipInfo
 from io import BytesIO
@@ -38,10 +37,10 @@ from ..core import macro_mode
 from ..core.macro_mode import macro_mode_on, get_macro_mode, until_macro_mode_off
 from ..core.context import context
 from ..core.cell import cell
-from ..core.mount import mountmanager #for now, just a single global mountmanager
 from .assign import assign
 from .proxy import Proxy
 from ..midlevel import copying
+from ..midlevel.vault import save_vault, load_vault
 
 Graph = namedtuple("Graph", ("nodes", "connections", "params", "lib"))
 
@@ -172,6 +171,7 @@ class Context(Base):
         """
         graph = deepcopy(graph)
         nodes = {}
+        self._children.clear()
         for node in graph["nodes"]:
             p = tuple(node["path"])
             if not mounts:
@@ -217,6 +217,7 @@ class Context(Base):
             self._manager = manager
         else:
             self._manager = Manager()
+        self._manager._highlevel_refs += 1
         self._graph = Graph({},[],{},{})
         self._graph.params.update(deepcopy(self._default_parameters))
         self._children = {}
@@ -263,7 +264,7 @@ class Context(Base):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         path = (attr,)
         return self._get_path(path)
@@ -275,10 +276,7 @@ class Context(Base):
         if attr in members and isinstance(members[attr], property):
             return object.__setattr__(self, attr, value)
         attr2 = (attr,)
-        if isinstance(value, Reactor):
-            value._init(self, (attr,) )
-            self._translate()
-        elif isinstance(value, (Transformer, Macro)):
+        if isinstance(value, (Transformer, Macro)):
             if value._parent is None:
                 self._graph[0][attr2] = value
                 self._children[attr2] = value
@@ -312,22 +310,6 @@ class Context(Base):
         self._translate()
         return traitlet
 
-    def mount(self, path=None, mode="rw", authority="cell", persistent=None):
-        raise NotImplementedError  # for now, not implemented; TODO: see issue 10
-
-        if self._parent() is not self:
-            raise NotImplementedError
-        if path is None:
-            self._mount = None
-            return
-        self._mount = {
-            "path": path,
-            "mode": mode,
-            "authority": authority,
-            "persistent": persistent
-        }
-        self._translate()
-
     def compute(self, timeout=None, report=2):
         """Block until no more computation is required.
 
@@ -355,8 +337,10 @@ class Context(Base):
         await self.translation()
         await self._gen_context.computation(timeout, report)
 
+    @property
     def self(self):
-        raise NotImplementedError
+        attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
+        return SelfWrapper(self, attributelist)
 
     def _translate(self):
         self._needs_translation = True
@@ -426,12 +410,7 @@ class Context(Base):
         return self._live_share_namespace
 
     def _get_graph(self, copy):
-        from ..core.manager.tasks.structured_cell import StructuredCellAuthTask
-        from ..core.manager.tasks import SetCellValueTask, SetCellBufferTask
-        auth_task_types = (
-            SetCellValueTask, SetCellBufferTask, StructuredCellAuthTask
-        )
-
+        self._wait_for_auth_tasks("the graph is being obtained")
         try:
             self._translating = True
             manager = self._manager
@@ -502,19 +481,6 @@ class Context(Base):
         }
         return graph
 
-        nodes = []
-        for node in graph["nodes"]:
-            node["path"] = tuple(node["path"])
-            nodes.append(node)
-        for con in graph["connections"]:
-            if con["type"] == "connection":
-                con["source"] = tuple(con["source"])
-                con["target"] = tuple(con["target"])
-            elif con["type"] == "link":
-                con["first"] = tuple(con["first"])
-                con["second"] = tuple(con["second"])
-        return graph
-
     def save_graph(self, filename):
         """Saves the graph in JSON format"""
         graph = self.get_graph()
@@ -531,7 +497,7 @@ class Context(Base):
         self._wait_for_auth_tasks("the graph buffers are obtained for zip")
         self._do_translate(force=force)
         graph = self.get_graph()
-        checksums = copying.get_graph_checksums(graph, with_libraries)
+        checksums = copying.get_graph_checksums(graph, with_libraries, with_annotations=False)
         manager = self._manager
         buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
         return get_zip(buffer_dict)
@@ -546,7 +512,7 @@ class Context(Base):
         await self._wait_for_auth_tasks_async("the graph buffers are obtained for zip")
         self._do_translate(force=force)
         graph = self.get_graph()
-        checksums = copying.get_graph_checksums(graph, with_libraries)
+        checksums = copying.get_graph_checksums(graph, with_libraries, with_annotations=False)
         manager = self._manager
         buffer_dict = await copying.get_buffer_dict(manager, checksums)
         return get_zip(buffer_dict)
@@ -569,15 +535,36 @@ class Context(Base):
         with open(filename, "wb") as f:
             f.write(zip)
 
+    def save_vault(self, dirname, with_libraries=True):
+        """Save the checksum-to-buffer cache for the current graph in a vault directory
+        """
+        # TODO: option to not follow deep cell checksums (currently, they are always followed)
+        force = (self._gen_context is None)
+        self._wait_for_auth_tasks("the graph buffers are obtained for zip")
+        self._do_translate(force=force)
+        graph = self.get_graph()
+        annotated_checksums = copying.get_graph_checksums(
+            graph, with_libraries, with_annotations=True
+        )
+        manager = self._manager
+        checksums = [c[0] for c in annotated_checksums]
+        buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
+        save_vault(dirname, annotated_checksums, buffer_dict)
+
+
     def _set_lib(self, path, lib):
         old_lib = self._graph.lib.get(path)
         self._graph.lib[path] = lib
         if lib is not None:
-            checksums = copying.get_checksums(lib["graph"]["nodes"])
+            checksums = copying.get_checksums(
+                lib["graph"]["nodes"],
+                lib["graph"]["connections"],
+                with_annotations=False
+            )
             for checksum in checksums:
                 buffer_cache.incref(bytes.fromhex(checksum), True)
         if old_lib is not None:
-            old_checksums = copying.get_checksums(old_lib["graph"]["nodes"])
+            old_checksums = copying.get_checksums(old_lib["graph"]["nodes"], [], with_annotations=False)
             for old_checksum in old_checksums:
                 buffer_cache.decref(bytes.fromhex(old_checksum))
 
@@ -608,6 +595,21 @@ class Context(Base):
         else:
             raise TypeError(type(zip))
         return copying.add_zip(manager, zipfile, incref=incref)
+
+    def load_vault(self, vault_directory, incref=False):
+        """Loads the contents of a vault directory in the checksum-to-buffer cache
+
+        Normally, the vault has been generated with Context.save_vault
+
+        Note that caching is temporary and entries will be removed after some time
+        if no element (cell, expression, or high-level library) holds their checksum
+        This can be overridden with "incref=True" (not recommended for long-living contexts)
+
+        """
+        if self._gen_context is None:
+            self._do_translate(force=True)
+        manager = self._manager
+        return load_vault(vault_directory, incref=incref)
 
     def include(self, lib, only_zip=False, full_path=False):
         """Include a library in the graph
@@ -772,7 +774,7 @@ class Context(Base):
         try:
             self._translating = True
             for path, child in self._children.items():
-                if isinstance(child, (Cell, Transformer, Reactor, Macro)):
+                if isinstance(child, (Cell, Transformer, Macro, Module)):
                     try:
                         child._set_observers()
                     except Exception:
@@ -790,6 +792,7 @@ class Context(Base):
 
         finally:
             livegraph._hold_observations = False
+            print_info("*" * 30 + "TRANSLATE COMPLETE" + "*" * 30)
             self._translating = False
 
         livegraph._flush_observations()
@@ -836,7 +839,12 @@ class Context(Base):
             sharepath = shareparams["path"]
             readonly = shareparams["readonly"]
             mimetype = hcell.mimetype
-            cell.share(sharepath, readonly, mimetype=mimetype)
+            toplevel = shareparams.get("toplevel", False)
+            cell.share(
+                sharepath, readonly,
+                mimetype=mimetype, toplevel=toplevel,
+                cellname="." + ".".join(path)
+            )
 
     def _rename_path(self, path, newpath):
         raise NotImplementedError
@@ -868,7 +876,7 @@ class Context(Base):
             if not runtime:
                 self._translate()
 
-        removed = self._remove_connections(path, runtime=runtime)
+        removed = self.remove_connections(path, runtime=runtime)
         if removed and not runtime:
             self._translate()
 
@@ -923,23 +931,57 @@ class Context(Base):
     def _get_lib(self, path):
         return self._graph.lib[tuple(path)]
 
-    def _remove_connections(self, path, keep_links=False, runtime=False):
-        """Removes all connections/links with source or target starting with path"""
+    def remove_connections(self, path, *,
+        runtime=False, endpoint="both", match="sub"
+    ):
+        """Removes all connections/links with source or target matching path
+
+        "endpoint" can be "source", "target", "connection", "link" or "all".
+        With endpoint "source", only remove connections where the source matches path. Don't remove links.
+        With endpoint "target", only remove connections where the target matches path. Don't remove links.
+        With endpoint "both", only remove connections where source or target matches path. Don't remove links.
+        With endpoint "link", remove links where "first" or "second" matches path. Don't remove connections
+
+        "match" can be "super", "exact", or "sub".
+        If "super", only paths P that are shorter or equal to "path" are matched. The start of P must be identical to "path"
+        If "exact", only paths P that are equal to "path" are matched
+        If "sub", only paths that are longer or equal to "path" are matched. The start of "path" must be identical to P.
+        If "all", all longer and shorter paths are matched.
+        """
+        assert endpoint in ("source", "target", "both", "link", "all")
+        assert match in ("super", "sub", "exact", "all")
         lp = len(path)
+        def matches(p):
+            if match == "exact":
+                return (p == path)
+            elif match == "super":
+                return path[:len(p)] == p
+            elif match == "sub":
+                return p[:lp] == path
+            else: # all
+                return p[:lp] == path or path[:len(p)] == p
+
         def keep_con(con):
             if con["type"] == "link":
-                if keep_links:
+                if endpoint not in ("link", "all"):
                     return True
                 first = con["first"]
-                if first[:lp] == path:
+                if matches(first):
                     return False
                 second = con["second"]
-                if second[:lp] == path:
+                if matches(second):
                     return False
                 return True
             else:
+                csource = con["source"]
+                if endpoint in ("source", "both", "all"):
+                    if matches(csource):
+                        return False
                 ctarget = con["target"]
-                return ctarget[:lp] != path
+                if endpoint in ("target", "both", "all"):
+                    if matches(ctarget):
+                        return False
+                return True
         connections = self._graph[1]
         if runtime:
             connections = self._runtime_graph[1]
@@ -966,7 +1008,7 @@ class Context(Base):
                 result.append(Link(self, node=node))
         return result
 
-    def children(self, type=None):
+    def get_children(self, type=None):
         """Returns all children of the context
         The type of the children can be specified as string
         If type is None, all children and descendants are returned:
@@ -978,7 +1020,7 @@ class Context(Base):
         children00 = []
         for p,c in self._children.items():
             if isinstance(c, LibInstance) and type != "libinstance":
-                for child in c.ctx.children():
+                for child in c.ctx.get_children():
                     children00.append((child.path, child))
             else:
                 children00.append((p, c))
@@ -991,21 +1033,45 @@ class Context(Base):
             children = [p for p in children if (p,) not in children00]
         return sorted(list(set(children)))
 
+    @property
+    def children(self):
+        """Returns a wrapper for the direct children of the context
+        This includes subcontexts"""
+        children = [p[0] for p in self._children]
+        children = sorted(list(set(children)))
+        return ChildrenWrapper(self, children)
+
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
-        subs = [p[0] for p in self._children]
-        return sorted(d + list(set(subs)))
+        children = [p[0] for p in self._children]
+        children = list(set(children))
+        return sorted(d + children)
 
     def _destroy(self):
         if self._destroyed:
             return
         self._destroyed = True
+        self._manager._highlevel_refs -= 1
         if self._gen_context is not None:
             self._gen_context.destroy()
         for lib in self._graph.lib.values():
-            checksums = copying.get_checksums(lib["graph"]["nodes"])
+            checksums = copying.get_checksums(
+                lib["graph"]["nodes"],
+                lib["graph"]["connections"],
+                with_annotations=False
+            )
             for checksum in checksums:
                 buffer_cache.decref(bytes.fromhex(checksum))
+
+    def __str__(self):
+        p = self.path
+        if p == "":
+            p = "<toplevel>"
+        ret = "Seamless Context: " + p
+        return ret
+
+    def __repr__(self):
+        return str(self)
 
     def __del__(self):
         self._destroy()
@@ -1029,7 +1095,7 @@ class SubContext(Base):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         parent = self._get_top_parent()
         path = self._path + (attr,)
@@ -1040,10 +1106,7 @@ class SubContext(Base):
             return object.__setattr__(self, attr, value)
         parent = self._get_top_parent()
         path = self._path + (attr,)
-        if isinstance(value, Reactor):
-            value._init(parent, path)
-            parent._translate()
-        elif isinstance(value, Transformer):
+        if isinstance(value, Transformer):
             if value._parent is None:
                 parent._graph[0][path] = value
                 parent._children[path] = value
@@ -1058,9 +1121,6 @@ class SubContext(Base):
         parent = self._get_top_parent()
         path = self._path + (attr,)
         parent._destroy_path(path)
-
-    def mount(self, path=None, mode="rw", authority="cell", persistent=None):
-        raise NotImplementedError # for now, not implemented; TODO: see issue 10
 
     def _get_graph(self, copy, runtime=False):
         parent = self._parent()
@@ -1112,7 +1172,7 @@ class SubContext(Base):
     def _translate(self):
         self._parent()._translate()
 
-    def children(self, type=None):
+    def get_children(self, type=None):
         classless = ("context", "libinstance")
         assert type is None or type in classless or type in nodeclasses, (type, nodeclasses.keys())
         l = len(self._path)
@@ -1126,17 +1186,33 @@ class SubContext(Base):
             children = [p for p in children if (p,) not in children00]
         return sorted(list(set(children)))
 
+    @property
+    def children(self):
+        result = {}
+        parent = self._get_top_parent()
+        for k in self.get_children(type=None):
+            path = self._path + (k,)
+            child = parent._get_path(path)
+            result[k] = child
+        return result
+
+    def __str__(self):
+        ret = "Seamless SubContext: " + self.path
+        return ret
+
+    def __repr__(self):
+        return str(self)
+
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
-        l = len(self._path)
-        subs = [p[l] for p in self._parent()._children if len(p) > l and p[:l] == self._path]
-        return sorted(d + list(set(subs)))
+        return sorted(d + self.get_children())
 
-from .Reactor import Reactor
 from .Transformer import Transformer
 from .Cell import Cell
 from .Link import Link
 from .Macro import Macro
+from .Module import Module
+from .SelfWrapper import SelfWrapper, ChildrenWrapper
 from .pin import PinWrapper
 from .library.libinstance import LibInstance
 from .PollingObserver import PollingObserver
@@ -1144,9 +1220,9 @@ from .PollingObserver import PollingObserver
 nodeclasses = {
     "cell": Cell,
     "transformer": Transformer,
-    "reactor": Reactor,
     "context": SubContext,
     "macro": Macro,
+    "module": Module
 }
 
 from ..core.manager.tasks.structured_cell import StructuredCellAuthTask

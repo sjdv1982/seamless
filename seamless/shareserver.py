@@ -16,6 +16,8 @@ It opens an update websocket server, and a REST server.
 
 Shares are of the form http://<address>:<port>/<namespace>/<path>
 By default, namespace is "ctx", address is localhost, port is 5813
+Shares with toplevel=True do not share under /<namespace>/, but under
+    http://<address>:<port>/<path> instead.
 
 All GET requests have a mode URL parameter (default: "buffer"), which can have
 one of the following values.
@@ -48,6 +50,9 @@ Upon connection, a client receives a handshake message: ["Seamless share update 
 Then, it receives a list of share keys (normally, each share key is bound to a cell).
 Then, it receives all checksums and markers.
 
+NOTE: The shareserver has a very liberal request size limit (i.e. file upload limit) of 1GB
+In production, you will probably want to put Seamless behind a proxy server (e.g. nginx)
+that enforces more sensible values
 """
 import os
 import asyncio
@@ -56,9 +61,12 @@ import traceback
 import json
 
 from asyncio import CancelledError
+import aiohttp
 from websockets.exceptions import ConnectionClosed
 
 DEBUG = False
+import logging
+logger = logging.getLogger("seamless")
 
 def get_subkey(buffer, subkey):
     value = json.loads(buffer)
@@ -88,7 +96,7 @@ def is_bound_port_error(exc):
 def tailsplit(tail):
     pos = tail.find("/")
     if pos == -1:
-        return tail, ""
+        return "", tail
     else:
         return tail[:pos], tail[pos+1:]
 
@@ -114,6 +122,12 @@ class Share:
 
     def unbind(self):
         self.bound = None
+
+    @property
+    def toplevel(self):
+        if self.bound is None:
+            raise AttributeError
+        return self.bound.toplevel
 
     async def read(self, marker=None):
         if marker is not None and marker <= self._marker:
@@ -284,7 +298,16 @@ class ShareNamespace:
         if mode == "value":
             if buffer is None:
                 return None, None
-            return buffer, content_type
+            if share.celltype == "mixed" and content_type.startswith("text"):
+                try:
+                    value0 = json.loads(buffer)
+                    if isinstance(value0, str):
+                        value = value0
+                except:
+                    pass
+            else:
+                value = buffer
+            return value, content_type
         result = {
             "checksum": checksum2,
             "marker": marker,
@@ -413,9 +436,8 @@ class ShareServer(object):
             except ValueError:
                 pass
         except Exception as exc:
-            if DEBUG:
-                print("DEBUG shareserver._send_sharelist")
-                traceback.print_exc()
+            logger.debug("shareserver._send_sharelist")
+            logger.debug(traceback.format_exc())
 
     async def _send_checksum(self, namespace, websocket, key, checksum, marker, prior=None):
         if prior is not None:
@@ -431,14 +453,34 @@ class ShareServer(object):
             except ValueError:
                 pass
         except Exception as exc:
-            if DEBUG:
-                print("DEBUG shareserver._send_checksum")
-                traceback.print_exc()
+            logger.debug("shareserver._send_checksum")
+            logger.debug(traceback.format_exc())
+
+
+    async def _serve_update_listen(self, websocket, path):
+        #keep connection open forever, ignore all messages
+        try:
+            async for message in websocket:
+                pass
+        except ConnectionClosed:
+            pass
+
+    async def _serve_update_ping(self, websocket, path):
+        #keep connection open forever, periodically send a ping
+        # else, nginx will close the connection after a minute
+        try:
+            while 1:
+                await asyncio.sleep(10)
+                #await websocket.ping()   # is NOT sufficient!
+                await self._send(websocket, ("ping",))
+        except ConnectionClosed:
+            pass
 
     async def _serve_update(self, websocket, path):
         if path:
             path = path.lstrip("/")
-        assert path in self.namespaces, path #TODO
+        if path not in self.namespaces:
+            return
         """
         In the future, path can be empty (=> get all namespaces)
          or longer than a namespace (=> get part of a namespace)
@@ -452,10 +494,14 @@ class ShareServer(object):
         except ConnectionClosed:
             return
         try:
-            async for message in websocket: #keep connection open forever, ignore all messages
-                pass
-        except ConnectionClosed:
-            pass
+            task_listen = asyncio.ensure_future(self._serve_update_listen(websocket, path))
+            task_ping = asyncio.ensure_future(self._serve_update_ping(websocket, path))
+            done, pending = await asyncio.wait(
+                [task_listen, task_ping],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            for task in pending:
+                task.cancel()
         finally:
             try:
                 namespace.update_connections.remove(websocket)
@@ -482,6 +528,13 @@ class ShareServer(object):
         print("Opened the seamless share update server at port {0}".format(self.update_port))
         self._update_server_started = True
 
+    def _find_toplevel(self, key):
+        for name in sorted(list(self.namespaces.keys())):
+            namespace = self.namespaces[name]
+            share = namespace.shares.get(key)
+            if share is not None and share.toplevel:
+                return namespace
+
     async def _handle_get(self, request):
         try:
             tail = request.match_info.get('tail')
@@ -489,63 +542,75 @@ class ShareServer(object):
                 return web.Response(
                     status=404
                 )
-            if tail == "" and "ctx" in self.namespaces:
-                raise web.HTTPFound('/ctx/index.html')
             ns, key = tailsplit(tail)
-        except web.HTTPFound:
-            raise
         except:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug("shareserver._handle_get")
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=400,
                 text="Invalid request",
             )
-
-        try:
-            namespace = self.namespaces[ns]
+        if ns == "":
             if key == "":
-                raise web.HTTPFound('/{}/index.html'.format(ns))
+                raise web.HTTPFound('/index.html')
+            namespace = self._find_toplevel(key)
+            if namespace is None:
+                if key == "index.html" and "ctx" in self.namespaces:
+                    raise web.HTTPFound('/ctx/index.html')
+                else:
+                    return web.Response(
+                        status=404,
+                        body=json.dumps({'not found': 404}),
+                        content_type='application/json'
+                    )
+            share = namespace.shares[key]
+            subkey = None
+        else:
             try:
-                share = namespace.shares[key]
-                subkey = None
+                namespace = self.namespaces[ns]
+                if key == "":
+                    raise web.HTTPFound('/{}/index.html'.format(ns))
+                try:
+                    share = namespace.shares[key]
+                    subkey = None
+                except KeyError:
+                    ok = False
+                    for pos in range(len(key)-1,0,-1):
+                        if key[pos] != "/":
+                            continue
+                        key2, subkey = key[:pos], key[pos+1:]
+                        try:
+                            share = namespace.shares[key2]
+                            ok = True
+                            key = key2
+                            break
+                        except KeyError:
+                            pass
+                    if not ok:
+                        raise KeyError(key) from None
             except KeyError:
-                ok = False
-                for pos in range(len(key)-1,0,-1):
-                    if key[pos] != "/":
-                        continue
-                    key2, subkey = key[:pos], key[pos+1:]
-                    try:
-                        share = namespace.shares[key2]
-                        ok = True
-                        key = key2
-                        break
-                    except KeyError:
-                        pass
-                if not ok:
-                    raise KeyError(key) from None
-        except KeyError:
-            if DEBUG:
-                traceback.print_exc()
-            return web.Response(
-                status=404,
-                body=json.dumps({'not found': 404}),
-                content_type='application/json'
-            )
+                logger.debug("shareserver._handle_get")
+                logger.debug(traceback.format_exc())
+                return web.Response(
+                    status=404,
+                    body=json.dumps({'not found': 404}),
+                    content_type='application/json'
+                )
 
         mode = request.rel_url.query.get("mode", "value")
 
         if mode not in ("buffer", "checksum", "value", "marker"):
             err = 'if specified, mode must be "buffer", "checksum", "value", or "marker"'
-            if DEBUG:
-                print("shareserver _handle.get", err, ns, key, mode)
+            msg = "shareserver._handle_get", err, ns, key, mode
+            logger.debug(" ".join([str(m) for m in msg]))
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=400,
                 text=err,
             )
 
         try:
-            result = await namespace.get(key, mode,subkey)
+            result = await namespace.get(key, mode, subkey)
             body, content_type = result
             if body is None:
                 return web.Response(
@@ -559,8 +624,7 @@ class ShareServer(object):
             )
         except CommunionError as exc:
             txt = exc.args[0]
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             if txt.startswith("CacheMissError"):
                 err = "Cache miss"
             elif txt.startswith("CanceledError"):
@@ -570,26 +634,32 @@ class ShareServer(object):
                 text=err,
             )
         except CacheMissError:
-            if DEBUG:
-                checksum = share._checksum
-                if checksum is not None:
-                    checksum = checksum.hex()
-                print("shareserver GET request, cache miss:", checksum)
+            checksum = share._checksum
+            if checksum is not None:
+                checksum = checksum.hex()
+            logger.debug("shareserver GET request, cache miss: {}".format(checksum))
+            logger.debug(traceback.format_exc())
             err = "Cache miss"
             return web.Response(
                 status=404,
                 text=err,
             )
         except CancelledError:
-            if DEBUG:
-                print("Share was destroyed", ns, key)
+            msg = "Share was destroyed", ns, key
+            logger.debug(" ".join([str(m) for m in msg]))
             return web.Response(
                 status=404,
                 text="Share was destroyed"
             )
+        except aiohttp.web_exceptions.HTTPClientError as exc:
+            logger.debug("shareserver._handle_get")
+            logger.debug(traceback.format_exc())
+            return web.Response(
+                status=exc.status_code,
+                text=exc.reason,
+            )
         except:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=500,
                 text="Unknown error"
@@ -603,9 +673,14 @@ class ShareServer(object):
             text = await request.text()
             data = json.loads(text)
             assert isinstance(data, dict)
+        except aiohttp.web_exceptions.HTTPClientError as exc:
+            logger.debug(traceback.format_exc())
+            return web.Response(
+                status=exc.status_code,
+                text=exc.reason,
+            )
         except:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=400,
                 text="Invalid request",
@@ -613,8 +688,7 @@ class ShareServer(object):
 
         if "buffer" in data:
             if "checksum" in data:
-                if DEBUG:
-                    print("shareserver PUT: contains buffer AND checksum")
+                logger.debug("shareserver PUT: contains buffer AND checksum")
                 return web.Response(
                     status=400,
                     text="contains buffer AND checksum",
@@ -628,12 +702,36 @@ class ShareServer(object):
 
         tail = request.match_info.get('tail')
         ns, key = tailsplit(tail)
+
+        if ns == "":
+            if key == "":
+                raise web.HTTPFound('/index.html')
+            namespace = self._find_toplevel(key)
+            if namespace is None:
+                if key == "index.html" and "ctx" in self.namespaces:
+                    raise web.HTTPFound('/ctx/index.html')
+                else:
+                    return web.Response(
+                        status=404,
+                        body=json.dumps({'not found': 404}),
+                        content_type='application/json'
+                    )
+            share = namespace.shares[key]
+        else:
+            try:
+                namespace = self.namespaces[ns]
+            except KeyError:
+                logger.debug(traceback.format_exc())
+                return web.Response(
+                    status=404,
+                    body=json.dumps({'not found': 404}),
+                    content_type='application/json'
+                )
+
         try:
-            namespace = self.namespaces[ns]
             share = namespace.shares[key]
         except KeyError:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=404,
                 body=json.dumps({'not found': 404}),
@@ -641,6 +739,13 @@ class ShareServer(object):
             )
 
         if share.readonly:
+            sharecell = None
+            if share.bound is not None:
+                sharecell = share.bound.cellname
+            if sharecell is not None:
+                msg = """Seamless just received a PUT request for {c}, but {c} is read-only.
+Share {c} with readonly=False to allow HTTP PUT requests"""
+                logger.warning(msg.format(c="cell " + sharecell))
             return web.Response(
                 status=405,
                 text="Refused, share is read-only",
@@ -654,15 +759,14 @@ class ShareServer(object):
                 text=newmarker,
             )
         except CancelledError:
-            if DEBUG:
-                print("Share was destroyed", ns, key)
+            msg = "Share was destroyed", ns, key
+            logger.debug(" ".join([str(m) for m in msg]))
             return web.Response(
                 status=404,
                 text="Share was destroyed"
             )
         except:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=500,
                 text="Unknown error"
@@ -679,8 +783,7 @@ class ShareServer(object):
             if timeout is not None:
                 timeout = float(timeout)
         except:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=400,
                 text="Invalid request",
@@ -708,8 +811,7 @@ class ShareServer(object):
                 content_type='application/json'
             )
         except:
-            if DEBUG:
-                traceback.print_exc()
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=500,
                 text="Unknown error"
@@ -719,7 +821,10 @@ class ShareServer(object):
         global web
         from aiohttp import web
         import aiohttp_cors
-        app = web.Application(debug=DEBUG)
+        app = web.Application(
+            client_max_size=1024**3,
+            debug=DEBUG
+        )
         app.add_routes([
             web.get('/{tail:.*}', self._handle_get),
             web.put('/{tail:.*}', self._handle_put),

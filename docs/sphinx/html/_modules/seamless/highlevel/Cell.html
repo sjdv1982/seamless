@@ -4,7 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>seamless.highlevel.Cell &#8212; Seamless 0.4 documentation</title>
+    <title>seamless.highlevel.Cell &#8212; Seamless 0.5 documentation</title>
     <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -24,7 +24,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">Seamless 0.4 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Seamless 0.5 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
           <li class="nav-item nav-item-2"><a href="../highlevel.html" accesskey="U">seamless.highlevel</a> &#187;</li> 
       </ul>
@@ -44,8 +44,8 @@
 <span class="kn">from</span> <span class="nn">.Base</span> <span class="kn">import</span> <span class="n">Base</span>
 <span class="kn">from</span> <span class="nn">.Resource</span> <span class="kn">import</span> <span class="n">Resource</span>
 <span class="kn">from</span> <span class="nn">..core.lambdacode</span> <span class="kn">import</span> <span class="n">lambdacode</span>
-<span class="kn">from</span> <span class="nn">..silk</span> <span class="kn">import</span> <span class="n">Silk</span>
-<span class="kn">from</span> <span class="nn">..mixed</span> <span class="kn">import</span> <span class="n">MixedBase</span>
+<span class="kn">from</span> <span class="nn">silk</span> <span class="kn">import</span> <span class="n">Silk</span>
+<span class="kn">from</span> <span class="nn">silk.mixed</span> <span class="kn">import</span> <span class="n">MixedBase</span>
 <span class="kn">from</span> <span class="nn">..mime</span> <span class="kn">import</span> <span class="n">get_mime</span><span class="p">,</span> <span class="n">language_to_mime</span><span class="p">,</span> <span class="n">ext_to_mime</span>
 
 <span class="n">celltypes</span> <span class="o">=</span> <span class="p">(</span>
@@ -224,7 +224,7 @@
     <span class="k">def</span> <span class="nf">_get_subcell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
         <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
         <span class="n">readonly</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1">### TODO</span>
         <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subpath</span> <span class="o">+</span> <span class="p">(</span><span class="n">attr</span><span class="p">,)</span>
@@ -262,7 +262,11 @@
             <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_subcell</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Cell.mount"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.mount">[docs]</a>    <span class="k">def</span> <span class="nf">mount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rw&quot;</span><span class="p">,</span> <span class="n">authority</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="n">persistent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="Cell.mount"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.mount">[docs]</a>    <span class="k">def</span> <span class="nf">mount</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rw&quot;</span><span class="p">,</span> <span class="n">authority</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+        <span class="n">persistent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">as_directory</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Mounts the cell to the file system.</span>
 <span class="sd">        Mounting is only supported for non-structured cells.</span>
 
@@ -284,9 +288,18 @@
 <span class="sd">        - persistent</span>
 <span class="sd">          If False, the file is deleted from disk when the Cell is destroyed</span>
 <span class="sd">          Default: True.</span>
+<span class="sd">        - as_directory</span>
+<span class="sd">          If True, the cell must contain a dictionary,</span>
+<span class="sd">          which is mounted to a directory instead of a file.</span>
+<span class="sd">          items that are themselves dictionaries are mounted to sub-directories.</span>
+<span class="sd">          Other items are cast to str upon mounting.</span>
+<span class="sd">          Default: False</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Mounting is only supported for non-structured cells&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">as_directory</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">celltype</span> <span class="o">!=</span> <span class="s2">&quot;plain&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Mounting as directory is only supported for plain cells&quot;</span><span class="p">)</span>
         <span class="c1"># TODO: check for independence (has_authority)</span>
         <span class="c1"># TODO, upon translation: check that there are no duplicate paths.</span>
         <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
@@ -294,7 +307,8 @@
             <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
             <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">mode</span><span class="p">,</span>
             <span class="s2">&quot;authority&quot;</span><span class="p">:</span> <span class="n">authority</span><span class="p">,</span>
-            <span class="s2">&quot;persistent&quot;</span><span class="p">:</span> <span class="n">persistent</span>
+            <span class="s2">&quot;persistent&quot;</span><span class="p">:</span> <span class="n">persistent</span><span class="p">,</span>
+            <span class="s2">&quot;as_directory&quot;</span><span class="p">:</span> <span class="n">as_directory</span>
         <span class="p">}</span>
         <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;mount&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mount</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -535,7 +549,6 @@
     <span class="nd">@checksum</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">checksum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checksum</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Sets the checksum of the cell, as SHA3-256 hash&quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">..silk</span> <span class="kn">import</span> <span class="n">Silk</span>
         <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
             <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;checksum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">checksum</span>
@@ -677,7 +690,7 @@
             <span class="k">return</span> <span class="n">mimetype</span>
         <span class="k">if</span> <span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span><span class="p">:</span>
             <span class="n">datatype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;datatype&quot;</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">datatype</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;mixed&quot;</span><span class="p">,</span> <span class="s2">&quot;binary&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">datatype</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;mixed&quot;</span><span class="p">,</span> <span class="s2">&quot;binary&quot;</span><span class="p">,</span> <span class="s2">&quot;plain&quot;</span><span class="p">):</span>
                 <span class="n">mimetype</span> <span class="o">=</span> <span class="n">get_mime</span><span class="p">(</span><span class="n">datatype</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">mimetype</span> <span class="o">=</span> <span class="n">ext_to_mime</span><span class="p">(</span><span class="n">datatype</span><span class="p">)</span>
@@ -804,8 +817,9 @@
         <span class="n">old_language</span> <span class="o">=</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;language&quot;</span><span class="p">)</span>
         <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;language&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lang</span>
         <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;file_extension&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extension</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">lang</span> <span class="o">!=</span> <span class="n">old_language</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="fm">__rshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Proxy</span><span class="p">)</span>
@@ -813,7 +827,7 @@
         <span class="k">assert</span> <span class="n">other</span><span class="o">.</span><span class="n">_pull_source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="n">other</span><span class="o">.</span><span class="n">_pull_source</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Cell.share"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.share">[docs]</a>    <span class="k">def</span> <span class="nf">share</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="Cell.share"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.share">[docs]</a>    <span class="k">def</span> <span class="nf">share</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">toplevel</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Shares a cell over HTTP.</span>
 
 <span class="sd">        Typically, the cell is available under</span>
@@ -821,6 +835,9 @@
 
 <span class="sd">        If path is None (default), Cell.path is used,</span>
 <span class="sd">        with dots replaced by slashes.</span>
+
+<span class="sd">        If toplevel is True, the cell is instead available under</span>
+<span class="sd">        http://localhost:5813/&lt;path&gt;.</span>
 
 <span class="sd">        If readonly is True, only GET requests are supported.</span>
 <span class="sd">        Else, the cell can also be modified using PUT requests</span>
@@ -841,6 +858,8 @@
             <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
             <span class="s2">&quot;readonly&quot;</span><span class="p">:</span> <span class="n">readonly</span><span class="p">,</span>
         <span class="p">}</span>
+        <span class="k">if</span> <span class="n">toplevel</span><span class="p">:</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;share&quot;</span><span class="p">][</span><span class="s2">&quot;toplevel&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span></div>
@@ -901,7 +920,7 @@
     <span class="n">cell</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()[</span><span class="s2">&quot;constant&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partialmethod</span>
-<span class="kn">from</span> <span class="nn">..silk.SilkBase</span> <span class="kn">import</span> <span class="n">binary_special_method_names</span>
+<span class="kn">from</span> <span class="nn">silk.SilkBase</span> <span class="kn">import</span> <span class="n">binary_special_method_names</span>
 <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">binary_special_method_names</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">Cell</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
         <span class="k">continue</span>
@@ -943,13 +962,13 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">Seamless 0.4 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Seamless 0.5 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
           <li class="nav-item nav-item-2"><a href="../highlevel.html" >seamless.highlevel</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2016-2020, Sjoerd de Vries.
+        &#169; Copyright 2016-2021, Sjoerd de Vries.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
     </div>
   </body>

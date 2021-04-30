@@ -58,7 +58,7 @@ class PINS:
         return setattr(self, attr, value)
 
 class RuntimeReactor:
-    def __init__(self, 
+    def __init__(self,
         manager, reactor, inputpins, outputpins, editpins
     ):
         self.manager = weakref.ref(manager)
@@ -73,7 +73,7 @@ class RuntimeReactor:
         self.values = {}
         self.PINS = PINS()
         self.executing = False
-    
+
     def prepare_namespace(self, updated):
         manager = self.manager()
         if updated is None:
@@ -88,7 +88,7 @@ class RuntimeReactor:
                 continue
             value = self.values[pinname]
             if pinname in ("code_start", "code_update", "code_stop"):
-                assert value is not None, pinname                
+                assert value is not None, pinname
                 continue
             if not self.live:
                 pin = ReactorInput(value)
@@ -100,7 +100,7 @@ class RuntimeReactor:
             if updated is not None and pinname not in updated:
                 self.PINS[pinname].updated = False
                 continue
-            value = self.values[pinname]
+            value = self.values.get(pinname)
             if not self.live:
                 pin = ReactorEdit(self, pinname, value)
                 self.PINS[pinname] = pin
@@ -133,15 +133,14 @@ class RuntimeReactor:
         try:
             if len(self.module_workspace):
                 with injector.active_workspace(self.module_workspace, self.namespace):
-                    exec(code_object, self.namespace) 
+                    exec(code_object, self.namespace)
             else:
-                exec(code_object, self.namespace) 
+                exec(code_object, self.namespace)
         except Exception as exception:
             self.clear()
             self.manager()._set_reactor_exception(self.reactor(), codename, exception)
 
     def execute(self):
-        assert len(self.updated)
         assert not self.executing
         self.manager()._set_reactor_exception(self.reactor(), None, None)
         codes = ("code_start", "code_update", "code_stop")
@@ -157,11 +156,6 @@ class RuntimeReactor:
             else:
                 self.prepare_namespace(self.updated)
             self.run_code("code_update")
-            """
-            if self.reactor().pure == True:
-                self.run_code("code_stop")
-                self.clear()
-            """
         finally:
             self.executing = False
         self.updated.clear()
@@ -179,7 +173,7 @@ class RuntimeReactor:
             cell = livegraph.editpin_to_cell[reactor][pinname]
             if cell is None:
                 return
-            manager.set_cell(cell, value)            
+            manager.set_cell(cell, value, origin_reactor=reactor)
         else:
             if preliminary:
                 raise NotImplementedError
@@ -197,7 +191,7 @@ class RuntimeReactor:
                 celltype = wa.celltype
                 subcelltype = wa.subcelltype
             ReactorResultTask(
-                manager, reactor, 
+                manager, reactor,
                 pinname, value,
                 celltype, subcelltype
             ).launch()
@@ -208,4 +202,10 @@ class RuntimeReactor:
         self.PINS = PINS()
         self.live = False
 
-from .manager.tasks.reactor_update import ReactorResultTask        
+    def stop(self):
+        if not self.live:
+            return
+        self.run_code("code_stop")
+        self.clear()
+
+from .manager.tasks.reactor_update import ReactorResultTask

@@ -1,0 +1,87 @@
+{
+  "connections": [],
+  "lib": [],
+  "nodes": [
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "b63b9b8053407b5a6ed2cbe1a9b87667152c2f4b34dfef28451b5d636a99460d",
+        "buffer": "b63b9b8053407b5a6ed2cbe1a9b87667152c2f4b34dfef28451b5d636a99460d",
+        "value": "b63b9b8053407b5a6ed2cbe1a9b87667152c2f4b34dfef28451b5d636a99460d"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "mount": {
+        "authority": "file",
+        "mode": "r",
+        "path": "cell-merge-START.py",
+        "persistent": true
+      },
+      "path": [
+        "code_start"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "24b88868c6528719d6d0066320ee03c80e6b79da4fac21678bdbe7c3d90d524c",
+        "buffer": "24b88868c6528719d6d0066320ee03c80e6b79da4fac21678bdbe7c3d90d524c",
+        "value": "24b88868c6528719d6d0066320ee03c80e6b79da4fac21678bdbe7c3d90d524c"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "mount": {
+        "authority": "file",
+        "mode": "r",
+        "path": "cell-merge-UPDATE.py",
+        "persistent": true
+      },
+      "path": [
+        "code_update"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "6a912ae3c4d5e08a55d953570562908ac88b6974ad0aee808da1bf217ea7d378"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "constructor_code"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "178ca1a44e2dd1ad6ccf54f18dc47e8e7ea9c974157d45a4c2047b45d3654919",
+        "buffer": "178ca1a44e2dd1ad6ccf54f18dc47e8e7ea9c974157d45a4c2047b45d3654919",
+        "value": "178ca1a44e2dd1ad6ccf54f18dc47e8e7ea9c974157d45a4c2047b45d3654919"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "constructor_params"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "b6cc0c06fb6fba173f79124d7771f61b9b46040fecc41211bd3d6a5f5e2eb0c8"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "macro_code"
+      ],
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

@@ -25,7 +25,7 @@ CFFI_VERBOSE = False
 module_cache = WeakValueDictionary()
 
 def build_interpreted_module(full_module_name, module_definition):
-    from ..ipython import execute as ipython_execute
+    from ..ipython import ipython2python, execute as execute_ipython
     language = module_definition["language"]
     code = module_definition["code"]
     assert language in ("python", "ipython"), language
@@ -34,7 +34,8 @@ def build_interpreted_module(full_module_name, module_definition):
     mod.__path__ = []
     namespace = mod.__dict__
     if language == "ipython":
-        ipython_execute(code, namespace)
+        code = ipython2python(code)
+        execute_ipython(code, namespace)
     else:
         exec(code, namespace)
     return mod

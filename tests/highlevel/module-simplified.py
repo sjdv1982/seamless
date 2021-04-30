@@ -1,8 +1,6 @@
 """ Based on tests/lowlevel/injection2.py
 
-This is a simplified tests for modules, treating the module as a structured Cell.
-In the future, this will be adapted to use highlevel Module objects
-(see feature issue E5)
+This is a simplified test for modules, treating the module as a structured Cell.
 """
 
 import seamless.core.execute

@@ -4,25 +4,25 @@ Time: 0.4 ms, None
 Time: 0.4 ms, *** Stage 0 ***
 
 Time: 0.5 ms, *** Stage 1a ***
-Time: 2.7 ms, ctx.txt1 [42, "test", {"mykey": "myvalue"}, true]
-Time: 2.7 ms, *** Stage 1b ***
-Time: 2.8 ms, *** Stage 1c ***
-Time: 5.0 ms, ctx.txt2 [42, "test", {"mykey": "myvalue"}, true]
-Time: 5.1 ms, ctx.txt3 [42, "test", {"mykey": "myvalue"}, true]
+Time: 2.9 ms, ctx.txt1 [42, "test", {"mykey": "myvalue"}, true]
+Time: 2.9 ms, *** Stage 1b ***
+Time: 3.0 ms, *** Stage 1c ***
+Time: 5.3 ms, ctx.txt2 [42, "test", {"mykey": "myvalue"}, true]
+Time: 5.5 ms, ctx.txt3 [42, "test", {"mykey": "myvalue"}, true]
 
-Time: 5.2 ms, *** Stage 2 ***
-Time: 7.7 ms, ctx.txt4 [42, "test", {"mykey": "myvalue"}, true]
+Time: 5.5 ms, *** Stage 2 ***
+Time: 7.9 ms, ctx.txt4 [42, "test", {"mykey": "myvalue"}, true]
 
-Time: 7.7 ms, *** Stage 3 ***
-Time: 9.9 ms, ctx.plain [42, "test", {"mykey": "myvalue"}, true]
-Time: 10.0 ms, *** Stage 3a ***
-Time: 11.8 ms, ctx.plain2 [42, "test", {"mykey": "myvalue"}, true]
-Time: 11.8 ms, *** Stage 3b ***
-Time: 14.1 ms, ctx.mixed [42, "test", {"mykey": "myvalue"}, true]
-Time: 14.1 ms, *** Stage 4 ***
-Time: 293.1 ms, ctx.py get_ipython().run_cell_magic('timeit', '', 'x = 42')
+Time: 7.9 ms, *** Stage 3 ***
+Time: 10.5 ms, ctx.plain [42, "test", {"mykey": "myvalue"}, true]
+Time: 10.5 ms, *** Stage 3a ***
+Time: 12.5 ms, ctx.plain2 [42, "test", {"mykey": "myvalue"}, true]
+Time: 12.5 ms, *** Stage 3b ***
+Time: 14.9 ms, ctx.mixed [42, "test", {"mykey": "myvalue"}, true]
+Time: 14.9 ms, *** Stage 4 ***
+Time: 99.2 ms, ctx.py _ = get_ipython().run_cell_magic('timeit', '', 'x = 42')
 
-Time: 293.2 ms, *** Stage 5 ***
-Time: 296.7 ms, ctx.plain3 Test string!! b'"Test string!!"\n'
-Time: 296.9 ms, ctx.text Test string!! b'Test string!!\n'
-Time: 297.1 ms, ctx.str Test string!! b'"Test string!!"\n'
+Time: 99.2 ms, *** Stage 5 ***
+Time: 103.3 ms, ctx.plain3 Test string!! b'"Test string!!"\n'
+Time: 103.6 ms, ctx.text Test string!! b'Test string!!\n'
+Time: 103.7 ms, ctx.str Test string!! b'"Test string!!"\n'

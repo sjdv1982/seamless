@@ -23,6 +23,8 @@ class AccessorUpdateTask(Task):
 
     async def _run(self):
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         taskmanager = manager.taskmanager
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
 
@@ -103,6 +105,7 @@ class AccessorUpdateTask(Task):
                 elif isinstance(worker, Reactor):
                     manager.taskmanager.cancel_reactor(worker)
                     if not worker._void:
+                        manager.taskmanager.cancel_reactor(worker)
                         ReactorUpdateTask(manager, worker).launch()
                 elif isinstance(worker, Macro):
                     manager.taskmanager.cancel_macro(worker)
@@ -158,7 +161,8 @@ class AccessorUpdateTask(Task):
                         target, result_checksum,
                         False, None, prelim=accessor._prelim
                     )
-                    CellUpdateTask(manager, target).launch()
+                    if result_checksum is not None:
+                        CellUpdateTask(manager, target).launch()
                 else:
                     if not target._destroyed:
                         assert expression.target_celltype == "mixed", expression.target_celltype

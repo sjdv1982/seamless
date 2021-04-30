@@ -1,4 +1,5 @@
 import inspect
+import textwrap
 from weakref import WeakSet
 
 from . import SeamlessBase
@@ -278,7 +279,6 @@ class Cell(SeamlessBase):
         Target can be a cell, pin, inchannel or unilink"""
         from .worker import InputPin, EditPin, OutputPin
         from .transformer import Transformer
-        from .reactor import Reactor
         from .macro import Macro, Path
         from .unilink import UniLink
         manager = self._get_manager()
@@ -306,10 +306,8 @@ class Cell(SeamlessBase):
             raise TypeError("Output pins must be the source of a connection, not the target")
         elif isinstance(target, Transformer):
             raise TypeError("Transformers cannot be connected directly, select a pin")
-        elif isinstance(target, Reactor):
-            raise TypeError("Reactors cannot be connected directly, select a pin")
         elif isinstance(target, Macro):
-            raise TypeError("Reactors cannot be connected directly, select a pin")
+            raise TypeError("Macros cannot be connected directly, select a pin")
         else:
             raise TypeError(type(target))
         manager.connect(self, None, target, target_subpath)
@@ -318,9 +316,10 @@ class Cell(SeamlessBase):
     def bilink(self, target):
         """Create a bidirectional unilink between two cells"""
         from .unilink import UniLink
+        from .macro import Path
         if isinstance(target, UniLink):
             target = target.get_linked()
-        if not isinstance(target, Cell):
+        if not isinstance(target, (Cell, Path)):
             raise TypeError(type(target))
         manager = self._get_manager()
         manager.bilink(self, target)
@@ -342,7 +341,7 @@ class Cell(SeamlessBase):
         self._mount.update({"extension": extension})
         return self
 
-    def mount(self, path=None, mode="rw", authority="cell", persistent=True):
+    def mount(self, path=None, mode="rw", authority="file", *, persistent=True, as_directory=False):
         """Performs a "lazy mount"; cell is mounted to the file when macro mode ends
         path: file path (can be None if an ancestor context has been mounted)
         mode: "r", "w" or "rw"
@@ -366,6 +365,7 @@ class Cell(SeamlessBase):
             "mode": mode,
             "authority": authority,
             "persistent": persistent,
+            "as_directory": as_directory
         })
         self._mount.update(self._mount_kwargs)
         MountItem(None, self, dummy=True, **self._mount) #to validate parameters
@@ -384,16 +384,19 @@ class Cell(SeamlessBase):
         if trigger and self._checksum is not None:
             observer(self._checksum.hex())
 
-    def share(self, path=None, readonly=True, mimetype=None):
+    def share(self, path=None, readonly=True, mimetype=None, *, toplevel=False, cellname=None):
         if not readonly:
             assert self.has_authority()
         oldshare = self._share
         self._share = {
             "readonly": readonly,
-            "path": path
+            "path": path,
+            "toplevel": toplevel
         }
         if mimetype is not None:
             self._share["mimetype"] = mimetype
+        if cellname is not None:
+            self._share["cellname"] = cellname
         if oldshare != self._share:
             sharemanager.update_share(self)
 
@@ -441,7 +444,7 @@ class MixedCell(Cell):
 
     @property
     def storage(self):
-        from ..mixed.get_form import get_form
+        from silk.mixed.get_form import get_form
         v = super().value
         if v is None:
             return None
@@ -449,7 +452,7 @@ class MixedCell(Cell):
 
     @property
     def form(self):
-        from ..mixed.get_form import get_form
+        from silk.mixed.get_form import get_form
         v = super().value
         if v is None:
             return None
@@ -479,6 +482,14 @@ class PythonCell(Cell):
     _celltype = "python"
     _subcelltype = None
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
+
+    def set(self, value):
+        """Update cell data from authority"""
+        if callable(value):
+            value = inspect.getsource(value)
+        if value is not None:
+            value = textwrap.dedent(value)
+        return super().set(value)
 
     def __str__(self):
         ret = "Seamless Python cell: " + self._format_path()
@@ -524,6 +535,14 @@ class IPythonCell(Cell):
     """A cell in IPython format (e.g. a Jupyter cell). Buffer ends with a newline"""
     _celltype = "ipython"
     _mount_kwargs = {"encoding": "utf-8", "binary": False}
+
+    def set(self, value):
+        """Update cell data from authority"""
+        if callable(value):
+            value = inspect.getsource(value)
+        if value is not None:
+            value = textwrap.dedent(value)
+        return super().set(value)
 
     def __str__(self):
         ret = "Seamless IPython cell: " + self._format_path()
@@ -623,10 +642,9 @@ subcelltypes["module"] = None
 from .unbound_context import UnboundManager
 from .mount import MountItem
 from .mount import is_dummy_mount
-from ..mixed.get_form import get_form
+from silk.mixed.get_form import get_form
 from .structured_cell import Inchannel, Outchannel
 from .macro_mode import get_macro_mode
-from .utils import strip_source
 from .share import sharemanager
 """
 TODO Documentation: only-text changes

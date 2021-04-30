@@ -112,6 +112,7 @@ def unvoid_reactor(reactor, livegraph):
 
     for pinname in editpins:
         if editpin_to_cell[pinname] is None: #unconnected
+            #print("NOT UNVOID UNCON", reactor, pinname, editpin_to_cell)
             reactor._status_reason = StatusReasonEnum.UNCONNECTED
             return
 
@@ -130,9 +131,11 @@ def unvoid_reactor(reactor, livegraph):
 
     for pinname in editpins:
         cell = editpin_to_cell[pinname]
-        if cell._void: # TODO: allow them to be void? By definition, these cells have authority
-            reactor._status_reason = StatusReasonEnum.UPSTREAM
-            return
+        if cell._void:
+            pin = reactor._pins[pinname]
+            if pin.must_be_defined:
+                reactor._status_reason = StatusReasonEnum.UPSTREAM
+                return
 
     print_debug("!!!UNVOID!!!: %s" % reactor)
     reactor._void = False

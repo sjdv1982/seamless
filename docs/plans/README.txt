@@ -1,6 +1,3 @@
-This folder contains plans into various states of fruition.
-On the long term, plans should be either:
-- Abandoned and archived
-- Implemented as a new feature
-- After implementation, converted into documentation
-  (user-level and/or developer)
+This folder contains substantial documentation for plans (including test results)
+that are beyond what can be fitted in a GitHub issue.
+So they are essentially "supplementary material".

@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 from .calculate_checksum import lrucache2
 
-from ...mixed.io import serialize as mixed_serialize
+from silk.mixed.io import serialize as mixed_serialize
 
 # serialize_cache: maps id(value),celltype to (buffer, value).
 # Need to store (a ref to) value,

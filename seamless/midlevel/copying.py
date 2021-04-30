@@ -1,18 +1,22 @@
 import sys
-from ..mixed import MixedBase
-from copy import deepcopy
+import textwrap
+from silk.mixed import MixedBase
 import inspect, asyncio
+
 from ..core.cache.buffer_cache import buffer_cache
 from ..core.protocol.deserialize import deserialize_sync as deserialize
 from ..core.protocol.serialize import serialize_sync as serialize
 from ..core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from ..core.protocol.deep_structure import apply_hash_pattern_sync, deep_structure_to_checksums
 
-def get_checksums(nodes):
-    def add_checksum(node, checksum, subpath=None):
+def get_checksums(nodes, connections, *, with_annotations):
+    def add_checksum(node, dependent, checksum, subpath=None):
         if checksum is None:
             return
-        checksums.add(checksum)
+        if with_annotations:
+            checksums.add((checksum, dependent))
+        else:
+            checksums.add(checksum)
         hash_pattern = None
         if node["type"] == "cell" and subpath != "schema":
             hash_pattern = node.get("hash_pattern")
@@ -31,6 +35,8 @@ def get_checksums(nodes):
                 return
             deep_structure = deserialize(buffer, bytes.fromhex(checksum), "plain", copy=False)
             deep_checksums = deep_structure_to_checksums(deep_structure, hash_pattern)
+            if with_annotations:
+                deep_checksums = [(c, dependent) for c in deep_checksums]
             checksums.update(deep_checksums)
     checksums = set()
     for node in nodes:
@@ -42,12 +48,28 @@ def get_checksums(nodes):
         checksum = node.get("checksum")
         if checksum is None:
             continue
-        elif isinstance(checksum, str):
-            add_checksum(node, checksum)
+        for connection in connections:
+            if connection["type"] == "link":
+                continue
+            p = connection["target"]
+            if p == node["path"]:
+                dependent = True
+                break
+        else:
+            dependent = False
+        if isinstance(checksum, str):
+            add_checksum(node, dependent, checksum)
         else:
             for k,v in checksum.items():
+                dependent2 = dependent
+                if node["type"] == "transformer":
+                    if k.startswith("result"):
+                        dependent2 = True
+                elif node["type"] == "cell":
+                    if k in ("buffer", "value"):
+                        dependent2 = True
                 if v is not None:
-                    add_checksum(node, v, k)
+                    add_checksum(node, dependent2, v, k)
     return checksums
 
 async def get_buffer_dict(manager, checksums):
@@ -107,7 +129,6 @@ def add_zip(manager, zipfile, incref=False):
     return result
 
 def fill_checksum(manager, node, temp_path, composite=True):
-    from ..core.utils import strip_source
     from ..core.cell import celltypes
     checksum = None
     subcelltype = None
@@ -115,6 +136,8 @@ def fill_checksum(manager, node, temp_path, composite=True):
     if node["type"] == "cell":
         celltype = node["celltype"]
         hash_pattern = node.get("hash_pattern")
+    elif node["type"] == "module":
+        celltype = "text"
     elif node["type"] == "transformer":
         if temp_path == "code":
             datatype = "code"
@@ -129,8 +152,6 @@ def fill_checksum(manager, node, temp_path, composite=True):
             celltype = "structured"
             if temp_path.startswith("input") and not temp_path.endswith("schema"):
                 hash_pattern = node.get("hash_pattern")
-    elif node["type"] == "reactor":
-        raise NotImplementedError ### livegraph branch, feature E2
     elif node["type"] == "macro":
         if temp_path == "code":
             datatype = "code"
@@ -146,7 +167,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
     else:
         raise TypeError(node["type"])
     if celltype == "structured":
-        if node["type"] in ("reactor", "transformer", "macro"):
+        if node["type"] in ("transformer", "macro"):
             datatype = "mixed"
         else:
             datatype = node["datatype"]
@@ -173,7 +194,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
     if datatype == "python":
         if inspect.isfunction(temp_value):
             code = inspect.getsource(temp_value)
-            code = strip_source(code)
+            code = textwrap.dedent(code)
             temp_value = code
     buf = serialize(temp_value, datatype, use_cache=False)
     checksum = calculate_checksum(buf)
@@ -191,20 +212,39 @@ def fill_checksum(manager, node, temp_path, composite=True):
             print(msg.format(node["path"], temp_path), file=sys.stderr)
     checksum = checksum.hex()
     if temp_path is None:
-        temp_path = "value"
-    if "checksum" not in node:
-        node["checksum"] = {}
-    temp_path = temp_path.lstrip("_")
-    node["checksum"][temp_path] = checksum
+        node["checksum"] = checksum
+    else:
+        if "checksum" not in node:
+            node["checksum"] = {}
+        temp_path = temp_path.lstrip("_")
+        node["checksum"][temp_path] = checksum
 
-def get_graph_checksums(graph, with_libraries):
+def get_graph_checksums(graph, with_libraries, *, with_annotations):
     nodes0 = graph["nodes"]
     nodes = [node for node in nodes0 if "scratch" not in node]
-    checksums = get_checksums(nodes)
+    connections = graph.get("connections", [])
+    checksums = get_checksums(
+        nodes, connections,
+        with_annotations=with_annotations
+    )
     if with_libraries:
         for lib in graph["lib"]:
-            lib_checksums = get_graph_checksums(lib["graph"], with_libraries=True)
+            lib_checksums = get_graph_checksums(
+                lib["graph"],
+                with_libraries=True,
+                with_annotations=with_annotations
+            )
             checksums.update(lib_checksums)
+    if with_annotations:
+        checksums0 = checksums
+        checksums = set()
+        for c, dependent in checksums0:
+            if not dependent:
+                checksums.add((c, False))
+        for c, dependent in checksums0:
+            if dependent:
+                if (c, True) not in checksums:
+                    checksums.add((c, True))
     return checksums
 
 def fill_checksums(mgr, nodes, *, path=None):
@@ -239,17 +279,14 @@ def fill_checksums(mgr, nodes, *, path=None):
             elif node["type"] == "macro":
                 fill_checksum(mgr, node, "param_auth")
                 fill_checksum(mgr, node, "code")
-            elif node["type"] == "reactor":
-                fill_checksum(mgr, node, "io")
-                fill_checksum(mgr, node, "code_start")
-                fill_checksum(mgr, node, "code_update")
-                fill_checksum(mgr, node, "code_stop")
             elif node["type"] == "cell":
                 if node["celltype"] == "structured":
                     temp_path = "auth"
                 else:
                     temp_path = "value"
                 fill_checksum(mgr, node, temp_path, composite=False)
+            elif node["type"] == "module":
+                fill_checksum(mgr, node, None, composite=False)
             else:
                 raise TypeError(p, node["type"])
             node.pop("TEMP", None)
@@ -258,7 +295,11 @@ def fill_checksums(mgr, nodes, *, path=None):
                     node["checksum"] = old_checksum
             else:
                 if old_checksum is not None:
-                    node["checksum"].update(old_checksum)
+                    if isinstance(node["checksum"], dict):
+                        if isinstance(old_checksum, dict):
+                            for k in old_checksum:
+                                if k not in node["checksum"]:
+                                    node["checksum"][k] = old_checksum[k]
         except Exception as exc:
             if first_exc is None:
                 first_exc = exc

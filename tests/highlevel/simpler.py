@@ -66,9 +66,6 @@ print(ctx.transform.inp.value)
 print("RESULT", ctx.transform.result.value, ctx.myresult.value)
 
 ctx.transform.example.b = "test"  # modification of schema => .inp exception
-ctx.translate()
-print("TRANSFORMER INPUT EXCEPTION", ctx.transform.inp.exception) # None
-print(ctx.transform.inp.value)
 ctx.compute()
 print("TRANSFORMER INPUT EXCEPTION", ctx.transform.inp.exception) # jsonschema.exceptions.ValidationError: 100 is not of type 'string'
 ###print("TF STATUS", ctx.transform.status)
@@ -99,7 +96,7 @@ print("TRANSFORMER EXCEPTION", ctx.transform.exception)
 
 print("START3")
 ctx.tfcode = triple_it
-ctx.transform._get_htf()["pins"].pop("b"); ctx._translate() ### KLUDGE
+del ctx.transform.pins.b
 ctx.compute()
 print(ctx.myresult.value)
 print("TRANSFORMER INPUT STATUS", ctx.transform.inp.status)

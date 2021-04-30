@@ -15,11 +15,13 @@ DESCRIPTION
 
 Starts a bash shell in a new Seamless Docker container
 
+**Uses the host network for the Docker container. Will only work under Linux.**
+
+The ID of the Docker container is available to the Docker container itself,
+ in the file ~/DOCKER_CONTAINER.
+
 The current directory is mounted to /cwd, and the command is executed there
-
-/tmp is mounted as well
-
-Uses the host network for the Docker container. Will only work under Linux.
+The name of the current directory is available in the container as $HOSTCWD.
 
 BUGS
 ====

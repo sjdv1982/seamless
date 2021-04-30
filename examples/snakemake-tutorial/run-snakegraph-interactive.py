@@ -1,6 +1,6 @@
 import seamless
 from seamless.highlevel import Context, Transformer, Cell
-from seamless.silk.Silk import RichValue
+from silk.Silk import RichValue
 import json, os
 import numpy as np
 from functools import partial
@@ -113,7 +113,7 @@ def bind(file, mode):
 
 def list_files():
     print("File system contents:")
-    for fs_cellname in ctx.fs.children("cell"):
+    for fs_cellname in ctx.fs.get_children("cell"):
         fs_cell = getattr(ctx.fs, fs_cellname)
         value = fs_cell.value
         value2 = RichValue(value, need_form=True)

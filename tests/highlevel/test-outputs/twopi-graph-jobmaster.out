@@ -1,6 +1,5 @@
 d89a78eede0f535003eae21099499943  twopi.seamless
 d89a78eede0f535003eae21099499943  /tmp/twopi-database.seamless
-TaskManager, tasks: 11 undestroyed
 OUTGOING jobslave jobmaster
 INCOMING jobmaster jobslave
 ADD SERVANT buffer
@@ -10,8 +9,8 @@ ADD SERVANT buffer_length
 ADD SERVANT semantic_to_syntactic
 ADD SERVANT semantic_to_syntactic
 ADD SERVANT transformation
+Set up a communion outgoing port 8602
 REMOVE SERVANT buffer
 REMOVE SERVANT buffer_length
 REMOVE SERVANT semantic_to_syntactic
-Set up a communion outgoing port 8602
 956e1f34a0047ad5f53dea731af782bd  twopi-colored-jobmaster.seamless

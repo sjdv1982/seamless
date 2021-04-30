@@ -189,6 +189,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
         if cell.has_authority():
             if self._timer_handle is not None:
                 self._timer_handle.cancel()
+                self._timer_handle = None
             self._timer_handle = asyncio.get_event_loop().call_later(
                 0.1,
                 self._cell_set,
@@ -237,6 +238,14 @@ class SeamlessTraitlet(traitlets.HasTraits):
         link = self._connect_traitlet(target, target_attr, True)
         self._newlink(link)
         return link
+
+    def observe(self, handler, names=traitlets.All, type='change'):
+        super().observe(handler, names, type)
+        names = traitlets.parse_notifier_name(names)
+        if names == [traitlets.All] or "value" in names:
+            self._notify_trait("value", self.value, self.value)
+
+    observe.__doc__ = traitlets.HasTraits.observe.__doc__
 
     def destroy(self):
         self._destroyed = True

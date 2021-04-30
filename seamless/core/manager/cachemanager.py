@@ -135,8 +135,9 @@ class CacheManager:
     def register_reactor(self, reactor):
         assert reactor not in self.reactor_to_refs
         refs = {}
-        for pinname in reactor.outputs:
-            refs[pinname] = None
+        for pinname in reactor._pins:
+            if reactor._pins[pinname].io == "output":
+                refs[pinname] = None
         self.reactor_to_refs[reactor] = refs
         self.reactor_exceptions[reactor] = None
 
@@ -497,11 +498,12 @@ is result: {}
 
     def destroy_reactor(self, reactor):
         refs = self.reactor_to_refs.pop(reactor)
-        for pinname in reactor.outputs:
-            ref = refs[pinname]
-            if ref is not None:
-                checksum = ref
-                self.decref_checksum(checksum, reactor, False, False)
+        for pinname in reactor._pins:
+            if reactor._pins[pinname].io == "output":
+                ref = refs[pinname]
+                if ref is not None:
+                    checksum = ref
+                    self.decref_checksum(checksum, reactor, False, False)
         self.reactor_exceptions.pop(reactor)
 
     def destroy_expression(self, expression):

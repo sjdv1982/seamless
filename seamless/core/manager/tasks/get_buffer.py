@@ -15,7 +15,10 @@ class GetBufferTask(BackgroundTask):
         checksum = self.checksum
         if checksum is None:
             return None
-        cachemanager = self.manager().cachemanager
+        manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
+        cachemanager = manager.cachemanager
         result = await cachemanager.fingertip(checksum)
         assert result is None or isinstance(result, bytes)
         return result

@@ -3,7 +3,7 @@ import numpy as np
 
 import os, sys, asyncio, functools, json, traceback, socket
 import database_backends
-from seamless.mixed.io.serialization import deserialize
+from silk.mixed.io.serialization import deserialize
 import gc
 
 buffercodes = (

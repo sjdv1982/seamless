@@ -33,6 +33,8 @@ class MacroUpdateTask(Task):
             await asyncio.sleep(0.01)
         macro = self.macro
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         livegraph = manager.livegraph
         taskmanager = manager.taskmanager
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
@@ -68,19 +70,25 @@ class MacroUpdateTask(Task):
         inputpins = {}
         for pinname, accessor in upstreams.items():
             inputpins[pinname] = accessor._checksum
+
+        cachemanager = manager.cachemanager
         if is_equal(inputpins, macro._last_inputs):
             if not macro._in_elision:
+                if cachemanager.macro_exceptions.get(macro) is not None:
+                    assert macro._gen_context is None
+                    macro._void = True
                 return
 
         macro._last_inputs = inputpins.copy()
 
         if elide(macro, inputpins):
             macro._in_elision = True
+            if cachemanager.macro_exceptions.get(macro) is not None:
+                assert macro._gen_context is None
+                macro._void = True
             return
 
         macro._in_elision = False
-
-        cachemanager = manager.cachemanager
 
         code = None
         values = {}

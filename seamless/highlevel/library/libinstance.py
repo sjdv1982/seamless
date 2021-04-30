@@ -1,7 +1,7 @@
 import weakref, json
 from copy import deepcopy
 
-highlevel_names = ("Context", "Cell", "Transformer", "Macro", "Reactor")
+highlevel_names = ("Context", "Cell", "Transformer", "Macro")
 
 class LibInstance:
 
@@ -64,6 +64,8 @@ class LibInstance:
                     raise TypeError(msg % (argname, type(value)))
                 if par["io"] == "input":
                     value = InputCellWrapper(connection_wrapper, value)
+                elif par["io"] == "edit":
+                    value = EditCellWrapper(connection_wrapper, value)
                 else: # par["io"] == "output"
                     node = value._get_hcell()
                     cellpath = value._path
@@ -91,6 +93,8 @@ class LibInstance:
                         raise TypeError(msg % (argname, k, type(vv)))
                     if par["io"] == "input":
                         vv = InputCellWrapper(connection_wrapper, vv)
+                    elif par["io"] == "edit":
+                        vv = EditCellWrapper(connection_wrapper, vv)
                     else: # par["io"] == "output"
                         node = vv._get_hcell()
                         cellpath = vv._path
@@ -121,7 +125,7 @@ class LibInstance:
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         hnode = self._get_node()
         libpath = hnode["libpath"]
@@ -166,13 +170,12 @@ class LibInstance:
         arguments[attr] = parse_argument(attr, value, params[attr])
         parent._translate()
 
-from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper
+from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper, EditCellWrapper
 from ..synth_context import SynthContext
 from ..Cell import Cell
 from ..SubCell import SubCell
 from ..Context import Context, SubContext
 from ...midlevel.StaticContext import StaticContext
 from ..Transformer import Transformer
-from ..Reactor import Reactor
 from ..Macro import Macro
 from ...core.cached_compile import exec_code

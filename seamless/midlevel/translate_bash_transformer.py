@@ -49,12 +49,12 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
       return_context=True
     )
     setattr(ctx, input_name, inp)
-    namespace[node["path"] + ("SCHEMA",), False] = inp.schema, node
+    namespace[node["path"] + ("SCHEMA",), "source"] = inp.schema, node
     if "input_schema" in mount:
         inp_ctx.schema.mount(**mount["input_schema"])
     for inchannel in inchannels:
         path = node["path"] + inchannel
-        namespace[path, True] = inp.inchannels[inchannel], node
+        namespace[path, "target"] = inp.inchannels[inchannel], node
 
     assert result_name not in pins #should have been checked by highlevel
     all_pins = {}
@@ -87,8 +87,8 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
     ctx.executor_code = sctx.executor_code.cell()
     ctx.executor_code.connect(ctx.tf.code)
 
-    namespace[node["path"] + ("code",), True] = ctx.code, node
-    namespace[node["path"] + ("code",), False] = ctx.code, node
+    namespace[node["path"] + ("code",), "target"] = ctx.code, node
+    namespace[node["path"] + ("code",), "source"] = ctx.code, node
 
     for pinname, pin in node["pins"].items():
         target = getattr(ctx.tf, pinname)
@@ -107,7 +107,7 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
         fingertip_no_recompute=node.get("fingertip_no_recompute", False),
         return_context=True
     )
-    namespace[node["path"] + ("RESULTSCHEMA",), False] = result.schema, node
+    namespace[node["path"] + ("RESULTSCHEMA",), "source"] = result.schema, node
     if "result_schema" in mount:
         result_ctx.schema.mount(**mount["result_schema"])
 
@@ -129,8 +129,8 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
         result_checksum[k2] = checksum[k]
     set_structured_cell_from_checksum(result, result_checksum)
 
-    namespace[node["path"], True] = inp, node
-    namespace[node["path"], False] = result, node
+    namespace[node["path"], "target"] = inp, node
+    namespace[node["path"], "source"] = result, node
 
 from .util import get_path, as_tuple, build_structured_cell, cell_setattr
 from .convert_checksum_dict import convert_checksum_dict

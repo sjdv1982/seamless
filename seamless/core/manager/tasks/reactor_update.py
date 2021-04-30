@@ -30,6 +30,8 @@ class ReactorUpdateTask(Task):
     async def _run(self):
         reactor = self.reactor
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         livegraph = manager.livegraph
         rtreactor = livegraph.rtreactors[reactor]
         taskmanager = manager.taskmanager
@@ -63,9 +65,11 @@ class ReactorUpdateTask(Task):
 
         for pinname in editpins:
             cell = editpin_to_cell[pinname]
-            if cell._void: # TODO: allow them to be void? By definition, these cells have authority
-                reactor._status_reason = StatusReasonEnum.UPSTREAM
-                return
+            pin = reactor._pins[pinname]
+            if pin.must_be_defined:
+                if cell._void:
+                    reactor._status_reason = StatusReasonEnum.UPSTREAM
+                    return
 
         if status_reason is not None:
             print("WARNING: reactor %s is void, shouldn't happen during reactor update" % reactor)
@@ -83,8 +87,6 @@ class ReactorUpdateTask(Task):
         for pinname in editpins:
             cell = editpin_to_cell[pinname]
             checksum = cell._checksum
-            if checksum is None:
-                raise Exception # authoritative cell cannot be non-void and no checksum
             editpin_checksums[pinname] = checksum
 
         reactor._pending = False
@@ -106,11 +108,12 @@ class ReactorUpdateTask(Task):
         for pinname in editpins:
             old_checksum = old_checksums.get(pinname)
             new_checksum = editpin_checksums[pinname]
-            if old_checksum != new_checksum:
-                updated.add(pinname)
-            new_inputs[pinname] = new_checksum
-            cell = editpin_to_cell[pinname]
-            new_inputs2[pinname] = cell._celltype, cell._subcelltype
+            if new_checksum is not None:
+                if old_checksum != new_checksum:
+                    updated.add(pinname)
+                new_inputs[pinname] = new_checksum
+                cell = editpin_to_cell[pinname]
+                new_inputs2[pinname] = cell._celltype, cell._subcelltype
 
         reactor._last_inputs = new_inputs
 
@@ -176,6 +179,8 @@ class ReactorResultTask(Task):
             print("WARNING: reactor %s is void, shouldn't happen during reactor result task" % reactor)
             return
         manager = self.manager()
+        if manager is None or manager._destroyed:
+            return
         livegraph = manager.livegraph
         accessors = livegraph.reactor_to_downstream[reactor][self.pinname]
         celltype, subcelltype = self.celltype, self.subcelltype
@@ -195,6 +200,7 @@ class ReactorResultTask(Task):
             except Exception as exc:
                 manager._set_reactor_exception(reactor, pinname, exc)
                 raise exc from None
+
         if checksum is not None:
             await validate_subcelltype(
                 checksum, celltype, subcelltype,

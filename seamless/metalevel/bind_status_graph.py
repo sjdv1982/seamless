@@ -1,23 +1,108 @@
 from functools import partial
+import functools
+import time
+import weakref
+import asyncio
+from copy import deepcopy
 
-status_callbacks = {}
+from numpy.lib.arraysetops import isin
 
-OBSERVE_GRAPH_DELAY = 0.23 # 23 is not a multiple of 100
-OBSERVE_STATUS_DELAY = 1
+OBSERVE_GRAPH_DELAY = 0.23 # 23 is not a multiple of 50
+OBSERVE_STATUS_DELAY = 0.5
+OBSERVE_STATUS_DELAY2 = 0.2
 
-def status_callback(ctx, ctx2, path, status):
-    if ctx._gen_context is None or ctx2._gen_context is None:
-        return
-    if ctx._gen_context._destroyed or ctx2._gen_context._destroyed:
-        return
-    handle = ctx2.status_.handle
-    path2 = ".".join(path)
-    handle[path2] = status
+status_observers = []
+
+class StatusObserver:
+    def __init__(self, ctx, ctx2):
+        self.ctx = weakref.ref(ctx)
+        self.ctx2 = weakref.ref(ctx2)
+        self.status = {}
+        self._dirty = True
+        self.observers = {}
+        self.last_time = None
+        self.runner = asyncio.ensure_future(self._run())
+
+    def _callback(self, path, status):
+        path2 = ".".join(path)
+        if status is None:
+            self.status.pop(path2, None)
+        else:
+            self.status[path2] = status
+        self._dirty = True
+        self._update()
+
+    def _update(self):
+        if not self._dirty:
+            return
+        t = time.time()
+        if self.last_time is None or t - self.last_time > OBSERVE_STATUS_DELAY2:
+            ctx, ctx2 = self.ctx(), self.ctx2()
+            if ctx is None or ctx2 is None:
+                return
+            if ctx._gen_context is None or ctx2._gen_context is None:
+                return
+            if ctx._gen_context._destroyed or ctx2._gen_context._destroyed:
+                return
+            try:
+                c = ctx2.status_
+                if not isinstance(c, Cell):
+                    return
+                c.set(self.status)
+            except Exception:
+                pass
+            self.last_time = t
+            self._dirty = False
+
+    async def _run(self):
+        while 1:
+            await asyncio.sleep(OBSERVE_STATUS_DELAY2)
+            self._update()
+
+    def observe(self, path):
+        ctx, ctx2 = self.ctx(), self.ctx2()
+        if ctx is None or ctx2 is None:
+            return
+        callback = functools.partial(self._callback, path)
+        callback(None)
+        observer = ctx.observe(path, callback, OBSERVE_STATUS_DELAY, observe_none=True)
+        self.destroy(path)
+        self.observers[path] = observer
+
+
+
+    def destroy(self, path):
+        observer = self.observers.pop(path, None)
+        if observer is None:
+            return
+        callback = observer.callback
+        observer.destroy()
+        callback(None)
+
 
 def observe_graph(ctx, ctx2, graph):
-    from copy import deepcopy
-    ctx2.graph.set(deepcopy(graph))
-    paths_to_delete = set(status_callbacks.keys())
+    try:
+        graph_rt = ctx2.graph_rt
+    except AttributeError:
+        graph_rt = None
+    if isinstance(graph_rt, Cell):
+        graph_rt.set(deepcopy(graph))
+    else:
+        try:
+            graph_cell = ctx2.graph
+        except AttributeError:
+            graph_cell = None
+        if isinstance(graph_cell, Cell):
+            graph_cell.set(deepcopy(graph))
+
+    for status_observer in status_observers:
+        if status_observer.ctx() is ctx and status_observer.ctx2() is ctx2:
+            break
+    else:
+        status_observer = StatusObserver(ctx, ctx2)
+        status_observers.append(status_observer)
+
+    paths_to_delete = set(status_observer.observers.keys())
     for node in graph["nodes"]:
         path = tuple(node["path"])
         if node["type"] == "cell":
@@ -27,27 +112,16 @@ def observe_graph(ctx, ctx2, graph):
                 path,
                 path + (node["INPUT"],),
             ]
-        else: # TODO: macro, reactor
+        else: # TODO: macro
             continue
         for path in paths:
-            if path in status_callbacks:
-                paths_to_delete.discard(path)
-                continue
-            #print("OBSERVE", path)
-            observers = {}
             for attr in ("status", "exception"):
                 subpath = path + (attr,)
-                callback = partial(status_callback, ctx, ctx2, subpath)
-                status_callback(ctx, ctx2, subpath, None)
-                observer = ctx.observe(subpath, callback, OBSERVE_STATUS_DELAY, observe_none=True)
-                observers[subpath] = observer
-            status_callbacks[path] = observers
+                if subpath in status_observer.observers:
+                    paths_to_delete.discard(subpath)
+                status_observer.observe(subpath)
     for dpath in paths_to_delete:
-        #print("DELETE", dpath)
-        observers = status_callbacks.pop(dpath)
-        for subpath, observer in observers.items():
-            observer.destroy()
-            status_callback(ctx, ctx2, subpath, None)
+        status_observer.destroy(dpath)
     #print("DONE")
 
 def bind_status_graph(ctx, status_graph, *, zips=None, mounts=False, shares=True):
@@ -77,13 +151,22 @@ They will be passed to ctx.add_zip before the graph is loaded
         mounts=mounts,
         shares=shares
     )
-    assert "graph" in ctx2.children()
+    assert "graph" in ctx2.get_children()
     observe_graph_bound = partial(
         observe_graph, ctx, ctx2
     )
     ctx2.translate()
     params = {"runtime": True}
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
+    def observe2(graph):
+        try:
+            graph_rt = ctx2.graph_rt
+        except AttributeError:
+            graph_rt = None
+        if not isinstance(graph_rt, Cell):
+            return
+        ctx2.graph.set(deepcopy(graph))
+    ctx.observe(("get_graph",), observe2, OBSERVE_GRAPH_DELAY)
     return ctx2
 
 async def bind_status_graph_async(ctx, status_graph, *, zips=None, mounts=False, shares=True):
@@ -113,11 +196,16 @@ They will be passed to ctx.add_zip before the graph is loaded
         mounts=mounts,
         shares=shares
     )
-    assert "graph" in ctx2.children()
+    assert "graph" in ctx2.get_children()
     observe_graph_bound = partial(
         observe_graph, ctx, ctx2,
     )
     await ctx2.translation()
     params = {"runtime": True}
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
+    def observe2(graph):
+        ctx2.graph.set(deepcopy(graph))
+    ctx.observe(("get_graph",), observe2, OBSERVE_GRAPH_DELAY)
     return ctx2
+
+from seamless.highlevel import Cell

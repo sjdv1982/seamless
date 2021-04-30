@@ -21,12 +21,18 @@ def parse_argument(argname, argvalue, parameter):
         if not isinstance(argvalue, Cell):
             msg = "%s must be Cell, not '%s'"
             raise TypeError(msg % (argname, type(argvalue)))
+        celltype = par.get("celltype")
+        if celltype is not None:
+            if argvalue.celltype != celltype:
+                msg = "%s must have celltype '%s', not '%s"
+                raise TypeError(msg % (argname, celltype, argvalue.celltype))
         value = argvalue._path
     else:  # par["type"] == "celldict":
         try:
             argvalue.items()
         except Exception:
             raise TypeError((argname, type(argvalue))) from None
+        celltype = par.get("celltype")
         value = {}
         for k, v in argvalue.items():
             if not isinstance(k, str):
@@ -35,10 +41,14 @@ def parse_argument(argname, argvalue, parameter):
             if not isinstance(v, Cell):
                 msg = "%s['%s'] must be Cell, not '%s'"
                 raise TypeError(msg % (argname, k, type(v)))
+            if celltype is not None:
+                if v.celltype != celltype:
+                    msg = "%s['%s'] must have celltype '%s', not '%s"
+                    raise TypeError(msg % (argname, k, celltype, v.celltype))
             value[k] = v._path
     return value
 
-from ...silk.Silk import RichValue
+from silk.Silk import RichValue
 from ..Base import Base
 from ..Cell import Cell
 from ..Context import Context, SubContext

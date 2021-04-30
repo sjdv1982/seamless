@@ -13,23 +13,39 @@ import asyncio
 
 from ..get_hash import get_hash
 
-import sys
-def log(*args, **kwargs):
-    print(*args, **kwargs, file=sys.stderr)
+import logging
+logger = logging.getLogger("seamless")
 
 class ShareItem:
     last_exc = None
     _destroyed = False
     _initialized = False
     _initializing = False
+    _cellname = None
     share = None
-    def __init__(self, cell, path, readonly, mimetype=None):
+    def __init__(self, cell, path, readonly, *,
+        mimetype=None,
+        toplevel=False,  # if True, don't use the name of the namespace, but serve under the web root directly
+        cellname=None
+    ):
         self.path = path
         self.celltype = cell._celltype
         self.cell = ref(cell)
         assert isinstance(readonly, bool)
         self.readonly = readonly
         self.mimetype = mimetype
+        self.toplevel = toplevel
+        self._cellname = cellname
+
+    @property
+    def cellname(self):
+        if self._cellname is not None:
+            return self._cellname
+        cell = self.cell()
+        if cell is None:
+            return None
+        return cell._format_path()
+
 
     def init(self):
         if self._initialized:
@@ -72,10 +88,9 @@ class ShareItem:
                 self.share = cached_share
             else:
                 namespace = shareserver.namespaces[name]
-                celltype = cell._celltype
                 self.share = namespace.add_share(
                     self.path, self.readonly,
-                    celltype, self.mimetype
+                    self.celltype, self.mimetype
                 )
             self.share.bind(self)
             if from_cache and not cell_pending:
@@ -119,7 +134,7 @@ class ShareItem:
         if self._destroyed:
             return
         self._destroyed = True
-        log("undestroyed mount path %s" % self.path)
+        logger.warning("undestroyed mount path %s" % self.path)
         #self.destroy()
 
 
@@ -193,8 +208,12 @@ class ShareManager:
                 share_item.destroy()
             if share_params is not None:
                 mimetype = share_params.get("mimetype")
+                toplevel = share_params.get("toplevel", False)
+                cellname = share_params.get("cellname")
                 new_share_item = ShareItem(
-                    cell, path, readonly, mimetype=mimetype
+                    cell, path, readonly, mimetype=mimetype,
+                    toplevel=toplevel,
+                    cellname=cellname
                 )
                 self.shares[cell] = new_share_item
                 checksum = cell._checksum

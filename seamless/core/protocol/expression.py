@@ -1,4 +1,5 @@
-from ...mixed import _array_types
+from numpy.lib.arraysetops import isin
+from silk.mixed import _array_types
 def _set_subpath(value, path, subvalue):
     head = path[0]
     if len(path) == 1:
@@ -7,6 +8,8 @@ def _set_subpath(value, path, subvalue):
         elif isinstance(value, list) and \
           subvalue is None and len(value) == head + 1:
             value.pop(-1)
+        elif isinstance(value, dict) and subvalue is None:
+            value.pop(path[0])
         else:
             value[head] = subvalue
         return

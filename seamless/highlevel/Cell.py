@@ -5,9 +5,10 @@ import threading
 from types import LambdaType
 from .Base import Base
 from .Resource import Resource
+from .SelfWrapper import SelfWrapper
 from ..core.lambdacode import lambdacode
-from ..silk import Silk
-from ..mixed import MixedBase
+from silk import Silk
+from silk.mixed import MixedBase
 from ..mime import get_mime, language_to_mime, ext_to_mime
 
 celltypes = (
@@ -180,13 +181,15 @@ class Cell(Base):
     def _cell(self):
         return self
 
+    @property
     def self(self):
-        raise NotImplementedError
+        attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
+        return SelfWrapper(self, attributelist)
 
     def _get_subcell(self, attr):
         hcell = self._get_hcell()
         if not hcell["celltype"] == "structured":
-            raise AttributeError(item)
+            raise AttributeError(attr)
         parent = self._parent()
         readonly = False ### TODO
         path = self._subpath + (attr,)
@@ -206,15 +209,13 @@ class Cell(Base):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__:
+        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         if attr == "schema":
             hcell = self._get_hcell()
             if hcell["celltype"] == "structured":
                 cell = self._get_cell()
-                ###schema = cell.get_schema() # wrong!
-                struc_ctx = cell._data._context()
-                schema = struc_ctx.example.handle.schema
+                schema = self.example.schema
                 return SchemaWrapper(self, schema, "SCHEMA")
             else:
                 raise AttributeError
@@ -224,7 +225,11 @@ class Cell(Base):
             return getattr(cell, attr)
         return self._get_subcell(attr)
 
-    def mount(self, path, mode="rw", authority="file", persistent=True):
+    def mount(
+        self, path, mode="rw", authority="file", *,
+        persistent=True,
+        as_directory=False
+    ):
         """Mounts the cell to the file system.
         Mounting is only supported for non-structured cells.
 
@@ -246,9 +251,18 @@ class Cell(Base):
         - persistent
           If False, the file is deleted from disk when the Cell is destroyed
           Default: True.
+        - as_directory
+          If True, the cell must contain a dictionary,
+          which is mounted to a directory instead of a file.
+          items that are themselves dictionaries are mounted to sub-directories.
+          Other items are cast to str upon mounting.
+          Default: False
         """
         if self.celltype == "structured":
             raise Exception("Mounting is only supported for non-structured cells")
+        if as_directory:
+            if self.celltype != "plain":
+                raise Exception("Mounting as directory is only supported for plain cells")
         # TODO: check for independence (has_authority)
         # TODO, upon translation: check that there are no duplicate paths.
         hcell = self._get_hcell2()
@@ -256,7 +270,8 @@ class Cell(Base):
             "path": path,
             "mode": mode,
             "authority": authority,
-            "persistent": persistent
+            "persistent": persistent,
+            "as_directory": as_directory
         }
         hcell["mount"] = mount
         if self._parent() is not None:
@@ -497,7 +512,6 @@ class Cell(Base):
     @checksum.setter
     def checksum(self, checksum):
         """Sets the checksum of the cell, as SHA3-256 hash"""
-        from ..silk import Silk
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             hcell["checksum"] = checksum
@@ -540,6 +554,7 @@ class Cell(Base):
             cell.set(value)
 
     def set_checksum(self, checksum):
+        """Sets the cell's checksum from a SHA256 checksum"""
         from ..core.structured_cell import StructuredCell
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
@@ -588,9 +603,14 @@ class Cell(Base):
     def celltype(self, value):
         assert value in celltypes, value
         hcell = self._get_hcell2()
+        if hcell["celltype"] == value:
+            return
         if hcell.get("UNTRANSLATED"):
             cellvalue = hcell.get("TEMP")
         else:
+            if value == "structured":
+                if "mount" in hcell:
+                    raise ValueError("Mounting is only supported for non-structured cells")
             cellvalue = self.value
         if isinstance(cellvalue, Silk):
             cellvalue = cellvalue.data
@@ -607,7 +627,8 @@ class Cell(Base):
         hcell.pop("checksum", None)
         hcell["UNTRANSLATED"] = True
         if cellvalue is not None:
-            hcell["TEMP"] = cellvalue
+            if self.authoritative:
+                hcell["TEMP"] = cellvalue
             hcell.pop("checksum", None)
         if self._parent() is not None:
             self._parent()._translate()
@@ -639,7 +660,7 @@ class Cell(Base):
             return mimetype
         if celltype == "structured":
             datatype = hcell["datatype"]
-            if datatype in ("mixed", "binary"):
+            if datatype in ("mixed", "binary", "plain"):
                 mimetype = get_mime(datatype)
             else:
                 mimetype = ext_to_mime(datatype)
@@ -658,6 +679,8 @@ class Cell(Base):
                 raise ValueError("Unknown extension %s" % ext) from None
             hcell["file_extension"] = ext
         hcell["mimetype"] = value
+        if self._parent() is not None:
+            self._parent()._translate()
 
     @property
     def datatype(self):
@@ -766,8 +789,9 @@ class Cell(Base):
         old_language = hcell.get("language")
         hcell["language"] = lang
         hcell["file_extension"] = extension
-        if self._parent() is not None:
-            self._parent()._translate()
+        if lang != old_language:
+            if self._parent() is not None:
+                self._parent()._translate()
 
     def __rshift__(self, other):
         assert isinstance(other, Proxy)
@@ -775,7 +799,7 @@ class Cell(Base):
         assert other._pull_source is not None
         other._pull_source(self)
 
-    def share(self, path=None, readonly=True):
+    def share(self, path=None, readonly=True, *, toplevel=False):
         """Shares a cell over HTTP.
 
         Typically, the cell is available under
@@ -783,6 +807,9 @@ class Cell(Base):
 
         If path is None (default), Cell.path is used,
         with dots replaced by slashes.
+
+        If toplevel is True, the cell is instead available under
+        http://localhost:5813/<path>.
 
         If readonly is True, only GET requests are supported.
         Else, the cell can also be modified using PUT requests
@@ -803,6 +830,8 @@ class Cell(Base):
             "path": path,
             "readonly": readonly,
         }
+        if toplevel:
+            hcell["share"]["toplevel"] = True
         if self._parent() is not None:
             self._parent()._translate()
         return self
@@ -845,10 +874,11 @@ class Cell(Base):
         else:
             raise AttributeError(attr)
 
-
     def __str__(self):
-        path = ".".join(self._path) if self._path is not None else None
-        return "Seamless Cell: %s" % path
+        return "Seamless Cell: " + self.path
+
+    def __repr__(self):
+        return str(self)
 
 def cell_binary_method(self, other, name):
     h = self.handle
@@ -863,7 +893,7 @@ def Constant(*args, **kwargs):
     cell._get_hcell2()["constant"] = True
 
 from functools import partialmethod
-from ..silk.SilkBase import binary_special_method_names
+from silk.SilkBase import binary_special_method_names
 for name in binary_special_method_names:
     if name in Cell.__dict__:
         continue

@@ -32,14 +32,15 @@ print("SCHEMA B",ctx.a.schema.properties.b)
 print("SCHEMA C",ctx.a.schema.properties.b.properties.c)
 print("SCHEMA D",ctx.a.schema.properties.b.properties.c.properties.d)
 
-"""
-# not yet working well...
 ctx.a.schema.properties.b.properties.pop("c")
 ctx.compute()
 print("SCHEMA A2",ctx.a.schema)
 ctx.a.b.c = None
 ctx.compute()
 print(ctx.report.status)
-ctx.a.b.c = {"d": 10, "dd": 20}
+ctx.a.b.c.set({"d": 12, "dd": 22})
 ctx.compute()
-"""
+print(ctx.report.status)
+ctx.a.b.c.d = 999
+ctx.compute()
+print(ctx.report.status)
