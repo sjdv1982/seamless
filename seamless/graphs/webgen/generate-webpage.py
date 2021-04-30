@@ -62,6 +62,9 @@ order = webform.get("order", [])
 for cell in webform["cells"]:
     if cell not in order:
         order.append(cell)
+for tf in webform["transformers"]:
+    if tf not in order:
+        order.append(tf)
 
 for extra_component in webform.get("extra_components", []):
     id = extra_component.get("id", None)
@@ -79,9 +82,9 @@ for extra_component in webform.get("extra_components", []):
 used_components = set()
 has_file = []
 
-for cell_or_id in order:
-    if cell_or_id in extra_components:
-        id = cell_or_id
+for cell_or_tf_or_id in order:
+    if cell_or_tf_or_id in extra_components:
+        id = cell_or_tf_or_id
         extra_component = extra_components[id]
         if "component" not in extra_component:
             continue
@@ -108,8 +111,26 @@ for cell_or_id in order:
                 if cell not in has_file:
                     has_file.append(cell)
         continue
+    elif cell_or_tf_or_id in webform["transformers"]:
+        tf = cell_or_tf_or_id
+        transformer = webform["transformers"][tf]
+        component = transformer["component"]
+        if component == "":
+            continue
+        par = transformer.get("params",{}).copy()
+        for n in range(10):
+            par["ID%d" % (n+1)] = ident()
+        par["TRANSFORMER"] = tf
 
-    cell = cell_or_id 
+        component_template = components[component + ".jinja.html"]
+        template = Template(component_template)
+        html = template.render(**par)
+        COMPONENTS += html + "\n"
+
+        used_components.add(component)        
+        continue
+
+    cell = cell_or_tf_or_id 
     config = webform["cells"][cell]
     default = defaults[config["celltype"]]
     VUE_DATA[cell] = {

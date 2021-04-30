@@ -101,7 +101,7 @@ ctx.merge_index_js = ctx.lib.merge(
     state=ctx.index_js_STATE
 )
 
-ctx.js.share("seamless-client.js", toplevel=True)
+ctx.seamless_client_js.share("seamless-client.js", toplevel=True)
 
 ctx.compute()
 ctx.save_graph("../webgen.seamless")

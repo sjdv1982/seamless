@@ -8,19 +8,33 @@ auto_read: the web page will download the value of the cell whenever it changes
 """
 # input: graph
 
+from copy import deepcopy
+
 cells = {}
 extra_components = []
+transformers = {}
 webform = {
     "index": {
         "title": "Seamless webform",
     },
     "cells": cells,
-    "extra_components": extra_components
+    "extra_components": extra_components,
+    "transformers": transformers,
+}
+default_transformer = {
+    "component": "transformer-status",
+    "params": {}
 }
 for node in graph["nodes"]:
     if "UNTRANSLATED" in node:
         continue
     if "UNSHARE" in node:
+        continue
+    key = "/".join(node["path"])
+    if node["type"] == "transformer":
+        tf = deepcopy(default_transformer)
+        tf["params"].update({"title": "Transformer " + node["path"][-1]})
+        transformers[key] = tf
         continue
     if node["type"] != "cell":
         continue
@@ -93,13 +107,12 @@ for node in graph["nodes"]:
         "params": params,
         "share": share,
     })
-    cellkey = "_".join(node["path"])
-    cells[cellkey] = cell
+    cells[key] = cell
     if not len(extra_components):
         extra_components.append(
             {
                 "id": "EXAMPLE_ID",
-                "cell": cellkey,
+                "cell": key,
                 "component": "",
                 "params": {},
             }

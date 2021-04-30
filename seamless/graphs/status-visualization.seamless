@@ -138,31 +138,15 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "9e76c511149e6d5e9308a8b72a40af6bb77fdb98b3d90f8ad261e5767fb8cc3a"
+        "value": "b5246c11b5023c785088cffc75468885fb47ac3a058ef7caec02fb7119ac7241"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
       "path": [
-        "js"
+        "seamless_client_js"
       ],
       "share": {
         "path": "seamless-client.js",
-        "readonly": true
-      },
-      "type": "cell"
-    },
-    {
-      "celltype": "text",
-      "checksum": {
-        "value": "1e790011125092fd8a88549f887ffe625f9fc53e8a286c869c5c2e661841f4bd"
-      },
-      "datatype": "mixed",
-      "mimetype": "text/javascript",
-      "path": [
-        "js2"
-      ],
-      "share": {
-        "path": "status-visualization.js",
         "readonly": true
       },
       "type": "cell"
@@ -190,6 +174,22 @@
       "path": [
         "status_data"
       ],
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "1e790011125092fd8a88549f887ffe625f9fc53e8a286c869c5c2e661841f4bd"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/javascript",
+      "path": [
+        "status_visualization_js"
+      ],
+      "share": {
+        "path": "status-visualization.js",
+        "readonly": true
+      },
       "type": "cell"
     },
     {

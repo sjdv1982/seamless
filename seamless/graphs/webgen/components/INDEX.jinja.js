@@ -101,8 +101,9 @@ const app = new Vue({
     },
     METHOD_file_upload(cellname, file) { 
       if (file === undefined) return
+      that = this
       file.arrayBuffer().then(function(buf){
-        vm[cellname].value = new Blob([new Uint8Array(buf)], {type: file.type })
+        that[cellname].value = new Blob([new Uint8Array(buf)], {type: file.type })
       })  
     }
     
