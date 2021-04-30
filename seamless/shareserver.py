@@ -467,10 +467,12 @@ class ShareServer(object):
 
     async def _serve_update_ping(self, websocket, path):
         #keep connection open forever, periodically send a ping
+        # else, nginx will close the connection after a minute
         try:
             while 1:
                 await asyncio.sleep(10)
-                await websocket.ping()
+                #await websocket.ping()   # is NOT sufficient!
+                await self._send(websocket, ("ping",))
         except ConnectionClosed:
             pass
 
