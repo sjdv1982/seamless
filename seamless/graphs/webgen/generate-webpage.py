@@ -26,8 +26,13 @@ from jinja2 import Template
 import random
 import json
 
+idents = set()
 def ident():
-    return "id-%d" % random.randint(1,10000)
+    while 1:
+        result = "id-%d" % random.randint(1,10000)
+        if result not in idents:
+            idents.add(result)
+            return result
 
 encodings = ["text", "json"]
 defaults = {
@@ -107,7 +112,10 @@ for cell_or_id in order:
     cell = cell_or_id 
     config = webform["cells"][cell]
     default = defaults[config["celltype"]]
-    VUE_DATA[cell] = default
+    VUE_DATA[cell] = {
+        "checksum": None,
+        "value": default
+    }
     if "share" in config:
         par = config["share"]
         encoding = par["encoding"]
@@ -117,7 +125,7 @@ for cell_or_id in order:
             SEAMLESS_READ_CELLS[encoding].append(cell)
         if par.get("write"):
             SEAMLESS_WRITE_CELLS[encoding].append(cell)
-            code = """{cell}: function (value) {{
+            code = """"{cell}.value": function (value) {{
       seamless_update("{cell}", value, "{encoding}")
     }},""".format(cell=cell, encoding=encoding)
             WATCHERS += code + "\n    "
@@ -150,11 +158,9 @@ for component in used_components:
         COMPONENT_JS += component_js + "\n"
 
 for cell in has_file:
-    fcell = cell + "_FILENAME"
-    VUE_DATA[fcell] = None
-    code = """{fcell}: function (file) {{
-this.METHOD_file_upload("{cell}", file)
-}},""".format(cell=cell, fcell=fcell)
+    code = """"{cell}.file": function (file) {{
+      this.METHOD_file_upload("{cell}", file)
+    }},""".format(cell=cell)
     WATCHERS += code + "\n    "
 
 component_template = components["INDEX.jinja.html"]
@@ -170,7 +176,7 @@ index_js = template.render(
     SEAMLESS_READ_CELLS=json.dumps(SEAMLESS_READ_CELLS, indent=2),
     SEAMLESS_WRITE_CELLS=json.dumps(SEAMLESS_WRITE_CELLS, indent=2),
     SEAMLESS_AUTO_READ_CELLS=json.dumps(SEAMLESS_AUTO_READ_CELLS, indent=2),
-    VUE_DATA=json.dumps(VUE_DATA, indent=2).replace("\n", "\n    "),
-    WATCHERS=WATCHERS
+    VUE_DATA=json.dumps(VUE_DATA, indent=2).replace("\n", "\n      "),
+    WATCHERS=WATCHERS.rstrip()
 )
 result["index.js"] = index_js

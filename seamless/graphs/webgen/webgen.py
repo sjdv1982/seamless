@@ -6,7 +6,7 @@ import os
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 os.system("rm -rf web")
 os.system("mkdir web")
-os.system("cp -r webcomponents web/components")
+os.system("cp -r components web/components")
 
 graph = json.load(open("../status-visualization.seamless"))
 

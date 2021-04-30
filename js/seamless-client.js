@@ -116,7 +116,6 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
         }
         //$("#error_message").text("RESP:" + r)
         ctx[key].value = r
-        console.log(key, response.headers.get("Content-Type"))
         ctx[key].content_type = response.headers.get('Content-Type')
       }
     })
@@ -247,11 +246,15 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
       }      
     }
     else if (message[0] == "update") {
-      let key = message[1][0]
+      let key = message[1][0]     
+      let checksum = message[1][1] 
       let marker = message[1][2]
       //$("#error_message").text(JSON.stringify(message))
       if (ctx[key]._marker == null || ctx[key]._marker < marker) {
-        get_value(key)
+        get_value(key)        
+      }
+      if (ctx[key]._marker == null || ctx[key]._marker <= marker) {
+        ctx[key].checksum = checksum
         ctx[key].initial = false
       }
     }    
