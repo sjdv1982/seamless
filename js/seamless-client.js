@@ -37,10 +37,16 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
         var pathArray = window.location.pathname.split('/')
         var Upath = ""
         for (i = 0; i < pathArray.length - 2; i++) {
-          if (pathArray[i] == "") continue;
-          Upath += "/";
-          Upath += pathArray[i];
+          if (pathArray[i] == "") continue
+          Upath += "/"
+          Upath += pathArray[i]
         }
+        if (pathArray.length > 1) {
+          last = pathArray[pathArray.length - 2]
+          if (last != "ctx" && last != "status") {
+            Upath += "/" + last
+          }
+        }        
         if (Upath == "") Upath = "/"
         if (update_server == "") {
           update_server = ws_protocol + "//" +  Uhost + Upath
@@ -258,6 +264,9 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
         ctx[key].initial = false
       }
     }    
+    else if (message[0] == "ping") {
+      return
+    }
     else {
       console.log('Seamless client websocket Error: unknown message format:', message)
       //$("#error_message").text(message) 
