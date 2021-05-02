@@ -100,6 +100,7 @@ highlink-cpp.py:  Run with ipython -i, then continue in interactive mode,
                   changing the source code and the schema until it works.
 mount.py:         Run with ipython -i, then continue in interactive mode.
                   Initial output is in test-outputs/mount.out
+cython_.py        Run with ipython -i                 
 python-debugging.py: Run with ipython -i, then continue in interactive mode.
 observe-graph.ipynb: Run "seamless-devel-jupyter" and then open /cwd in the browser
 traitlets.ipynb: same as above

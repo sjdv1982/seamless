@@ -279,7 +279,7 @@ class Module(Base):
 
     @language.setter
     def language(self, value):
-        if value != "python":
+        if value not in ("python", "ipython"):
             raise NotImplementedError
         from ..compiler import find_language
         hnode = self._get_hnode2()
