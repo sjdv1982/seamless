@@ -1,4 +1,7 @@
 
+from seamless.core.transformation import SeamlessTransformationError
+
+
 header = """
 /*
 The following C header has been auto-generated from the transformer schema
@@ -13,7 +16,7 @@ If your transform() function is written in C++, don't forget to add 'extern "C" 
 """
 
 if "type" not in input_schema:
-    raise TypeError("Input schema needs to be defined")
+    raise SeamlessTransformationError("Input schema (transformer.inp.schema) needs to be defined in JSON schema format, containing at least 'type'")
 
 json_to_c = {
     "integer": "int",
@@ -51,7 +54,7 @@ def gen_basic_type(name, schema, *, verify_integer_bytesize, item=False):
             type = schema["type"]
         else:
             if not has_form or "type" not in form:
-                raise TypeError("Item schema {0} must contain 'type' in its schema or form schema".format(name2))
+                raise SeamlessTransformationError("Item schema {0} must contain 'type' in its schema or form schema".format(name2))
             type = form["type"]
     else:
         type = schema["type"]
@@ -83,15 +86,15 @@ def gen_array(name, schema, *, verify_shape, const):
         name2 = ".".join(name)
 
     if "form" not in schema:
-        raise ValueError("'{0}' schema must have form schema".format(name2))
+        raise SeamlessTransformationError("'{0}' schema must have form schema".format(name2))
 
     form = schema["form"]
     array_struct_name = gen_struct_name(name)
     array_struct_members = []
     if verify_shape and "shape" not in form:
-        raise ValueError("'{0}' form schema must have 'shape'".format(name2))
+        raise SeamlessTransformationError("'{0}' form schema must have 'shape'".format(name2))
     if "ndim" not in form:
-        raise ValueError("'{0}' form schema must have 'ndim'".format(name2))
+        raise SeamlessTransformationError("'{0}' form schema must have 'ndim'".format(name2))
     array_struct_members.append(("unsigned int", "shape[%d]" % form["ndim"]))
 
     warnings = []
@@ -108,6 +111,7 @@ def gen_array(name, schema, *, verify_shape, const):
         raise NotImplementedError(name2) #heterogeneous arrays (tuples)
 
     tname = name
+    struct_code = ""
     if isinstance(name, str):
         tname = (name,)
     if type == "array":
@@ -116,12 +120,13 @@ def gen_array(name, schema, *, verify_shape, const):
         req_storage = "pure-binary"
         ctype, nested_struct_code = gen_struct(
           tname+ ("item",), itemschema,
-          verify_pure_binary=True
+          verify_pure_binary=True,
+          const=const
         )
         if const:
             ctype = "const " + ctype
         ctype += " *"
-        struct_code += nested_struct_code
+        struct_code += nested_struct_code + "\n"
     else:
         req_storage = "binary"
         ctype = gen_basic_type(
@@ -131,7 +136,7 @@ def gen_array(name, schema, *, verify_shape, const):
           item=True
         )
     if "storage" not in schema or not schema["storage"].endswith(req_storage):
-        raise ValueError("'{0}' schema must have {1} storage defined".format(name2, req_storage))
+        raise SeamlessTransformationError("'{0}' schema must have {1} storage defined".format(name2, req_storage))
     ctype2 = ctype
     if const and not ctype2.startswith("const "):
         ctype2 = "const " + ctype
@@ -139,7 +144,8 @@ def gen_array(name, schema, *, verify_shape, const):
     array_struct_code = gen_struct_code(array_struct_name, array_struct_members)
     for warning in warnings:
         print("WARNING: " + warning)
-    return array_struct_name, array_struct_code
+    struct_code += array_struct_code
+    return array_struct_name, struct_code
 
 def gen_struct_code(name, members):
     struct_code = "typedef struct {0} {{\n".format(name)
@@ -158,7 +164,7 @@ def gen_struct(name, schema, *, verify_pure_binary, const):
     if verify_pure_binary is not None:
         req_storage = "pure-binary" if verify_pure_binary else "binary"
         if "storage" not in schema or not schema["storage"].endswith(req_storage):
-            raise ValueError("'{0}' schema must have {1} storage defined".format(name2, req_storage))
+            raise SeamlessTransformationError("'{0}' schema must have {1} storage defined".format(name2, req_storage))
     struct_name = gen_struct_name(name)
     struct_members = []
     tname = name
@@ -210,7 +216,7 @@ inputpins = [v.unsilk for v in inputpins]
 
 for pin in inputpins:
     if pin not in input_props:
-        raise TypeError("Input pin '%s' is not in input schema" % pin)
+        raise SeamlessTransformationError("Input pin '%s' is not in input schema" % pin)
 
 order = input_schema.get("order", [])
 for propname in sorted(input_props.keys()):
@@ -219,7 +225,7 @@ for propname in sorted(input_props.keys()):
 for propnr, propname in enumerate(order):
     propschema = input_props[propname]
     if "type" not in propschema:
-        raise TypeError("Property '%s' needs to have its type defined" % propname)
+        raise SeamlessTransformationError("Property '%s' needs to have its type defined" % propname)
     prop_jtype = propschema["type"]
     if prop_jtype == "object":
         raise NotImplementedError #input structs
@@ -233,7 +239,7 @@ for propnr, propname in enumerate(order):
 
 
 if "type" not in result_schema:
-    raise TypeError("Result schema needs to be defined")
+    raise SeamlessTransformationError("Result schema (transformer.result.schema) needs to be defined in JSON schema format, containing at least 'type'")    
 
 return_jtype = result_schema["type"]
 if return_jtype == "object":
