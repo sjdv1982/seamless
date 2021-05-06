@@ -1,5 +1,5 @@
 {% set name = "seamless-framework" %}
-{% set version = "0.5.2" %}
+{% set version = "0.6-devel" %}
 
 package:
   name: "{{ name|lower }}"
@@ -20,10 +20,10 @@ requirements:
     - setuptools
   run:
     - python==3.7.3
-    - numpy==1.17.*
+    - numpy==1.20.*
     - requests==2.22.*
-    - cffi==1.13.*
-    - traitlets==4.3.*
+    - cffi==1.14.*
+    - traitlets==5.0.*
     - biopython==1.76.*
     #- nglview==2.7.*
     #
@@ -35,7 +35,7 @@ requirements:
     - ruamel.yaml.clib==0.2.*
     #- speg==0.3.*
     #
-    - jsonschema==3.*
+    - jsonschema==3.2.*
     #- websockets==8.1.*
     #
     - aiohttp==3.6.*
@@ -48,14 +48,14 @@ requirements:
     - yarl==1.4.*
     #- redis==3.3.*
     - redis
-    - pandas==0.24.*
-    - IPython==7.12.*
-    - notebook==6.0.*
-    - tornado==6.0.*
-    - ipykernel==5.1.*
-    - pyzmq==18.1.*
-    - jedi==0.15.2
-    - parso==0.5.2
+    - pandas==1.2.*
+    - IPython==7.23.*
+    - notebook==6.3.*
+    - tornado==6.1.*
+    - ipykernel==5.5.*
+    - pyzmq==22.0.*
+    - jedi==0.18.*
+    - parso==0.8.*
     #- jupyter-console==6.1.*
     #
     #- docker==3.7.*
@@ -65,6 +65,7 @@ requirements:
     #- debugpy==1.2.*
     #
     - mpld3==0.5.*
+    - lxml==4.5.*
     - silk
 #test:
 #  imports:
