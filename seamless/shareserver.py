@@ -288,7 +288,11 @@ class ShareNamespace:
         if subkey is not None:
             assert mode in ("buffer", "value")
         share = self.shares[key]
-        checksum, marker = await share.read()
+        try:
+            checksum, marker = await share.read()
+        except CancelledError as exc:
+            if mode not in ("checksum", "marker"):
+                raise Exception from None
         if checksum is not None:
             checksum2 = checksum.hex()
         else:
@@ -673,7 +677,7 @@ class ShareServer(object):
                 text=err,
             )
         except CancelledError:
-            msg = "Share was destroyed", ns, key
+            msg = "Share was destroyed (1)", ns, key
             logger.debug(" ".join([str(m) for m in msg]))
             return web.Response(
                 status=404,
@@ -787,7 +791,7 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
                 text=newmarker,
             )
         except CancelledError:
-            msg = "Share was destroyed", ns, key
+            msg = "Share was destroyed (2)", ns, key
             logger.debug(" ".join([str(m) for m in msg]))
             return web.Response(
                 status=404,
