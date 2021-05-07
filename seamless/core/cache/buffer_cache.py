@@ -26,6 +26,7 @@ def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
 
+empty_dict_checksum = 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c'
 class BufferCache:
     """Checksum-to-buffer cache.
     Every buffer is referred to by a CacheManager (or more than one).
@@ -56,6 +57,8 @@ class BufferCache:
         self.buffer_length = {} #checksum-to-bufferlength
         self.non_persistent = set()
         self.missing = set()
+
+        self.incref_buffer(bytes.fromhex(empty_dict_checksum), b'{}\n', True)
 
     def _is_persistent(self, authoritative):
         if authoritative:
@@ -270,6 +273,7 @@ class BufferCache:
     def destroy(self):
         if self.buffer_cache is None:
             return
+        self.buffer_refcount.pop(bytes.fromhex(empty_dict_checksum), None)
         if len(self.buffer_refcount):
             print_warning("buffer cache, %s buffers undestroyed" % len(self.buffer_refcount))
         self.buffer_cache = None

@@ -191,6 +191,9 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
         if (ctx[key]._marker == oldmarker) {
           ctx[key]._marker = newmarker
         }
+        else {
+          get_value(key)
+        }
       }
     })
     .catch(function(err) {

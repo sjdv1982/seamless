@@ -201,6 +201,9 @@ class Manager:
         #and cell._context()._macro is None: # TODO: forbid
         if not initial and not from_structured_cell:
             self.cancel_cell(cell, (checksum is None))
+        else:
+            if cell._structured_cell is None:
+                unvoid_cell(cell, self.livegraph)
         self._set_cell_checksum(
             cell, checksum,
             (checksum is None), status_reason=reason,
