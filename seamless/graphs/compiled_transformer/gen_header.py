@@ -31,12 +31,12 @@ json_to_c = {
     "string": "char",
 }
 
-def gen_struct_name(name):
+def gen_struct_name(name, postfix="Struct"):
     def capitalize(subname):
         return "".join([subsubname.capitalize() for subsubname in subname.split("_")])
     if isinstance(name, str):
         name = (name,)
-    return "".join([capitalize(subname) for subname in name]) + "Struct"
+    return "".join([capitalize(subname) for subname in name]) + postfix
 
 def gen_basic_type(name, schema, *, verify_integer_bytesize, item=False):
     name2 = name
@@ -80,7 +80,7 @@ def gen_basic_type(name, schema, *, verify_integer_bytesize, item=False):
     ###    print("WARNING: " + warning)
     return result
 
-def gen_array(name, schema, *, verify_shape, const):
+def gen_array(name, schema, *, verify_shape, const, is_result=False):
     name2 = name
     if isinstance(name, (tuple, list)):
         name2 = ".".join(name)
@@ -130,10 +130,10 @@ def gen_array(name, schema, *, verify_shape, const):
     else:
         req_storage = "binary"
         ctype = gen_basic_type(
-          tname+ ("item",),
-          itemschema,
-          verify_integer_bytesize=True,
-          item=True
+            tname+ ("item",),
+            itemschema,
+            verify_integer_bytesize=True,
+            item=True
         )
     if "storage" not in schema or not schema["storage"].endswith(req_storage):
         raise SeamlessTransformationError("'{0}' schema must have {1} storage defined".format(name2, req_storage))
@@ -249,7 +249,10 @@ if return_jtype == "object":
     input_args.append(output_ctype + " *" + result_name)
 elif return_jtype == "array":
     return_ctype = "void"
-    output_ctype, struct_header = gen_array(result_name, result_schema, verify_shape=False, const=False)
+    output_ctype, struct_header = gen_array(
+        result_name, result_schema, 
+        verify_shape=False, const=False, is_result=True
+    )
     header += struct_header
     input_args.append(output_ctype + " *" + result_name)
 else:
