@@ -265,6 +265,14 @@ class CommunionServer:
             coro_server = websockets.serve(server, outgoing_address, outgoing)
             print("Set up a communion outgoing port %d" % outgoing)
         if len(incoming):
+            for n in range(len(incoming)):
+                url = incoming[n]
+                try:
+                    int(url)
+                    url = "localhost:" + url
+                except ValueError:
+                    pass
+                incoming[n] = url                
             self._to_start_incoming = incoming.copy()
         for url in incoming:
             url0 = url
