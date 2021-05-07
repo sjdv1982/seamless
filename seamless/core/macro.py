@@ -510,5 +510,4 @@ from .injector import macro_injector as injector
 from .unbound_context import UnboundContext, UnboundManager
 from .macro_mode import macro_mode_on, curr_macro, get_macro_mode
 from .cached_compile import exec_code
-from .build_module import build_module
 from .status import StatusReasonEnum
