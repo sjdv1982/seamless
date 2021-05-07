@@ -87,6 +87,7 @@ class Macro(Worker):
                 keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
                 self.namespace.clear()
                 self.namespace["__name__"] = "macro"
+                self.namespace["__package__"] = "macro"
                 self.namespace.update(keep)
                 self.namespace.update( self.default_namespace.copy())
                 self.namespace["HighLevelContext"] = HighLevelContext
@@ -187,6 +188,7 @@ class Macro(Worker):
         keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
         self.namespace.clear()
         self.namespace["__name__"] = "macro"
+        self.namespace["__package__"] = "macro"
         self.namespace.update(keep)
 
     def _set_context(self, ctx, name):

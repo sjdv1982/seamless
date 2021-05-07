@@ -122,7 +122,7 @@ class ReactorUpdateTask(Task):
 
         checksums = {}
         values = {}
-        module_workspace = {}
+        modules_to_build = {}
         for pinname, accessor in upstreams.items():
             if pinname not in updated:
                 continue
@@ -147,11 +147,11 @@ class ReactorUpdateTask(Task):
                 code_obj = cached_compile(value, str(reactor))
                 values[pinname] = code_obj
             elif (celltype, subcelltype) == ("plain", "module"):
-                mod = await build_module_async(value)
-                module_workspace[pinname] = mod[1]
+                modules_to_build[pinname] = value
             else:
                 values[pinname] = value
 
+        module_workspace = await build_all_modules(modules_to_build)
         rtreactor.module_workspace.update(module_workspace)
         rtreactor.values.update(values)
         rtreactor.updated = updated
@@ -241,4 +241,4 @@ from .serialize_buffer import SerializeToBufferTask
 from .checksum import CalculateChecksumTask
 from .get_buffer import GetBufferTask
 from ...protocol.validate_subcelltype import validate_subcelltype
-from ...build_module import build_module_async
+from ...build_module import build_all_modules

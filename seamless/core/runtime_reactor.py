@@ -1,7 +1,6 @@
 import weakref
 
 from .injector import reactor_injector as injector
-from .build_module import build_module
 
 class ReactorInput:
     def __init__(self, value):
@@ -79,6 +78,7 @@ class RuntimeReactor:
         if updated is None:
             self.clear()
         self.namespace["__name__"] = "reactor"
+        self.namespace["__package__"] = "reactor"
         for pinname in self.inputpins:
             if updated is not None and pinname not in updated:
                 if pinname not in ("code_start", "code_update", "code_stop"):

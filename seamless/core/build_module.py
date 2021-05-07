@@ -2,6 +2,7 @@ import json
 import sys, os
 import importlib
 import tempfile
+import pprint
 from weakref import WeakValueDictionary
 from types import ModuleType
 from ..get_hash import get_dict_hash
@@ -24,7 +25,7 @@ CFFI_VERBOSE = False
 
 module_cache = WeakValueDictionary()
 
-def build_interpreted_module(full_module_name, module_definition):
+def build_interpreted_module(full_module_name, module_definition, module_workspace):
     from ..ipython import ipython2python, execute as execute_ipython
     language = module_definition["language"]
     code = module_definition["code"]
@@ -33,11 +34,23 @@ def build_interpreted_module(full_module_name, module_definition):
     mod = ModuleType(full_module_name)
     mod.__path__ = []
     namespace = mod.__dict__
-    if language == "ipython":
-        code = ipython2python(code)
-        execute_ipython(code, namespace)
-    else:
-        exec(code, namespace)
+    sysmodules = {}
+    try:
+        for ws_modname, ws_mod in module_workspace.items():
+            sysmod = sys.modules.pop(ws_modname, None)
+            sysmodules[ws_modname] = sysmod
+            sys.modules[ws_modname] = ws_mod
+        if language == "ipython":
+            code = ipython2python(code)
+            execute_ipython(code, namespace)
+        else:
+            exec(code, namespace)
+    finally:
+        for sysmodname, sysmod in sysmodules.items():
+            if sysmod is None:
+                sys.modules.pop(sysmodname, None)
+            else:
+                sys.modules[sysmodname] = sysmod
     return mod
 
 def import_extension_module(full_module_name, module_code, debug, source_files):
@@ -122,7 +135,7 @@ def build_compiled_module(full_module_name, checksum, module_definition):
     mod = import_extension_module(full_module_name, module_code, debug, source_files)
     return mod
 
-def build_module(module_definition):
+def build_module(module_definition, module_workspace={}):
     mtype = module_definition["type"]
     assert mtype in ("interpreted", "compiled"), mtype
     json.dumps(module_definition)
@@ -130,7 +143,7 @@ def build_module(module_definition):
     full_module_name = "seamless_module_" + checksum.hex()
     if full_module_name not in module_cache:
         if mtype == "interpreted":
-            mod = build_interpreted_module(full_module_name, module_definition)
+            mod = build_interpreted_module(full_module_name, module_definition, module_workspace)
         elif mtype == "compiled":
             completed_module_definition = complete(module_definition)
             completed_checksum = get_dict_hash(completed_module_definition)
@@ -142,7 +155,7 @@ def build_module(module_definition):
         mod = module_cache[full_module_name]
     return full_module_name, mod
 
-async def build_module_async(module_definition):
+async def build_module_async(module_definition, module_workspace={}):
     """
     loop = asyncio.get_event_loop()
     with ProcessPoolExecutor() as executor:
@@ -152,5 +165,40 @@ async def build_module_async(module_definition):
             module_definition
         )
     """
-    full_module_name, mod = build_module(module_definition)
+    full_module_name, mod = build_module(module_definition, module_workspace)
     return full_module_name, mod
+
+async def build_all_modules(modules_to_build):
+    module_workspace = {} 
+    all_modules = list(modules_to_build.keys())
+    while len(modules_to_build):
+        modules_to_build_new = {}
+        for pinname, module_def in modules_to_build.items():
+            deps = module_def.get("dependencies", [])
+            for dep in deps:
+                if dep not in module_workspace:
+                    modules_to_build_new[pinname] = module_def
+                    break
+            else:
+                mod = await build_module_async(module_def, module_workspace)
+                assert mod is not None, pinname
+                module_workspace[pinname] = mod[1]
+        
+        if len(modules_to_build_new) == len(modules_to_build):
+            deps = {}
+            for pinname, module_def in modules_to_build:
+                cdeps = module_def.get("dependencies")
+                if cdeps:
+                    deps[pinname] = cdeps
+            depstr = pprint.pformat(deps)
+            raise Exception("""Circular or unfulfilled dependencies:
+
+{}
+
+All modules: {}
+"""     
+            ).format(depstr, all_modules)
+        
+        modules_to_build = modules_to_build_new
+                
+    return module_workspace
