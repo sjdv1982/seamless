@@ -99,7 +99,7 @@ def build_compiled_module(full_module_name, checksum, module_definition):
                 remaining_objects[objectname] = object_
             object_checksums[objectname] = object_checksum
         if len(remaining_objects):
-            build_dir = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name)
+            build_dir = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name)               
             success, new_binary_objects, source_files, stderr = compile(
               remaining_objects, build_dir,
               compiler_verbose=module_definition.get(
@@ -186,7 +186,7 @@ async def build_all_modules(modules_to_build):
         
         if len(modules_to_build_new) == len(modules_to_build):
             deps = {}
-            for pinname, module_def in modules_to_build:
+            for pinname, module_def in modules_to_build.items():
                 cdeps = module_def.get("dependencies")
                 if cdeps:
                     deps[pinname] = cdeps
@@ -196,8 +196,8 @@ async def build_all_modules(modules_to_build):
 {}
 
 All modules: {}
-"""     
-            ).format(depstr, all_modules)
+""".format(depstr, all_modules))     
+            
         
         modules_to_build = modules_to_build_new
                 

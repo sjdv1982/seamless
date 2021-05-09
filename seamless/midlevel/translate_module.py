@@ -3,16 +3,20 @@ from .util import get_path
 
 import inspect
 
-def gen_module_cell(module_code, module_type, language):
-    return {
+def gen_module_cell(module_code, module_type, language, dependencies):
+    result = {
         "type": module_type,
         "language": language,
         "code": module_code,
     }
+    if len(dependencies):
+        result["dependencies"] = dependencies
+    return result
 
 def translate_module(node, root, namespace, inchannels, outchannels):
     module_type = node["module_type"]
     language = node["language"]
+    dependencies = node["dependencies"]
 
     path = node["path"]
     parent = get_path(root, path[:-1], None, None)
@@ -40,6 +44,7 @@ def translate_module(node, root, namespace, inchannels, outchannels):
         "module_type": ("input", "str"),
         "language": ("input", "str"),
         "module_code": ("input", "text"),
+        "dependencies": ("input", "plain"),
         "result": ("output", "plain")
     })
     subcontext.gen_module_cell.code.cell().set(
@@ -47,6 +52,7 @@ def translate_module(node, root, namespace, inchannels, outchannels):
     )
     subcontext.gen_module_cell.module_type.cell().set(module_type)
     subcontext.gen_module_cell.language.cell().set(language)
+    subcontext.gen_module_cell.dependencies.cell().set(dependencies)
     codecell.connect(subcontext.gen_module_cell.module_code)
 
     subcontext.gen_module_cell.result.connect(subcontext.module_cell)

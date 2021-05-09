@@ -1,3 +1,4 @@
+from numpy import isin
 from .Base import Base
 
 def get_new_module(path):
@@ -6,6 +7,7 @@ def get_new_module(path):
         "type": "module",
         "module_type": "interpreted",
         "language": "python",
+        "dependencies": [], 
         "UNTRANSLATED": True,
     }
 
@@ -145,6 +147,24 @@ class Module(Base):
         value = codecell.value
         return value
 
+    @property
+    def dependencies(self):
+        """Returns the dependencies of the module"""
+        hnode = self._get_hnode2()
+        return tuple(hnode.get("dependencies", []))
+
+    @dependencies.setter
+    def dependencies(self, value):
+        deps = []
+        for dep in value:
+            if not isinstance(dep, str):
+                raise TypeError(dep)
+            deps.append(dep)
+        hnode = self._get_hnode2()
+        hnode["dependencies"] = deps
+        if self._parent() is not None:
+            self._parent()._translate()
+        
     async def fingertip(self):
         """Puts the buffer of the code cell's checksum 'at your fingertips':
 
