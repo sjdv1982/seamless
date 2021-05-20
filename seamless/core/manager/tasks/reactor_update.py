@@ -151,7 +151,8 @@ class ReactorUpdateTask(Task):
             else:
                 values[pinname] = value
 
-        module_workspace = await build_all_modules(modules_to_build)
+        module_workspace = {}
+        build_all_modules(modules_to_build, module_workspace)
         rtreactor.module_workspace.update(module_workspace)
         rtreactor.values.update(values)
         rtreactor.updated = updated

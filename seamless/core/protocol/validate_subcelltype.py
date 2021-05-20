@@ -31,7 +31,7 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename):
     if celltype == "plain" and subcelltype == "module":
         v = json.loads(value)
         if not v.get("dependencies"):
-            await build_module_async(v) 
+            build_module(v) 
     else:
         tree = ast.parse(value, filename=codename)
         # cached_compile(value, codename)   # pointless; syntax error is not caught
@@ -46,4 +46,4 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename):
 
 from .get_buffer import get_buffer, CacheMissError
 from ..cached_compile import analyze_code, cached_compile
-from ..build_module import build_module_async
+from ..build_module import build_module

@@ -114,7 +114,8 @@ class MacroUpdateTask(Task):
             else:
                 values[pinname] = value
 
-        module_workspace = await build_all_modules(modules_to_build)
+        module_workspace = {}
+        build_all_modules(modules_to_build, module_workspace)
 
         if macro._gen_context is not None:
             macro._gen_context.destroy()

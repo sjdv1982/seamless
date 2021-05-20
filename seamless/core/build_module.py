@@ -155,21 +155,7 @@ def build_module(module_definition, module_workspace={}):
         mod = module_cache[full_module_name]
     return full_module_name, mod
 
-async def build_module_async(module_definition, module_workspace={}):
-    """
-    loop = asyncio.get_event_loop()
-    with ProcessPoolExecutor() as executor:
-        full_module_name, mod = await loop.run_in_executor(
-            executor,
-            build_module,
-            module_definition
-        )
-    """
-    full_module_name, mod = build_module(module_definition, module_workspace)
-    return full_module_name, mod
-
-async def build_all_modules(modules_to_build):
-    module_workspace = {} 
+def build_all_modules(modules_to_build, module_workspace):
     all_modules = list(modules_to_build.keys())
     while len(modules_to_build):
         modules_to_build_new = {}
@@ -180,7 +166,7 @@ async def build_all_modules(modules_to_build):
                     modules_to_build_new[pinname] = module_def
                     break
             else:
-                mod = await build_module_async(module_def, module_workspace)
+                mod = build_module(module_def, module_workspace)
                 assert mod is not None, pinname
                 module_workspace[pinname] = mod[1]
         
@@ -201,4 +187,4 @@ All modules: {}
         
         modules_to_build = modules_to_build_new
                 
-    return module_workspace
+    return

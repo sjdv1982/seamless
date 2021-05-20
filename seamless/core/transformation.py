@@ -436,7 +436,8 @@ class TransformationJob:
             namespace["PINS"][pinname] = v
             namespace[pinname] = v
 
-        module_workspace = await build_all_modules(modules_to_build)
+        module_workspace = {}
+        build_all_modules(modules_to_build, module_workspace)
         assert code is not None
 
         async def get_result_checksum(result_buffer):
