@@ -1,6 +1,7 @@
 import sys
 from types import ModuleType
 from contextlib import contextmanager
+from .build_module import Package
 
 class Injector:
     def __init__(self, topmodule_name):
@@ -26,12 +27,25 @@ class Injector:
             sys_modules[self.topmodule_name] = self.topmodule
             if self.topmodule_name != "macro":
                 namespace[self.topmodule_name] = self.topmodule
+            package_mapping = {}
             for modname, mod in workspace.items():
-                mname = self.topmodule_name + "." + modname
+                if isinstance(mod, Package):
+                    for k,v in mod.mapping.items():
+                        if v == "__init__":
+                            package_mapping[k] = modname
+                        else:
+                            package_mapping[k] = modname + "." + v
+            for modname, mod in workspace.items():
+                if isinstance(mod, Package):
+                    continue
+                modname2 = modname
+                if modname in package_mapping:                    
+                    modname2 = package_mapping[modname]
+                mname = self.topmodule_name + "." + modname2
                 sys_modules[mname] = mod
-                namespace[modname] = mod
-                old_packages[modname] = mod.__package__
-                old_names[modname] = mod.__name__
+                namespace[modname2] = mod
+                old_packages[modname2] = mod.__package__
+                old_names[modname2] = mod.__name__
                 mod.__package__ = self.topmodule_name
                 mod.__name__ = mname
                 mod.__path__ = []

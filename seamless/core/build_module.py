@@ -1,4 +1,5 @@
 import json
+import re
 import sys, os
 import importlib
 import tempfile
@@ -25,26 +26,53 @@ CFFI_VERBOSE = False
 
 module_cache = WeakValueDictionary()
 
-def build_interpreted_module(full_module_name, module_definition, module_workspace):
+class Package:
+    def __init__(self, mapping):
+        self.mapping = mapping
+
+def build_interpreted_module(
+    full_module_name, module_definition, module_workspace,
+    module_error_name, parent_module_name=None
+):
     from ..ipython import ipython2python, execute as execute_ipython
     language = module_definition["language"]
     code = module_definition["code"]
     assert language in ("python", "ipython"), language
+    if isinstance(code, dict):
+        return build_interpreted_package(
+            full_module_name, language, code, module_workspace,
+            parent_module_name=parent_module_name,
+            module_error_name=module_error_name
+        )
+
     assert isinstance(code, str), type(code)
     mod = ModuleType(full_module_name)
     mod.__path__ = []
+    if parent_module_name is not None:
+        mod.__package__ = parent_module_name.split(".")[0]
     namespace = mod.__dict__
     sysmodules = {}
     try:
         for ws_modname, ws_mod in module_workspace.items():
             sysmod = sys.modules.pop(ws_modname, None)
-            sysmodules[ws_modname] = sysmod
-            sys.modules[ws_modname] = ws_mod
+            ws_modname2 = ws_modname
+            if ws_modname2.endswith(".__init__"):
+                ws_modname2 = ws_modname2[:-len(".__init__")]
+            sysmodules[ws_modname2] = sysmod
+            sys.modules[ws_modname2] = ws_mod
         if language == "ipython":
             code = ipython2python(code)
             execute_ipython(code, namespace)
         else:
-            exec(code, namespace)
+            try:
+                exec(code, namespace)
+            except ModuleNotFoundError:
+                mname = module_error_name
+                if mname is None:
+                    mname = parent_module_name
+                if mname is None:
+                    mname = full_module_name
+                raise Exception(mname) from None
     finally:
         for sysmodname, sysmod in sysmodules.items():
             if sysmod is None:
@@ -52,6 +80,45 @@ def build_interpreted_module(full_module_name, module_definition, module_workspa
             else:
                 sys.modules[sysmodname] = sysmod
     return mod
+
+def build_interpreted_package(
+    full_module_name, language, package_definition, module_workspace,
+    *, parent_module_name, module_error_name
+):
+    assert language == "python", language
+    assert "__init__" in package_definition
+    if parent_module_name is None:
+        parent_module_name = full_module_name
+    
+    p = {}
+    mapping = {}
+    for k,v in package_definition.items():
+        assert isinstance(k,str), k
+        assert isinstance(v, dict)
+        assert "code" in v, k
+        assert isinstance(v["code"], str), k
+        vv = v
+        if v.get("dependencies"):
+            vv = v.copy()
+            for depnr, dep in enumerate(v["dependencies"]):
+                dep2 = parent_module_name + dep if dep[:1] == "." else dep
+                if dep2 == "__init__":
+                    dep2 = parent_module_name + "." + dep2
+                vv["dependencies"][depnr] = dep2
+        assert k[:2] != "..", k
+        kk = parent_module_name + k if k[:1] == "." else k
+        p[kk] = v
+        k2 = k if k[:-1] == "." else "." + k
+        modname = full_module_name + k2
+        mapping[modname] = kk
+    build_all_modules(
+        p, module_workspace, 
+        mtype="interpreted", 
+        parent_module_name=parent_module_name,
+        module_error_name=module_error_name
+    )
+    return Package(mapping)
+    
 
 def import_extension_module(full_module_name, module_code, debug, source_files):
     with locklock:
@@ -79,7 +146,7 @@ def import_extension_module(full_module_name, module_code, debug, source_files):
             if not debug:
                 os.remove(module_file)
 
-def build_compiled_module(full_module_name, checksum, module_definition):
+def build_compiled_module(full_module_name, checksum, module_definition, *, module_error_name):
     from .cache.database_client import database_cache, database_sink
     mchecksum = b"python-ext-" + checksum
     module_code = database_cache.get_compile_result(mchecksum)
@@ -135,47 +202,72 @@ def build_compiled_module(full_module_name, checksum, module_definition):
     mod = import_extension_module(full_module_name, module_code, debug, source_files)
     return mod
 
-def build_module(module_definition, module_workspace={}):
-    mtype = module_definition["type"]
+def build_module(module_definition, module_workspace={}, *, 
+     module_error_name, mtype=None, parent_module_name=None):
+    if mtype is None:
+        mtype = module_definition["type"]
     assert mtype in ("interpreted", "compiled"), mtype
     json.dumps(module_definition)
     checksum = get_dict_hash(module_definition)
     full_module_name = "seamless_module_" + checksum.hex()
     if full_module_name not in module_cache:
         if mtype == "interpreted":
-            mod = build_interpreted_module(full_module_name, module_definition, module_workspace)
+            mod = build_interpreted_module(
+                full_module_name, module_definition, module_workspace,
+                parent_module_name=parent_module_name,
+                module_error_name=module_error_name
+            )
         elif mtype == "compiled":
+            assert parent_module_name is None
             completed_module_definition = complete(module_definition)
             completed_checksum = get_dict_hash(completed_module_definition)
             mod = build_compiled_module(
-              full_module_name, completed_checksum, completed_module_definition
+              full_module_name, completed_checksum, completed_module_definition,
+              module_error_name=module_error_name
             )
         module_cache[full_module_name] = mod
     else:
         mod = module_cache[full_module_name]
     return full_module_name, mod
 
-def build_all_modules(modules_to_build, module_workspace):
+def build_all_modules(
+    modules_to_build, module_workspace, *, 
+    mtype=None, parent_module_name=None,
+    module_error_name=None
+):
     all_modules = list(modules_to_build.keys())
     while len(modules_to_build):
         modules_to_build_new = {}
-        for pinname, module_def in modules_to_build.items():
+        for modname, module_def in modules_to_build.items():
             deps = module_def.get("dependencies", [])
             for dep in deps:
                 if dep not in module_workspace:
-                    modules_to_build_new[pinname] = module_def
+                    modules_to_build_new[modname] = module_def
                     break
             else:
-                mod = build_module(module_def, module_workspace)
-                assert mod is not None, pinname
-                module_workspace[pinname] = mod[1]
+                modname2 = None
+                if parent_module_name is not None:
+                    modname2 = parent_module_name + "." + modname
+                modname3 = modname
+                if module_error_name is not None:
+                    modname3 = module_error_name + "." + modname
+                modname4 = modname
+                if parent_module_name is not None:
+                    modname4 = modname2
+                mod = build_module(
+                    module_def, module_workspace, 
+                    mtype=mtype, parent_module_name=modname2,
+                    module_error_name=modname3
+                )
+                assert mod is not None, modname
+                module_workspace[modname4] = mod[1]
         
         if len(modules_to_build_new) == len(modules_to_build):
             deps = {}
-            for pinname, module_def in modules_to_build.items():
+            for modname, module_def in modules_to_build.items():
                 cdeps = module_def.get("dependencies")
                 if cdeps:
-                    deps[pinname] = cdeps
+                    deps[modname] = cdeps
             depstr = pprint.pformat(deps)
             raise Exception("""Circular or unfulfilled dependencies:
 

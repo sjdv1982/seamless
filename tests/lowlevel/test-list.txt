@@ -38,6 +38,8 @@ schema.py
 fingertip.py
 injection.py
 dependent-modules.py
+module-package.py
+module-package-complex.py
 injection2.py
 injection3.py
 injection4.py: the output is approximate, depends on exact timings, see also [1]
