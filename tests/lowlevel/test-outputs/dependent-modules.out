@@ -1,0 +1,10 @@
+START
+macro execute
+10 100 10
+/macro execute
+None
+stage 2
+macro execute
+20 100 20
+/macro execute
+None

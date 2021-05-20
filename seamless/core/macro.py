@@ -87,6 +87,7 @@ class Macro(Worker):
                 keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
                 self.namespace.clear()
                 self.namespace["__name__"] = "macro"
+                self.namespace["__package__"] = "macro"
                 self.namespace.update(keep)
                 self.namespace.update( self.default_namespace.copy())
                 self.namespace["HighLevelContext"] = HighLevelContext
@@ -187,6 +188,7 @@ class Macro(Worker):
         keep = {k:v for k,v in self.namespace.items() if k.startswith("_")}
         self.namespace.clear()
         self.namespace["__name__"] = "macro"
+        self.namespace["__package__"] = "macro"
         self.namespace.update(keep)
 
     def _set_context(self, ctx, name):
@@ -508,5 +510,4 @@ from .injector import macro_injector as injector
 from .unbound_context import UnboundContext, UnboundManager
 from .macro_mode import macro_mode_on, curr_macro, get_macro_mode
 from .cached_compile import exec_code
-from .build_module import build_module
 from .status import StatusReasonEnum

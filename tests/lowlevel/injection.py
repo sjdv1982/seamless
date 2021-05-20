@@ -48,7 +48,7 @@ print("/macro2 execute")
     ctx.macro_code2.connect(ctx.macro2.code)
     ctx.testmodule.connect(ctx.macro2.testmodule2)
 
-    ctx.mount("/tmp/mount-test", persistent=None)
+    #ctx.mount("/tmp/mount-test", persistent=None)
 
 
 print("START")

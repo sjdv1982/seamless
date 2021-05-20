@@ -14,6 +14,7 @@ class Injector:
         sys_modules = sys.modules
         old_modules = {}
         old_packages = {}
+        old_names = {}
         if self.topmodule_name in sys_modules:
             old_modules[self.topmodule_name] = sys_modules[self.topmodule_name]
         for modname, mod in workspace.items():
@@ -30,7 +31,9 @@ class Injector:
                 sys_modules[mname] = mod
                 namespace[modname] = mod
                 old_packages[modname] = mod.__package__
-                mod.__package__ = mname
+                old_names[modname] = mod.__name__
+                mod.__package__ = self.topmodule_name
+                mod.__name__ = mname
                 mod.__path__ = []
             yield
         finally:
@@ -43,6 +46,9 @@ class Injector:
                 if mname in old_packages:
                     mod = sys_modules[mname]
                     mod.__package__ = old_packages[mname]
+                if mname in old_names:
+                    mod = sys_modules[mname]
+                    mod.__name__ = old_names[mname]
                 if mname in old_modules:
                     sys_modules[mname] = old_modules[mname]
                 else:
