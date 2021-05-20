@@ -4,7 +4,6 @@ import sys, os
 import importlib
 import tempfile
 import pprint
-from weakref import WeakValueDictionary
 from types import ModuleType
 from ..get_hash import get_dict_hash
 from ..compiler.locks import locks, locklock
@@ -24,7 +23,8 @@ SEAMLESS_EXTENSION_DIR = os.path.join(tempfile.gettempdir(), "seamless-extension
 COMPILE_VERBOSE = True
 CFFI_VERBOSE = False
 
-module_cache = WeakValueDictionary()
+from ..pylru import lrucache
+module_cache = lrucache(size=100)
 
 class Package:
     def __init__(self, mapping):
@@ -45,11 +45,21 @@ def build_interpreted_module(
             module_error_name=module_error_name
         )
 
-    assert isinstance(code, str), type(code)
+    assert isinstance(code, str), type(code)    
+    package_name = None
     mod = ModuleType(full_module_name)
-    mod.__path__ = []
     if parent_module_name is not None:
-        mod.__package__ = parent_module_name.split(".")[0]
+        package_name = parent_module_name
+        if package_name.endswith(".__init__"):
+            package_name = package_name[:-len(".__init__")]
+        else:
+            pos = package_name.rfind(".")
+            if pos > -1:
+                package_name = package_name[:pos]
+        mod = ModuleType(package_name)
+        
+        mod.__package__ = package_name
+    mod.__path__ = []
     namespace = mod.__dict__
     sysmodules = {}
     try:
@@ -67,6 +77,7 @@ def build_interpreted_module(
             try:
                 exec(code, namespace)
             except ModuleNotFoundError:
+                raise
                 mname = module_error_name
                 if mname is None:
                     mname = parent_module_name

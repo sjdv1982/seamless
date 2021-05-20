@@ -46,7 +46,7 @@ class Injector:
                 namespace[modname2] = mod
                 old_packages[modname2] = mod.__package__
                 old_names[modname2] = mod.__name__
-                mod.__package__ = self.topmodule_name
+                mod.__package__ = mname
                 mod.__name__ = mname
                 mod.__path__ = []
             yield
