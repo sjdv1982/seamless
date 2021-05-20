@@ -559,7 +559,7 @@ class ShareServer(object):
         for name in sorted(list(self.namespaces.keys())):
             namespace = self.namespaces[name]
             share = namespace.shares.get(key)
-            if share is not None and share.toplevel:
+            if share is not None and share.bound and share.toplevel:
                 return namespace
 
     async def _handle_get(self, request):
