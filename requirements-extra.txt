@@ -5,4 +5,5 @@ jupyterhub==1.0.0
 jupyterlab==1.2.1
 jupyterlab-server==1.0.6
 ipython==7.12.0
-lxml
+mistune==0.8.4
+lxml==4.5.2
