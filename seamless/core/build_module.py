@@ -219,6 +219,7 @@ def build_module(module_definition, module_workspace={}, *,
     assert mtype in ("interpreted", "compiled"), mtype
     json.dumps(module_definition)
     checksum = get_dict_hash(module_definition)
+    dependencies = module_definition.get("dependencies")
     full_module_name = "seamless_module_" + checksum.hex()
     if module_error_name is not None:
         full_module_name += "_" + module_error_name
@@ -250,7 +251,8 @@ def build_module(module_definition, module_workspace={}, *,
               full_module_name, completed_checksum, completed_module_definition,
               module_error_name=module_error_name
             )
-        module_cache[full_module_name] = mod
+        if not dependencies:
+            module_cache[full_module_name] = mod
     return full_module_name, mod
 
 def build_all_modules(

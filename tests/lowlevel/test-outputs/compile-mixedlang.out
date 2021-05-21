@@ -6,5 +6,11 @@ g++ -c obj2.cpp -O3 -ffast-math -march=native -fPIC -p -g -o obj2.o
 
 5.0
 10.0
+
+gfortran -c obj1.f90 -O3 -fno-automatic -fcray-pointer -ffast-math -march=native -fPIC -p -g -o obj1.o
+
+g++ -c obj2.cpp -O3 -ffast-math -march=native -fPIC -p -g -o obj2.o
+
+
 ADD2 50.0
 50.0

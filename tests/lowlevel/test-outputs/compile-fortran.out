@@ -3,5 +3,9 @@ gfortran -c main.f90 -O3 -fno-automatic -fcray-pointer -ffast-math -march=native
 
 
 5.0
+
+gfortran -c main.f90 -O3 -fno-automatic -fcray-pointer -ffast-math -march=native -fPIC -p -g -o main.o
+
+
 ADD 25.0
 25.0
