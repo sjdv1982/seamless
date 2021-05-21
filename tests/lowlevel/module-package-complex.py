@@ -1,6 +1,6 @@
 import seamless
 from seamless.core import macro_mode_on
-from seamless.core import context, cell, macro
+from seamless.core import context, cell, macro, transformer
 
 
 mod_init = """
@@ -59,18 +59,8 @@ testmodule = {
     "code": package,
 }
 
-with macro_mode_on():
-    ctx = context(toplevel=True)
-    ctx.param = cell("plain").set(1)
-
-    ctx.macro = macro({
-        "param": "plain",
-        "testmodule": ("plain", "module"),
-    })
-
-    ctx.param.connect(ctx.macro.param)
-    ctx.macro_code = cell("macro").set("""
-print("macro execute")
+code = """
+print("execute")
 from .testmodule import testvalue
 from .testmodule.sub.mod1 import func
 from .testmodule.sub.mod2 import func as func2
@@ -81,8 +71,21 @@ print(testmodule.testvalue)
 from .testmodule import mod3
 print(mod3.testvalue)
 print(mod3.testfunc(99))
-print("/macro execute")
-""")
+result = 0
+print("/execute")
+"""
+
+with macro_mode_on():
+    ctx = context(toplevel=True)
+    ctx.param = cell("plain").set(1)
+
+    ctx.macro = macro({
+        "param": "plain",
+        "testmodule": ("plain", "module"),
+    })
+
+    ctx.param.connect(ctx.macro.param)
+    ctx.macro_code = cell("macro").set(code)
     ctx.macro_code.connect(ctx.macro.code)
 
     ctx.testmodule = cell("plain").set(testmodule)
@@ -91,3 +94,36 @@ print("/macro execute")
 print("START")
 ctx.compute()
 print(ctx.macro.exception)
+
+with macro_mode_on():
+    ctx = context(toplevel=True)
+    ctx.param = cell("plain").set(1)
+
+    ctx.tf = transformer({
+        "param": {
+            "io": "input",
+            "celltype": "plain",
+        },
+        "testmodule": {
+            "io": "input",
+            "celltype": "plain", 
+            "subcelltype": "module",
+        },
+        "result": "output"
+    })
+
+    ctx.param.connect(ctx.tf.param)
+    ctx.tf_code = cell("transformer").set(code)
+    ctx.tf_code.connect(ctx.tf.code)
+
+    ctx.testmodule = cell("plain").set(testmodule)
+    ctx.testmodule.connect(ctx.tf.testmodule)
+
+    ctx.result = cell("plain")
+    ctx.tf.result.connect(ctx.result)
+    
+print("START 2")
+ctx.compute()
+print(ctx.tf.logs)
+print(ctx.tf.exception)
+print(ctx.tf.status)

@@ -1,10 +1,22 @@
 START
-macro execute
+execute
 42
 True
 42
 42
 42
 99
-/macro execute
+/execute
 None
+START 2
+execute
+42
+True
+42
+42
+42
+99
+/execute
+
+None
+Status: OK

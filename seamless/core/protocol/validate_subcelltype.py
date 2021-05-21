@@ -31,7 +31,7 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename):
     if celltype == "plain" and subcelltype == "module":
         v = json.loads(value)
         if not v.get("dependencies"):
-            build_module(v) 
+            build_module(v, module_error_name=None) 
     else:
         tree = ast.parse(value, filename=codename)
         # cached_compile(value, codename)   # pointless; syntax error is not caught

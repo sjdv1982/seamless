@@ -55,9 +55,7 @@ def build_interpreted_module(
         else:
             pos = package_name.rfind(".")
             if pos > -1:
-                package_name = package_name[:pos]
-        mod = ModuleType(package_name)
-        
+                package_name = package_name[:pos]        
         mod.__package__ = package_name
     mod.__path__ = []
     namespace = mod.__dict__
@@ -77,12 +75,7 @@ def build_interpreted_module(
             try:
                 exec(code, namespace)
             except ModuleNotFoundError:
-                raise
                 mname = module_error_name
-                if mname is None:
-                    mname = parent_module_name
-                if mname is None:
-                    mname = full_module_name
                 raise Exception(mname) from None
     finally:
         for sysmodname, sysmod in sysmodules.items():
@@ -221,7 +214,20 @@ def build_module(module_definition, module_workspace={}, *,
     json.dumps(module_definition)
     checksum = get_dict_hash(module_definition)
     full_module_name = "seamless_module_" + checksum.hex()
-    if full_module_name not in module_cache:
+    cached = False
+    if full_module_name in module_cache:
+        mod = module_cache[full_module_name]
+        if isinstance(mod, Package):
+            for k in mod.mapping:
+                if k in module_cache:
+                    module_workspace[k] = module_cache[k]
+                else:
+                    break
+            else:
+                cached = True
+        else:
+            cached = True
+    if not cached:
         if mtype == "interpreted":
             mod = build_interpreted_module(
                 full_module_name, module_definition, module_workspace,
@@ -237,8 +243,6 @@ def build_module(module_definition, module_workspace={}, *,
               module_error_name=module_error_name
             )
         module_cache[full_module_name] = mod
-    else:
-        mod = module_cache[full_module_name]
     return full_module_name, mod
 
 def build_all_modules(

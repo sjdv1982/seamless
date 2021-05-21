@@ -32,9 +32,11 @@ class Injector:
                 if isinstance(mod, Package):
                     for k,v in mod.mapping.items():
                         if v == "__init__":
-                            package_mapping[k] = modname
+                            vv = modname
                         else:
-                            package_mapping[k] = modname + "." + v
+                            vv = modname + "." + v
+                        package_mapping[k] = vv
+                        assert k in workspace, k
             for modname, mod in workspace.items():
                 if isinstance(mod, Package):
                     continue

@@ -26,7 +26,7 @@ def translate_module(node, root, namespace, inchannels, outchannels):
     subcontext = context(toplevel=False)
     setattr(parent, name, subcontext)
 
-    codecell = core_cell("text")
+    codecell = core_cell("plain")
     subcontext.code = codecell
     if node.get("fingertip_no_recompute"):
         codecell._fingertip_recompute = False
@@ -37,13 +37,22 @@ def translate_module(node, root, namespace, inchannels, outchannels):
     if checksum is not None:
         codecell._set_checksum(checksum, initial=True)
     if "mount" in node:
-        codecell.mount(**node["mount"])
+        codecell2 = core_cell("text")
+        subcontext.code2 = codecell2
+        codecell2.mount(**node["mount"])
+        mode = node["mount"].get("mode", "rw")
+        if mode == "rw" :
+            codecell2.bilink(codecell)
+        elif mode == "r":
+            codecell2.connect(codecell)
+        elif mode == "w":
+            codecell.connect(codecell2)
 
     subcontext.module_cell = core_cell("plain")
     subcontext.gen_module_cell = transformer({
         "module_type": ("input", "str"),
         "language": ("input", "str"),
-        "module_code": ("input", "text"),
+        "module_code": ("input", "plain"),
         "dependencies": ("input", "plain"),
         "result": ("output", "plain")
     })

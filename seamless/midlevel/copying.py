@@ -137,7 +137,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
         celltype = node["celltype"]
         hash_pattern = node.get("hash_pattern")
     elif node["type"] == "module":
-        celltype = "text"
+        celltype = "plain"
     elif node["type"] == "transformer":
         if temp_path == "code":
             datatype = "code"
