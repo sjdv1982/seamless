@@ -268,7 +268,11 @@ class StructuredCell(SeamlessBase):
         else:
             assert isinstance(path[0], str), path
             if self._schema_value is None:
-                self._schema_value = {}
+                if self.schema._checksum is not None:
+                    schema = self.schema.value
+                    self._schema_value = schema
+                else:
+                    self._schema_value = {}
             set_subpath(self._schema_value, None, path, value)
 
     def _join_schema(self):

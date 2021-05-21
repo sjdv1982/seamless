@@ -537,8 +537,8 @@ class TaskManager:
             self.task_ids.remove(task.taskid)
             task._cleaned = True
 
-            print_debug("FINISHED", task.__class__.__name__, hex(id(task)), task.dependencies)
-
+            print_debug("FINISHED", task.__class__.__name__, task.taskid, task.dependencies)
+            
             for dep in task.dependencies:
                 try:
                     self._clean_dep(dep, task)

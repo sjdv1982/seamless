@@ -177,6 +177,8 @@ class StructuredCellJoinTask(StructuredCellTask):
                 from_cache = True
                 ok = True
         try:
+            value = None
+            schema = None
             if not from_cache:
                 prelim = {}
                 for out_path in sc.outchannels:
@@ -337,7 +339,9 @@ class StructuredCellJoinTask(StructuredCellTask):
                         ok = False
                     else:
                         value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
-
+            
+            if ok and (not from_cache) and value is not None:
+                schema = sc.get_schema()
             if ok and (not from_cache) and value is not None and schema is not None:
                 if schema is not None:
                     if sc.hash_pattern is None:

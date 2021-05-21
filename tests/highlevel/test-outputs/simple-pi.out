@@ -50,7 +50,9 @@
     {
       "celltype": "structured",
       "checksum": {
-        "auth": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3"
+        "auth": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3",
+        "buffer": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3",
+        "value": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3"
       },
       "datatype": "mixed",
       "hash_pattern": null,
@@ -82,6 +84,6 @@
 
 <Silk: 3.141592653589793 >
 <Silk: 6.283185307179586 >
-5ca46a61e4d5db7396994a81ab9b41a9  twopi.seamless
+fa83984c7be73e63720a3a20c3696bfa  twopi.seamless
 866725122b2f66558ad0a174092648ae  twopi-result.seamless
 f52ebcf56bc009698617d96c2bdd7189  twopi-result.zip
