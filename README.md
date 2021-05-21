@@ -390,8 +390,8 @@ Alternative installations
 conda create -n seamless
 conda activate seamless
 conda install 'python==3.8.8' pip
-pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements.txt
-pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements-extra.txt
+pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/stable/requirements.txt
+pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/stable/requirements-extra.txt
 conda install -c rpbs  -c conda-forge silk seamless-framework
 ```
 
