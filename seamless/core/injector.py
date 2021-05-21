@@ -58,7 +58,12 @@ class Injector:
             else:
                 sys_modules.pop(self.topmodule_name, None)
             for modname, mod in workspace.items():
-                mname = self.topmodule_name + "." + modname
+                if isinstance(mod, Package):
+                    continue
+                modname2 = modname
+                if modname in package_mapping:                    
+                    modname2 = package_mapping[modname]
+                mname = self.topmodule_name + "." + modname2
                 if mname in old_packages:
                     mod = sys_modules[mname]
                     mod.__package__ = old_packages[mname]
