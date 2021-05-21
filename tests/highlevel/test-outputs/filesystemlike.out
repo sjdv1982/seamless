@@ -6,9 +6,9 @@ test OK!
 START
 Possible cyclic dependencies detected, involving 4 cells:
    Seamless structured cell: .filesystem
-   Seamless structured cell: .result
-   Seamless structured cell: .job.result
    Seamless structured cell: .job.inp
+   Seamless structured cell: .job.result
+   Seamless structured cell: .result
 
 <Silk: This OK!
 is OK!

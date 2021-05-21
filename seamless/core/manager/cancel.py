@@ -997,7 +997,7 @@ class CancellationCycle:
             msg = "Possible cyclic dependencies detected, involving %d cells" % len(new_cyclic_cells)
             if len(new_cyclic_cells) <= 5:
                 msg += ":\n"
-                for scell in new_cyclic_cells:
+                for scell in sorted(new_cyclic_cells,key=lambda c: str(c)):
                     msg += "   " + str(scell) + "\n"
             else:
                 msg += "..."
