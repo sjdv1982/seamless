@@ -82,16 +82,6 @@ class CellUpdateTask(Task):
                 if reactor is not self.origin_reactor:
                     if not reactor._void:
                         ReactorUpdateTask(manager, reactor).launch()
-            sc = cell._structured_cell
-            if sc is not None:
-                if sc.schema is not cell:
-                    print("WARNING: cell %s has a structured cell but is not its schema, shouldn't happen during cell update" % cell)
-                buffer = await GetBufferTask(manager, checksum).run()
-                value = await DeserializeBufferTask(
-                    manager, buffer, checksum, cell.celltype, copy=True
-                )
-                manager.update_schema_cell(cell, value, None)
-
             if cell in livegraph.cell_to_macro_elision:
                 for elision in livegraph.cell_to_macro_elision[cell]:
                     macro = elision.macro

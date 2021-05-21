@@ -31,7 +31,7 @@ def build_labels(upstream, base, modified):
     return tuple([l+str(n) for l in labels0])
 
 upstream, base, modified = None, None, None
-if PINS.conflict.defined and len(PINS.conflict.value.strip()):
+if PINS.conflict.defined and PINS.conflict.value.strip("\n ") not in ("",  no_conflict):
     state = "conflict"
     upstream = PINS.upstream_stage.value
     base = PINS.base.value

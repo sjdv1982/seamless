@@ -37,6 +37,10 @@ compile-mixedlang.py
 schema.py
 fingertip.py
 injection.py
+dependent-modules.py
+module-package.py
+module-package-complex.py
+module-package-absolute.py
 injection2.py
 injection3.py
 injection4.py: the output is approximate, depends on exact timings, see also [1]
@@ -49,7 +53,7 @@ simple-duplex-remote.py: run together with:
 simple-remote.py: run together with scripts/jobslave-nodatabase.py
 simple-remote2.py: run together with:
      python3 -u ../../scripts/jobslave-nodatabase.py --time 30 --direct-print > test-outputs/simple-remote2-jobslave.out 2>&1
-compile-run-remote.py: run together with scripts/jobslave-nodatabase.py --direct-print . [2]
+compile-run-remote.py: run together with scripts/jobslave-nodatabase.py --direct-print .
      The jobslave output should include "ADD 8.141592979431152"
 macro.py
 macro2.py
@@ -102,4 +106,3 @@ NOTES
 - Open cell-ipython.html in the browser and cell-ipython*.ipy in a text editor
 - Interpolate cell-ipython.ipy between ORIGINAL and OPTIMIZED,
   and observe the HTML and timings.
-[2] Be sure to test the jobslave in a Docker container, as it doesn't work with Python3.6.9 or 3.7.6, but it does work for 3.7.3

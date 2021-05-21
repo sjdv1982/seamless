@@ -1,4 +1,4 @@
-from seamless.core.transformation import SeamlessStreamTransformationError
+from seamless.core.transformation import SeamlessStreamTransformationError, SeamlessTransformationError
 from silk import Silk
 import numpy as np
 import operator, functools
@@ -42,6 +42,22 @@ json_to_c = {
     "boolean": "bool",
     "string": "char",
 }
+def get_maxshape(shape):
+    maxshape = []
+    for item in shape:
+        if isinstance(item, list):
+            item = item[-1]
+        assert isinstance(item, int), shape
+        if item == -1:
+            raise SeamlessTransformationError(
+                "Cannot use -1 in result shape. A positive value must be given. To indicate a maximum value, specify a list [0, max]"
+            )
+        elif item < -1:
+            raise SeamlessTransformationError(
+                "Result shape values must be positive. To indicate a maximum value, specify a list [0, max]"
+            )
+        maxshape.append(item)
+    return maxshape
 
 def gen_basic_type(schema):
     warnings = []
@@ -76,19 +92,20 @@ def gen_struct_name(name):
 
 def build_array_struct(name, arr, with_strides):
     array_struct_name = gen_struct_name(name)
+    if isinstance(arr, Silk):
+        arr = arr.data
+    ptr = ffi.from_buffer(arr)
     array_struct = ffi.new(array_struct_name + " *")
     array_struct.shape[0:len(arr.shape)] = arr.shape[:]
     if with_strides:
         array_struct.strides[0:len(arr.strides)] = arr.strides[:]
-    if isinstance(arr, Silk):
-        arr = arr.data
-    ptr = ffi.from_buffer(arr)
     array_struct.data = ffi.cast(ffi.typeof(array_struct.data), ptr)
     return array_struct
 
 def build_result_array_struct(name, schema):
     array_struct_name = gen_struct_name(name)
     shape = schema["form"]["shape"]
+    maxshape = get_maxshape(shape)
     try:
         type = schema["items"]["type"]
     except KeyError:
@@ -98,7 +115,7 @@ def build_result_array_struct(name, schema):
     dtype = get_dtype(type, unsigned, bytesize)
     array_struct = ffi.new(array_struct_name + " *")
     array_struct.shape[0:len(shape)] = shape[:]
-    arr = np.zeros(shape=shape,dtype=dtype)
+    arr = np.zeros(shape=maxshape,dtype=dtype)
     ARRAYS.append(arr)
     arr_ptr = ffi.from_buffer(arr)
     array_struct.data = ffi.cast(ffi.typeof(array_struct.data), arr_ptr)
@@ -127,9 +144,10 @@ def build_result_array(schema):
     global result_struct
     result_struct_name = gen_struct_name(result_name)
     shape = schema["form"]["shape"]
-    for dim in shape:
+    maxshape = tuple(get_maxshape(shape))
+    for dim in maxshape:
         if dim <= 0:
-            raise ValueError("Result shape {} contains non-positive numbers".format(shape))
+            raise SeamlessTransformationError("Result shape {} contains non-positive numbers".format(shape))
     try:
         type = schema["items"]["type"]
     except KeyError:
@@ -138,8 +156,8 @@ def build_result_array(schema):
     bytesize = schema["items"]["form"].get("bytesize")
     dtype = get_dtype(type, unsigned, bytesize)
     result_struct = ffi.new(result_struct_name + " *")
-    result_struct.shape[0:len(shape)] = shape[:]
-    arr = np.zeros(shape=shape,dtype=dtype)
+    result_struct.shape[0:len(shape)] = maxshape[:]
+    arr = np.zeros(shape=maxshape,dtype=dtype)
     ARRAYS.append(arr)
     arr_ptr = ffi.from_buffer(arr)
     result_struct.data = ffi.cast(ffi.typeof(result_struct.data), arr_ptr)
@@ -148,6 +166,7 @@ def build_result_array(schema):
 def unpack_result_array_struct(array_struct, schema):
     ""
     shape = schema["form"]["shape"]
+    maxshape = tuple(get_maxshape(shape))
     try:
         type = schema["items"]["type"]
     except KeyError:
@@ -156,7 +175,7 @@ def unpack_result_array_struct(array_struct, schema):
     bytesize = schema["items"]["form"].get("bytesize")
     dtype = get_dtype(type, unsigned, bytesize)
     shape = list(array_struct.shape)
-    nbytes = functools.reduce(operator.mul, shape, 1) * dtype.itemsize
+    nbytes = functools.reduce(operator.mul, maxshape, 1) * dtype.itemsize
     """
     buf = ffi.buffer(array_struct.data, nbytes)
     arr = np.frombuffer(buf,dtype=dtype).reshape(shape)
@@ -166,9 +185,14 @@ def unpack_result_array_struct(array_struct, schema):
     #instead, just pop off the array...
     arr = ARRAYS.pop(0)
     assert arr.dtype == dtype
-    assert arr.shape == tuple(shape), (arr.shape, shape)
+    assert arr.shape == maxshape
     assert arr.nbytes == nbytes
-    return arr
+    if array_struct.shape == maxshape:
+        return arr
+    else:
+        slices = tuple([slice(0,i) for i in array_struct.shape])
+        sub = arr[slices].copy()
+        return sub
 
 def unpack_result_struct(result_struct, schema):
     result_dict = {}
@@ -197,13 +221,15 @@ input_props = input_schema["properties"]
 
 for pin in input_pins:
     if pin not in input_props:
-        raise TypeError("Missing schema for input pin .%s" % pin)
+        raise SeamlessTransformationError("Missing schema for input pin .%s" % pin)
 
 order = input_schema.get("order", [])
 for prop in sorted(input_props.keys()):
     if prop not in order:
         order.append(prop)
 for propnr, prop in enumerate(order):
+    if prop not in kwargs:
+        raise SeamlessTransformationError("required property '{}' missing or undefined".format(prop))
     value = kwargs[prop]
     propschema = input_props[prop]
     proptype = propschema["type"]

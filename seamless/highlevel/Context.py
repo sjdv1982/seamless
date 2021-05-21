@@ -772,6 +772,7 @@ class Context(Base):
             self._needs_translation = needs_translation
 
         try:
+            livegraph._hold_observations = True
             self._translating = True
             for path, child in self._children.items():
                 if isinstance(child, (Cell, Transformer, Macro, Module)):
@@ -1000,6 +1001,19 @@ class Context(Base):
         connections.append(link._node)
         self._translate()
 
+    def unlink(self, first, second):
+        """Removes a bidirectional link between the first and second cell
+        (if it exists)
+        Returns True if a link was removed
+        """
+        link = Link(self, first=first, second=second)
+        try:
+            link.remove()
+        except ValueError:
+            return False
+        self._translate()
+        return True
+
     def get_links(self):
         connections = self._graph.connections
         result = []
@@ -1036,8 +1050,15 @@ class Context(Base):
     @property
     def children(self):
         """Returns a wrapper for the direct children of the context
-        This includes subcontexts"""
+        This includes subcontexts and libinstances"""
         children = [p[0] for p in self._children]
+        g = self._graph[0]
+        for k in g:
+            if len(k) > 1:
+                continue
+            node = g[k]
+            if node["type"] == "libinstance":
+                children.append(k[0])
         children = sorted(list(set(children)))
         return ChildrenWrapper(self, children)
 
@@ -1045,7 +1066,15 @@ class Context(Base):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
         children = [p[0] for p in self._children]
         children = list(set(children))
-        return sorted(d + children)
+        libinstances = []
+        g = self._graph[0]
+        for k in g:
+            if len(k) > 1:
+                continue
+            node = g[k]
+            if node["type"] == "libinstance":
+                libinstances.append(k[0])
+        return sorted(d + children + libinstances)
 
     def _destroy(self):
         if self._destroyed:

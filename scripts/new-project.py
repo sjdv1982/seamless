@@ -92,13 +92,22 @@ else:
 code = '''
 PROJNAME = "%s"
 
-import os, shutil
+import os, sys, shutil
 
 from seamless.highlevel import Context, Cell, Transformer
 
 ctx = None
 webctx = None
 save = None
+
+def pr(*args):
+    print(*args, file=sys.stderr)
+
+async def define_graph(ctx):
+    """Code to define the graph
+    Leave this function empty if you want load() to load the graph from graph/PROJNAME.seamless 
+    """
+    pass
 
 async def load():
     from seamless.metalevel.bind_status_graph import bind_status_graph_async
@@ -112,24 +121,35 @@ async def load():
         pass
     else:
         if ctx is not None:
-            print('"ctx" already exists. To reload, do "ctx = None" or "del ctx" before load()')
+            pr('"ctx" already exists. To reload, do "ctx = None" or "del ctx" before load()')
             return
-
-    graph = json.load(open("graph/" + PROJNAME + ".seamless"))
+    
     for f in (
-        "web/index.html", "web/index.js",
-        "web/index-CONFLICT.html", "web/index-CONFLICT.js",
-        "web/webform.json", "web/webform-CONFLICT.txt"
+        "web/index-CONFLICT.html",
+        "web/index-CONFLICT.js",
+        "web/webform-CONFLICT.txt",
     ):
         if os.path.exists(f):
+            if open(f).read().rstrip("\\n ") in ("", "No conflict"):
+                continue
             dest = f + "-BAK"
             if os.path.exists(dest):
-                os.remove(dest)
+                os.remove(dest)            
+            pr("Existing '{}' found, moving to '{}'".format(f, dest))
             shutil.move(f, dest)
     ctx = Context()
+    empty_graph = await ctx._get_graph_async(copy=True)
+    await define_graph(ctx)
+    new_graph = await ctx._get_graph_async(copy=True)
+    graph_file = "graph/" + PROJNAME + ".seamless"
     ctx.load_vault("vault")
-    ctx.set_graph(graph, mounts=True, shares=True)
-    await ctx.translation(force=True)
+    if new_graph != empty_graph:
+        pr("*** define_graph() function detected. Not loading '{}'***\\n".format(graph_file))
+    else:
+        pr("*** define_graph() function is empty. Loading '{}' ***\\n".format(graph_file))
+        graph = json.load(open(graph_file))        
+        ctx.set_graph(graph, mounts=True, shares=True)
+        await ctx.translation(force=True)
 
     status_graph = json.load(open("graph/" + PROJNAME + "-webctx.seamless"))
 
@@ -157,7 +177,7 @@ async def load():
         ctx.save_vault("vault")
         webctx.save_vault("vault")
 
-    print("""Project loaded.
+    pr("""Project loaded.
 
     Main context is "ctx"
     Web/status context is "webctx"

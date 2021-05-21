@@ -38,7 +38,7 @@ class Link:
     def remove(self):
         if self._node is None:
             return
-        parent._graph.connections.remove(self._node)
+        self.parent._graph.connections.remove(self._node)
 
 from .proxy import Proxy, CodeProxy
 from .Cell import Cell

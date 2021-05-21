@@ -1,0 +1,19 @@
+%load_ext Cython
+
+%%cython -a
+from libc.math cimport log
+def func(int i):
+    cdef int n
+    cdef int nn
+    cdef double s = 0
+    #with nogil:
+    for n in range(i):
+        for nn in range(i):
+            s += log(n*nn+1)/10000.0
+    return s
+
+# _ is the last IPython cell. With %%cython -a, it is a
+# IPython.core.display.HTML object of the
+# We can access the HTML data with _.data
+
+func_html = _.data

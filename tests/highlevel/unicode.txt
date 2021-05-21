@@ -1,0 +1,10 @@
+one:é
+two: ê
+three: ¢
+four: €
+five: ³
+six: ć
+seven: ĉ
+eight: ¾
+nine: ·
+ten: ç

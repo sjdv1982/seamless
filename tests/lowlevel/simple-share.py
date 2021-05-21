@@ -132,6 +132,7 @@ r = thread(
     data=json.dumps({"buffer": "43\n"})
 )
 print(r.json())
+asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.5))  # to get the request processed
 print("OK3a")
 ctx.compute()
 
@@ -142,5 +143,3 @@ ctx.compute()
 
 print(ctx.param_a.value)
 print(ctx.macro.ctx.a.value)
-
-import asyncio; asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.5))  # to get the update message

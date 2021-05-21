@@ -1,7 +1,7 @@
 import weakref, json
 from copy import deepcopy
 
-highlevel_names = ("Context", "Cell", "Transformer", "Macro")
+highlevel_names = ("Context", "Cell", "Transformer", "Macro", "Module")
 
 class LibInstance:
 
@@ -154,6 +154,12 @@ class LibInstance:
             value = argvalue
         return value
 
+    def __dir__(self):        
+        hnode = self._get_node()
+        libpath = hnode["libpath"]
+        arguments = hnode["arguments"]
+        return list(arguments.keys()) + ["ctx", "libpath", "arguments", "status"]
+
     def __setattr__(self, attr, value):
         from .argument import parse_argument
         if attr.startswith("_"):
@@ -178,4 +184,5 @@ from ..Context import Context, SubContext
 from ...midlevel.StaticContext import StaticContext
 from ..Transformer import Transformer
 from ..Macro import Macro
+from ..Module import Module
 from ...core.cached_compile import exec_code

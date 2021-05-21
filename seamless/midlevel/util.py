@@ -11,7 +11,7 @@ def as_tuple(v):
 
 def get_path_link(root, path, namespace):
     if path[-1] in ("SCHEMA", "RESULTSCHEMA"):
-        sc = get_path(root, path[:-1], namespace, False)
+        sc = get_path(root, path[:-1], namespace, True)
         if path[-1] == "SCHEMA":
             if isinstance(sc, Outchannel):
                 sc = sc.structured_cell()

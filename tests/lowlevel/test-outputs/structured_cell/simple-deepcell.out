@@ -1,27 +1,27 @@
 Traceback (most recent call last):
   File "structured_cell/simple-deepcell.py", line 16, in <module>
     data.set(20)
-  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/Silk.py", line 523, in set
+  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.7.egg/silk/Silk.py", line 523, in set
     self._set(value, lowlevel=False)
-  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/Silk.py", line 487, in _set
+  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.7.egg/silk/Silk.py", line 487, in _set
     self._set_value_simple(value)
-  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/Silk.py", line 434, in _set_value_simple
+  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.7.egg/silk/Silk.py", line 434, in _set_value_simple
     self._data.set(value)
-  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/mixed/__init__.py", line 56, in set
+  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.7.egg/silk/mixed/__init__.py", line 56, in set
     self._monitor.set_path(self._path, value)
-  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/mixed/Monitor.py", line 126, in set_path
+  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.7.egg/silk/mixed/Monitor.py", line 126, in set_path
     self.backend.set_path(path, subdata)
-  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/mixed/Backend.py", line 66, in set_path
+  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.7.egg/silk/mixed/Backend.py", line 66, in set_path
     result = self._set_path(path, data)
-  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/mixed/Backend.py", line 356, in _set_path
+  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.7.egg/silk/mixed/Backend.py", line 356, in _set_path
     sc._set_auth_path((), data)
   File "/seamless/seamless/core/structured_cell.py", line 231, in _set_auth_path
     set_subpath(self._auth_value, self.hash_pattern, path, value)
-  File "/seamless/seamless/core/protocol/expression.py", line 144, in set_subpath_sync
-    subvalue, sub_hash_pattern
+  File "/seamless/seamless/core/protocol/expression.py", line 143, in set_subpath_sync
+    sub_structure, _ = value_to_deep_structure_sync(
   File "/seamless/seamless/core/protocol/deep_structure.py", line 418, in value_to_deep_structure_sync
     asyncio.get_event_loop().run_until_complete(fut)
-  File "/opt/conda/lib/python3.7/asyncio/base_events.py", line 584, in run_until_complete
+  File "/opt/conda/lib/python3.8/asyncio/base_events.py", line 616, in run_until_complete
     return future.result()
   File "/seamless/seamless/core/protocol/deep_structure.py", line 389, in value_to_deep_structure
     raise DeepStructureError(hash_pattern, value) from None

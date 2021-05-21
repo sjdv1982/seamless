@@ -28,13 +28,13 @@ c.share(path="index.html")
 
 import seamless, os
 seamless_dir = os.path.dirname(seamless.__file__)
-c = ctx2.js = Cell()
+c = ctx2.seamless_client_js = Cell()
 c.celltype = "text"
 c.set(open(seamless_dir + "/js/seamless-client.js").read())
 c.mimetype = "text/javascript"
 c.share(path="seamless-client.js")
 
-c = ctx2.js2 = Cell()
+c = ctx2.status_visualization_js = Cell()
 c.celltype = "text"
 c.set(open("status-visualization.js").read())
 c.mimetype = "text/javascript"

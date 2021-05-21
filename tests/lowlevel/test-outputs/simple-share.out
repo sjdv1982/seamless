@@ -2,18 +2,22 @@ Opened the seamless share update server at port 5138
 Opened the seamless REST server at port 5813
 OK1 ctx
 1 2
-WS ECHO ["Seamless share update server", "0.01"]
+WS ECHO ["Seamless share update server", "0.02"]
 WS ECHO ["sharelist", ["self"]]
+WS ECHO ["binary", []]
 {'not found': 404}
 {'not found': 404}
 WS ECHO ["sharelist", ["cell1", "cell2", "self"]]
+WS ECHO ["binary", []]
 WS ECHO ["update", ["cell1", "bfb3843fc9199b316e2567251596f33f70784b6003b88d198b82be231352ddaa", 1]]
 WS ECHO ["update", ["cell2", "191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba", 1]]
 99
 OK2 ctx
-WS ECHO ["Seamless share update server", "0.01"]
+WS ECHO ["Seamless share update server", "0.02"]
 WS ECHO ["sharelist", ["self"]]
+WS ECHO ["binary", []]
 WS ECHO ["sharelist", ["macro/ctx/a", "macro/ctx/a0", "param_a", "self"]]
+WS ECHO ["binary", []]
 WS ECHO ["update", ["macro/ctx/a0", "a4654c74202cb987505719dc98609c3c46582d384f45f54659736280c66223f4", 1]]
 WS ECHO ["update", ["param_a", "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3", 1]]
 WS ECHO ["update", ["macro/ctx/a", "0d5d541db3b11b331a8752b7e3c743ce43f0df6143589e4298f51027011a5937", 1]]
@@ -24,9 +28,9 @@ WS ECHO ["update", ["macro/ctx/a", "0d5d541db3b11b331a8752b7e3c743ce43f0df614358
 OK3
 WS ECHO ["update", ["param_a", "5d5a3c73da8e376d31a96613e450d0cad333ebcf496acbc0eb9fa6c1ab8c42fa", 2]]
 2
+WS ECHO ["update", ["macro/ctx/a", "108cbc2435f5f35785d868b38892c9df7420159806175b336eaa62957d6c71ec", 2]]
 OK3a
 43
 OK3b
 43
 1043
-WS ECHO ["update", ["macro/ctx/a", "108cbc2435f5f35785d868b38892c9df7420159806175b336eaa62957d6c71ec", 2]]

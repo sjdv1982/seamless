@@ -8,6 +8,25 @@ from copy import deepcopy
 
 from ..status import StatusReasonEnum
 
+import logging
+logger = logging.getLogger("seamless")
+
+def print_info(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.info(msg)
+
+def print_warning(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.warning(msg)
+
+def print_debug(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.debug(msg)
+
+def print_error(*args):
+    msg = " ".join([str(arg) for arg in args])
+    logger.error(msg)
+
 def mainthread(func):
     def func2(*args, **kwargs):
         if threading.current_thread is None: # destruction at exit
@@ -201,6 +220,9 @@ class Manager:
         #and cell._context()._macro is None: # TODO: forbid
         if not initial and not from_structured_cell:
             self.cancel_cell(cell, (checksum is None))
+        else:
+            if cell._structured_cell is None:
+                unvoid_cell(cell, self.livegraph)
         self._set_cell_checksum(
             cell, checksum,
             (checksum is None), status_reason=reason,
@@ -251,8 +273,15 @@ class Manager:
             status_reason = None
 
         livegraph = self.livegraph
+        schema_value = None
         if len(livegraph.schemacells[cell]):
             authoritative = True
+            value = None
+            if checksum is not None:
+                buf = self._get_buffer(checksum)
+                value = deserialize_sync(buf, checksum, "plain", copy=False)
+            for sc in livegraph.schemacells[cell]:
+                sc._schema_value = deepcopy(value)
         elif cell._structured_cell is not None:
             authoritative = (cell._structured_cell.auth is cell)
         else:
@@ -261,6 +290,8 @@ class Manager:
         old_checksum = cell._checksum
         if old_checksum is not None and old_checksum != checksum:
             cachemanager.decref_checksum(old_checksum, cell, authoritative, False)
+        
+        print_debug("SET CHECKSUM", cell, "None:", checksum is None)
         cell._checksum = checksum
         cell._void = void
         cell._status_reason = status_reason

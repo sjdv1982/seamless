@@ -3,7 +3,15 @@
 g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
 
 
+
+g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+
+
 5.0
+
+g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+
+
 
 g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
 

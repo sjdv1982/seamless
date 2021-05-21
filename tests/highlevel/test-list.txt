@@ -31,13 +31,14 @@ macro.py
 macro-elision.py
 reactor-edit-macro.py
 delay.py
-module-simplified.py [1]
-module.py [1]
-bash.py [2]
+module-simplified.py
+module.py
+bash.py
 docker_.py
 docker2.py
 expression-exceptions.py
 highlink-schema.py
+highlink-schema-tf.py
 traitlet.py
 traitlet2.py: The exact output is dependent on random memory locations
 simple.py
@@ -74,14 +75,21 @@ high-in-low8.py
 high-in-low4-memory.py    # Quite long test.
                           # Creates 5.6 GB of buffer cache in /tmp/dummy-db
                           # Run with rm -rf /tmp/dummy-db  && mkdir -p /tmp/dummy-db && seamless-devel-database dummydb-config.yaml
-                          # Time is ~120 seconds, or ~60 seconds when re-executed
+                          # Time is ~120 seconds, or ~60 seconds when re-executed (TODO: re-time)
                           # Re-executing the test is faster, because the transformation results and input buffers are cached
                           # Exact output will depend on timings
                           # After the test, "rm -rf /tmp/dummy-db && docker stop seamless-database-container"
-high-in-low6-memory.py    # See above. Time is ~90 seconds, or ~40 seconds when re-executed
+high-in-low6-memory.py    # See above. Time is ~90 seconds, or ~40 seconds when re-executed (TODO: re-time)
 
 Non-automatic tests
 =========================
+share-binary-and-unicode.py
+    Run with ipython
+    Open http://localhost:5813/ctx/cow.jpg and http://localhost:5813/ctx/unicode.txt in a browser
+    In a terminal, run seamless-http-put http://localhost:5813/ctx/cow.jpg --upload-file cow-rotate.jpg --binary
+    The cow should be upside down
+    In a terminal, run seamless-http-put http://localhost:5813/ctx/unicode.txt --upload-file unicode.txt
+    The unicode text should refresh
 docker-kill.py    The output is not important. Important is that "docker ps -a" reveals no remaining orphaned "ubuntu" Docker containers.
 bash-kill.py      The output is not important. Important is that the script finishes in 3.5-4 sec, and that 'ps -ef' reveals no remaining orphaned "sleep" processes
 add.py:           Run with ipython -i, then change mounts /tmp/a /tmp/b /tmp/c /tmp/code.py
@@ -92,6 +100,7 @@ highlink-cpp.py:  Run with ipython -i, then continue in interactive mode,
                   changing the source code and the schema until it works.
 mount.py:         Run with ipython -i, then continue in interactive mode.
                   Initial output is in test-outputs/mount.out
+cython_.py        Run with ipython -i                 
 python-debugging.py: Run with ipython -i, then continue in interactive mode.
 observe-graph.ipynb: Run "seamless-devel-jupyter" and then open /cwd in the browser
 traitlets.ipynb: same as above
@@ -105,7 +114,3 @@ share-pdb-docker.seamless/.zip: to test using:
     In that case, open also http://localhost:5813/status/index.html
 plotting.py
 
-NOTES
-=====
-[1] Be sure to test this in a Docker container, as it doesn't work with Python3.6.9 or 3.7.6, but it does work for 3.7.3
-[2] Be sure to test this in a Docker container or with Python3.7, as it doesn't work with Python3.6 (subprocess API too old)

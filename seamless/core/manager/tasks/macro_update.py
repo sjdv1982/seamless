@@ -1,6 +1,6 @@
 import asyncio
 from . import Task
-from ...build_module import build_module_async
+from ...build_module import build_all_modules
 from ...macro_mode import get_macro_mode
 
 import logging
@@ -92,8 +92,8 @@ class MacroUpdateTask(Task):
 
         code = None
         values = {}
-        module_workspace = {}
-        for pinname, accessor in upstreams.items():
+        modules_to_build = {}
+        for pinname, accessor in sorted(upstreams.items(),key=lambda item: item[0]):
             expression_checksum = await EvaluateExpressionTask(
                 manager,
                 accessor.expression
@@ -106,14 +106,16 @@ class MacroUpdateTask(Task):
             assert buffer is not None
             value = await deserialize(buffer, expression_checksum, celltype, True)
             if value is None:
-                raise CacheMissError(pinname, codename)
+                raise CacheMissError(pinname)
             if pinname == "code":
                 code = value
             elif (celltype, subcelltype) == ("plain", "module"):
-                mod = await build_module_async(value)
-                module_workspace[pinname] = mod[1]
+                modules_to_build[pinname] = value
             else:
                 values[pinname] = value
+
+        module_workspace = {}
+        build_all_modules(modules_to_build, module_workspace)
 
         if macro._gen_context is not None:
             macro._gen_context.destroy()

@@ -1,5 +1,5 @@
 <Silk: 12 >
-None
+{}
 START
 <Silk: {'a': 1} > <Silk: 3 >
 <Silk: 12 > <Silk: {'a': 12} >
@@ -26,8 +26,7 @@ RUN!
 <Silk: 13 >
 <Silk: {'a': 13, 'b': 100} >
 RESULT <Silk: 139 > <Silk: 139 >
-TRANSFORMER INPUT EXCEPTION Traceback (most recent call last):
-jsonschema.exceptions.ValidationError: 100 is not of type 'string'
+TRANSFORMER INPUT EXCEPTION jsonschema.exceptions.ValidationError: 100 is not of type 'string'
 
 Failed validating 'type' in schema['properties']['b']:
     {'type': 'string'}

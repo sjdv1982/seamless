@@ -59,10 +59,14 @@ import asyncio
 import weakref
 import traceback
 import json
+import base64
 
 from asyncio import CancelledError
 import aiohttp
 from websockets.exceptions import ConnectionClosed
+
+class UnboundShareError(AttributeError):
+    pass
 
 DEBUG = False
 import logging
@@ -116,6 +120,18 @@ class Share:
         self.requests = []
         self.bound = None # bound ShareItem
 
+    @property
+    def binary(self):
+        if self.celltype == "mixed":
+            binary = True
+            if self.mimetype is not None and self.mimetype.startswith("text"):
+                binary = False
+        elif self.celltype in ("bytes", "binary"):
+            binary = True
+        else:
+            binary = False
+        return binary
+
     def bind(self, share_item):
         assert self.bound is None
         self.bound = share_item
@@ -130,8 +146,11 @@ class Share:
         return self.bound.toplevel
 
     async def read(self, marker=None):
-        if marker is not None and marker <= self._marker:
-            return
+        if marker is not None and marker < self._marker:
+            raise CancelledError
+        if self._calc_checksum_task is not None:
+            if self._calc_checksum_task.cancelled():
+                self._calc_checksum_task = None
         while 1:
             if self._calc_checksum_task is None:
                 break
@@ -140,15 +159,18 @@ class Share:
 
     def set_checksum(self, checksum, marker=None):
         if marker is not None and marker <= self._marker:
-            return None
+            if marker == self._marker:
+                return
+            raise CancelledError
         if checksum == self._checksum:
             return
         if marker is None:
             marker = self._marker + 1
         self._cancel()
         self._checksum = checksum
-        if self.bound is not None:
-            self.bound.update(checksum)
+        if self.bound is None:
+            raise AttributeError
+        self.bound.update(checksum)
         self._marker = marker
         send_checksum_task = self._send_checksum()
         send_checksum_task = asyncio.ensure_future(send_checksum_task)
@@ -157,9 +179,10 @@ class Share:
         return marker
 
     async def set_buffer(self, buffer, marker=None):
-        from .core.protocol.calculate_checksum import calculate_checksum
         if marker is not None and marker <= self._marker:
-            return None
+            if marker == self._marker:
+                return
+            raise CancelledError
         if marker is None:
             marker = self._marker + 1
         self._cancel()
@@ -172,7 +195,8 @@ class Share:
             buffer = buffer.encode()
         if not isinstance(buffer, bytes):
             raise TypeError(type(buffer))
-        buffer = buffer.rstrip(b'\n') + b'\n'
+        if not self.binary:
+            buffer = buffer.rstrip(b'\n') + b'\n'
         task = self._calc_checksum(buffer)
         task = asyncio.ensure_future(task)
         self._calc_checksum_task = task
@@ -274,7 +298,13 @@ class ShareNamespace:
         if subkey is not None:
             assert mode in ("buffer", "value")
         share = self.shares[key]
-        checksum, marker = await share.read()
+        try:
+            checksum, marker = await share.read()
+        except CancelledError as exc:
+            if mode not in ("checksum", "marker"):
+                raise Exception from None
+            logging.debug(traceback.print_exc())
+            raise CancelledError from None
         if checksum is not None:
             checksum2 = checksum.hex()
         else:
@@ -286,28 +316,32 @@ class ShareNamespace:
             content_type = share.mimetype
         else:
             content_type = get_mime(share.celltype)
-        manager = self.manager()
-        buffer = await manager.cachemanager.fingertip(checksum, must_have_cell=True)
-        if subkey is not None:
-            assert content_type == 'application/json'
-            buffer = get_subkey(buffer, subkey)
-        if mode == "buffer":
-            if buffer is None:
-                return None, None
-            return buffer, "text/plain"
-        if mode == "value":
-            if buffer is None:
-                return None, None
-            if share.celltype == "mixed" and content_type.startswith("text"):
-                try:
-                    value0 = json.loads(buffer)
-                    if isinstance(value0, str):
-                        value = value0
-                except:
-                    pass
-            else:
-                value = buffer
-            return value, content_type
+        if mode in ("buffer", "value"):
+            manager = self.manager()
+            buffer = await manager.cachemanager.fingertip(checksum, must_have_cell=True)
+            if subkey is not None:
+                assert content_type == 'application/json'
+                buffer = get_subkey(buffer, subkey)
+            if mode == "buffer":
+                if buffer is None:
+                    return None, None
+                content_type_buffer = "text/plain"
+                if share.binary:
+                    content_type_buffer = content_type
+                return buffer, content_type_buffer
+            if mode == "value":
+                if buffer is None:
+                    return None, None
+                if share.celltype == "mixed" and content_type.startswith("text"):
+                    try:
+                        value0 = json.loads(buffer)
+                        if isinstance(value0, str):
+                            value = value0
+                    except:
+                        pass
+                else:
+                    value = buffer
+                return value, content_type
         result = {
             "checksum": checksum2,
             "marker": marker,
@@ -330,8 +364,12 @@ class ShareNamespace:
             if checksum is not None:
                 checksum = bytes.fromhex(checksum)
             return await share.set_checksum(checksum, marker)
-        else:
-            buffer = value
+        else:            
+            if share.binary:
+                buffer0 = value.encode("ascii")
+                buffer = base64.b64decode(buffer0)
+            else:                
+                buffer = value
             return await share.set_buffer(buffer, marker)
 
     async def put(self, key, value, mode, marker):
@@ -340,7 +378,15 @@ class ShareNamespace:
         coro = self._put(share, value, mode, marker)
         fut = asyncio.ensure_future(coro)
         share.requests.append(fut)
-        return await fut
+        try:
+            return await fut
+        except UnboundShareError as exc:
+            raise exc from None
+        except CancelledError as exc:
+            raise exc from None
+        except Exception as exc:
+            logger.debug(traceback.format_exc())
+            raise exc from None
 
     async def send_checksum(self, key, checksum, marker):
         coros = []
@@ -426,8 +472,10 @@ class ShareServer(object):
 
     async def _send_sharelist(self, namespace, websocket):
         sharelist = namespace.sharelist
+        binary = [cell for cell in sharelist if cell != "self" and namespace.shares[cell].binary]
         try:
-            return await self._send(websocket, ("sharelist", sharelist))
+            await self._send(websocket, ("sharelist", sharelist))
+            await self._send(websocket, ("binary", binary))
         except CancelledError:
             raise
         except ConnectionClosed:
@@ -488,7 +536,7 @@ class ShareServer(object):
         """
         namespace = self.namespaces[path]
         try:
-            await self._send(websocket, ("Seamless share update server", "0.01"))
+            await self._send(websocket, ("Seamless share update server", "0.02"))
             namespace.update_connections.append(websocket)
             await self._send_sharelist(namespace, websocket)
         except ConnectionClosed:
@@ -532,7 +580,7 @@ class ShareServer(object):
         for name in sorted(list(self.namespaces.keys())):
             namespace = self.namespaces[name]
             share = namespace.shares.get(key)
-            if share is not None and share.toplevel:
+            if share is not None and share.bound and share.toplevel:
                 return namespace
 
     async def _handle_get(self, request):
@@ -617,17 +665,22 @@ class ShareServer(object):
                     status=404,
                     text="empty",
                 )
+            if content_type is not None and content_type.startswith("text"):
+                charset = "utf-8"
+            else:
+                charset = None
             return web.Response(
                 status=200,
                 body=body,
                 content_type=content_type,
+                charset=charset
             )
         except CommunionError as exc:
             txt = exc.args[0]
             logger.debug(traceback.format_exc())
             if txt.startswith("CacheMissError"):
                 err = "Cache miss"
-            elif txt.startswith("CanceledError"):
+            elif txt.startswith("CancelledError"):
                 err = "Share was destroyed"
             return web.Response(
                 status=404,
@@ -644,9 +697,10 @@ class ShareServer(object):
                 status=404,
                 text=err,
             )
-        except CancelledError:
+        except CancelledError as exc:
             msg = "Share was destroyed", ns, key
             logger.debug(" ".join([str(m) for m in msg]))
+            logger.debug(traceback.format_exc())
             return web.Response(
                 status=404,
                 text="Share was destroyed"
@@ -758,12 +812,19 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
                 status=200,
                 text=newmarker,
             )
-        except CancelledError:
+        except UnboundShareError as exc:
             msg = "Share was destroyed", ns, key
             logger.debug(" ".join([str(m) for m in msg]))
             return web.Response(
                 status=404,
                 text="Share was destroyed"
+            )
+        except CancelledError:
+            msg = "PUT was superseded", ns, key
+            logger.debug(" ".join([str(m) for m in msg]))
+            return web.Response(
+                status=409,
+                text="PUT was superseded"
             )
         except:
             logger.debug(traceback.format_exc())

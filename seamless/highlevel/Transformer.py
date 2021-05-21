@@ -581,6 +581,9 @@ class Transformer(Base):
             else:
                 curr_exc = getattr(tf, k).exception
             if curr_exc is not None:
+                if k == "executor":
+                    if isinstance(curr_exc, dict) and list(curr_exc.keys()) == ["module"]:
+                        curr_exc = curr_exc["module"]    
                 if isinstance(curr_exc, dict):
                     curr_exc = pprint.pformat(curr_exc, width=100)
                 exc += "*** " + k + " ***\n"
@@ -597,7 +600,20 @@ class Transformer(Base):
         if htf.get("UNTRANSLATED"):
             return None
         tf = self._get_tf(force=True).tf
-        return tf.logs
+        if htf["compiled"]:
+            logs = ""
+            for k in "gen_header", "integrator", "executor":
+                subtf = getattr(tf, k)
+                sublogs = subtf.logs
+                if sublogs is not None and len(sublogs.strip()):
+                    logs += "*** " + k + " ***\n"
+                    logs += sublogs.strip() + "\n"
+                    logs += "*** /" + k + " ***\n"    
+            if not len(logs):
+                return None
+            return logs                
+        else:
+            return tf.logs
 
     @property
     def status(self):

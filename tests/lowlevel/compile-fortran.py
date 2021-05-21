@@ -35,7 +35,7 @@ module = {
 # 2: compile it to binary module
 ######################################################################
 
-testmodule = build_module(module)[1].lib
+testmodule = build_module(module, module_error_name=None)[1].lib
 print(testmodule.add(2,3))
 
 ######################################################################

@@ -1,26 +1,23 @@
 *** executor ***
-{'module': 'Traceback (most recent call last):\n'
-           '  File "/seamless/seamless/core/manager/tasks/evaluate_expression.py", line 129, in '
-           '_run\n'
-           '    codename="expression"\n'
-           '  File "/seamless/seamless/core/protocol/validate_subcelltype.py", line 33, in '
-           'validate_subcelltype\n'
-           '    await build_module_async(v)\n'
-           '  File "/seamless/seamless/core/build_module.py", line 155, in build_module_async\n'
-           '    full_module_name, mod = build_module(module_definition)\n'
-           '  File "/seamless/seamless/core/build_module.py", line 138, in build_module\n'
-           '    full_module_name, completed_checksum, completed_module_definition\n'
-           '  File "/seamless/seamless/core/build_module.py", line 98, in build_compiled_module\n'
-           '    raise BuildModuleError(stderr)\n'
-           'seamless.core.build_module.BuildModuleError: \n'
-           'g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o\n'
-           '******************** ERROR ********************\n'
-           'main.cpp:1:1: error: ‘lambda’ does not name a type\n'
-           ' lambda a,b: a + b\n'
-           ' ^~~~~~\n'
-           '\n'
-           '******************** /ERROR ********************\n'
-           '\n'}*** /executor ***
+Traceback (most recent call last):
+  File "/seamless/seamless/core/manager/tasks/evaluate_expression.py", line 125, in _run
+    await validate_subcelltype(
+  File "/seamless/seamless/core/protocol/validate_subcelltype.py", line 34, in validate_subcelltype
+    build_module(v, module_error_name=None)
+  File "/seamless/seamless/core/build_module.py", line 250, in build_module
+    mod = build_compiled_module(
+  File "/seamless/seamless/core/build_module.py", line 188, in build_compiled_module
+    raise BuildModuleError(stderr)
+seamless.core.build_module.BuildModuleError: 
+g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+******************** ERROR ********************
+main.cpp:1:1: error: ‘lambda’ does not name a type
+    1 | lambda a,b: a + b
+      | ^~~~~~
+
+******************** /ERROR ********************
+
+*** /executor ***
 
 ********************************************************************************
 
@@ -36,6 +33,10 @@ If your transform() function is written in C++, don't forget to add 'extern "C" 
 
 int transform(int a, int b, double *result);
 ********************************************************************************
+
+g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+
+
 
 g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
 

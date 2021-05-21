@@ -12,7 +12,7 @@ from multiprocessing import Process
 from .execute import Queue, execute, execute_debug
 from .run_multi_remote import run_multi_remote, run_multi_remote_pair
 from .injector import transformer_injector as injector
-from .build_module import build_module_async
+from .build_module import build_all_modules
 
 import logging
 logger = logging.getLogger("seamless")
@@ -371,14 +371,17 @@ class TransformationJob:
         prelim_callback, progress_callback
     ):
         values = {}
-        module_workspace = {}
-        namespace = {"__name__": "transformer"}
+        namespace = {
+            "__name__": "transformer",
+            "__package__": "transformer",
+        }
         inputs = []
         code = None
         logs = [None, None]
         lock = await acquire_lock(self.checksum)
         namespace["PINS"] = {}
-        for pinname in self.transformation:
+        modules_to_build = {}
+        for pinname in sorted(self.transformation.keys()):
             if pinname == "__output__":
                 continue
             celltype, subcelltype, sem_checksum = self.transformation[pinname]
@@ -404,9 +407,7 @@ class TransformationJob:
             if pinname == "code":
                 code = value
             elif (celltype, subcelltype) == ("plain", "module"):
-                mod = await build_module_async(value)
-                assert mod is not None # build_module_async failed
-                module_workspace[pinname] = mod[1]
+                modules_to_build[pinname] = value
             else:
                 namespace["PINS"][pinname] = value
                 namespace[pinname] = value
@@ -435,6 +436,8 @@ class TransformationJob:
             namespace["PINS"][pinname] = v
             namespace[pinname] = v
 
+        module_workspace = {}
+        build_all_modules(modules_to_build, module_workspace)
         assert code is not None
 
         async def get_result_checksum(result_buffer):

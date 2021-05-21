@@ -8,6 +8,15 @@ from asyncio import CancelledError
 
 from ...utils import overlap_path
 
+empty_dict_checksum = 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c'
+def is_empty(cell):
+    if cell is None:
+        return True
+    cs = cell._checksum
+    if cs is None or cs == empty_dict_checksum:
+        return True
+    return False
+
 class StructuredCellTask(Task):
     def __init__(self, manager, structured_cell):
         super().__init__(manager)
@@ -147,7 +156,7 @@ class StructuredCellJoinTask(StructuredCellTask):
         if not sc.no_auth:
             if sc.auth._checksum is not None:
                 join_dict["auth"] = sc.auth._checksum.hex()
-        if sc.schema is not None and sc.schema._checksum is not None:
+        if not is_empty(sc.schema):
             join_dict["schema"] = sc.schema._checksum.hex()
         if len(sc.inchannels):
             jd_inchannels = {}
@@ -168,6 +177,8 @@ class StructuredCellJoinTask(StructuredCellTask):
                 from_cache = True
                 ok = True
         try:
+            value = None
+            schema = None
             if not from_cache:
                 prelim = {}
                 for out_path in sc.outchannels:
@@ -179,7 +190,9 @@ class StructuredCellJoinTask(StructuredCellTask):
                     prelim[out_path] = curr_prelim
                 value, checksum = None, None
                 ok = True
-                schema = sc.get_schema()
+                schema = None
+                if not is_empty(sc.schema):
+                    schema = sc.get_schema()
                 has_auth = False
                 has_inchannel = False
                 if len(sc.inchannels):
@@ -326,7 +339,9 @@ class StructuredCellJoinTask(StructuredCellTask):
                         ok = False
                     else:
                         value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
-
+            
+            if ok and (not from_cache) and value is not None:
+                schema = sc.get_schema()
             if ok and (not from_cache) and value is not None and schema is not None:
                 if schema is not None:
                     if sc.hash_pattern is None:

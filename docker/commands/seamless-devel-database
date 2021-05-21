@@ -12,7 +12,6 @@ seamlessdir=$SEAMLESSDIR
 echo "Starting container seamless-database-container"
 echo 'Running Seamless database adapter with' $database_config
 docker run \
-  --rm \
   -d \
   -p 5522:5522 \
   --name seamless-database-container \

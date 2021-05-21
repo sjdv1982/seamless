@@ -1,4 +1,5 @@
             <section>
+
                 <b-collapse class="card" animation="slide" aria-id="{{ID1}}">
                     <div
                         slot="trigger"
@@ -16,13 +17,8 @@
                         </a>
                     </div>
                     <div class="card-content">
-                        <div class="content">
-                            <b-field grouped>
-                                <b-input v-bind:value="{{CELL}}" v-model.number="{{CELL}}" type="number"></b-input>
-                            </b-field>
-                            <b-field>
-                                <b-slider v-bind:value="{{CELL}}" v-model="{{CELL}}" :min="{{min}}" :max="{{max}}" lazy></b-slider>
-                            </b-field>
+                        <div class="content" style="overflow: auto; height: 400px;">
+                            <pre>{{ '{{' }} {{CELL}}.value {{ '}}' }}</pre>
                         </div>
                     </div>
                 </b-collapse>

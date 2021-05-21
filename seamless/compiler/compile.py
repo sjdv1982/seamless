@@ -58,7 +58,7 @@ def compile(binary_objects, build_dir, *,
             header_file = headername + ".h" # hard-code C/C++ for now
             with open(header_file, "w") as f:
                 f.write(headercode)
-            source_files[header_file] = header_code
+            source_files[header_file] = headercode
         for objectname, object_ in binary_objects.items():
             code_file = objectname + "." + object_["extension"]
             obj_file = objectname + ".o"
@@ -78,6 +78,7 @@ def compile(binary_objects, build_dir, *,
                 f.write(object_["code"])
             source_files[code_file] = object_["code"]
             cmd2 = " ".join(cmd)
+            cmd2 = cmd2.replace("{{BUILD_DIR}}", build_dir)
             if compiler_verbose:
                 stderr += cmd2 +"\n"
             process = subprocess.run(cmd2,shell=True, capture_output=True)
@@ -151,6 +152,8 @@ def complete(module_definition):
                 options += profile_options
         else:
             options = list(debug_options)
+            if compiler_name in ("gcc", "g++", "gfortran", "gccgo"): 
+                options.append("-ffile-prefix-map={0}.{1}=/SEAMLESS/{0}.{1}".format(objectname, extension))
         o.pop("profile_options", None)
         o.pop("debug_options", None)
         o["options"] = options

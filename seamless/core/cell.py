@@ -380,9 +380,15 @@ class Cell(SeamlessBase):
 
 
     def _set_observer(self, observer, trigger=True):
+        manager = self._get_manager()
+        livegraph = manager.livegraph        
         self._observer = observer
         if trigger and self._checksum is not None:
-            observer(self._checksum.hex())
+            cs = self._checksum.hex()
+            if livegraph._hold_observations:
+                livegraph._observing.append((self, cs))
+            else:
+                observer(cs)
 
     def share(self, path=None, readonly=True, mimetype=None, *, toplevel=False, cellname=None):
         if not readonly:

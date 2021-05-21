@@ -2,13 +2,11 @@
 {'a': 10, 'c': 30}
 <Silk: None >
 None
-Traceback (most recent call last):
 TypeError: 'str' object does not support item assignment
 
 
 <Silk: None >
 None
-Traceback (most recent call last):
 TypeError: 'str' object does not support item assignment
 
 

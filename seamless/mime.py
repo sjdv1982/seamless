@@ -45,6 +45,7 @@ celltype_to_ext = {
     "cson": "cson",
     "yaml": "yaml",
     "binary": "npy",
+    "bytes": None,
     "mixed": "mixed",
     None: None,
 }

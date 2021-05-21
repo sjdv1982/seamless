@@ -7,10 +7,14 @@ class SelfWrapper:
         self._attributelist = attributelist
         self._wrapped = wrapped
         self._cls = type(wrapped)
+
+    def _get_prop(self, attr):
+        return self._cls.__dict__[attr]
+
     def __getattr__(self, attr):
         if attr not in self._attributelist:
             raise AttributeError(attr)
-        prop = self._cls.__dict__[attr]
+        prop = self._get_prop(attr)
         if callable(prop):
             wprop = partial(prop, self._wrapped)
             update_wrapper(wrapped=prop, wrapper=wprop)
@@ -31,3 +35,7 @@ class SelfWrapper:
 
 class ChildrenWrapper(SelfWrapper):
     _ATTRIBUTES = "Children"
+
+    def _get_prop(self, attr):
+        return self._wrapped._get_path((attr,))
+    

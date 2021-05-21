@@ -1,9 +1,7 @@
-Waiting for: Seamless transformer: .tf.tf
 a 
 b 
 c 
 None
-Waiting for: Seamless transformer: .tf.tf
 
 <Silk: {'test.npy': array([ 0,  3,  6,  9, 12, 15, 18, 21, 24, 27, 30, 33]), 'test.txt': 'hello\n'} >
 <Silk: [ 0  3  6  9 12 15 18 21 24 27 30 33] >

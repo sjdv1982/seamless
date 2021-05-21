@@ -1,6 +1,5 @@
 {'type': 'integer'}
 **************************************************
-Traceback (most recent call last):
 jsonschema.exceptions.ValidationError: 'test' is not of type 'integer'
 
 Failed validating 'type' in schema:
@@ -17,7 +16,6 @@ data: None
 buffered: test
 {'type': 'number'}
 **************************************************
-Traceback (most recent call last):
 jsonschema.exceptions.ValidationError: 'test' is not of type 'number'
 
 Failed validating 'type' in schema:

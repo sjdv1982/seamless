@@ -145,6 +145,9 @@ class StructuredCellCancellation:
         self.cycle = weakref.ref(cycle)
         self.scell = weakref.ref(scell)
         self.state = get_scell_state(scell)
+        if self.state == "void":
+            # Structured cells with auth checksums may have been unvoided during translation
+            scell._data._void = True  
         self.mode = scell._mode
         if self.mode is None:
             self.mode = SCModeEnum.VOID
@@ -160,7 +163,7 @@ class StructuredCellCancellation:
                 incon = (self.state, scell._data._void)
                 if known_inconsistency is None or known_inconsistency != incon:
                     traceback.print_exc()
-                    ###traceback.print_stack()
+                    traceback.print_stack()
                     get_scell_state(scell, verbose=True)
                     cycle._known_inconsistencies[scell.path] = incon
             else:
@@ -994,7 +997,7 @@ class CancellationCycle:
             msg = "Possible cyclic dependencies detected, involving %d cells" % len(new_cyclic_cells)
             if len(new_cyclic_cells) <= 5:
                 msg += ":\n"
-                for scell in new_cyclic_cells:
+                for scell in sorted(new_cyclic_cells,key=lambda c: str(c)):
                     msg += "   " + str(scell) + "\n"
             else:
                 msg += "..."

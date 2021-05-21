@@ -40,6 +40,8 @@ direct_celltypes = (
     "checksum"
 )
 
+empty_dict_checksum = 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c'
+
 def set_structured_cell_from_checksum(cell, checksum):
     trigger = False
     """
@@ -92,13 +94,15 @@ def set_structured_cell_from_checksum(cell, checksum):
             cell._data._status_reason = None
             trigger = True
 
+    schema_checksum = empty_dict_checksum
     if "schema" in checksum:
-        cell.schema._set_checksum(
-            checksum["schema"],
-            from_structured_cell=True,
-            initial=True
-        )
-        trigger = True
+        schema_checksum = checksum["schema"]        
+    cell.schema._set_checksum(
+        schema_checksum,
+        from_structured_cell=True,
+        initial=True
+    )
+    trigger = True
 
     if trigger:
         cell._get_manager().structured_cell_trigger(cell)
@@ -326,6 +330,7 @@ def translate(graph, ctx):
         else:
             raise TypeError(t)
         node.pop("UNTRANSLATED", None)
+        node.pop("UNSHARE", None)
 
     namespace2 = OrderedDict()
     for k in sorted(namespace.keys(), key=lambda k:-len(k)):

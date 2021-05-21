@@ -368,7 +368,7 @@ class TaskManager:
             if verbose:
                 print("Waiting for:",end=" ")
                 objs = " ".join([str(obj) for obj in result])
-                print(objs)
+                print(objs)            
             return result, True
 
         while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or not run_mount:
@@ -405,6 +405,7 @@ class TaskManager:
                             self.loop.run_until_complete(asyncio.sleep(0.1))
                             ptasks = [None]  # just to prevent the loop from breaking
         waitfor, background = print_report(verbose=False)
+        manager.livegraph._flush_observations()
         if not len(waitfor) and get_tasks_func is None:
             cyclic_scells = manager.livegraph.get_cyclic()
             return cyclic_scells, background
@@ -508,6 +509,7 @@ class TaskManager:
                             await asyncio.sleep(0.1)
                             ptasks = [None]  # just to prevent the loop from breaking
         waitfor, background = print_report(verbose=False)
+        manager.livegraph._flush_observations()
         if not len(waitfor) and get_tasks_func is None:
             cyclic_scells = manager.livegraph.get_cyclic()
             return cyclic_scells, background
@@ -537,8 +539,8 @@ class TaskManager:
             self.task_ids.remove(task.taskid)
             task._cleaned = True
 
-            print_debug("FINISHED", task.__class__.__name__, hex(id(task)), task.dependencies)
-
+            print_debug("FINISHED", task.__class__.__name__, task.taskid, task.dependencies)
+            
             for dep in task.dependencies:
                 try:
                     self._clean_dep(dep, task)

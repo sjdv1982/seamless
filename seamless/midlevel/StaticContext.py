@@ -25,7 +25,10 @@ class StaticContext:
             self._manager = manager
         else:
             self._manager = Manager()
+        old_root = self._manager.last_ctx()
         self.root = context(toplevel=True,manager=self._manager)
+        if old_root is not None:
+            self._manager.add_context(old_root)
 
     def __del__(self):
         self.root.destroy()

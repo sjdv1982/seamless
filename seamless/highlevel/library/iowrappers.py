@@ -32,7 +32,7 @@ class ConnectionWrapper:
             target_full_path = target.path
         else:
             if not isinstance(target, Cell):
-                raise TypeError(type(target))
+                raise TypeError("Target must be Cell, not {}".format(type(target)))
             if target_subpath is None:
                 target._get_hcell().pop("checksum", None)
             target_full_path = self.basepath + target._path

@@ -16,6 +16,7 @@ Welcome to Seamless's documentation!
    cell
    transformer
    new-project
+   shareserver
 
    reference
 

@@ -64,7 +64,9 @@
       "checksum": {
         "code": "ea4be6d2f69a0b0dd008ac66de7ad65da4ab4b64d30747263e4c343403038451",
         "input": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
-        "input_buffer": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf"
+        "input_buffer": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "debug": false,
@@ -138,31 +140,15 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "f0abdac1afdb6b57312984a526441c769d257a88fbc91ef53b0b66ab9ff79bd4"
+        "value": "53625924a580d6897c6de33596b7b3ec00d2d2ab6f4d2de0aa866cced69300a0"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
       "path": [
-        "js"
+        "seamless_client_js"
       ],
       "share": {
         "path": "seamless-client.js",
-        "readonly": true
-      },
-      "type": "cell"
-    },
-    {
-      "celltype": "text",
-      "checksum": {
-        "value": "1e790011125092fd8a88549f887ffe625f9fc53e8a286c869c5c2e661841f4bd"
-      },
-      "datatype": "mixed",
-      "mimetype": "text/javascript",
-      "path": [
-        "js2"
-      ],
-      "share": {
-        "path": "status-visualization.js",
         "readonly": true
       },
       "type": "cell"
@@ -172,6 +158,7 @@
       "checksum": {
         "auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "buffer": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "datatype": "mixed",
@@ -190,6 +177,22 @@
       "path": [
         "status_data"
       ],
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "1e790011125092fd8a88549f887ffe625f9fc53e8a286c869c5c2e661841f4bd"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/javascript",
+      "path": [
+        "status_visualization_js"
+      ],
+      "share": {
+        "path": "status-visualization.js",
+        "readonly": true
+      },
       "type": "cell"
     },
     {

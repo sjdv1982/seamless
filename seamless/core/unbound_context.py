@@ -357,6 +357,18 @@ class UnboundContext(SeamlessBase):
                 manager.register_structured_cell(child)
             else:
                 continue
+
+        for comnr, (com, args) in enumerate(self._realmanager.commands):
+            if com == "set cell checksum":
+                cell, checksum, initial, from_structured_cell, trigger_bilinks = args
+                cell._initial_checksum = None
+                manager.set_cell_checksum(
+                    cell, checksum,
+                    initial=initial,
+                    from_structured_cell=from_structured_cell,
+                    trigger_bilinks=trigger_bilinks
+                )
+
         for comnr, (com, args) in enumerate(self._realmanager.commands):
             if com == "set cell":
                 pass  # for stage 3
@@ -372,7 +384,7 @@ class UnboundContext(SeamlessBase):
                 cell, other = args
                 cell.bilink(other)
             elif com == "set cell checksum":
-                pass  # for stage 3
+                pass  # done in stage pre-2
             else:
                 raise ValueError(com)
 
@@ -405,14 +417,7 @@ class UnboundContext(SeamlessBase):
             elif com == "bilink":
                 pass  # Done in stage 2
             elif com == "set cell checksum":
-                cell, checksum, initial, from_structured_cell, trigger_bilinks = args
-                cell._initial_checksum = None
-                manager.set_cell_checksum(
-                    cell, checksum,
-                    initial=initial,
-                    from_structured_cell=from_structured_cell,
-                    trigger_bilinks=trigger_bilinks
-                )
+                pass # Done in stage pre-2
             else:
                 raise ValueError(com)
 

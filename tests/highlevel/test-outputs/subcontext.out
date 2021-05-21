@@ -2,17 +2,13 @@
 
 <Silk: 30 >
 <Silk: 30 >
-<Silk: 30 >
-
-<Silk: 200 >
-<Silk: 130 >
-<Silk: 230 >
-<Silk: 30 >
-
-<Silk: 200 >
-<Silk: 130 >
-<Silk: 2200 >
-
-'Status: OK'
-Status: {'z': 'Status: undefined'}
-Status: {'sub2': {'z': 'Status: undefined', 'sub3': {'z': 'Status: undefined'}}}
+Traceback (most recent call last):
+  File "subcontext.py", line 22, in <module>
+    ctx.sub3 = ctx.sub1
+  File "/seamless/seamless/highlevel/Context.py", line 294, in __setattr__
+    assign(self, attr2, value)
+  File "/seamless/seamless/highlevel/assign.py", line 490, in assign
+    assign_context(ctx, path, value)
+  File "/seamless/seamless/highlevel/assign.py", line 382, in assign_context
+    for lib in graph["lib"]:
+KeyError: 'lib'
