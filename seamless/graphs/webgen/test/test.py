@@ -33,7 +33,7 @@ ctx.merge_webform = ctx.lib.merge(
     state=ctx.webform_STATE
 )
 
-ctx.webcomponents = Cell("plain").mount("webcomponents", as_directory=True)
+ctx.webcomponents = Cell("plain").mount("components", as_directory=True)
 
 ctx.generate_webpage = Transformer()
 ctx.generate_webpage.code.mount("../generate-webpage.py", "r")

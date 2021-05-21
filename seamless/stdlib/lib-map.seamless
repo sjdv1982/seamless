@@ -26,6 +26,7 @@
       "checksum": {
         "auth": "c1c2950c28e0f5c6d9aea4a4b6635277ac713ab0e9931b3e030e815a5d0b32d6",
         "buffer": "c1c2950c28e0f5c6d9aea4a4b6635277ac713ab0e9931b3e030e815a5d0b32d6",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "c1c2950c28e0f5c6d9aea4a4b6635277ac713ab0e9931b3e030e815a5d0b32d6"
       },
       "datatype": "mixed",
@@ -93,6 +94,7 @@
       "checksum": {
         "auth": "83ef17e24cf010eca784ebfe799e20da014655eb23835b85c81d252be4b5716d",
         "buffer": "83ef17e24cf010eca784ebfe799e20da014655eb23835b85c81d252be4b5716d",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "83ef17e24cf010eca784ebfe799e20da014655eb23835b85c81d252be4b5716d"
       },
       "datatype": "mixed",
@@ -160,6 +162,7 @@
       "checksum": {
         "auth": "3e0dfd5898019b6b0db6b2fe2e094a3649533bcc6353e6a538e46306375ed16d",
         "buffer": "3e0dfd5898019b6b0db6b2fe2e094a3649533bcc6353e6a538e46306375ed16d",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "3e0dfd5898019b6b0db6b2fe2e094a3649533bcc6353e6a538e46306375ed16d"
       },
       "datatype": "mixed",
@@ -227,6 +230,7 @@
       "checksum": {
         "auth": "0ec2a98d93e6c58887738b7bb8bf1bf29d750dab117859847696d245d6f035db",
         "buffer": "0ec2a98d93e6c58887738b7bb8bf1bf29d750dab117859847696d245d6f035db",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "0ec2a98d93e6c58887738b7bb8bf1bf29d750dab117859847696d245d6f035db"
       },
       "datatype": "mixed",

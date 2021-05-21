@@ -19,6 +19,7 @@
       "checksum": {
         "auth": "4fa6b5218d20565a020a7697f93a9b61acb0a030a4c2dcfac24a62d3213fedec",
         "buffer": "4fa6b5218d20565a020a7697f93a9b61acb0a030a4c2dcfac24a62d3213fedec",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "4fa6b5218d20565a020a7697f93a9b61acb0a030a4c2dcfac24a62d3213fedec"
       },
       "datatype": "mixed",

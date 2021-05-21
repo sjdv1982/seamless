@@ -1,5 +1,5 @@
 {% set name = "seamless-framework" %}
-{% set version = "0.6devel" %}
+{% set version = "0.6" %}
 
 package:
   name: "{{ name|lower }}"
@@ -7,7 +7,7 @@ package:
 
 build:
   noarch: python
-  number: 3
+  number: 1
 
 source:
   path: ../..

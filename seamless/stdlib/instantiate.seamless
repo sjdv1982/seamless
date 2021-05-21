@@ -5,7 +5,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "e498ecd5c7af1a11b00b011734b79c4d92222ee614ff3bdfcd62e3315929b89f"
+        "value": "9d56e327371c579f34820633441c35c8442b2df99b88bb8d246902e91afd492a"
       },
       "datatype": "mixed",
       "language": "python",
@@ -19,6 +19,7 @@
       "checksum": {
         "auth": "b4a75f4effe7308b12827b073b7ba1778355d2b445c821d408cc935deeeea969",
         "buffer": "b4a75f4effe7308b12827b073b7ba1778355d2b445c821d408cc935deeeea969",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "b4a75f4effe7308b12827b073b7ba1778355d2b445c821d408cc935deeeea969"
       },
       "datatype": "mixed",

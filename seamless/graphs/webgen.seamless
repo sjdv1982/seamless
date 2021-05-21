@@ -316,7 +316,9 @@
       "checksum": {
         "code": "ea4be6d2f69a0b0dd008ac66de7ad65da4ab4b64d30747263e4c343403038451",
         "input": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
-        "input_buffer": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf"
+        "input_buffer": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "debug": false,
@@ -352,7 +354,9 @@
       "checksum": {
         "code": "5723eed725d85bc55cd776af408c3c5ee5af2fc617c47a1f262e153be4e6abe0",
         "input": "2a87d93425220f1a1088b84abf05651ea3142467118f938ebd15f636226ee146",
-        "input_buffer": "2a87d93425220f1a1088b84abf05651ea3142467118f938ebd15f636226ee146"
+        "input_buffer": "2a87d93425220f1a1088b84abf05651ea3142467118f938ebd15f636226ee146",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "debug": false,
@@ -378,7 +382,9 @@
         "code": "2800a0b75ec2298d4e1f8158e8f6d9d49ea89f4046245dfa7763aa6969fc1426",
         "input": "a03a218bc3e1fe1e59e1e2d305ed9e3e3fb06c97f9c948d30248c6de3b5580f3",
         "input_auth": "81ca3960f4a23c56f7b259a4287b97a8490b035d7ced72175210faac51f51618",
-        "input_buffer": "a03a218bc3e1fe1e59e1e2d305ed9e3e3fb06c97f9c948d30248c6de3b5580f3"
+        "input_buffer": "a03a218bc3e1fe1e59e1e2d305ed9e3e3fb06c97f9c948d30248c6de3b5580f3",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "debug": false,
@@ -698,7 +704,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "9de23e34e5fff8a1240beb2b2812c52f937371e1ac2d78d269449127399dbb4b"
+        "value": "53625924a580d6897c6de33596b7b3ec00d2d2ab6f4d2de0aa866cced69300a0"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
@@ -717,6 +723,7 @@
       "checksum": {
         "auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "buffer": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "datatype": "mixed",
