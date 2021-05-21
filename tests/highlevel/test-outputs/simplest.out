@@ -27,6 +27,7 @@ On instance:
  'nodes': [{'celltype': 'structured',
             'checksum': {'auth': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
                          'buffer': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
+                         'schema': 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c',
                          'value': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783'},
             'datatype': 'mixed',
             'hash_pattern': None,

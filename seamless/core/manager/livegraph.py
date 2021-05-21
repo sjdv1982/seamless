@@ -1,3 +1,4 @@
+import traceback
 import weakref
 from functools import update_wrapper
 from ..status import StatusReasonEnum
@@ -928,11 +929,10 @@ class LiveGraph:
             cell, checksum = self._observing.popleft()
             if cell._destroyed or cell._observer is None:
                 continue
-                try:
-                    cs = checksum.hex() if checksum is not None else None
-                    cell._observer(cs)
-                except Exception:
-                    traceback.print_exc()
+            try:
+                cell._observer(checksum)
+            except Exception:
+                traceback.print_exc()
 
 
     def get_cyclic(self):

@@ -772,6 +772,7 @@ class Context(Base):
             self._needs_translation = needs_translation
 
         try:
+            livegraph._hold_observations = True
             self._translating = True
             for path, child in self._children.items():
                 if isinstance(child, (Cell, Transformer, Macro, Module)):

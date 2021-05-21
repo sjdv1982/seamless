@@ -1,3 +1,4 @@
+from copy import deepcopy
 import sys
 import textwrap
 from silk.mixed import MixedBase
@@ -48,6 +49,7 @@ def get_checksums(nodes, connections, *, with_annotations):
         checksum = node.get("checksum")
         if checksum is None:
             continue
+        checksum = deepcopy(checksum)
         for connection in connections:
             if connection["type"] == "link":
                 continue
@@ -80,7 +82,6 @@ async def get_buffer_dict(manager, checksums):
     checksums = list(checksums)
     async def get_buf(checksum):
         return await cachemanager.fingertip(checksum)
-        return get_buffer(bytes.fromhex(checksum))
     for checksum in checksums:
         coro = get_buf(checksum)
         coros.append(coro)

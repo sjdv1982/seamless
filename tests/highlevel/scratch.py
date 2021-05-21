@@ -12,4 +12,4 @@ ctx.b.scratch = True
 ctx.compute()
 print(ctx.b.value, ctx.b.checksum)
 z = ctx.get_zip()
-print("ZIP size (should be 241):", len(z))
+print("ZIP size (should be 448):", len(z))
