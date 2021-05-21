@@ -4,6 +4,7 @@ import sys, os
 import importlib
 import tempfile
 import pprint
+import traceback
 from types import ModuleType
 from ..get_hash import get_dict_hash
 from ..compiler.locks import locks, locklock
@@ -62,10 +63,10 @@ def build_interpreted_module(
     sysmodules = {}
     try:
         for ws_modname, ws_mod in module_workspace.items():
-            sysmod = sys.modules.pop(ws_modname, None)
             ws_modname2 = ws_modname
             if ws_modname2.endswith(".__init__"):
                 ws_modname2 = ws_modname2[:-len(".__init__")]
+            sysmod = sys.modules.pop(ws_modname2, None)
             sysmodules[ws_modname2] = sysmod
             sys.modules[ws_modname2] = ws_mod
         if language == "ipython":
@@ -74,9 +75,11 @@ def build_interpreted_module(
         else:
             try:
                 exec(code, namespace)
-            except ModuleNotFoundError:
+            except ModuleNotFoundError as exc:
                 mname = module_error_name
-                raise Exception(mname) from None
+                excstr = traceback.format_exception_only(type(exc), exc)
+                excstr = "\n".join(excstr)
+                raise Exception(mname + ": " + excstr) from None
     finally:
         for sysmodname, sysmod in sysmodules.items():
             if sysmod is None:
@@ -97,6 +100,8 @@ def build_interpreted_package(
     p = {}
     mapping = {}
     for k,v in package_definition.items():
+        if k == "__name__":
+            continue
         assert isinstance(k,str), k
         assert isinstance(v, dict)
         assert "code" in v, k
@@ -119,7 +124,8 @@ def build_interpreted_package(
         p, module_workspace, 
         mtype="interpreted", 
         parent_module_name=parent_module_name,
-        module_error_name=module_error_name
+        module_error_name=module_error_name,
+        absolute_package_name=package_definition.get("__name__")
     )
     return Package(mapping)
     
@@ -248,7 +254,8 @@ def build_module(module_definition, module_workspace={}, *,
 def build_all_modules(
     modules_to_build, module_workspace, *, 
     mtype=None, parent_module_name=None,
-    module_error_name=None
+    module_error_name=None,
+    absolute_package_name=None
 ):
     all_modules = list(modules_to_build.keys())
     while len(modules_to_build):
@@ -276,6 +283,12 @@ def build_all_modules(
                 )
                 assert mod is not None, modname
                 module_workspace[modname4] = mod[1]
+                if absolute_package_name is not None:
+                    pos = modname4.find(".")
+                    modname5 = absolute_package_name
+                    if pos > -1:
+                        modname5 += modname4[pos:]
+                    module_workspace[modname5] = mod[1]
         
         if len(modules_to_build_new) == len(modules_to_build):
             deps = {}

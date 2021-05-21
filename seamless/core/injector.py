@@ -16,13 +16,9 @@ class Injector:
         old_modules = {}
         old_packages = {}
         old_names = {}
+        new_modules = {}
         if self.topmodule_name in sys_modules:
             old_modules[self.topmodule_name] = sys_modules[self.topmodule_name]
-        for modname, mod in workspace.items():
-            assert mod is not None, modname
-            mname = self.topmodule_name + "." + modname
-            if mname in sys_modules:
-                old_modules[mname] = sys_modules[mname]
         try:
             sys_modules[self.topmodule_name] = self.topmodule
             if self.topmodule_name != "macro":
@@ -43,12 +39,30 @@ class Injector:
                 modname2 = modname
                 if modname in package_mapping:                    
                     modname2 = package_mapping[modname]
+                elif modname.find(".") > -1:
+                    # absolute module name injection
+                    continue
                 mname = self.topmodule_name + "." + modname2
+                if mname.endswith(".__init__"):
+                    mname = mname[:-len(".__init__")]
+                if mname in sys_modules:
+                    old_modules[mname] = sys_modules[mname]
+                new_modules[modname] = mname
                 sys_modules[mname] = mod
+                if mod.__name__ in sys_modules:
+                    old_modules[mod.__name__] = sys_modules[mod.__name__]
+                sys_modules[mod.__name__] = mod
                 namespace[modname2] = mod
-                old_packages[modname2] = mod.__package__
-                old_names[modname2] = mod.__name__
-                mod.__package__ = mname
+                old_packages[mname] = mod.__package__
+                old_names[mname] = mod.__name__
+                package_name = mname
+                if package_name.endswith(".__init__"):
+                    package_name = package_name[:-len(".__init__")]
+                else:
+                    pos = package_name.rfind(".")
+                    if pos > -1:
+                        package_name = package_name[:pos]        
+                mod.__package__ = package_name
                 mod.__name__ = mname
                 mod.__path__ = []
             yield
@@ -58,22 +72,29 @@ class Injector:
             else:
                 sys_modules.pop(self.topmodule_name, None)
             for modname, mod in workspace.items():
-                if isinstance(mod, Package):
+                if modname not in new_modules:
                     continue
-                modname2 = modname
-                if modname in package_mapping:                    
-                    modname2 = package_mapping[modname]
-                mname = self.topmodule_name + "." + modname2
+                mname = new_modules[modname]
                 if mname in old_packages:
+                    assert mname in sys_modules, mname
                     mod = sys_modules[mname]
                     mod.__package__ = old_packages[mname]
                 if mname in old_names:
+                    assert mname in sys_modules, mname
                     mod = sys_modules[mname]
                     mod.__name__ = old_names[mname]
+
+            for modname, mod in workspace.items():
+                if modname not in new_modules:
+                    continue
                 if mname in old_modules:
                     sys_modules[mname] = old_modules[mname]
                 else:
                     sys_modules.pop(mname, None)
+                if mod.__name__ in old_modules:
+                    sys_modules[mod.__name__ ] = old_modules[mod.__name__ ]
+                else:
+                    sys_modules.pop(mod.__name__ , None)
 
 
 macro_injector = Injector("macro")

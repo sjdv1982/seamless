@@ -32,9 +32,9 @@
     {
       "celltype": "structured",
       "checksum": {
-        "auth": "6a0ab511643c2033420e6d8770d820961a825c36c25d8bf7091fd58cb44cdf50",
-        "buffer": "6a0ab511643c2033420e6d8770d820961a825c36c25d8bf7091fd58cb44cdf50",
-        "value": "6a0ab511643c2033420e6d8770d820961a825c36c25d8bf7091fd58cb44cdf50"
+        "auth": "58cd7003dd00c4d35095a9983e0b19dd8b91df47ab0c295c5acd9583cab219b3",
+        "buffer": "58cd7003dd00c4d35095a9983e0b19dd8b91df47ab0c295c5acd9583cab219b3",
+        "value": "58cd7003dd00c4d35095a9983e0b19dd8b91df47ab0c295c5acd9583cab219b3"
       },
       "datatype": "mixed",
       "hash_pattern": null,

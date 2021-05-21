@@ -1,4 +1,6 @@
 result = {}
+if package_name is not None:
+    result["__name__"] = package_name
 from .analyze_dependencies import analyze_dependencies
 def analyze(d, prefix):
     for k,v in d.items():
