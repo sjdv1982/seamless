@@ -31,9 +31,9 @@ macro.py
 macro-elision.py
 reactor-edit-macro.py
 delay.py
-module-simplified.py [1]
-module.py [1]
-bash.py [2]
+module-simplified.py
+module.py
+bash.py
 docker_.py
 docker2.py
 expression-exceptions.py
@@ -114,7 +114,3 @@ share-pdb-docker.seamless/.zip: to test using:
     In that case, open also http://localhost:5813/status/index.html
 plotting.py
 
-NOTES
-=====
-[1] Be sure to test this in a Docker container, as it doesn't work with Python3.6.9 or 3.7.6, but it does work for 3.7.3
-[2] Be sure to test this in a Docker container or with Python3.7, as it doesn't work with Python3.6 (subprocess API too old)

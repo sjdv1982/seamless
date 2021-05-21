@@ -1,8 +1,8 @@
 transformer
-<module 'seamless_module_71179523293c7228db821222b955cfeb19b8f15391a04c03f3b66f2312a8911b'>
+<module 'transformer.testmodule'>
 10
 10
-['transformer.testmodule']
+['transformer.testmodule', 'seamless_module_71179523293c7228db821222b955cfeb19b8f15391a04c03f3b66f2312a8911b_testmodule']
 Status: OK
 Status: OK
 None

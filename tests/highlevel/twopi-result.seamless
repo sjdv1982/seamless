@@ -30,7 +30,9 @@
         "code": "b24cb296a9e7872c592baedc5ba4166c90dc3c464e4e2ddfddb78f9c56837b89",
         "input": "b17233472bc65400d753219f1d4ca6ad726e913db78a68f39a6a910df1ed5f8c",
         "input_buffer": "b17233472bc65400d753219f1d4ca6ad726e913db78a68f39a6a910df1ed5f8c",
-        "result": "9acc23666aadc2bb7c469e92fe770f49604bbdeecd6cc850677459be5327e9da"
+        "result": "9acc23666aadc2bb7c469e92fe770f49604bbdeecd6cc850677459be5327e9da",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "debug": false,

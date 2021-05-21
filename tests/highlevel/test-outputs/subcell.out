@@ -19,13 +19,12 @@ Stage 7
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 108, 'f': 20} >
 <Silk: None >
 <Silk: None >
-Traceback (most recent call last):
 jsonschema.exceptions.ValidationError: 
 ************************************************************************
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/validation/validators.py", line 231, in validator_validators
+  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.7.egg/silk/validation/validators.py", line 231, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in validator
     assert self.f > self.d
@@ -50,13 +49,12 @@ Stage 8
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 88, 'f': 20} >
 <Silk: None >
 <Silk: None >
-Traceback (most recent call last):
 jsonschema.exceptions.ValidationError: 
 ************************************************************************
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/validation/validators.py", line 231, in validator_validators
+  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.7.egg/silk/validation/validators.py", line 231, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in validator
     assert self.f > self.d

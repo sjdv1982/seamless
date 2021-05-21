@@ -1,4 +1,4 @@
-None
+{}
 <Silk: 2 >
 None
 {'type': 'integer'}
@@ -8,7 +8,6 @@ None
 <Silk: None >
 {'type': 'integer'}
 <Silk: 12 >
-Traceback (most recent call last):
 jsonschema.exceptions.ValidationError: 1.2 is not of type 'integer'
 
 Failed validating 'type' in schema:
@@ -20,9 +19,9 @@ On instance:
 <Silk: None >
 {'type': 'integer'}
 <Silk: test >
-None
+{}
 <Silk: test >
-None
+{}
 {'connections': [],
  'lib': [],
  'nodes': [{'celltype': 'structured',
@@ -38,13 +37,12 @@ RUN VALIDATION <Silk: test >
 {'validators': [{'code': 'def validation(self):\n    print("RUN VALIDATION", self)\n    assert self != "test"\n', 'language': 'python', 'name': 'validation'}]}
 
 simplest.py EXCEPTION:
-Traceback (most recent call last):
 jsonschema.exceptions.ValidationError: 
 ************************************************************************
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/opt/conda/lib/python3.7/site-packages/silk-0.1-py3.7.egg/silk/validation/validators.py", line 231, in validator_validators
+  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.7.egg/silk/validation/validators.py", line 231, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 3, in validation
     assert self != "test"

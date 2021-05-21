@@ -6,6 +6,10 @@ ERROR 1:
 g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
 
 
+
+g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+
+
 *** executor ***
 
 *************************************************
@@ -19,6 +23,10 @@ Compiled transformer returned non-zero value: 1
 
 
 ERROR 2:
+
+
+g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+
 
 
 g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o

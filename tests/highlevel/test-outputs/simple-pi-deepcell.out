@@ -27,7 +27,9 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "b24cb296a9e7872c592baedc5ba4166c90dc3c464e4e2ddfddb78f9c56837b89"
+        "code": "b24cb296a9e7872c592baedc5ba4166c90dc3c464e4e2ddfddb78f9c56837b89",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "debug": false,
@@ -80,6 +82,6 @@
 
 <Silk: 3.141592653589793 >
 <Silk: 6.283185307179586 >
-d89a78eede0f535003eae21099499943  twopi-deepcell.seamless
-956e1f34a0047ad5f53dea731af782bd  twopi-deepcell-result.seamless
-ffd6900fb06976b1932d0b87d5a6cf1f  twopi-deepcell-result.zip
+5ca46a61e4d5db7396994a81ab9b41a9  twopi-deepcell.seamless
+866725122b2f66558ad0a174092648ae  twopi-deepcell-result.seamless
+f52ebcf56bc009698617d96c2bdd7189  twopi-deepcell-result.zip
