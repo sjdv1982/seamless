@@ -254,9 +254,12 @@ class MountItem:
                             with open(entry.path, filemode) as f:
                                 try:
                                     data = f.read().strip("\n")
+                                except UnicodeDecodeError:
+                                    continue
                                 except:
                                     log("Reading error in '{}'".format(entry.path))
-                            subresult[name] = data
+                                else:
+                                    subresult[name] = data
                         elif entry.is_dir():
                             subsubresult = {}
                             scan(entry.path, subsubresult)
