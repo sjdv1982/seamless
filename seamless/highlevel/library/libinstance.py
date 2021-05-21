@@ -1,7 +1,7 @@
 import weakref, json
 from copy import deepcopy
 
-highlevel_names = ("Context", "Cell", "Transformer", "Macro")
+highlevel_names = ("Context", "Cell", "Transformer", "Macro", "Module")
 
 class LibInstance:
 
@@ -184,4 +184,5 @@ from ..Context import Context, SubContext
 from ...midlevel.StaticContext import StaticContext
 from ..Transformer import Transformer
 from ..Macro import Macro
+from ..Module import Module
 from ...core.cached_compile import exec_code
