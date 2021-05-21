@@ -64,6 +64,7 @@ requirements:
     #
     #- debugpy==1.2.*
     #
+    - cython==0.29.*
     - mpld3==0.5.*
     - lxml==4.5.*
     - silk
