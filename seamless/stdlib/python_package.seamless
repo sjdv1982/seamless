@@ -1,0 +1,83 @@
+{
+  "connections": [],
+  "lib": [],
+  "nodes": [
+    {
+      "path": [
+        "code"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "a00e72d1e6a69a732565a498071908450d149b10fd898e2bbda4825564cc9e41",
+        "buffer": "a00e72d1e6a69a732565a498071908450d149b10fd898e2bbda4825564cc9e41",
+        "value": "a00e72d1e6a69a732565a498071908450d149b10fd898e2bbda4825564cc9e41"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "mount": {
+        "authority": "file",
+        "mode": "r",
+        "path": "analyze_dependencies.py",
+        "persistent": true
+      },
+      "path": [
+        "code",
+        "analyze_dependencies"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "6a0ab511643c2033420e6d8770d820961a825c36c25d8bf7091fd58cb44cdf50",
+        "buffer": "6a0ab511643c2033420e6d8770d820961a825c36c25d8bf7091fd58cb44cdf50",
+        "value": "6a0ab511643c2033420e6d8770d820961a825c36c25d8bf7091fd58cb44cdf50"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "mount": {
+        "authority": "file",
+        "mode": "r",
+        "path": "build_package.py",
+        "persistent": true
+      },
+      "path": [
+        "code",
+        "build_package"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "d2e1f1b4958cc15d5c2469ab65b6fd33df710c9234e31aedffaf9d8ce878f892"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "constructor_code"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "bf1a69ff271ad20628db76c8a5906b15f72f8bcbd56adde3f76e2e40f953629a",
+        "buffer": "bf1a69ff271ad20628db76c8a5906b15f72f8bcbd56adde3f76e2e40f953629a",
+        "value": "bf1a69ff271ad20628db76c8a5906b15f72f8bcbd56adde3f76e2e40f953629a"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "constructor_params"
+      ],
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}
