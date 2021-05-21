@@ -37,12 +37,17 @@ class Injector:
                 if isinstance(mod, Package):
                     continue
                 modname2 = modname
+                is_abs = False
                 if modname in package_mapping:                    
                     modname2 = package_mapping[modname]
                 elif modname.find(".") > -1:
                     # absolute module name injection
-                    continue
-                mname = self.topmodule_name + "." + modname2
+                    is_abs = True
+                if is_abs:
+                    continue ###
+                    mname = modname
+                else:
+                    mname = self.topmodule_name + "." + modname2
                 if mname.endswith(".__init__"):
                     mname = mname[:-len(".__init__")]
                 if mname in sys_modules:

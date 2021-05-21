@@ -302,7 +302,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
         node["path"] = pp
         nodetype = node["type"]
         nodes[pp] = node
-        if not runtime:
+        if not runtime and nodetype not in ("context", "libinstance"):
             node["UNTRANSLATED"] = True
         remove_checksum = []
         if nodetype == "cell":
@@ -338,6 +338,20 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
                 node.pop("checksum")
         elif nodetype == "context":
             pass
+        elif nodetype == "libinstance":
+            nodelib = ctx._graph.lib[tuple(node["libpath"])]
+            for argname, arg in list(node["arguments"].items()):
+                param = nodelib["params"][argname]
+                if param["type"] in ("cell", "context"):
+                    if not isinstance(arg, list):
+                        arg = [arg]
+                    arg = list(path) + arg
+                elif param["type"] == "celldict":
+                    for k,v in arg.items():
+                        if not isinstance(v, list):
+                            v = [v]
+                        v = list(path) + v
+                node["arguments"][argname] = arg
         else:
             raise TypeError(nodetype)
         if "checksum" in node:
@@ -365,6 +379,10 @@ def _assign_context(ctx, new_nodes, new_connections, path, runtime):
 
 def assign_context(ctx, path, value):
     graph = value.get_graph()
+    for lib in graph["lib"]:
+        lpath = tuple(lib["path"])
+        lib["path"] = lpath
+        ctx._set_lib(lpath, lib)
     new_nodes, new_connections = graph["nodes"], graph["connections"]
     _assign_context(ctx, new_nodes, new_connections, path, runtime=False)
 

@@ -220,6 +220,8 @@ def build_module(module_definition, module_workspace={}, *,
     json.dumps(module_definition)
     checksum = get_dict_hash(module_definition)
     full_module_name = "seamless_module_" + checksum.hex()
+    if module_error_name is not None:
+        full_module_name += "_" + module_error_name
     cached = False
     if full_module_name in module_cache:
         mod = module_cache[full_module_name]
