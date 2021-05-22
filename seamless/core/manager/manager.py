@@ -73,6 +73,7 @@ class Manager:
     _destroyed = False
     _active = True
     _highlevel_refs = 0
+    _last_ctx = None
     def __init__(self):
         global is_dummy_mount
         from .livegraph import LiveGraph
@@ -80,7 +81,6 @@ class Manager:
         from .taskmanager import TaskManager
         from .cancel import CancellationCycle
         self.contexts = weakref.WeakSet()
-        self.last_ctx = lambda: None
         from ... import communion_server
         self.livegraph = LiveGraph(self)
         self.cachemanager = CacheManager(self)
@@ -110,7 +110,19 @@ class Manager:
     def add_context(self, ctx):
         assert ctx._toplevel
         self.contexts.add(ctx)
-        self.last_ctx = weakref.ref(ctx)
+        self._last_ctx = weakref.ref(ctx)
+    
+    def last_ctx(self):
+        result = None
+        if self._last_ctx is not None:
+            result = self._last_ctx()
+        if result is not None:
+            return result
+        if not len(self.contexts):
+            return None
+        for ctx in self.contexts:
+            self._last_ctx = weakref.ref(ctx)
+            return ctx
 
     def remove_context(self, ctx):
         assert ctx._toplevel
@@ -760,7 +772,7 @@ If origin_task is provided, that task is not cancelled."""
         self.contexts.clear()
         for ctx in contexts:
             ctx.destroy(from_del=from_del)
-        self.last_ctx = lambda: None
+        self._last_ctx = None
         for path in list(self.livegraph.macropath_to_upstream.keys()):
             path.destroy()
         self.cachemanager.check_destroyed()
