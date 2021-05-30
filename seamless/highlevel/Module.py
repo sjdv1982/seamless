@@ -271,6 +271,28 @@ class Module(Base):
         return codecell.status
 
     @property
+    def status(self):
+        """Returns the status of the module's code cell.
+
+        The status may be undefined, error, upstream or OK
+        If it is error, Cell.exception will be non-empty.
+        """
+        if self._get_hnode().get("UNTRANSLATED"):
+            return "Status: error (ctx needs translation)"
+        codecell = self._get_codecell()
+        return codecell.status
+
+    @property
+    def exception(self):
+        """Returns the exception associated with the module's code cell.
+
+        If not None, this exception was raised during parsing."""
+        if self._get_hnode().get("UNTRANSLATED"):
+            return "Status: error (ctx needs translation)"
+        codecell = self._get_codecell()
+        return codecell.exception
+
+    @property
     def type(self):
         """The type of the module, interpreted or compiled"""
         hnode = self._get_hnode2()

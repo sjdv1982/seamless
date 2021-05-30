@@ -88,6 +88,8 @@ conversion_equivalent = { #equivalent conversions
     ("text", "str"): ("text", "plain"),
     ("python", "str"): ("text", "plain"),
     ("ipython", "str"): ("text", "plain"),
+    ("python", "plain"): ("text", "plain"),
+    ("ipython", "plain"): ("text", "plain"),
     ("python", "mixed"): ("text", "plain"),
     ("ipython", "mixed"): ("text", "plain"),
     ("cson", "mixed"): ("cson", "plain"),
@@ -117,9 +119,9 @@ conversion_equivalent = { #equivalent conversions
 
 conversion_forbidden = set([ # forbidden conversions.
     ("text", "binary"),
-    ("python", "cson"), ("python", "yaml"), ("python", "plain"), ("python", "binary"),
+    ("python", "cson"), ("python", "yaml"), ("python", "binary"),
     ("python", "bytes"), ("python", "int"), ("python", "float"), ("python", "bool"),
-    ("ipython", "cson"), ("ipython", "yaml"), ("ipython", "plain"), ("ipython", "binary"),
+    ("ipython", "cson"), ("ipython", "yaml"), ("ipython", "binary"),
     ("ipython", "bytes"), ("ipython", "int"), ("ipython", "float"), ("ipython", "bool"),
     ("cson", "python"), ("cson", "ipython"), ("cson", "yaml"), ("cson", "binary"),
     ("cson", "bytes"), ("cson", "str"), ("cson", "int"), ("cson", "float"), ("cson", "bool"),

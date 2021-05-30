@@ -53,8 +53,7 @@ class Worker(SeamlessBase):
         return object.__dir__(self) + list(self._pins.keys())
 
 
-from .cell import celltypes as celltypes0
-celltypes = list(celltypes0) + ["module"]
+from .cell import celltypes
 
 class PinBase(SeamlessBase):
     def __init__(self, worker, name, celltype, subcelltype=None):

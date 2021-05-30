@@ -110,7 +110,6 @@ async def syntactic_to_semantic(
             checksum, buffer, celltype, "plain"
         )
     elif celltype == "python":
-        # TODO: consider subcelltype (?)
         value = await deserialize(buffer, checksum, "python", False)
         tree = ast.parse(value, filename=codename)
         dump = ast.dump(tree).encode()
