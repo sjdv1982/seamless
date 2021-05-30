@@ -77,6 +77,11 @@ def tf_get_buffer(transformation):
         if k == "__output__":
             d[k] = v
             continue
+        elif k == "__env__":
+            checksum = v
+            checksum = checksum.hex()
+            d[k] = checksum
+            continue
         celltype, subcelltype, checksum = v
         checksum = checksum.hex()
         d[k] = celltype, subcelltype, checksum
@@ -251,7 +256,10 @@ class TransformationCache:
             for pinname in transformation:
                 if pinname == "__output__":
                     continue
-                celltype, subcelltype, sem_checksum = transformation[pinname]
+                if pinname == "__env__":
+                    sem_checksum = transformation[pinname]
+                else:
+                    celltype, subcelltype, sem_checksum = transformation[pinname]
                 buffer_cache.incref(sem_checksum, False)
         else:
             tf = self.transformations_to_transformers[tf_checksum]
@@ -346,6 +354,8 @@ class TransformationCache:
         for pinname in transformation:
             if pinname == "__output__":
                 continue
+            if pinname == "__env__":
+                continue
             celltype, subcelltype, sem_checksum = transformation[pinname]
             buffer_cache.decref(sem_checksum)
         buffer_cache.decref(tf_checksum)
@@ -395,6 +405,8 @@ class TransformationCache:
         semantic_cache = {}
         for k,v in transformation.items():
             if k == "__output__":
+                continue
+            if k == "__env__":
                 continue
             celltype, subcelltype, sem_checksum = v
             if syntactic_is_semantic(celltype, subcelltype):
@@ -649,7 +661,9 @@ class TransformationCache:
             if transformation_buffer is not None:
                 transformation = json.loads(transformation_buffer)
                 for k,v in transformation.items():
-                    if k != "__output__":
+                    if k == "__env__":
+                        transformation[k] = bytes.fromhex(v)
+                    elif k != "__output__":
                         if v[-1] is not None:
                             v[-1] = bytes.fromhex(v[-1])
         return transformation
@@ -776,6 +790,8 @@ class TransformationCache:
             raise CacheMissError
         for k,v in transformation.items():
             if k == "__output__":
+                continue
+            if k == "__env__":
                 continue
             celltype, subcelltype, sem_checksum = v
             if syntactic_is_semantic(celltype, subcelltype):

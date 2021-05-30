@@ -47,6 +47,7 @@ injection4.py: the output is approximate, depends on exact timings, see also [1]
 injection5.py: see above
 simple-share.py
 transformation-checksum.sh: run with Seamless database
+transformation-raw.py
 simple-duplex.py
 simple-duplex-remote.py: run together with:
      python3 -u ../../scripts/jobslave-nodatabase.py --time 40 --direct-print > test-outputs/simple-duplex-remote-jobslave.out 2>&1
@@ -97,6 +98,10 @@ compile-debug.py
      - run the gdb shell as privileged root, i.e. as "docker exec -u root -it --privileged container_name bash"
      OR
      - disable kernel hardening in your host (/proc/sys/kernel/yama/ptrace_scope, set the value to 0)
+
+transformation-raw-conda.py
+     First run this, and it should give an error
+     then install Tensorflow with "pip install tensorflow", and then it should work 
 
 
 NOTES

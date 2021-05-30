@@ -7,6 +7,7 @@ import traceback
 import functools
 import time
 import atexit
+import json
 
 from multiprocessing import Process
 from .execute import Queue, execute, execute_debug
@@ -367,9 +368,16 @@ class TransformationJob:
         else:
             raise RemoteJobError()
 
+
     async def _execute_local(self,
         prelim_callback, progress_callback
     ):
+        env = self.transformation.get("__env__")
+        if env is not None:
+            env = get_buffer(env)
+            env = json.loads(env.decode())
+            assert env is not None
+            await validate_environment(env)
         values = {}
         namespace = {
             "__name__": "transformer",
@@ -383,6 +391,8 @@ class TransformationJob:
         modules_to_build = {}
         for pinname in sorted(self.transformation.keys()):
             if pinname == "__output__":
+                continue
+            if pinname == "__env__":
                 continue
             celltype, subcelltype, sem_checksum = self.transformation[pinname]
             if syntactic_is_semantic(celltype, subcelltype):
@@ -414,6 +424,8 @@ class TransformationJob:
                 inputs.append(pinname)
         for pinname in self.transformation:
             if pinname == "__output__":
+                continue
+            if pinname == "__env__":
                 continue
             celltype, _, _ = self.transformation[pinname]
             if celltype != "mixed":
@@ -560,3 +572,4 @@ from .cache.transformation_cache import transformation_cache, syntactic_is_seman
 from .status import SeamlessInvalidValueError
 from silk import Silk, Scalar
 from ..communion_client import communion_client_manager
+from .environment import validate_environment
