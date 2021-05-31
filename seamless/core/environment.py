@@ -9,7 +9,6 @@ from numpy import isin
 
 DOCKER_SOCKET = "/var/run/docker.sock"
 DOCKER_IMAGE = os.environ.get("DOCKER_IMAGE", "rpbs/seamless")
-print(DOCKER_IMAGE)
 
 def check_docker_power():
     if not os.path.exists(DOCKER_SOCKET):
@@ -149,5 +148,7 @@ async def validate_environment(environment):
         if result_conda[1] is not None:
             err += "Conda:\n  " + str(result_conda[1]) + "\n"
     if not len(err):
+        if result_conda[0] is None and result_capabilities[0] is None and result_image[0] is None:
+            return
         err = "Unknown environment error"
     raise ValueError("Environment error:\n" + err)

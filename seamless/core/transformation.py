@@ -378,6 +378,9 @@ class TransformationJob:
             env = json.loads(env.decode())
             assert env is not None
             await validate_environment(env)
+        with_ipython_kernel = False
+        if "powers" in env and "ipython" in env["powers"]:
+            with_ipython_kernel = True
         values = {}
         namespace = {
             "__name__": "transformer",
@@ -472,9 +475,10 @@ class TransformationJob:
             outputname, celltype, subcelltype = self.outputpin
             args = (
                 self.codename, code,
+                with_ipython_kernel,
                 injector, module_workspace,
                 self.codename,
-                namespace, inputs, outputname, celltype, queue
+                namespace, inputs, outputname, celltype, queue,                
             )
             kwargs = {"python_debug": self.python_debug}
             execute_command = execute_debug if self.debug else execute
