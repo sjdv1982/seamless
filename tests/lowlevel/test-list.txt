@@ -9,7 +9,7 @@ conversions.py: the output is approximate, depends on exact timings
 simple.py
 simple-async.py
 simple-indirect.py
-simple-ipython.py: Run with ipython --no-term-title (not -i) (see issue 25).
+simple-ipython.py
 exception_upon_compute.py
 subcontext.py
 simple-reactor.py

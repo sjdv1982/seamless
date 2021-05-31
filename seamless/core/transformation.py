@@ -372,15 +372,15 @@ class TransformationJob:
     async def _execute_local(self,
         prelim_callback, progress_callback
     ):
+        with_ipython_kernel = False
         env = self.transformation.get("__env__")
         if env is not None:
             env = get_buffer(env)
             env = json.loads(env.decode())
             assert env is not None
             await validate_environment(env)
-        with_ipython_kernel = False
-        if "powers" in env and "ipython" in env["powers"]:
-            with_ipython_kernel = True
+            if "powers" in env and "ipython" in env["powers"]:
+                with_ipython_kernel = True
         values = {}
         namespace = {
             "__name__": "transformer",

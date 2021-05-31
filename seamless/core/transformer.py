@@ -16,6 +16,7 @@ class Transformer(Worker):
     _checksum = None
     _prelim_result = False
     _progress = 0.0
+    _env = None
     debug = False
     python_debug = False
 
@@ -70,6 +71,16 @@ class Transformer(Worker):
         super()._set_context(ctx, name)
         if not has_ctx:
             self._get_manager().register_transformer(self)
+
+    @property
+    def env(self):
+        return self._env
+
+    @env.setter
+    def env(self, env: dict):
+        if not isinstance(env, dict):
+            raise TypeError(type(env))
+        self._env = env
 
     @property
     def checksum(self):

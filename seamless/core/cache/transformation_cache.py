@@ -8,6 +8,7 @@ class HardCancelError(Exception):
     def __str__(self):
         return self.__class__.__name__
 
+from seamless.core.protocol.serialize import serialize
 import sys
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
@@ -18,8 +19,9 @@ import functools
 import asyncio
 import time
 import traceback
+from copy import deepcopy
 
-from ...get_hash import get_dict_hash
+from ...get_hash import get_dict_hash, get_hash
 """
 TODO: offload exceptions (as text) to database (also allow them to be cleared in database?)
 TODO: do the same with stdout, stderr
@@ -187,6 +189,11 @@ class TransformationCache:
         cachemanager = transformer._get_manager().cachemanager
         outputname, celltype, subcelltype = outputpin
         transformation = {"__output__": outputpin}
+        if transformer.env is not None:
+            envbuf = await serialize(transformer.env, "plain")
+            env_checksum = get_hash(envbuf)
+            buffer_cache.cache_buffer(env_checksum, envbuf)
+            transformation["__env__"] = env_checksum
         for pinname, checksum in inputpin_checksums.items():
             await cachemanager.fingertip(checksum)
             pin = transformer._pins[pinname]
@@ -260,7 +267,7 @@ class TransformationCache:
                     sem_checksum = transformation[pinname]
                 else:
                     celltype, subcelltype, sem_checksum = transformation[pinname]
-                buffer_cache.incref(sem_checksum, False)
+                buffer_cache.incref(sem_checksum, (pinname == "__env__"))
         else:
             tf = self.transformations_to_transformers[tf_checksum]
 
@@ -355,6 +362,8 @@ class TransformationCache:
             if pinname == "__output__":
                 continue
             if pinname == "__env__":
+                env_checksum = transformation["__env__"]
+                buffer_cache.decref(env_checksum)
                 continue
             celltype, subcelltype, sem_checksum = transformation[pinname]
             buffer_cache.decref(sem_checksum)
