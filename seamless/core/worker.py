@@ -42,12 +42,14 @@ class Worker(SeamlessBase):
     _pins = None
     _last_inputs = None
 
-    def __getattr__(self, attr):
+    def get_pin(self, attr):
         if self._pins is None or attr not in self._pins:
             raise AttributeError(attr)
         else:
             return self._pins[attr]
 
+    def __getattr__(self, attr):
+        return self.get_pin(attr)
 
     def __dir__(self):
         return object.__dir__(self) + list(self._pins.keys())

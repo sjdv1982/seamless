@@ -86,7 +86,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     namespace[node["path"] + ("code",), "source"] = ctx.code, node
 
     for pin in list(node["pins"].keys()):
-        target = getattr(ctx.tf, pin)
+        target = ctx.tf.get_pin(pin)
         pin_cell = pin_cells[pin]
         inp.outchannels[(pin,)].connect(pin_cell)
         pin_cell.connect(target)
@@ -104,13 +104,13 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
 
     setattr(ctx, result_name, result)
 
-    result_pin = getattr(ctx.tf, result_name)
+    result_pin = ctx.tf.get_pin(result_name)
     result_cell = cell("mixed")
     cell_setattr(node, ctx, result_cell_name, result_cell)
     result_pin.connect(result_cell)
     result_cell.connect(result.inchannels[()])
     if node["SCHEMA"]:
-        schema_pin = getattr(ctx.tf, node["SCHEMA"])
+        schema_pin = ctx.tf.get_pin(node["SCHEMA"])
         result.schema.connect(schema_pin)
     result_checksum = {}
     for k in checksum:

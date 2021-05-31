@@ -94,7 +94,7 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels)
     namespace[node["path"] + ("code",), "source"] = ctx.code, node
 
     for pinname, pin in node["pins"].items():
-        target = getattr(ctx.tf, pinname)
+        target = ctx.tf.get_pin(pinname)
         celltype = pin.get("celltype", "mixed")
         if celltype == "code":
             celltype = "text"
@@ -116,13 +116,13 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels)
 
     setattr(ctx, result_name, result)
 
-    result_pin = getattr(ctx.tf, result_name)
+    result_pin = ctx.tf.get_pin(result_name)
     result_cell = cell("mixed")
     cell_setattr(node, ctx, result_cell_name, result_cell)
     result_pin.connect(result_cell)
     result_cell.connect(result.inchannels[()])
     if node["SCHEMA"]:
-        schema_pin = getattr(ctx.tf, node["SCHEMA"])
+        schema_pin = ctx.tf.get_pin(node["SCHEMA"])
         result.schema.connect(schema_pin)
     result_checksum = {}
     for k in checksum:
