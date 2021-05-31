@@ -15,6 +15,7 @@ gdbflags='' ###
 
 docker run --rm \
   $gdbflags \
+  -e DOCKER_IMAGE=rpbs/seamless \
   --network=host \
   -v `pwd`:/home/jovyan/cwd \
   -v /var/run/docker.sock:/var/run/docker.sock \

@@ -4,6 +4,7 @@ set -u -e
 # Creates a new Seamless project in the current directory
 
 docker run --rm \
+  -e DOCKER_IMAGE=rpbs/seamless \
   -v `pwd`:/cwd \
   --workdir /cwd \
   -u `id -u` \

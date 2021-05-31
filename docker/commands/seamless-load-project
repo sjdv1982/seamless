@@ -17,6 +17,7 @@ fi
 
 docker run --rm -it \
   $gdbflags \
+  -e DOCKER_IMAGE=rpbs/seamless \
   --network=host \
   -v `pwd`:/cwd \
   -v /tmp:/tmp \

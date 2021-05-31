@@ -17,6 +17,7 @@ gdbflags='' ###
 
 docker run --rm \
   $gdbflags \
+  -e DOCKER_IMAGE=rpbs/seamless \
   -v $seamlessdir:$seamlessdir \
   -e "PYTHONPATH="$seamlessdir \
   --network=host \
