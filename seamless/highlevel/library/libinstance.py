@@ -147,6 +147,8 @@ class LibInstance:
         hnode = self._get_node()
         libpath = hnode["libpath"]
         arguments = hnode["arguments"]
+        lib = self.get_lib()
+        params = lib["params"]        
         if attr not in arguments:
             if attr == "ctx":
                 parent = self._parent()
@@ -156,13 +158,14 @@ class LibInstance:
                 return libpath
             if attr == "arguments":
                 return arguments
-            raise AttributeError(attr)
+            if attr not in params or params[attr]["io"] != "output":
+                raise AttributeError(attr)
         argname = attr
-        argvalue = arguments[argname]
         parent = self._parent()
-        lib = self.get_lib()
-        params = lib["params"]
         par = params[argname]
+        if par["io"] == "output":
+            return Proxy(parent, self._path + (argname,), "r")
+        argvalue = arguments[argname]
         if par["type"] == "cell":
             if isinstance(argvalue, list):
                 argvalue = tuple(argvalue)
@@ -195,6 +198,9 @@ class LibInstance:
         params = lib["params"]
         if attr not in params:
             raise AttributeError(attr)
+        par = params[attr]
+        if par["io"] == "output":
+            raise AttributeError("Reverse assignment for '{}'".format(attr))
         arguments[attr] = parse_argument(attr, value, params[attr])
         parent = self._parent()
         parent._translate()
@@ -209,3 +215,4 @@ from ..Transformer import Transformer
 from ..Macro import Macro
 from ..Module import Module
 from ...core.cached_compile import exec_code
+from ..proxy import Proxy

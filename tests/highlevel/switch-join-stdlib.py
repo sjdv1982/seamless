@@ -68,7 +68,7 @@ ctx.join = ctx.lib.join()
 ctx.join.celltype = "float"
 ctx.join.inputs = rdict
 ctx.join.selected = ctx.selected
-ctx.join.output = ctx.output
+ctx.output = ctx.join.output
 # /
 ctx.compute()
 
