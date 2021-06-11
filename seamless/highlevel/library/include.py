@@ -39,28 +39,21 @@ class IncludedLibrary:
         self._graph = graph
         self._constructor = constructor
         self._params = OrderedDict(params)
-        func_parameters = []
-        for k, v in params.items():
-            func_par = Parameter(k, Parameter.POSITIONAL_OR_KEYWORD)
-            func_parameters.append(func_par)
-        self._signature = Signature(func_parameters)
         identifier = ".".join(self._path)
         cached_compile(self._constructor, identifier)  # just to validate
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, **kwargs):
         kwargs2 = kwargs.copy()
         params = list(self._params.items())
-        for n in range(len(args), len(params)):
+        for n in range(len(params)):
             k,v = params[n]
             if k in kwargs2:
                 continue
             default = v.get("default")
             if default is not None:
                 kwargs2[k] = default
-        arguments0 = self._signature.bind(*args, **kwargs2)
-        arguments0.apply_defaults()
         arguments = {}
-        for argname, argvalue in arguments0.arguments.items():
+        for argname, argvalue in kwargs2.items():
             par = self._params[argname]
             arguments[argname] = parse_argument(argname, argvalue, par)
 

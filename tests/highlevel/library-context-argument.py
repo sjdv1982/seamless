@@ -2,7 +2,7 @@ from seamless.highlevel import Context, Cell
 from seamless.highlevel.library import LibraryContainer
 from pprint import pprint
 
-stdlib = LibraryContainer("stdlib")
+lib = LibraryContainer("lib")
 
 subctx = Context()
 subctx.x = 20
@@ -14,16 +14,16 @@ subctx.result = subctx.minus
 subctx.compute()
 print(subctx.result.value)
 
-#  Simplified version of stdlib.instantiate
-stdlib.instantiate0 = Context()
+#  Simplified version of lib.instantiate
+lib.instantiate0 = Context()
 def constructor(ctx, libctx, context_graph, copies):
     for n in range(copies):
         name = "copy{}".format(n+1)
         subctx = Context()
         subctx.set_graph(context_graph)
         setattr(ctx, name, subctx)
-stdlib.instantiate0.constructor = constructor
-stdlib.instantiate0.params = {
+lib.instantiate0.constructor = constructor
+lib.instantiate0.params = {
     "copies": "value",
     "context_graph": "context"
 }

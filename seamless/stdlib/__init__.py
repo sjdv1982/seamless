@@ -2,7 +2,7 @@ import glob, os, json
 from ..highlevel.library import LibraryContainer
 from ..highlevel.library.library import set_library
 from ..midlevel.StaticContext import StaticContext
-stdlib = LibraryContainer("stdlib")
+lib = LibraryContainer("stdlib")
 
 currdir=os.path.dirname(os.path.abspath(__file__))
 graph_files = glob.glob("{}/*.seamless".format(currdir))
@@ -31,3 +31,4 @@ for graph_file in graph_files:
         constructor_params = sctx.constructor_params.value
         path = ("stdlib", graph_name)
         set_library(path, graph, zip, constructor, constructor_params)
+    globals()[path[1]] = getattr(lib, path[1])

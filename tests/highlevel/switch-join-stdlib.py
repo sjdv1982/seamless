@@ -1,6 +1,6 @@
 # Adapted from /seamless/stdlib/switch-join/switch-join.py
 from seamless.highlevel import Context, Cell
-from seamless.stdlib import stdlib
+from seamless import stdlib
 
 ctx = Context()
 ctx.include(stdlib.switch)
@@ -55,12 +55,21 @@ ctx.switch = ctx.lib.switch(
 )
 ctx.compute()
 ctx.output = Cell("float")
+"""
 ctx.join = ctx.lib.join(
     celltype="float",
     inputs=rdict,
     selected=ctx.selected,
     output=ctx.output,
 )
+"""
+# Alternative syntax
+ctx.join = ctx.lib.join()
+ctx.join.celltype = "float"
+ctx.join.inputs = rdict
+ctx.join.selected = ctx.selected
+ctx.join.output = ctx.output
+# /
 ctx.compute()
 
 print(ctx.output.value)

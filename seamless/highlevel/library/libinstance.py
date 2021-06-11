@@ -1,10 +1,11 @@
+import traceback
 import weakref, json
 from copy import deepcopy
 
 highlevel_names = ("Context", "Cell", "Transformer", "Macro", "Module")
 
 class LibInstance:
-
+    
     def __init__(self, parent, *, path=None, libpath=None, arguments=None):
         self._parent = weakref.ref(parent)
         self._path = path
@@ -112,15 +113,31 @@ class LibInstance:
             if name not in namespace:
                 namespace[name] = globals()[name]
         identifier = ".".join(self._path)
-        exec_code(constructor, identifier, namespace, argnames, None)
+        try:
+            exec_code(constructor, identifier, namespace, argnames, None)
+        except Exception:
+            self._get_node()["exception"] = traceback.format_exc()
+            try:
+                libctx.root.destroy()
+            except Exception:
+                pass
+            return
         overlay_graph = overlay_context.get_graph()
         overlay_connections = connection_wrapper.connections
         libctx.root.destroy()
+        self._get_node().pop("exception", None)
         return overlay_graph, overlay_nodes, overlay_connections
 
     @property
     def status(self):
-        raise NotImplementedError
+        if self.exception is not None:
+            return "Status: error"
+        else:
+            return self.ctx.status
+
+    @property
+    def exception(self):
+        return self._get_node().get("exception")
 
     def __getattribute__(self, attr):
         if attr.startswith("_"):
@@ -156,7 +173,6 @@ class LibInstance:
 
     def __dir__(self):        
         hnode = self._get_node()
-        libpath = hnode["libpath"]
         arguments = hnode["arguments"]
         return list(arguments.keys()) + ["ctx", "libpath", "arguments", "status"]
 
@@ -168,11 +184,11 @@ class LibInstance:
         hnode = self._get_node()
         libpath = hnode["libpath"]
         arguments = hnode["arguments"]
-        if attr not in arguments:
-            raise AttributeError(attr)
         parent = self._parent()
         lib = parent._get_lib(tuple(libpath))
         params = lib["params"]
+        if attr not in params:
+            raise AttributeError(attr)
         arguments[attr] = parse_argument(attr, value, params[attr])
         parent._translate()
 

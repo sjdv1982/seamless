@@ -15,12 +15,8 @@ def pretranslate(ctx, graph):
     overlay_connections = []
     for path in libinstances:
         libinstance = LibInstance(ctx, path=path)
-        try:
-            result = libinstance._run()
-        except Exception as exc:
-            import traceback
-            print("LibInstance:", path, file=sys.stderr)
-            traceback.print_exc()
+        result = libinstance._run()
+        if libinstance.exception is not None:
             continue
         curr_graph, curr_nodes, curr_connections = result
         path2 = path + ("ctx",)

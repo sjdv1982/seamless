@@ -2,7 +2,7 @@ from seamless.highlevel import Context, Cell
 from seamless.highlevel.library import LibraryContainer
 from pprint import pprint
 
-stdlib = LibraryContainer("stdlib")
+lib = LibraryContainer("lib")
 
 ctx = Context()
 ctx.x = 20
@@ -14,15 +14,15 @@ ctx.result = ctx.minus
 ctx.compute()
 print(ctx.result.value)
 
-stdlib.subtract = ctx
+lib.subtract = ctx
 def constructor(ctx, libctx, inp1, inp2, outp, const):
     graph = libctx.get_graph()
     ctx.set_graph(graph)
     inp1.connect(ctx.x)
     inp2.connect(ctx.y)
     outp.connect_from(ctx.result)
-stdlib.subtract.constructor = constructor
-stdlib.subtract.params = {
+lib.subtract.constructor = constructor
+lib.subtract.params = {
     "const": "value",
     "inp1": {
         "type": "cell",
@@ -42,7 +42,7 @@ ctx = Context()
 ctx.a = 200
 ctx.b = 120
 ctx.c = Cell()
-ctx.include(stdlib.subtract)
+ctx.include(lib.subtract)
 ctx.subtract1 = ctx.lib.subtract(
     inp1=ctx.a,
     inp2=ctx.b,
@@ -81,9 +81,9 @@ def constructor2(ctx, libctx, inp1, inp2, outp, const):
     inp1.connect(ctx.y)
     inp2.connect(ctx.x)
     outp.connect_from(ctx.result)
-stdlib.subtract.constructor = constructor2
+lib.subtract.constructor = constructor2
 ctx.compute()
 print(ctx.c.value)
-ctx.include(stdlib.subtract)
+ctx.include(lib.subtract)
 ctx.compute()
 print(ctx.c.value)
