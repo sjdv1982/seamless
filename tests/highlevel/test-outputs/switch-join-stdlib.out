@@ -1,0 +1,17 @@
+12.0
+<Silk: 10.0 > 10.0 None None
+Status: OK Status: undefined Status: undefined
+<Silk: 12.0 > <Silk: None > <Silk: None >
+
+False
+7.0
+<Silk: 10.0 > None 10.0 None
+Status: unconnected Status: OK Status: undefined
+<Silk: None > <Silk: 7.0 > <Silk: None >
+
+False
+40.0
+<Silk: 10.0 > None None 10.0
+Status: unconnected Status: unconnected Status: OK
+<Silk: None > <Silk: None > <Silk: 40.0 >
+
