@@ -196,6 +196,7 @@ class LibInstance:
         if attr not in params:
             raise AttributeError(attr)
         arguments[attr] = parse_argument(attr, value, params[attr])
+        parent = self._parent()
         parent._translate()
 
 from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper, EditCellWrapper
