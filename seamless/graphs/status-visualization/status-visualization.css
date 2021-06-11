@@ -23,6 +23,10 @@ svg:not(.active):not(.ctrl) path.link {
   cursor: pointer;
 }
 
+path.link.dashed {
+  stroke-dasharray: 2,2;
+}
+
 path.link.selected {
   stroke-dasharray: 10,2;
 }

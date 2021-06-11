@@ -160,7 +160,7 @@ class LibInstance:
         argname = attr
         argvalue = arguments[argname]
         parent = self._parent()
-        lib = parent._get_lib(tuple(libpath))
+        lib = self.get_lib()
         params = lib["params"]
         par = params[argname]
         if par["type"] == "cell":
@@ -176,16 +176,22 @@ class LibInstance:
         arguments = hnode["arguments"]
         return list(arguments.keys()) + ["ctx", "libpath", "arguments", "status"]
 
+    def get_lib(self):
+        """Returns the library of which this is an instance"""
+        hnode = self._get_node()
+        libpath = hnode["libpath"]
+        parent = self._parent()
+        lib = parent._get_lib(tuple(libpath))
+        return deepcopy(lib)
+
     def __setattr__(self, attr, value):
         from .argument import parse_argument
         if attr.startswith("_"):
             super().__setattr__(attr, value)
             return
         hnode = self._get_node()
-        libpath = hnode["libpath"]
         arguments = hnode["arguments"]
-        parent = self._parent()
-        lib = parent._get_lib(tuple(libpath))
+        lib = self.get_lib()
         params = lib["params"]
         if attr not in params:
             raise AttributeError(attr)
