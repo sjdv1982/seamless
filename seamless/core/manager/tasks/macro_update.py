@@ -4,6 +4,8 @@ from ...build_module import build_all_modules
 from ...macro_mode import get_macro_mode
 
 import logging
+
+from seamless import compiler
 logger = logging.getLogger("seamless")
 
 def print_info(*args):
@@ -115,7 +117,15 @@ class MacroUpdateTask(Task):
                 values[pinname] = value
 
         module_workspace = {}
-        build_all_modules(modules_to_build, module_workspace)
+        
+        root = macro._root()
+        compilers = getattr(root,"_compilers", default_compilers)
+        languages = getattr(root,"_languages", default_languages)
+        build_all_modules(
+            modules_to_build, module_workspace,
+            compilers=compilers,
+            languages=languages
+        )
 
         if macro._gen_context is not None:
             macro._gen_context.destroy()
@@ -130,3 +140,4 @@ from . import is_equal
 from ...status import StatusReasonEnum
 from ...cache.elision import elide
 from ...cache import CacheMissError
+from ....compiler import compilers as default_compilers, languages as default_languages

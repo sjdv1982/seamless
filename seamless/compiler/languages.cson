@@ -1,5 +1,4 @@
-# Specifications and default settings for languages
-#TODO: integrate this with mimetypes at the high level
+# Specifications and default settings for supported languages
 {
   "python": {
     "extension": "py",
@@ -7,14 +6,6 @@
   }
   "ipython": {
     "extension": "ipy",
-    "mode": "interpreted"
-  }
-  "ipython-notebook": {
-    "extension": "ipynb",
-    "mode": "interpreted"
-  }
-  "javascript": {
-    "extension": "js",
     "mode": "interpreted"
   }
   "c": {
@@ -26,11 +17,6 @@
     "extension": "cpp"
     "mode": "compiled"
     "compiler": "g++"
-  }
-  "cuda": {
-    "extension": "cu"
-    "mode": "compiled"
-    "compiler": "nvcc"
   }
   "fortran": {
     "extension": ["f", "f90"]

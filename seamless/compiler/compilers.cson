@@ -1,10 +1,8 @@
-# Defaults for various compiles
-
-# NOTE: -ffast-math reduces reproducibility.
-#  But when the compiler versions are not the same, it is not guaranteed anyway
-#  (and -ffast-math will be the least of our worries)
-# So, enable it by default
-
+# Defaults for various compilers
+# NOTE: Seamless does not take (the checksum of) a compiler or compiler setting as explicit dependency
+# Therefore, Seamless does not re-execute a computation when compiler settings change
+# and it is assumed that compiler settings have no impact on reproducibility,
+#  i.e. a computation is reproducible or irreproducible no matter the compiler settings
 {
   #GNU compiler collection; no "location"; use `which` or implicit shell execution
   "gcc": {
@@ -29,15 +27,6 @@
       "options": ["-O3", "-fno-automatic", "-fcray-pointer", "-ffast-math", "-march=native", "-fPIC"],
       "public_options": ["-fPIC"],
       "debug_options": ["-fPIC", "-O0", "-fno-automatic", "-fcray-pointer"],
-      "profile_options": ["-p", "-g"],
-  }
-  #nvcc; no "location"; use `which` or implicit shell execution
-  "nvcc": {
-      "compile_flag": "-c"
-      "output_flag": "-o"
-      "options": ["-O3", "-ffast-math", "-fPIC"],
-      "public_options": ["-fPIC"],
-      "debug_options": ["-fPIC", "-g", "-O0", "-fno-inline" , "-Wall"],
       "profile_options": ["-p", "-g"],
   }
 }

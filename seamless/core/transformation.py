@@ -14,6 +14,7 @@ from .execute import Queue, execute, execute_debug
 from .run_multi_remote import run_multi_remote, run_multi_remote_pair
 from .injector import transformer_injector as injector
 from .build_module import build_all_modules
+from ..compiler import compilers as default_compilers, languages as default_languages
 
 import logging
 logger = logging.getLogger("seamless")
@@ -426,9 +427,7 @@ class TransformationJob:
                 namespace[pinname] = value
                 inputs.append(pinname)
         for pinname in self.transformation:
-            if pinname == "__output__":
-                continue
-            if pinname == "__env__":
+            if pinname in ("__output__", "__env__", "__compilers__", "__languages__"):
                 continue
             celltype, _, _ = self.transformation[pinname]
             if celltype != "mixed":
@@ -452,7 +451,12 @@ class TransformationJob:
             namespace[pinname] = v
 
         module_workspace = {}
-        build_all_modules(modules_to_build, module_workspace)
+        compilers = self.transformation.get("__compilers__", default_compilers)
+        languages = self.transformation.get("__languages__", default_languages)
+        build_all_modules(
+            modules_to_build, module_workspace,
+            compilers=compilers, languages=languages
+        )
         assert code is not None
 
         async def get_result_checksum(result_buffer):

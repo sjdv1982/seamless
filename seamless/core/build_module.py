@@ -212,7 +212,8 @@ def build_compiled_module(full_module_name, checksum, module_definition, *, modu
     mod = import_extension_module(full_module_name, module_code, debug, source_files)
     return mod
 
-def build_module(module_definition, module_workspace={}, *, 
+def build_module(module_definition, module_workspace={}, *,
+     compilers, languages,
      module_error_name, mtype=None, parent_module_name=None):
     if mtype is None:
         mtype = module_definition["type"]
@@ -245,7 +246,7 @@ def build_module(module_definition, module_workspace={}, *,
             )
         elif mtype == "compiled":
             assert parent_module_name is None
-            completed_module_definition = complete(module_definition)
+            completed_module_definition = complete(module_definition, compilers)
             completed_checksum = get_dict_hash(completed_module_definition)
             mod = build_compiled_module(
               full_module_name, completed_checksum, completed_module_definition,
@@ -257,6 +258,7 @@ def build_module(module_definition, module_workspace={}, *,
 
 def build_all_modules(
     modules_to_build, module_workspace, *, 
+    compilers, languages,
     mtype=None, parent_module_name=None,
     module_error_name=None,
     absolute_package_name=None
@@ -282,6 +284,7 @@ def build_all_modules(
                     modname4 = modname2
                 mod = build_module(
                     module_def, module_workspace, 
+                    compilers=compilers, languages=languages,
                     mtype=mtype, parent_module_name=modname2,
                     module_error_name=modname3
                 )

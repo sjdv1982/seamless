@@ -152,7 +152,14 @@ class ReactorUpdateTask(Task):
                 values[pinname] = value
 
         module_workspace = {}
-        build_all_modules(modules_to_build, module_workspace)
+        root = reactor._root()
+        compilers = getattr(root,"_compilers", default_compilers)
+        languages = getattr(root,"_languages", default_languages)
+        build_all_modules(
+            modules_to_build, module_workspace,
+            compilers=compilers,
+            languages=languages
+        )
         rtreactor.module_workspace.update(module_workspace)
         rtreactor.values.update(values)
         rtreactor.updated = updated
@@ -243,3 +250,4 @@ from .checksum import CalculateChecksumTask
 from .get_buffer import GetBufferTask
 from ...protocol.validate_subcelltype import validate_subcelltype
 from ...build_module import build_all_modules
+from ....compiler import compilers as default_compilers, languages as default_languages

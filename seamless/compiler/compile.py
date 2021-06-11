@@ -1,5 +1,4 @@
 
-from . import compilers, languages
 from .. import subprocess
 
 import numpy as np
@@ -106,7 +105,7 @@ def compile(binary_objects, build_dir, *,
         stderr = ""
     return success, result, source_files, stderr
 
-def complete(module_definition):
+def complete(module_definition, compilers):
     from silk import Silk
     assert module_definition["type"] == "compiled"
     assert "public_header" in module_definition

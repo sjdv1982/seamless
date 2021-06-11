@@ -6,12 +6,6 @@ Linking options etc. are passed through.
 This dict can be sent to a transformer or reactor over a binarymodule pin
 
 Current state: stub.
-Fleshed-out spec is in:
-    TODO.md, section Modules, compiled workers, and interpreted workers
-
-TODO: Make this a high-level library of transformers
-For now, to dynamically add a language/compiler,
-  modify the languages/compilers dicts
 """
 
 import os
