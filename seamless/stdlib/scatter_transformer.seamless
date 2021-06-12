@@ -1,0 +1,36 @@
+{
+  "connections": [],
+  "lib": [],
+  "nodes": [
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "dca5ce76f6d1ea6bee27c1470958a6f3ecaa71012b2d514d0fdd2e91f3090c44"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "constructor_code"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "91d474193149820ddbde5e924b531e1aefe2ce7aafd5f3cecdb877f78892c1f9",
+        "buffer": "91d474193149820ddbde5e924b531e1aefe2ce7aafd5f3cecdb877f78892c1f9",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "value": "91d474193149820ddbde5e924b531e1aefe2ce7aafd5f3cecdb877f78892c1f9"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "constructor_params"
+      ],
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

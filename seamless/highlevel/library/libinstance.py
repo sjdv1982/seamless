@@ -83,7 +83,7 @@ class LibInstance:
                     msg = "'%s' must be Context, not '%s'"
                     raise TypeError(msg % (argname, type(value)))
                 value = SubContext(parent, argvalue).get_graph()
-            else: # par["type"] == "celldict":
+            elif par["type"] == "celldict":
                 value = {}
                 for k,v in argvalue.items():
                     if isinstance(v, list):
@@ -105,6 +105,22 @@ class LibInstance:
                             connection_wrapper, overlay_node, cellpath
                         )
                     value[k] = vv
+            elif par["type"] == "kwargs":
+                value = {}
+                for k,v0 in argvalue.items():
+                    vtype, v = v0
+                    if vtype == "cell":
+                        if isinstance(v, list):
+                            v = tuple(v)
+                        vv = parent._children.get(v)
+                        if isinstance(vv, SubCell) or not isinstance(vv, Cell):
+                            msg = "%s['%s'] must be Cell, not '%s'"
+                            raise TypeError(msg % (argname, k, type(vv)))
+                        value[k] = "cell", InputCellWrapper(connection_wrapper, vv)
+                    else: # value
+                        value[k] = "value", v
+            else:
+                raise NotImplementedError(par["type"])                    
             namespace[argname] = value
         libctx = StaticContext.from_graph(graph, manager=parent._manager)
         namespace["libctx"] = libctx
@@ -197,11 +213,22 @@ class LibInstance:
         lib = self.get_lib()
         params = lib["params"]
         if attr not in params:
-            raise AttributeError(attr)
-        par = params[attr]
-        if par["io"] == "output":
-            raise AttributeError("Reverse assignment for '{}'".format(attr))
-        arguments[attr] = parse_argument(attr, value, params[attr])
+            for parname in params:
+                par = params[parname]
+                if par["io"] != "input":
+                    continue
+                if par["type"] == "kwargs":
+                    if parname not in arguments:
+                        arguments[parname] = {}
+                    arguments[parname][attr] = parse_argument(attr, value, params[parname])
+                    break
+            else:
+                raise AttributeError(attr)
+        else:
+            par = params[attr]
+            if par["io"] == "output":
+                raise AttributeError("Reverse assignment for '{}'".format(attr))
+            arguments[attr] = parse_argument(attr, value, params[attr])
         parent = self._parent()
         parent._translate()
 

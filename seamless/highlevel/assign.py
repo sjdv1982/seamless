@@ -528,6 +528,7 @@ def assign(ctx, path, value):
             if isinstance(target, Cell):
                 _remove_independent_mountshares(target._get_hcell())
             assign_connection(ctx, value._path, path, True)
+            ctx._translate()
     elif isinstance(value, LibInstance):
         assign_libinstance(ctx, path, value)
         ctx._translate()
@@ -546,7 +547,6 @@ def assign(ctx, path, value):
             Cell(parent=ctx, path=path) #inserts itself as child
             node = get_new_cell(path)
             ctx._graph[0][path] = node
-        #TODO: break links and connections from ctx._children[path]
         assign_connection(ctx, value._virtual_path, path, False)
         check_libinstance_subcontext_binding(ctx, path)
         ctx._translate()

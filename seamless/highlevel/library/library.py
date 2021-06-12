@@ -8,13 +8,13 @@ def validate_params(params):
         return None
     result = {}
     for k, v in params.items():
-        assert k not in ("code", "ctx")
+        assert k not in ("ctx",)
         if isinstance(v, str):
             v = {"type": v}
         type_ = v.get("type", "value")
-        assert type_ in ("value", "cell", "celldict", "context"), (k, type_)
+        assert type_ in ("value", "cell", "celldict", "context", "kwargs"), (k, type_)
         io = v.get("io", "input")
-        if type_ in ("value", "context"):
+        if type_ in ("value", "context", "kwargs"):
             assert io == "input", (k, io)
         if type_ in ("cell", "celldict"):
             assert io in ("input", "output", "edit"), (k, io)
