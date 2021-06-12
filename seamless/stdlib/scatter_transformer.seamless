@@ -5,7 +5,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "dca5ce76f6d1ea6bee27c1470958a6f3ecaa71012b2d514d0fdd2e91f3090c44"
+        "value": "7d6fb20dea2b5ea1024d49d9d4e8108aaae221d3d0761711d38ff52717356a3f"
       },
       "datatype": "mixed",
       "language": "python",
@@ -17,15 +17,27 @@
     {
       "celltype": "structured",
       "checksum": {
-        "auth": "91d474193149820ddbde5e924b531e1aefe2ce7aafd5f3cecdb877f78892c1f9",
-        "buffer": "91d474193149820ddbde5e924b531e1aefe2ce7aafd5f3cecdb877f78892c1f9",
+        "auth": "239834434cffa2369ab8a9ded02ba6d663c1036f9d56931a7c1be3720fbf2bd3",
+        "buffer": "239834434cffa2369ab8a9ded02ba6d663c1036f9d56931a7c1be3720fbf2bd3",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "91d474193149820ddbde5e924b531e1aefe2ce7aafd5f3cecdb877f78892c1f9"
+        "value": "239834434cffa2369ab8a9ded02ba6d663c1036f9d56931a7c1be3720fbf2bd3"
       },
       "datatype": "mixed",
       "hash_pattern": null,
       "path": [
         "constructor_params"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "32716d29a6c42a06c5882223d55afa4283152f6b15dac3657783e629c532c236"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "path": [
+        "macro_code"
       ],
       "type": "cell"
     }
