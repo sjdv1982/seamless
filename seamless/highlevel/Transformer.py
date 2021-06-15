@@ -185,7 +185,11 @@ class Transformer(Base):
 
     def clear_exception(self):
         tf = self._get_tf(force=True)
-        tf.tf.clear_exception()
+        htf = self._get_htf()
+        if htf["compiled"]:
+            tf.tf.executor.clear_exception()
+        else:
+            tf.tf.clear_exception()
 
     @property
     def hash_pattern(self):
@@ -213,13 +217,14 @@ class Transformer(Base):
         return self._get_htf()["language"]
     @language.setter
     def language(self, value):
-        from ..compiler import find_language
-        lang, language, extension = find_language(value)
+        parent = self._parent()
+        lang, language, extension = parent.environment.find_language(value)
         compiled = (language["mode"] == "compiled")
         htf = self._get_htf()
         old_language = htf.get("language")
         htf["language"] = lang
         old_compiled = htf.get("compiled", False)
+        untranslate = False
         if old_compiled != compiled:
             htf["UNTRANSLATED"] = True
         elif (old_language in ("bash", "docker")) != (language in ("bash", "docker")):

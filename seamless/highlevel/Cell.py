@@ -786,7 +786,8 @@ class Cell(Base):
         celltype = hcell["celltype"]
         if celltype != "code":
             return self._setattr("language", value)
-        lang, language, extension = find_language(value)
+        parent = self._parent()
+        lang, language, extension = parent.environment.find_language(value)
         old_language = hcell.get("language")
         hcell["language"] = lang
         hcell["file_extension"] = extension

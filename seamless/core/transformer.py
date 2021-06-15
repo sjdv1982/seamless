@@ -17,6 +17,7 @@ class Transformer(Worker):
     _prelim_result = False
     _progress = 0.0
     _env = None
+    _exception_to_clear = False
     debug = False
     python_debug = False
 

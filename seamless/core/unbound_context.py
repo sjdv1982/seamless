@@ -138,6 +138,8 @@ class UnboundContext(SeamlessBase):
     _bound = None
     _context = None
     _realmanager = None
+    _compilers = None
+    _languages = None
     _root_highlevel_context = lambda self: None
     _synth_highlevel_context = lambda self: None
 
@@ -424,6 +426,10 @@ class UnboundContext(SeamlessBase):
     def _bind(self, ctx):
         from .context import Context
         from .macro import Path
+
+        ctx._compilers = self._compilers
+        ctx._languages = self._languages
+
         pseudo_connections = getattr(self, "_pseudo_connections", None)
         highlevel_context = self._root_._root_highlevel_context()
         set_pseudo_connections(highlevel_context, ctx.path, pseudo_connections)

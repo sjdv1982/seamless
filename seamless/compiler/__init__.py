@@ -20,7 +20,9 @@ with open(languages_cson_file) as f:
     languages_cson = f.read()
 languages = cson2json(languages_cson)
 
-def find_language(lang):
+def find_language(lang, languages=None):
+    if languages is None:
+        languages = globals()["languages"]
     lang2 = lang
     if lang == "docker":
         lang2 = "bash"
@@ -40,7 +42,7 @@ def find_language(lang):
                 if lang2 in ext:
                     break
         else:
-            raise KeyError(lang2) from None
+            raise KeyError("Unknown language: {}".format(lang2)) from None
         extension = lang2
     return lang, language, extension
 

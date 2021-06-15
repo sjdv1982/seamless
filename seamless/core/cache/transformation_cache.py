@@ -75,6 +75,8 @@ def tf_get_buffer(transformation):
     assert isinstance(transformation, dict)
     d = {}
     for k in transformation:
+        if k in ("__compilers__", "__languages__"):
+            continue
         v = transformation[k]
         if k == "__output__":
             d[k] = v
@@ -189,6 +191,11 @@ class TransformationCache:
         cachemanager = transformer._get_manager().cachemanager
         outputname, celltype, subcelltype = outputpin
         transformation = {"__output__": outputpin}
+        root = transformer._root()
+        if root._compilers is not None:
+            transformation["__compilers__"] = root._compilers
+        if root._languages is not None:
+            transformation["__languages__"] = root._languages
         if transformer.env is not None:
             envbuf = await serialize(transformer.env, "plain")
             env_checksum = get_hash(envbuf)
@@ -261,6 +268,8 @@ class TransformationCache:
                 result_checksum, prelim = self.transformation_results[tf_checksum]
                 buffer_cache.incref(result_checksum, False)
             for pinname in transformation:
+                if pinname in ("__compilers__", "__languages__"):
+                    continue
                 if pinname == "__output__":
                     continue
                 if pinname == "__env__":
@@ -279,6 +288,9 @@ class TransformationCache:
             if tf_checksum not in self.python_debug:
                 self.python_debug.add(tf_checksum)
                 self.clear_exception(transformer)
+        if transformer._exception_to_clear:
+            self.clear_exception(tf_checksum=tf_checksum)
+            transformer._exception_to_clear = False
 
         if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
             old_tf_checksum = None
@@ -413,6 +425,8 @@ class TransformationCache:
         python_debug = tf_checksum in self.python_debug
         semantic_cache = {}
         for k,v in transformation.items():
+            if k in ("__compilers__", "__languages__"):
+                continue
             if k == "__output__":
                 continue
             if k == "__env__":
@@ -752,6 +766,7 @@ class TransformationCache:
             assert tf_checksum is None
             tf_checksum = self.transformer_to_transformations.get(transformer)
         if tf_checksum is None:
+            transformer._exception_to_clear = True
             return
         exc = self.transformation_exceptions.pop(tf_checksum, None)
         if exc is None:

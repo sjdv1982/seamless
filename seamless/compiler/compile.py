@@ -105,7 +105,7 @@ def compile(binary_objects, build_dir, *,
         stderr = ""
     return success, result, source_files, stderr
 
-def complete(module_definition, compilers):
+def complete(module_definition, compilers, languages):
     from silk import Silk
     assert module_definition["type"] == "compiled"
     assert "public_header" in module_definition
@@ -125,7 +125,7 @@ def complete(module_definition, compilers):
             raise Exception("Binary Module, object '%s': no language defined" % objectname)
         lang = object_["language"]
         extension = object_.get("extension")
-        _, language, extension2 = find_language(lang)
+        _, language, extension2 = find_language(lang, languages)
         if extension is None and extension2 is not None:
             extension = extension2
         if extension is None:
@@ -135,11 +135,13 @@ def complete(module_definition, compilers):
         o["extension"] = extension
 
         compiler_name = object_.get("compiler", language.get("compiler"))
-        assert compiler_name is not None, lang
+        if compiler_name is None:
+            raise ValueError("No compiler defined for compiled language '{}'".format(lang))
         o["compiler"] = compiler_name
         compiler = compilers[compiler_name]
         target = object_.get("target", overall_target)
-        assert target in ("release", "debug", "profile"), target
+        if target not in ("release", "debug", "profile"):
+            raise ValueError(target)
         o["target"] = target
         std_options = object_.get("options", compiler["options"])
         profile_options = object_.get("profile_options", compiler["profile_options"])

@@ -32,7 +32,7 @@ validate_XXX return a tuple
 - Element 1: error message
 """
 
-async def validate_image(environment):
+def validate_image(environment):
     image = environment.get("image")
     if image is None:
         return None, None
@@ -49,14 +49,14 @@ async def validate_image(environment):
         err = "Cannot execute code locally: current image is '{}', whereas '{}' is required"
         return None, err.format(DOCKER_IMAGE, image["name"])
 
-async def validate_capabilities(environment):
+def validate_capabilities(environment):
     capabilities = environment.get("capabilities")
     if capabilities is None:
         return None, None
     return None, "Not implemented"
 
 
-async def validate_conda_environment(environment):
+def validate_conda_environment(environment):
     condenv = environment.get("conda")
     if condenv is None:
         return None, None
@@ -77,6 +77,8 @@ async def validate_conda_environment(environment):
                     continue
                 if ll[0] != ms.name:
                     continue
+                if ms.version is None:
+                    break
                 if ms.version.match(ll[1]):                
                     break
                 else:
@@ -100,12 +102,12 @@ power_checkers = {
     "image": check_docker_power,
 }
 
-async def validate_environment(environment):
+def validate_environment(environment):
     if not isinstance(environment, dict):
         raise TypeError("Malformed environment")
-    result_conda = await validate_conda_environment(environment)
-    result_capabilities = await validate_capabilities(environment)
-    result_image = await validate_image(environment)
+    result_conda = validate_conda_environment(environment)
+    result_capabilities = validate_capabilities(environment)
+    result_image = validate_image(environment)
     powers = environment.get("powers", [])
     
     for power in powers:

@@ -17,6 +17,7 @@ from .build_module import build_all_modules
 from ..compiler import compilers as default_compilers, languages as default_languages
 
 import logging
+
 logger = logging.getLogger("seamless")
 
 forked_processes = weakref.WeakKeyDictionary()
@@ -116,6 +117,8 @@ class TransformationJob:
         self.codename = codename
         assert "code" in transformation, transformation.keys()
         for pinname in transformation:
+            if pinname in ("__compilers__", "__languages__"):
+                continue
             if pinname != "__output__":
                 assert transformation[pinname][2] is not None, pinname
         outputpin = transformation["__output__"]
@@ -379,7 +382,7 @@ class TransformationJob:
             env = get_buffer(env)
             env = json.loads(env.decode())
             assert env is not None
-            await validate_environment(env)
+            validate_environment(env)
             if "powers" in env and "ipython" in env["powers"]:
                 with_ipython_kernel = True
         values = {}
@@ -394,6 +397,8 @@ class TransformationJob:
         namespace["PINS"] = {}
         modules_to_build = {}
         for pinname in sorted(self.transformation.keys()):
+            if pinname in ("__compilers__", "__languages__"):
+                continue
             if pinname == "__output__":
                 continue
             if pinname == "__env__":
