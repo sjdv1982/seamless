@@ -13,5 +13,6 @@ def get_hash(content, hex=False):
     return result
 
 def get_dict_hash(d, hex=False):
+    """This function is compatible with the checksum of a "plain" cell"""
     content = json.dumps(d, sort_keys=True, indent=2) + "\n"
     return get_hash(content,hex=hex)
