@@ -6,6 +6,10 @@
 {
   #GNU compiler collection; no "location"; use `which` or implicit shell execution
   "gcc": {
+      "mode": "object",   # compiles source files into .o files one by one
+                          # alternatives:  
+                          # - "archive", that compiles each source file into an .a file
+                          # - "package", that compiles *all* source files into a single .a file
       "compile_flag": "-c"
       "output_flag": "-o"
       "options": ["-O3", "-ffast-math", "-march=native", "-fPIC"],
@@ -14,6 +18,7 @@
       "profile_options": ["-p", "-g"],
   }
   "g++": {
+      "mode": "object",   
       "compile_flag": "-c"
       "output_flag": "-o"
       "options": ["-O3", "-ffast-math", "-march=native", "-fPIC"],
@@ -22,6 +27,7 @@
       "profile_options": ["-p", "-g"],
   }
   "gfortran": {
+      "mode": "object",  
       "compile_flag": "-c"
       "output_flag": "-o"
       "options": ["-O3", "-fno-automatic", "-fcray-pointer", "-ffast-math", "-march=native", "-fPIC"],

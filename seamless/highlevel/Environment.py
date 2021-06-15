@@ -144,7 +144,7 @@ class Environment:
                 raise ValueError(result_conda[1])
         if self._which is not None:
             for binary in self._which:
-                result = subprocess.run("which " +  binary, shell=True)
+                result = subprocess.run("which " +  binary, shell=True, capture_output=True)
                 if result.returncode:
                     raise ValueError("which: '{}' is not available in command line path'".format(binary))
         languages = cson2json(self._languages)

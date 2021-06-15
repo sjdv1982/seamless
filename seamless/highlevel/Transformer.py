@@ -674,6 +674,34 @@ class Transformer(Base):
         attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
         return SelfWrapper(self, attributelist)
 
+    @property
+    def link_options(self):
+        """Linker options for compiled modules
+        They are a list of strings, for example:
+        ["-lm", "-lgfortran", "-lcudart"]
+        """
+        htf = self._get_htf()
+        if not htf["compiled"]:
+            raise AttributeError("Only for compiled transformers")
+        return deepcopy(htf.get("link_options", []))
+
+    @link_options.setter
+    def link_options(self, link_options):
+        htf = self._get_htf()
+        if not htf["compiled"]:
+            raise AttributeError("Only for compiled transformers")
+        ok = True
+        if not isinstance(link_options, list):
+            ok = False
+        else:
+            for opt in link_options:
+                if not isinstance(opt, str):
+                    ok = False
+        if not ok:
+            raise TypeError("link_options must be a list of strings")
+        htf["link_options"] = deepcopy(link_options)
+        self._parent()._translate()
+
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)

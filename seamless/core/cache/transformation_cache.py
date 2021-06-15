@@ -371,7 +371,7 @@ class TransformationCache:
         if not dummy:
             self.transformations_to_transformers.pop(tf_checksum)
         for pinname in transformation:
-            if pinname == "__output__":
+            if pinname in ("__output__", "__languages__", "__compilers__"):
                 continue
             if pinname == "__env__":
                 env_checksum = transformation["__env__"]
