@@ -113,4 +113,16 @@ share-pdb-docker.seamless/.zip: to test using:
       --add-zip /seamless/seamless/graphs/status-visualization.zip
     In that case, open also http://localhost:5813/status/index.html
 plotting.py
+environment.py
+   Can be run automatically in a standard container,
+    and will exit at some point because Rust is not installed
+    (see test-outputs/environment2.out)
+  Otherwise, install Rust in the container and then run the test.
+  This will print 29, 34, 34 at the end
+environment2.py
+   Can be run automatically in a standard container,
+    and will exit at some point because Go is not installed
+    (see test-outputs/environment2.out)
+  Otherwise, install Go in the container and then run the test.
+  This will print 2029, 2096 at the end, and then wait for a debugger
 
