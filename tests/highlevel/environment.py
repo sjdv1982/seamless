@@ -142,6 +142,7 @@ except ValueError:
     exit(0)
 
 # If we get here, then everything should be fine
+ctx.compute()
 print(ctx.tf.exception)  # None
 print(ctx.tf.result.value) # 29
 

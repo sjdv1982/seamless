@@ -109,7 +109,7 @@ ctx.tf.clear_exception()
 ctx.compute()
 
 # Now we get either:
-# 1. The compiler error mentioned above (signature mismatch)
+# 1. The compiler error mentioned above (conflicting types for "transform")
 # or:
 # 2. A complaint that 'go' is not available
 print(ctx.tf.exception)
