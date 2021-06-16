@@ -1,6 +1,6 @@
 FROM jupyter/scipy-notebook@sha256:a891adee079e8c3eee54fef732cd282fe6b06c5fabe1948b9b11e07144526865
 LABEL author="Sjoerd de Vries <sjoerd.de-vries@inserm.fr>"
-LABEL version="0.6.1"
+LABEL version="0.6.2"
 USER root
 COPY requirements.txt requirements.txt
 RUN apt update && apt install -y gfortran curl gdb iputils-ping redis-tools apt-transport-https ca-certificates gnupg-agent software-properties-common
