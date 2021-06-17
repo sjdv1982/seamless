@@ -34,7 +34,7 @@ class Transformer(Worker):
             param = transformer_params[p]
             self._transformer_params[p] = param
             pin = None
-            io, celltype, subcelltype = None, None, None
+            io, celltype, subcelltype, as_ = None, None, None, None
             if isinstance(param, str):
                 io = param
             elif isinstance(param, (list, tuple)):
@@ -49,12 +49,13 @@ class Transformer(Worker):
                 io = param["io"]
                 celltype = param.get("celltype", celltype)
                 subcelltype = param.get("subcelltype", subcelltype)
+                as_ = param.get("as", None)
             else:
                 raise ValueError((p, param))
             if io == "input":
-                pin = InputPin(self, p, celltype, subcelltype)
+                pin = InputPin(self, p, celltype, subcelltype, as_=as_)
             elif io == "output":
-                pin = OutputPin(self, p, celltype, subcelltype)
+                pin = OutputPin(self, p, celltype, subcelltype, as_=as_)
                 assert self._output_name is None  # can have only one output
                 self._output_name = p
             else:

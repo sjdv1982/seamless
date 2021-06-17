@@ -2,7 +2,7 @@ import linecache
 import functools
 from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda, stmt as Statement
 
-@functools.lru_cache(maxsize=1000)
+#@functools.lru_cache(maxsize=1000) disable LRU cache, because linecache identifiers are degenerate
 def cached_compile(code, identifier, mode="exec", flags=None, \
   dont_inherit=0):
     if flags is not None:

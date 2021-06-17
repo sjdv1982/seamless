@@ -345,7 +345,8 @@ class CommunionServer:
                     if buffer is not None:
                         buffer_cache.cache_buffer(remote_pins[n][0], buffer)
             await tcache.incref_transformation(
-                transformation, transformer
+                transformation, transformer,
+                transformation_build_exception=None
             )
         except Exception as exc:
             tcache.transformation_exceptions[transformer.tf_checksum] = exc

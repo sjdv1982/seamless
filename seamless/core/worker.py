@@ -58,13 +58,14 @@ class Worker(SeamlessBase):
 from .cell import celltypes
 
 class PinBase(SeamlessBase):
-    def __init__(self, worker, name, celltype, subcelltype=None):
+    def __init__(self, worker, name, celltype, subcelltype=None, *, as_=None):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
         assert celltype is None or celltype in celltypes, (celltype, celltypes)
         self.name = name
         self.celltype = celltype
         self.subcelltype = subcelltype
+        self.as_ = as_
 
     @property
     def path(self):
@@ -224,8 +225,8 @@ class EditPin(EditPinBase):
 
     io = "edit"
 
-    def __init__(self, worker, name, celltype, subcelltype=None, *, must_be_defined=False):
-        super().__init__(worker, name, celltype, subcelltype=subcelltype)
+    def __init__(self, worker, name, celltype, subcelltype=None, *, as_=None, must_be_defined=False):
+        super().__init__(worker, name, celltype, subcelltype=subcelltype, as_=as_)
         self._must_be_defined = must_be_defined
 
     @property

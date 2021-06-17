@@ -109,12 +109,17 @@ class MacroUpdateTask(Task):
             value = await deserialize(buffer, expression_checksum, celltype, True)
             if value is None:
                 raise CacheMissError(pinname)
+            pinname2 = pinname
+            pin = macro._pins[pinname]
+            if pin.as_ is not None:
+                pinname2 = pin.as_
+
             if pinname == "code":
                 code = value
             elif (celltype, subcelltype) == ("plain", "module"):
-                modules_to_build[pinname] = value
+                modules_to_build[pinname2] = value
             else:
-                values[pinname] = value
+                values[pinname2] = value
 
         module_workspace = {}
         

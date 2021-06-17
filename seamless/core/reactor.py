@@ -27,7 +27,7 @@ class Reactor(Worker):
             param = reactor_params[p]
             self._reactor_params[p] = param
             pin = None
-            io, celltype, subcelltype = None, None, None
+            io, celltype, subcelltype, as_ = None, None, None, None
             must_be_defined = False if io == "edit" else True
             if isinstance(param, str):
                 io = param
@@ -43,19 +43,20 @@ class Reactor(Worker):
                 io = param["io"]
                 celltype = param.get("celltype", celltype)
                 subcelltype = param.get("subcelltype", subcelltype)
+                as_ = param.get("as", None)
                 must_be_defined = param.get("must_be_defined", must_be_defined)
             else:
                 raise ValueError((p, param))
             if io == "input":
                 if not must_be_defined:
                     raise ValueError("pin '%s': must_be_defined must be true for input pins" % p)
-                pin = InputPin(self, p, celltype, subcelltype)
+                pin = InputPin(self, p, celltype, subcelltype, as_=as_)
             elif io == "output":
                 if not must_be_defined:
                     raise ValueError("pin '%s': must_be_defined must be true for output pins" % p)
-                pin = OutputPin(self, p, celltype, subcelltype)
+                pin = OutputPin(self, p, celltype, subcelltype, as_=as_)
             elif io == "edit":
-                pin = EditPin(self, p, celltype, subcelltype, must_be_defined=must_be_defined)
+                pin = EditPin(self, p, celltype, subcelltype, must_be_defined=must_be_defined, as_=as_)
             else:
                 raise ValueError(io)
 

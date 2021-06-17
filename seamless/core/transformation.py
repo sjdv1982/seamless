@@ -117,7 +117,7 @@ class TransformationJob:
         self.codename = codename
         assert "code" in transformation, transformation.keys()
         for pinname in transformation:
-            if pinname in ("__compilers__", "__languages__"):
+            if pinname in ("__compilers__", "__languages__", "__as__"):
                 continue
             if pinname != "__output__":
                 assert transformation[pinname][2] is not None, pinname
@@ -396,12 +396,11 @@ class TransformationJob:
         lock = await acquire_lock(self.checksum)
         namespace["PINS"] = {}
         modules_to_build = {}
+        as_ = self.transformation.get("__as__", {})
         for pinname in sorted(self.transformation.keys()):
-            if pinname in ("__compilers__", "__languages__"):
+            if pinname in ("__compilers__", "__languages__", "__env__", "__as__"):
                 continue
             if pinname == "__output__":
-                continue
-            if pinname == "__env__":
                 continue
             celltype, subcelltype, sem_checksum = self.transformation[pinname]
             if syntactic_is_semantic(celltype, subcelltype):
@@ -428,11 +427,12 @@ class TransformationJob:
             elif (celltype, subcelltype) == ("plain", "module"):
                 modules_to_build[pinname] = value
             else:
-                namespace["PINS"][pinname] = value
-                namespace[pinname] = value
-                inputs.append(pinname)
+                pinname_as = as_.get(pinname, pinname)
+                namespace["PINS"][pinname_as] = value
+                namespace[pinname_as] = value
+                inputs.append(pinname_as)
         for pinname in self.transformation:
-            if pinname in ("__output__", "__env__", "__compilers__", "__languages__"):
+            if pinname in ("__output__", "__env__", "__compilers__", "__languages__", "__as__"):
                 continue
             celltype, _, _ = self.transformation[pinname]
             if celltype != "mixed":
