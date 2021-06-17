@@ -16,6 +16,7 @@ from .SchemaWrapper import SchemaWrapper
 from silk import Silk
 from .compiled import CompiledObjectDict
 from silk.mixed.get_form import get_form
+from .Environment import Environment
 
 default_pin = {
   "celltype": "mixed",
@@ -81,8 +82,15 @@ class Transformer(Base):
             node = self._get_htf()
         except:
             node = None
+        self._environment = Environment(self)
         if node is None:
             htf = new_transformer(parent, path, code, pins, hash_pattern)
+        elif "environment" in node:
+            self._environment._load(node["environment"])
+
+    @property
+    def environment(self):
+        return self._environment
 
     @property
     def RESULT(self):
@@ -562,7 +570,7 @@ class Transformer(Base):
         else:
             attrs = (
                 htf["INPUT"], "code",
-                "tf",
+                "ipy_template_code", "apply_ipy_template", "ipy_code", "tf",
                 htf["RESULT"]
             )
 
@@ -583,6 +591,13 @@ class Transformer(Base):
                 if len(exc):
                     return exc
                 curr_exc = getattr(self, k).exception
+            elif k in ("ipy_template_code", "apply_ipy_template", "ipy_code"):
+                tf2 = self._get_tf(force=True)
+                try:
+                    item = getattr(tf2, k)
+                except AttributeError:                    
+                    continue
+                curr_exc = item.exception
             else:
                 curr_exc = getattr(tf, k).exception
             if curr_exc is not None:
@@ -639,8 +654,8 @@ class Transformer(Base):
             )
         else:
             attrs = (
-                htf["INPUT"], "code",
-                "tf",
+                htf["INPUT"], "code", 
+                "ipy_template_code", "apply_ipy_template", "ipy_code", "tf",
                 htf["RESULT"]
             )
         for k in attrs:
@@ -653,6 +668,13 @@ class Transformer(Base):
                 status = self._get_tf(force=True).code.status
             elif k == "tf":
                 status = self._get_tf(force=True).tf.status
+            elif k in ("ipy_template_code", "apply_ipy_template", "ipy_code"):
+                tf2 = self._get_tf(force=True)
+                try:
+                    item = getattr(tf2, k)
+                except AttributeError:                    
+                    continue
+                status = item.status
             else:
                 tf = self._get_tf(force=True).tf
                 status = getattr(tf, k).status

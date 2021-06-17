@@ -1,9 +1,18 @@
-from seamless.core import cell, \
+from numpy import e
+from ..core import cell, \
  transformer, context, StructuredCell
 
-def translate_py_transformer(node, root, namespace, inchannels, outchannels):
+def translate_py_transformer(
+        node, root, namespace, inchannels, outchannels,
+        *, ipy_template
+    ):
     from .translate import set_structured_cell_from_checksum
+    from ..highlevel.Environment import Environment
     #TODO: simple translation, without a structured cell
+
+    env0 = Environment(None)
+    env0._load(node.get("environment"))
+    env = env0._to_lowlevel()
 
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
@@ -63,14 +72,53 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         ctx.tf.python_debug = True
     if node.get("compiled_debug"):
         ctx.tf.debug = True
-    if node["language"] == "ipython":
+    if node["language"] == "ipython" or ipy_template is not None:
+        if env is None:
+            env = {}
+        env["powers"] = ["ipython"]
+    
+    if ipy_template is not None:
+        ctx.code = cell("text")
+    elif node["language"] == "ipython":
         ctx.code = cell("ipython")
-    else:
+    elif node["language"] == "python":
         ctx.code = cell("transformer")
+    else:
+        raise ValueError(node["language"]) # shouldn't happen
+
     if "code" in mount:
         ctx.code.mount(**mount["code"])
 
-    ctx.code.connect(ctx.tf.code)
+    if ipy_template is not None:        
+        ipy_template_params = {
+            "code_": {
+                "io": "input",
+                "celltype": "text",
+                "as": "code",
+            },
+            "parameters": {
+                "io": "input",
+                "celltype": "plain",
+            },
+            "result": {
+                "io": "output",
+                "celltype": "ipython",
+            }            
+        }
+        ctx.apply_ipy_template = transformer(ipy_template_params)
+        ctx.ipy_template_code = cell("transformer").set(ipy_template[0])
+        ctx.ipy_template_code.connect(ctx.apply_ipy_template.code)
+        par = ipy_template[1]
+        if par is None:
+            par = {}
+        ctx.apply_ipy_template.parameters.cell().set(par)
+        ctx.code.connect(ctx.apply_ipy_template.code_)
+        ctx.ipy_code = cell("ipython")
+        ctx.apply_ipy_template.result.connect(ctx.ipy_code)
+        ctx.ipy_code.connect(ctx.tf.code)
+    else:
+        ctx.code.connect(ctx.tf.code)
+    
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
@@ -119,6 +167,9 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         k2 = "value" if k == "result" else k[len("result_"):]
         result_checksum[k2] = checksum[k]
     set_structured_cell_from_checksum(result, result_checksum)
+
+    if env is not None:
+        ctx.tf.env = env
 
     namespace[node["path"], "target"] = inp, node
     namespace[node["path"], "source"] = result, node

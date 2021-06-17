@@ -1,0 +1,47 @@
+{
+  "connections": [],
+  "environment": {
+    "ipy_templates": {
+      "cython": {
+        "code": "def wrap_cython(code, parameters):    \n    tmpl = \"\"\"\nget_ipython().run_line_magic(\"load_ext\", \"Cython\")\nget_ipython().run_cell_magic(\"cython\", \"\", {})\nif \"transform\" not in globals():\n    raise Exception(\"Cython code must define a function 'transform'\")\nresult = transform(**PINS)  \n\"\"\"\n    return tmpl.format(repr(code))\n"
+      }
+    },
+    "languages": "{\n  \"bash\": {\n    \"extension\": \"sh\",\n    \"mode\": \"interpreted\"\n  },\n  \"c\": {\n    \"compiler\": \"gcc\",\n    \"extension\": \"c\",\n    \"mode\": \"compiled\"\n  },\n  \"c++\": {\n    \"compiler\": \"g++\",\n    \"extension\": \"cpp\",\n    \"mode\": \"compiled\"\n  },\n  \"cython\": {\n    \"extension\": \"pyx\",\n    \"mode\": \"interpreted\"\n  },\n  \"fortran\": {\n    \"compiler\": \"gfortran\",\n    \"extension\": [\n      \"f\",\n      \"f90\"\n    ],\n    \"mode\": \"compiled\"\n  },\n  \"ipython\": {\n    \"extension\": \"ipy\",\n    \"mode\": \"interpreted\"\n  },\n  \"python\": {\n    \"extension\": \"py\",\n    \"mode\": \"interpreted\"\n  }\n}"
+  },
+  "lib": [],
+  "nodes": [
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "8ca94e9e4c41a73c7e4425f9fd7cf2c063fd52086d1c4d71cb1757fca724fc7c",
+        "input": "35994d6fc2bb07548700db45ad6ec48ebfc3120e88422f74b3b07baf13eba2ce",
+        "input_auth": "35994d6fc2bb07548700db45ad6ec48ebfc3120e88422f74b3b07baf13eba2ce",
+        "input_buffer": "35994d6fc2bb07548700db45ad6ec48ebfc3120e88422f74b3b07baf13eba2ce",
+        "result": "408975cae81f477efd4a63fe5d30ab888926c86c725fd1af7e9f1be2a0fbca87",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+      },
+      "compiled": false,
+      "debug": false,
+      "file_extension": "pyx",
+      "hash_pattern": {
+        "*": "#"
+      },
+      "language": "cython",
+      "path": [
+        "tf"
+      ],
+      "pins": {
+        "a": {
+          "celltype": "mixed"
+        }
+      },
+      "type": "transformer"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

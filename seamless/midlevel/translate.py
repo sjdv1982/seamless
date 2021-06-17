@@ -272,7 +272,7 @@ def import_before_translate(graph):
             elif node["language"] == "docker":
                 from .translate_docker_transformer import translate_docker_transformer
 
-def translate(graph, ctx):
+def translate(graph, ctx, environment):
     from ..core.macro_mode import curr_macro
     if curr_macro() is None:
         print_info("*" * 30 + "TRANSLATE" + "*" * 30)
@@ -302,17 +302,31 @@ def translate(graph, ctx):
         path = node["path"]
         if t == "transformer":
             inchannels, outchannels = find_channels(node["path"], connection_paths)
+            language = node["language"]
             if node["compiled"]:
                 from .translate_compiled_transformer import translate_compiled_transformer
                 translate_compiled_transformer(node, ctx, namespace, inchannels, outchannels)
-            elif node["language"] in ("python", "ipython"):
-                translate_py_transformer(node, ctx, namespace, inchannels, outchannels)
-            elif node["language"] == "bash":
+            elif language == "bash":
                 translate_bash_transformer(node, ctx, namespace, inchannels, outchannels)
-            elif node["language"] == "docker":
+            elif language == "docker":
                 translate_docker_transformer(node, ctx, namespace, inchannels, outchannels)
             else:
-                raise NotImplementedError(node["language"])
+                ipy_template = None
+                if language not in ("python", "ipython"):                    
+                    ok = False                    
+                    if environment is not None:
+                        try:
+                            ipy_template = environment.get_ipy_template(language)
+                            ok = True
+                            language = "ipython"
+                        except KeyError:
+                            pass
+                    if not ok:
+                        raise NotImplementedError(language)
+                translate_py_transformer(
+                    node, ctx, namespace, inchannels, outchannels,
+                    ipy_template=ipy_template
+                )                
         elif t == "macro":
             if node["language"]  != "python":
                 raise NotImplementedError(node["language"])

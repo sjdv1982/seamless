@@ -201,6 +201,8 @@ class Context(Base):
             path = tuple(l["path"])
             l["path"] = path
             self._set_lib(path, l)
+        env = graph.get("environment", None)
+        self.environment._load(env)
         self._translate()
         return self
 
@@ -225,7 +227,7 @@ class Context(Base):
         self._parent = weakref.ref(self)
         self._traitlets = {}
         self._observers = set()
-        self._environment = Environment(self)
+        self._environment = ContextEnvironment(self)
         _contexts.add(self)
 
     def _get_node(self, path):
@@ -436,6 +438,9 @@ class Context(Base):
             "params": params,
             "lib": lib,
         }
+        env = self.environment._save()
+        if env is not None:
+            graph["environment"] = env
         return graph
 
     async def _get_graph_async(self, copy):
@@ -460,6 +465,9 @@ class Context(Base):
             "params": params,
             "lib": lib,
         }
+        env = self.environment._save()
+        if env is not None:
+            graph["environment"] = env
         return graph
 
     def get_graph(self, runtime=False):
@@ -752,7 +760,7 @@ class Context(Base):
                 ub_ctx._languages = env["languages"]
                 self._unbound_context = ub_ctx
                 ub_ctx._root_highlevel_context = weakref.ref(self)
-                translate(graph, ub_ctx)
+                translate(graph, ub_ctx, self.environment)
                 nodedict = {node["path"]: node for node in graph["nodes"]}
                 nodedict0 = {node["path"]: node for node in graph0["nodes"]}
                 for path in nodedict:
@@ -1251,7 +1259,7 @@ from .SelfWrapper import SelfWrapper, ChildrenWrapper
 from .pin import PinWrapper
 from .library.libinstance import LibInstance
 from .PollingObserver import PollingObserver
-from .Environment import Environment
+from .Environment import ContextEnvironment
 
 nodeclasses = {
     "cell": Cell,

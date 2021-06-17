@@ -4,6 +4,7 @@ import conda
 from conda.models.match_spec import MatchSpec
 from conda.cli.python_api import Commands, run_command as conda_run
 import os, stat
+import subprocess
 
 from numpy import isin
 
@@ -105,6 +106,11 @@ power_checkers = {
 def validate_environment(environment):
     if not isinstance(environment, dict):
         raise TypeError("Malformed environment")
+    for binary in environment.get("which", []):
+        result = subprocess.run("which " +  binary, shell=True, capture_output=True)
+        if result.returncode:
+            raise ValueError("which: '{}' is not available in command line path'".format(binary))
+
     result_conda = validate_conda_environment(environment)
     result_capabilities = validate_capabilities(environment)
     result_image = validate_image(environment)
