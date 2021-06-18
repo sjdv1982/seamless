@@ -33,6 +33,17 @@ result = func(a)
 ctx.compute()
 print(ctx.tf.result.value)
 
+# For good measure, define an execution environment
+# This should give no problem, as Cython is installed in the Seamless Docker image
+ctx.tf.environment.set_conda("""
+dependencies:
+  - cython
+""", "yaml")
+ctx.tf.environment.set_which(["cython"], format="plain")
+ctx.compute()
+print(ctx.tf.status)
+print(ctx.tf.result.value)
+
 # Now set the transformer as pure Cython code
 # - We must call it "transform"
 # - The argument must be "a", the pin name
@@ -96,6 +107,16 @@ result = transform(**PINS)
     return tmpl.format(repr(code))
 
 env.set_ipy_template("cython", wrap_cython)
+
+# Define an environment for the Cython code generator
+from seamless.highlevel.Environment import Environment
+tmpl_env = Environment()
+tmpl_env.set_conda("""
+dependencies:
+  - cython
+""", "yaml")
+tmpl_env.set_which(["cython"], format="plain")
+env.set_ipy_template_environment("cython", tmpl_env)
 
 ctx.compute()
 print(ctx.tf.status)

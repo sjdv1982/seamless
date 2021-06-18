@@ -16,7 +16,7 @@ from ..compiler import languages_cson as languages_default, compilers_cson as co
 
 class Environment:
     _props = ["_conda", "_which"]
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         if parent is None:
             self._parent = lambda: None
         else:
@@ -38,6 +38,7 @@ class Environment:
             state = self._save()
             if state is not None:
                 node["environment"] = state
+            parent._parent()._translate()
         else:
             raise TypeError(type(parent))
 
@@ -211,7 +212,9 @@ class ContextEnvironment(Environment):
         languages = self.get_languages("plain")
         return find_language(language, languages)
 
-    def set_ipy_template(self, language:str, template_code, parameters=None):
+    def set_ipy_template(
+        self, language:str, template_code, parameters=None, environment=None
+    ):
         """Sets an IPython template for a foreign programming language
 A transformer written in that language will have the template code
 applied to its .code attribute,
@@ -229,6 +232,10 @@ The template code has similar requirements as a Python transformer:
 
 parameters: optional
 A JSON-serializable object that will be passed to the template code
+
+environment: optional
+An Environment instance that defines where the template code will be run.
+
 """
         if not isinstance(language, str):
             raise TypeError(language)
@@ -239,21 +246,16 @@ A JSON-serializable object that will be passed to the template code
                 raise ValueError("Cannot obtain source code for template_code")
             if not isinstance(template_code, str):
                 raise TypeError(type(template_code))            
-        if parameters is not None:
-            if not isinstance(parameters, dict):
-                raise TypeError(type(parameters))
         if self._ipy_templates is None:
             self._ipy_templates = {}
         tmpl = {
             "code": template_code
         }
-        if parameters is not None:
-            try:
-                json.dumps(parameters)
-            except Exception:
-                raise ValueError("Parameters must be JSON-serializable") from None
-            tmpl["parameters"] = deepcopy(parameters)
         self._ipy_templates[language] = tmpl
+        if parameters is not None:
+            self.set_ipy_template_parameters(language, parameters)
+        if environment is not None:
+            self.set_ipy_template_environment(language, environment)
         self._update()
 
     def set_ipy_template_parameters(self, language, parameters) -> None:
@@ -270,18 +272,32 @@ See set_ipy_template for documentation
         tmpl["parameters"] = deepcopy(parameters)
         self._update()
 
+    def set_ipy_template_environment(self, language, environment: Environment) -> None:
+        """Sets the environment for the IPython template code for a programming language
+See set_ipy_template for documentation
+"""
+        if self._ipy_templates is None or language not in self._ipy_templates:
+            raise KeyError(language)
+        tmpl = self._ipy_templates[language]
+        if not isinstance(environment, Environment):
+            raise TypeError(type(environment))
+        env = environment._save()
+        tmpl["environment"] = deepcopy(env)
+        self._update()
+
     def get_ipy_template(self, language) -> tuple:
         """Gets the IPython template for a programming language
 See set_ipy_template for documentation
     
-Returns a (code, parameters) tuple"""
+Returns a (code, parameters, environment) tuple"""
         if self._ipy_templates is None or language not in self._ipy_templates:
             raise KeyError(language)
         tmpl = self._ipy_templates[language]
         code = tmpl["code"]
         parameters = deepcopy(tmpl.get("parameters"))
-        return code, parameters
-        
+        environment = deepcopy(tmpl.get("environment"))
+        return code, parameters, environment
+
     def _parse_and_validate(self):
         super()._parse_and_validate()
         languages = cson2json(self._languages)

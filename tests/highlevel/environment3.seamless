@@ -3,7 +3,13 @@
   "environment": {
     "ipy_templates": {
       "cython": {
-        "code": "def wrap_cython(code, parameters):    \n    tmpl = \"\"\"\nget_ipython().run_line_magic(\"load_ext\", \"Cython\")\nget_ipython().run_cell_magic(\"cython\", \"\", {})\nif \"transform\" not in globals():\n    raise Exception(\"Cython code must define a function 'transform'\")\nresult = transform(**PINS)  \n\"\"\"\n    return tmpl.format(repr(code))\n"
+        "code": "def wrap_cython(code, parameters):    \n    tmpl = \"\"\"\nget_ipython().run_line_magic(\"load_ext\", \"Cython\")\nget_ipython().run_cell_magic(\"cython\", \"\", {})\nif \"transform\" not in globals():\n    raise Exception(\"Cython code must define a function 'transform'\")\nresult = transform(**PINS)  \n\"\"\"\n    return tmpl.format(repr(code))\n",
+        "environment": {
+          "conda": "\ndependencies:\n  - cython\n",
+          "which": [
+            "cython"
+          ]
+        }
       }
     },
     "languages": "{\n  \"bash\": {\n    \"extension\": \"sh\",\n    \"mode\": \"interpreted\"\n  },\n  \"c\": {\n    \"compiler\": \"gcc\",\n    \"extension\": \"c\",\n    \"mode\": \"compiled\"\n  },\n  \"c++\": {\n    \"compiler\": \"g++\",\n    \"extension\": \"cpp\",\n    \"mode\": \"compiled\"\n  },\n  \"cython\": {\n    \"extension\": \"pyx\",\n    \"mode\": \"interpreted\"\n  },\n  \"fortran\": {\n    \"compiler\": \"gfortran\",\n    \"extension\": [\n      \"f\",\n      \"f90\"\n    ],\n    \"mode\": \"compiled\"\n  },\n  \"ipython\": {\n    \"extension\": \"ipy\",\n    \"mode\": \"interpreted\"\n  },\n  \"python\": {\n    \"extension\": \"py\",\n    \"mode\": \"interpreted\"\n  }\n}"
@@ -25,6 +31,12 @@
       },
       "compiled": false,
       "debug": false,
+      "environment": {
+        "conda": "\ndependencies:\n  - cython\n",
+        "which": [
+          "cython"
+        ]
+      },
       "file_extension": "pyx",
       "hash_pattern": {
         "*": "#"

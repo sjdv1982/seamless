@@ -112,6 +112,11 @@ def translate_py_transformer(
         if par is None:
             par = {}
         ctx.apply_ipy_template.parameters.cell().set(par)
+        tmpl_env = ipy_template[2]
+        if tmpl_env is not None:
+            tmpl_env2 = Environment()
+            tmpl_env2._load(tmpl_env)
+            ctx.apply_ipy_template.env = tmpl_env2._to_lowlevel()
         ctx.code.connect(ctx.apply_ipy_template.code_)
         ctx.ipy_code = cell("ipython")
         ctx.apply_ipy_template.result.connect(ctx.ipy_code)
