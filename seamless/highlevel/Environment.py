@@ -1,5 +1,4 @@
 import inspect
-from re import I
 import weakref
 from copy import deepcopy
 
@@ -337,6 +336,15 @@ Returns a (code, parameters, environment) tuple"""
         environment = deepcopy(tmpl.get("environment"))
         return code, parameters, environment
 
+    def _get_py_bridges(self):
+        python_bridges = self._py_bridges
+        if python_bridges is None:
+            clone = deepcopy(self)
+            from ..metalevel.python_bridges import load_py_bridges
+            load_py_bridges(clone)
+            python_bridges = clone._py_bridges
+        return python_bridges
+
     def set_py_bridge(
         self, language:str, bridge_code, bridge_parameters=None, environment=None
     ):
@@ -361,7 +369,7 @@ A JSON-serializable object that will be passed to the bridge code
 environment: optional
 An Environment instance that defines where the bridge code will be run.
 
-Setting it to None resets it to the default (default=None as of Seamless 0.7)
+Setting it to None resets it to the default (support for only R, as of Seamless 0.7)
 """
         if not isinstance(language, str):
             raise TypeError(language)
@@ -373,7 +381,7 @@ Setting it to None resets it to the default (default=None as of Seamless 0.7)
             if not isinstance(bridge_code, str):
                 raise TypeError(type(bridge_code))
         if self._py_bridges is None:
-            self._py_bridges = {}
+            self._py_bridges = self._get_py_bridges()
         bridge = {
             "code": bridge_code
         }
@@ -388,27 +396,32 @@ Setting it to None resets it to the default (default=None as of Seamless 0.7)
         """Sets the Python bridge parameters for a programming language
 See set_py_bridge for documentation
 """
-        if self._py_bridges is None or language not in self._py_bridges:
+
+        python_bridges = self._get_py_bridges()
+        if language not in python_bridges:
             raise KeyError(language)
-        bridge = self._py_bridges[language]
+        bridge = python_bridges[language]
         try:
             json.dumps(parameters)
         except Exception:
             raise ValueError("Parameters must be JSON-serializable") from None
         bridge["parameters"] = deepcopy(parameters)
+        self._py_bridges = python_bridges
         self._update()
 
     def set_py_bridge_environment(self, language, environment: Environment) -> None:
         """Sets the environment for the Python bridge code for a programming language
 See set_py_bridge for documentation
 """
-        if self._py_bridges is None or language not in self._py_bridges:
+        python_bridges = self._get_py_bridges()
+        if language not in python_bridges:
             raise KeyError(language)
-        bridge = self._py_bridges[language]
+        bridge = python_bridges[language]
         if not isinstance(environment, Environment):
             raise TypeError(type(environment))
         env = environment._save()
         bridge["environment"] = deepcopy(env)
+        self._py_bridges = python_bridges
         self._update()
 
     def get_py_bridge(self, language) -> tuple:
@@ -416,9 +429,10 @@ See set_py_bridge for documentation
 See set_py_bridge for documentation
     
 Returns a (code, parameters, environment) tuple"""
-        if self._py_bridges is None or language not in self._py_bridges:
+        python_bridges = self._get_py_bridges()
+        if language not in python_bridges:
             raise KeyError(language)
-        bridge = self._py_bridges[language]
+        bridge = python_bridges[language]
         code = bridge["code"]
         parameters = deepcopy(bridge.get("parameters"))
         environment = deepcopy(bridge.get("environment"))

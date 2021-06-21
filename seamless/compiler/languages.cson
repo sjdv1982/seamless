@@ -27,4 +27,8 @@
     "extension": "sh",
     "mode": "interpreted"
   }
+  "r": {
+    "extension": "R",
+    "mode": "interpreted"
+  }
 }

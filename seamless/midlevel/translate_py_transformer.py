@@ -26,7 +26,7 @@ def translate_py_transformer(
 
     result_name = node["RESULT"]
     result_cell_name = result_name + "_CELL"
-    if node["language"] == "ipython":
+    if node["language"] != "python":
         assert result_name == "result"
     input_name = node["INPUT"]
     for c in inchannels:
@@ -157,6 +157,8 @@ def translate_py_transformer(
             bridge_env0 = Environment()
             bridge_env0._load(bridge_env00)
             bridge_env = bridge_env0._to_lowlevel()
+            if env is None:
+                env = {}
             if "powers" in bridge_env:
                 if "powers" in env:
                     env["powers"] = env["powers"] + bridge_env["powers"]

@@ -14,7 +14,7 @@ ctx.tf = Transformer()
 # Code for the bridge. All values are read from PINS
 # NOTE: python-bond supports no keyword arguments
 #  argument order is alphabetical
-def wrap_php(**kwargs):
+def bridge_php(**kwargs):
     import json
     from bond import make_bond
     php = make_bond('PHP')
@@ -34,7 +34,7 @@ def wrap_php(**kwargs):
         args.append(pinvalue)
     return transform(*args)
 
-ctx.tf.code = wrap_php
+ctx.tf.code = bridge_php
 ctx.tf.environment.set_conda("""
 channels:
   - pypi
@@ -93,8 +93,8 @@ except NotImplementedError as exc:
     traceback.print_exc(limit=0)
     print()
 
-# Define wrap_php as a Python bridge
-env.set_py_bridge("php", wrap_php)
+# Define bridge_php as a Python bridge
+env.set_py_bridge("php", bridge_php)
 
 # Define an environment for the PHP bridge
 from seamless.highlevel.Environment import Environment

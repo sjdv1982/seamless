@@ -137,3 +137,12 @@ environment5.py
 environment6.py
   Adding dynamic support for PHP. This will fail. 
   Install php7.4-cli with apt and python-bond with pip to make it succeed.
+r.py
+  run with ipython
+  Third line should be <Silk: 314.3% >
+  There should be two plots, in:
+   http://localhost:5813/ctx/result.svg
+   and
+   http://localhost:5813/ctx/result.png
+  edit plot.R
+  The PNG should update, the SVG should not
