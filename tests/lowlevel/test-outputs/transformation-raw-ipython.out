@@ -1,0 +1,27 @@
+{
+  "__env__": "1dddb510da7795a4fb3de948526eef08dbeae63957d6aa2f70ef97d64f0a1b76",
+  "__output__": [
+    "result",
+    "int",
+    null
+  ],
+  "a": [
+    "int",
+    null,
+    "08d2d6aba49b53a764f897cf54cc0984e6568e3081d4dc31936eff54d90e79bd"
+  ],
+  "b": [
+    "int",
+    null,
+    "607ad8c0dbe89ff9463bf8a99a2224486a0c8e5c2171d49988a9af1a70175e0f"
+  ],
+  "code": [
+    "python",
+    null,
+    "fb90ae39f33124c519ee4634f58b2856040262de533a61f50ab742af6e454875"
+  ]
+}
+
+b'19\n'
+72.6 ns +- 1.1 ns per loop (mean +- std. dev. of 7 runs, 10000000 loops each)
+

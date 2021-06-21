@@ -11,6 +11,7 @@ HOSTCWD=`pwd`
 
 containerID=$(docker run --rm \
   $gdbflags \
+  -e DOCKER_IMAGE=rpbs/seamless \
   --network=host \
   -d \
   -e HOSTCWD=$HOSTCWD \

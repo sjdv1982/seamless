@@ -7,14 +7,17 @@ import traceback
 import functools
 import time
 import atexit
+import json
 
 from multiprocessing import Process
 from .execute import Queue, execute, execute_debug
 from .run_multi_remote import run_multi_remote, run_multi_remote_pair
 from .injector import transformer_injector as injector
 from .build_module import build_all_modules
+from ..compiler import compilers as default_compilers, languages as default_languages
 
 import logging
+
 logger = logging.getLogger("seamless")
 
 forked_processes = weakref.WeakKeyDictionary()
@@ -114,6 +117,8 @@ class TransformationJob:
         self.codename = codename
         assert "code" in transformation, transformation.keys()
         for pinname in transformation:
+            if pinname in ("__compilers__", "__languages__", "__as__"):
+                continue
             if pinname != "__output__":
                 assert transformation[pinname][2] is not None, pinname
         outputpin = transformation["__output__"]
@@ -367,9 +372,19 @@ class TransformationJob:
         else:
             raise RemoteJobError()
 
+
     async def _execute_local(self,
         prelim_callback, progress_callback
     ):
+        with_ipython_kernel = False
+        env = self.transformation.get("__env__")
+        if env is not None:
+            env = get_buffer(env)
+            env = json.loads(env.decode())
+            assert env is not None
+            validate_environment(env)
+            if "powers" in env and "ipython" in env["powers"]:
+                with_ipython_kernel = True
         values = {}
         namespace = {
             "__name__": "transformer",
@@ -381,7 +396,10 @@ class TransformationJob:
         lock = await acquire_lock(self.checksum)
         namespace["PINS"] = {}
         modules_to_build = {}
+        as_ = self.transformation.get("__as__", {})
         for pinname in sorted(self.transformation.keys()):
+            if pinname in ("__compilers__", "__languages__", "__env__", "__as__"):
+                continue
             if pinname == "__output__":
                 continue
             celltype, subcelltype, sem_checksum = self.transformation[pinname]
@@ -409,11 +427,12 @@ class TransformationJob:
             elif (celltype, subcelltype) == ("plain", "module"):
                 modules_to_build[pinname] = value
             else:
-                namespace["PINS"][pinname] = value
-                namespace[pinname] = value
-                inputs.append(pinname)
+                pinname_as = as_.get(pinname, pinname)
+                namespace["PINS"][pinname_as] = value
+                namespace[pinname_as] = value
+                inputs.append(pinname_as)
         for pinname in self.transformation:
-            if pinname == "__output__":
+            if pinname in ("__output__", "__env__", "__compilers__", "__languages__", "__as__"):
                 continue
             celltype, _, _ = self.transformation[pinname]
             if celltype != "mixed":
@@ -425,19 +444,25 @@ class TransformationJob:
                 schema_celltype, _, _ = schema_pin
                 assert schema_celltype == "plain", schema_pinname
                 schema = namespace[schema_pinname]
-            if schema is None and isinstance(namespace[pinname], Scalar):
+            pinname_as = as_.get(pinname, pinname)
+            if schema is None and isinstance(namespace[pinname_as], Scalar):
                 continue
             if schema is None:
                 schema = {}
             v = Silk(
-                data=namespace[pinname],
+                data=namespace[pinname_as],
                 schema=schema
             )
-            namespace["PINS"][pinname] = v
-            namespace[pinname] = v
+            namespace["PINS"][pinname_as] = v
+            namespace[pinname_as] = v
 
         module_workspace = {}
-        build_all_modules(modules_to_build, module_workspace)
+        compilers = self.transformation.get("__compilers__", default_compilers)
+        languages = self.transformation.get("__languages__", default_languages)
+        build_all_modules(
+            modules_to_build, module_workspace,
+            compilers=compilers, languages=languages
+        )
         assert code is not None
 
         async def get_result_checksum(result_buffer):
@@ -460,9 +485,10 @@ class TransformationJob:
             outputname, celltype, subcelltype = self.outputpin
             args = (
                 self.codename, code,
+                with_ipython_kernel,
                 injector, module_workspace,
                 self.codename,
-                namespace, inputs, outputname, celltype, queue
+                namespace, inputs, outputname, celltype, queue,                
             )
             kwargs = {"python_debug": self.python_debug}
             execute_command = execute_debug if self.debug else execute
@@ -560,3 +586,4 @@ from .cache.transformation_cache import transformation_cache, syntactic_is_seman
 from .status import SeamlessInvalidValueError
 from silk import Silk, Scalar
 from ..communion_client import communion_client_manager
+from .environment import validate_environment

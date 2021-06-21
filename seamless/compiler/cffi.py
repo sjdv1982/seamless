@@ -52,8 +52,7 @@ def _build(dist, tempdir, compiler_verbose=False, debug=None):
 
 def _write_objects(binary_objects, tempdir):
     objects = []
-    for objectname, objdata in binary_objects.items():
-        objfile = objectname+".o"
+    for objfile, objdata in binary_objects.items():
         objfile = os.path.join(tempdir, objfile)
         with open(objfile, "wb") as f:
             f.write(objdata)

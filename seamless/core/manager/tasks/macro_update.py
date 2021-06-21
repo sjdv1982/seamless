@@ -4,6 +4,8 @@ from ...build_module import build_all_modules
 from ...macro_mode import get_macro_mode
 
 import logging
+
+from seamless import compiler
 logger = logging.getLogger("seamless")
 
 def print_info(*args):
@@ -107,15 +109,28 @@ class MacroUpdateTask(Task):
             value = await deserialize(buffer, expression_checksum, celltype, True)
             if value is None:
                 raise CacheMissError(pinname)
+            pinname2 = pinname
+            pin = macro._pins[pinname]
+            if pin.as_ is not None:
+                pinname2 = pin.as_
+
             if pinname == "code":
                 code = value
             elif (celltype, subcelltype) == ("plain", "module"):
-                modules_to_build[pinname] = value
+                modules_to_build[pinname2] = value
             else:
-                values[pinname] = value
+                values[pinname2] = value
 
         module_workspace = {}
-        build_all_modules(modules_to_build, module_workspace)
+        
+        root = macro._root()
+        compilers = getattr(root,"_compilers", default_compilers)
+        languages = getattr(root,"_languages", default_languages)
+        build_all_modules(
+            modules_to_build, module_workspace,
+            compilers=compilers,
+            languages=languages
+        )
 
         if macro._gen_context is not None:
             macro._gen_context.destroy()
@@ -130,3 +145,4 @@ from . import is_equal
 from ...status import StatusReasonEnum
 from ...cache.elision import elide
 from ...cache import CacheMissError
+from ....compiler import compilers as default_compilers, languages as default_languages

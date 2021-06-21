@@ -39,10 +39,12 @@ def _finalize(
     result_cell_name1 = result_name + "_CELL1"
     result_cell_name2 = result_name + "_CELL2"
     input_cell_name = input_name + "_CELL"
+    link_options_cell_name = "LINK_OPTIONS_CELL"
     main_module_cell_name = input_name + "_MAIN_MODULE_CELL"
     forbidden = (
         result_name, result_cell_name1,
         result_cell_name2, input_cell_name,
+        link_options_cell_name,
         main_module_cell_name
     )
     for c in inchannels:
@@ -54,9 +56,15 @@ def _finalize(
     cell_setattr(node, ctx, result_cell_name2, result_cell2)
     input_cell = cell("mixed")
     cell_setattr(node, ctx, input_cell_name, input_cell)
+    link_options_cell = cell("plain")
+    cell_setattr(node, ctx, link_options_cell_name, link_options_cell)
     main_module_cell = cell("plain")
     cell_setattr(node, ctx, main_module_cell_name, main_module_cell)
 
+    link_options_cell.connect(
+        ctx.main_module.inchannels[("link_options",)]
+    )
+    link_options_cell.set(node.get("link_options", []))
     #1: between transformer and library
 
     ctx.inputpins.connect(ctf.gen_header.inputpins)
@@ -95,7 +103,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     #TODO: still a lot of common code with translate_py_transformer, put in functions
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
-    main_module_inchannels = [("objects",) + ic[1:] for ic in inchannels if ic[0] == "_main_module"]
+    main_module_inchannels = [("objects",) + ic[1:] for ic in inchannels if ic[0] == "_main_module"] + [("link_options",)]
     inchannels = [ic for ic in inchannels if ic[0] != "_main_module"]
 
     parent = get_path(root, node["path"][:-1], None, None)
@@ -143,7 +151,7 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
         p.update(pin)
         all_pins[pinname] = p
         inputpins.append(pinname)
-    all_pins[result_name] = {"io": "output", "transfer_mode": "copy"}
+    all_pins[result_name] = {"io": "output"}
     if node["SCHEMA"]:
         all_pins[node["SCHEMA"]] = {
             "io": "input", "celltype": "mixed"
@@ -160,6 +168,8 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     )
 
     for ic in main_module_inchannels:
+        if ic == "link_options":
+            continue
         icpath = node["path"] + ("_main_module",) + ic[1:]
         namespace[icpath, "target"] = ctx.main_module.inchannels[ic], node
 

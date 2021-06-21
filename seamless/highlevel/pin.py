@@ -80,6 +80,18 @@ class PinWrapper:
         hpin["io"] = value
         self._parent()._parent()._translate()
 
+    @property
+    def as_(self):
+        hpin = self._get_hpin()
+        return hpin.get("as")
+
+    @as_.setter
+    def as_(self, as_):
+        if not isinstance(as_, str):
+            raise TypeError(as_)
+        hpin = self._get_hpin()
+        hpin["as"] = as_
+
     def __getitem__(self, pinname):
         return getattr(self, pinname)
 

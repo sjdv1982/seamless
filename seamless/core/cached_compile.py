@@ -2,7 +2,7 @@ import linecache
 import functools
 from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda, stmt as Statement
 
-@functools.lru_cache(maxsize=1000)
+#@functools.lru_cache(maxsize=1000) disable LRU cache, because linecache identifiers are degenerate
 def cached_compile(code, identifier, mode="exec", flags=None, \
   dont_inherit=0):
     if flags is not None:
@@ -36,7 +36,7 @@ def analyze_code(code, identifier):
                 raise SyntaxError((identifier, err))
     return mode, func_name
 
-def exec_code(code, identifier, namespace, inputs, output):
+def exec_code(code, identifier, namespace, inputs, output, *, with_ipython_kernel=False):
     mode, func_name = analyze_code(code, identifier)
     input_params = ",".join(["{0}={0}".format(inp) for inp in sorted(list(inputs))])
     if mode == "block":
@@ -54,11 +54,11 @@ def exec_code(code, identifier, namespace, inputs, output):
     elif mode == "expression":
         assert output is not None
         code2 = "%s = " % output + code
-    code_obj = cached_compile(code2, identifier)
-    # See issue 25
-    #from ..ipython import execute
-    #execute(code2, namespace)
-    exec(code_obj, namespace)
+    if with_ipython_kernel:
+        ipython_execute(code2, namespace)
+    else:
+        code_obj = cached_compile(code2, identifier)
+        exec(code_obj, namespace)
 
 def check_function_like(code, identifier):
     """Check if code exists of one function and some statements
@@ -84,3 +84,5 @@ def check_function_like(code, identifier):
     if function_name is None:
         return False
     return function_name, nstatements
+
+from ..ipython import execute as ipython_execute

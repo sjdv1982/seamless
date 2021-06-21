@@ -28,6 +28,7 @@ class CompiledObjectWrapper:
         parent = worker._parent()
         target_path = worker._path + ("_main_module", self._obj, attr)
         if isinstance(value, Cell):
+            from ..assign import assign_connection
             assert value._parent() == parent
             #TODO: check existing inchannel connections and links (cannot be the same or higher)
             exempt = worker._exempt()
@@ -157,7 +158,7 @@ class CompiledObjectWrapper:
             language = "c"
         file_extension = self._get_value("extension")
         if file_extension is None:
-            _, _, file_extension = find_language(language)
+            _, _, file_extension = parent.environment.find_language(language)
         value = self._get_value("code")
         cell = {
             "path": other._path,

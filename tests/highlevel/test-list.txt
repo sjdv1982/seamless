@@ -64,6 +64,7 @@ load-graph-static.py
 vault.bash: run as i=vault; seamless-devel ./$i.bash > test-outputs/$i.out 2>&1
 library.py
 library2.py
+environment3.py
 high-in-low.py
 high-in-low2.py
 high-in-low3.py
@@ -114,4 +115,35 @@ share-pdb-docker.seamless/.zip: to test using:
       --add-zip /seamless/seamless/graphs/status-visualization.zip
     In that case, open also http://localhost:5813/status/index.html
 plotting.py
-
+environment.py
+   Can be run automatically in a standard container,
+    and will exit at some point because Rust is not installed
+    (see test-outputs/environment2.out)
+  Otherwise, install Rust in the container and then run the test.
+  This will print 29, 34, 34 at the end
+environment2.py
+   Can be run automatically in a standard container,
+    and will exit at some point because Go is not installed
+    (see test-outputs/environment2.out)
+  Otherwise, install Go in the container and then run the test.
+  This will print 2029, 2096 at the end, and then wait for a debugger
+environment4.py
+  This will fail. 
+  Install net-tools with apt and 'sympy==1.7.*' with conda to make it succeed.
+environment5.py
+  Loads and runs the graph for environment3 and then environment4.
+  Should succeed for the former (result: 11.40)
+   and fail for the latter.
+  Install net-tools with apt and 'sympy==1.7.*' with conda to make it succeed.
+environment6.py
+  Adding dynamic support for PHP. This will fail. 
+  Install php7.4-cli with apt and python-bond with pip to make it succeed.
+r.py
+  run with ipython
+  Third line should be <Silk: 314.3% >
+  There should be two plots, in:
+   http://localhost:5813/ctx/result.svg
+   and
+   http://localhost:5813/ctx/result.png
+  edit plot.R
+  The PNG should update, the SVG should not

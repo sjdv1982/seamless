@@ -28,7 +28,7 @@ class Macro(Worker):
                 raise ValueError("Forbidden pin name: %s" % p)
             param = macro_params[p]
             self._macro_params[p] = param
-            celltype, subcelltype = None, None
+            celltype, subcelltype, as_ = None, None, None
             if isinstance(param, str):
                 celltype = param
             elif isinstance(param, (list, tuple)):
@@ -40,9 +40,10 @@ class Macro(Worker):
             elif isinstance(param, dict):
                 celltype = param.get("celltype", celltype)
                 subcelltype = param.get("subcelltype", subcelltype)
+                as_ = param.get("as", None)
             else:
                 raise ValueError((p, param))
-            pin = InputPin(self, p, celltype, subcelltype)
+            pin = InputPin(self, p, celltype, subcelltype, as_=as_)
             self.function_expr_template += "%s=%s," % (p, p)
             self._pins[p] = pin
         self.function_expr_template = self.function_expr_template[:-1] + ")"

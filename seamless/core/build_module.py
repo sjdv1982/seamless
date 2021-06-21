@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 import re
 import sys, os
@@ -156,6 +157,37 @@ def import_extension_module(full_module_name, module_code, debug, source_files):
             if not debug:
                 os.remove(module_file)
 
+def _merge_objects(objects):
+    result = {}
+    n_merged = 0
+    for objname, obj in objects.items():
+        if obj["compile_mode"] in ("object", "archive"):
+            obj_file = objname
+            if obj["compile_mode"]  == "object":
+                obj_file += ".o"
+            else:
+                obj_file += ".a"
+            curr = deepcopy(obj)
+            curr["code_dict"] = {
+                objname + "." + obj["extension"]: obj["code"]
+            }
+            curr.pop("code")
+            result[obj_file] = curr
+        elif obj["compile_mode"] == "package":     
+            for oname, o in result.items():
+                if not oname.startswith("_PACKAGE__"):
+                    continue
+                if o["language"] == obj["language"] and o["compiler"] == obj["compiler"]:
+                    pass
+            else:
+                curr = deepcopy(obj)
+                curr.pop("code")
+                n_merged += 1
+                result["_PACKAGE__%d.a" % n_merged] = curr
+                curr["code_dict"] = {}
+            curr["code_dict"][objname + "." + obj["extension"]] = obj["code"]                    
+    return result
+
 def build_compiled_module(full_module_name, checksum, module_definition, *, module_error_name):
     from .cache.database_client import database_cache, database_sink
     mchecksum = b"python-ext-" + checksum
@@ -164,17 +196,18 @@ def build_compiled_module(full_module_name, checksum, module_definition, *, modu
     debug = (module_definition.get("target") == "debug")
     if module_code is None:
         objects = module_definition["objects"]
+        objects = _merge_objects(objects)
         binary_objects = {}
         remaining_objects = {}
         object_checksums = {}
-        for objectname, object_ in objects.items():
+        for object_file, object_ in objects.items():
             object_checksum = get_dict_hash(object_)
             binary_code = database_cache.get_compile_result(object_checksum)
             if binary_code is not None:
-                binary_objects[objectname] = binary_code
+                binary_objects[object_file] = binary_code
             else:
-                remaining_objects[objectname] = object_
-            object_checksums[objectname] = object_checksum
+                remaining_objects[object_file] = object_
+            object_checksums[object_file] = object_checksum
         if len(remaining_objects):
             build_dir = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name)               
             success, new_binary_objects, source_files, stderr = compile(
@@ -189,9 +222,9 @@ def build_compiled_module(full_module_name, checksum, module_definition, *, modu
             else:
                 if len(stderr):
                     print(stderr)  # TODO: log this, but it is not obvious where
-            for objectname, binary_code in new_binary_objects.items():
-                binary_objects[objectname] = binary_code
-                object_checksum = object_checksums[objectname]
+            for object_file, binary_code in new_binary_objects.items():
+                binary_objects[object_file] = binary_code
+                object_checksum = object_checksums[object_file]
                 database_sink.set_compile_result(object_checksum, binary_code)
         link_options = module_definition["link_options"]
         target = module_definition["target"]
@@ -212,7 +245,8 @@ def build_compiled_module(full_module_name, checksum, module_definition, *, modu
     mod = import_extension_module(full_module_name, module_code, debug, source_files)
     return mod
 
-def build_module(module_definition, module_workspace={}, *, 
+def build_module(module_definition, module_workspace={}, *,
+     compilers, languages,
      module_error_name, mtype=None, parent_module_name=None):
     if mtype is None:
         mtype = module_definition["type"]
@@ -245,7 +279,7 @@ def build_module(module_definition, module_workspace={}, *,
             )
         elif mtype == "compiled":
             assert parent_module_name is None
-            completed_module_definition = complete(module_definition)
+            completed_module_definition = complete(module_definition, compilers, languages)
             completed_checksum = get_dict_hash(completed_module_definition)
             mod = build_compiled_module(
               full_module_name, completed_checksum, completed_module_definition,
@@ -257,6 +291,7 @@ def build_module(module_definition, module_workspace={}, *,
 
 def build_all_modules(
     modules_to_build, module_workspace, *, 
+    compilers, languages,
     mtype=None, parent_module_name=None,
     module_error_name=None,
     absolute_package_name=None
@@ -282,6 +317,7 @@ def build_all_modules(
                     modname4 = modname2
                 mod = build_module(
                     module_def, module_workspace, 
+                    compilers=compilers, languages=languages,
                     mtype=mtype, parent_module_name=modname2,
                     module_error_name=modname3
                 )

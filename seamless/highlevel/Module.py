@@ -325,7 +325,8 @@ class Module(Base):
             raise NotImplementedError
         from ..compiler import find_language
         hnode = self._get_hnode2()
-        lang, language, extension = find_language(value)
+        parent = self._parent()
+        lang, _, _ = parent.environment.find_language(value)
         hnode["language"] = lang
         if self._parent() is not None:
             self._parent()._translate()

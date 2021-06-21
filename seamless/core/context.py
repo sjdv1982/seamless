@@ -1,4 +1,5 @@
 """Module for Context class."""
+from seamless import compiler
 import weakref
 from weakref import WeakValueDictionary
 from collections import OrderedDict
@@ -39,12 +40,16 @@ class Context(SeamlessBase):
     _macro_root = None
     _root_highlevel_context = lambda self: None
     _synth_highlevel_context = lambda self: None
+    _compilers = None
+    _languages = None
 
     def __init__(
         self, *,
         toplevel=False,
         mount=None,
-        manager=None
+        manager=None,
+        compilers=None,
+        languages=None
     ):
         """Construct a new context.
 
@@ -58,14 +63,22 @@ Parameters
 ----------
 name: str
     name of the context within the parent context
+
+toplevel: bool
+    whether the context is top-level or not
+
+mount: DEPRECATED
+
+manager: seamless.core.manager.Manager or None   
+    Managers can be shared between contexts, which can be practical for various caches
+    If None, create a new manager
+
+compilers: dict or None
+    Compiler specification. If None, workers will use seamless.core.compiler.compilers
+
+languages: dict or None
+    Languages specification. If None, workers will use seamless.core.compiler.languages
 """
-        ''' #debugging
-        try:
-            raise Exception
-        except Exception as exc:
-            import traceback
-            self._EXC = "\n".join(traceback.format_stack())
-        '''
         global Macro
         if Macro is None:
             from .macro import Macro
@@ -88,6 +101,10 @@ name: str
             self.mount(**mount_params)
         self._children = {}
         self._auto = set()
+        if compilers is not None:
+            self._compilers = compilers
+        if languages is not None:
+            self._languages = languages
         if toplevel:
             register_toplevel(self)
 
@@ -346,7 +363,6 @@ name: str
         if self._destroyed:
             return
         self.__dict__["_destroyed"] = True
-        ###print(self._EXC) # debugging
         print("Undestroyed %s (%s), mount points may remain" % (self, hex(id(self))))
 
 

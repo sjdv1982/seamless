@@ -1,0 +1,90 @@
+ValueError: Conda package 'python': 3.8.8 installed, but >=10 required
+
+{'properties': {'a': {'type': 'integer'}, 'b': {'type': 'integer'}}, 'type': 'object'}
+{'type': 'integer'}
+<Silk: 13 >
+KeyError: 'Unknown language: rust'
+
+# Specifications and default settings for supported languages
+{
+  "python": {
+    "extension": "py",
+    "mode": "interpreted"
+  }
+  "ipython": {
+    "extension": "ipy",
+    "mode": "interpreted"
+  }
+
+
+/*
+The following C header has been auto-generated from the transformer schema
+It will be used to generate bindings, but it will not be automatically
+added to the compiled transformer code.
+
+If your transformer code is written in C/C++, you may do so yourself.
+For C, you may need to include "stdint.h" and "stdbool.h".
+If your transform() function is written in C++, don't forget to add 'extern "C" '
+*/
+
+int transform(int a, int b, int *result);
+
+*** executor ***
+Traceback (most recent call last):
+  File "/seamless/seamless/core/transformation.py", line 251, in _execute
+    result, logs = await self._execute_local(
+  File "/seamless/seamless/core/transformation.py", line 461, in _execute_local
+    build_all_modules(
+  File "/seamless/seamless/core/build_module.py", line 318, in build_all_modules
+    mod = build_module(
+  File "/seamless/seamless/core/build_module.py", line 282, in build_module
+    completed_module_definition = complete(module_definition, compilers, languages)
+  File "/seamless/seamless/compiler/compile.py", line 139, in complete
+    raise ValueError("No compiler defined for compiled language '{}'".format(lang))
+ValueError: No compiler defined for compiled language 'rust'
+*** /executor ***
+
+
+# Defaults for various compilers
+# NOTE: Seamless does not take (the checksum of) a compiler or compiler setting as explicit dependency
+# Therefore, Seamless does not re-execute a computation when compiler settings change
+# and it is assumed that compiler settings have no impact on reproducibility,
+#  i.e. a computation is reproducible or irreproducible no matter the compiler settings
+{
+  #GNU compiler collection; no "location"; use `which` or implicit shell execution
+  "gcc": {
+      "mode": "object",   # compiles source files into .o files one by one
+                          # alternatives:  
+                          # - "archive", that compiles each source file into an .a file
+                          # - "package", that compiles *all* source files into a single .a file
+      "compile_flag": "-c"
+      "output_flag": "-o"
+      "options": ["-O3", "-ffast-math", "-march=native", "-fPIC"],
+      "public_options": ["-fPIC"],
+      "debug_options": ["-fPIC", "-g", "-O0", "-fno-inline" , "-Wall"],
+      "profile_options": ["-p", "-g"],
+  }
+  "g++": {
+
+*** executor ***
+Traceback (most recent call last):
+  File "/seamless/seamless/core/transformation.py", line 251, in _execute
+    result, logs = await self._execute_local(
+  File "/seamless/seamless/core/transformation.py", line 461, in _execute_local
+    build_all_modules(
+  File "/seamless/seamless/core/build_module.py", line 318, in build_all_modules
+    mod = build_module(
+  File "/seamless/seamless/core/build_module.py", line 284, in build_module
+    mod = build_compiled_module(
+  File "/seamless/seamless/core/build_module.py", line 221, in build_compiled_module
+    raise BuildModuleError(stderr)
+seamless.core.build_module.BuildModuleError: 
+rustc  --crate-type=staticlib -o main.a main.rs
+******************** ERROR ********************
+/bin/sh: 1: rustc: not found
+
+******************** /ERROR ********************
+
+*** /executor ***
+
+ValueError: which: 'rustc' is not available in command line path'

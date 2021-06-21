@@ -42,12 +42,14 @@ class Worker(SeamlessBase):
     _pins = None
     _last_inputs = None
 
-    def __getattr__(self, attr):
+    def get_pin(self, attr):
         if self._pins is None or attr not in self._pins:
             raise AttributeError(attr)
         else:
             return self._pins[attr]
 
+    def __getattr__(self, attr):
+        return self.get_pin(attr)
 
     def __dir__(self):
         return object.__dir__(self) + list(self._pins.keys())
@@ -56,13 +58,14 @@ class Worker(SeamlessBase):
 from .cell import celltypes
 
 class PinBase(SeamlessBase):
-    def __init__(self, worker, name, celltype, subcelltype=None):
+    def __init__(self, worker, name, celltype, subcelltype=None, *, as_=None):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
         assert celltype is None or celltype in celltypes, (celltype, celltypes)
         self.name = name
         self.celltype = celltype
         self.subcelltype = subcelltype
+        self.as_ = as_
 
     @property
     def path(self):
@@ -222,8 +225,8 @@ class EditPin(EditPinBase):
 
     io = "edit"
 
-    def __init__(self, worker, name, celltype, subcelltype=None, *, must_be_defined=False):
-        super().__init__(worker, name, celltype, subcelltype=subcelltype)
+    def __init__(self, worker, name, celltype, subcelltype=None, *, as_=None, must_be_defined=False):
+        super().__init__(worker, name, celltype, subcelltype=subcelltype, as_=as_)
         self._must_be_defined = must_be_defined
 
     @property

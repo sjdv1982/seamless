@@ -21,6 +21,10 @@ ctx.tf = transformer({
     "b": "input",
     "c": "output"
 })
+
+ctx.tf.env = {
+    "powers": ["ipython"]
+}
 ctx.cell1.connect(ctx.tf.a)
 ctx.cell2.connect(ctx.tf.b)
 ctx.code.connect(ctx.tf.code)
@@ -34,6 +38,7 @@ print(ctx.tf.value, ctx.tf, ctx.tf.status)
 print(ctx.status)
 print(ctx.tf.exception)
 ctx.compute()
+exit(0)
 ctx.cell1.set(10)
 ctx.compute()
 print(ctx.result.value, ctx.status)

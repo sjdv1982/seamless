@@ -1,9 +1,21 @@
-from seamless.core import cell, \
+from copy import deepcopy
+from numpy import e, isin
+from ..core import cell, \
  transformer, context, StructuredCell
 
-def translate_py_transformer(node, root, namespace, inchannels, outchannels):
+def translate_py_transformer(
+        node, root, namespace, inchannels, outchannels,
+        *, ipy_template, py_bridge
+    ):
     from .translate import set_structured_cell_from_checksum
+    from ..highlevel.Environment import Environment
     #TODO: simple translation, without a structured cell
+
+    assert not (ipy_template is not None and py_bridge is not None)
+
+    env0 = Environment(None)
+    env0._load(node.get("environment"))
+    env = env0._to_lowlevel()
 
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
@@ -14,7 +26,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
 
     result_name = node["RESULT"]
     result_cell_name = result_name + "_CELL"
-    if node["language"] == "ipython":
+    if node["language"] != "python":
         assert result_name == "result"
     input_name = node["INPUT"]
     for c in inchannels:
@@ -58,19 +70,129 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         all_pins[node["SCHEMA"]] = {
             "io": "input", "celltype": "mixed"
         }
+    if py_bridge is not None: 
+        for k in "code_", "bridge_parameters":
+            if k in all_pins:
+                msg = "Python bridge for {} cannot have a pin named '{}'".format(
+                    "." + "".join(node["path"]), k 
+                )
+                raise ValueError(msg)
+        all_pins.update({
+            "code_": {
+                "io": "input",
+                "celltype": "text",
+                "as": "code",
+            },
+            "bridge_parameters": {
+                "io": "input",
+                "celltype": "plain",
+            },
+        })
     ctx.tf = transformer(all_pins)
     if node["debug"]:
         ctx.tf.python_debug = True
     if node.get("compiled_debug"):
         ctx.tf.debug = True
-    if node["language"] == "ipython":
+    if node["language"] == "ipython" or ipy_template is not None:
+        if env is None:
+            env = {}
+        if env.get("powers") is None:
+            env["powers"] = []
+        env["powers"] += ["ipython"]
+    
+    if ipy_template is not None or py_bridge is not None:
+        ctx.code = cell("text")
+    elif node["language"] == "ipython":
         ctx.code = cell("ipython")
-    else:
+    elif node["language"] == "python":
         ctx.code = cell("transformer")
+    else:
+        raise ValueError(node["language"]) # shouldn't happen
+
     if "code" in mount:
         ctx.code.mount(**mount["code"])
 
-    ctx.code.connect(ctx.tf.code)
+    if ipy_template is not None:        
+        ipy_template_params = {
+            "code_": {
+                "io": "input",
+                "celltype": "text",
+                "as": "code",
+            },
+            "parameters": {
+                "io": "input",
+                "celltype": "plain",
+            },
+            "result": {
+                "io": "output",
+                "celltype": "ipython",
+            }            
+        }
+        ctx.apply_ipy_template = transformer(ipy_template_params)
+        ctx.ipy_template_code = cell("transformer").set(ipy_template[0])
+        ctx.ipy_template_code.connect(ctx.apply_ipy_template.code)
+        par = ipy_template[1]
+        if par is None:
+            par = {}
+        ctx.apply_ipy_template.parameters.cell().set(par)
+        tmpl_env = ipy_template[2]
+        if tmpl_env is not None:
+            tmpl_env2 = Environment()
+            tmpl_env2._load(tmpl_env)
+            ctx.apply_ipy_template.env = tmpl_env2._to_lowlevel()
+        ctx.code.connect(ctx.apply_ipy_template.code_)
+        ctx.ipy_code = cell("ipython")
+        ctx.apply_ipy_template.result.connect(ctx.ipy_code)
+        ctx.ipy_code.connect(ctx.tf.code)
+    elif py_bridge is not None: 
+        ctx.py_bridge_code = cell("transformer").set(py_bridge[0])
+        ctx.py_bridge_code.connect(ctx.tf.code)
+        ctx.code.connect(ctx.tf.code_)
+        par = py_bridge[1]
+        if par is None:
+            par = {}
+        ctx.tf.bridge_parameters.cell().set(par)
+        bridge_env00 = py_bridge[2]
+        if bridge_env00 is not None:
+            bridge_env0 = Environment()
+            bridge_env0._load(bridge_env00)
+            bridge_env = bridge_env0._to_lowlevel()
+            if env is None:
+                env = {}
+            if "powers" in bridge_env:
+                if "powers" in env:
+                    env["powers"] = env["powers"] + bridge_env["powers"]
+                else:
+                    env["powers"] = bridge_env["powers"]
+            if "which" in bridge_env:
+                if "which" in env:
+                    env["which"] = env["which"] + bridge_env["which"]
+                else:
+                    env["which"] = bridge_env["which"]
+            if "conda" in bridge_env:
+                if "conda" in env:
+                    for k in env["conda"]:
+                        v = deepcopy(env["conda"][k])
+                        if k in bridge_env["conda"]:
+                            bv = deepcopy(bridge_env["conda"][k])
+                            ok = True
+                            if type(v) != type(bv):
+                                ok = False
+                            if isinstance(v, list):
+                                v += bv
+                            elif isinstance(v, dict):
+                                v.update(bv)
+                            else:
+                                ok = False
+                            if not ok:
+                                raise TypeError(
+                                    "Python bridge: cannot merge conda environments",
+                                    "."+".".join(node["path"]), node["language"],
+                                    k, type(v), type(bv)
+                                )
+    else:
+        ctx.code.connect(ctx.tf.code)
+    
     checksum = node.get("checksum", {})
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
@@ -86,7 +208,7 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
     namespace[node["path"] + ("code",), "source"] = ctx.code, node
 
     for pin in list(node["pins"].keys()):
-        target = getattr(ctx.tf, pin)
+        target = ctx.tf.get_pin(pin)
         pin_cell = pin_cells[pin]
         inp.outchannels[(pin,)].connect(pin_cell)
         pin_cell.connect(target)
@@ -104,13 +226,13 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
 
     setattr(ctx, result_name, result)
 
-    result_pin = getattr(ctx.tf, result_name)
+    result_pin = ctx.tf.get_pin(result_name)
     result_cell = cell("mixed")
     cell_setattr(node, ctx, result_cell_name, result_cell)
     result_pin.connect(result_cell)
     result_cell.connect(result.inchannels[()])
     if node["SCHEMA"]:
-        schema_pin = getattr(ctx.tf, node["SCHEMA"])
+        schema_pin = ctx.tf.get_pin(node["SCHEMA"])
         result.schema.connect(schema_pin)
     result_checksum = {}
     for k in checksum:
@@ -119,6 +241,9 @@ def translate_py_transformer(node, root, namespace, inchannels, outchannels):
         k2 = "value" if k == "result" else k[len("result_"):]
         result_checksum[k2] = checksum[k]
     set_structured_cell_from_checksum(result, result_checksum)
+
+    if env is not None:
+        ctx.tf.env = env
 
     namespace[node["path"], "target"] = inp, node
     namespace[node["path"], "source"] = result, node

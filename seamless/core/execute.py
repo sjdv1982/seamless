@@ -50,6 +50,7 @@ def set_progress(result_queue, value):
     result_queue.put((3, value))
 
 def _execute(name, code,
+      with_ipython_kernel,
       injector, module_workspace,
       identifier, namespace,
       inputs, output_name, celltype, result_queue
@@ -66,9 +67,15 @@ def _execute(name, code,
             namespace.pop(output_name, None)
             if len(module_workspace):
                 with injector.active_workspace(module_workspace, namespace):
-                    exec_code(code, identifier, namespace, inputs, output_name)
+                    exec_code(
+                        code, identifier, namespace, inputs, output_name, 
+                        with_ipython_kernel=with_ipython_kernel
+                    )
             else:
-                exec_code(code, identifier, namespace, inputs, output_name)
+                exec_code(
+                    code, identifier, namespace, inputs, output_name, 
+                    with_ipython_kernel=with_ipython_kernel
+                )
         except SeamlessTransformationError as exc:
             exc = str(exc) + "\n"
             return (2, exc)
@@ -128,6 +135,7 @@ class FakeStdStream:
         return True
 
 def execute(name, code,
+      with_ipython_kernel,
       injector, module_workspace,
       identifier, namespace,
       inputs, output_name, celltype, result_queue,
@@ -143,6 +151,7 @@ def execute(name, code,
         ok = False
         if direct_print:
             result = _execute(name, code,
+                with_ipython_kernel,
                 injector, module_workspace,
                 identifier, namespace,
                 inputs, output_name, celltype, result_queue
@@ -153,6 +162,7 @@ def execute(name, code,
             sys.stdout, sys.stderr = stdout, stderr
             with wurlitzer.pipes() as (stdout2, stderr2):
                 result = _execute(name, code,
+                    with_ipython_kernel,
                     injector, module_workspace,
                     identifier, namespace,
                     inputs, output_name, celltype, result_queue
@@ -207,6 +217,8 @@ def execute(name, code,
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
         raise SystemExit() from None
     except Exception:
+        if not direct_print:
+            sys.stdout, sys.stderr = old_stdio
         traceback.print_exc()
     finally:
         if not direct_print:
@@ -221,6 +233,7 @@ def execute(name, code,
 
 
 def execute_debug(name, code,
+      with_ipython_kernel,
       injector, module_workspace,
       identifier, namespace,
       inputs, output_name, celltype, result_queue,
@@ -248,6 +261,7 @@ def execute_debug(name, code,
         except DebuggerAttached:
             pass
         result = _execute(name, code,
+            with_ipython_kernel,
             injector, module_workspace,
             identifier, namespace,
             inputs, output_name, celltype, result_queue

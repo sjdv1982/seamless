@@ -8,6 +8,7 @@ class HardCancelError(Exception):
     def __str__(self):
         return self.__class__.__name__
 
+from seamless.core.protocol.serialize import serialize
 import sys
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
@@ -18,8 +19,9 @@ import functools
 import asyncio
 import time
 import traceback
+from copy import deepcopy
 
-from ...get_hash import get_dict_hash
+from ...get_hash import get_dict_hash, get_hash
 """
 TODO: offload exceptions (as text) to database (also allow them to be cleared in database?)
 TODO: do the same with stdout, stderr
@@ -73,9 +75,16 @@ def tf_get_buffer(transformation):
     assert isinstance(transformation, dict)
     d = {}
     for k in transformation:
+        if k in ("__compilers__", "__languages__"):
+            continue
         v = transformation[k]
-        if k == "__output__":
+        if k in ("__output__", "__as__"):
             d[k] = v
+            continue
+        elif k == "__env__":
+            checksum = v
+            checksum = checksum.hex()
+            d[k] = checksum
             continue
         celltype, subcelltype, checksum = v
         checksum = checksum.hex()
@@ -182,10 +191,24 @@ class TransformationCache:
         cachemanager = transformer._get_manager().cachemanager
         outputname, celltype, subcelltype = outputpin
         transformation = {"__output__": outputpin}
+        as_ = {}
+        root = transformer._root()
+        if root._compilers is not None:
+            transformation["__compilers__"] = root._compilers
+        if root._languages is not None:
+            transformation["__languages__"] = root._languages
+        if transformer.env is not None:
+            envbuf = await serialize(transformer.env, "plain")
+            env_checksum = get_hash(envbuf)
+            buffer_cache.cache_buffer(env_checksum, envbuf)
+            transformation["__env__"] = env_checksum
+        transformation_build_exception = None
         for pinname, checksum in inputpin_checksums.items():
             await cachemanager.fingertip(checksum)
             pin = transformer._pins[pinname]
             celltype, subcelltype = celltypes[pinname]
+            if pin.as_ is not None:
+                as_[pinname] = pin.as_
             if checksum is None:
                 sem_checksum = None
             else:
@@ -194,10 +217,14 @@ class TransformationCache:
                 if sem_checksum is None:
                     codename = str(pin)
                     if not syntactic_is_semantic(celltype, subcelltype):
-                        sem_checksum = await syntactic_to_semantic(
-                            checksum, celltype, subcelltype,
-                            codename
-                        )
+                        try:
+                            sem_checksum = await syntactic_to_semantic(
+                                checksum, celltype, subcelltype,
+                                codename
+                            )
+                        except Exception as exc:
+                            transformation_build_exception = exc
+                            break
                         self.syntactic_to_semantic_checksums[key] = sem_checksum
                         semkey = (sem_checksum, celltype, subcelltype)
                         if semkey in self.semantic_to_syntactic_checksums:
@@ -212,7 +239,12 @@ class TransformationCache:
                     else:
                         sem_checksum = checksum
             transformation[pinname] = celltype, subcelltype, sem_checksum
-        await self.incref_transformation(transformation, transformer)
+        if len(as_):
+            transformation["__as__"] = as_
+        await self.incref_transformation(
+            transformation, transformer,
+            transformation_build_exception=transformation_build_exception
+        )
 
     async def remote_wait(self, tf_checksum, peer_id):
         key = tf_checksum, peer_id
@@ -227,7 +259,7 @@ class TransformationCache:
                 break
 
 
-    async def incref_transformation(self, transformation, transformer):
+    async def incref_transformation(self, transformation, transformer, *, transformation_build_exception):
         ###import traceback; traceback.print_stack()
         assert isinstance(transformer, (Transformer, RemoteTransformer, DummyTransformer))
         if isinstance(transformer, RemoteTransformer):
@@ -249,10 +281,15 @@ class TransformationCache:
                 result_checksum, prelim = self.transformation_results[tf_checksum]
                 buffer_cache.incref(result_checksum, False)
             for pinname in transformation:
+                if pinname in ("__compilers__", "__languages__", "__as__"):
+                    continue
                 if pinname == "__output__":
                     continue
-                celltype, subcelltype, sem_checksum = transformation[pinname]
-                buffer_cache.incref(sem_checksum, False)
+                if pinname == "__env__":
+                    sem_checksum = transformation[pinname]
+                else:
+                    celltype, subcelltype, sem_checksum = transformation[pinname]
+                buffer_cache.incref(sem_checksum, (pinname == "__env__"))
         else:
             tf = self.transformations_to_transformers[tf_checksum]
 
@@ -264,6 +301,9 @@ class TransformationCache:
             if tf_checksum not in self.python_debug:
                 self.python_debug.add(tf_checksum)
                 self.clear_exception(transformer)
+        if transformer._exception_to_clear:
+            self.clear_exception(tf_checksum=tf_checksum)
+            transformer._exception_to_clear = False
 
         if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
             old_tf_checksum = None
@@ -277,6 +317,13 @@ class TransformationCache:
                 #print("INCREF WITH OLD",  tf_checksum.hex(), old_tf_checksum.hex())
                 old_transformation = self.transformations[old_tf_checksum]
                 self.decref_transformation(old_transformation, transformer)
+        
+        if transformation_build_exception is not None:
+            self.transformation_exceptions[tf_checksum] = transformation_build_exception
+            transformers = self.transformations_to_transformers[tf_checksum]
+            self._set_exc(transformers, transformation_build_exception)
+            return
+            
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
         if result_checksum is not None:
             if isinstance(transformer, Transformer):
@@ -344,7 +391,11 @@ class TransformationCache:
         if not dummy:
             self.transformations_to_transformers.pop(tf_checksum)
         for pinname in transformation:
-            if pinname == "__output__":
+            if pinname in ("__output__", "__languages__", "__compilers__", "__as__"):
+                continue
+            if pinname == "__env__":
+                env_checksum = transformation["__env__"]
+                buffer_cache.decref(env_checksum)
                 continue
             celltype, subcelltype, sem_checksum = transformation[pinname]
             buffer_cache.decref(sem_checksum)
@@ -394,7 +445,11 @@ class TransformationCache:
         python_debug = tf_checksum in self.python_debug
         semantic_cache = {}
         for k,v in transformation.items():
-            if k == "__output__":
+            if k in ("__compilers__", "__languages__"):
+                continue
+            if k in ("__output__", "__as__"):
+                continue
+            if k == "__env__":
                 continue
             celltype, subcelltype, sem_checksum = v
             if syntactic_is_semantic(celltype, subcelltype):
@@ -649,7 +704,9 @@ class TransformationCache:
             if transformation_buffer is not None:
                 transformation = json.loads(transformation_buffer)
                 for k,v in transformation.items():
-                    if k != "__output__":
+                    if k == "__env__":
+                        transformation[k] = bytes.fromhex(v)
+                    elif k not in ("__output__", "__as__"):
                         if v[-1] is not None:
                             v[-1] = bytes.fromhex(v[-1])
         return transformation
@@ -691,7 +748,7 @@ class TransformationCache:
 
         remote = communion_client_manager.remote_buffer_status
         for key, value in transformation.items():
-            if key == "__output__":
+            if key in ("__output__", "__as__"):
                 continue
             celltype, subcelltype, sem_checksum = value
             if syntactic_is_semantic(celltype, subcelltype):
@@ -729,6 +786,7 @@ class TransformationCache:
             assert tf_checksum is None
             tf_checksum = self.transformer_to_transformations.get(transformer)
         if tf_checksum is None:
+            transformer._exception_to_clear = True
             return
         exc = self.transformation_exceptions.pop(tf_checksum, None)
         if exc is None:
@@ -775,7 +833,9 @@ class TransformationCache:
         if transformation is None:
             raise CacheMissError
         for k,v in transformation.items():
-            if k == "__output__":
+            if k in ("__output__", "__as__"):
+                continue
+            if k == "__env__":
                 continue
             celltype, subcelltype, sem_checksum = v
             if syntactic_is_semantic(celltype, subcelltype):

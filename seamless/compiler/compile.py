@@ -1,5 +1,4 @@
 
-from . import compilers, languages
 from .. import subprocess
 
 import numpy as np
@@ -59,24 +58,24 @@ def compile(binary_objects, build_dir, *,
             with open(header_file, "w") as f:
                 f.write(headercode)
             source_files[header_file] = headercode
-        for objectname, object_ in binary_objects.items():
-            code_file = objectname + "." + object_["extension"]
-            obj_file = objectname + ".o"
+        for obj_file, object_ in binary_objects.items():
+
             if os.path.exists(obj_file):
                 os.remove(obj_file)
             cmd = [
               object_["compiler_binary"],
               object_["compile_flag"],
-              code_file,
             ]
             cmd += object_["options"]
             cmd += [
               object_["output_flag"],
               obj_file
             ]
-            with open(code_file, "w") as f:
-                f.write(object_["code"])
-            source_files[code_file] = object_["code"]
+            for code_file, code in object_["code_dict"].items():
+                cmd.append(code_file)
+                with open(code_file, "w") as f:
+                    f.write(code)
+                source_files[code_file] = code
             cmd2 = " ".join(cmd)
             cmd2 = cmd2.replace("{{BUILD_DIR}}", build_dir)
             if compiler_verbose:
@@ -93,7 +92,7 @@ def compile(binary_objects, build_dir, *,
                 stderr += curr_stderr + "\n"
                 with open(obj_file, "rb") as f:
                     obj = f.read()
-                result[objectname] = obj
+                result[obj_file] = obj
     finally:
         os.chdir(curr_dir)
         try:
@@ -106,7 +105,7 @@ def compile(binary_objects, build_dir, *,
         stderr = ""
     return success, result, source_files, stderr
 
-def complete(module_definition):
+def complete(module_definition, compilers, languages):
     from silk import Silk
     assert module_definition["type"] == "compiled"
     assert "public_header" in module_definition
@@ -126,7 +125,7 @@ def complete(module_definition):
             raise Exception("Binary Module, object '%s': no language defined" % objectname)
         lang = object_["language"]
         extension = object_.get("extension")
-        _, language, extension2 = find_language(lang)
+        _, language, extension2 = find_language(lang, languages)
         if extension is None and extension2 is not None:
             extension = extension2
         if extension is None:
@@ -136,11 +135,14 @@ def complete(module_definition):
         o["extension"] = extension
 
         compiler_name = object_.get("compiler", language.get("compiler"))
-        assert compiler_name is not None, lang
-        o["compiler"] = compiler_name
+        if compiler_name is None:
+            raise ValueError("No compiler defined for compiled language '{}'".format(lang))
+        o["compiler"] = compiler_name        
         compiler = compilers[compiler_name]
+        o["compile_mode"] = compiler.get("mode", "object")
         target = object_.get("target", overall_target)
-        assert target in ("release", "debug", "profile"), target
+        if target not in ("release", "debug", "profile"):
+            raise ValueError(target)
         o["target"] = target
         std_options = object_.get("options", compiler["options"])
         profile_options = object_.get("profile_options", compiler["profile_options"])

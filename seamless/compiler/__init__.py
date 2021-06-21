@@ -6,12 +6,6 @@ Linking options etc. are passed through.
 This dict can be sent to a transformer or reactor over a binarymodule pin
 
 Current state: stub.
-Fleshed-out spec is in:
-    TODO.md, section Modules, compiled workers, and interpreted workers
-
-TODO: Make this a high-level library of transformers
-For now, to dynamically add a language/compiler,
-  modify the languages/compilers dicts
 """
 
 import os
@@ -26,7 +20,9 @@ with open(languages_cson_file) as f:
     languages_cson = f.read()
 languages = cson2json(languages_cson)
 
-def find_language(lang):
+def find_language(lang, languages=None):
+    if languages is None:
+        languages = globals()["languages"]
     lang2 = lang
     if lang == "docker":
         lang2 = "bash"
@@ -46,7 +42,7 @@ def find_language(lang):
                 if lang2 in ext:
                     break
         else:
-            raise KeyError(lang2) from None
+            raise KeyError("Unknown language: {}".format(lang2)) from None
         extension = lang2
     return lang, language, extension
 

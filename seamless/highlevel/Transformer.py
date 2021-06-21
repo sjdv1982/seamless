@@ -16,6 +16,7 @@ from .SchemaWrapper import SchemaWrapper
 from silk import Silk
 from .compiled import CompiledObjectDict
 from silk.mixed.get_form import get_form
+from .Environment import Environment
 
 default_pin = {
   "celltype": "mixed",
@@ -81,8 +82,15 @@ class Transformer(Base):
             node = self._get_htf()
         except:
             node = None
+        self._environment = Environment(self)
         if node is None:
             htf = new_transformer(parent, path, code, pins, hash_pattern)
+        elif "environment" in node:
+            self._environment._load(node["environment"])
+
+    @property
+    def environment(self):
+        return self._environment
 
     @property
     def RESULT(self):
@@ -185,7 +193,11 @@ class Transformer(Base):
 
     def clear_exception(self):
         tf = self._get_tf(force=True)
-        tf.tf.clear_exception()
+        htf = self._get_htf()
+        if htf["compiled"]:
+            tf.tf.executor.clear_exception()
+        else:
+            tf.tf.clear_exception()
 
     @property
     def hash_pattern(self):
@@ -213,13 +225,14 @@ class Transformer(Base):
         return self._get_htf()["language"]
     @language.setter
     def language(self, value):
-        from ..compiler import find_language
-        lang, language, extension = find_language(value)
+        parent = self._parent()
+        lang, language, extension = parent.environment.find_language(value)
         compiled = (language["mode"] == "compiled")
         htf = self._get_htf()
         old_language = htf.get("language")
         htf["language"] = lang
         old_compiled = htf.get("compiled", False)
+        untranslate = False
         if old_compiled != compiled:
             htf["UNTRANSLATED"] = True
         elif (old_language in ("bash", "docker")) != (language in ("bash", "docker")):
@@ -557,7 +570,7 @@ class Transformer(Base):
         else:
             attrs = (
                 htf["INPUT"], "code",
-                "tf",
+                "ipy_template_code", "apply_ipy_template", "ipy_code", "tf",
                 htf["RESULT"]
             )
 
@@ -578,6 +591,13 @@ class Transformer(Base):
                 if len(exc):
                     return exc
                 curr_exc = getattr(self, k).exception
+            elif k in ("ipy_template_code", "apply_ipy_template", "ipy_code"):
+                tf2 = self._get_tf(force=True)
+                try:
+                    item = getattr(tf2, k)
+                except AttributeError:                    
+                    continue
+                curr_exc = item.exception
             else:
                 curr_exc = getattr(tf, k).exception
             if curr_exc is not None:
@@ -634,8 +654,8 @@ class Transformer(Base):
             )
         else:
             attrs = (
-                htf["INPUT"], "code",
-                "tf",
+                htf["INPUT"], "code", 
+                "ipy_template_code", "apply_ipy_template", "ipy_code", "tf",
                 htf["RESULT"]
             )
         for k in attrs:
@@ -648,6 +668,13 @@ class Transformer(Base):
                 status = self._get_tf(force=True).code.status
             elif k == "tf":
                 status = self._get_tf(force=True).tf.status
+            elif k in ("ipy_template_code", "apply_ipy_template", "ipy_code"):
+                tf2 = self._get_tf(force=True)
+                try:
+                    item = getattr(tf2, k)
+                except AttributeError:                    
+                    continue
+                status = item.status
             else:
                 tf = self._get_tf(force=True).tf
                 status = getattr(tf, k).status
@@ -669,6 +696,34 @@ class Transformer(Base):
         attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
         return SelfWrapper(self, attributelist)
 
+    @property
+    def link_options(self):
+        """Linker options for compiled modules
+        They are a list of strings, for example:
+        ["-lm", "-lgfortran", "-lcudart"]
+        """
+        htf = self._get_htf()
+        if not htf["compiled"]:
+            raise AttributeError("Only for compiled transformers")
+        return deepcopy(htf.get("link_options", []))
+
+    @link_options.setter
+    def link_options(self, link_options):
+        htf = self._get_htf()
+        if not htf["compiled"]:
+            raise AttributeError("Only for compiled transformers")
+        ok = True
+        if not isinstance(link_options, list):
+            ok = False
+        else:
+            for opt in link_options:
+                if not isinstance(opt, str):
+                    ok = False
+        if not ok:
+            raise TypeError("link_options must be a list of strings")
+        htf["link_options"] = deepcopy(link_options)
+        self._parent()._translate()
+
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
@@ -685,10 +740,13 @@ class Transformer(Base):
         htf = self._get_htf()
         dirs = None
         deleter = None
+        setter = None
         pull_source = functools.partial(self._pull_source, attr)
         if attr in htf["pins"]:
             getter = functools.partial(self._valuegetter, attr)
-            dirs = ["value", "celltype"]
+            pin = getattr(self.pins, attr)
+            setter = functools.partial(setattr, pin)
+            dirs = ["value", "celltype", "subcelltype", "as_"]
             proxycls = Proxy
         elif attr == "pins":
             return PinsWrapper(self)
@@ -727,7 +785,13 @@ class Transformer(Base):
                 return CompiledObjectDict(self)
         else:
             raise AttributeError(attr)
-        return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter, dirs=dirs)
+        mode = "w" if setter is not None else "r"
+        return proxycls(
+            self, 
+            (attr,), mode, 
+            pull_source=pull_source, 
+            getter=getter, setter=setter, dirs=dirs
+        )
 
     def _sub_mount_header(self, path=None, mode="w", authority="cell", persistent=True):
         assert mode == "w"
@@ -899,6 +963,10 @@ class Transformer(Base):
     def _valuegetter(self, attr, attr2):
         if attr2 == "celltype":
             return getattr(self.pins, attr).celltype
+        if attr2 == "subcelltype":
+            return getattr(self.pins, attr).subcelltype
+        if attr2 == "as_":
+            return getattr(self.pins, attr).as_
         if attr2 != "value":
             raise AttributeError(attr2)
         return self._get_value(attr)

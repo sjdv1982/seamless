@@ -113,6 +113,8 @@ class BufferCache:
         """
         if checksum is None:
             return
+        assert isinstance(checksum, bytes)
+        assert len(checksum) == 32
         assert isinstance(buffer, bytes)
         #print("LOCAL CACHE", checksum.hex())
         self._update_time(checksum, len(buffer))
@@ -132,6 +134,8 @@ class BufferCache:
         See the documentation of self.incref.
         """
         assert checksum is not None
+        assert isinstance(checksum, bytes)
+        assert len(checksum) == 32
         assert isinstance(buffer, bytes)
         l = len(buffer)
         if checksum not in self.buffer_length:
@@ -205,7 +209,8 @@ class BufferCache:
         If there is no database, all buffers are considered persistent,
          unless LOCAL_MODE_FULL_PERSISTENCE is disabled, in which case only authoritative buffers are.
         """
-
+        assert isinstance(checksum, bytes)
+        assert len(checksum) == 32
         buffer = None
         if checksum not in self.buffer_refcount:
             buffer = self.buffer_cache.get(checksum)
@@ -218,6 +223,8 @@ class BufferCache:
         This means that it will remain accessible for a short while
         """
         #print("DECREF     ", checksum.hex())
+        assert isinstance(checksum, bytes)
+        assert len(checksum) == 32
         if checksum not in self.buffer_refcount:
             print_warning("double decref, %s" % checksum.hex())
             return
@@ -237,6 +244,8 @@ class BufferCache:
             return None
         if isinstance(checksum, str):
             checksum = bytes.fromhex(checksum)
+        assert isinstance(checksum, bytes)
+        assert len(checksum) == 32
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
             assert isinstance(buffer, bytes)
@@ -253,6 +262,8 @@ class BufferCache:
     def get_buffer_length(self, checksum):
         if checksum is None:
             return None
+        assert isinstance(checksum, bytes)
+        assert len(checksum) == 32
         length = self.buffer_length.get(checksum)
         if length is not None:
             return length
@@ -266,6 +277,8 @@ class BufferCache:
     def buffer_check(self, checksum):
         """For the communion_server..."""
         assert checksum is not None
+        assert isinstance(checksum, bytes)
+        assert len(checksum) == 32
         if checksum in self.buffer_cache:
             return True
         return database_cache.has_buffer(checksum)

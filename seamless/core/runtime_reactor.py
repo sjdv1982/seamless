@@ -80,9 +80,12 @@ class RuntimeReactor:
         self.namespace["__name__"] = "reactor"
         self.namespace["__package__"] = "reactor"
         for pinname in self.inputpins:
+            pinname2 = pinname
+            if self.reactor()._pins[pinname].as_ is not None:
+                pinname2 = self.reactor()._pins[pinname].as_
             if updated is not None and pinname not in updated:
                 if pinname not in ("code_start", "code_update", "code_stop"):
-                    self.PINS[pinname].updated = False
+                    self.PINS[pinname2].updated = False
                 continue
             if pinname in self.module_workspace:
                 continue
@@ -92,39 +95,45 @@ class RuntimeReactor:
                 continue
             if not self.live:
                 pin = ReactorInput(value)
-                self.PINS[pinname] = pin
+                self.PINS[pinname2] = pin
             else:
-                self.PINS[pinname]._value = value
-                self.PINS[pinname].updated = True
+                self.PINS[pinname2]._value = value
+                self.PINS[pinname2].updated = True
         for pinname in self.editpins:
+            pinname2 = pinname
+            if self.reactor()._pins[pinname].as_ is not None:
+                pinname2 = self.reactor()._pins[pinname].as_
             if updated is not None and pinname not in updated:
-                self.PINS[pinname].updated = False
+                self.PINS[pinname2].updated = False
                 continue
             value = self.values.get(pinname)
             if not self.live:
                 pin = ReactorEdit(self, pinname, value)
-                self.PINS[pinname] = pin
+                self.PINS[pinname2] = pin
             else:
-                if value == self.PINS[pinname]._value:
-                    self.PINS[pinname].updated = False
+                if value == self.PINS[pinname2]._value:
+                    self.PINS[pinname2].updated = False
                 else:
-                    self.PINS[pinname]._value = value
-                    self.PINS[pinname].updated = True
+                    self.PINS[pinname2]._value = value
+                    self.PINS[pinname2].updated = True
         for pinname in self.outputpins:
+            pinname2 = pinname
+            if self.reactor()._pins[pinname].as_ is not None:
+                pinname2 = self.reactor()._pins[pinname].as_
             if not self.live:
                 pin = ReactorOutput(self, pinname)
-                self.PINS[pinname] = pin
-        for pinname in self.module_workspace:
-            value = self.module_workspace[pinname]
+                self.PINS[pinname2] = pin
+        for pinname2 in self.module_workspace:
+            value = self.module_workspace[pinname2]
             if not self.live:
-                self.PINS[pinname] = ReactorInput(value)
-                self.PINS[pinname] = pin
+                pin = ReactorInput(value)
+                self.PINS[pinname2] = pin
             else:
-                self.PINS[pinname]._value = value
+                self.PINS[pinname2]._value = value
             if updated is not None and pinname not in updated:
-                self.PINS[pinname].updated = False
+                self.PINS[pinname2].updated = False
             else:
-                self.PINS[pinname].updated = True
+                self.PINS[pinname2].updated = True
 
     def run_code(self, codename):
         assert codename in ("code_start", "code_stop", "code_update")

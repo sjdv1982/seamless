@@ -170,8 +170,6 @@ class MountItem:
                         if file_checksum == cell_checksum:
                             update_file = False
                         else:
-                            if cell_checksum is not None:
-                                print(cell_checksum.hex())
                             print("Warning: File path '%s' has a different value, overwriting cell" % self.path) #TODO: log warning
                     self._after_read(file_checksum)
                 if update_file:
