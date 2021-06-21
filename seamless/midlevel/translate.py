@@ -312,20 +312,29 @@ def translate(graph, ctx, environment):
                 translate_docker_transformer(node, ctx, namespace, inchannels, outchannels)
             else:
                 ipy_template = None
+                py_bridge = None
                 if language not in ("python", "ipython"):                    
                     ok = False                    
                     if environment is not None:
                         try:
                             ipy_template = environment.get_ipy_template(language)
                             ok = True
-                            language = "ipython"
                         except KeyError:
                             pass
+                        try:
+                            py_bridge = environment.get_py_bridge(language)
+                            ok = True
+                        except KeyError:
+                            pass
+                        if ipy_template is not None and py_bridge is not None:
+                            msg = "Language '{}' has an IPython template AND a Python bridge"
+                            raise ValueError(msg.format(language))
                     if not ok:
                         raise NotImplementedError(language)
                 translate_py_transformer(
                     node, ctx, namespace, inchannels, outchannels,
-                    ipy_template=ipy_template
+                    ipy_template=ipy_template,
+                    py_bridge=py_bridge
                 )                
         elif t == "macro":
             if node["language"]  != "python":

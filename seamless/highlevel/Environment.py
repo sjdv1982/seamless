@@ -15,7 +15,7 @@ from ..core.environment import validate_conda_environment
 from ..compiler import languages_cson as languages_default, compilers_cson as compilers_default
 
 class Environment:
-    _props = ["_conda", "_which"]
+    _props = ["_conda", "_which", "_powers"]
     def __init__(self, parent=None):
         if parent is None:
             self._parent = lambda: None
@@ -23,6 +23,7 @@ class Environment:
             self._parent = weakref.ref(parent)
         self._conda = None
         self._which = None
+        self._powers = None
 
     def _update(self):
         from .Context import Context
@@ -105,6 +106,9 @@ for transformers individually (Transformer.environment)"""
             return
         if not isinstance(which, list):
             raise TypeError("Must be list, not {}".format(type(which)))
+        for w in which:
+            if not isinstance(w, str):
+                raise TypeError("Must be list of strings")
         self._which = which
         self._update()
 
@@ -114,6 +118,35 @@ for transformers individually (Transformer.environment)"""
             raise NotImplementedError(format)  # must be plain Python for now
         return deepcopy(self._which)
 
+    def set_powers(self, powers):
+        """List of abstract powers that must be available
+Currently supported: 
+- "docker": run Docker containers (or Singularity)
+- "ipython": have get_ipython available
+- "conda": have conda available to install new packages dynamically
+        """
+        if powers is None:
+            self._powers = None
+            self._update()
+            return
+        if not isinstance(powers, list):
+            raise TypeError("Must be list, not {}".format(type(powers)))
+        for p in powers:
+            if not isinstance(p, str):
+                raise TypeError("Must be list of strings")
+        self._powers = powers
+        self._update()
+
+    def get_powers(self):
+        """List of abstract powers that must be available
+Currently supported: 
+- "docker": run Docker containers (or Singularity)
+- "ipython": have get_ipython available
+- "conda": have conda available to install new packages dynamically
+        """
+        return deepcopy(self._powers)
+
+
     def _to_lowlevel(self):
         result = {}
         if self._which is not None:
@@ -121,6 +154,8 @@ for transformers individually (Transformer.environment)"""
         if self._conda is not None:
             conda_env = yaml.load(self._conda)
             result["conda"] = conda_env
+        if self._powers is not None:
+            result["powers"] = deepcopy(self._powers)
         if not len(result):
             return None
         return result
@@ -145,9 +180,11 @@ class ContextEnvironment(Environment):
         self._languages = None
         self._compilers = None
         self._ipy_templates = None
+        self._py_bridges = None
 
     def set_languages(self, languages, format):
-        """Definition of supported languages"""
+        """Definition of supported languages
+Setting it to None resets it to the default language definition"""
         if format not in ("cson", "plain"):
             raise NotImplementedError(format)  # must be cson for now
         if languages is None:
@@ -178,7 +215,8 @@ class ContextEnvironment(Environment):
 
 
     def set_compilers(self, compilers, format):
-        """Definition of supported compilers"""
+        """Definition of supported compilers
+Setting it to None resets it to the default compiler definitions"""
         if format not in ("cson", "plain"):
             raise NotImplementedError(format)  # must be cson or plain
         if compilers is None:
@@ -236,6 +274,7 @@ A JSON-serializable object that will be passed to the template code
 environment: optional
 An Environment instance that defines where the template code will be run.
 
+Setting it to None resets it to the default (default=None as of Seamless 0.7)
 """
         if not isinstance(language, str):
             raise TypeError(language)
@@ -296,6 +335,93 @@ Returns a (code, parameters, environment) tuple"""
         code = tmpl["code"]
         parameters = deepcopy(tmpl.get("parameters"))
         environment = deepcopy(tmpl.get("environment"))
+        return code, parameters, environment
+
+    def set_py_bridge(
+        self, language:str, bridge_code, bridge_parameters=None, environment=None
+    ):
+        """Sets an Python bridge for a foreign programming language
+A transformer written in that language will be executed by the bridge.
+
+bridge_code must be:
+- a Python function that takes N+2 keyword arguments.
+  The N keyword arguments are the pins declared by the foreign transformer.
+  The other two arguments are:
+    "code" is the foreign language code. 
+    "bridge_parameters" is what is supplied here.
+  Alternatively, all parameter values can be retrieved from the PINS dict
+
+- or: a string with the source code of such a Python function
+
+- or: a code block that defines a variable "result"        
+
+bridge_parameters: optional
+A JSON-serializable object that will be passed to the bridge code
+
+environment: optional
+An Environment instance that defines where the bridge code will be run.
+
+Setting it to None resets it to the default (default=None as of Seamless 0.7)
+"""
+        if not isinstance(language, str):
+            raise TypeError(language)
+
+        if callable(bridge_code):
+            bridge_code = inspect.getsource(bridge_code)
+            if bridge_code is None:
+                raise ValueError("Cannot obtain source code for bridge_code")
+            if not isinstance(bridge_code, str):
+                raise TypeError(type(bridge_code))
+        if self._py_bridges is None:
+            self._py_bridges = {}
+        bridge = {
+            "code": bridge_code
+        }
+        self._py_bridges[language] = bridge
+        if bridge_parameters is not None:
+            self.set_py_bridge_parameters(language, bridge_parameters)
+        if environment is not None:
+            self.set_py_bridge_environment(language, environment)
+        self._update()
+
+    def set_py_bridge_parameters(self, language, parameters) -> None:
+        """Sets the Python bridge parameters for a programming language
+See set_py_bridge for documentation
+"""
+        if self._py_bridges is None or language not in self._py_bridges:
+            raise KeyError(language)
+        bridge = self._py_bridges[language]
+        try:
+            json.dumps(parameters)
+        except Exception:
+            raise ValueError("Parameters must be JSON-serializable") from None
+        bridge["parameters"] = deepcopy(parameters)
+        self._update()
+
+    def set_py_bridge_environment(self, language, environment: Environment) -> None:
+        """Sets the environment for the Python bridge code for a programming language
+See set_py_bridge for documentation
+"""
+        if self._py_bridges is None or language not in self._py_bridges:
+            raise KeyError(language)
+        bridge = self._py_bridges[language]
+        if not isinstance(environment, Environment):
+            raise TypeError(type(environment))
+        env = environment._save()
+        bridge["environment"] = deepcopy(env)
+        self._update()
+
+    def get_py_bridge(self, language) -> tuple:
+        """Gets the Python bridge for a programming language
+See set_py_bridge for documentation
+    
+Returns a (code, parameters, environment) tuple"""
+        if self._py_bridges is None or language not in self._py_bridges:
+            raise KeyError(language)
+        bridge = self._py_bridges[language]
+        code = bridge["code"]
+        parameters = deepcopy(bridge.get("parameters"))
+        environment = deepcopy(bridge.get("environment"))
         return code, parameters, environment
 
     def _parse_and_validate(self):
