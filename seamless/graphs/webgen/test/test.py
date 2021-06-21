@@ -1,5 +1,5 @@
 from seamless.highlevel import Context, Cell, Transformer, Link, load_graph
-from seamless.stdlib import stdlib
+from seamless import stdlib
 import os, json
 
 ctx = Context()

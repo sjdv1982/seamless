@@ -1,7 +1,7 @@
 from seamless.highlevel import Context
 from seamless.highlevel.library import LibraryContainer
 
-stdlib = LibraryContainer("stdlib")
+lib = LibraryContainer("lib")
 
 ctx = Context()
 ctx.x = 20
@@ -13,15 +13,15 @@ ctx.result = ctx.minus
 ctx.compute()
 print(ctx.result.value)
 
-stdlib.subtract = ctx
+lib.subtract = ctx
 def constructor(ctx, libctx):
     graph = libctx.get_graph()
     ctx.set_graph(graph)
-stdlib.subtract.constructor = constructor
-stdlib.subtract.params = {}
+lib.subtract.constructor = constructor
+lib.subtract.params = {}
 
 ctx = Context()
-ctx.include(stdlib.subtract)
+ctx.include(lib.subtract)
 ctx.subtract1 = ctx.lib.subtract()
 x = ctx.subtract1
 print(x.libpath)
@@ -30,7 +30,7 @@ print(y._path)
 print(y._constructor)
 print(len(y._graph))
 print(len(y._graph["nodes"]))
-z = stdlib.subtract
+z = lib.subtract
 print(z.constructor)
 print(len(z._graph))
 print(len(z._zip))

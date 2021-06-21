@@ -65,7 +65,9 @@ def under_libinstance_control(nodedict, path):
         if longest_path is None:
             return False
     node = nodedict[longest_path]
-    return node["type"] == "libinstance"
+    if node["type"] == "libinstance":
+        return node
+    return None
 
 def assign_constant(ctx, path, value):
     old = None
@@ -168,9 +170,28 @@ def assign_libinstance(ctx, path, libinstance):
 
 def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     nodedict = ctx._graph[0]
-    if under_libinstance_control(nodedict, source):
-        msg = "Cannot connect from path under libinstance control: {}"
-        raise Exception(msg.format(source))
+    libinstance_source_node = under_libinstance_control(nodedict, source)
+    if libinstance_source_node is not None:
+        try:
+            lib = ctx._get_lib(tuple(libinstance_source_node["libpath"]))
+            p = libinstance_source_node["path"]
+            if len(source) != len(p) + 1:
+                raise ValueError
+            params = lib["params"]
+            attr = source[-1]
+            if attr not in params:
+                raise AttributeError
+            par = params[attr]
+            if par["io"] != "output":
+                raise AttributeError 
+            arguments = libinstance_source_node["arguments"]
+            from .library.argument import parse_argument
+            t = ctx._children[target]
+            arguments[attr] = parse_argument(attr, t, par)
+            return True
+        except Exception: 
+            msg = "Cannot connect from path under libinstance control: {}"
+            raise Exception(msg.format(source)) from None        
     if under_libinstance_control(nodedict, target):
         msg = "Cannot connect to path under libinstance control: {}"
         raise Exception(msg.format(target))
@@ -507,6 +528,7 @@ def assign(ctx, path, value):
             if isinstance(target, Cell):
                 _remove_independent_mountshares(target._get_hcell())
             assign_connection(ctx, value._path, path, True)
+            ctx._translate()
     elif isinstance(value, LibInstance):
         assign_libinstance(ctx, path, value)
         ctx._translate()
@@ -525,7 +547,6 @@ def assign(ctx, path, value):
             Cell(parent=ctx, path=path) #inserts itself as child
             node = get_new_cell(path)
             ctx._graph[0][path] = node
-        #TODO: break links and connections from ctx._children[path]
         assign_connection(ctx, value._virtual_path, path, False)
         check_libinstance_subcontext_binding(ctx, path)
         ctx._translate()

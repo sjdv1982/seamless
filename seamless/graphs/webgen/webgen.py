@@ -1,5 +1,5 @@
 from seamless.highlevel import Context, Transformer, Cell
-from seamless.stdlib import stdlib
+from seamless import stdlib
 import json
 
 import os

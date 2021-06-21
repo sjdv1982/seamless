@@ -362,8 +362,12 @@ def translate(graph, ctx, environment):
     for connection in connections:
         if connection["type"] == "connection":
             translate_connection(connection, namespace2, ctx)
-        else:
+        elif connection["type"] == "link":
             translate_link(connection, namespace2, ctx)
+        elif connection["type"] == "virtual":
+            pass
+        else:
+            raise TypeError(connection["type"])
 
 from .translate_py_transformer import translate_py_transformer
 from .translate_macro import translate_macro

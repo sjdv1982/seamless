@@ -143,6 +143,7 @@ function restart() {
   path = path.enter().append('svg:path')
     .attr('class', 'link')
     .classed('selected', (d) => d === selectedLink)
+    .classed('dashed', (d) => d.linktype == "virtual")
     .style('marker-start', (d) => d.left ? 'url(#start-arrow)' : '')
     .style('marker-end', (d) => d.right ? 'url(#end-arrow)' : '')
     .on('mousedown', (d) => {
@@ -295,8 +296,9 @@ ctx.self.onsharelist = function(sharelist) {
       newLink = {
         source: nodeMapping[shareLink.source],
         target: nodeMapping[shareLink.target],
-        right: true, 
+        right: (shareLink.type != "virtual"), 
       }
+      newLink.linktype = shareLink.type
       newLink.left = (shareLink.type == "link")
       newLinks.push(newLink)
     }) 

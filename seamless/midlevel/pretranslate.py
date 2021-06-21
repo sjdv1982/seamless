@@ -15,22 +15,27 @@ def pretranslate(ctx, graph):
     overlay_connections = []
     for path in libinstances:
         libinstance = LibInstance(ctx, path=path)
-        try:
-            result = libinstance._run()
-        except Exception as exc:
-            import traceback
-            print("LibInstance:", path, file=sys.stderr)
-            traceback.print_exc()
+        result = libinstance._run()
+        if libinstance.exception is not None:
             continue
         curr_graph, curr_nodes, curr_connections = result
         path2 = path + ("ctx",)
         for nodepath, node in curr_nodes.items():
             overlay_nodedict[nodepath] = node
         overlay_connections += curr_connections
-        for node in curr_graph["nodes"]:
-            nodepath = path2 + tuple(node["path"])
+        for node in curr_graph["nodes"]:            
+            p = tuple(node["path"])
+            nodepath = path2 + p
             node["path"] = nodepath
             overlay_nodedict[nodepath] = node
+            """
+            con = {
+                "source": path,
+                "target": nodepath,
+                "type": "virtual",
+            }
+            overlay_connections.append(con)
+            """
         for con in curr_graph["connections"]:
             con["source"] = path2 + tuple(con["source"])
             con["target"] = path2 + tuple(con["target"])

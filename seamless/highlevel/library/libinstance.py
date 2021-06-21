@@ -1,10 +1,11 @@
+import traceback
 import weakref, json
 from copy import deepcopy
 
 highlevel_names = ("Context", "Cell", "Transformer", "Macro", "Module")
 
 class LibInstance:
-
+    
     def __init__(self, parent, *, path=None, libpath=None, arguments=None):
         self._parent = weakref.ref(parent)
         self._path = path
@@ -82,7 +83,7 @@ class LibInstance:
                     msg = "'%s' must be Context, not '%s'"
                     raise TypeError(msg % (argname, type(value)))
                 value = SubContext(parent, argvalue).get_graph()
-            else: # par["type"] == "celldict":
+            elif par["type"] == "celldict":
                 value = {}
                 for k,v in argvalue.items():
                     if isinstance(v, list):
@@ -104,6 +105,22 @@ class LibInstance:
                             connection_wrapper, overlay_node, cellpath
                         )
                     value[k] = vv
+            elif par["type"] == "kwargs":
+                value = {}
+                for k,v0 in argvalue.items():
+                    vtype, v = v0
+                    if vtype == "cell":
+                        if isinstance(v, list):
+                            v = tuple(v)
+                        vv = parent._children.get(v)
+                        if isinstance(vv, SubCell) or not isinstance(vv, Cell):
+                            msg = "%s['%s'] must be Cell, not '%s'"
+                            raise TypeError(msg % (argname, k, type(vv)))
+                        value[k] = "cell", InputCellWrapper(connection_wrapper, vv)
+                    else: # value
+                        value[k] = "value", v
+            else:
+                raise NotImplementedError(par["type"])                    
             namespace[argname] = value
         libctx = StaticContext.from_graph(graph, manager=parent._manager)
         namespace["libctx"] = libctx
@@ -112,15 +129,31 @@ class LibInstance:
             if name not in namespace:
                 namespace[name] = globals()[name]
         identifier = ".".join(self._path)
-        exec_code(constructor, identifier, namespace, argnames, None)
+        try:
+            exec_code(constructor, identifier, namespace, argnames, None)
+        except Exception:
+            self._get_node()["exception"] = traceback.format_exc()
+            try:
+                libctx.root.destroy()
+            except Exception:
+                pass
+            return
         overlay_graph = overlay_context.get_graph()
         overlay_connections = connection_wrapper.connections
         libctx.root.destroy()
+        self._get_node().pop("exception", None)
         return overlay_graph, overlay_nodes, overlay_connections
 
     @property
     def status(self):
-        raise NotImplementedError
+        if self.exception is not None:
+            return "Status: error"
+        else:
+            return self.ctx.status
+
+    @property
+    def exception(self):
+        return self._get_node().get("exception")
 
     def __getattribute__(self, attr):
         if attr.startswith("_"):
@@ -130,6 +163,8 @@ class LibInstance:
         hnode = self._get_node()
         libpath = hnode["libpath"]
         arguments = hnode["arguments"]
+        lib = self.get_lib()
+        params = lib["params"]        
         if attr not in arguments:
             if attr == "ctx":
                 parent = self._parent()
@@ -139,13 +174,14 @@ class LibInstance:
                 return libpath
             if attr == "arguments":
                 return arguments
-            raise AttributeError(attr)
+            if attr not in params or params[attr]["io"] != "output":
+                raise AttributeError(attr)
         argname = attr
-        argvalue = arguments[argname]
         parent = self._parent()
-        lib = parent._get_lib(tuple(libpath))
-        params = lib["params"]
         par = params[argname]
+        if par["io"] == "output":
+            return Proxy(parent, self._path + (argname,), "r")
+        argvalue = arguments[argname]
         if par["type"] == "cell":
             if isinstance(argvalue, list):
                 argvalue = tuple(argvalue)
@@ -156,9 +192,16 @@ class LibInstance:
 
     def __dir__(self):        
         hnode = self._get_node()
-        libpath = hnode["libpath"]
         arguments = hnode["arguments"]
         return list(arguments.keys()) + ["ctx", "libpath", "arguments", "status"]
+
+    def get_lib(self):
+        """Returns the library of which this is an instance"""
+        hnode = self._get_node()
+        libpath = hnode["libpath"]
+        parent = self._parent()
+        lib = parent._get_lib(tuple(libpath))
+        return deepcopy(lib)
 
     def __setattr__(self, attr, value):
         from .argument import parse_argument
@@ -166,14 +209,27 @@ class LibInstance:
             super().__setattr__(attr, value)
             return
         hnode = self._get_node()
-        libpath = hnode["libpath"]
         arguments = hnode["arguments"]
-        if attr not in arguments:
-            raise AttributeError(attr)
-        parent = self._parent()
-        lib = parent._get_lib(tuple(libpath))
+        lib = self.get_lib()
         params = lib["params"]
-        arguments[attr] = parse_argument(attr, value, params[attr])
+        if attr not in params:
+            for parname in params:
+                par = params[parname]
+                if par["io"] != "input":
+                    continue
+                if par["type"] == "kwargs":
+                    if parname not in arguments:
+                        arguments[parname] = {}
+                    arguments[parname][attr] = parse_argument(attr, value, params[parname])
+                    break
+            else:
+                raise AttributeError(attr)
+        else:
+            par = params[attr]
+            if par["io"] == "output":
+                raise AttributeError("Reverse assignment for '{}'".format(attr))
+            arguments[attr] = parse_argument(attr, value, params[attr])
+        parent = self._parent()
         parent._translate()
 
 from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper, EditCellWrapper
@@ -186,3 +242,4 @@ from ..Transformer import Transformer
 from ..Macro import Macro
 from ..Module import Module
 from ...core.cached_compile import exec_code
+from ..proxy import Proxy

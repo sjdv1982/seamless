@@ -1,3 +1,15 @@
+import json
+import inspect
+import textwrap
+
+def _get_value(name, value):
+    if callable(value):
+        value = inspect.getsource(value)
+        if value is None:
+            raise Exception("Cannot obtain source code for '{}'".format(name))
+        value = textwrap.dedent(value)
+    return RichValue(value).value
+
 def get_argument_value(name, value):
     if isinstance(value, Cell):
         if value._get_hcell().get("constant"):
@@ -6,7 +18,7 @@ def get_argument_value(name, value):
             raise TypeError("'%s' is a value argument, you cannot pass a cell unless it is constant" % name)
     elif isinstance(value, Base):
         raise TypeError("'%s' must be value or constant cell, not '%s'" % (name, type(value)))
-    return RichValue(value).value
+    return _get_value(name, value)
 
 def parse_argument(argname, argvalue, parameter):
     par = parameter
@@ -27,7 +39,14 @@ def parse_argument(argname, argvalue, parameter):
                 msg = "%s must have celltype '%s', not '%s"
                 raise TypeError(msg % (argname, celltype, argvalue.celltype))
         value = argvalue._path
-    else:  # par["type"] == "celldict":
+    elif par["type"] == "kwargs":
+        if isinstance(argvalue, Cell):
+            value = ("cell", argvalue._path)
+        elif isinstance(argvalue, Base):
+            raise TypeError("'%s' must be value or cell, not '%s'" % (argname, type(argvalue)))
+        else:
+            value = ("value", _get_value(argname, argvalue))
+    elif par["type"] == "celldict":
         try:
             argvalue.items()
         except Exception:
@@ -46,6 +65,12 @@ def parse_argument(argname, argvalue, parameter):
                     msg = "%s['%s'] must have celltype '%s', not '%s"
                     raise TypeError(msg % (argname, k, celltype, v.celltype))
             value[k] = v._path
+    else:
+        raise NotImplementedError(par["type"])
+    try:
+        json.dumps(value)
+    except (TypeError, ValueError):
+        raise ValueError("Argument '{}' is not JSON-serializable".format(argname)) from None
     return value
 
 from silk.Silk import RichValue
