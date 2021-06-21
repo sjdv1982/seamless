@@ -740,10 +740,13 @@ class Transformer(Base):
         htf = self._get_htf()
         dirs = None
         deleter = None
+        setter = None
         pull_source = functools.partial(self._pull_source, attr)
         if attr in htf["pins"]:
             getter = functools.partial(self._valuegetter, attr)
-            dirs = ["value", "celltype"]
+            pin = getattr(self.pins, attr)
+            setter = functools.partial(setattr, pin)
+            dirs = ["value", "celltype", "subcelltype", "as_"]
             proxycls = Proxy
         elif attr == "pins":
             return PinsWrapper(self)
@@ -782,7 +785,13 @@ class Transformer(Base):
                 return CompiledObjectDict(self)
         else:
             raise AttributeError(attr)
-        return proxycls(self, (attr,), "r", pull_source=pull_source, getter=getter, dirs=dirs)
+        mode = "w" if setter is not None else "r"
+        return proxycls(
+            self, 
+            (attr,), mode, 
+            pull_source=pull_source, 
+            getter=getter, setter=setter, dirs=dirs
+        )
 
     def _sub_mount_header(self, path=None, mode="w", authority="cell", persistent=True):
         assert mode == "w"
@@ -954,6 +963,10 @@ class Transformer(Base):
     def _valuegetter(self, attr, attr2):
         if attr2 == "celltype":
             return getattr(self.pins, attr).celltype
+        if attr2 == "subcelltype":
+            return getattr(self.pins, attr).subcelltype
+        if attr2 == "as_":
+            return getattr(self.pins, attr).as_
         if attr2 != "value":
             raise AttributeError(attr2)
         return self._get_value(attr)

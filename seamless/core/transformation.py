@@ -444,16 +444,17 @@ class TransformationJob:
                 schema_celltype, _, _ = schema_pin
                 assert schema_celltype == "plain", schema_pinname
                 schema = namespace[schema_pinname]
-            if schema is None and isinstance(namespace[pinname], Scalar):
+            pinname_as = as_.get(pinname, pinname)
+            if schema is None and isinstance(namespace[pinname_as], Scalar):
                 continue
             if schema is None:
                 schema = {}
             v = Silk(
-                data=namespace[pinname],
+                data=namespace[pinname_as],
                 schema=schema
             )
-            namespace["PINS"][pinname] = v
-            namespace[pinname] = v
+            namespace["PINS"][pinname_as] = v
+            namespace[pinname_as] = v
 
         module_workspace = {}
         compilers = self.transformation.get("__compilers__", default_compilers)
