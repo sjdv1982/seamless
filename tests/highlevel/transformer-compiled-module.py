@@ -37,7 +37,9 @@ def build_transformer():
     code = """
     int add(int a, int b, double *result) {*result = a+b;};
     """
-    ctx.add_code >> ctx.transform.main_module.add.code
+    ctx.add_code = Cell("code")
+    ctx.add_code.language = "c"
+    ctx.transform.main_module.add.code = ctx.add_code
     ctx.add_code.set(code)
     ctx.translate()
 
