@@ -14,7 +14,7 @@ class ReadAccessor(Accessor):
         self.source = source
         self.manager = weakref.ref(manager)
         self.path = path
-        assert celltype in celltypes or isinstance(celltype, MacroPath)
+        assert celltype in celltypes or celltype in pin_celltypes or isinstance(celltype, MacroPath), celltype
         self.reactor_pinname = None
         self.celltype = celltype
         self.write_accessor = None
@@ -92,7 +92,7 @@ class WriteAccessor(Accessor):
         assert pinname is None or path is None
         self.read_accessor = weakref.ref(read_accessor)
         self.target = weakref.ref(target)
-        assert celltype in celltypes or isinstance(celltype, MacroPath), celltype
+        assert celltype in celltypes or celltype in pin_celltypes or isinstance(celltype, MacroPath), celltype
         self.celltype = celltype
         assert subcelltype is None or subcelltype in subcelltypes
         self.subcelltype = subcelltype
@@ -103,6 +103,7 @@ class WriteAccessor(Accessor):
         self.hash_pattern = hash_pattern
 
 from ...core.cell import Cell, celltypes, subcelltypes
+from ...core.worker import pin_celltypes
 from ...core.macro import Path as MacroPath
 from ...core.status import StatusReasonEnum
 from .expression import Expression

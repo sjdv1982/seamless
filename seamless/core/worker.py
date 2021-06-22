@@ -56,12 +56,13 @@ class Worker(SeamlessBase):
 
 
 from .cell import celltypes
+pin_celltypes = list(celltypes.keys()) + ["silk"]
 
 class PinBase(SeamlessBase):
     def __init__(self, worker, name, celltype, subcelltype=None, *, as_=None):
         self.worker_ref = weakref.ref(worker)
         super().__init__()
-        assert celltype is None or celltype in celltypes, (celltype, celltypes)
+        assert celltype is None or celltype in pin_celltypes, (celltype, pin_celltypes)
         self.name = name
         self.celltype = celltype
         self.subcelltype = subcelltype

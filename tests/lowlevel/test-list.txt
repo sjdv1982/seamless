@@ -1,3 +1,5 @@
+# NOTE: See https://github.com/sjdv1982/seamless/issues/65 . Regressions expected!!!
+
 # In general, run with:
 #   python3 -u TEST.py > test-outputs/TEST.out 2>&1
 # Before each release, the test set must be run under seamless-devel AND under the Conda environment!

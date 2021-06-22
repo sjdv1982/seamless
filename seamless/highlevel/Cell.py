@@ -211,15 +211,16 @@ class Cell(Base):
             return super().__getattribute__(attr)
         if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
+        hcell = self._get_hcell()
         if attr == "schema":
-            hcell = self._get_hcell()
+            if hcell.get("UNTRANSLATED"):
+                raise AttributeError("Cannot access Cell.schema: cell must be translated first")
             if hcell["celltype"] == "structured":
                 cell = self._get_cell()
                 schema = self.example.schema
                 return SchemaWrapper(self, schema, "SCHEMA")
             else:
                 raise AttributeError
-        hcell = self._get_hcell()
         if not hcell["celltype"] == "structured":
             cell = self._get_cell()
             return getattr(cell, attr)

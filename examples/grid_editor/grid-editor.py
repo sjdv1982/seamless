@@ -81,10 +81,10 @@ ctx.translation_.celltype = "plain"
 ctx.translation_.mount("translation.json")
 
 def combine_grid_params(grid_params, translation):  
-  result = grid_params.unsilk  
+  result = grid_params 
   p = result["grid_params"][3]
-  p["trans_x"] = translation.unsilk[0]
-  p["trans_y"] = translation.unsilk[1]
+  p["trans_x"] = translation[0]
+  p["trans_y"] = translation[1]
   return result
 
 ctx.combine_grid_params = combine_grid_params

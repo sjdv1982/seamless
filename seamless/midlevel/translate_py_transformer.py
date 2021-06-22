@@ -35,9 +35,17 @@ def translate_py_transformer(
     pin_cells = {}
     for pin in list(node["pins"].keys()):
         pin_cell_name = pin + "_PIN"
+        celltype = node["pins"][pin].get("celltype")
+        if celltype is None:
+            if pin.endswith("_SCHEMA"):
+                celltype = "plain"
+            else:
+                celltype = "mixed"
+        if celltype == "silk":
+            celltype = "mixed"
         assert pin_cell_name not in all_inchannels
         assert pin_cell_name not in node["pins"]
-        pin_cell = cell("mixed")
+        pin_cell = cell(celltype)
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pin] = pin_cell
 

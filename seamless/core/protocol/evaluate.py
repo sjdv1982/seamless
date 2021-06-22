@@ -30,6 +30,10 @@ evaluation_cache_3 = {}
 
 
 def needs_buffer_evaluation(checksum, celltype, target_celltype, fingertip_mode=False):
+    if celltype == "silk":
+        celltype = "mixed"
+    if target_celltype == "silk":
+        target_celltype = "mixed"
     if celltype == target_celltype:
         return False
     if (checksum, celltype) not in evaluation_cache_1:
@@ -59,6 +63,10 @@ def needs_buffer_evaluation(checksum, celltype, target_celltype, fingertip_mode=
         raise TypeError((celltype, target_celltype)) # should never happen
 
 async def evaluate_from_checksum(checksum, celltype, target_celltype):
+    if celltype == "silk":
+        celltype = "mixed"
+    if target_celltype == "silk":
+        target_celltype = "mixed"
     if celltype == target_celltype:
         return checksum
     assert (checksum, celltype) in evaluation_cache_1
@@ -81,6 +89,10 @@ async def evaluate_from_checksum(checksum, celltype, target_celltype):
         raise TypeError((celltype, target_celltype)) # should never happen
 
 async def evaluate_from_buffer(checksum, buffer, celltype, target_celltype, fingertip_mode=False):
+    if celltype == "silk":
+        celltype = "mixed"
+    if target_celltype == "silk":
+        target_celltype = "mixed"
     if (celltype, target_celltype) in conversion_equivalent:
         celltype, target_celltype = conversion_equivalent[celltype, target_celltype]
     if celltype == target_celltype or (celltype, target_celltype) in conversion_trivial:

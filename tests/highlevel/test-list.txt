@@ -1,3 +1,5 @@
+# NOTE: See https://github.com/sjdv1982/seamless/issues/65 . Regressions expected!!!
+
 # In general, run with:
 #   python3 -u TEST.py > test-outputs/TEST.out 2>&1
 #   Best also to test using "ipython3 TEST.py", since re-translation may work differently

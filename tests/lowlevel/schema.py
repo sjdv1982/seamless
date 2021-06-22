@@ -22,7 +22,7 @@ with macro_mode_on():
     ctx.tf = transformer({
         "a": "input",
         "b": "input",
-        "f": ("input", "mixed"),
+        "f": ("input", "silk"),
         "f_SCHEMA": "input",
         "c": "output"
     })

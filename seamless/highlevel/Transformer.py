@@ -18,8 +18,9 @@ from .compiled import CompiledObjectDict
 from silk.mixed.get_form import get_form
 from .Environment import Environment
 
+# removed celltype="mixed" as of Seamless 0.7
 default_pin = {
-  "celltype": "mixed",
+  
 }
 
 def new_transformer(ctx, path, code, pins, hash_pattern):

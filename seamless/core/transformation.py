@@ -435,14 +435,14 @@ class TransformationJob:
             if pinname in ("__output__", "__env__", "__compilers__", "__languages__", "__as__"):
                 continue
             celltype, _, _ = self.transformation[pinname]
-            if celltype != "mixed":
+            if celltype != "silk":
                 continue
             schema_pinname = pinname + "_SCHEMA"
             schema_pin = self.transformation.get(schema_pinname)
             schema = None
             if schema_pin is not None:
                 schema_celltype, _, _ = schema_pin
-                assert schema_celltype == "plain", schema_pinname
+                assert schema_celltype == "plain", (schema_pinname, schema_celltype)
                 schema = namespace[schema_pinname]
             pinname_as = as_.get(pinname, pinname)
             if schema is None and isinstance(namespace[pinname_as], Scalar):

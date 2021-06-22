@@ -38,7 +38,8 @@ def analyze_code(code, identifier):
 
 def exec_code(code, identifier, namespace, inputs, output, *, with_ipython_kernel=False):
     mode, func_name = analyze_code(code, identifier)
-    input_params = ",".join(["{0}={0}".format(inp) for inp in sorted(list(inputs))])
+    inputs2 = [inp for inp in sorted(list(inputs)) if not inp.endswith("_SCHEMA")]
+    input_params = ",".join(["{0}={0}".format(inp) for inp in inputs2])
     if mode == "block":
         code2 = code
     elif mode == "function":

@@ -1,21 +1,13 @@
-'''
-from silk import Silk
-
-buf = {}
-s = Silk(buffer=buf)
-s.x = 20
-s.y = 88
-def validate(self):
-    print("VALIDATE", self)
-    assert self.x > 0
-s.add_validator(validate, "validate")
-s.x = -1
-print(s)
-print(s.data)
-print(buf)
-'''
-
-from seamless.highlevel import Context
+"""
+TO DOCUMENT:
+To get Silk in your transformer:
+- Declare the inputpin celltype as "silk"
+- Declare an extra inputpin <pinname>_SCHEMA
+  If this extra inputpin is not there, an empty schema is applied.
+Pins ending with _SCHEMA are never provided as arguments to the transform()
+function (or lambda)
+"""
+from seamless.highlevel import Context, Cell, Transformer
 
 import seamless.core.execute
 seamless.core.execute.DIRECT_PRINT = True
@@ -83,3 +75,24 @@ a.b.set_d = setter
 a.b.set_d(80)
 ctx.compute()
 print(ctx.b.value)
+
+print("START")
+def mean(self):
+    return sum(self)/len(self)
+
+ctx.l = Cell("plain").set([10, 20, 32])
+ctx.schema = Cell("plain")
+ctx.dummy = Cell()
+ctx.translate()
+ctx.link(ctx.schema, ctx.dummy.schema)
+h = ctx.dummy.handle
+h.mean = mean
+ctx.tf = lambda l: "Mean: %.3f" % l.mean()
+ctx.tf.l = ctx.l
+ctx.tf.pins.l.celltype = "silk"
+ctx.tf.l_SCHEMA = ctx.schema
+ctx.result = ctx.tf.result
+ctx.result.celltype = "str"
+ctx.compute()
+print(ctx.tf.exception)
+print(ctx.result.value)
