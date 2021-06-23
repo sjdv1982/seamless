@@ -95,7 +95,7 @@ class EvaluateExpressionTask(Task):
                                 fingertip_mode=self.fingertip_mode
                             )
                         else:
-                            # Worst case. We have to deserialize the buffer, and evaluate the expression path on that.
+                            # Worst case. We have to deserialize the buffer, and evaluate the expression path on that.                            
                             assert expression.celltype == "mixed" # paths may apply only to mixed cells
                             value = await DeserializeBufferTask(
                                 manager, buffer, expression.checksum,
@@ -105,12 +105,32 @@ class EvaluateExpressionTask(Task):
                             if mode == "checksum":
                                 if expression.target_celltype == "mixed":
                                     assert expression.result_hash_pattern == "#", expression.result_hash_pattern
-                                expression_result_checksum = result
-                                result_buffer = None
+                                need_buf = needs_buffer_evaluation(
+                                    expression.checksum,
+                                    expression.celltype,
+                                    expression.target_celltype,
+                                    self.fingertip_mode
+                                )
+                                if not need_buf:
+                                    result = await evaluate_from_checksum(
+                                        result,
+                                        expression.celltype, 
+                                        expression.target_celltype, 
+                                    )
+                                    expression_result_checksum = result
+                                    result_buffer = None
+                                else:
+                                    result_buffer0 = await GetBufferTask(manager, result).run()                                    
+                                    expression_result_checksum = await evaluate_from_buffer(
+                                        result, result_buffer0, 
+                                        expression.celltype,
+                                        expression.target_celltype
+                                    )
+                                    result_buffer = None
                             elif result is None:
                                 expression_result_checksum = None
                             else:
-                                result_value = result
+                                result_value = result                                
                                 result_buffer = await SerializeToBufferTask(
                                     manager, result_value,
                                     expression.target_celltype,

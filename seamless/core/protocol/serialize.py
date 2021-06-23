@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from .calculate_checksum import lrucache2
 
 from silk.mixed.io import serialize as mixed_serialize
+from silk.Silk import Silk
 
 # serialize_cache: maps id(value),celltype to (buffer, value).
 # Need to store (a ref to) value,
@@ -35,6 +36,8 @@ def _serialize(value, celltype):
         txt = json.dumps(value, sort_keys=True, indent=2)
         buffer = (txt + "\n").encode()
     elif celltype == "mixed":
+        if isinstance(value, Silk):
+            value = value.unsilk
         buffer = mixed_serialize(value)
     elif celltype == "binary":
         if isinstance(value, bytes):

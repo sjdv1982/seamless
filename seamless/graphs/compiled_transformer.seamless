@@ -174,16 +174,12 @@
         "input_schema": {
           "celltype": "plain"
         },
-        "kwargs": {
-          "celltype": "mixed"
-        },
+        "kwargs": {},
         "module": {
           "celltype": "plain",
           "subcelltype": "module"
         },
-        "pins": {
-          "celltype": "mixed"
-        },
+        "pins": {},
         "result_name": {
           "celltype": "text"
         },
@@ -196,7 +192,7 @@
     {
       "celltype": "plain",
       "checksum": {
-        "value": "aaf50871507b40a8d6332b21ae2ea64043a2e5f18c08a1f3354d33060b889ebf"
+        "value": "ce81e055d491eb62162187e0e307116e52ba1945c10e48fa3800ee655958add0"
       },
       "datatype": "mixed",
       "path": [
@@ -209,7 +205,7 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "0f7c10c552de8c6e11b674aa60b807010a07ae2889d5191f7d886979f70d10d0",
+        "code": "6010e88f08969a596aabd984532850904fb43af31fdd817b81bee1189e166fa2",
         "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
@@ -238,9 +234,7 @@
         "input_schema": {
           "celltype": "plain"
         },
-        "inputpins": {
-          "celltype": "mixed"
-        },
+        "inputpins": {},
         "result_name": {
           "celltype": "str"
         },
@@ -253,7 +247,7 @@
     {
       "celltype": "plain",
       "checksum": {
-        "value": "89bbdd54804e95e9c16b6f141c2af5e553cb225411e449a0fd40b62d4cbdd756"
+        "value": "cafc034efec410716ce957de073161545c3789a06816cb4999919d5eeb60b714"
       },
       "datatype": "mixed",
       "path": [
