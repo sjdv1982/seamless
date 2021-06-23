@@ -508,6 +508,9 @@ class Manager:
             return get_buffer(checksum)
         if checksum is None:
             return None
+        empty_dict_checksum = 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c'
+        if checksum.hex() == empty_dict_checksum:
+            return b"{}\n"
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
             assert isinstance(buffer, bytes)
