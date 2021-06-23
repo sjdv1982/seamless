@@ -88,6 +88,11 @@ def assign_constant(ctx, path, value):
                 if cell.has_authority():
                     old._set(value)
                     return False
+                else:
+                    return True
+            else:
+                old._set(value)
+                return False
         elif isinstance(old, Module):
             removed = ctx.remove_connections(
                 path,
@@ -364,11 +369,15 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
             for argname, arg in list(node["arguments"].items()):
                 param = nodelib["params"][argname]
                 if param["type"] in ("cell", "context"):
+                    if isinstance(arg, tuple):
+                        arg = list(arg)
                     if not isinstance(arg, list):
                         arg = [arg]
                     arg = list(path) + arg
                 elif param["type"] == "celldict":
                     for k,v in arg.items():
+                        if isinstance(v, tuple):
+                            v = list(v)
                         if not isinstance(v, list):
                             v = [v]
                         v = list(path) + v
