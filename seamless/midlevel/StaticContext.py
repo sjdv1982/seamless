@@ -13,12 +13,14 @@ class StaticContext:
         nodes = {tuple(node["path"]):node for node in nodes0}
         connections = graph["connections"]
         params = graph.get("params", {})
-        return cls(nodes, connections, params, manager=manager)
+        lib = graph.get("lib", {})
+        return cls(nodes, connections, lib, params, manager=manager)
 
-    def __init__(self, nodes, connections, params={}, *, manager=None):
+    def __init__(self, nodes, connections, lib={}, params={}, *, manager=None):
         from seamless.core.manager import Manager
         self._nodes = nodes
         self._connections = connections
+        self._lib = lib
         self._params = params
         if manager is not None:
             assert isinstance(manager, Manager), type(manager)
@@ -39,6 +41,7 @@ class StaticContext:
             graph["nodes"] = deepcopy(list(self._nodes.values()))
             graph["connections"] = deepcopy(self._connections)
             graph["params"] = deepcopy(self._params)
+            graph["lib"] = deepcopy(self._lib)
             return graph
         nodes, connections, params  = self._nodes, self._connections, self._params
         path = self._parent_path

@@ -1,0 +1,24 @@
+<Silk: 15 >
+Seamless SynthContext: .sub_outer.ctx
+{'result': 'Status: undefined'}
+None
+Seamless SynthContext: .sub_outer.ctx.sub_inner.ctx
+['minus', 'result', 'x', 'y']
+Seamless Cell: .sub_outer.ctx.sub_inner.ctx.x
+<Silk: 20 >
+<Silk: 15 >
+<Silk: 15 >
+Status: OK
+<Silk: 15 >
+<Silk: 15 >
+Status: OK
+SUB 1 <Silk: 15 >
+None
+<Silk: 12 >
+SUB 2 <Silk: 7 >
+None
+SUB 3 <Silk: 7 >
+None
+SUB 4 <Silk: 7 >
+SUB 5 <Silk: 7 >
+SUB 6 <Silk: 95 >

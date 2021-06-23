@@ -96,10 +96,10 @@ class CellWrapper:
         return hcell["hash_pattern"]
 
 class InputCellWrapper(CellWrapper):
-    def __init__(self, connection_wrapper, cell):
+    def __init__(self, connection_wrapper, node, path):
         self._connection_wrapper = connection_wrapper
-        self._cell = cell
-        self._node = cell._get_hcell()
+        self._node = node
+        self._path = path
     def connect(self, target, source_path=None, target_path=None):
         self._connection_wrapper.connect(
             self,
@@ -109,13 +109,13 @@ class InputCellWrapper(CellWrapper):
         )
     @property
     def path(self):
-        return self._cell._path
+        return self._path
 
 class EditCellWrapper(CellWrapper):
-    def __init__(self, connection_wrapper, cell):
+    def __init__(self, connection_wrapper, node, path):
         self._connection_wrapper = connection_wrapper
-        self._cell = cell
-        self._node = cell._get_hcell()
+        self._node = node
+        self._path = path
     def link(self, target):
         self._connection_wrapper.link(
             self,
@@ -123,7 +123,7 @@ class EditCellWrapper(CellWrapper):
         )
     @property
     def path(self):
-        return self._cell._path
+        return self._path
 
 class OutputCellWrapper(CellWrapper):
     def __init__(self, connection_wrapper, node, path):

@@ -14,11 +14,20 @@ ctx.compute()
 print(ctx.result.value)
 
 lib.subtract = ctx
-def constructor(ctx, libctx):
+def constructor(ctx, libctx, result):
     graph = libctx.get_graph()
     ctx.set_graph(graph)
+    if result is not None:
+        result.connect_from(ctx.result)
 lib.subtract.constructor = constructor
-lib.subtract.params = {}
+lib.subtract.params = {
+    "result": {
+        "io": "output",
+        "type": "cell",
+        "default": None,
+        "must_be_defined": False,
+    }
+}
 
 ctx = Context()
 ctx.include(lib.subtract)
@@ -41,7 +50,12 @@ print(z.ctx.x.value)
 
 ctx.compute()
 print(ctx.subtract1.ctx)
+print(ctx.subtract1.exception)
 print(dir(ctx.subtract1.ctx))
 print(ctx.subtract1.ctx.x)
 print(ctx.subtract1.ctx.x.value)
 print(ctx.subtract1.ctx.result.value)
+
+ctx.result = ctx.subtract1.result
+ctx.compute()
+print(ctx.result.value)

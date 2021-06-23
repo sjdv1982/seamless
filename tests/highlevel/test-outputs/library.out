@@ -1,15 +1,19 @@
 <Silk: 15 >
 ('subtract',)
 ('subtract',)
-def constructor(ctx, libctx):
+def constructor(ctx, libctx, result):
     graph = libctx.get_graph()
     ctx.set_graph(graph)
+    if result is not None:
+        result.connect_from(ctx.result)
 
 4
 4
-def constructor(ctx, libctx):
+def constructor(ctx, libctx, result):
     graph = libctx.get_graph()
     ctx.set_graph(graph)
+    if result is not None:
+        result.connect_from(ctx.result)
 
 4
 1428
@@ -17,8 +21,10 @@ Seamless Context: .
 Seamless Cell: .x
 8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad
 <Silk: 20 >
-<seamless.highlevel.synth_context.SynthContext object at 0x7fb92c4592e0>
+Seamless SynthContext: .subtract1.ctx
+None
 ['minus', 'result', 'x', 'y']
 Seamless Cell: .subtract1.ctx.x
 <Silk: 20 >
+<Silk: 15 >
 <Silk: 15 >

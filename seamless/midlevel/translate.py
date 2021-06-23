@@ -348,8 +348,8 @@ def translate(graph, ctx, environment):
             inchannels, outchannels = find_channels(path, connection_paths)
             translate_module(node, ctx, namespace, inchannels, outchannels)
         elif t == "libinstance":
-            msg = "Libinstance '%s' was not removed during pre-translation, or is a nested libinstance"
-            raise TypeError(msg % path)
+            msg = "Libinstance '%s' was not removed during pre-translation"
+            raise TypeError(msg % str(path))
         else:
             raise TypeError(t)
         node.pop("UNTRANSLATED", None)

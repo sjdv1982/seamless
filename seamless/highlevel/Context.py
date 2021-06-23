@@ -128,6 +128,7 @@ class Context(Base):
     _live_share_namespace = None
     _destroyed = False
     _environment = None
+    _libroot = None
 
     @classmethod
     def from_graph(cls, graph, manager, *, mounts=True, shares=True, share_namespace=None, zip=None):
@@ -185,6 +186,8 @@ class Context(Base):
                 continue
             nodecls = nodeclasses[nodetype]
             child = nodecls(parent=self,path=p)
+            if nodetype in ("cell", "transformer", "macro"):
+                node["UNTRANSLATED"] = True
         connections = graph["connections"]
         for con in connections:
             if con["type"] == "connection":
@@ -908,7 +911,10 @@ class Context(Base):
     def lib(self):
         """Returns the libraries that were included in the graph"""
         from .library.include import IncludedLibraryContainer
-        return IncludedLibraryContainer(self, ())
+        libroot = self._libroot
+        if libroot is None:
+            libroot = self
+        return IncludedLibraryContainer(libroot, ())
 
     def resolve(self, checksum, celltype=None):
         """Returns the data buffer that corresponds to the checksum.
@@ -936,7 +942,10 @@ class Context(Base):
                 self._observers.remove(obs)
 
     def _get_libs(self, path):
-        lib = self._graph.lib
+        libroot = self._libroot
+        if libroot is None:
+            libroot = self
+        lib = libroot._graph.lib
         lp = len(path)
         result = {k[lp:]:v for k,v in lib.items() \
                   if len(k) > lp and k[:lp] == path \
@@ -944,7 +953,10 @@ class Context(Base):
         return result
 
     def _get_lib(self, path):
-        return self._graph.lib[tuple(path)]
+        libroot = self._libroot
+        if libroot is None:
+            libroot = self
+        return libroot._graph.lib[tuple(path)]
 
     def remove_connections(self, path, *,
         runtime=False, endpoint="both", match="sub"
@@ -1170,11 +1182,32 @@ class SubContext(Base):
         parent._wait_for_auth_tasks("the graph is being obtained")
         nodes, connections, params, _ = parent._graph
         path = self._path
+        pathl = list(path)
         lp = len(path)
         newnodes = []
         for nodepath, node in sorted(nodes.items(), key=lambda kv: kv[0]):
             if len(nodepath) > lp and nodepath[:lp] == path:
                 newnode = deepcopy(node)
+                if newnode["type"] == "libinstance":
+                    nodelib = parent._graph.lib[tuple(newnode["libpath"])]
+                    for argname, arg in list(newnode["arguments"].items()):
+                        param = nodelib["params"][argname]
+                        if param["type"] in ("cell", "context"):
+                            if isinstance(arg, tuple):
+                                arg = list(arg)
+                            if not isinstance(arg, list):
+                                arg = [arg]
+                            if len(arg) > lp and arg[:lp] == pathl:
+                                arg = arg[lp:]
+                        elif param["type"] == "celldict":
+                            for k,v in arg.items():
+                                if isinstance(v, tuple):
+                                    v = list(v)
+                                if not isinstance(v, list):
+                                    v = [v]
+                                if len(v) > lp and v[:lp] == pathl:
+                                    v = v[lp:]
+                        newnode["arguments"][argname] = arg
                 newnode["path"] = nodepath[lp:]
                 newnodes.append(newnode)
         new_connections = []
@@ -1198,7 +1231,8 @@ class SubContext(Base):
         graph = {
             "nodes": newnodes,
             "connections": new_connections,
-            "params": params
+            "params": params,
+            "lib": {},
         }
         return graph
 

@@ -20,6 +20,7 @@ def validate_params(params):
             assert io in ("input", "output", "edit"), (k, io)
         default = v.get("default")
         celltype = v.get("celltype")
+        must_be_defined = v.get("must_be_defined")
         try:
             json.dumps(default)
         except:
@@ -29,6 +30,10 @@ def validate_params(params):
             "io": io,
             "default": default
         }
+        if must_be_defined is not None:
+            if must_be_defined not in (True, False):
+                raise ValueError((k, must_be_defined))
+            result[k]["must_be_defined"] = must_be_defined
         if celltype is not None:
             result[k]["celltype"] = celltype
     return result
@@ -80,8 +85,8 @@ class Library:
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
         if attr == "ctx":
-            self._graph = ctx.get_graph()
-            self._zip = ctx.get_zip()
+            self._graph = value.get_graph()
+            self._zip = value.get_zip()
             set_library(
                 self._path,
                 self._graph, self._zip,
@@ -164,6 +169,9 @@ class Library:
         if add_zip:
             ctx.add_zip(self._zip)
         ctx._set_lib(path, lib)
+        for libdep in self._graph["lib"]:
+            libdep_path = tuple(libdep["path"])
+            ctx._set_lib(libdep_path, libdep)
 
     def include_zip(self, ctx):
         ctx.add_zip(self._zip)

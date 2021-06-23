@@ -6,18 +6,26 @@ highlevel_names = ("Context", "Cell", "Transformer", "Macro", "Module")
 
 class LibInstance:
     
-    def __init__(self, parent, *, path=None, libpath=None, arguments=None):
+    def __init__(self, 
+        parent, *, path=None, libpath=None, 
+        arguments=None, extra_nodes={},
+    ):
         self._parent = weakref.ref(parent)
         self._path = path
         self._temp_libpath = libpath
         self._temp_arguments = arguments
         self._overlay_context = None
+        self._extra_nodes = extra_nodes
+        self._bound = None
 
     def _bind(self, ctx, path):
-        assert ctx is self._parent() # must have same top-level Context as the library
-        assert self._path is None, self._path
+        assert ctx is self._parent() or ctx._libroot is self._parent() # must have same top-level Context as the library
+        if self._path is not None:
+            assert self._bound is None
+            assert path == self._path, (path, self._path)
         assert self._temp_libpath is not None
         assert self._temp_arguments is not None
+        self._bound = weakref.ref(ctx)
         self._path = path
         node = {
             "path": path,
@@ -32,13 +40,19 @@ class LibInstance:
 
     def _get_node(self):
         parent = self._parent()
-        return parent._graph.nodes[self._path]
+        try:
+            return parent._graph.nodes[self._path]
+        except KeyError:
+            try:
+                return self._extra_nodes[self._path]
+            except KeyError:
+                raise KeyError(self._path) from None
 
     def _run(self):
         assert self._path is not None
         hnode = self._get_node()
         libpath = hnode["libpath"]
-        arguments = hnode["arguments"]
+        arguments = deepcopy(hnode["arguments"])
         parent = self._parent()
         lib = parent._get_lib(tuple(libpath))
         graph = lib["graph"]
@@ -46,12 +60,17 @@ class LibInstance:
         params = lib["params"]
 
         overlay_context = Context(manager=parent._manager)
+        overlay_context._libroot = parent
         self._overlay_context = overlay_context
         namespace = {
             "ctx": overlay_context
         }
         connection_wrapper = ConnectionWrapper(self._path + ("ctx",))
         overlay_nodes = {}
+        for argname in params:
+            par = params[argname]
+            if argname not in arguments and "default" in par:
+                arguments[argname] = par["default"]
         for argname, argvalue in arguments.items():
             par = params[argname]
             if par["type"] == "value":
@@ -59,22 +78,36 @@ class LibInstance:
             elif par["type"] == "cell":
                 if isinstance(argvalue, list):
                     argvalue = tuple(argvalue)
-                value = parent._children.get(argvalue)
-                if isinstance(value, SubCell) or not isinstance(value, Cell):
-                    msg = "%s must be Cell, not '%s'"
-                    raise TypeError(msg % (argname, type(value)))
-                if par["io"] == "input":
-                    value = InputCellWrapper(connection_wrapper, value)
-                elif par["io"] == "edit":
-                    value = EditCellWrapper(connection_wrapper, value)
-                else: # par["io"] == "output"
-                    node = value._get_hcell()
-                    cellpath = value._path
-                    overlay_node = deepcopy(node)
-                    overlay_nodes[cellpath] = overlay_node
-                    value = OutputCellWrapper(
-                        connection_wrapper, overlay_node, cellpath
-                    )
+                value = None
+                if argvalue is not None:
+                    value = parent._children.get(argvalue)
+                    if value is not None:
+                        if isinstance(value, SubCell) or not isinstance(value, Cell):
+                            msg = "%s must be Cell, not '%s'"
+                            raise TypeError(msg % (argname, type(value)))
+                        value = value._get_hcell(), argvalue
+                    if value is None and self._extra_nodes is not None:
+                        value_node = self._extra_nodes.get(argvalue) 
+                        if value_node is not None:
+                            value = value_node, argvalue
+                if value is None:
+                    if argvalue is not None:
+                        raise Exception("Non-existing cell '%s'", argvalue)
+                    if not (par.get("must_be_defined") == False):
+                        raise ValueError("%s must be defined" % argname)
+                else:
+                    if par["io"] == "input":
+                        value = InputCellWrapper(connection_wrapper, value[0], value[1])
+                    elif par["io"] == "edit":
+                        value = EditCellWrapper(connection_wrapper, value[0], value[1])
+                    else: # par["io"] == "output"
+                        node = value[0]
+                        cellpath = value[1]
+                        overlay_node = deepcopy(node)
+                        overlay_nodes[cellpath] = overlay_node
+                        value = OutputCellWrapper(
+                            connection_wrapper, overlay_node, cellpath
+                        )
             elif par["type"] == "context":
                 if isinstance(argvalue, list):
                     argvalue = tuple(argvalue)
@@ -89,16 +122,22 @@ class LibInstance:
                     if isinstance(v, list):
                         v = tuple(v)
                     vv = parent._children.get(v)
-                    if isinstance(vv, SubCell) or not isinstance(vv, Cell):
-                        msg = "%s['%s'] must be Cell, not '%s'"
-                        raise TypeError(msg % (argname, k, type(vv)))
+                    if vv is None and self._extra_nodes is not None:
+                        value_node = self._extra_nodes.get(v) 
+                        if value_node is not None:
+                            vv = value_node, v
+                    else:
+                        if isinstance(vv, SubCell) or not isinstance(vv, Cell):
+                            msg = "%s['%s'] must be Cell, not '%s'"
+                            raise TypeError(msg % (argname, k, type(vv)))
+                        vv = vv._get_hcell(), v
                     if par["io"] == "input":
-                        vv = InputCellWrapper(connection_wrapper, vv)
+                        vv = InputCellWrapper(connection_wrapper, vv[0], vv[1])
                     elif par["io"] == "edit":
-                        vv = EditCellWrapper(connection_wrapper, vv)
+                        vv = EditCellWrapper(connection_wrapper, vv[0], vv[1])
                     else: # par["io"] == "output"
-                        node = vv._get_hcell()
-                        cellpath = vv._path
+                        node = vv[0]
+                        cellpath = vv[1]
                         overlay_node = deepcopy(node)
                         overlay_nodes[cellpath] = overlay_node
                         vv = OutputCellWrapper(
@@ -120,7 +159,7 @@ class LibInstance:
                     else: # value
                         value[k] = "value", v
             else:
-                raise NotImplementedError(par["type"])                    
+                raise NotImplementedError(par["type"])
             namespace[argname] = value
         libctx = StaticContext.from_graph(graph, manager=parent._manager)
         namespace["libctx"] = libctx
@@ -200,7 +239,16 @@ class LibInstance:
         hnode = self._get_node()
         libpath = hnode["libpath"]
         parent = self._parent()
-        lib = parent._get_lib(tuple(libpath))
+        if parent._libroot is not None:
+            try:
+                lib = parent._get_lib(tuple(libpath))
+            except KeyError:
+                try:
+                    lib = parent._libroot._get_lib(tuple(libpath))
+                except KeyError as exc:
+                    raise exc from None
+        else:
+            lib = parent._get_lib(tuple(libpath))
         return deepcopy(lib)
 
     def __setattr__(self, attr, value):
