@@ -252,7 +252,10 @@ class Context(Base):
                 return LibInstance(self, path=path)
             assert node["type"] == "context", (path, node["type"]) #if not context, should be in children!
             return SubContext(self, path)
-        return Proxy(self, path, "w")
+        attr = path
+        if len(path) == 1:
+            attr = path[0]
+        raise AttributeError(attr)
 
     def _get_subcontext(self, path):
         child = self._children[path]
