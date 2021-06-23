@@ -1,6 +1,7 @@
 import weakref
 
 class SynthContext:
+    """Context synthesized by a Library constructor"""
     _context = None
     def __init__(self, parent, path, context=None):
         self._parent = weakref.ref(parent)
@@ -74,6 +75,12 @@ class SynthContext:
             raise NotImplementedError(node["type"])
         Base.__init__(result, parent, path)
         return result
+
+    def __str__(self):
+        if self._path is None:
+            path = "<None>"
+        path = "." + ".".join(self._path)
+        return "Seamless SynthContext: " + path
 
 from .Base import Base
 from .Cell import Cell
