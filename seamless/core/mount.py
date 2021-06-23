@@ -122,7 +122,7 @@ class MountItem:
         if cell._destroyed:
             return
         if "r" in self.mode:
-            assert cell.has_authority(), cell # mount read mode only for authoritative cells
+            assert cell.has_independence(), cell # mount read mode only for authoritative cells
         exists = self._exists()
         cell_checksum = cell._checksum
         cell_empty = (cell_checksum is None)
@@ -212,6 +212,9 @@ class MountItem:
         cell = self.cell()
         if cell is None:
             return
+        if not cell.has_independence():
+            msg = "Cannot load file contents into to {}: this cell is not fully independent, i.e. it has incoming connections"
+            raise Exception(msg.format(cell))
         if cell._celltype == "plain":
             if "w" in self.mode:
                 try:
@@ -845,7 +848,7 @@ def scan(ctx_or_cell):
                     raise Exception("Structured cells cannot be mounted: %s" % child)
                 else:
                     livegraph = child._get_manager().livegraph
-                    if child._get_macro() is not None or not child.has_authority():
+                    if child._get_macro() is not None or not child.has_independence():
                         if result["mode"] == "r":
                             return None
                         result["mode"] = "w"

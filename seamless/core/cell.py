@@ -324,9 +324,9 @@ class Cell(SeamlessBase):
         manager = self._get_manager()
         manager.bilink(self, target)
 
-    def has_authority(self, path=None):
+    def has_independence(self, path=None):
         manager = self._get_manager()
-        return manager.livegraph.has_authority(self, path)
+        return manager.livegraph.has_independence(self, path)
 
     def upstream(self):
         manager = self._get_manager()
@@ -392,7 +392,7 @@ class Cell(SeamlessBase):
 
     def share(self, path=None, readonly=True, mimetype=None, *, toplevel=False, cellname=None):
         if not readonly:
-            assert self.has_authority()
+            assert self.has_independence()
         oldshare = self._share
         self._share = {
             "readonly": readonly,

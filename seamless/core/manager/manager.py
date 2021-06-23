@@ -214,7 +214,7 @@ class Manager:
                 assert cell._structured_cell is None
                 assert sc_data is None and sc_buf is None
                 if sc_schema is None:
-                    assert cell.has_authority()
+                    assert cell.has_independence()
                 assert sc_buf is None
         else:  # initial
             assert not trigger_bilinks
@@ -287,7 +287,7 @@ class Manager:
         livegraph = self.livegraph
         schema_value = None
         if len(livegraph.schemacells[cell]):
-            authoritative = True
+            independent = True
             value = None
             if checksum is not None:
                 buf = self._get_buffer(checksum)
@@ -295,13 +295,13 @@ class Manager:
             for sc in livegraph.schemacells[cell]:
                 sc._schema_value = deepcopy(value)
         elif cell._structured_cell is not None:
-            authoritative = (cell._structured_cell.auth is cell)
+            independent = (cell._structured_cell.auth is cell)
         else:
-            authoritative = cell.has_authority()
+            independent = cell.has_independence()
         cachemanager = self.cachemanager
         old_checksum = cell._checksum
         if old_checksum is not None and old_checksum != checksum:
-            cachemanager.decref_checksum(old_checksum, cell, authoritative, False)
+            cachemanager.decref_checksum(old_checksum, cell, independent, False)
         
         print_debug("SET CHECKSUM", cell, "None:", checksum is None)
         cell._checksum = checksum
@@ -309,7 +309,7 @@ class Manager:
         cell._status_reason = status_reason
         cell._prelim = prelim
         if checksum != old_checksum:
-            cachemanager.incref_checksum(checksum, cell, authoritative, False)
+            cachemanager.incref_checksum(checksum, cell, independent, False)
             observer = cell._observer
             if (observer is not None or livegraph._hold_observations) and ((checksum is not None) or void):
                 cs = checksum.hex() if checksum is not None else None
@@ -430,7 +430,7 @@ class Manager:
     def set_cell(self, cell, value, origin_reactor=None):
         if self._destroyed or cell._destroyed:
             return
-        assert cell.has_authority(), "{} is not independent".format(cell)
+        assert cell.has_independence(), "{} is not independent".format(cell)
         assert cell._structured_cell is None, cell
         reason = None
         if value is None:
@@ -455,7 +455,7 @@ class Manager:
         if self._destroyed or cell._destroyed:
             return
         assert cell._hash_pattern is None
-        assert cell.has_authority(), "{} is not independent".format(cell)
+        assert cell.has_independence(), "{} is not independent".format(cell)
         assert cell._structured_cell is None, cell
         reason = None
         if buffer is None:

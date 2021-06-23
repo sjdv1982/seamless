@@ -357,7 +357,8 @@ class Path:
                 reason=StatusReasonEnum.UNCONNECTED
             )
         if not oldcell._destroyed:
-            if not self_authority:
+            self_independence = livegraph.has_independence(self)
+            if not self_independence:
                 manager.cancel_cell(
                     oldcell, void=True,
                     reason=StatusReasonEnum.UNDEFINED
@@ -375,23 +376,23 @@ class Path:
         manager = self._get_manager()
         assert manager is not None, (self._root(), self._realmanager, self._macro)
         livegraph = manager.livegraph
-        self_authority = livegraph.has_authority(self)
+        self_independence = livegraph.has_independence(self)
         oldcell = self._cell
         assert oldcell is None
         if cell is None:
             return
         if cell._structured_cell:
             raise NotImplementedError("Macro paths for structured cells are not supported")
-        cell_authority = cell.has_authority()
-        if not cell_authority and not self_authority:
-            msg = "Cannot bind %s to %s: both have no authority"
+        cell_independence = cell.has_independence()
+        if not cell_independence and not self_independence:
+            msg = "Cannot bind %s to %s: both have no independence"
             raise Exception(msg % (cell, self))
         for path in cell._paths:
             assert path is not self, self._path
         cell._paths.add(self)
         self._cell = cell
         if trigger:
-            if self_authority:
+            if self_independence:
                 for accessor in livegraph.macropath_to_downstream[self]:
                     if not cell._void:
                         accessor._new_macropath = True
@@ -404,9 +405,9 @@ class Path:
             else:
                 livegraph.rev_activate_bilink(self)
 
-            if not self_authority:
+            if not self_independence:
                 up_accessor = livegraph.macropath_to_upstream[self]
-                assert up_accessor is not None  # if no up accessor, how could we have no authority?
+                assert up_accessor is not None  # if no up accessor, how could we have no independence?
                 upstream_cell = livegraph.accessor_to_upstream[up_accessor]
                 if not upstream_cell._void:
                     up_accessor._new_macropath = True
@@ -415,7 +416,7 @@ class Path:
                 if upstream_cell._checksum is not None:
                     CellUpdateTask(manager, upstream_cell).launch()
         else:
-            if cell_authority and not self_authority:  # bound cell loses authority
+            if cell_independence and not self_independence:  # bound cell loses independence
                 manager.cancel_cell(cell, void=False)
 
 

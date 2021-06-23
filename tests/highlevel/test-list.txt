@@ -8,6 +8,7 @@ bytes-conversion.py
 mime.py
 test-html.py
 auth-checksum.py
+independence-error-message.py
 schema.py
 subcell.py
 subsubcell.py
