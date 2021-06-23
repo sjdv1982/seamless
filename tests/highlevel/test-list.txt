@@ -66,6 +66,7 @@ load-graph.py
 load-graph-static.py
 vault.bash: run as i=vault; seamless-devel ./$i.bash > test-outputs/$i.out 2>&1
 library.py
+library-context-argument.py
 library2.py
 library-in-library.py
 environment3.py

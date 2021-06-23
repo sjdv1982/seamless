@@ -1,8 +1,8 @@
 <Silk: 15 >
 ('subtract',)
-{'const': 42, 'inp1': ('a',), 'inp2': ('b',), 'outp': ('c',)}
+{'inp1': ('a',), 'inp2': ('b',), 'outp': ('c',), 'const': 42}
 42
-<seamless.highlevel.synth_context.SynthContext object at 0x7f136be1dcc0>
+Seamless SynthContext: .subtract1.ctx
 ['minus', 'result', 'x', 'y']
 Seamless Cell: .subtract1.ctx.result
 <Silk: 80 >

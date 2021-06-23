@@ -61,6 +61,7 @@ class LibInstance:
 
         overlay_context = Context(manager=parent._manager)
         overlay_context._libroot = parent
+        overlay_context._untranslatable = True
         self._overlay_context = overlay_context
         namespace = {
             "ctx": overlay_context

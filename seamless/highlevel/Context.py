@@ -129,6 +129,7 @@ class Context(Base):
     _destroyed = False
     _environment = None
     _libroot = None
+    _untranslatable = False
 
     @classmethod
     def from_graph(cls, graph, manager, *, mounts=True, shares=True, share_namespace=None, zip=None):
@@ -373,6 +374,8 @@ class Context(Base):
         i.e. under python or ipython, but not in a Jupyter kernel.
         """
         from seamless import verify_sync_translate
+        if self._untranslatable:
+            raise Exception("Context is untranslatable")
         verify_sync_translate()
         self._wait_for_auth_tasks("the graph is re-translated")
         return self._do_translate(force=force, explicit=True)
