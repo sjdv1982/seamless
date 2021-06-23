@@ -1,6 +1,10 @@
 #TODO: add celltype and mimetype
 import weakref
 
+class Pull:
+    def __init__(self, proxy):
+        self._proxy = proxy
+
 class Proxy:
     _getter = None
     def __init__(self, parent, path, mode,
@@ -22,17 +26,14 @@ class Proxy:
     def _virtual_path(self):
         return self._parent()._path + self._path
 
-    def __rshift__(self, other):
-        assert "w" in self._mode
-        assert isinstance(other, Proxy)
-        assert "r" in other._mode
-        assert other._pull_source is not None
-        other._pull_source(self)
+    def pull(self):
+        if self._pull_source is None:
+            raise AttributeError
+        return Pull(self)
 
     def __str__(self):
         path = self._parent()._path + self._path
         return "%s for %s" % (type(self).__name__, "." + ".".join(path))
-
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):

@@ -972,7 +972,7 @@ class Transformer(Base):
             raise AttributeError(attr2)
         return self._get_value(attr)
 
-    def _pull_source(self, attr, other):
+    def _pull_source(self, attr, path):
         from .assign import assign_connection
         tf = self._get_tf()
         htf = self._get_htf()
@@ -983,22 +983,6 @@ class Transformer(Base):
             if htf["mount"].get("code") is None:
                 return
             node["mount"] = htf["mount"].pop("code")
-        if isinstance(other, Cell):
-            target_path = self._path + (attr,)
-            try:
-                value = getattr(self, attr).value
-            except:
-                value = None
-            assign_connection(parent, other._path, target_path, False)
-            set_mount(other._get_hcell2())
-            if value is not None:
-                other.set(value)
-            htf["UNTRANSLATED"] = True
-            parent._translate()
-            return
-        assert isinstance(other, Proxy)
-        assert other._parent() is parent
-        path = other._path
         language = htf["language"]
         value = None
         if attr == "code":
@@ -1042,7 +1026,7 @@ class Transformer(Base):
             child.mimetype = mimetype
 
         target_path = self._path + (attr,)
-        assign_connection(parent, other._path, target_path, False)
+        assign_connection(parent, path, target_path, False)
         htf["UNTRANSLATED"] = True
         parent._translate()
 

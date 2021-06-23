@@ -23,7 +23,7 @@ def build_transformer():
 
     ctx.transform.language = "cpp"
     ctx.transform.main_module.compiler_verbose = False
-    ctx.code >> ctx.transform.code
+    ctx.code = ctx.transform.code.pull()
     ctx.code = """
     extern "C" double add(int a, int b);
     extern "C" int transform(int a, int b, double *result) {

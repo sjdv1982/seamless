@@ -36,7 +36,7 @@ ctx.compute()
 print(ctx.a.value, ctx.transform.inp.value)
 print(ctx.transform.result.value)
 
-ctx.tfcode >> ctx.transform.code
+ctx.tfcode = ctx.transform.code.pull()
 ctx.compute()
 print(ctx.transform.result.value, ctx.myresult.value)
 

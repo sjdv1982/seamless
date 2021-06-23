@@ -18,7 +18,7 @@ print("ERROR 1:")
 print("")
 
 ctx.transform.language = "cpp"
-ctx.code >> ctx.transform.code
+ctx.code = ctx.transform.code.pull()
 ctx.code = """
 #include <iostream>
 using namespace std;

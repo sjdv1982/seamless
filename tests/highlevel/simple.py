@@ -39,7 +39,7 @@ ctx.compute()
 print("4", ctx.myresult.value)
 
 # 5
-ctx.tfcode >> ctx.transform.code
+ctx.tfcode = ctx.transform.code.pull()
 def triple_it2(a, b):
     return 3 * a + b
 ctx.tfcode = triple_it2

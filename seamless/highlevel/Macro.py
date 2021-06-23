@@ -450,64 +450,8 @@ class Macro(Base):
             raise AttributeError(attr2)
         return self._get_value(attr)
 
-    def _pull_source(self, attr, other):
+    def _pull_source(self, attr, path):
         raise NotImplementedError # TODO: follow transformer
-        from .assign import assign_connection
-        mctx = self._get_mctx()
-        node = self._get_node()
-        parent = self._parent()
-        if isinstance(other, Cell):
-            target_path = self._path + (attr,)
-            assign_connection(parent, other._path, target_path, False)
-            parent._translate()
-            return
-        assert isinstance(other, Proxy)
-        assert other._parent() is parent
-        path = other._path
-        language = node["language"]
-        value = None
-        if attr == "code":
-            if mctx is not None:
-                p = mctx.code
-                value = p.data
-            elif "TEMP" in node and "code" in node["TEMP"]:
-                value = node["TEMP"]["code"]
-            cell = {
-                "path": path,
-                "type": "cell",
-                "celltype": "code",
-                "language": language,
-                "transformer": True,
-                "UNTRANSLATED": True,
-            }
-            if value is not None:
-                assert isinstance(value, str), type(value)
-                cell["TEMP"] = value
-            if "checksum" in node:
-                node["checksum"].pop("code", None)
-        else:
-            raise NotImplementedError
-            if mctx is not None:
-                param = getattr(mctx, node["PARAM"])
-                p = getattr(param.value, attr)
-            value = p.value
-            cell = {
-                "path": path,
-                "type": "cell",
-                "celltype": "structured",
-                "datatype": "mixed",
-            }
-        child = Cell(parent=ctx, path=path) #inserts itself as child
-        parent._graph[0][path] = cell
-        if "file_extension" in node:
-            child.mimetype = node["file_extension"]
-        else:
-            mimetype = language_to_mime(language)
-            child.mimetype = mimetype
-
-        target_path = self._path + (attr,)
-        assign_connection(parent, other._path, target_path, False)
-        parent._translate()
 
     def _observe_param(self, checksum):
         if self._parent() is None:

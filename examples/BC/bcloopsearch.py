@@ -18,7 +18,7 @@ async def main():
     ctx.pdb2 = open("1AKE-B-hit.pdb").read()
     ctx.load_pdb1 = Transformer()
     ctx.load_pdb1.pdb = ctx.pdb1
-    ctx.load_pdb_code >> ctx.load_pdb1.code
+    ctx.load_pdb_code = ctx.load_pdb1.code.pull()
     ctx.load_pdb_code.mount("load_pdb.py")
     ctx.flanks = ctx.load_pdb1
 
@@ -63,7 +63,7 @@ async def main():
     ctx.bcloopsearch.main_module.compiler_verbose = False
     ctx.bcloopsearch.code.mount("bcloopsearch.c", authority="file")
     ctx.bcloopsearch.main_module.lib.language = "c"
-    ctx.bclib_code >> ctx.bcloopsearch.main_module.lib.code 
+    ctx.bclib_code = ctx.bcloopsearch.main_module.lib.code.pull()
     ctx.bclib_code.mount("BCLoopSearch-lib.c", authority="file")
 
     ctx.bc_hits = ctx.bcloopsearch

@@ -14,7 +14,7 @@ ctx.compute()
 print(ctx.result.value)
 
 ctx.transform.language = "cpp"
-ctx.code >> ctx.transform.code
+ctx.code = ctx.transform.code.pull()
 ctx.code = """
 extern "C" int transform(int a, int b, double *result) {
     *result = a + b;

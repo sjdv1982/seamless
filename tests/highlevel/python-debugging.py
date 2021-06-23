@@ -29,7 +29,7 @@ def triple_it(a):
 
 ctx.transform = triple_it
 ctx.transform.debug = True
-ctx.code >> ctx.transform.code
+ctx.code = ctx.transform.code.pull()
 ctx.code.mount("triple_it.py")
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform

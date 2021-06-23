@@ -9,7 +9,7 @@ def triple_it(a):
     return 3 * a
 
 ctx.transform = triple_it
-ctx.code >> ctx.transform.code
+ctx.code = ctx.transform.code.pull()
 ctx.code.share()
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform

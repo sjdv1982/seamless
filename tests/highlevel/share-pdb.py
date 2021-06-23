@@ -24,11 +24,11 @@ ctx.pdb = ctx.fix_pdb
 ctx.pdb.celltype = "text"
 ctx.pdb.share("pdb.pdb")
 
-ctx.filter_code >> ctx.filter_pdb.code
+ctx.filter_code = ctx.filter_pdb.code.pull()
 ctx.filter_code.share("filter_code.bash", readonly=False)
 ctx.filter_code.mount("/tmp/filter_code.bash")
 
-ctx.code >> ctx.fix_pdb.code
+ctx.code = ctx.fix_pdb.code.pull()
 ctx.code.share("code.bash",readonly=False)
 ctx.code.mount("/tmp/code.bash")
 

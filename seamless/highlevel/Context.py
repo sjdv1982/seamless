@@ -38,7 +38,7 @@ from ..core.macro_mode import macro_mode_on, get_macro_mode, until_macro_mode_of
 from ..core.context import context
 from ..core.cell import cell
 from .assign import assign
-from .proxy import Proxy
+from .proxy import Proxy, Pull
 from ..midlevel import copying
 from ..midlevel.vault import save_vault, load_vault
 
@@ -299,6 +299,8 @@ class Context(Base):
             if isinstance(child, Cell):
                 child.set(value)
             """
+        elif isinstance(value, Pull):
+            value._proxy._pull_source(attr2)
         else:
             assign(self, attr2, value)
 
@@ -1172,6 +1174,8 @@ class SubContext(Base):
                 parent._translate()
             else:
                 assign(parent, path, value)
+        elif isinstance(value, Pull):
+            value._proxy._pull_source(path)
         else:
             assign(parent, path, value)
 

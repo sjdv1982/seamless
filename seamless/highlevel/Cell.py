@@ -796,12 +796,6 @@ class Cell(Base):
             if self._parent() is not None:
                 self._parent()._translate()
 
-    def __rshift__(self, other):
-        assert isinstance(other, Proxy)
-        assert "r" in other._mode
-        assert other._pull_source is not None
-        other._pull_source(self)
-
     def share(self, path=None, readonly=True, *, toplevel=False):
         """Shares a cell over HTTP.
 

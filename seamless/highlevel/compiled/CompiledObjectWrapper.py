@@ -127,24 +127,14 @@ class CompiledObjectWrapper:
             obj = handle["objects"][self._obj]
             return obj.get(attr)
 
-    def _pull_source(self, other):
+    def _pull_source(self, path):
         from ..assign import assign_connection
         from ..Transformer import Transformer
         from ...compiler import find_language
         worker = self._worker()
         parent = worker._parent()
-        assert other._parent() is parent
 
-        if isinstance(other, Cell):
-            target_path = self._path + ("code",)
-            assign_connection(parent, other._path, target_path, False)
-            self._delattr("code")
-            parent._translate()
-            return
-
-        assert isinstance(other, Proxy)
-
-        new_path = other._path
+        new_path = path
         target_path = worker._path + ("_main_module", self._obj, "code")
         language = None
         if isinstance(worker, Transformer):
@@ -161,7 +151,7 @@ class CompiledObjectWrapper:
             _, _, file_extension = parent.environment.find_language(language)
         value = self._get_value("code")
         cell = {
-            "path": other._path,
+            "path": new_path,
             "type": "cell",
             "celltype": "code",
             "language": language,
