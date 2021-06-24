@@ -33,6 +33,7 @@ def print_error(*args):
 
 
 from .Base import Base
+from .Help import ContextHelpMixin
 from ..core import macro_mode
 from ..core.macro_mode import macro_mode_on, get_macro_mode, until_macro_mode_off
 from ..core.context import context
@@ -112,7 +113,7 @@ def get_zip(buffer_dict):
     archive.close()
     return result
 
-class Context(Base):
+class Context(Base, ContextHelpMixin):
     """Context class. Organizes cells and workers hierarchically.
 
     See http://sjdv1982.github.io/seamless/sphinx/html/context.html for documentation
@@ -231,7 +232,7 @@ class Context(Base):
         self._traitlets = {}
         self._observers = set()
         self._environment = ContextEnvironment(self)
-        _contexts.add(self)
+        _contexts.add(self)        
 
     def _get_node(self, path):
         try:
@@ -271,9 +272,12 @@ class Context(Base):
         setattr(self, attr, value)
 
     def __getattribute__(self, attr):
+        if attr == "__doc__":
+            return self._get_doc()
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
+        if attr in type(self).__dict__ or attr in self.__dict__ \
+          or attr == "path" or attr in ContextHelpMixin.__dict__:
             return super().__getattribute__(attr)
         path = (attr,)
         return self._get_path(path)
@@ -1135,8 +1139,6 @@ class Context(Base):
 
     def __del__(self):
         self._destroy()
-
-
 
 class SubContext(Base):
     def __init__(self, parent, path):
