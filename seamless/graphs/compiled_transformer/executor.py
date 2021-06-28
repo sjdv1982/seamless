@@ -228,6 +228,7 @@ for prop in sorted(input_props.keys()):
     if prop not in order:
         order.append(prop)
 for propnr, prop in enumerate(order):
+    print("PROP", prop)
     if prop not in kwargs:
         raise SeamlessTransformationError("required property '{}' missing or undefined".format(prop))
     value = kwargs[prop]
@@ -239,6 +240,7 @@ for propnr, prop in enumerate(order):
         form = propschema.get("form", {})
         with_strides = ("contiguous" not in form or not form["contiguous"])
         array_struct = build_array_struct(prop, value, with_strides)
+        print("STRUC", array_struct, value.shape)
         args.append(array_struct)
     else:
         args.append(value)

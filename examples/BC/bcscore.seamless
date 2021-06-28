@@ -125,7 +125,23 @@
     {
       "celltype": "structured",
       "checksum": {
+        "auth": "035c62295bade8d2c76a985c0d1015f4622798c1ae7d4f318cc660aebc691344",
+        "buffer": "035c62295bade8d2c76a985c0d1015f4622798c1ae7d4f318cc660aebc691344",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "value": "035c62295bade8d2c76a985c0d1015f4622798c1ae7d4f318cc660aebc691344"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "auto_translate"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "structured",
+      "checksum": {
         "buffer": "ef0b151105ecf660a8ecfa4947652f87b37b9b095d960afd2274f1145853acc6",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "ef0b151105ecf660a8ecfa4947652f87b37b9b095d960afd2274f1145853acc6"
       },
       "datatype": "mixed",
@@ -144,7 +160,8 @@
       "language": "c",
       "mimetype": "text/x-csrc",
       "mount": {
-        "authority": "cell",
+        "as_directory": false,
+        "authority": "file",
         "mode": "rw",
         "path": "BClib.c",
         "persistent": true
@@ -161,10 +178,10 @@
       "SCHEMA": null,
       "checksum": {
         "code": "7a59bb12e5bb5159db270679c3be1f332cea1d30e1b408ed7f9213d64cf81081",
-        "input": "0131ee7636a4bb9a1d76884de7d7cdd85ae5c970ab9d1e6df9ba9f3804dbab7f",
-        "input_auth": "7c893c187cb72edbe10beb70e3a7a05f9d786375c17b93ee97d5c87dd66b9b5b",
-        "input_buffer": "0131ee7636a4bb9a1d76884de7d7cdd85ae5c970ab9d1e6df9ba9f3804dbab7f",
-        "main_module": "130b5a93161890098708f22d34e924a7c4e47a64e0f4509b710a481d8cb70db4",
+        "input": "626729babc7acc1a23f2c6cca674ed5eb96b9e2250650c7060c537a414d6917a",
+        "input_auth": "45fe47bbc89aa35667e2ed2c84bc3aa83fc2a602371011174ccefe4d4af5f5b3",
+        "input_buffer": "626729babc7acc1a23f2c6cca674ed5eb96b9e2250650c7060c537a414d6917a",
+        "main_module": "6e004f0fd87d7f7c407f8bf77e563d4ad1f115b9d37bfb2c07af647fd5548469",
         "result": "ef0b151105ecf660a8ecfa4947652f87b37b9b095d960afd2274f1145853acc6",
         "result_schema": "21d6591d6f42968b8b99640b269345e1ba16a6f607e041a5dd47f1c2fb8756bf",
         "schema": "b54c98e19ca14701dc7146b0e9fe9b288d9e86d6ac22b85e5db4613451f2042d"
@@ -172,6 +189,9 @@
       "compiled": true,
       "debug": false,
       "file_extension": "c",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "c",
       "mount": {
         "code": {
@@ -191,18 +211,10 @@
         "bcscore"
       ],
       "pins": {
-        "coor1": {
-          "celltype": "mixed"
-        },
-        "coor2": {
-          "celltype": "mixed"
-        },
-        "flanksize": {
-          "celltype": "mixed"
-        },
-        "gapsize": {
-          "celltype": "mixed"
-        }
+        "coor1": {},
+        "coor2": {},
+        "flanksize": {},
+        "gapsize": {}
       },
       "type": "transformer"
     },
@@ -213,6 +225,7 @@
       },
       "datatype": "mixed",
       "mount": {
+        "as_directory": false,
         "authority": "file",
         "mode": "r",
         "path": "bcscore-schema.json",
@@ -227,6 +240,7 @@
       "celltype": "structured",
       "checksum": {
         "buffer": "fe4621ada9594853b8c9c13e6fd0b63681df0e8b209079f57b2b74a220f58a94",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "fe4621ada9594853b8c9c13e6fd0b63681df0e8b209079f57b2b74a220f58a94"
       },
       "datatype": "mixed",
@@ -240,6 +254,7 @@
       "celltype": "structured",
       "checksum": {
         "buffer": "32a00701fd118918d48c69e37599a11a7ac8cf4e813e4dab10276367e844b3ce",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "32a00701fd118918d48c69e37599a11a7ac8cf4e813e4dab10276367e844b3ce"
       },
       "datatype": "mixed",
@@ -253,6 +268,7 @@
       "celltype": "structured",
       "checksum": {
         "buffer": "01797c498c4f5b71d15d3b4ef20ad77756f9fe1a0f363fbda5a8875a8e579097",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "01797c498c4f5b71d15d3b4ef20ad77756f9fe1a0f363fbda5a8875a8e579097"
       },
       "datatype": "mixed",
@@ -270,20 +286,23 @@
       "SCHEMA": null,
       "checksum": {
         "code": "d36851b261de7fed9a7eeb184e69fe82b06b6bb101b14f95d41ca323c546f916",
-        "input": "616051ac714fa2610f6740fab403b82a0cbd0a20d606c83161e07e292af7009e",
-        "input_buffer": "616051ac714fa2610f6740fab403b82a0cbd0a20d606c83161e07e292af7009e",
-        "result": "fe4621ada9594853b8c9c13e6fd0b63681df0e8b209079f57b2b74a220f58a94"
+        "input": "27b39f798df8afe4d120ffa5162b8e1cfe00dbec6473d74cb8b17b9b30599985",
+        "input_buffer": "27b39f798df8afe4d120ffa5162b8e1cfe00dbec6473d74cb8b17b9b30599985",
+        "result": "fe4621ada9594853b8c9c13e6fd0b63681df0e8b209079f57b2b74a220f58a94",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "debug": false,
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "python",
       "path": [
         "load_pdb1"
       ],
       "pins": {
-        "pdb": {
-          "celltype": "mixed"
-        }
+        "pdb": {}
       },
       "type": "transformer"
     },
@@ -293,20 +312,23 @@
       "SCHEMA": null,
       "checksum": {
         "code": "d36851b261de7fed9a7eeb184e69fe82b06b6bb101b14f95d41ca323c546f916",
-        "input": "5fc0d3ff787e4cb83ba8d784f1beeddfdc56b42ccf7f6244f4cdd9d2c7b92f96",
-        "input_buffer": "5fc0d3ff787e4cb83ba8d784f1beeddfdc56b42ccf7f6244f4cdd9d2c7b92f96",
-        "result": "32a00701fd118918d48c69e37599a11a7ac8cf4e813e4dab10276367e844b3ce"
+        "input": "113f23f888d0e8db5cb41a9abed2f1e47cfac9b374edc2d4802057411baebc22",
+        "input_buffer": "113f23f888d0e8db5cb41a9abed2f1e47cfac9b374edc2d4802057411baebc22",
+        "result": "32a00701fd118918d48c69e37599a11a7ac8cf4e813e4dab10276367e844b3ce",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "debug": false,
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "python",
       "path": [
         "load_pdb2"
       ],
       "pins": {
-        "pdb": {
-          "celltype": "mixed"
-        }
+        "pdb": {}
       },
       "type": "transformer"
     },
@@ -318,7 +340,8 @@
       "language": "python",
       "mimetype": "text/x-python",
       "mount": {
-        "authority": "cell",
+        "as_directory": false,
+        "authority": "file",
         "mode": "rw",
         "path": "load_pdb.py",
         "persistent": true
@@ -334,6 +357,7 @@
       "checksum": {
         "auth": "6566da48f46fe8cfb576ccc5f3918dfc310edd4e548f0bfcf9d1e947a1de2b78",
         "buffer": "6566da48f46fe8cfb576ccc5f3918dfc310edd4e548f0bfcf9d1e947a1de2b78",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "6566da48f46fe8cfb576ccc5f3918dfc310edd4e548f0bfcf9d1e947a1de2b78"
       },
       "datatype": "mixed",
@@ -348,6 +372,7 @@
       "checksum": {
         "auth": "a63ed9c47f41e315a905941320001aa16576edf8c33d5754c9261ae841ba5eb0",
         "buffer": "a63ed9c47f41e315a905941320001aa16576edf8c33d5754c9261ae841ba5eb0",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "a63ed9c47f41e315a905941320001aa16576edf8c33d5754c9261ae841ba5eb0"
       },
       "datatype": "mixed",

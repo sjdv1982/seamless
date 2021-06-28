@@ -146,8 +146,7 @@ async def main():
 
     ctx.header = ctx.bcloopsearch.header
     ctx.header.mimetype = "h"
-    ctx.header.output_widget()
-
+    ctx.header.output
 
     # In[8]:
 
@@ -201,7 +200,6 @@ async def main():
 
     ctx.bc_hits.value.unsilk["hitstats"][:nhits]
 
-
     # In[ ]:
 
 
@@ -213,6 +211,7 @@ async def main():
     ctx.db_index = ctx.load_db_index
     del ctx.dbca
     ctx.dbca = dbca
+    ctx.bcloopsearch.dbca = ctx.dbca
     ctx.bcloopsearch.seg_index = ctx.db_index.seg
     ctx.bcloopsearch.pdb_index = ctx.db_index.pdb
     ctx.bcloopsearch.minBC = 0.99
