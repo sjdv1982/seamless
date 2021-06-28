@@ -2,7 +2,92 @@ import traceback
 import weakref, json
 from copy import deepcopy
 
+from traitlets.traitlets import Instance
+
 highlevel_names = ("Context", "Cell", "Transformer", "Macro", "Module")
+
+def interpret_arguments(arguments, params, parent, extra_nodes):
+    arguments = arguments.copy()
+    result = {}
+    for argname in params:
+        par = params[argname]
+        if argname not in arguments and "default" in par:
+            arguments[argname] = par["default"]
+    for argname, argvalue in arguments.items():
+        par = params[argname]
+        if par["type"] == "value":
+            value = argvalue
+            if value is None:
+                continue
+        elif par["type"] == "cell":
+            path = argvalue
+            if isinstance(path, list):
+                path = tuple(path)
+            value = None
+            if path is not None:
+                value = parent._children.get(path)
+                if value is not None:
+                    if isinstance(value, SubCell) or not isinstance(value, Cell):
+                        msg = "%s must be Cell, not '%s'"
+                        raise TypeError(msg % (argname, type(value)))
+                    value = value._get_hcell(), path
+                if value is None and extra_nodes is not None:
+                    value_node = extra_nodes.get(path) 
+                    if value_node is not None:
+                        value = value_node, path
+            if value is None:
+                if path is not None:
+                    raise Exception("Non-existing cell '%s'", path)
+                if not (par.get("must_be_defined") == False):
+                    raise ValueError("%s must be defined" % argname)
+            
+        elif par["type"] == "context":
+            path = argvalue
+            if isinstance(path, list):
+                path = tuple(path)
+            value = parent._children.get(path)
+            if value is not None:
+                msg = "'%s' must be Context, not '%s'"
+                raise TypeError(msg % (argname, type(value)))
+            value = SubContext(parent, path).get_graph()
+
+        elif par["type"] == "celldict":
+            value = {}
+            for k,v in argvalue.items():
+                if isinstance(v, list):
+                    v = tuple(v)
+                vv = parent._children.get(v)
+                if vv is None and extra_nodes is not None:
+                    value_node = extra_nodes.get(v) 
+                    if value_node is not None:
+                        vv = value_node, v
+                else:
+                    if isinstance(vv, SubCell) or not isinstance(vv, Cell):
+                        msg = "%s['%s'] must be Cell, not '%s'"
+                        raise TypeError(msg % (argname, k, type(vv)))
+                    vv = vv._get_hcell(), v
+                value[k] = vv
+
+        elif par["type"] == "kwargs":
+            value = {}
+            for k,v0 in argvalue.items():
+                vtype, v = v0
+                if vtype == "cell":
+                    if isinstance(v, list):
+                        v = tuple(v)
+                    vv = parent._children.get(v)
+                    if isinstance(vv, SubCell) or not isinstance(vv, Cell):
+                        msg = "%s['%s'] must be Cell, not '%s'"
+                        raise TypeError(msg % (argname, k, type(vv)))
+                    value[k] = "cell", vv
+                else: # value
+                    value[k] = "value", v
+
+        else:
+            raise NotImplementedError(par["type"])
+
+        result[argname] = value
+    return result
 
 class LibInstance:
     
@@ -48,6 +133,15 @@ class LibInstance:
             except KeyError:
                 raise KeyError(self._path) from None
 
+
+    def _exc(self, limit):
+        self._get_node()["exception"] = traceback.format_exc(limit=limit)
+        try:
+            libctx.root.destroy()
+        except Exception:
+            pass
+        return
+
     def _run(self):
         assert self._path is not None
         hnode = self._get_node()
@@ -57,80 +151,72 @@ class LibInstance:
         lib = parent._get_lib(tuple(libpath))
         graph = lib["graph"]
         constructor = lib["constructor"]
+        constructor_schema = lib.get("constructor_schema")
         params = lib["params"]
 
         overlay_context = Context(manager=parent._manager)
         overlay_context._libroot = parent
         self._overlay_context = overlay_context
-        namespace = {
-            "ctx": overlay_context
-        }
+        namespace = {}
         connection_wrapper = ConnectionWrapper(self._path + ("ctx",))
         overlay_nodes = {}
-        for argname in params:
-            par = params[argname]
-            if argname not in arguments and "default" in par:
-                arguments[argname] = par["default"]
-        for argname, argvalue in arguments.items():
+
+        interpreted_arguments = interpret_arguments(
+            arguments, params, parent,
+            self._extra_nodes
+        )
+
+        # Fill namespace, part 1: value arguments
+        for argname, argvalue in interpreted_arguments.items():
             par = params[argname]
             if par["type"] == "value":
                 value = argvalue
+            else:
+                continue
+            namespace[argname] = value
+
+
+        # Fill namespace, part 2: validation
+        if constructor_schema is not None:
+            instance = Silk(
+                data=deepcopy(namespace), 
+                schema=constructor_schema
+            )
+            try:
+                instance.validate()
+            except ValidationError:
+                self._exc(0)
+                return
+            except Exception:
+                self._exc()
+                return
+
+
+        # Fill namespace, part 3: ctx and other arguments
+        namespace["ctx"] = overlay_context
+
+        for argname, argvalue in interpreted_arguments.items():
+            par = params[argname]
+            if par["type"] == "value":
+                continue
+            if argvalue is None or par["type"] == "context":
+                value = argvalue
             elif par["type"] == "cell":
-                if isinstance(argvalue, list):
-                    argvalue = tuple(argvalue)
-                value = None
-                if argvalue is not None:
-                    value = parent._children.get(argvalue)
-                    if value is not None:
-                        if isinstance(value, SubCell) or not isinstance(value, Cell):
-                            msg = "%s must be Cell, not '%s'"
-                            raise TypeError(msg % (argname, type(value)))
-                        value = value._get_hcell(), argvalue
-                    if value is None and self._extra_nodes is not None:
-                        value_node = self._extra_nodes.get(argvalue) 
-                        if value_node is not None:
-                            value = value_node, argvalue
-                if value is None:
-                    if argvalue is not None:
-                        raise Exception("Non-existing cell '%s'", argvalue)
-                    if not (par.get("must_be_defined") == False):
-                        raise ValueError("%s must be defined" % argname)
-                else:
-                    if par["io"] == "input":
-                        value = InputCellWrapper(connection_wrapper, value[0], value[1])
-                    elif par["io"] == "edit":
-                        value = EditCellWrapper(connection_wrapper, value[0], value[1])
-                    else: # par["io"] == "output"
-                        node = value[0]
-                        cellpath = value[1]
-                        overlay_node = deepcopy(node)
-                        overlay_nodes[cellpath] = overlay_node
-                        value = OutputCellWrapper(
-                            connection_wrapper, overlay_node, cellpath
-                        )
-            elif par["type"] == "context":
-                if isinstance(argvalue, list):
-                    argvalue = tuple(argvalue)
-                value = parent._children.get(argvalue)
-                if value is not None:
-                    msg = "'%s' must be Context, not '%s'"
-                    raise TypeError(msg % (argname, type(value)))
-                value = SubContext(parent, argvalue).get_graph()
+                node = argvalue[0]
+                cellpath = argvalue[1]
+                if par["io"] == "input":
+                    value = InputCellWrapper(connection_wrapper, node, cellpath)
+                elif par["io"] == "edit":
+                    value = EditCellWrapper(connection_wrapper, node, cellpath)
+                else: # par["io"] == "output"
+                    overlay_node = deepcopy(node)
+                    overlay_nodes[cellpath] = overlay_node
+                    value = OutputCellWrapper(
+                        connection_wrapper, overlay_node, cellpath
+                    )
             elif par["type"] == "celldict":
                 value = {}
                 for k,v in argvalue.items():
-                    if isinstance(v, list):
-                        v = tuple(v)
-                    vv = parent._children.get(v)
-                    if vv is None and self._extra_nodes is not None:
-                        value_node = self._extra_nodes.get(v) 
-                        if value_node is not None:
-                            vv = value_node, v
-                    else:
-                        if isinstance(vv, SubCell) or not isinstance(vv, Cell):
-                            msg = "%s['%s'] must be Cell, not '%s'"
-                            raise TypeError(msg % (argname, k, type(vv)))
-                        vv = vv._get_hcell(), v
                     if par["io"] == "input":
                         vv = InputCellWrapper(connection_wrapper, vv[0], vv[1])
                     elif par["io"] == "edit":
@@ -149,15 +235,10 @@ class LibInstance:
                 for k,v0 in argvalue.items():
                     vtype, v = v0
                     if vtype == "cell":
-                        if isinstance(v, list):
-                            v = tuple(v)
-                        vv = parent._children.get(v)
-                        if isinstance(vv, SubCell) or not isinstance(vv, Cell):
-                            msg = "%s['%s'] must be Cell, not '%s'"
-                            raise TypeError(msg % (argname, k, type(vv)))
-                        value[k] = "cell", InputCellWrapper(connection_wrapper, vv)
+                        value[k] = "cell", InputCellWrapper(connection_wrapper, v)
                     else: # value
                         value[k] = "value", v
+
             else:
                 raise NotImplementedError(par["type"])
             namespace[argname] = value
@@ -171,12 +252,7 @@ class LibInstance:
         try:
             exec_code(constructor, identifier, namespace, argnames, None)
         except Exception:
-            self._get_node()["exception"] = traceback.format_exc()
-            try:
-                libctx.root.destroy()
-            except Exception:
-                pass
-            return
+            self._exc()
         overlay_graph = overlay_context.get_graph()
         overlay_connections = connection_wrapper.connections
         libctx.root.destroy()
@@ -232,7 +308,10 @@ class LibInstance:
     def __dir__(self):        
         hnode = self._get_node()
         arguments = hnode["arguments"]
-        return list(arguments.keys()) + ["ctx", "libpath", "arguments", "status"]
+        result = list(arguments.keys()) 
+        result += ["ctx", "libpath", "arguments", "status"]
+        # TODO: api_schema methods/properties
+        return result
 
     def get_lib(self):
         """Returns the library of which this is an instance"""
@@ -291,3 +370,5 @@ from ..Macro import Macro
 from ..Module import Module
 from ...core.cached_compile import exec_code
 from ..proxy import Proxy
+from silk.Silk import Silk
+from silk.validation import ValidationError

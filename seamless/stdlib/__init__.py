@@ -23,12 +23,32 @@ for graph_file in graph_files:
                 continue
             constructor = ssctx.constructor_code.value
             constructor_params = ssctx.constructor_params.value
+            constructor_schema = None
+            if hasattr(ssctx, "constructor_schema"):
+                constructor_schema = ssctx.constructor_schema.value
+            api_schema = None
+            if hasattr(ssctx, "api_schema"):
+                api_schema = ssctx.api_schema.value
             path = ("stdlib", graph_name[len("lib-"):], child)
             sub_graph = ssctx.static.get_graph()
-            set_library(path, sub_graph, zip, constructor, constructor_params)
+            set_library(
+                path, sub_graph, zip, constructor, constructor_params,
+                constructor_schema=constructor_schema,
+                api_schema=api_schema
+            )
     else:
         constructor = sctx.constructor_code.value
         constructor_params = sctx.constructor_params.value
+        constructor_schema = None
+        if hasattr(sctx, "constructor_schema"):
+            constructor_schema = sctx.constructor_schema.value
+        api_schema = None
+        if hasattr(sctx, "api_schema"):
+            api_schema = sctx.api_schema.value
         path = ("stdlib", graph_name)
-        set_library(path, graph, zip, constructor, constructor_params)
+        set_library(
+            path, graph, zip, constructor, constructor_params,
+            constructor_schema=constructor_schema,
+            api_schema=api_schema
+        )
     globals()[path[1]] = getattr(lib, path[1])
