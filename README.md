@@ -66,7 +66,7 @@ ctx.b = 20              # ctx.b => Seamless cell
 ctx.add = add           # ctx.add => Seamless transformer
 ctx.add.a = ctx.a
 ctx.add.b = ctx.b
-ctx.c = ctx.add         # ctx.c => Seamless cell
+ctx.c = ctx.add.result  # ctx.c => Seamless cell
 await ctx.computation() # in a .py file, use "ctx.compute()" instead
 ctx.c.value
 ```
@@ -373,7 +373,7 @@ ctx.add.code.value
 ## Additional features
 - Transformers can be written in Python, IPython, bash, or any compiled language (C, C++, ...).
 - Bash transformers can be executed inside Docker images.
-- IPython transformers can use IPython magics, allowing the use of languages such as Cython (tested), Matlab/Octave (untested), Julia (untested), or R (untested).
+- IPython transformers can use IPython magics, allowing the use of languages such as Cython (tested), Matlab/Octave (untested), Julia (untested), or R (tested).
 - The use of Redis as a checksum-to-buffer cache
 - Seamless instances can communicate, serving as job slaves or result caches for transformations.
 - Interactive monitoring of status and exception messages.

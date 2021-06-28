@@ -751,7 +751,7 @@ class Cell(Base):
 
     @property
     def hash_pattern(self):
-        # TODO: document when released in 0.3
+        # TODO: document when released in 0.7
         hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         assert celltype in ("structured", "mixed")
