@@ -30,7 +30,7 @@ lib.instantiate0.params = {
 
 ctx = Context()
 ctx.subcontext = subctx
-ctx.include(stdlib.instantiate0)
+ctx.include(lib.instantiate0)
 ctx.inst = ctx.lib.instantiate0(
     copies=2,
     context_graph=ctx.subcontext

@@ -8,6 +8,7 @@ bytes-conversion.py
 mime.py
 test-html.py
 auth-checksum.py
+independence-error-message.py
 schema.py
 subcell.py
 subsubcell.py
@@ -25,6 +26,7 @@ simplest.py
 simple-missing.py
 simpler-listpin.py
 simpler-result.py
+tf-byte-dict.py
 simpler.py
 simpler-deepcell.py
 simpler-ipython.py: Run with ipython --no-term-title (not -i) (see issue 25). Output is approximate, depends on exact timings.
@@ -65,6 +67,7 @@ load-graph.py
 load-graph-static.py
 vault.bash: run as i=vault; seamless-devel ./$i.bash > test-outputs/$i.out 2>&1
 library.py
+library-context-argument.py
 library2.py
 library-in-library.py
 environment3.py

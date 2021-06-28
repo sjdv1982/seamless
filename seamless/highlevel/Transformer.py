@@ -663,6 +663,8 @@ class Transformer(Base):
             pending = False
             upstream = False
             if k in (htf["INPUT"], htf["RESULT"]):
+                if k == htf["INPUT"] and not len(htf["pins"]):
+                    continue
                 cell = getattr(self, k)
                 status = cell.status
             elif k == "code":

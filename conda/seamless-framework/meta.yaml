@@ -36,7 +36,7 @@ requirements:
     #- speg==0.3.*
     #
     - jsonschema==3.2.*
-    #- websockets==8.1.*
+    #- websockets==9.1.*
     #
     - aiohttp==3.6.*
     #- aiohttp_cors==0.7.*
@@ -65,7 +65,7 @@ requirements:
     #- debugpy==1.2.*
     #
     - cython==0.29.*
-    - lxml==4.5.*
+    - lxml==4.6.*
     - r-base==4.0.*
     - r-cairo==1.5_12.*
     - rpy2==3.4.*

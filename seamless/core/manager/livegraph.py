@@ -73,7 +73,7 @@ class LiveGraph:
 
         self.rtreactors = {}
 
-        self.temp_auth = weakref.WeakKeyDictionary()
+        self.temp_independence = weakref.WeakKeyDictionary()
 
         self.cell_parsing_exceptions = {}
 
@@ -247,9 +247,9 @@ class LiveGraph:
             if cell._structured_cell is None:
                 if len(self.schemacells[cell]):
                     return
-                if cell.has_authority():
+                if cell.has_independence():
                     return
-                msg = "Bilinked cell %s must have authority"
+                msg = "Bilinked cell %s must have independence"
                 raise Exception(msg % cell)
             else:
                 msg = "Bilinked cell %s cannot be part of structured cell, unless it is its schema"
@@ -283,7 +283,7 @@ class LiveGraph:
         pinname = source.name
         worker = source.worker_ref()
 
-        assert self._has_authority(
+        assert self._has_independence(
             target, from_upon_connection_task=from_upon_connection_task
         ), target
 
@@ -401,7 +401,7 @@ class LiveGraph:
     ):
         """Connect one simple cell to another"""
         assert source._structured_cell is None and target._structured_cell is None
-        assert self._has_authority(
+        assert self._has_independence(
             target, from_upon_connection_task=from_upon_connection_task
         ), target
 
@@ -441,7 +441,7 @@ class LiveGraph:
         assert source._structured_cell is not None and target._structured_cell is None
         assert source in self.paths_to_downstream, source
         assert source_path in self.paths_to_downstream[source], (source, self.paths_to_downstream[source].keys(), source_path)
-        assert self._has_authority(
+        assert self._has_independence(
             target, from_upon_connection_task=from_upon_connection_task
         ), target
 
@@ -522,7 +522,7 @@ class LiveGraph:
     ):
         """Connect a macropath to a simple cell"""
         assert target._structured_cell is None
-        assert self._has_authority(
+        assert self._has_independence(
             target, from_upon_connection_task=from_upon_connection_task
         ), target
 
@@ -560,7 +560,7 @@ class LiveGraph:
     ):
         """Connect a simple cell to a macropath"""
         assert source._structured_cell is None
-        assert self._has_authority(
+        assert self._has_independence(
             target, from_upon_connection_task=from_upon_connection_task
         ), target
 
@@ -627,7 +627,7 @@ class LiveGraph:
             result = None
         return result
 
-    def _has_authority(
+    def _has_independence(
         self, cell_or_macropath, path=None, *, from_upon_connection_task=None
     ):
         try:
@@ -644,20 +644,20 @@ class LiveGraph:
         if path is not None:
             assert cell._structured_cell is not None
             return not cell._structured_cell.no_auth
-        if cell._destroyed and cell in self.temp_auth:
-            return self.temp_auth[cell]
+        if cell._destroyed and cell in self.temp_independence:
+            return self.temp_independence[cell]
         if cell._structured_cell is not None:
             return cell._structured_cell.auth is cell
         else:
             for macropath in cell._paths:
-                if not self.has_authority(macropath):
+                if not self.has_independence(macropath):
                     return False
             return self.cell_to_upstream[cell] is None
 
-    def has_authority(
+    def has_independence(
         self, cell_or_macropath, path=None
     ):
-        return self._has_authority(cell_or_macropath, path)
+        return self._has_independence(cell_or_macropath, path)
 
     @destroyer
     def destroy_accessor(self, manager, accessor, from_upstream=False):
@@ -833,7 +833,7 @@ class LiveGraph:
                 elision = self.cell_from_macro_elision[cell]
                 elision.destroy()
 
-            self.temp_auth[cell] = cell.has_authority()
+            self.temp_independence[cell] = cell.has_independence()
             up_accessor = self.cell_to_upstream[cell]
             if up_accessor is not None:
                 self.destroy_accessor(manager, up_accessor)

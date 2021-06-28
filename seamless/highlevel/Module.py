@@ -104,7 +104,7 @@ class Module(Base):
           If False, the file is deleted from disk when the code cell is destroyed
           Default: True.
         """
-        # TODO: check for independence (has_authority)
+        # TODO: check for independence (has_independence)
         # TODO, upon translation: check that there are no duplicate paths.
         hnode = self._get_hnode2()
         mount = {

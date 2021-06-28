@@ -387,12 +387,8 @@
         "op1"
       ],
       "pins": {
-        "a": {
-          "celltype": "mixed"
-        },
-        "b": {
-          "celltype": "mixed"
-        }
+        "a": {},
+        "b": {}
       },
       "type": "transformer"
     },
@@ -418,12 +414,8 @@
         "op2"
       ],
       "pins": {
-        "a": {
-          "celltype": "mixed"
-        },
-        "b": {
-          "celltype": "mixed"
-        }
+        "a": {},
+        "b": {}
       },
       "type": "transformer"
     },
@@ -449,12 +441,8 @@
         "op3"
       ],
       "pins": {
-        "a": {
-          "celltype": "mixed"
-        },
-        "b": {
-          "celltype": "mixed"
-        }
+        "a": {},
+        "b": {}
       },
       "type": "transformer"
     },

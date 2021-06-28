@@ -82,7 +82,7 @@ def set_structured_cell_from_checksum(cell, checksum):
 
     if "auth" in checksum:
         if cell.auth is None:
-            msg = "Warning: %s has no authority, but an auth checksum is present"
+            msg = "Warning: %s has no independence, but an auth checksum is present"
             print(msg % cell)
         else:
             cell.auth._set_checksum(
