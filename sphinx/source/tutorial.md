@@ -200,7 +200,8 @@ Intro:
 
 ## D4. Libraries and Library instances
 Intro:
-- ...
+- Scatter transformers
+- Nextflow-style channels
 - Gotcha: retranslate after setting a value
 - Value and cell pins
 - Celldict pins
@@ -215,6 +216,7 @@ Intermediate:
 
 In-depth:
 - Elision 
+- Context schema and api schema
 
 ## D5. Debugging Seamless transformers
 Intro:
@@ -258,6 +260,7 @@ In-depth:
 
 ## E1. Why files are bad
 - Why Seamless is different from nextflow
+- Link to: Nextflow-style channels, scatter transformers
 - Link to reproducibility
 - Converting from snakemake
 
