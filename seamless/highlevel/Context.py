@@ -249,7 +249,9 @@ class Context(Base):
         node = self._graph[0].get(path)
         if node is not None:
             if node["type"] == "libinstance":
-                return LibInstance(self, path=path)
+                li = LibInstance(self, path=path)
+                li._bound = weakref.ref(self)
+                return li
             assert node["type"] == "context", (path, node["type"]) #if not context, should be in children!
             return SubContext(self, path)
         attr = path

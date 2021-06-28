@@ -69,19 +69,22 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
                 value[k] = vv
 
         elif par["type"] == "kwargs":
-            value = {}
-            for k,v0 in argvalue.items():
-                vtype, v = v0
-                if vtype == "cell":
-                    if isinstance(v, list):
-                        v = tuple(v)
-                    vv = parent._children.get(v)
-                    if isinstance(vv, SubCell) or not isinstance(vv, Cell):
-                        msg = "%s['%s'] must be Cell, not '%s'"
-                        raise TypeError(msg % (argname, k, type(vv)))
-                    value[k] = "cell", vv
-                else: # value
-                    value[k] = "value", v
+            if argvalue is None:
+                value = None
+            else:
+                value = {}
+                for k,v0 in argvalue.items():
+                    vtype, v = v0
+                    if vtype == "cell":
+                        if isinstance(v, list):
+                            v = tuple(v)
+                        vv = parent._children.get(v)
+                        if isinstance(vv, SubCell) or not isinstance(vv, Cell):
+                            msg = "%s['%s'] must be Cell, not '%s'"
+                            raise TypeError(msg % (argname, k, type(vv)))
+                        value[k] = "cell", vv
+                    else: # value
+                        value[k] = "value", v
 
         else:
             raise NotImplementedError(par["type"])
@@ -134,12 +137,13 @@ class LibInstance:
                 raise KeyError(self._path) from None
 
 
-    def _exc(self, limit):
+    def _exc(self, limit, libctx):
         self._get_node()["exception"] = traceback.format_exc(limit=limit)
-        try:
-            libctx.root.destroy()
-        except Exception:
-            pass
+        if libctx is not None:
+            try:
+                libctx.root.destroy()
+            except Exception:
+                pass
         return
 
     def _run(self):
@@ -178,17 +182,17 @@ class LibInstance:
 
         # Fill namespace, part 2: validation
         if constructor_schema is not None:
-            instance = Silk(
+            instance = LibInstanceSilk(
                 data=deepcopy(namespace), 
                 schema=constructor_schema
             )
             try:
                 instance.validate()
             except ValidationError:
-                self._exc(0)
+                self._exc(0, None)
                 return
             except Exception:
-                self._exc()
+                self._exc(None, None)
                 return
 
 
@@ -249,14 +253,18 @@ class LibInstance:
             if name not in namespace:
                 namespace[name] = globals()[name]
         identifier = ".".join(self._path)
+        ok = False
         try:
             exec_code(constructor, identifier, namespace, argnames, None)
         except Exception:
-            self._exc()
+            self._exc(1, libctx)
+        else:
+            ok = True
         overlay_graph = overlay_context.get_graph()
         overlay_connections = connection_wrapper.connections
         libctx.root.destroy()
-        self._get_node().pop("exception", None)
+        if ok:
+            self._get_node().pop("exception", None)
         return overlay_graph, overlay_nodes, overlay_connections
 
     @property
@@ -275,9 +283,13 @@ class LibInstance:
             return super().__getattribute__(attr)
         if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
-        hnode = self._get_node()
-        libpath = hnode["libpath"]
-        arguments = hnode["arguments"]
+        if self._bound is not None:
+            hnode = self._get_node()
+            libpath = hnode["libpath"]
+            arguments = hnode["arguments"]
+        else:
+            libpath = self._temp_libpath
+            arguments = self._temp_arguments
         lib = self.get_lib()
         params = lib["params"]        
         if attr not in arguments:
@@ -322,8 +334,11 @@ class LibInstance:
 
     def get_lib(self, copy=True):
         """Returns the library of which this is an instance"""
-        hnode = self._get_node()
-        libpath = hnode["libpath"]
+        if self._bound is not None:
+            hnode = self._get_node()
+            libpath = hnode["libpath"]
+        else:
+            libpath = self._temp_libpath
         parent = self._parent()
         if parent._libroot is not None:
             try:
@@ -334,6 +349,7 @@ class LibInstance:
                 except KeyError as exc:
                     raise exc from None
         else:
+            assert libpath is not None
             lib = parent._get_lib(tuple(libpath))
         if not copy:
             return lib
@@ -351,7 +367,9 @@ class LibInstance:
         lib = self.get_lib(copy=False)
         schema = lib.get("api_schema")
         assert schema is not None
-        return Silk(data=arguments, schema=schema)
+        result = LibInstanceSilk(data=arguments, schema=schema)
+        result._libinstance = self
+        return result
 
     def __setattr__(self, attr, value):
         from .argument import parse_argument
@@ -398,3 +416,10 @@ from ...core.cached_compile import exec_code
 from ..proxy import Proxy
 from silk.Silk import Silk
 from silk.validation import ValidationError
+
+class LibInstanceSilk(Silk):
+    __slots__ = list(Silk.__slots__) + ["_libinstance"]
+
+    @property
+    def libinstance(self):
+        return self._libinstance
