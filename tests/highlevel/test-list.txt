@@ -69,7 +69,10 @@ vault.bash: run as i=vault; seamless-devel ./$i.bash > test-outputs/$i.out 2>&1
 library.py
 library-context-argument.py
 library2.py
+library-context-argument.py
 library-in-library.py
+library-schema.py
+channel.py
 environment3.py
 high-in-low.py
 high-in-low2.py

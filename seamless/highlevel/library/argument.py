@@ -12,12 +12,9 @@ def _get_value(name, value):
 
 def get_argument_value(name, value):
     if isinstance(value, Cell):
-        if value._get_hcell().get("constant"):
-            value = value.value
-        else:
-            raise TypeError("'%s' is a value argument, you cannot pass a cell unless it is constant" % name)
+        raise TypeError("'%s' is a value argument, you cannot pass a cell" % name)
     elif isinstance(value, Base):
-        raise TypeError("'%s' must be value or constant cell, not '%s'" % (name, type(value)))
+        raise TypeError("'%s' must be value, not '%s'" % (name, type(value)))
     return _get_value(name, value)
 
 def parse_argument(argname, argvalue, parameter):

@@ -527,6 +527,9 @@ class Cell(Base):
     @property
     def handle(self):
         assert self.celltype == "structured"
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            raise AttributeError
         cell = self._get_cell()
         if self.hash_pattern is not None:
             return cell.handle_hash
