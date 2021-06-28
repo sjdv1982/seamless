@@ -19,11 +19,13 @@ example.add_validator(validator)
 api_schema = {}
 example = Silk(schema=api_schema)
 
+def q(self):
+    return 42
+example.q = property(q)
+
 def square(self):
     self.a = self.a * self.a
 example.square = square
-
-
 
 def constructor(ctx, libctx, a, b):
     print("a = {}".format(a))
@@ -64,4 +66,11 @@ ctx.compute()
 print(ctx.inst.exception)
 
 ctx.inst.b = 200
+ctx.compute()
+
+print("START")
+print(ctx.inst.q)
+print(ctx.inst.a)
+ctx.inst.square()
+print(ctx.inst.a)
 ctx.compute()

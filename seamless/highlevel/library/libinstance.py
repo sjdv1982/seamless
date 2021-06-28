@@ -290,6 +290,13 @@ class LibInstance:
             if attr == "arguments":
                 return arguments
             if attr not in params or params[attr]["io"] != "output":
+                if attr in self._get_api_methods():
+                    api = self._build_api(arguments)
+                    if not api.schema["methods"][attr].get("property"):
+                        # May have false positives in non-self-modifying methods, but we can't know in advance
+                        parent = self._parent()
+                        parent._translate()
+                    return getattr(api, attr)
                 raise AttributeError(attr)
         argname = attr
         parent = self._parent()
@@ -310,10 +317,10 @@ class LibInstance:
         arguments = hnode["arguments"]
         result = list(arguments.keys()) 
         result += ["ctx", "libpath", "arguments", "status"]
-        # TODO: api_schema methods/properties
-        return result
+        result += self._get_api_methods()
+        return sorted(result)
 
-    def get_lib(self):
+    def get_lib(self, copy=True):
         """Returns the library of which this is an instance"""
         hnode = self._get_node()
         libpath = hnode["libpath"]
@@ -328,7 +335,23 @@ class LibInstance:
                     raise exc from None
         else:
             lib = parent._get_lib(tuple(libpath))
-        return deepcopy(lib)
+        if not copy:
+            return lib
+        else:
+            return deepcopy(lib)
+
+    def _get_api_methods(self):
+        lib = self.get_lib(copy=False)
+        schema = lib.get("api_schema")
+        if schema is None:
+            return []
+        return sorted(list(schema.get("methods", {}).keys()))
+
+    def _build_api(self, arguments):
+        lib = self.get_lib(copy=False)
+        schema = lib.get("api_schema")
+        assert schema is not None
+        return Silk(data=arguments, schema=schema)
 
     def __setattr__(self, attr, value):
         from .argument import parse_argument
@@ -350,6 +373,9 @@ class LibInstance:
                     arguments[parname][attr] = parse_argument(attr, value, params[parname])
                     break
             else:
+                if attr in self._get_api_methods():
+                    api = self._build_api(arguments)
+                    return setattr(api, attr, value)  
                 raise AttributeError(attr)
         else:
             par = params[attr]
