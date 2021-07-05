@@ -1,6 +1,7 @@
 import weakref
 import functools
 import pprint
+import json
 from copy import deepcopy
 from .Cell import Cell
 from .Module import Module
@@ -92,6 +93,22 @@ class Transformer(Base):
     @property
     def environment(self):
         return self._environment
+
+    @property
+    def meta(self):
+        """Dictionary of meta-parameters.
+These don't affect the computation result, but may affect job managers
+Example of meta-parameters: expected computation time, service name
+        """
+        return deepcopy(self._get_htf().get("meta"))
+
+    @meta.setter
+    def meta(self, value):
+        if not isinstance(value, dict):
+            raise TypeError(value)
+        json.dumps(value)
+        htf = self._get_htf()
+        htf["meta"] = value
 
     @property
     def RESULT(self):

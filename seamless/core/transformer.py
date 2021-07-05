@@ -17,6 +17,7 @@ class Transformer(Worker):
     _prelim_result = False
     _progress = 0.0
     _env = None
+    _meta = None
     _exception_to_clear = False
     debug = False
     python_debug = False
@@ -83,6 +84,16 @@ class Transformer(Worker):
         if not isinstance(env, dict):
             raise TypeError(type(env))
         self._env = env
+
+    @property
+    def meta(self):
+        return self._meta
+
+    @meta.setter
+    def meta(self, meta: dict):
+        if not isinstance(meta, dict):
+            raise TypeError(type(meta))
+        self._meta = meta
 
     @property
     def checksum(self):

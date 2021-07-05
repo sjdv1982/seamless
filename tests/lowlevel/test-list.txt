@@ -51,6 +51,7 @@ simple-share.py
 transformation-checksum.sh: run with Seamless database
 transformation-raw.py
 transformation-raw-ipython.py
+meta.py
 simple-duplex.py
 simple-duplex-remote.py: run together with:
      python3 -u ../../scripts/jobslave-nodatabase.py --time 40 --direct-print > test-outputs/simple-duplex-remote-jobslave.out 2>&1

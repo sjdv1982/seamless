@@ -344,10 +344,17 @@ class CommunionServer:
                     buffer = buffers[n]
                     if buffer is not None:
                         buffer_cache.cache_buffer(remote_pins[n][0], buffer)
-            await tcache.incref_transformation(
+            result = await tcache.incref_transformation(
                 transformation, transformer,
                 transformation_build_exception=None
             )
+            if result is not None:
+                tf_checksum, result_checksum, prelim = result
+                if result_checksum is None or prelim:
+                    job = tcache.run_job(transformation, tf_checksum)
+                    if job is not None:
+                        await asyncio.shield(job.future)
+
         except Exception as exc:
             tcache.transformation_exceptions[transformer.tf_checksum] = exc
 
