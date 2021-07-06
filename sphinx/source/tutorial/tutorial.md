@@ -1,12 +1,13 @@
 Tutorial
 ========
 
-TODO: integrate new_project.md
+<!-- TODO: integrate new_project.md -->
 
 # Part A. Getting started
 
 ## A1. How to use Seamless
 
+Seamless is meant to bring together proga
 Intro:
 - Seamless CLI
 - new project
@@ -71,6 +72,7 @@ Intermediate:
 - Compiled transformers:
     - header, integrator, executor
     - main_module multiple files (link to module)
+- Meta parameters (computation times etc.)
 - Transformations and checksums (link to universal delocalized computation)
 
 In-depth:
