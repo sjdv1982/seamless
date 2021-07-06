@@ -616,9 +616,7 @@ cellclasses = {
     "checksum": ChecksumCell
 }
 
-def cell(celltype="plain", **kwargs):
-    if celltype is None:
-        celltype = "plain"
+def cell(celltype="mixed", **kwargs):
     cellclass = cellclasses[celltype]
     return cellclass(**kwargs)
 
