@@ -202,6 +202,14 @@ class TransformationCache:
         }
         if transformer.meta is not None:
             meta.update(transformer.meta)
+        if "META" in inputpin_checksums:
+            checksum = inputpin_checksums["META"]
+            await cachemanager.fingertip(checksum)
+            inp_metabuf = buffer_cache.get_buffer(checksum)
+            if inp_metabuf is None:
+                raise CacheMissError("META")
+            inp_meta = json.loads(inp_metabuf)
+            meta.update(inp_meta)
         metabuf = await serialize(meta, "plain")
         meta_checksum = get_hash(metabuf)
         buffer_cache.cache_buffer(meta_checksum, metabuf)
@@ -213,6 +221,8 @@ class TransformationCache:
             transformation["__env__"] = env_checksum
         transformation_build_exception = None
         for pinname, checksum in inputpin_checksums.items():
+            if pinname == "META":
+                continue
             await cachemanager.fingertip(checksum)
             pin = transformer._pins[pinname]
             celltype, subcelltype = celltypes[pinname]

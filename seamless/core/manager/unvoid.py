@@ -75,10 +75,14 @@ def unvoid_transformer(transformer, livegraph):
         transformer._status_reason = StatusReasonEnum.UNCONNECTED
         return
     for pinname, accessor in upstreams.items():
+        if pinname == "META":
+            continue
         if accessor is None: #unconnected
             transformer._status_reason = StatusReasonEnum.UNCONNECTED
             return
     for pinname, accessor in upstreams.items():
+        if pinname == "META":
+            continue
         if accessor._void: #upstream error
             #print("NOT UNVOID", transformer, pinname)
             transformer._status_reason = StatusReasonEnum.UPSTREAM
