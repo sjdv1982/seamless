@@ -98,7 +98,10 @@ def _finalize(
 
     ctx.module.connect(ctf.executor.module)
 
-def translate_compiled_transformer(node, root, namespace, inchannels, outchannels):
+def translate_compiled_transformer(
+        node, root, namespace, inchannels, outchannels,
+        *, has_meta_connection
+    ):
     from .translate import set_structured_cell_from_checksum
     #TODO: still a lot of common code with translate_py_transformer, put in functions
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
@@ -196,6 +199,16 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
     set_structured_cell_from_checksum(inp, inp_checksum)
     namespace[node["path"] + ("code",), "target"] = ctx.code, node
     namespace[node["path"] + ("code",), "source"] = ctx.code, node
+
+    if has_meta_connection:
+        ctx.meta = cell("plain")
+        ctx.meta.connect(ctf.executor.META)
+        namespace[node["path"] + ("meta",), "target"] = ctx.meta, node    
+    else:
+        meta = node.get("meta")
+        if meta is not None:
+            ctf.executor.meta = meta
+
 
     result, result_ctx = build_structured_cell(
         ctx, result_name, [()],

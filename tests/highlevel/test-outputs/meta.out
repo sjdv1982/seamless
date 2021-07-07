@@ -1,0 +1,15 @@
+{'transformer_path': ['func', 'tf']}
+{'somekey': 'somevalue', 'transformer_path': ['func', 'tf']}
+{'calculated meta': 42, 'transformer_path': ['func', 'tf']}
+{'somekey': 'somevalue2', 'transformer_path': ['func', 'tf']}
+None
+<Silk: 12 >
+{'calculated meta': 42, 'transformer_path': ['func', 'tf']}
+
+gcc -c -O3 -ffast-math -march=native -fPIC -p -g -o main.o main.c
+
+
+{'somekey': 'somevalue3', 'transformer_path': ['func', 'tf', 'executor']}
+None
+<Silk: 1013 >
+{'calculated meta': 42, 'transformer_path': ['func', 'tf', 'executor']}

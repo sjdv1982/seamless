@@ -89,6 +89,8 @@ class Transformer(Base):
             htf = new_transformer(parent, path, code, pins, hash_pattern)
         elif "environment" in node:
             self._environment._load(node["environment"])
+        self._temp_code = None
+        self._temp_pins = None
 
     @property
     def environment(self):
@@ -99,16 +101,31 @@ class Transformer(Base):
         """Dictionary of meta-parameters.
 These don't affect the computation result, but may affect job managers
 Example of meta-parameters: expected computation time, service name
+
+You can set this dictionary directly, or you may assign .meta to a cell
         """
         return deepcopy(self._get_htf().get("meta"))
 
     @meta.setter
     def meta(self, value):
-        if not isinstance(value, dict):
-            raise TypeError(value)
-        json.dumps(value)
+        from .assign import assign_connection
+        parent = self._parent()
+        assert parent is not None
         htf = self._get_htf()
-        htf["meta"] = value
+        target_path = self._path + ("meta",)
+        if isinstance(value, Cell):
+            assert value._parent() is parent
+            assign_connection(parent, value._path, target_path, False)
+            htf.pop("meta", None)
+        elif isinstance(value, Proxy):
+            raise TypeError(".meta can only be assigned to a dict or to a whole Cell")
+        else:
+            if not isinstance(value, dict):
+                raise TypeError(value)
+            json.dumps(value)
+            parent.remove_connections(target_path,endpoint="target")
+            htf["meta"] = value
+        parent._translate()
 
     @property
     def RESULT(self):
@@ -253,7 +270,7 @@ Example of meta-parameters: expected computation time, service name
         untranslate = False
         if old_compiled != compiled:
             htf["UNTRANSLATED"] = True
-        elif (old_language in ("bash", "docker")) != (language in ("bash", "docker")):
+        elif (old_language in ("bash", "docker")) != (lang in ("bash", "docker")):
             htf["UNTRANSLATED"] = True
         htf["compiled"] = compiled
         htf["file_extension"] = extension
@@ -398,7 +415,9 @@ Example of meta-parameters: expected computation time, service name
                 htf["TEMP"]["input_auth"][attr] = value
                 if attr not in htf["pins"]:
                     htf["pins"][attr] = default_pin.copy()
-            self._parent()._translate()
+            parent = self._parent()
+            parent.remove_connections(self._path + (attr,), endpoint="target")
+            parent._translate()
             return
 
         if attr == "code":
@@ -416,7 +435,7 @@ Example of meta-parameters: expected computation time, service name
                 if callable(value):
                     value, _, _ = parse_function_code(value)
                 check_libinstance_subcontext_binding(parent, self._path)
-                removed = parent.remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,), endpoint="target")
                 if removed:
                     htf = self._get_htf()
                     htf["UNTRANSLATED"] = True
@@ -438,7 +457,7 @@ Example of meta-parameters: expected computation time, service name
             else:
                 tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
-                removed = parent.remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,), endpoint="target")
                 if removed:
                     translate = True
                 inp.handle_no_inference.set(value)
@@ -467,7 +486,7 @@ Example of meta-parameters: expected computation time, service name
             else:
                 tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
-                removed = parent.remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,), endpoint="target")
                 if removed:
                     translate = True
                 setattr(inp.handle_no_inference, attr, value)
@@ -522,6 +541,7 @@ Example of meta-parameters: expected computation time, service name
 
     def _get_htf(self):
         parent = self._parent()
+        assert parent is not None
         return parent._get_node(self._path)
 
     def _get_value(self, attr):

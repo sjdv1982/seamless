@@ -14,7 +14,10 @@ graph = json.load(open(graphfile))
 sctx = StaticContext.from_graph(graph)
 sctx.add_zip(zipfile)
 
-def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
+def translate_bash_transformer(
+        node, root, namespace, inchannels, outchannels,
+        *, has_meta_connection
+    ):
     from .translate import set_structured_cell_from_checksum
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
@@ -99,6 +102,15 @@ def translate_bash_transformer(node, root, namespace, inchannels, outchannels):
         cell_setattr(node, ctx, pin_intermediate[pinname], intermediate_cell)
         inp.outchannels[(pinname,)].connect(intermediate_cell)
         intermediate_cell.connect(target)
+
+    if has_meta_connection:
+        ctx.meta = cell("plain")
+        ctx.meta.connect(ctx.tf.META)
+        namespace[node["path"] + ("meta",), "target"] = ctx.meta, node    
+    else:
+        meta = node.get("meta")
+        if meta is not None:
+            ctx.tf.meta = meta
 
     result, result_ctx = build_structured_cell(
         ctx, result_name, [()],

@@ -74,6 +74,7 @@ library-in-library.py
 library-schema.py
 channel.py
 environment3.py
+meta.py
 high-in-low.py
 high-in-low2.py
 high-in-low3.py

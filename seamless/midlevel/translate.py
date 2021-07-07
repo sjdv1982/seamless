@@ -302,14 +302,28 @@ def translate(graph, ctx, environment):
         path = node["path"]
         if t == "transformer":
             inchannels, outchannels = find_channels(node["path"], connection_paths)
+            try:
+                inchannels.remove(("meta",))
+                has_meta_connection = True
+            except ValueError:
+                has_meta_connection = False
             language = node["language"]
             if node["compiled"]:
                 from .translate_compiled_transformer import translate_compiled_transformer
-                translate_compiled_transformer(node, ctx, namespace, inchannels, outchannels)
+                translate_compiled_transformer(
+                    node, ctx, namespace, inchannels, outchannels,
+                    has_meta_connection = has_meta_connection
+                )
             elif language == "bash":
-                translate_bash_transformer(node, ctx, namespace, inchannels, outchannels)
+                translate_bash_transformer(
+                    node, ctx, namespace, inchannels, outchannels,
+                    has_meta_connection = has_meta_connection
+                )
             elif language == "docker":
-                translate_docker_transformer(node, ctx, namespace, inchannels, outchannels)
+                translate_docker_transformer(
+                    node, ctx, namespace, inchannels, outchannels,
+                    has_meta_connection = has_meta_connection
+                )
             else:
                 ipy_template = None
                 py_bridge = None
@@ -334,7 +348,8 @@ def translate(graph, ctx, environment):
                 translate_py_transformer(
                     node, ctx, namespace, inchannels, outchannels,
                     ipy_template=ipy_template,
-                    py_bridge=py_bridge
+                    py_bridge=py_bridge,
+                    has_meta_connection=has_meta_connection
                 )                
         elif t == "macro":
             if node["language"]  != "python":

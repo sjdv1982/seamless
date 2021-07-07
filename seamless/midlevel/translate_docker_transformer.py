@@ -14,7 +14,9 @@ graph = json.load(open(graphfile))
 sctx = StaticContext.from_graph(graph)
 sctx.add_zip(zipfile)
 
-def translate_docker_transformer(node, root, namespace, inchannels, outchannels):
+def translate_docker_transformer(node, root, namespace, inchannels, outchannels, *, has_meta_connection):
+    if has_meta_connection:
+        raise NotImplementedError
     from .translate import set_structured_cell_from_checksum
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
