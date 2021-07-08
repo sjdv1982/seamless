@@ -252,14 +252,21 @@ You can set this dictionary directly, or you may assign .meta to a cell
     def language(self):
         """Defines the programming language of the transformer's source code.
 
-        Allowed values are: python, ipython, bash, docker
-        (which is bash executed in a Docker image), or any compiled language.
+        Allowed values are: python, ipython, bash,
+        or any compiled language.
 
         See seamless.compiler.languages and seamless.compile.compilers for a list
         """
         return self._get_htf()["language"]
     @language.setter
     def language(self, value):
+        if value == "docker":
+            import warnings
+            warnings.warn(
+                'Transformer.language="docker" is deprecated. Use language="bash" and set docker_image.',
+                FutureWarning,
+            )
+            value = "bash"
         parent = self._parent()
         lang, language, extension = parent.environment.find_language(value)
         compiled = (language["mode"] == "compiled")
@@ -270,28 +277,34 @@ You can set this dictionary directly, or you may assign .meta to a cell
         untranslate = False
         if old_compiled != compiled:
             htf["UNTRANSLATED"] = True
-        elif (old_language in ("bash", "docker")) != (lang in ("bash", "docker")):
+        elif (old_language == "bash" != (lang  == "bash")):
             htf["UNTRANSLATED"] = True
         htf["compiled"] = compiled
         htf["file_extension"] = extension
         has_translated = False
-        if lang == "docker":
-            if old_language != "docker":
-                im = False
-                if "docker_image" not in htf["pins"]:
-                    htf["pins"]["docker_image"] = default_pin.copy()
-                    im = True
-                """
-                if im:
-                    self.docker_image = ""
-                """
-
-        else:
-            if old_language == "docker":
-                htf["pins"].pop("docker_image")
-
         if not has_translated:
             self._parent()._translate()
+
+    @property
+    def docker_image(self):
+        """Defines the Docker image in which a transformer should run
+        Getting this property is more-or-less syntactic sugar for:
+          Transformer.environment.get_image()["name"]
+        Setting this property is more-or-less syntactic sugar for:
+          Transformer.environment.set_image({"name": ...})
+        """
+        im = self.environment.get_image()
+        if im is None:
+            return None
+        return im["name"]
+
+    @docker_image.setter
+    def docker_image(self, image):
+        im = self.environment.get_image()
+        if im is None:
+            im = {}
+        im["name"] = image
+        self.environment.set_image(im)
 
     @property
     def header(self):

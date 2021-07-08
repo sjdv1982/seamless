@@ -60,10 +60,10 @@ if ctx.result.value is None:
 
 import os, json
 currdir=os.path.dirname(os.path.abspath(__file__))
-graph_filename=os.path.join(currdir,"../docker_transformer.seamless")
+graph_filename=os.path.join(currdir,"../bashdocker_transformer.seamless")
 json.dump(graph, open(graph_filename, "w"), sort_keys=True, indent=2)
 
-zip_filename=os.path.join(currdir,"../docker_transformer.zip")
+zip_filename=os.path.join(currdir,"../bashdocker_transformer.zip")
 with open(zip_filename, "bw") as f:
     f.write(zip)
 

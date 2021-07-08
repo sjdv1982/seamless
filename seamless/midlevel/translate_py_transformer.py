@@ -1,7 +1,7 @@
 from copy import deepcopy
 from numpy import e, isin
 from ..core import cell, \
- transformer, context, StructuredCell
+ transformer, context
 
 def translate_py_transformer(
         node, root, namespace, inchannels, outchannels,

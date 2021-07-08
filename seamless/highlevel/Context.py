@@ -157,7 +157,6 @@ class Context(Base):
         if share_namespace is not None:
             self.share_namespace = share_namespace
         self.set_graph(graph,mounts=mounts,shares=shares)
-        graph = deepcopy(graph)
         return self
 
     def set_graph(self, graph, *, mounts=True, shares=True):
@@ -171,7 +170,8 @@ class Context(Base):
         "shares": share cells over HTTP, as specified in the graph
 
         """
-        graph = deepcopy(graph)
+        from ..midlevel.graph_convert import graph_convert
+        graph = graph_convert(graph, self)
         nodes = {}
         self._children.clear()
         for node in graph["nodes"]:
@@ -446,6 +446,7 @@ class Context(Base):
             params = deepcopy(params)
             lib = deepcopy(lib)
         graph = {
+            "__seamless__": "0.7",
             "nodes": nodes,
             "connections": connections,
             "params": params,
@@ -473,6 +474,7 @@ class Context(Base):
             params = deepcopy(params)
             lib = deepcopy(lib)
         graph = {
+            "__seamless__": "0.7",
             "nodes": nodes,
             "connections": connections,
             "params": params,

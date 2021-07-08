@@ -1,4 +1,5 @@
 {
+  "__seamless__": "0.7",
   "connections": [],
   "environment": {
     "ipy_templates": {
@@ -12,7 +13,7 @@
         }
       }
     },
-    "languages": "{\n  \"bash\": {\n    \"extension\": \"sh\",\n    \"mode\": \"interpreted\"\n  },\n  \"c\": {\n    \"compiler\": \"gcc\",\n    \"extension\": \"c\",\n    \"mode\": \"compiled\"\n  },\n  \"c++\": {\n    \"compiler\": \"g++\",\n    \"extension\": \"cpp\",\n    \"mode\": \"compiled\"\n  },\n  \"cython\": {\n    \"extension\": \"pyx\",\n    \"mode\": \"interpreted\"\n  },\n  \"fortran\": {\n    \"compiler\": \"gfortran\",\n    \"extension\": [\n      \"f\",\n      \"f90\"\n    ],\n    \"mode\": \"compiled\"\n  },\n  \"ipython\": {\n    \"extension\": \"ipy\",\n    \"mode\": \"interpreted\"\n  },\n  \"python\": {\n    \"extension\": \"py\",\n    \"mode\": \"interpreted\"\n  }\n}"
+    "languages": "{\n  \"bash\": {\n    \"extension\": \"sh\",\n    \"mode\": \"interpreted\"\n  },\n  \"c\": {\n    \"compiler\": \"gcc\",\n    \"extension\": \"c\",\n    \"mode\": \"compiled\"\n  },\n  \"c++\": {\n    \"compiler\": \"g++\",\n    \"extension\": \"cpp\",\n    \"mode\": \"compiled\"\n  },\n  \"cython\": {\n    \"extension\": \"pyx\",\n    \"mode\": \"interpreted\"\n  },\n  \"fortran\": {\n    \"compiler\": \"gfortran\",\n    \"extension\": [\n      \"f\",\n      \"f90\"\n    ],\n    \"mode\": \"compiled\"\n  },\n  \"ipython\": {\n    \"extension\": \"ipy\",\n    \"mode\": \"interpreted\"\n  },\n  \"python\": {\n    \"extension\": \"py\",\n    \"mode\": \"interpreted\"\n  },\n  \"r\": {\n    \"extension\": \"R\",\n    \"mode\": \"interpreted\"\n  }\n}"
   },
   "lib": [],
   "nodes": [
@@ -46,9 +47,7 @@
         "tf"
       ],
       "pins": {
-        "a": {
-          "celltype": "mixed"
-        }
+        "a": {}
       },
       "type": "transformer"
     }

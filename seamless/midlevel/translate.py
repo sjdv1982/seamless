@@ -248,16 +248,13 @@ def translate_link(node, namespace, ctx):
 
 translate_compiled_transformer = None
 translate_bash_transformer = None
-translate_docker_transformer = None
 
 def import_before_translate(graph):
     global translate_compiled_transformer
     global translate_bash_transformer
-    global translate_docker_transformer
     impvars = (
         "translate_compiled_transformer",
         "translate_bash_transformer",
-        "translate_docker_transformer"
     )
     if all([globals()[var] is not None for var in impvars]):
         return
@@ -269,8 +266,6 @@ def import_before_translate(graph):
                 from .translate_compiled_transformer import translate_compiled_transformer
             elif node["language"] == "bash":
                 from .translate_bash_transformer import translate_bash_transformer
-            elif node["language"] == "docker":
-                from .translate_docker_transformer import translate_docker_transformer
 
 def translate(graph, ctx, environment):
     from ..core.macro_mode import curr_macro
@@ -316,11 +311,6 @@ def translate(graph, ctx, environment):
                 )
             elif language == "bash":
                 translate_bash_transformer(
-                    node, ctx, namespace, inchannels, outchannels,
-                    has_meta_connection = has_meta_connection
-                )
-            elif language == "docker":
-                translate_docker_transformer(
                     node, ctx, namespace, inchannels, outchannels,
                     has_meta_connection = has_meta_connection
                 )
@@ -390,7 +380,6 @@ from .translate_module import translate_module
 '''
 # imported only at need...
 from .translate_bash_transformer import translate_bash_transformer
-from .translate_docker_transformer import translate_docker_transformer
 from .translate_compiled_transformer import translate_compiled_transformer
 '''
 from ..core.protocol.deep_structure import apply_hash_pattern_sync, access_hash_pattern

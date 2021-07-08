@@ -1,4 +1,5 @@
 import os, json
+from copy import deepcopy
 from seamless.core import cell, transformer, context
 from ..midlevel.StaticContext import StaticContext
 
@@ -19,6 +20,39 @@ def translate_bash_transformer(
         *, has_meta_connection
     ):
     from .translate import set_structured_cell_from_checksum
+    from ..highlevel.Environment import Environment
+    from ..core.environment import (
+        validate_capabilities,
+        validate_conda_environment,
+        validate_image
+    )
+
+    env0 = Environment(None)
+    env0._load(node.get("environment"))
+    env = env0._to_lowlevel()
+
+    is_docker_transformer = False
+    if env is not None and env.get("image") is not None:
+        ok1 = validate_capabilities(env)[0]
+        ok2 = validate_conda_environment(env)[0]
+        ok3 = validate_image(env)[0]
+        if not (ok1 or ok2 or ok3):
+            is_docker_transformer = True
+
+    if is_docker_transformer:
+        from .translate_bashdocker_transformer import translate_bashdocker_transformer
+        docker_image = env.pop("image")["name"]
+        # TODO: pass on version and checksum as well?
+        if "powers" not in env:
+            env["powers"] = []
+        env["powers"].append("docker")
+        return translate_bashdocker_transformer(
+            node, root, namespace, inchannels, outchannels,
+            has_meta_connection = has_meta_connection,
+            env=env, docker_image=docker_image
+        )
+
+
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
     parent = get_path(root, node["path"][:-1], None, None)
@@ -103,14 +137,13 @@ def translate_bash_transformer(
         inp.outchannels[(pinname,)].connect(intermediate_cell)
         intermediate_cell.connect(target)
 
+    meta = deepcopy(node.get("meta", {}))
+    meta["transformer_type"] = "bash"
+    ctx.tf.meta = meta
     if has_meta_connection:
         ctx.meta = cell("plain")
         ctx.meta.connect(ctx.tf.META)
         namespace[node["path"] + ("meta",), "target"] = ctx.meta, node    
-    else:
-        meta = node.get("meta")
-        if meta is not None:
-            ctx.tf.meta = meta
 
     result, result_ctx = build_structured_cell(
         ctx, result_name, [()],
@@ -140,6 +173,9 @@ def translate_bash_transformer(
         k2 = "value" if k == "result" else k[len("result_"):]
         result_checksum[k2] = checksum[k]
     set_structured_cell_from_checksum(result, result_checksum)
+
+    if env is not None:
+        ctx.tf.env = env
 
     namespace[node["path"], "target"] = inp, node
     namespace[node["path"], "source"] = result, node

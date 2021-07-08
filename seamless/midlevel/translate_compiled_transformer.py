@@ -103,7 +103,12 @@ def translate_compiled_transformer(
         *, has_meta_connection
     ):
     from .translate import set_structured_cell_from_checksum
-    #TODO: still a lot of common code with translate_py_transformer, put in functions
+    from ..highlevel.Environment import Environment
+    
+    env0 = Environment(None)
+    env0._load(node.get("environment"))
+    env = env0._to_lowlevel()
+
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
     main_module_inchannels = [("objects",) + ic[1:] for ic in inchannels if ic[0] == "_main_module"] + [("link_options",)]
@@ -245,6 +250,9 @@ def translate_compiled_transformer(
     if "header" in mount:
         ctx.header.mount(**mount["header"])
     namespace[node["path"] + ("header",), "source"] = ctx.header, node
+
+    if env is not None:
+        ctf.executor.env = env
 
     namespace[node["path"], "target"] = inp, node
     namespace[node["path"], "source"] = result, node

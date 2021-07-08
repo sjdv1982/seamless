@@ -100,7 +100,7 @@ def validate_conda_environment(environment):
 power_checkers = {
     "ipython": check_ipython_power,
     "conda": check_conda_power,
-    "image": check_docker_power,
+    "docker": check_docker_power,
 }
 
 def validate_environment(environment):
