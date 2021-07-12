@@ -20,7 +20,6 @@ def triple_it_b(a, b):
     return 3 * a + b
 
 ctx.transform = triple_it
-ctx.transform.debug = True
 ctx.transform.a = 1
 print("START")
 ctx.compute()

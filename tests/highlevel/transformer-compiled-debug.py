@@ -52,6 +52,7 @@ ctx.result.mount("/tmp/result.txt", mode="w")
 ctx.code.mount("/tmp/code.cpp", authority="cell")
 ctx.compute()
 
-ctx.transform.debug = True
+raise NotImplementedError("debug mode")
+#ctx.transform.debug = True
 ctx.translate()
 # => fire up ipython

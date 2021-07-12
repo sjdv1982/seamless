@@ -14,7 +14,7 @@ graph = json.load(open(graphfile))
 sctx = StaticContext.from_graph(graph)
 sctx.add_zip(zipfile)
 
-def _init_from_graph(ctf, debug):
+def _init_from_graph(ctf):
     ctf.gen_header_code = sctx.gen_header.code.cell()
     ctf.gen_header_params = sctx.gen_header_params.cell()
     ctf.gen_header = transformer(sctx.gen_header_params.value)
@@ -22,15 +22,12 @@ def _init_from_graph(ctf, debug):
 
     ctf.integrator_code = sctx.integrator.code.cell()
     ctf.integrator_params = sctx.integrator_params.cell()
-    ctf.integrator = transformer(sctx.integrator_params.value)
-    ctf.integrator.debug_.cell().set(debug)
+    ctf.integrator = transformer(sctx.integrator_params.value)    
     ctf.integrator_code.connect(ctf.integrator.code)
 
     ctf.executor_code = sctx.executor.code.cell()
     ctf.executor_params = sctx.executor_params.cell()
     ctf.executor = transformer(sctx.executor_params.value)
-    if debug:
-        ctf.executor.debug = True
     ctf.executor_code.connect(ctf.executor.code)
 
 def _finalize(
@@ -100,7 +97,6 @@ def _finalize(
 
 def translate_compiled_transformer(node, root, namespace, inchannels, outchannels):
     from .translate import set_structured_cell_from_checksum
-    #TODO: still a lot of common code with translate_py_transformer, put in functions
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
     main_module_inchannels = [("objects",) + ic[1:] for ic in inchannels if ic[0] == "_main_module"] + [("link_options",)]
@@ -175,10 +171,10 @@ def translate_compiled_transformer(node, root, namespace, inchannels, outchannel
 
     # Transformer itself
     ctf = ctx.tf = context()
-    debug = node["debug"] or node.get("compiled_debug")
-    if debug is None:
-        debug = False
-    _init_from_graph(ctf, debug)
+    _init_from_graph(ctf)
+    print("TODO: set integrator._debug")
+    debug = False ###
+    ctf.integrator.debug_.cell().set(debug)
 
     ctx.code = cell("text")
     ctx.code.set_file_extension(node["file_extension"])

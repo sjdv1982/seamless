@@ -330,7 +330,7 @@ ctx.data = Cell().set(data)
 def get_data_a(data):
     return [v["a"] for v in data]
 ctx.get_data_a = get_data_a
-ctx.get_data_a.debug = True
+raise NotImplementedError ###ctx.get_data_a.debug = True
 
 def get_data_b(data):
     return [v["b"] for v in data]

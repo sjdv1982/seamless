@@ -73,8 +73,6 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels)
             "access_mode": "json", "content_type": "json"
         }
     ctx.tf = transformer(all_pins)
-    if node["debug"]:
-        ctx.tf.debug = True
     ctx.code = cell("text")
     if "code" in mount:
         ctx.code.mount(**mount["code"])

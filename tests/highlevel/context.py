@@ -12,7 +12,7 @@ def triple_it(a):
 
 ctx.transform = triple_it
 ctx.transform.a = ctx.a
-ctx.transform.debug = True
+raise NotImplementedError ###ctx.transform.debug = True
 ctx.myresult = ctx.transform
 ctx.compute()
 print(ctx.myresult.value)

@@ -21,7 +21,7 @@ def triple_it_b(a, b):
 
 ctx.transform = triple_it
 ctx.transform.hash_pattern = {"*": "#"}
-ctx.transform.debug = True
+raise NotImplementedError ###ctx.transform.debug = True
 ctx.transform.a = 1
 print("START")
 ctx.compute()

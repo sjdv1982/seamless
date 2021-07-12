@@ -43,7 +43,6 @@ def new_transformer(ctx, path, code, pins, hash_pattern):
         "RESULT": "result",
         "INPUT": "inp",
         "SCHEMA": None, #the result schema can be exposed as an input pin to the transformer under this name
-        "debug": False,
         "UNTRANSLATED": True,
     }
     if code is not None:
@@ -127,24 +126,6 @@ class Transformer(Base):
     @INPUT.setter
     def INPUT(self, value):
         raise NotImplementedError
-
-    @property
-    def debug(self):
-        """For a compiled transformer, if it is compiled in debug mode"""
-        return self._get_htf()["debug"]
-    @debug.setter
-    def debug(self, value):
-        assert value in (True, False)
-        from ..core.transformer import Transformer as CoreTransformer
-        htf = self._get_htf()
-        htf["debug"] = value
-        if htf.get("compiled", False):
-            old_target = self.main_module.target
-            if value and old_target != "debug":
-                self.main_module.target = "debug"
-            elif (not value) and old_target == "debug":
-                self.main_module.target = "release"
-        self._parent()._translate()
 
     @property
     def fingertip_no_remote(self):

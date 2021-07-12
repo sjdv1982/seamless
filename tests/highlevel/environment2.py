@@ -153,7 +153,8 @@ print(ctx.tf.result.value) # 2096
 # We can even launch debugging 
 #  GDB is not very good, but other debuggers (Delve) exist
 # TODO: source file mapping (Seamless only does this for gcc compilers)
-ctx.tf.debug = True
+raise NotImplementedError("debug mode")
+### ctx.tf.debug = True
 ctx.tf.a = 18
 ctx.compute()
 print(ctx.tf.result.value)

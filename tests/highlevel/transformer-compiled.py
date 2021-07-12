@@ -49,7 +49,3 @@ ctx.b.mount("/tmp/b.txt")
 ctx.result.mount("/tmp/result.txt", mode="w")
 ctx.code.mount("/tmp/code.cpp")
 ctx.compute()
-
-# ctx.transform.debug = True
-# ctx.translate()
-# => fire up ipython

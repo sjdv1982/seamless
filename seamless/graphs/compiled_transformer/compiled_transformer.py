@@ -17,11 +17,12 @@ pins["input_schema"]["celltype"] = "plain"
 pins["result_schema"]["celltype"] = "plain"
 pins["input_name"]["celltype"] = "str"
 pins["result_name"]["celltype"] = "str"
-ctx.gen_header.debug = True
+raise NotImplementedError ###ctx.gen_header.debug = True
+
 ctx.gen_header.code = set_resource(gen_header_file)
 
 ctx.integrator = lambda lang, header, compiled_code, main_module, debug_: None
-ctx.integrator.debug = True
+raise NotImplementedError ###ctx.integrator.debug = True
 ctx.integrator.code = set_resource(integrator_file)
 pins = ctx.integrator.pins
 pins["debug_"]["celltype"] = "bool"
