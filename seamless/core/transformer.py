@@ -1,10 +1,3 @@
-"""
-NOTE: in theory, a transformer should have a "copy" attribute,
- indicating if the input arguments will be protected against writing
-In practice, the input arguments, even if read from checksum-to-value cache,
- will be in a subprocess. So even if they are modified, there is no
- contamination of cache values.
-"""
 from collections import OrderedDict
 import asyncio
 import traceback
@@ -17,16 +10,18 @@ class Transformer(Worker):
     _prelim_result = False
     _progress = 0.0
     _env = None
+    _meta = None
     _exception_to_clear = False
     debug = None
 
     def __init__(self, transformer_params, *,  stream_params=None):
         self.code = InputPin(self, "code", "python", "transformer")
-        self._pins = {"code":self.code}
+        self.META = InputPin(self, "META", "plain")
+        self._pins = {"code":self.code, "META": self.META}
         self._output_name = None
         self._transformer_params = OrderedDict()
         self._stream_params = stream_params # TODO: validate
-        forbidden = ("code",)
+        forbidden = ("code","META")
         for p in sorted(transformer_params.keys()):
             if p in forbidden:
                 raise ValueError("Forbidden pin name: %s" % p)
@@ -84,6 +79,16 @@ class Transformer(Worker):
         self._env = env
 
     @property
+    def meta(self):
+        return self._meta
+
+    @meta.setter
+    def meta(self, meta: dict):
+        if not isinstance(meta, dict):
+            raise TypeError(type(meta))
+        self._meta = meta
+
+    @property
     def checksum(self):
         checksum = self._checksum
         if checksum is not None:
@@ -105,6 +110,8 @@ class Transformer(Worker):
         upstreams = livegraph.transformer_to_upstream.get(self)
         if upstreams is not None:
             for accessor in upstreams.values():
+                if accessor is None:
+                    continue
                 if accessor.preliminary:
                     return True
         return False

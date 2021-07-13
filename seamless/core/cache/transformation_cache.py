@@ -56,6 +56,7 @@ def print_error(*args):
 
 class RemoteTransformer:
     debug = None
+    _exception_to_clear = None
     def __init__(self, tf_checksum, peer_id):
         self.tf_checksum = tf_checksum
         self.peer_id = peer_id
@@ -64,6 +65,7 @@ class RemoteTransformer:
 class DummyTransformer:
     _status_reason = None
     debug = None
+    _exception_to_clear = None
     def __init__(self, tf_checksum):
         self.tf_checksum = tf_checksum
         self.progress = None
@@ -73,7 +75,7 @@ def tf_get_buffer(transformation):
     assert isinstance(transformation, dict)
     d = {}
     for k in transformation:
-        if k in ("__compilers__", "__languages__"):
+        if k in ("__compilers__", "__languages__", "__meta__"):
             continue
         v = transformation[k]
         if k in ("__output__", "__as__"):
@@ -180,9 +182,7 @@ class TransformationCache:
             transformation = self.transformations[tf_checksum]
             self.decref_transformation(transformation, transformer)
 
-    async def update_transformer(self,
-        transformer, celltypes, inputpin_checksums, outputpin
-    ):
+    async def build_transformation(self, transformer, celltypes, inputpin_checksums, outputpin):
         assert isinstance(transformer, Transformer)
         cachemanager = transformer._get_manager().cachemanager
         outputname, celltype, subcelltype = outputpin
@@ -193,6 +193,23 @@ class TransformationCache:
             transformation["__compilers__"] = root._compilers
         if root._languages is not None:
             transformation["__languages__"] = root._languages
+        meta = {
+            "transformer_path": transformer.path,
+        }
+        if transformer.meta is not None:
+            meta.update(transformer.meta)
+        if "META" in inputpin_checksums:
+            checksum = inputpin_checksums["META"]
+            await cachemanager.fingertip(checksum)
+            inp_metabuf = buffer_cache.get_buffer(checksum)
+            if inp_metabuf is None:
+                raise CacheMissError("META")
+            inp_meta = json.loads(inp_metabuf)
+            meta.update(inp_meta)
+        metabuf = await serialize(meta, "plain")
+        meta_checksum = get_hash(metabuf)
+        buffer_cache.cache_buffer(meta_checksum, metabuf)
+        transformation["__meta__"] = meta_checksum
         if transformer.env is not None:
             envbuf = await serialize(transformer.env, "plain")
             env_checksum = get_hash(envbuf)
@@ -200,6 +217,8 @@ class TransformationCache:
             transformation["__env__"] = env_checksum
         transformation_build_exception = None
         for pinname, checksum in inputpin_checksums.items():
+            if pinname == "META":
+                continue
             await cachemanager.fingertip(checksum)
             pin = transformer._pins[pinname]
             celltype, subcelltype = celltypes[pinname]
@@ -237,10 +256,27 @@ class TransformationCache:
             transformation[pinname] = celltype, subcelltype, sem_checksum
         if len(as_):
             transformation["__as__"] = as_
-        await self.incref_transformation(
+        return transformation, transformation_build_exception
+
+    async def update_transformer(self,
+        transformer, celltypes, inputpin_checksums, outputpin
+    ):
+        assert isinstance(transformer, Transformer)
+        transformation, transformation_build_exception = \
+            await self.build_transformation(                
+                transformer, celltypes, inputpin_checksums, outputpin
+            )
+        result = await self.incref_transformation(
             transformation, transformer,
             transformation_build_exception=transformation_build_exception
         )
+        if result is not None:
+            tf_checksum, result_checksum, prelim = result
+            if result_checksum is None or prelim:
+                job = self.run_job(transformation, tf_checksum)
+                if job is not None:
+                    await asyncio.shield(job.future)
+
 
     async def remote_wait(self, tf_checksum, peer_id):
         key = tf_checksum, peer_id
@@ -277,7 +313,7 @@ class TransformationCache:
                 result_checksum, prelim = self.transformation_results[tf_checksum]
                 buffer_cache.incref(result_checksum, False)
             for pinname in transformation:
-                if pinname in ("__compilers__", "__languages__", "__as__"):
+                if pinname in ("__compilers__", "__languages__", "__as__", "__meta__"):
                     continue
                 if pinname == "__output__":
                     continue
@@ -326,10 +362,7 @@ class TransformationCache:
                     prelim=prelim
                 )
                 TransformerResultUpdateTask(manager, transformer).launch()
-        if result_checksum is None or prelim:
-            job = self.run_job(transformation, tf_checksum)
-            if job is not None:
-                await asyncio.shield(job.future)
+        return tf_checksum, result_checksum, prelim
 
     def decref_transformation(self, transformation, transformer):
         ###import traceback; traceback.print_stack()
@@ -378,7 +411,7 @@ class TransformationCache:
         if not dummy:
             self.transformations_to_transformers.pop(tf_checksum)
         for pinname in transformation:
-            if pinname in ("__output__", "__languages__", "__compilers__", "__as__"):
+            if pinname in ("__output__", "__languages__", "__compilers__", "__as__", "__meta__"):
                 continue
             if pinname == "__env__":
                 env_checksum = transformation["__env__"]
@@ -433,7 +466,7 @@ class TransformationCache:
 
         semantic_cache = {}
         for k,v in transformation.items():
-            if k in ("__compilers__", "__languages__"):
+            if k in ("__compilers__", "__languages__", "__meta__"):
                 continue
             if k in ("__output__", "__as__"):
                 continue
@@ -833,7 +866,18 @@ class TransformationCache:
                 None
             )
         transformer = DummyTransformer(tf_checksum)
-        coro = self.incref_transformation(transformation, transformer)
+        async def incref_and_run():
+            result = await self.incref_transformation(
+                transformation, transformer, 
+                transformation_build_exception=None 
+            )
+            if result is not None:
+                tf_checksum, result_checksum, prelim = result
+                if result_checksum is None or prelim:
+                    job = self.run_job(transformation, tf_checksum)
+                    if job is not None:
+                        await asyncio.shield(job.future)
+        coro = incref_and_run()
         fut = asyncio.ensure_future(coro)
         last_result_checksum = None
         last_progress = None

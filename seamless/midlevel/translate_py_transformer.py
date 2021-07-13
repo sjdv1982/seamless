@@ -1,11 +1,11 @@
 from copy import deepcopy
 from numpy import e, isin
 from ..core import cell, \
- transformer, context, StructuredCell
+ transformer, context
 
 def translate_py_transformer(
         node, root, namespace, inchannels, outchannels,
-        *, ipy_template, py_bridge
+        *, ipy_template, py_bridge, has_meta_connection
     ):
     from .translate import set_structured_cell_from_checksum
     from ..highlevel.Environment import Environment
@@ -216,6 +216,15 @@ def translate_py_transformer(
         pin_cell = pin_cells[pin]
         inp.outchannels[(pin,)].connect(pin_cell)
         pin_cell.connect(target)
+
+    if has_meta_connection:
+        ctx.meta = cell("plain")
+        ctx.meta.connect(ctx.tf.META)
+        namespace[node["path"] + ("meta",), "target"] = ctx.meta, node    
+    else:
+        meta = node.get("meta")
+        if meta is not None:
+            ctx.tf.meta = meta
 
     result, result_ctx = build_structured_cell(
         ctx, result_name, [()],

@@ -45,11 +45,15 @@ class TransformerUpdateTask(Task):
 
         status_reason = None
         for pinname, accessor in upstreams.items():
+            if pinname == "META":
+                continue
             if accessor is None: #unconnected
                 status_reason = StatusReasonEnum.UNCONNECTED
                 break
         else:
             for pinname, accessor in upstreams.items():
+                if pinname == "META" and accessor is None:
+                    continue
                 if accessor._void: #upstream error
                     status_reason = StatusReasonEnum.UPSTREAM
         if not len(downstreams):
@@ -61,6 +65,8 @@ class TransformerUpdateTask(Task):
             return
 
         for pinname, accessor in upstreams.items():
+            if pinname == "META" and accessor is None:
+                continue
             if accessor._checksum is None: #pending; a legitimate use case, but we can't proceed
                 print_debug("ABORT", self.__class__.__name__, hex(id(self)), self.dependencies, " <= pinname", pinname)
                 manager.cancel_transformer(transformer, False)
@@ -68,11 +74,15 @@ class TransformerUpdateTask(Task):
 
         inputpins = {}
         for pinname, accessor in upstreams.items():
+            if pinname == "META" and accessor is None:
+                continue
             inputpins[pinname] = accessor._checksum
 
         first_output = downstreams[0].write_accessor.target()
         celltypes = {}
         for pinname, accessor in upstreams.items():
+            if pinname == "META" and accessor is None:
+                continue
             wa = accessor.write_accessor
             celltypes[pinname] = wa.celltype, wa.subcelltype
         transformer._last_inputs = inputpins
@@ -87,7 +97,6 @@ class TransformerUpdateTask(Task):
             output_subcelltype = first_output._subcelltype
         outputpin = outputname, output_celltype, output_subcelltype
         self.waiting_for_job = True
-        from seamless.core.cache.buffer_cache import buffer_cache
         await transformation_cache.update_transformer(
             transformer, celltypes, inputpins, outputpin
         )

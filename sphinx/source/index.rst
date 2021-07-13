@@ -12,6 +12,8 @@ Welcome to Seamless's documentation!
 
    introduction
 
+   tutorial/tutorial.md
+
    context
    cell
    transformer

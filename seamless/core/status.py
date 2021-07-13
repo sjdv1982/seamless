@@ -115,6 +115,8 @@ def status_transformer(transformer):
             pins = []
             if upstreams is not None:
                 for pinname, accessor in upstreams.items():
+                    if pinname == "META":
+                        continue
                     if accessor is None:
                         pins.append(pinname)
             if downstreams is not None:

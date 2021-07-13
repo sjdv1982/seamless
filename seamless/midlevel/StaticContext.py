@@ -9,6 +9,8 @@ class StaticContext:
 
     @classmethod
     def from_graph(cls, graph, *, manager=None):
+        from .graph_convert import graph_convert
+        graph = graph_convert(graph, None)
         nodes0 = graph["nodes"]
         nodes = {tuple(node["path"]):node for node in nodes0}
         connections = graph["connections"]

@@ -1,3 +1,3 @@
-Status: OK {'docker_image': 'ubuntu'}
-Status: {'tf1': '*tf*: Status: error', 'tf2': '*tf*: Status: upstream => a undefined', 'tf1_result': 'Status: undefined'} {'docker_image': 'ubuntu'}
-Status: OK {'docker_image': 'ubuntu'}
+Status: OK None
+Status: {'tf1': '*tf*: Status: error', 'tf2': '*inp*: Status: undefined', 'tf1_result': 'Status: undefined'} None
+Status: OK None

@@ -134,7 +134,7 @@ class TransformationJob:
         self.codename = codename
         assert "code" in transformation, transformation.keys()
         for pinname in transformation:
-            if pinname in ("__compilers__", "__languages__", "__as__"):
+            if pinname in ("__compilers__", "__languages__", "__as__", "__meta__"):
                 continue
             if pinname != "__output__":
                 assert transformation[pinname][2] is not None, pinname
@@ -394,6 +394,13 @@ class TransformationJob:
         prelim_callback, progress_callback
     ):
         with_ipython_kernel = False
+
+        meta = self.transformation.get("__meta__")
+        if meta is not None:
+            meta = get_buffer(meta)
+            meta = json.loads(meta.decode())
+        # meta not used for now...
+
         env = self.transformation.get("__env__")
         if env is not None:
             env = get_buffer(env)
@@ -415,7 +422,7 @@ class TransformationJob:
         modules_to_build = {}
         as_ = self.transformation.get("__as__", {})
         for pinname in sorted(self.transformation.keys()):
-            if pinname in ("__compilers__", "__languages__", "__env__", "__as__"):
+            if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__"):
                 continue
             if pinname == "__output__":
                 continue
@@ -449,7 +456,10 @@ class TransformationJob:
                 namespace[pinname_as] = value
                 inputs.append(pinname_as)
         for pinname in self.transformation:
-            if pinname in ("__output__", "__env__", "__compilers__", "__languages__", "__as__"):
+            if pinname in (
+                "__output__", "__env__", "__compilers__", 
+                "__languages__", "__as__", "__meta__"
+            ):
                 continue
             celltype, _, _ = self.transformation[pinname]
             if celltype != "silk":

@@ -18,13 +18,19 @@ class Link:
         self.parent = parent
         if node is None:
             assert first is not None and second is not None
-            assert is_simple(first)
+            msg = "{}: Linked cells/proxies must be independent (no incoming connections)"
+            msg2 = "{}: Linked cells/proxies must be simple, not structured"
+            if not is_simple(first):
+                raise Exception(msg2.format(first))
             if not isinstance(first, SchemaWrapper):
-                assert first.authoritative
+                if not first.independent:
+                    raise Exception(msg.format(first))
 
-            assert is_simple(second)
+            if not is_simple(second):
+                raise Exception(msg2.format(second))
             if not isinstance(second, SchemaWrapper):
-                assert second.authoritative
+                if not second.independent:
+                    raise Exception(msg.format(second))
             vclasses = (Proxy, SchemaWrapper)
             first_path = first._virtual_path if isinstance(first, vclasses) else first._path
             second_path = second._virtual_path if isinstance(second, vclasses) else second._path

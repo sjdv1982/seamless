@@ -50,6 +50,20 @@ print()
 from pprint import pprint
 pprint(ctx.status)
 
+# Copying subcontexts does not copy external connections
+ctx.subc = Context()
+ctx.subc.a = Cell("int")
+ctx.subc.a = ctx.a1
+ctx.subc2 = ctx.subc
+ctx.compute()
+print(ctx.subc.a.value)
+print(ctx.subc2.a.value) # None!
+ctx.a1 = 1000
+ctx.compute()
+print(ctx.subc.a.value)
+print(ctx.subc2.a.value) # None!
+print()
+
 graph = ctx.get_graph()
 ctx2 = Context()
 ctx2.graph = graph

@@ -88,9 +88,6 @@ def _execute(name, code,
             else:
                 try:
                     result = namespace[output_name]
-                    result = unsilk(result)
-                    result_buffer = serialize(result, celltype)
-                    return (0, result_buffer)
                 except KeyError:
                     function_like = check_function_like(code, identifier)
                     if function_like:
@@ -108,6 +105,14 @@ or
                     else:
                         msg = "Output variable name '%s' undefined" % output_name
                     return (1, msg)
+                else:
+                    try:
+                        result = unsilk(result)
+                        result_buffer = serialize(result, celltype)
+                        return (0, result_buffer)
+                    except Exception as exc:
+                        exc = traceback.format_exc()
+                        return (1, exc)
 
 class FakeStdStream:
     def __init__(self, real):

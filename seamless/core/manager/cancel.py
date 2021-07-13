@@ -466,6 +466,8 @@ class StructuredCellCancellation:
 
 def void_worker(upstreams):
     for pinname, accessor in upstreams.items():
+        if pinname == "META":
+            continue
         if accessor is None:
             return StatusReasonEnum.UNCONNECTED
         if accessor._void:

@@ -1,20 +1,24 @@
 import os, json
+from copy import deepcopy
 from seamless.core import cell, transformer, context
 from ..midlevel.StaticContext import StaticContext
 
 import seamless
 seamless_dir = os.path.dirname(seamless.__file__)
 graphfile = os.path.join(seamless_dir,
-    "graphs", "docker_transformer.seamless"
+    "graphs", "bashdocker_transformer.seamless"
 )
 zipfile = os.path.join(seamless_dir,
-    "graphs", "docker_transformer.zip"
+    "graphs", "bashdocker_transformer.zip"
 )
 graph = json.load(open(graphfile))
 sctx = StaticContext.from_graph(graph)
 sctx.add_zip(zipfile)
 
-def translate_docker_transformer(node, root, namespace, inchannels, outchannels):
+def translate_bashdocker_transformer(
+    node, root, namespace, inchannels, outchannels, *, 
+    docker_image, has_meta_connection, env
+):
     from .translate import set_structured_cell_from_checksum
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
@@ -39,7 +43,6 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels)
     pins["docker_image"] = {"celltype": "str"}
     pins["pins_"] = {"celltype": "plain"}
     pins0 = list(pins.keys())
-    pins0.remove("docker_image")
     ctx.pins = cell("plain").set(pins0)
 
     interchannels = [as_tuple(pin) for pin in pins]
@@ -78,6 +81,7 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels)
         ctx.code.mount(**mount["code"])
 
     ctx.pins.connect(ctx.tf.pins_)
+    ctx.tf.docker_image.cell().set(docker_image)
     ctx.code.connect(ctx.tf.docker_command)
     checksum = node.get("checksum", {})
     if "code" in checksum:
@@ -100,6 +104,14 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels)
         cell_setattr(node, ctx, pin_intermediate[pinname], intermediate_cell)
         inp.outchannels[(pinname,)].connect(intermediate_cell)
         intermediate_cell.connect(target)
+
+    meta = deepcopy(node.get("meta", {}))
+    meta["transformer_type"] = "bashdocker"
+    ctx.tf.meta = meta
+    if has_meta_connection:
+        ctx.meta = cell("plain")
+        ctx.meta.connect(ctx.tf.META)
+        namespace[node["path"] + ("meta",), "target"] = ctx.meta, node    
 
     result, result_ctx = build_structured_cell(
         ctx, result_name, [()],
@@ -129,6 +141,9 @@ def translate_docker_transformer(node, root, namespace, inchannels, outchannels)
         k2 = "value" if k == "result" else k[len("result_"):]
         result_checksum[k2] = checksum[k]
     set_structured_cell_from_checksum(result, result_checksum)
+
+    if env is not None:
+        ctx.tf.env = env
 
     namespace[node["path"], "target"] = inp, node
     namespace[node["path"], "source"] = result, node

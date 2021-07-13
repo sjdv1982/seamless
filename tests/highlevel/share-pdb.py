@@ -63,8 +63,8 @@ ctx.compute()
 ctx.save_graph("share-pdb.seamless")
 ctx.save_zip("share-pdb.zip")
 
-ctx.fix_pdb.language = "docker"
-ctx.filter_pdb.language = "docker"
+ctx.fix_pdb.language = "bash"
+ctx.filter_pdb.language = "bash"
 ctx.translate()
 
 ctx.fix_pdb.docker_image = "ubuntu"

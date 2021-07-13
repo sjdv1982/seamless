@@ -2,6 +2,7 @@ from seamless.metalevel.debugmode import DebugMode
 import weakref
 import functools
 import pprint
+import json
 from copy import deepcopy
 from .Cell import Cell
 from .Module import Module
@@ -90,10 +91,43 @@ class Transformer(Base):
             htf = new_transformer(parent, path, code, pins, hash_pattern)
         elif "environment" in node:
             self._environment._load(node["environment"])
+        self._temp_code = None
+        self._temp_pins = None
 
     @property
     def environment(self):
         return self._environment
+
+    @property
+    def meta(self):
+        """Dictionary of meta-parameters.
+These don't affect the computation result, but may affect job managers
+Example of meta-parameters: expected computation time, service name
+
+You can set this dictionary directly, or you may assign .meta to a cell
+        """
+        return deepcopy(self._get_htf().get("meta"))
+
+    @meta.setter
+    def meta(self, value):
+        from .assign import assign_connection
+        parent = self._parent()
+        assert parent is not None
+        htf = self._get_htf()
+        target_path = self._path + ("meta",)
+        if isinstance(value, Cell):
+            assert value._parent() is parent
+            assign_connection(parent, value._path, target_path, False)
+            htf.pop("meta", None)
+        elif isinstance(value, Proxy):
+            raise TypeError(".meta can only be assigned to a dict or to a whole Cell")
+        else:
+            if not isinstance(value, dict):
+                raise TypeError(value)
+            json.dumps(value)
+            parent.remove_connections(target_path,endpoint="target")
+            htf["meta"] = value
+        parent._translate()
 
     @property
     def RESULT(self):
@@ -202,14 +236,21 @@ class Transformer(Base):
     def language(self):
         """Defines the programming language of the transformer's source code.
 
-        Allowed values are: python, ipython, bash, docker
-        (which is bash executed in a Docker image), or any compiled language.
+        Allowed values are: python, ipython, bash,
+        or any compiled language.
 
         See seamless.compiler.languages and seamless.compile.compilers for a list
         """
         return self._get_htf()["language"]
     @language.setter
     def language(self, value):
+        if value == "docker":
+            import warnings
+            warnings.warn(
+                'Transformer.language="docker" is deprecated. Use language="bash" and set docker_image.',
+                FutureWarning,
+            )
+            value = "bash"
         parent = self._parent()
         lang, language, extension = parent.environment.find_language(value)
         compiled = (language["mode"] == "compiled")
@@ -220,28 +261,34 @@ class Transformer(Base):
         untranslate = False
         if old_compiled != compiled:
             htf["UNTRANSLATED"] = True
-        elif (old_language in ("bash", "docker")) != (language in ("bash", "docker")):
+        elif (old_language == "bash" != (lang  == "bash")):
             htf["UNTRANSLATED"] = True
         htf["compiled"] = compiled
         htf["file_extension"] = extension
         has_translated = False
-        if lang == "docker":
-            if old_language != "docker":
-                im = False
-                if "docker_image" not in htf["pins"]:
-                    htf["pins"]["docker_image"] = default_pin.copy()
-                    im = True
-                """
-                if im:
-                    self.docker_image = ""
-                """
-
-        else:
-            if old_language == "docker":
-                htf["pins"].pop("docker_image")
-
         if not has_translated:
             self._parent()._translate()
+
+    @property
+    def docker_image(self):
+        """Defines the Docker image in which a transformer should run
+        Getting this property is more-or-less syntactic sugar for:
+          Transformer.environment.get_image()["name"]
+        Setting this property is more-or-less syntactic sugar for:
+          Transformer.environment.set_image({"name": ...})
+        """
+        im = self.environment.get_image()
+        if im is None:
+            return None
+        return im["name"]
+
+    @docker_image.setter
+    def docker_image(self, image):
+        im = self.environment.get_image()
+        if im is None:
+            im = {}
+        im["name"] = image
+        self.environment.set_image(im)
 
     @property
     def header(self):
@@ -365,7 +412,9 @@ class Transformer(Base):
                 htf["TEMP"]["input_auth"][attr] = value
                 if attr not in htf["pins"]:
                     htf["pins"][attr] = default_pin.copy()
-            self._parent()._translate()
+            parent = self._parent()
+            parent.remove_connections(self._path + (attr,), endpoint="target")
+            parent._translate()
             return
 
         if attr == "code":
@@ -383,7 +432,7 @@ class Transformer(Base):
                 if callable(value):
                     value, _, _ = parse_function_code(value)
                 check_libinstance_subcontext_binding(parent, self._path)
-                removed = parent.remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,), endpoint="target")
                 if removed:
                     htf = self._get_htf()
                     htf["UNTRANSLATED"] = True
@@ -405,7 +454,7 @@ class Transformer(Base):
             else:
                 tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
-                removed = parent.remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,), endpoint="target")
                 if removed:
                     translate = True
                 inp.handle_no_inference.set(value)
@@ -434,7 +483,7 @@ class Transformer(Base):
             else:
                 tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
-                removed = parent.remove_connections(self._path + (attr,))
+                removed = parent.remove_connections(self._path + (attr,), endpoint="target")
                 if removed:
                     translate = True
                 setattr(inp.handle_no_inference, attr, value)
@@ -489,6 +538,7 @@ class Transformer(Base):
 
     def _get_htf(self):
         parent = self._parent()
+        assert parent is not None
         return parent._get_node(self._path)
 
     def _get_value(self, attr):
@@ -647,6 +697,8 @@ class Transformer(Base):
             pending = False
             upstream = False
             if k in (htf["INPUT"], htf["RESULT"]):
+                if k == htf["INPUT"] and not len(htf["pins"]):
+                    continue
                 cell = getattr(self, k)
                 status = cell.status
             elif k == "code":

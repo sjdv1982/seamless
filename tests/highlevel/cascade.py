@@ -6,8 +6,8 @@ ctx = Context()
 ctx.tf1 = lambda a: None
 ctx.tf2 = lambda a: None
 ctx.translate()
-ctx.tf1.language = "docker"
-ctx.tf2.language = "docker"
+ctx.tf1.language = "bash"
+ctx.tf2.language = "bash"
 ctx.tf1.docker_image = "ubuntu"
 ctx.tf2.docker_image = "ubuntu"
 ctx.translate()

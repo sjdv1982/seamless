@@ -39,13 +39,24 @@ def validate_params(params):
     return result
 
 def get_library(path):
-    graph, zip, constructor, params = _libraries[path]
-    lib = Library(path, graph, zip, constructor, params)
+    (
+        graph, zip, constructor, params, 
+        api_schema, constructor_schema
+    ) = _libraries[path]
+    lib = Library(
+        path, graph, zip, constructor, params,
+        api_schema=api_schema,
+        constructor_schema=constructor_schema
+    )
     return lib
 
-def set_library(path, graph, zip, constructor, params):
+def set_library(path, graph, zip, constructor, params,
+    *, api_schema, constructor_schema):
     validated_params = validate_params(params)
-    _libraries[path] = graph, zip, constructor, validated_params
+    _libraries[path] = (
+        graph, zip, constructor, validated_params,
+        api_schema, constructor_schema
+    )
 
 class LibraryContainer:
     def __init__(self, path):
@@ -71,27 +82,33 @@ class LibraryContainer:
         path = self._path + (attr,)
         graph = libctx.get_graph()
         zip = libctx.get_zip()
-        set_library(path, graph, zip, None, None)
+        set_library(
+            path, graph, zip, None, None,
+            api_schema=None, constructor_schema=None
+        )
 
 class Library:
-    def __init__(self, path, graph, zip, constructor=None, params=None):
+    def __init__(self, path, graph, zip, 
+        constructor=None, params=None, 
+        *,
+        api_schema=None, constructor_schema=None
+    ):
         self._path = path
         self._graph = graph
         self._zip = zip
         self._constructor = constructor
         self._params = params
+        self._api_schema = api_schema
+        self._constructor_schema = constructor_schema
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
+        ok = False
         if attr == "ctx":
             self._graph = value.get_graph()
             self._zip = value.get_zip()
-            set_library(
-                self._path,
-                self._graph, self._zip,
-                self._constructor, self._params
-            )
+            ok = True
         elif attr == "constructor":
             constructor = value
             if inspect.isfunction(constructor):
@@ -99,12 +116,7 @@ class Library:
                 code = textwrap.dedent(code)
                 constructor = code
             self._constructor = constructor
-            set_library(
-                self._path,
-                self._graph, self._zip,
-                self._constructor, self._params
-            )
-            return
+            ok = True
         elif attr == "params":
             params = value
             if isinstance(params, Silk):
@@ -112,12 +124,23 @@ class Library:
             if not isinstance(params, dict):
                 raise TypeError(type(value))
             self._params = params
+            ok = True
+        elif attr in ("constructor_schema", "api_schema"):
+            schema = value
+            if isinstance(schema, Silk):
+                schema = schema.unsilk
+            if not isinstance(schema, dict):
+                raise TypeError(type(schema))
+            setattr(self, "_" + attr, schema)
+            ok = True
+        if ok:
             set_library(
                 self._path,
                 self._graph, self._zip,
-                self._constructor, self._params
+                self._constructor, self._params,
+                constructor_schema=self._constructor_schema,
+                api_schema=self._api_schema
             )
-            return
         else:
             raise AttributeError(attr)
 
@@ -163,6 +186,10 @@ class Library:
             "language": "python",
             "api": "pyseamless"
         }
+        if self._constructor_schema is not None:
+            lib["constructor_schema"] = self._constructor_schema
+        if self._api_schema is not None:
+            lib["api_schema"] = self._api_schema
         IncludedLibrary(ctx, **lib)   # to validate the arguments
         s = json.dumps(lib)
         lib = json.loads(s)
@@ -181,7 +208,7 @@ class Library:
         for attr in self.__dict__:
             if attr.startswith("_") and attr in dirs:
                 dirs.remove(attr)
-        dirs += ["ctx", "constructor", "params"]
+        dirs += ["ctx", "constructor", "params", "api_schema", "constructor_schema"]
         return dirs
 
 from .include import IncludedLibrary

@@ -126,7 +126,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
                     self._updating = False
                 if self.links is not None:
                     self.links = []
-        if self.links is not None and not self.incell().has_authority():
+        if self.links is not None and not self.incell().has_independence():
             for link in list(self.links):
                 if link.bidirectional:
                     print("Removed bidirectional link")
@@ -186,7 +186,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
         if self.incell is None:
             return
         cell = self.incell()
-        if cell.has_authority():
+        if cell.has_independence():
             if self._timer_handle is not None:
                 self._timer_handle.cancel()
                 self._timer_handle = None
@@ -198,7 +198,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
             )
 
     def _cell_set(self, cell, value):
-        if cell.has_authority():
+        if cell.has_independence():
             cell.set(value)
 
     def _add_notifiers(self, handler, name, type):
@@ -234,7 +234,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
 
     def link(self, target, target_attr="value"):
         if self.incell is not None:
-            assert self.incell().has_authority()
+            assert self.incell().has_independence()
         link = self._connect_traitlet(target, target_attr, True)
         self._newlink(link)
         return link

@@ -130,6 +130,7 @@ class Context(Base, ContextHelpMixin):
     _destroyed = False
     _environment = None
     _libroot = None
+    _untranslatable = False
 
     @classmethod
     def from_graph(cls, graph, manager, *, mounts=True, shares=True, share_namespace=None, zip=None):
@@ -157,7 +158,6 @@ class Context(Base, ContextHelpMixin):
         if share_namespace is not None:
             self.share_namespace = share_namespace
         self.set_graph(graph,mounts=mounts,shares=shares)
-        graph = deepcopy(graph)
         return self
 
     def set_graph(self, graph, *, mounts=True, shares=True):
@@ -171,7 +171,8 @@ class Context(Base, ContextHelpMixin):
         "shares": share cells over HTTP, as specified in the graph
 
         """
-        graph = deepcopy(graph)
+        from ..midlevel.graph_convert import graph_convert
+        graph = graph_convert(graph, self)
         nodes = {}
         self._children.clear()
         for node in graph["nodes"]:
@@ -250,7 +251,9 @@ class Context(Base, ContextHelpMixin):
         node = self._graph[0].get(path)
         if node is not None:
             if node["type"] == "libinstance":
-                return LibInstance(self, path=path)
+                li = LibInstance(self, path=path)
+                li._bound = weakref.ref(self)
+                return li
             assert node["type"] == "context", (path, node["type"]) #if not context, should be in children!
             return SubContext(self, path)
         attr = path
@@ -377,6 +380,8 @@ class Context(Base, ContextHelpMixin):
         i.e. under python or ipython, but not in a Jupyter kernel.
         """
         from seamless import verify_sync_translate
+        if self._untranslatable:
+            raise Exception("Context is untranslatable")
         verify_sync_translate()
         self._wait_for_auth_tasks("the graph is re-translated")
         return self._do_translate(force=force, explicit=True)
@@ -445,6 +450,7 @@ class Context(Base, ContextHelpMixin):
             params = deepcopy(params)
             lib = deepcopy(lib)
         graph = {
+            "__seamless__": "0.7",
             "nodes": nodes,
             "connections": connections,
             "params": params,
@@ -472,6 +478,7 @@ class Context(Base, ContextHelpMixin):
             params = deepcopy(params)
             lib = deepcopy(lib)
         graph = {
+            "__seamless__": "0.7",
             "nodes": nodes,
             "connections": connections,
             "params": params,

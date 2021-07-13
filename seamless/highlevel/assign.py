@@ -85,7 +85,7 @@ def assign_constant(ctx, path, value):
             hcell = old._get_hcell()
             if not hcell.get("UNTRANSLATED"):
                 cell = old._get_cell()
-                if cell.has_authority():
+                if cell.has_independence():
                     old._set(value)
                     return False
                 else:

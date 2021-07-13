@@ -82,7 +82,7 @@ def set_structured_cell_from_checksum(cell, checksum):
 
     if "auth" in checksum:
         if cell.auth is None:
-            msg = "Warning: %s has no authority, but an auth checksum is present"
+            msg = "Warning: %s has no independence, but an auth checksum is present"
             print(msg % cell)
         else:
             cell.auth._set_checksum(
@@ -248,16 +248,13 @@ def translate_link(node, namespace, ctx):
 
 translate_compiled_transformer = None
 translate_bash_transformer = None
-translate_docker_transformer = None
 
 def import_before_translate(graph):
     global translate_compiled_transformer
     global translate_bash_transformer
-    global translate_docker_transformer
     impvars = (
         "translate_compiled_transformer",
         "translate_bash_transformer",
-        "translate_docker_transformer"
     )
     if all([globals()[var] is not None for var in impvars]):
         return
@@ -269,8 +266,6 @@ def import_before_translate(graph):
                 from .translate_compiled_transformer import translate_compiled_transformer
             elif node["language"] == "bash":
                 from .translate_bash_transformer import translate_bash_transformer
-            elif node["language"] == "docker":
-                from .translate_docker_transformer import translate_docker_transformer
 
 def translate(graph, ctx, environment):
     from ..core.macro_mode import curr_macro
@@ -302,14 +297,23 @@ def translate(graph, ctx, environment):
         path = node["path"]
         if t == "transformer":
             inchannels, outchannels = find_channels(node["path"], connection_paths)
+            try:
+                inchannels.remove(("meta",))
+                has_meta_connection = True
+            except ValueError:
+                has_meta_connection = False
             language = node["language"]
             if node["compiled"]:
                 from .translate_compiled_transformer import translate_compiled_transformer
-                translate_compiled_transformer(node, ctx, namespace, inchannels, outchannels)
+                translate_compiled_transformer(
+                    node, ctx, namespace, inchannels, outchannels,
+                    has_meta_connection = has_meta_connection
+                )
             elif language == "bash":
-                translate_bash_transformer(node, ctx, namespace, inchannels, outchannels)
-            elif language == "docker":
-                translate_docker_transformer(node, ctx, namespace, inchannels, outchannels)
+                translate_bash_transformer(
+                    node, ctx, namespace, inchannels, outchannels,
+                    has_meta_connection = has_meta_connection
+                )
             else:
                 ipy_template = None
                 py_bridge = None
@@ -335,7 +339,7 @@ def translate(graph, ctx, environment):
                     node, ctx, namespace, inchannels, outchannels,
                     ipy_template=ipy_template,
                     py_bridge=py_bridge,
-                    debug=debug
+                    has_meta_connection=has_meta_connection
                 )                
         elif t == "macro":
             if node["language"]  != "python":
@@ -376,7 +380,6 @@ from .translate_module import translate_module
 '''
 # imported only at need...
 from .translate_bash_transformer import translate_bash_transformer
-from .translate_docker_transformer import translate_docker_transformer
 from .translate_compiled_transformer import translate_compiled_transformer
 '''
 from ..core.protocol.deep_structure import apply_hash_pattern_sync, access_hash_pattern

@@ -60,7 +60,7 @@ class ShareItem:
         if cell._destroyed:
             return
         if not self.readonly:
-            assert cell.has_authority(), cell # mount read mode only for authoritative cells
+            assert cell.has_independence(), cell # mount read mode only for authoritative cells
         self._initializing = True
         try:
             manager = cell._get_manager()

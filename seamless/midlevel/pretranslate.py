@@ -1,5 +1,6 @@
 from copy import deepcopy
 import sys
+import weakref
 
 def pretranslate(ctx, graph, libinstance_nodes={},prev_overlay_nodes={}):
     assert isinstance(ctx, Context)
@@ -26,6 +27,7 @@ def pretranslate(ctx, graph, libinstance_nodes={},prev_overlay_nodes={}):
             ctx, path=path, 
             extra_nodes=extra_nodes,
         )
+        libinstance._bound = weakref.ref(ctx)
         result = libinstance._run()
         if libinstance.exception is not None:
             continue

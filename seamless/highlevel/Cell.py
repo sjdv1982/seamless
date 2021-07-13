@@ -14,7 +14,7 @@ from ..mime import get_mime, language_to_mime, ext_to_mime
 celltypes = (
     "structured", "text", "code", "plain", "mixed", "binary",
     "cson", "yaml", "str", "bytes", "int", "float", "bool",
-    "checksum"
+    "checksum" 
 )
 
 def get_new_cell(path):
@@ -49,7 +49,7 @@ class Cell(Base):
         parent._children[path] = self
 
     @property
-    def authoritative(self):
+    def independent(self):
         """True if the cell has no dependencies"""
         parent = self._parent()
         connections = parent._graph.connections
@@ -264,7 +264,11 @@ class Cell(Base):
         if as_directory:
             if self.celltype != "plain":
                 raise Exception("Mounting as directory is only supported for plain cells")
-        # TODO: check for independence (has_authority)
+
+        if "r" in mode and not self.independent:
+            msg = "Cannot mount {} in read mode: this cell is not fully independent, i.e. it has incoming connections"
+            raise Exception(msg.format(self))
+
         # TODO, upon translation: check that there are no duplicate paths.
         hcell = self._get_hcell2()
         mount = {
@@ -357,7 +361,7 @@ class Cell(Base):
     def value(self):
         """Returns the value of the cell, if translated
 
-        If the cell is not authoritative,
+        If the cell is not independent,
          the value is None if an upstream dependency
          is undefined or has an error.
 
@@ -523,6 +527,9 @@ class Cell(Base):
     @property
     def handle(self):
         assert self.celltype == "structured"
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            raise AttributeError
         cell = self._get_cell()
         if self.hash_pattern is not None:
             return cell.handle_hash
@@ -628,7 +635,7 @@ class Cell(Base):
         hcell.pop("checksum", None)
         hcell["UNTRANSLATED"] = True
         if cellvalue is not None:
-            if self.authoritative:
+            if self.independent:
                 hcell["TEMP"] = cellvalue
             hcell.pop("checksum", None)
         if self._parent() is not None:
@@ -751,7 +758,7 @@ class Cell(Base):
 
     @property
     def hash_pattern(self):
-        # TODO: document when released in 0.3
+        # TODO: document when released in 0.7
         hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         assert celltype in ("structured", "mixed")
@@ -820,7 +827,14 @@ class Cell(Base):
 
         To remove a share, do `del cell.share`
         """
-        assert readonly or self.authoritative
+        if not readonly:
+            if self.celltype == "structured":
+                raise Exception("{}: Non-readonly HTTP share is only supported for non-structured cells".format(self))
+            if not self.independent:
+                msg = "{}: Non-readonly HTTP share is not possible. This cell is not fully independent, i.e. it has incoming connections"
+                raise Exception(msg.format(self))
+
+        assert readonly or self.independent
         assert readonly or self.celltype != "structured"
         hcell = self._get_hcell2()
         hcell["share"] = {
