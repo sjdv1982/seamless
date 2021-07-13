@@ -11,7 +11,7 @@ def triple_it(a, b):
     return 3 * a + b
 
 ctx.transform = triple_it
-raise NotImplementedError ###ctx.transform.debug = True
+ctx.transform.debug.direct_print = True
 ctx.transform.a = ctx.a
 ctx.transform.b = 6
 ctx.myresult = ctx.transform

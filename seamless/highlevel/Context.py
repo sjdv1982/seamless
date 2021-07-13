@@ -1,3 +1,4 @@
+from seamless.core.transformer import Transformer
 import traceback
 from copy import deepcopy
 from collections import namedtuple
@@ -779,7 +780,19 @@ class Context(Base, ContextHelpMixin):
                 ub_ctx._languages = env["languages"]
                 self._unbound_context = ub_ctx
                 ub_ctx._root_highlevel_context = weakref.ref(self)
-                translate(graph, ub_ctx, self.environment)
+                transformer_debugs = {}
+                for path, child in self._children.items():
+                    if isinstance(child, Transformer):
+                        debug = child.debug._to_lowlevel()
+                        if debug is not None:
+                            transformer_debugs[tuple(path)] = debug
+                if not len(transformer_debugs):
+                    transformer_debugs = None
+                translate(
+                    graph, ub_ctx, 
+                    self.environment, 
+                    transformer_debugs=transformer_debugs
+                )
                 nodedict = {node["path"]: node for node in graph["nodes"]}
                 nodedict0 = {node["path"]: node for node in graph0["nodes"]}
                 for path in nodedict:

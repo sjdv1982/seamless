@@ -99,6 +99,10 @@ class Transformer(Base):
         return self._environment
 
     @property
+    def debug(self):
+        return self._debug
+
+    @property
     def meta(self):
         """Dictionary of meta-parameters.
 These don't affect the computation result, but may affect job managers

@@ -1,6 +1,3 @@
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
-
 tf_code = '''
 print(__name__)
 print(testmodule)
@@ -50,6 +47,7 @@ def tf(a):
     return a * q * mymodule.q
 
 ctx.tf = tf
+ctx.tf.debug.direct_print = True
 ctx.tf.a = 10
 ctx.tf.mymodule = ctx.testmodule
 ctx.compute()

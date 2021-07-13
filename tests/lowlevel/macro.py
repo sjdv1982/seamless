@@ -2,9 +2,6 @@ import seamless
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, macro
 
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
-
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.param = cell().set(1)
@@ -24,6 +21,9 @@ with macro_mode_on():
             "b": "input",
             "c": "output"
         })
+        ctx.tf._debug = {
+            "direct_print" : True
+        }
         ctx.a.connect(ctx.tf.a)
         ctx.b.connect(ctx.tf.b)
         ctx.code = cell("transformer").set("print('TRANSFORM'); import time; time.sleep(2); c = a + b")

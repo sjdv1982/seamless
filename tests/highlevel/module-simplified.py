@@ -4,7 +4,6 @@ This is a simplified test for modules, treating the module as a structured Cell.
 """
 
 import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
 
 tf_code = '''
 print(__name__)
@@ -27,6 +26,7 @@ ctx.testmodule = Cell("plain").set({
 ctx.tf = Transformer(code=tf_code)
 ctx.tf.a = 10
 ctx.tf.b = 20
+ctx.tf.debug.direct_print = True
 ctx.tf.testmodule = ctx.testmodule
 ctx.tf.pins.testmodule.celltype = "plain"
 ctx.tf.pins.testmodule.subcelltype = "module"

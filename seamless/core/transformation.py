@@ -524,7 +524,10 @@ class TransformationJob:
                 if debug.get("python_attach"):
                     python_attach_port = await acquire_python_attach_port(self.checksum)
                     debug["python_attach_port"] = python_attach_port
-            self.executor = Process(target=execute,args=args, daemon=True)
+            kwargs = {}
+            if debug is not None:
+                kwargs["debug"] = debug
+            self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=True)
             self.executor.start()
             running = True
             result = None

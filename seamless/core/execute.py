@@ -12,10 +12,10 @@ import signal
 import wurlitzer
 import debugpy
 
-# TODO: decide when to kill an execution job!
-
 from .cached_compile import exec_code, check_function_like
 from .protocol.serialize import _serialize as serialize
+
+DIRECT_PRINT = False
 
 def unsilk(value):
     if isinstance(value, Silk):
@@ -145,10 +145,12 @@ def execute(name, code,
     if debug is None:
         debug = {}
     else:
-        from ...metalevel.ide import debug_hook
+        from ..metalevel.ide import debug_hook
         debug_hook(debug)      
     if debug.get("direct_print"):
         direct_print = True
+    else:
+        direct_print = DIRECT_PRINT
     if debug.get("python_attach"):
         port = int(debug["python_attach_port"])  # MUST be set right before forking
         print("*" * 80)

@@ -221,7 +221,7 @@ class LibInstance:
                     )
             elif par["type"] == "celldict":
                 value = {}
-                for k,v in argvalue.items():
+                for k,vv in argvalue.items():
                     if par["io"] == "input":
                         vv = InputCellWrapper(connection_wrapper, vv[0], vv[1])
                     elif par["io"] == "edit":

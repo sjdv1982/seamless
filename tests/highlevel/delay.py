@@ -16,12 +16,12 @@ def func(a, delay):
 ctx.tf1 = func
 ctx.tf1.a = 1
 ctx.tf1.delay = 0
-raise NotImplementedError ###ctx.tf1.debug = True
+ctx.tf1.debug.direct_print = True
 ctx.tf2 = func
 ctx.intermediate = ctx.tf1
 ctx.tf2.a = ctx.intermediate
 ctx.tf2.delay = 0
-raise NotImplementedError ###ctx.tf2.debug = True
+ctx.tf2.debug.direct_print = True
 ctx.result = ctx.tf2
 ctx.compute()
 print(ctx.result.value)

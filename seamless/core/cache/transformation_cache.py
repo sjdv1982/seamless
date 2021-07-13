@@ -325,7 +325,7 @@ class TransformationCache:
         else:
             tf = self.transformations_to_transformers[tf_checksum]
 
-        if transformer.debug is not None:
+        if transformer._debug is not None:
             self.clear_exception(transformer)
         if transformer._exception_to_clear:
             self.clear_exception(tf_checksum=tf_checksum)
@@ -458,8 +458,8 @@ class TransformationCache:
             ):
                 continue
             tfs.append(transformer._format_path())
-            if debug is None and transformer.debug is not None:
-                debug = deepcopy(transformer.debug)
+            if debug is None and transformer._debug is not None:
+                debug = deepcopy(transformer._debug)
         if len(tfs):
             tftxt = ",".join(tfs)
             print_info("Executing transformer: {}".format(tftxt))

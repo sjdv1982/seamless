@@ -2,9 +2,6 @@ import seamless
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, macro
 
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
-
 def run(a,b):
     print("RUN")
     import time
@@ -21,7 +18,13 @@ def build(ctx, param, run):
         "c": "output",
     }
     ctx.tf1 = transformer(tf_params)
+    ctx.tf1._debug = {
+        "direct_print" : True
+    }
     ctx.tf2 = transformer(tf_params)
+    ctx.tf2._debug = {
+        "direct_print" : True
+    }
     tf = ctx.tf2 if param == "PARAM" else ctx.tf1
 
     ctx.run = cell("transformer").set(run)

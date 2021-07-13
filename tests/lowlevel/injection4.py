@@ -2,9 +2,6 @@ import seamless
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer
 
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
-
 with open("cell-ipython.ipy", "w") as f:
     with open("cell-ipython-ORIGINAL.ipy", "r") as f2:
         f.write(f2.read())
@@ -18,6 +15,9 @@ with macro_mode_on():
         "testmodule": ("input", "plain", "module"),
         "result": "output",
     })
+    ctx.tf._debug = {
+        "direct_print" : True
+    }
     ctx.gen_html = transformer({
         "testmodule": ("input", "plain", "module"),
         "html": "output",

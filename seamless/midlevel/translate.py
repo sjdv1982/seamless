@@ -267,7 +267,7 @@ def import_before_translate(graph):
             elif node["language"] == "bash":
                 from .translate_bash_transformer import translate_bash_transformer
 
-def translate(graph, ctx, environment):
+def translate(graph, ctx, environment, transformer_debugs):
     from ..core.macro_mode import curr_macro
     if curr_macro() is None:
         print_info("*" * 30 + "TRANSLATE" + "*" * 30)
@@ -296,6 +296,9 @@ def translate(graph, ctx, environment):
             continue
         path = node["path"]
         if t == "transformer":
+            debug = None
+            if transformer_debugs is not None:
+                debug = transformer_debugs.get(tuple(path))
             inchannels, outchannels = find_channels(node["path"], connection_paths)
             try:
                 inchannels.remove(("meta",))
@@ -307,12 +310,14 @@ def translate(graph, ctx, environment):
                 from .translate_compiled_transformer import translate_compiled_transformer
                 translate_compiled_transformer(
                     node, ctx, namespace, inchannels, outchannels,
-                    has_meta_connection = has_meta_connection
+                    has_meta_connection=has_meta_connection,
+                    debug=debug
                 )
             elif language == "bash":
                 translate_bash_transformer(
                     node, ctx, namespace, inchannels, outchannels,
-                    has_meta_connection = has_meta_connection
+                    has_meta_connection=has_meta_connection,
+                    debug=debug
                 )
             else:
                 ipy_template = None
@@ -339,7 +344,8 @@ def translate(graph, ctx, environment):
                     node, ctx, namespace, inchannels, outchannels,
                     ipy_template=ipy_template,
                     py_bridge=py_bridge,
-                    has_meta_connection=has_meta_connection
+                    has_meta_connection=has_meta_connection,
+                    debug=debug
                 )                
         elif t == "macro":
             if node["language"]  != "python":

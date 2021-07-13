@@ -32,7 +32,10 @@ class HighLevelContext(UnboundContext):
         if not isinstance(highlevel_ctx, Context):
             raise TypeError(type(highlevel_ctx))
         graph = self._graph
-        translate(graph, self, highlevel_ctx.environment)
+        translate(
+            graph, self, highlevel_ctx.environment, 
+            transformer_debugs=None
+        )
         path = curr_macro().path + ("ctx",) + self.path
         _assign_context(
             highlevel_ctx,

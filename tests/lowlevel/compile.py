@@ -1,6 +1,3 @@
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
-
 code = """
 #include <cmath>
 
@@ -35,6 +32,9 @@ with macro_mode_on():
         "result": ("output", "plain"),
     })
     ctx.testmodule.connect(tf.testmodule)
+    tf._debug = {
+        "direct_print" : True
+    }
     tf.a.cell().set(2)
     tf.b.cell().set(3)
     tf.code.cell().set("""

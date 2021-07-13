@@ -39,7 +39,10 @@ def run_macro(ctx, par_static, graph):
     from seamless.midlevel.translate import translate
     print("RUN MACRO", par_static)
     ctx.subctx = context()
-    translate(graph, ctx.subctx, environment=None)
+    translate(
+        graph, ctx.subctx, 
+        environment=None, transformer_debugs=None
+    )
     ctx.subctx.a.set(par_static)
     ctx.par_dynamic = cell("int")
     ctx.par_dynamic.connect(ctx.subctx.b)

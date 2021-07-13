@@ -1,13 +1,11 @@
 from seamless.highlevel import Context, Cell
 
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
-
 def func(a, b):
     return a + b
 
 ctx = Context()
 ctx.tf = func
+ctx.tf.debug.direct_print = True
 ctx.tf.a = 2
 ctx.tf.b = 3
 ctx.compute()

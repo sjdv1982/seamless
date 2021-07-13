@@ -1,9 +1,6 @@
 import seamless
 from seamless.core import context, cell, transformer, unilink
 
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
-
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)
 ctx.cell2 = cell("int").set(2)
@@ -24,11 +21,17 @@ ctx.tf = transformer({
     "b": "input",
     "c": "output"
 })
+ctx.tf._debug = {
+    "direct_print" : True
+}
 ctx.tf_duplex = transformer({
     "a": "input",
     "b": "input",
     "c": "output"
 })
+ctx.tf_duplex._debug = {
+    "direct_print" : True
+}
 ctx.code.connect(ctx.tf.code)
 ctx.code.connect(ctx.tf_duplex.code)
 ctx.cell1.connect(ctx.tf.a)
@@ -42,7 +45,7 @@ def report():
     print("TF       ", ctx.tf.status)
     print("TF DUPLEX", ctx.tf_duplex.status)
     v1 = ctx.result.value
-    v1 = ("%.3f" % ctx.result.value) if v1 is not None else None
+    v1 = ("%.3f" % v1) if v1 is not None else None
     v2 = ctx.result_duplex.value
     v2 = ("%.3f" % v2) if v2 is not None else None
     print("RESULT       ", v1, ctx.result.status)

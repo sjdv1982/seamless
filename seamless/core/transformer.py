@@ -12,7 +12,7 @@ class Transformer(Worker):
     _env = None
     _meta = None
     _exception_to_clear = False
-    debug = None
+    _debug = None
 
     def __init__(self, transformer_params, *,  stream_params=None):
         self.code = InputPin(self, "code", "python", "transformer")

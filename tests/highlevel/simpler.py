@@ -1,6 +1,3 @@
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
-
 from seamless.highlevel import Context
 from pprint import pprint
 
@@ -20,6 +17,7 @@ def triple_it_b(a, b):
     return 3 * a + b
 
 ctx.transform = triple_it
+ctx.transform.debug.direct_print = True
 ctx.transform.a = 1
 print("START")
 ctx.compute()

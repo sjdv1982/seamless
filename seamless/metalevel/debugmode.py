@@ -2,7 +2,7 @@
 ...
 You can switch from direct_print to another mode, but not vice versa.
 """
-print("TODO: refactor away all instances of DIRECT_PRINT; implement ide.debug_hook")
+print("TODO: implement ide.debug_hook")
 import weakref
 import os
 
@@ -57,7 +57,7 @@ Entering full debug mode."""
             raise TypeError(type(value))
         self._direct_print = value
 
-    def _to_low_level(self):
+    def _to_lowlevel(self):
         debug = {
             "direct_print": self._direct_print,
             "python_attach": False,
@@ -65,4 +65,6 @@ Entering full debug mode."""
             "generic_attach": False,
             "generic_attach_message": None,
         }
+        if all([f == False or f is None for f in debug.values()]):
+            return None
         return debug

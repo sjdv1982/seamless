@@ -1,3 +1,6 @@
+import seamless.core.execute
+seamless.core.execute.DIRECT_PRINT = True
+
 def test(mylib):
     print("test map_list")
     test_map_list(mylib)
@@ -21,7 +24,6 @@ def test_map_list_N(mylib):
         print("ADD", a, b)
         return a + b
     ctx.add.tf = add
-    raise NotImplementedError ###ctx.add.tf.debug = True
     ctx.add.tf.a = ctx.add.inp.a
     ctx.add.tf.b = ctx.add.inp.b
     ctx.add.result = ctx.add.tf
@@ -65,7 +67,6 @@ def test_map_list(mylib):
         print("ADD", a, b)
         return a + b
     ctx.add.tf = add
-    raise NotImplementedError ###ctx.add.tf.debug = True
     ctx.add.tf.a = ctx.add.inp
     ctx.add.tf.b = 1000
     ctx.add.result = ctx.add.tf
@@ -102,7 +103,6 @@ def test_map_dict(mylib):
         print("ADD", a, b)
         return a + b
     ctx.add.tf = add
-    raise NotImplementedError ###ctx.add.tf.debug = True
     ctx.add.tf.a = ctx.add.inp
     ctx.add.tf.b = 1000
     ctx.add.result = ctx.add.tf
@@ -157,7 +157,6 @@ def test_map_dict_chunk(mylib):
             result[key] = a[key] * factor
         return result
     ctx.mul.tf = mul
-    raise NotImplementedError ###ctx.mul.tf.debug = True
     ctx.mul.tf.a = ctx.mul.inp
     ctx.mul.tf.factor = 3
     ctx.mul.result = ctx.mul.tf

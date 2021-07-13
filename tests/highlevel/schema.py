@@ -9,9 +9,6 @@ function (or lambda)
 """
 from seamless.highlevel import Context, Cell, Transformer
 
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
-
 ctx = Context()
 ctx.a = {}
 ctx.translate()
@@ -88,6 +85,7 @@ ctx.link(ctx.schema, ctx.dummy.schema)
 h = ctx.dummy.handle
 h.mean = mean
 ctx.tf = lambda l: "Mean: %.3f" % l.mean()
+ctx.tf.debug.direct_print = True
 ctx.tf.l = ctx.l
 ctx.tf.pins.l.celltype = "silk"
 ctx.tf.l_SCHEMA = ctx.schema

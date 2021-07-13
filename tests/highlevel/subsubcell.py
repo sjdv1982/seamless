@@ -1,6 +1,3 @@
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
-
 from seamless.highlevel import Context
 ctx = Context()
 ctx.a = {}
@@ -13,6 +10,7 @@ print(ctx.a.value)
 def report(a,**args):
     print("report", a, args)
 ctx.report = report
+ctx.report.debug.direct_print = True
 ctx.report.a = ctx.a
 ctx.report.b = ctx.a.b
 ctx.report.c = ctx.a.b.c

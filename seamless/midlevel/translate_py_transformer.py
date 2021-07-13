@@ -5,7 +5,8 @@ from ..core import cell, \
 
 def translate_py_transformer(
         node, root, namespace, inchannels, outchannels,
-        *, ipy_template, py_bridge, has_meta_connection
+        *, ipy_template, py_bridge, has_meta_connection,
+        debug
     ):
     from .translate import set_structured_cell_from_checksum
     from ..highlevel.Environment import Environment
@@ -257,6 +258,7 @@ def translate_py_transformer(
 
     if env is not None:
         ctx.tf.env = env
+    ctx.tf._debug = debug
 
     namespace[node["path"], "target"] = inp, node
     namespace[node["path"], "source"] = result, node

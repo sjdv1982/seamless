@@ -1,8 +1,5 @@
 from seamless.core.build_module import build_module
 
-import seamless.core.execute
-seamless.core.execute.DIRECT_PRINT = True
-
 ######################################################################
 # 1: set up compiled module
 ######################################################################
@@ -58,6 +55,9 @@ with macro_mode_on():
         "testmodule": ("input", "plain", "module"),
         "result": ("output", "plain"),
     })
+    ctx.tf._debug = {
+        "direct_print" : True
+    }
     ctx.module.connect(tf.testmodule)
     tf.a.cell().set(12)
     tf.b.cell().set(13)
