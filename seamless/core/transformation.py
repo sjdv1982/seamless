@@ -1,4 +1,5 @@
 """Schedules asynchronous (transformer) jobs"""
+from copy import deepcopy
 import weakref
 import asyncio
 import multiprocessing
@@ -10,8 +11,7 @@ import atexit
 import json
 
 from multiprocessing import Process
-from .execute import Queue, execute, execute_debug
-from .run_multi_remote import run_multi_remote, run_multi_remote_pair
+from .execute import Queue, execute
 from .injector import transformer_injector as injector
 from .build_module import build_all_modules
 from ..compiler import compilers as default_compilers, languages as default_languages
@@ -67,6 +67,13 @@ class SeamlessStreamTransformationError(Exception):
 ###############################################################################
 
 _locks = [None] * multiprocessing.cpu_count()
+
+# NOTE: if you run Seamless outside the Docker host network bridge,
+# you probably want these ports exposed... TODO
+_python_attach_ports = {
+    port: None for port in range(5679, 5680)
+}
+
 def set_ncores(ncores):
     if len(_locks) != ncores:
         if any(_locks):
@@ -89,6 +96,17 @@ def release_lock(locknr):
     assert _locks[locknr] is not None
     _locks[locknr] = None
 
+async def acquire_python_attach_port(tf_checksum):
+    while 1:
+        for k in sorted(_free_python_attach_ports):
+            if _python_attach_ports[k] is None:
+                _python_attach_ports[k] = tf_checksum
+                return k
+        await asyncio.sleep(0.01)
+
+async def free_python_attach_port(port):
+    _python_attach_ports[port] = None
+
 ###############################################################################
 # Remote jobs
 ###############################################################################
@@ -109,8 +127,7 @@ class TransformationJob:
     def __init__(self,
         checksum, codename,
         transformation,
-        semantic_cache, debug,
-        python_debug
+        semantic_cache, *, debug,
     ):
         self.checksum = checksum
         assert codename is not None
@@ -129,7 +146,6 @@ class TransformationJob:
         self.transformation = transformation
         self.semantic_cache = semantic_cache
         self.debug = debug
-        self.python_debug = python_debug
         self.executor = None
         self.future = None
         self.remote = False
@@ -237,8 +253,9 @@ class TransformationJob:
         while not transformation_cache.active:
             await asyncio.sleep(0.05)
         clients = list(communion_client_manager.clients["transformation"])
-        await self._probe_remote(clients)
-        if self.remote and not self.debug and not self.python_debug:
+        if self.debug is not None:
+            await self._probe_remote(clients)
+        if self.remote:
             self.remote_futures = None
             try:
                 result = await self._execute_remote(
@@ -481,6 +498,7 @@ class TransformationJob:
         self.start = time.time()
         running = False
         try:
+            python_attach_port = None
             queue = Queue()
             outputname, celltype, subcelltype = self.outputpin
             args = (
@@ -490,9 +508,13 @@ class TransformationJob:
                 self.codename,
                 namespace, inputs, outputname, celltype, queue,                
             )
-            kwargs = {"python_debug": self.python_debug}
-            execute_command = execute_debug if self.debug else execute
-            self.executor = Process(target=execute_command,args=args, kwargs=kwargs, daemon=True)
+            debug = None
+            if self.debug is not None:
+                debug = deepcopy(self.debug) 
+                if debug.get("python_attach"):
+                    python_attach_port = await acquire_python_attach_port(self.checksum)
+                    debug["python_attach_port"] = python_attach_port
+            self.executor = Process(target=execute,args=args, daemon=True)
             self.executor.start()
             running = True
             result = None
@@ -550,6 +572,8 @@ class TransformationJob:
                 forked_processes[self.executor] = time.time()
             raise asyncio.CancelledError from None
         finally:
+            if python_attach_port is not None:
+                free_python_attach_port(python_attach_port)
             release_lock(lock)
         result_checksum = await get_result_checksum(result_buffer)
         buffer_cache.cache_buffer(result_checksum, result_buffer)

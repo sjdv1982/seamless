@@ -55,8 +55,7 @@ def print_error(*args):
     logger.error(msg)
 
 class RemoteTransformer:
-    debug = False
-    python_debug = False
+    debug = None
     def __init__(self, tf_checksum, peer_id):
         self.tf_checksum = tf_checksum
         self.peer_id = peer_id
@@ -64,8 +63,7 @@ class RemoteTransformer:
 
 class DummyTransformer:
     _status_reason = None
-    debug = False
-    python_debug = False
+    debug = None
     def __init__(self, tf_checksum):
         self.tf_checksum = tf_checksum
         self.progress = None
@@ -133,8 +131,6 @@ class TransformationCache:
     _destroyed = False
     def __init__(self):
         self.transformations = {} # tf-checksum-to-transformation
-        self.debug = set() # set of debug tf-checksums
-        self.python_debug = set() # set of python-debug tf-checksums
         self.transformation_results = {} # tf-checksum-to-(result-checksum, prelim)
         self.transformation_exceptions = {} # tf-checksum-to-exception
         self.transformation_logs = {} # tf-checksum-to-stdout/stderr-logs (max 10k each)
@@ -293,14 +289,8 @@ class TransformationCache:
         else:
             tf = self.transformations_to_transformers[tf_checksum]
 
-        if transformer.debug:
-            if tf_checksum not in self.debug:
-                self.debug.add(tf_checksum)
-                self.clear_exception(transformer)
-        if transformer.python_debug:
-            if tf_checksum not in self.python_debug:
-                self.python_debug.add(tf_checksum)
-                self.clear_exception(transformer)
+        if transformer.debug is not None:
+            self.clear_exception(transformer)
         if transformer._exception_to_clear:
             self.clear_exception(tf_checksum=tf_checksum)
             transformer._exception_to_clear = False
@@ -363,9 +353,6 @@ class TransformationCache:
         else:
             dummy = True
             transformers = []
-        debug = any([tf.debug for tf in transformers])
-        if not debug:
-            self.debug.discard(tf_checksum)
         if not len(transformers):
             delay = TF_KEEP_ALIVE_MIN
             job = self.transformation_jobs.get(tf_checksum)
@@ -430,6 +417,7 @@ class TransformationCache:
         else:
             codename = str(transformers[-1])
 
+        debug = None
         tfs = []
         for transformer in transformers:
             if isinstance(transformer,
@@ -437,12 +425,12 @@ class TransformationCache:
             ):
                 continue
             tfs.append(transformer._format_path())
+            if debug is None and transformer.debug is not None:
+                debug = deepcopy(transformer.debug)
         if len(tfs):
             tftxt = ",".join(tfs)
             print_info("Executing transformer: {}".format(tftxt))
 
-        debug = tf_checksum in self.debug
-        python_debug = tf_checksum in self.python_debug
         semantic_cache = {}
         for k,v in transformation.items():
             if k in ("__compilers__", "__languages__"):
@@ -463,7 +451,7 @@ class TransformationCache:
         job = TransformationJob(
             tf_checksum, codename,
             transformation, semantic_cache,
-            debug, python_debug
+            debug=debug
         )
         job.execute(
             self.prelim_callback,

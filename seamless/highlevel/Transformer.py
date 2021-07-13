@@ -1,3 +1,4 @@
+from seamless.metalevel.debugmode import DebugMode
 import weakref
 import functools
 import pprint
@@ -59,12 +60,14 @@ class Transformer(Base):
     _temp_code = None
     _temp_pins = None
     def __init__(self, *, parent=None, path=None, code=None, pins=None, hash_pattern={"*": "#"}):
+        from ..metalevel.debugmode import DebugMode
         assert (parent is None) == (path is None)
         if parent is not None:
             self._init(parent, path, code, pins)
         else:
             self._temp_code = code
             self._temp_pins = pins
+        self._debug = DebugMode(self)
 
     def _init(self, parent, path, code=None, pins=None, hash_pattern={"*": "#"}):
         super().__init__(parent, path)

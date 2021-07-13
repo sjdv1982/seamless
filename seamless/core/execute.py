@@ -9,18 +9,13 @@ import time
 import sys
 import os
 import signal
-import platform
-import threading
-import inspect
-import ctypes
 import wurlitzer
+import debugpy
 
 # TODO: decide when to kill an execution job!
 
 from .cached_compile import exec_code, check_function_like
 from .protocol.serialize import _serialize as serialize
-
-DIRECT_PRINT = False
 
 def unsilk(value):
     if isinstance(value, Silk):
@@ -139,16 +134,49 @@ def execute(name, code,
       injector, module_workspace,
       identifier, namespace,
       inputs, output_name, celltype, result_queue,
-      python_debug = None
+      debug = None,
     ):
-    if python_debug:
-        direct_print = True
+    direct_print = False    
+    if debug is None:
+        debug = {}
     else:
-        direct_print = DIRECT_PRINT
+        from ...metalevel.ide import debug_hook
+        debug_hook(debug)      
+    if debug.get("direct_print"):
+        direct_print = True
+    if debug.get("python_attach"):
+        port = int(debug["python_attach_port"])  # MUST be set right before forking
+        print("*" * 80)
+        print("Executing transformer %s with Python debugging" % name)
+        msg = debug.get("python_attach_message")
+        if msg is not None:
+            print(msg)
+        print("*" * 80)
+        debugpy.listen(("localhost", port))  # listen for incoming DAP client connections
+        debugpy.wait_for_client()  # wait for a client to connect
     assert identifier is not None
     _exiting = False
     try:
-        ok = False
+        ok = False        
+        if debug.get("generic_attach"):
+            print("*" * 80)
+            print("Executing transformer %s with generic debugging" % name)
+            msg = debug.get("generic_attach_message")
+            if msg is not None:
+                print(msg)
+            print("Process ID: %s" % os.getpid())
+            print("Transformer execution will pause until SIGUSR1 has been received")
+            print("*" * 80)
+            class DebuggerAttached(Exception):
+                pass
+            def handler(*args, **kwargs):
+                raise DebuggerAttached
+            signal.signal(signal.SIGUSR1, handler)
+            try:
+                time.sleep(3600)
+            except DebuggerAttached:
+                pass
+
         if direct_print:
             result = _execute(name, code,
                 with_ipython_kernel,
@@ -231,58 +259,5 @@ def execute(name, code,
             except Exception:
                 traceback.print_exc()
 
-
-def execute_debug(name, code,
-      with_ipython_kernel,
-      injector, module_workspace,
-      identifier, namespace,
-      inputs, output_name, celltype, result_queue,
-      **args
-    ):
-    _exiting = False
-    direct_print = DIRECT_PRINT
-    try:
-        ok = False
-        old_stdio = sys.stdout, sys.stderr
-        sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
-
-        print("*" * 80)
-        print("Executing transformer %s in debug mode" % name)
-        print("Process ID: %s" % os.getpid())
-        print("Transformer execution will pause until SIGUSR1 has been received")
-        print("*" * 80)
-        class DebuggerAttached(Exception):
-            pass
-        def handler(*args, **kwargs):
-            raise DebuggerAttached
-        signal.signal(signal.SIGUSR1, handler)
-        try:
-            time.sleep(3600)
-        except DebuggerAttached:
-            pass
-        result = _execute(name, code,
-            with_ipython_kernel,
-            injector, module_workspace,
-            identifier, namespace,
-            inputs, output_name, celltype, result_queue
-        )
-        result_queue.put(result)
-        ok = True
-    except SystemExit:
-        _exiting = True
-        signal.signal(signal.SIGTERM, signal.SIG_DFL)
-        raise SystemExit() from None
-    except Exception:
-        traceback.print_exc()
-    finally:
-        if not direct_print:
-            sys.stdout, sys.stderr = old_stdio
-        if not _exiting:
-            try:
-                result_queue.close()
-                if ok:
-                    result_queue.join()
-            except Exception:
-                traceback.print_exc()
 
 from silk import Silk

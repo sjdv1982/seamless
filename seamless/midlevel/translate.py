@@ -334,7 +334,8 @@ def translate(graph, ctx, environment):
                 translate_py_transformer(
                     node, ctx, namespace, inchannels, outchannels,
                     ipy_template=ipy_template,
-                    py_bridge=py_bridge
+                    py_bridge=py_bridge,
+                    debug=debug
                 )                
         elif t == "macro":
             if node["language"]  != "python":

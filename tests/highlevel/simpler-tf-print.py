@@ -13,7 +13,7 @@ def triple_it(a):
 
 ctx.transform = triple_it
 ctx.transform.a = ctx.a
-raise NotImplementedError ###ctx.transform.debug = True
+ctx.transform.debug.direct_print = True
 print("START")
 ctx.compute()
 ctx.a = 20
