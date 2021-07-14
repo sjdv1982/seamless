@@ -41,7 +41,7 @@ def run_macro(ctx, par_static, graph):
     ctx.subctx = context()
     translate(
         graph, ctx.subctx, 
-        environment=None, transformer_debugs=None
+        environment=None
     )
     ctx.subctx.a.set(par_static)
     ctx.par_dynamic = cell("int")

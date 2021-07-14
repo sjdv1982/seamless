@@ -131,6 +131,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
             json.dumps(value)
             parent.remove_connections(target_path,endpoint="target")
             htf["meta"] = value
+        self._get_htf()["UNTRANSLATED"] = True
         parent._translate()
 
     @property
@@ -234,6 +235,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         htf = self._get_htf()
         htf["hash_pattern"] = value
         htf.pop("checksum", None)
+        self._get_htf()["UNTRANSLATED"] = True
         self._parent()._translate()
 
     @property
@@ -418,6 +420,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
                     htf["pins"][attr] = default_pin.copy()
             parent = self._parent()
             parent.remove_connections(self._path + (attr,), endpoint="target")
+            htf["UNTRANSLATED"] = True
             parent._translate()
             return
 
@@ -856,6 +859,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
                     mount.pop(attr)
                     if not len(mount):
                         htf.pop("mount")
+                    self._get_htf()["UNTRANSLATED"] = True
                     self._parent()._translate()
             return
         mount = {
@@ -867,6 +871,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         if not "mount" in htf:
             htf["mount"] = {}
         htf["mount"][attr] = mount
+        self._get_htf()["UNTRANSLATED"] = True
         self._parent()._translate()
 
     def _codegetter(self, attr):
@@ -897,6 +902,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
                     mount.pop("code")
                     if not len(mount):
                         htf.pop("mount")
+                    self._get_htf()["UNTRANSLATED"] = True
                     self._parent()._translate()
         else:
             raise AttributeError(attr)
@@ -970,7 +976,6 @@ You can set this dictionary directly, or you may assign .meta to a cell
         inputcell = getattr(tf, htf["INPUT"])
         handle = inputcell.handle_no_inference
         setattr(handle, attr, value)
-        self._parent()._translate()
 
     def _resultgetter(self, attr):
         htf = self._get_htf()

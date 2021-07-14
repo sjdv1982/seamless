@@ -279,6 +279,7 @@ class Cell(Base):
             "as_directory": as_directory
         }
         hcell["mount"] = mount
+        hcell["UNTRANSLATED"] = True
         if self._parent() is not None:
             self._parent()._translate()
         return self

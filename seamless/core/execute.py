@@ -145,26 +145,35 @@ def execute(name, code,
     if debug is None:
         debug = {}
     else:
-        from ..metalevel.ide import debug_hook
-        debug_hook(debug)      
+        from ..metalevel.ide import debug_pre_hook, debug_post_hook
+        debug_pre_hook(debug)
     if debug.get("direct_print"):
         direct_print = True
     else:
         direct_print = DIRECT_PRINT
-    if debug.get("python_attach"):
-        port = int(debug["python_attach_port"])  # MUST be set right before forking
-        print("*" * 80)
-        print("Executing transformer %s with Python debugging" % name)
-        msg = debug.get("python_attach_message")
-        if msg is not None:
-            print(msg)
-        print("*" * 80)
-        debugpy.listen(("localhost", port))  # listen for incoming DAP client connections
-        debugpy.wait_for_client()  # wait for a client to connect
+    if debug.get("exec-identifier"):
+        identifier = debug["exec-identifier"]
     assert identifier is not None
+
     _exiting = False
     try:
+        old_stdio = sys.stdout, sys.stderr
+
         ok = False        
+
+        sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+
+        if debug.get("python_attach"):
+            port = int(debug["python_attach_port"])  # MUST be set right before forking
+            print("*" * 80)
+            print("Executing transformer %s with Python debugging" % name)
+            msg = debug.get("python_attach_message")
+            if msg is not None:
+                print(msg)
+            print("*" * 80)        
+            debugpy.listen(("localhost", port))  # listen for incoming DAP client connections
+            debugpy.wait_for_client()  # wait for a client to connect
+
         if debug.get("generic_attach"):
             print("*" * 80)
             print("Executing transformer %s with generic debugging" % name)
@@ -192,7 +201,6 @@ def execute(name, code,
                 inputs, output_name, celltype, result_queue
             )
         else:
-            old_stdio = sys.stdout, sys.stderr
             stdout, stderr = FakeStdStream(sys.stdout), FakeStdStream(sys.stderr)
             sys.stdout, sys.stderr = stdout, stderr
             with wurlitzer.pipes() as (stdout2, stderr2):
@@ -252,10 +260,14 @@ def execute(name, code,
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
         raise SystemExit() from None
     except Exception:
-        if not direct_print:
-            sys.stdout, sys.stderr = old_stdio
+        sys.stdout, sys.stderr = old_stdio
         traceback.print_exc()
     finally:
+        if debug is not None:
+            try:
+                debug_post_hook(debug)
+            except Exception:
+                traceback.print_exc()
         if not direct_print:
             sys.stdout, sys.stderr = old_stdio
         if not _exiting:

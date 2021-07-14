@@ -33,8 +33,7 @@ class HighLevelContext(UnboundContext):
             raise TypeError(type(highlevel_ctx))
         graph = self._graph
         translate(
-            graph, self, highlevel_ctx.environment, 
-            transformer_debugs=None
+            graph, self, highlevel_ctx.environment
         )
         path = curr_macro().path + ("ctx",) + self.path
         _assign_context(

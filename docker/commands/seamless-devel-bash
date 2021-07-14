@@ -16,7 +16,7 @@ gdbflags='' ###
 
 containerID=$(docker run --rm \
    $gdbflags \
-   -e DOCKER_IMAGE=rpbs/seamless \
+   -e "DOCKER_IMAGE=rpbs/seamless" \
    --network=host \
    -d \
   -v $seamlessdir:/seamless \

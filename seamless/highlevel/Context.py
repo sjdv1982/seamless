@@ -173,6 +173,11 @@ class Context(Base, ContextHelpMixin):
 
         """
         from ..midlevel.graph_convert import graph_convert
+        for child in self._children.values():
+            if isinstance(child, Transformer):
+                if child.debug.mode is not None:
+                    msg = "Cannot delete {} in debug mode"
+                    raise Exception(msg.format(child))
         graph = graph_convert(graph, self)
         nodes = {}
         self._children.clear()
@@ -724,12 +729,13 @@ class Context(Base, ContextHelpMixin):
         #from pprint import pprint; pprint(graph0)
         if not force and not self._needs_translation:
             return
-        """
-        if self._translating:
-            raise Exception("Nested invocation of ctx.translate")
-        """
         if self._translating:
             return
+        for child in self._children.values():
+            if isinstance(child, Transformer):
+                if child.debug.mode is not None:
+                    msg = "Cannot translate while {} in debug mode"
+                    raise Exception(msg.format(child))
         env = self.environment._parse_and_validate()
         graph = pretranslate(self, graph0)
         if graph is not graph0:
@@ -780,18 +786,9 @@ class Context(Base, ContextHelpMixin):
                 ub_ctx._languages = env["languages"]
                 self._unbound_context = ub_ctx
                 ub_ctx._root_highlevel_context = weakref.ref(self)
-                transformer_debugs = {}
-                for path, child in self._children.items():
-                    if isinstance(child, Transformer):
-                        debug = child.debug._to_lowlevel()
-                        if debug is not None:
-                            transformer_debugs[tuple(path)] = debug
-                if not len(transformer_debugs):
-                    transformer_debugs = None
                 translate(
                     graph, ub_ctx, 
-                    self.environment, 
-                    transformer_debugs=transformer_debugs
+                    self.environment
                 )
                 nodedict = {node["path"]: node for node in graph["nodes"]}
                 nodedict0 = {node["path"]: node for node in graph0["nodes"]}
@@ -903,6 +900,14 @@ class Context(Base, ContextHelpMixin):
                 return
             graph = self._runtime_graph
         nodes = graph.nodes
+        for p in list(nodes.keys()):
+            if p[:len(path)] == path:
+                node = nodes[p]
+                child = self._children.get(p)
+                if isinstance(child, Transformer):
+                    if child.debug.mode is not None:
+                        msg = "Cannot delete {} in debug mode"
+                        raise Exception(msg.format(child))
         for p in list(nodes.keys()):
             if p[:len(path)] == path:
                 node = nodes[p]

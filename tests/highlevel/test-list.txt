@@ -157,3 +157,5 @@ r.py
    http://localhost:5813/ctx/result.png
   edit plot.R
   The PNG should update, the SVG should not
+debugmode-py-light.py
+  To debug a simple Python transformer in VSCode. Follow the instructions.

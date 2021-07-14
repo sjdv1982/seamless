@@ -1,3 +1,4 @@
+from seamless.core.transformer import Transformer
 import weakref
 import asyncio
 from asyncio import CancelledError
@@ -26,6 +27,21 @@ def print_debug(*args):
 def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
+
+def print_wait_for(wait_for):
+    objs = []
+    for obj in wait_for:
+        if isinstance(obj, Transformer):
+            if obj._debug is not None:
+                if obj._debug.get("python_attach") is not None:
+                    continue
+                if obj._debug.get("generic_attach") is not None:
+                    continue
+        objs.append(str(obj))
+    objs = " ".join(objs)
+    if len(objs):
+        print("Waiting for:",end=" ")
+        print(objs)            
 
 class TaskManager:
     _destroyed = False
@@ -366,9 +382,7 @@ class TaskManager:
                 return [], True
             result = sorted(running, key=lambda dep: dep.path)
             if verbose:
-                print("Waiting for:",end=" ")
-                objs = " ".join([str(obj) for obj in result])
-                print(objs)            
+                print_wait_for(result)
             return result, True
 
         while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or not run_mount:
@@ -466,9 +480,7 @@ class TaskManager:
                 return [], True
             result = sorted(running, key=lambda dep: dep.path)
             if verbose:
-                print("Waiting for:",end=" ")
-                objs = " ".join([str(obj) for obj in result])
-                print(objs)
+                print_wait_for(result)
             return result, True
 
         while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or not run_mount:

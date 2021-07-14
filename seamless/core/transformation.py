@@ -98,13 +98,13 @@ def release_lock(locknr):
 
 async def acquire_python_attach_port(tf_checksum):
     while 1:
-        for k in sorted(_free_python_attach_ports):
+        for k in sorted(_python_attach_ports):
             if _python_attach_ports[k] is None:
                 _python_attach_ports[k] = tf_checksum
                 return k
         await asyncio.sleep(0.01)
 
-async def free_python_attach_port(port):
+def free_python_attach_port(port):
     _python_attach_ports[port] = None
 
 ###############################################################################
