@@ -296,6 +296,7 @@ def build_all_modules(
     module_error_name=None,
     absolute_package_name=None
 ):
+    full_module_names = {}
     all_modules = list(modules_to_build.keys())
     while len(modules_to_build):
         modules_to_build_new = {}
@@ -322,6 +323,7 @@ def build_all_modules(
                     module_error_name=modname3
                 )
                 assert mod is not None, modname
+                full_module_names[modname] = mod[0]
                 module_workspace[modname4] = mod[1]
                 if absolute_package_name is not None:
                     pos = modname4.find(".")
@@ -347,4 +349,4 @@ All modules: {}
         
         modules_to_build = modules_to_build_new
                 
-    return
+    return full_module_names

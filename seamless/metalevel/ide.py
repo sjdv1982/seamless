@@ -5,6 +5,7 @@ import traceback
 import commentjson
 
 hostcwd = os.environ.get("HOSTCWD")
+from .debugmode import docker_container
 
 launch_json_py = {
     #"name": "Python: Remote Attach",
@@ -18,6 +19,33 @@ launch_json_py = {
     ]
 }
 
+launch_json_compiled_docker =  {
+    #"name": "ctx.tf: debug Seamless C/C++ transformer",
+    "type": "cppdbg",
+    "request": "attach",
+    "program": "/opt/conda/bin/python",
+    #"processId": "1114",
+    "pipeTransport": {
+        "debuggerPath": "/usr/bin/gdb",
+        "pipeProgram": "docker",
+        "pipeArgs": ["exec", "-u", "root", "--privileged", "-i", None, "sh", "-c"],
+        "pipeCwd": ""
+    },
+    "sourceFileMap": {
+    },
+    "MIMode": "gdb",
+    "setupCommands": [
+        {
+            "description": "Enable pretty-printing for gdb",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": True
+        },
+        {
+            # NOT WORKING
+            "text": "-interpreter-exec console \"skip -fi /build/glibc-eX1tMB/glibc-2.31/sysdeps/unix/sysv/linux/select.c\"" 
+        }
+    ]
+}
 
 
 def _vscode_init():
@@ -55,17 +83,19 @@ def _vscode_py_attach_create(debug):
     entry["connect"]["port"] = int(debug["python_attach_port"])
     for source, target in debug["source_map"]:
         mapping = {
-            "localRoot": "${workspaceFolder}" ,#+ target,
+            "localRoot": target,
             "remoteRoot": source
         }
         entry["pathMappings"].append(mapping)
     if "configurations" not in launch_json_data:
         launch_json_data["configurations"] = []
-    launch_json_data["configurations"].append(entry)
+    config = launch_json_data["configurations"]
+    config[:] = [entry for entry in config if entry["name"] != name]
+    config.append(entry)
     with open(launch_json, "w") as f:
         json.dump(launch_json_data, f, indent=4)
 
-def _vscode_py_attach_cleanup(debug):
+def _vscode_attach_cleanup(debug):
     try:
         launch_json, launch_json_data = _vscode_init()
     except Exception as exc:
@@ -80,6 +110,38 @@ def _vscode_py_attach_cleanup(debug):
     with open(launch_json, "w") as f:
         json.dump(launch_json_data, f, indent=4)
 
+def _vscode_compiled_attach_create(debug):
+    from ..core.build_module import SEAMLESS_EXTENSION_DIR
+    launch_json, launch_json_data = _vscode_init()
+    if docker_container is None:
+        raise NotImplementedError  # compiled debug outside Docker container
+    name = debug["name"]
+    entry = deepcopy(launch_json_compiled_docker)
+    entry["name"] = name
+    entry["processId"] = int(os.getpid())
+    pipeargs = entry["pipeTransport"]["pipeArgs"]
+    for n in range(len(pipeargs)):
+        if pipeargs[n] is None:
+            pipeargs[n] = docker_container
+    for source, target in debug["source_map"]:
+        entry["sourceFileMap"][source] = target
+    main = debug["main-code"]
+    main2 = os.path.splitext(main)[1]
+    main3 = os.path.relpath(main, "/cwd")
+    #main3 = os.path.join(hostcwd, main3) # DOES NOT WORK
+    main3 = "${workspaceFolder}/" + main3 #  DOES NOT WORK
+    key = SEAMLESS_EXTENSION_DIR + "/" + debug["full_module_names"]["module"] + "/main" + main2
+    entry["sourceFileMap"][key] = main3   # DOES NOT WORK
+    if "configurations" not in launch_json_data:
+        launch_json_data["configurations"] = []
+    config = launch_json_data["configurations"]
+    config[:] = [entry for entry in config if entry["name"] != name]
+    config.append(entry)
+    with open(launch_json, "w") as f:
+        json.dump(launch_json_data, f, indent=4)
+
+
+
 def debug_pre_hook(debug):
     if debug is None:
         return
@@ -87,9 +149,9 @@ def debug_pre_hook(debug):
     if debug.get("python_attach"):
         if ide != "vscode":
             raise NotImplementedError
-        return _vscode_py_attach_create(debug)            
+        return _vscode_py_attach_create(debug)
     if debug.get("generic_attach"):
-        raise NotImplementedError        
+        return _vscode_compiled_attach_create(debug)
 
 def debug_post_hook(debug):
     if debug is None:
@@ -98,6 +160,8 @@ def debug_post_hook(debug):
     if debug.get("python_attach"):
         if ide != "vscode":
             raise NotImplementedError
-        return _vscode_py_attach_cleanup(debug)            
+        return _vscode_attach_cleanup(debug)            
     if debug.get("generic_attach"):
-        raise NotImplementedError                
+        if ide != "vscode":
+            raise NotImplementedError
+        return _vscode_attach_cleanup(debug)

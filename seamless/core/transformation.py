@@ -483,10 +483,20 @@ class TransformationJob:
             namespace["PINS"][pinname_as] = v
             namespace[pinname_as] = v
 
+        debug = None
+        if self.debug is not None:
+            debug = deepcopy(self.debug) 
+
         module_workspace = {}
         compilers = self.transformation.get("__compilers__", default_compilers)
         languages = self.transformation.get("__languages__", default_languages)
-        build_all_modules(
+        if debug is not None and debug.get("generic_attach"):
+            main_code = debug.get("main-code")
+            if main_code is not None and "module" in modules_to_build:
+                m = modules_to_build["module"]
+                if "objects" in m and "main" in m["objects"]:
+                    m["objects"]["main"]["host_filename"] = main_code
+        full_module_names = build_all_modules(
             modules_to_build, module_workspace,
             compilers=compilers, languages=languages
         )
@@ -518,12 +528,12 @@ class TransformationJob:
                 self.codename,
                 namespace, inputs, outputname, celltype, queue,                
             )
-            debug = None
-            if self.debug is not None:
-                debug = deepcopy(self.debug) 
+            if debug is not None:
                 if debug.get("python_attach"):
                     python_attach_port = await acquire_python_attach_port(self.checksum)
                     debug["python_attach_port"] = python_attach_port
+                if full_module_names:
+                    debug["full_module_names"] = full_module_names
             kwargs = {}
             if debug is not None:
                 kwargs["debug"] = debug

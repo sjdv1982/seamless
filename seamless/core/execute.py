@@ -180,8 +180,9 @@ def execute(name, code,
             msg = debug.get("generic_attach_message")
             if msg is not None:
                 print(msg)
-            print("Process ID: %s" % os.getpid())
-            print("Transformer execution will pause until SIGUSR1 has been received")
+            else:
+                print("Process ID: %s" % os.getpid())
+                print("Transformer execution will pause until SIGUSR1 has been received")
             print("*" * 80)
             class DebuggerAttached(Exception):
                 pass

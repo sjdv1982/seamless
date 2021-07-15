@@ -22,21 +22,25 @@ In that case, do Transformer.clear_exception()"""
 }
 
 generic_attach_messages = {
-    "vscode": """Python source code mount to {host_path} detected.
+    "vscode": """Generic source code mount to {host_path} detected.
 
 In Visual Studio Code, set breakpoints in this file.
 
 In "Run and Debug", an entry "{name}" should be present.
 If not, make sure that {host_project_dir} is the primary directory of your VSCode workspace
 
-Transformer execution will now be halted until a SIGUSR1 signal is received.
-Debugging is done as follows:
+Note that the source mapping in VSCode launch.json is not working; 
+This is circumvented only for gcc, using -ffile-prefix-map
 
-In VSCode, launch the "{name}" debug entry.
-- Press F6, and press Esc to ignore the "Cannot find select.c" error message
-- Then press Ctrl+Shift+Y, and type "-exec break".
+Transformer execution will now be halted until a SIGUSR1 signal is received.
+Debugging is done in VSCore as follows:
+
+- Select the "{name}" debug entry and press F5.
+- Press F6, then press Esc to ignore the "Cannot find select.c" error message
+- Then press Ctrl+Shift+Y to go to the Debug Console
 - Type "-exec signal SIGUSR1"; again, press Esc to ignore the "Cannot find select.c" error message
 - Finally, press F5
+
 """
 
 }
@@ -94,24 +98,34 @@ class DebugMode:
         self._mode = None
         self._ide = "vscode"  # hard-coded for 0.7
 
-    def _get_core_transformer(self):
+    def _get_core_transformer(self, force):
         tf = self._tf()
         node = tf._get_htf()
         tf2 = tf._get_tf()
-        if node["language"] in ("python", "ipython"):
+        if node["language"] == "python":
             return tf2.tf
-        raise NotImplementedError
+        elif node["compiled"]:
+            return tf2.tf.executor
+        else:
+            # bash, ipython, ipy_template, and py_bridge languages.
+            # bash and py_bridge could be supported in the future
+            if not force:
+                return None  
+            else:
+                msg = """Attach-and-debug with breakpoints is not possible for language {}
+Only shells in full debug mode are possible, please specify this explicitly"""
+                raise ValueError(msg.format(node["language"]))
 
     def enable(self, mode=None):
         if self._mode is not None:
             raise ValueError("Debug mode is already active.")
         tf = self._tf()
         if tf is None or tf._get_htf().get("UNTRANSLATED"):
-            raise ValueError("Transformer is untranslated.")
-        core_transformer = self._get_core_transformer()
+            raise ValueError("Transformer is untranslated.")        
         if mode is not None:
             assert mode in ("full", "light"), mode
             if mode == "light":
+                core_transformer = self._get_core_transformer(force=True)
                 try:
                     validate_light_mode(self._tf())
                 except ValidationError as exc:
@@ -120,6 +134,8 @@ class DebugMode:
     Reason: {}"""
                     msg = msg.format(reason) + "\n"
                     raise ValidationError(msg) from None
+            elif mode == "full":
+                pass
         else:
             try:
                 validate_light_mode(self._tf())
@@ -135,11 +151,14 @@ Entering full debug mode."""
                 mode = "full"
 
         if mode == "full":
+            core_transformer = self._get_core_transformer(force=False)
             code_mount = get_code_mount(tf)
             if code_mount["mode"] != "rw":
                 msg = "Code mount '{}' must be read-write"
                 raise Exception(msg.format(code_mount["path"]))
+            raise NotImplementedError
         elif mode == "light":
+            core_transformer = self._get_core_transformer(force=True)
             code_mount = get_code_mount(tf)
             hostcwd = os.environ.get("HOSTCWD")
             code_path = os.path.abspath(code_mount["path"])
@@ -150,7 +169,11 @@ Only full debug mode is possible, please specify this explicitly"""
                 raise ValidationError(msg.format(code_mount["path"]))
         self._mode = mode
         debug = self._to_lowlevel()
-        core_transformer._debug = debug
+        if core_transformer is not None:
+            core_transformer._debug = debug
+            node = tf._get_htf()
+            if node["compiled"]:
+                tf._get_tf().tf.integrator.debug_.set(True)
 
     @property
     def mode(self):
@@ -177,7 +200,7 @@ Only full debug mode is possible, please specify this explicitly"""
             "generic_attach_message": None,
         }
         mode = self._mode
-        if mode is not None:
+        if mode == "light":
             debug["direct_print"] = True
             tf = self._tf()
             node = tf._get_htf()
@@ -189,21 +212,41 @@ Only full debug mode is possible, please specify this explicitly"""
                 code_path = os.path.abspath(code_mount["path"])
                 host_path = code_path
                 host_project_dir = os.getcwd()
-                if mode == "light": 
-                    hostcwd = os.environ.get("HOSTCWD")
-                    if hostcwd is not None: # source mapping is needed
-                        host_path = os.path.relpath(code_path, "/cwd")
-                        host_path = os.path.join(hostcwd, host_path)
-                        host_project_dir = hostcwd
-                        #debug["source_map"] = [(code_path, host_path)]
-                        debug["source_map"] = [("/cwd", hostcwd)]
-                    debug["exec-identifier"] = code_path
+                hostcwd = os.environ.get("HOSTCWD")
+                if hostcwd is not None: # source mapping is needed
+                    host_path = os.path.relpath(code_path, "/cwd")
+                    host_path = os.path.join(hostcwd, host_path)
+                    host_project_dir = hostcwd
+                    #debug["source_map"] = [(code_path, host_path)]
+                    debug["source_map"] = [("/cwd", hostcwd)]
+                debug["exec-identifier"] = code_path
                 msg = python_attach_messages[self._ide].format(
                     host_path=host_path,
                     host_project_dir=host_project_dir,
                     name=name
                 )
                 debug["python_attach_message"] = msg
+            elif node["compiled"]:
+                debug["generic_attach"] = True
+                code_path = os.path.abspath(code_mount["path"])
+                host_path = code_path
+                host_project_dir = os.getcwd()
+                hostcwd = os.environ.get("HOSTCWD")
+                if hostcwd is not None: # source mapping is needed
+                    host_path = os.path.relpath(code_path, "/cwd")
+                    host_path = os.path.join(hostcwd, host_path)
+                    host_project_dir = hostcwd
+                    #debug["source_map"] = [(code_path, host_path)]
+                    debug["source_map"] = [("/cwd", hostcwd)]
+                debug["main-code"] = code_path
+                msg = generic_attach_messages[self._ide].format(
+                    host_path=host_path,
+                    host_project_dir=host_project_dir,
+                    name=name
+                )
+                debug["generic_attach_message"] = msg
+        if mode == "full":
+            raise NotImplementedError
 
         if all([(f == False or f is None) for f in debug.values()]):
             return None

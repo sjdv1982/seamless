@@ -181,9 +181,7 @@ def translate_compiled_transformer(
     # Transformer itself
     ctf = ctx.tf = context()
     _init_from_graph(ctf)
-    print("TODO: set integrator._debug")
-    debug = False ###
-    ctf.integrator.debug_.cell().set(debug)
+    ctf.integrator.debug_.cell().set(False)
 
     ctx.code = cell("text")
     ctx.code.set_file_extension(node["file_extension"])
