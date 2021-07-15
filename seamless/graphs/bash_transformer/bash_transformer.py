@@ -20,7 +20,6 @@ zip = ctx.get_zip()
 
 # 3: Run test example
 
-###ctx.mount("/tmp/seamless-test", persistent=False)
 ctx.testdata = "a\nb\nc\nd\ne\nf\n"
 ctx.bashcode = "head -$lines testdata > firstdata; mkdir -p RESULT/input; cp firstdata RESULT; cp testdata RESULT/input"
 ctx.executor = lambda bashcode, testdata, pins_, lines: None

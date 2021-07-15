@@ -4,7 +4,6 @@ from seamless.highlevel import Context, Cell
 import json
 
 ctx = Context()
-###ctx.mount(os.path.join(tempfile.gettempdir(), "transformer-compiled")) ##not working for now
 
 ctx.transform = lambda a,b: a + b
 ctx.transform.a = 2

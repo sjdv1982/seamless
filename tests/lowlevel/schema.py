@@ -36,8 +36,6 @@ with macro_mode_on():
     ctx.f_schema = cell("plain").set(schema)
     ctx.f_schema.connect(ctx.tf.f_SCHEMA)
 
-    #ctx.mount("/tmp/mount-test")
-
 ctx.compute()
 print(ctx.result.value)
 ctx.cell1.set(10)

@@ -36,8 +36,6 @@ Debugging is done in VSCore as follows:
 - Press F6, then press Esc to ignore the "Cannot find select.c" error message
 - Then press Ctrl+Shift+Y to go to the Debug Console
 - Type "-exec signal SIGUSR1"
-- Finally, press F5
-
 """
 
 }

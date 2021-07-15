@@ -4,7 +4,6 @@ ctx = Context()
 ctx.v = "test"
 ctx.v_schema = Cell()
 ctx.v_schema.celltype = "plain"
-###ctx.mount("/tmp/mount-test")
 ctx.translate()
 ctx.link(ctx.v.schema, ctx.v_schema)
 ctx.translate()

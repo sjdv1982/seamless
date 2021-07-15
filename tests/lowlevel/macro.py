@@ -38,8 +38,6 @@ with macro_mode_on():
     ctx.macrocode = cell("macro").set(macro_code)
     ctx.macrocode.connect(ctx.mymacro.code)
 
-    ctx.mount("/tmp/mount-test", persistent=False)
-
 
 print("START")
 ctx.compute(1)

@@ -2,7 +2,6 @@ from seamless.highlevel import Context
 import json
 
 ctx = Context()
-###ctx.mount("/tmp/mount-test")
 
 ctx.a = 12
 

@@ -12,7 +12,6 @@ def progress(limit, delay, factor, offset):
 
 with macro_mode_on():
     ctx = context(toplevel=True)
-    ctx.mount("/tmp/mount-seamless", persistent=None)
     ctx.progress = cell("transformer").set(progress)
     tf_params = {
         "limit": ("input", "int"),

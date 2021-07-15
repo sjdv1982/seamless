@@ -1,7 +1,6 @@
 from seamless.highlevel import Context
 
 ctx = Context()
-###ctx.mount("/tmp/mount-test")
 
 ctx.a = 12
 

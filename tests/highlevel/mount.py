@@ -6,7 +6,6 @@ ctx.txt.mount("mount.txt", authority="file")
 ctx.compute()
 print(ctx.txt.value)
 
-###ctx.mount("mount-test", persistent=False)
 ctx.intcell = 780
 ctx.intcell.celltype = "int"
 ctx.intcell.mount("/tmp/intcell.txt")

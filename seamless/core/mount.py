@@ -20,10 +20,8 @@ from speg.peg import ParseError
 import sys, os
 import time
 import traceback
-import copy
 from contextlib import contextmanager
 import json
-import itertools
 import functools
 
 from ..get_hash import get_hash
@@ -31,21 +29,6 @@ from ..get_hash import get_hash
 import sys
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
-
-def multicaps(s):
-    if s is None:
-        return False
-    if isinstance(s, tuple):
-        for ss in s:
-            if multicaps(ss):
-                return True
-        return False
-    if not isinstance(s, str):
-        raise TypeError(type(s))
-    for n in range(len(s)-1):
-        if s[n].isupper() and s[n+1].isupper():
-            return True
-    return False
 
 empty_checksums = {get_hash(json.dumps(v)+"\n",hex=True) for v in ("", {}, [])}
 
@@ -58,7 +41,7 @@ def is_dummy_mount(mount):
     if mount is None:
         return True
     assert isinstance(mount, dict), mount
-    if list(mount.keys()) == ["extension"]:
+    if not len(mount.keys()):
         return True
     return False
 
@@ -246,7 +229,7 @@ class MountItem:
     def _read_as_directory(self):
         result = {}
         try:
-            def scan(path, subresult):
+            def scan_(path, subresult):
                 with os.scandir(path) as it:
                     for entry in it:
                         name = entry.name
@@ -263,10 +246,10 @@ class MountItem:
                                     subresult[name] = data
                         elif entry.is_dir():
                             subsubresult = {}
-                            scan(entry.path, subsubresult)
+                            scan_(entry.path, subsubresult)
                             if len(subsubresult):
                                 subresult[name] = subsubresult
-            scan(self.path, result)
+            scan_(self.path, result)
             data = json.dumps(result, sort_keys=True, indent=2)
             buffer = data.encode()
             return buffer
@@ -380,7 +363,7 @@ class MountItem:
             stat = os.stat(self.path)
             mtime = stat.st_mtime
             try:
-                def scan(path):
+                def scan_(path):
                     nonlocal mtime
                     with os.scandir(path) as it:
                         for entry in it:
@@ -390,8 +373,8 @@ class MountItem:
                                 if mtime is None or f_mtime > mtime:
                                     mtime = f_mtime
                             if entry.is_dir():
-                                scan(entry.path)
-                scan(self.path)
+                                scan_(entry.path)
+                scan_(self.path)
             except RuntimeError:
                 pass
             return mtime
@@ -506,7 +489,6 @@ class MountManager:
     def __init__(self, latency):
         self.latency = latency
         self.mounts = {}
-        self.contexts = WeakSet()
         self.lock = RLock()
         self.cell_updates = deque()
         self._tick = Event()
@@ -565,31 +547,8 @@ class MountManager:
             mount_item.destroy()
 
     @lockmethod
-    def unmount_context(self, context, from_del=False, toplevel=False):
-        if context in self.contexts:
-            self.contexts.remove(context)
-        elif not from_del and not toplevel:
-            return
-        mount = context._mount
-        if toplevel:
-            self.paths.pop(context, None)
-            if mount is None:
-                return
-        #print("unmount context", context)
-        assert not is_dummy_mount(mount), context
-        try:
-            paths = self.paths[context._root()]
-        except KeyError:
-            if not from_del:
-                return
-            paths = set()
-        try:
-            paths.remove(mount["path"])
-        except KeyError:
-            pass
-        if mount["persistent"] != True:
-            dirpath = mount["path"]
-            mountmanager.garbage_dirs[dirpath] = time.time(), mount["persistent"]
+    def destroy_toplevel_context(self, context):
+        self.paths.pop(context, None)
 
     @lockmethod
     def add_context(self, context, as_parent):
@@ -746,8 +705,6 @@ class MountManager:
         for cell in list(self.mounts.keys()):
             assert isinstance(cell, Cell), cell
             self.unmount(cell)
-        for context in sorted(self.contexts,key=lambda l:-len(l.path)):
-            self.unmount_context(context)
 
         self.cached_checksums.clear()
         for filepath in list(self.garbage.keys()):
@@ -773,7 +730,7 @@ class MountManager:
         self.mounts.clear()
 
 @lockfunc
-def scan(ctx_or_cell):
+def scan(ctx):
     """Scans a cell or a context and its children for _mount attributes, and mounts them
     """
     from .context import Context
@@ -782,88 +739,31 @@ def scan(ctx_or_cell):
     from . import Worker, Macro
     assert not mountmanager._mounting
 
-    if isinstance(ctx_or_cell, UnboundContext):
-        raise TypeError(ctx_or_cell)
+    if isinstance(ctx, UnboundContext):
+        raise TypeError(ctx)
 
-    root = ctx_or_cell._root()
+    root = ctx._root()
     if root is not None and root not in mountmanager.paths:
         mountmanager.paths[root] = set()
 
-    contexts = set()
     cells = set()
     links = set()
     mounts = mountmanager.mounts.copy()
     if sys.exc_info()[0] is not None:
         return #No mounting if there is an exception
-    def find_mount(c, as_parent=False, child=None):
-        if as_parent:
-            assert child is not None
-        #elif multicaps(c.path):
-        #    return
+    
+    def find_mount(c):
+        result = None
         if c in mounts:
             result = mounts[c]
         elif not is_dummy_mount(c._mount):
             result = c._mount.copy()
             if result["path"] is None:
-                parent = c._context
-                assert parent is not None, c
-                parent = parent()
-                parent_result = find_mount(parent, as_parent=True,child=c)
-                if parent_result is None:
-                    raise Exception("No path provided for mount of %s, but no ancestor context is mounted" % c)
-                result["path"] = parent_result["path"]
-                result["autopath"] = True
-        elif isinstance(c, Context) and c._toplevel:
-            result = None
-        else:
-            if isinstance(c, Context) and c._macro is not None and c._context is None:
-                parent = c._macro._context
-            else:
-                parent = c._context
-                assert parent is not None, c
-            parent = parent()
-            result = None
-            cc = c
-            if isinstance(c, UniLink):
-                cc = c.get_linked()
-            if isinstance(cc, (Context, Cell)):
-                result = find_mount(parent, as_parent=True,child=c)
-            elif isinstance(cc, Macro):
-                result = find_mount(parent, as_parent=False, child=cc.ctx)
-        if not as_parent:
+                raise Exception("No path provided for mount of %s" % c)
             mounts[c] = result
-        if as_parent and result is not None:
-            result = copy.deepcopy(result)
-            if result["persistent"] is None:
-                result["persistent"] = False
-            result["autopath"] = True
-            if isinstance(child, Context) and child._context is None and child._macro is not None:
-                result["path"] += "/" + child._macro.name
-            else:
-                result["path"] += "/" + child.name
-            if isinstance(child, UniLink):
-                child = child.get_linked()
-            if isinstance(child, Cell) and is_dummy_mount(child._mount):
-                if child._structured_cell:
-                    raise Exception("Structured cells cannot be mounted: %s" % child)
-                else:
-                    livegraph = child._get_manager().livegraph
-                    if child._get_macro() is not None or not child.has_independence():
-                        if result["mode"] == "r":
-                            return None
-                        result["mode"] = "w"
-            extension = None
-            if child._mount is not None:
-                extension = child._mount.get("extension")
-            if extension is not None:
-                extension = "." + extension
-            else:
-                extension = get_extension(child)
-            result["path"] += extension
         return result
 
     def enumerate_context(cctx):
-        contexts.add(cctx)
         for child in cctx._children.values():
             if isinstance(child, Cell):
                 if child.name not in cctx._auto:
@@ -873,56 +773,11 @@ def scan(ctx_or_cell):
             elif isinstance(child, Macro):
                 if child._gen_context is not None:
                     enumerate_context(child._gen_context)
-    if isinstance(ctx_or_cell, Context):
-        enumerate_context(ctx_or_cell)
-    else:
-        cells.add(ctx_or_cell)
+    
+    enumerate_context(ctx)
 
-    for context in contexts:
-        find_mount(context)
     for cell in cells:
         find_mount(cell)
-
-    done_contexts = set()
-    contexts_to_mount = {}
-    def mount_context_delayed(context, as_parent=False):
-        if not context in mounts or mounts[context] is None:
-            return
-        if context in done_contexts:
-            if not as_parent:
-                contexts_to_mount[context] = False
-            return
-        parent = context._context
-        if parent is not None:
-            parent = parent()
-            mount_context_delayed(parent, as_parent=True)
-        object.__setattr__(context, "_mount", mounts[context]) #not in macro mode
-        contexts_to_mount[context] = as_parent
-        done_contexts.add(context)
-
-    for context in contexts:
-        mount_context_delayed(context)
-
-    def propagate_persistency(c, persistent=False):
-        m = c._mount
-        if is_dummy_mount(m):
-            return
-        if persistent:
-            m["persistent"] = True
-        elif m["persistent"] == True and m.get("autopath"):
-            persistent = True
-        if isinstance(c, Context):
-            if c._toplevel:
-                return
-        parent = c._context
-        if isinstance(c, Context) and c._context is None and c._macro is not None:
-            parent = c._macro._context
-        assert parent is not None, c
-        parent = parent()
-        propagate_persistency(parent, persistent)
-    for child in itertools.chain(contexts, cells):
-        if not is_dummy_mount(child._mount):
-            propagate_persistency(child)
 
     mount_cells = []
     for cell in cells:
@@ -944,12 +799,6 @@ def scan(ctx_or_cell):
             object.__setattr__(unilink, "_mount", mount) #not in macro mode
             mount_links.append(unilink)
 
-    ctx_to_mount = sorted(contexts_to_mount, key=lambda l:len(l.path))
-    for ctx in ctx_to_mount:
-        as_parent = contexts_to_mount[ctx]
-        mountmanager._check_context(ctx, as_parent)
-        mountmanager.add_context(ctx, as_parent)
-
     mount_items = []
     for cell in mount_cells:
         mount_item = mountmanager.add_mount(cell, **cell._mount)
@@ -960,18 +809,7 @@ def scan(ctx_or_cell):
         mount = unilink._mount
         mountmanager.add_link(unilink, mount["path"], mount["persistent"])
 
-
 mountmanager = MountManager(0.2) #TODO: latency in config file
-
-def get_extension(c):
-    from .cell import extensions
-    for k,v in extensions.items():
-        if type(c) == k:
-            return v
-    for k,v in extensions.items():
-        if isinstance(c, k):
-            return v
-    return ""
 
 from .unilink import UniLink
 from .cell import Cell

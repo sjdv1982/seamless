@@ -2,7 +2,6 @@ from seamless.highlevel import Context, Cell
 from pprint import pprint
 
 ctx = Context()
-###ctx.mount("/tmp/mount-test")
 
 ctx.a = 0
 ctx.translate()

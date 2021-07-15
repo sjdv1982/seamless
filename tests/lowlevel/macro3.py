@@ -5,7 +5,6 @@ from seamless.core import context, cell, transformer, \
 
 with macro_mode_on():
     ctx = context(toplevel=True)
-    ctx.mount("/tmp/mount-test")
     ctx.param = cell("plain").set(0)
 
     ctx.macro = macro({

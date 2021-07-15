@@ -2,7 +2,6 @@ from seamless.highlevel import Context
 from pprint import pprint
 
 ctx = Context()
-###ctx.mount("/tmp/mount-test")
 
 ctx.a = 12
 ctx.compute()

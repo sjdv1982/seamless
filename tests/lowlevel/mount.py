@@ -2,6 +2,9 @@ import seamless
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer
 
+import os
+os.makedirs("/tmp/mount-test", exist_ok=True)
+
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.cell1 = cell().set(1)
@@ -16,9 +19,10 @@ with macro_mode_on():
     ctx.cell2.connect(ctx.tf.b)
     ctx.code = cell("transformer").set("c = a + b")
     ctx.code.connect(ctx.tf.code)
-    ctx.tf.c.connect(ctx.result)
+    ctx.tf.c.connect(ctx.result)    
     ctx.result.mount("/tmp/mount-test/myresult", persistent=True, mode="w")
-    ctx.mount("/tmp/mount-test", persistent=True)
+    ctx.cell1.mount("/tmp/mount-test/cell1", persistent=True)
+    ctx.cell2.mount("/tmp/mount-test/cell2", persistent=True)
     ctx.sub = context(toplevel=False)
     ctx.sub.mycell = cell("text").set("This is my cell\nend")
 

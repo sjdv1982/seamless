@@ -17,7 +17,6 @@ with macro_mode_on():
     ctx.code.connect(ctx.tf.code)
     ctx.c = cell("plain")
     ctx.tf.c.connect(ctx.c)
-    ctx.mount("/tmp/mount-test", persistent=None)
 
 ctx.compute()
 

@@ -10,8 +10,6 @@ from contextlib import contextmanager
 
 from . import SeamlessBase
 from .macro_mode import get_macro_mode, curr_macro, register_toplevel, unregister_toplevel
-from .mount import is_dummy_mount, scan as mount_scan
-
 
 class StatusReport(dict):
     def __str__(self):
@@ -34,8 +32,6 @@ class Context(SeamlessBase):
     _auto = None
     _toplevel = False
     _naming_pattern = "ctx"
-    _mount = None
-    _unmounted = False
     _macro = None # The macro that created this context
     _macro_root = None
     _root_highlevel_context = lambda self: None
@@ -46,7 +42,6 @@ class Context(SeamlessBase):
     def __init__(
         self, *,
         toplevel=False,
-        mount=None,
         manager=None,
         compilers=None,
         languages=None
@@ -66,8 +61,6 @@ name: str
 
 toplevel: bool
     whether the context is top-level or not
-
-mount: DEPRECATED
 
 manager: seamless.core.manager.Manager or None   
     Managers can be shared between contexts, which can be practical for various caches
@@ -91,14 +84,6 @@ languages: dict or None
                 manager = Manager()
             manager.add_context(self)
             self._manager = manager
-        if mount is not None:
-            mount_params = {
-                "path": mount,
-                "mode": "rw",
-                "authority": "file",
-                "persistent": True
-            }
-            self.mount(**mount_params)
         self._children = {}
         self._auto = set()
         if compilers is not None:
@@ -150,10 +135,6 @@ languages: dict or None
             assert child._context is None
         self._children[childname] = child
         child._set_context(self, childname)
-        if not get_macro_mode():
-            if isinstance(child, (Cell, Context)):
-                mount_scan(child)
-
 
     def _add_new_cell(self, cell):
         assert isinstance(cell, Cell)
@@ -300,11 +281,6 @@ languages: dict or None
             statustxt = json.dumps(statustxt, indent=2, sort_keys=True)
         return "Status: " + statustxt
 
-    def mount(self, path=None, mode="rw", authority="cell", persistent=False):
-        if not get_macro_mode():
-            msg = "Mounting contexts in direct mode is not possible"
-            raise Exception(msg)
-
     def __dir__(self):
         result = []
         result[:] = self._methods
@@ -333,23 +309,9 @@ languages: dict or None
                 manager._destroy_macropath(path)
             unregister_toplevel(self)
             manager.remove_context(self)
-        self._unmount(from_del=from_del)
-
-    def _unmount(self, from_del=False, manager=None):
-        from .macro import Macro
-        if self._unmounted:
-            return
-        self._unmounted = True
-        if manager is None:
-            manager = self._root()._get_manager()
-        mountmanager = manager.mountmanager
-        if self._toplevel or not is_dummy_mount(self._mount):
-            mountmanager.unmount_context(
-                self,
-                from_del=from_del,
-                toplevel=self._toplevel
-            )
-
+            manager.mountmanager.destroy_toplevel_context(self)
+            
+            
     @property
     def exception(self):
         return None

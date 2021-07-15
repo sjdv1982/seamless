@@ -157,7 +157,6 @@ class UnboundContext(SeamlessBase):
             self._bound_manager = manager
         self._auto = set()
         self._children = {}
-        self._mount = None
         self._is_macro = macro
         if toplevel:
             assert root is None
@@ -255,26 +254,6 @@ class UnboundContext(SeamlessBase):
         assert self._realmanager is not None
         return self._realmanager
 
-    def mount(self, path=None, mode="rw", authority="cell", persistent=False):
-        """Performs a "lazy mount"; context is mounted to the directory path when macro mode ends
-        path: directory path (can be None if an ancestor context has been mounted)
-        mode: "r", "w" or "rw" (passed on to children)
-        authority: "cell", "file" or "file-strict" (passed on to children)
-        persistent: whether or not the directory persists after the context has been destroyed
-                    The same setting is applied to all children
-                    May also be None, in which case the directory is emptied, but remains
-        """
-        assert self._mount is None #Only the mountmanager may modify this further!
-        self._mount = {
-            "autopath": False,
-            "path": path,
-            "mode": mode,
-            "authority": authority,
-            "persistent": persistent
-        }
-        MountItem(None, self, dummy=True, **self._mount) #to validate parameters
-
-
     @property
     def _macro(self):
         if not self._bound:
@@ -282,24 +261,10 @@ class UnboundContext(SeamlessBase):
         else:
             return self._bound._macro
 
-    @property
-    def _mount(self):
-        if not self._bound:
-            return self.__dict__["_mount"]
-        else:
-            return self._bound._mount
-    @_mount.setter
-    def _mount(self, value):
-        if not self._bound:
-            self.__dict__["_mount"] = value
-        else:
-            self._bound._mount = value
-
     def _root(self):
         return self._root_
 
     def _bind_stage1(self, ctx):
-        ctx._mount = copy.deepcopy(self._mount)
         ctxmap = {}
         manager = ctx._get_manager()
 
@@ -484,5 +449,4 @@ from .macro import Macro
 from .structured_cell import StructuredCell
 from .context import Context
 from .macro_mode import curr_macro, register_toplevel
-from .mount import MountItem, is_dummy_mount
 from .pseudo_connections import set_pseudo_connections
