@@ -2,6 +2,7 @@ import json
 import os
 from copy import deepcopy
 import traceback
+from typing import OrderedDict
 import commentjson
 
 hostcwd = os.environ.get("HOSTCWD")
@@ -31,8 +32,7 @@ launch_json_compiled_docker =  {
         "pipeArgs": ["exec", "-u", "root", "--privileged", "-i", None, "sh", "-c"],
         "pipeCwd": ""
     },
-    "sourceFileMap": {
-    },
+    "sourceFileMap": OrderedDict(),
     "MIMode": "gdb",
     "setupCommands": [
         {
@@ -123,22 +123,21 @@ def _vscode_compiled_attach_create(debug):
     for n in range(len(pipeargs)):
         if pipeargs[n] is None:
             pipeargs[n] = docker_container
-    for source, target in debug["source_map"]:
-        entry["sourceFileMap"][source] = target
     main = debug["main-code"]
     main2 = os.path.splitext(main)[1]
     main3 = os.path.relpath(main, "/cwd")
-    #main3 = os.path.join(hostcwd, main3) # DOES NOT WORK
-    main3 = "${workspaceFolder}/" + main3 #  DOES NOT WORK
+    main3 = "${workspaceFolder}/" + main3
     key = SEAMLESS_EXTENSION_DIR + "/" + debug["full_module_names"]["module"] + "/main" + main2
-    entry["sourceFileMap"][key] = main3   # DOES NOT WORK
+    entry["sourceFileMap"][key] = main3
+    for source, target in debug["source_map"]:
+        entry["sourceFileMap"][source] = target
     if "configurations" not in launch_json_data:
         launch_json_data["configurations"] = []
     config = launch_json_data["configurations"]
     config[:] = [entry for entry in config if entry["name"] != name]
     config.append(entry)
     with open(launch_json, "w") as f:
-        json.dump(launch_json_data, f, indent=4)
+        json.dump(launch_json_data, f, sort_keys=False,indent=4)
 
 
 

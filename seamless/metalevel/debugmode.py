@@ -29,16 +29,13 @@ In Visual Studio Code, set breakpoints in this file.
 In "Run and Debug", an entry "{name}" should be present.
 If not, make sure that {host_project_dir} is the primary directory of your VSCode workspace
 
-Note that the source mapping in VSCode launch.json is not working; 
-This is circumvented only for gcc, using -ffile-prefix-map
-
 Transformer execution will now be halted until a SIGUSR1 signal is received.
 Debugging is done in VSCore as follows:
 
-- Select the "{name}" debug entry and press F5.
+- Press Ctrl+Shift+D, select the "{name}" debug entry and press F5.
 - Press F6, then press Esc to ignore the "Cannot find select.c" error message
 - Then press Ctrl+Shift+Y to go to the Debug Console
-- Type "-exec signal SIGUSR1"; again, press Esc to ignore the "Cannot find select.c" error message
+- Type "-exec signal SIGUSR1"
 - Finally, press F5
 
 """

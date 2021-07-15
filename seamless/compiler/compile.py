@@ -75,10 +75,10 @@ def compile(binary_objects, build_dir, *,
                     cmd.append(opt)
             cmd += [
               object_["output_flag"],
-              obj_file
+              os.path.abspath(obj_file)
             ]
             for code_file, code in object_["code_dict"].items():
-                cmd.append(code_file)
+                cmd.append(os.path.abspath(code_file))
                 with open(code_file, "w") as f:
                     f.write(code)
                 source_files[code_file] = code
@@ -161,7 +161,8 @@ def complete(module_definition, compilers, languages):
         else:
             options = list(debug_options)
             if compiler_name in ("gcc", "g++", "gfortran", "gccgo"): 
-                options.append("-ffile-prefix-map={0}.{1}={2}".format(objectname, extension, "{host_filename}"))
+                pass # should no longer be necessary...
+                #options.append("-ffile-prefix-map={0}.{1}={2}".format(objectname, extension, "{host_filename}"))
                 #options.append("-ffile-prefix-map={0}.{1}=/SEAMLESS/{0}.{1}".format(objectname, extension)) # DOES NOT WORK
         o.pop("profile_options", None)
         o.pop("debug_options", None)
