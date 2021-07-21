@@ -62,6 +62,11 @@ try:
     container = None
     signal.signal(signal.SIGTERM, sighandler)
     options = {}
+    if "docker_options" in PINS:
+        opt = PINS["docker_options"]
+        if isinstance(opt, Silk):
+            opt = opt.unsilk
+        options = dict(opt)
     env = {}
     options["environment"] = env
     for pin in pins_:
