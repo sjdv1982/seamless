@@ -161,3 +161,5 @@ debugmode-py-light.py
   To debug a simple Python transformer in VSCode. Follow the instructions.
 debugmode-compiled-light.py
   To debug a simple C++ transformer in VSCode. Follow the instructions.
+debugmode-py-full.py
+  Full debugging of a simple Python transformer in VSCode. Follow the instructions.

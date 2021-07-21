@@ -2,16 +2,25 @@
 ...
 You can switch from direct_print to another mode, but not vice versa.
 """
+from seamless import core
 import weakref
 import os
 
 
+python_attach_headers = {
+    ("light", "vscode") : """Python source code mount to {host_path} detected.
+
+In Visual Studio Code, set breakpoints in this file.""",
+
+    ("full", "vscode") : """The source code has been mounted to files inside the directory:
+{main_directory}.
+
+In Visual Studio Code, set breakpoints in these files."""
+
+}
+
 python_attach_messages = {
-    "vscode": """Python source code mount to {host_path} detected.
-
-In Visual Studio Code, set breakpoints in this file.
-
-In "Run and Debug", an entry "{name}" should be present.
+    "vscode": """In "Run and Debug", an entry "{name}" should be present.
 If not, make sure that {host_project_dir} is the primary directory of your VSCode workspace
 
 Transformer execution will now be halted until the VSCode debugger attaches itself.
@@ -91,6 +100,7 @@ class DebugMode:
         self._tf = weakref.ref(transformer)
         self._direct_print = False
         self._mode = None
+        self._mount = None
         self._ide = "vscode"  # hard-coded for 0.7
 
     def _get_core_transformer(self, force):
@@ -138,20 +148,17 @@ Only shells in full debug mode are possible, please specify this explicitly"""
             except ValidationError as exc:
                 reason = exc.args[0]
                 msg = """Cannot enter light debug mode. 
-Reason: {}
-Entering full debug mode."""
+Reason: {}"""
                 print("*" * 80)
                 print(msg.format(reason))
                 print("*" * 80)
                 mode = "full"
 
         if mode == "full":
-            core_transformer = self._get_core_transformer(force=False)
-            code_mount = get_code_mount(tf)
-            if code_mount["mode"] != "rw":
-                msg = "Code mount '{}' must be read-write"
-                raise Exception(msg.format(code_mount["path"]))
-            raise NotImplementedError
+            core_transformer = self._get_core_transformer(force=False)            
+            self._mount = debugmountmanager.add_mount(
+                core_transformer
+            )
         elif mode == "light":
             core_transformer = self._get_core_transformer(force=True)
             code_mount = get_code_mount(tf)
@@ -194,7 +201,7 @@ Only full debug mode is possible, please specify this explicitly"""
             "generic_attach": False,
             "generic_attach_message": None,
         }
-        mode = self._mode
+        mode = self._mode        
         if mode == "light":
             debug["direct_print"] = True
             tf = self._tf()
@@ -215,8 +222,12 @@ Only full debug mode is possible, please specify this explicitly"""
                     #debug["source_map"] = [(code_path, host_path)]
                     debug["source_map"] = [("/cwd", hostcwd)]
                 debug["exec-identifier"] = code_path
-                msg = python_attach_messages[self._ide].format(
+                msg = python_attach_headers[mode, self._ide].format(
                     host_path=host_path,
+                    host_project_dir=host_project_dir,
+                    name=name
+                ) + "\n"
+                msg += python_attach_messages[self._ide].format(
                     host_project_dir=host_project_dir,
                     name=name
                 )
@@ -241,9 +252,45 @@ Only full debug mode is possible, please specify this explicitly"""
                 )
                 debug["generic_attach_message"] = msg
         if mode == "full":
-            raise NotImplementedError
+            tf = self._tf()
+            debug["main_directory"] = self._mount.path
+            print("""Entering full debug mode for {}
+Mounted main directory: {}            
+""".format(tf, debug["main_directory"]))
+            debug["direct_print"] = True
+            node = tf._get_htf()
+            name = str(tf.path) + " Seamless transformer"
+            debug["name"] = name
+            host_project_dir = os.getcwd()
+            hostcwd = os.environ.get("HOSTCWD")
+            if hostcwd is not None:
+                host_project_dir = hostcwd
+            if node["language"] == "python":
+                debug["python_attach"] = True
+                msg = python_attach_headers[mode, self._ide].format(
+                    main_directory=self._mount.path,
+                    name=name
+                ) + "\n"
+                msg += python_attach_messages[self._ide].format(
+                    host_project_dir=host_project_dir,
+                    name=name
+                )
+                debug["python_attach_message"] = msg
+                code_cell = getattr(self._mount.mount_ctx, "code")
+                #debug["main-code"] = code_cell._mount["path"]
+                debug["exec-identifier"] = code_cell._mount["path"]
+            else:            
+                raise NotImplementedError
 
         if all([(f == False or f is None) for f in debug.values()]):
             return None
         debug["ide"] = self._ide
+        debug["mode"] = mode
         return debug
+
+    def disable(self):
+        raise NotImplementedError
+        self._mode = None
+        debugmountmanager.remove_mount(self._mount)
+
+from .debugmount import debugmountmanager

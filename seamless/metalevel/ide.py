@@ -81,7 +81,7 @@ def _vscode_py_attach_create(debug):
     entry = deepcopy(launch_json_py)
     entry["name"] = debug["name"]
     entry["connect"]["port"] = int(debug["python_attach_port"])
-    for source, target in debug["source_map"]:
+    for source, target in debug.get("source_map", []):
         mapping = {
             "localRoot": target,
             "remoteRoot": source
@@ -129,7 +129,7 @@ def _vscode_compiled_attach_create(debug):
     main3 = "${workspaceFolder}/" + main3
     key = SEAMLESS_EXTENSION_DIR + "/" + debug["full_module_names"]["module"] + "/main" + main2
     entry["sourceFileMap"][key] = main3
-    for source, target in debug["source_map"]:
+    for source, target in debug.get("source_map", []):
         entry["sourceFileMap"][source] = target
     if "configurations" not in launch_json_data:
         launch_json_data["configurations"] = []

@@ -8,14 +8,17 @@ set -u -e
 gdbflags='' ###
 HOSTCWD=`pwd`
 
-
+SEAMLESS_DEBUGGING_DIRECTORY=/tmp/seamless-debug
+mkdir -p ${SEAMLESS_DEBUGGING_DIRECTORY}
 containerID=$(docker run --rm \
   $gdbflags \
   -e DOCKER_IMAGE=rpbs/seamless \
+  -e "SEAMLESS_DEBUGGING_DIRECTORY=${SEAMLESS_DEBUGGING_DIRECTORY}" \
   --network=host \
   -d \
   -e HOSTCWD=$HOSTCWD \
   -v $HOSTCWD:/cwd \
+  -v ${SEAMLESS_DEBUGGING_DIRECTORY}:${SEAMLESS_DEBUGGING_DIRECTORY} \
   --workdir /cwd \
   -it \
   -u `id -u` \

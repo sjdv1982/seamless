@@ -310,8 +310,9 @@ languages: dict or None
             unregister_toplevel(self)
             manager.remove_context(self)
             manager.mountmanager.destroy_toplevel_context(self)
-            
-            
+            if debugmountmanager is not None:
+                debugmountmanager.remove_mounts(self)            
+
     @property
     def exception(self):
         return None
@@ -365,6 +366,10 @@ from .unilink import UniLink
 from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .structured_cell import StructuredCell
+try:
+    from ..metalevel.debugmount import debugmountmanager
+except ImportError:
+    debugmountmanager = None
 
 from .manager import Manager
 Macro = None # import later

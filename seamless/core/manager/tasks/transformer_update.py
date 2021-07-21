@@ -27,7 +27,9 @@ class TransformerUpdateTask(Task):
         self._dependencies.append(transformer)
 
     async def _run(self):
+        from ....metalevel.debugmount import debugmountmanager        
         transformer = self.transformer
+        has_debugmount = debugmountmanager.is_mounted(transformer)
         manager = self.manager()
         if manager is None or manager._destroyed:
             return
@@ -42,6 +44,9 @@ class TransformerUpdateTask(Task):
 
         upstreams = livegraph.transformer_to_upstream[transformer]
         downstreams = livegraph.transformer_to_downstream[transformer]
+
+        if has_debugmount:
+            print("TF UPDATE DEBUGMOUNT, TODO", transformer)
 
         status_reason = None
         for pinname, accessor in upstreams.items():

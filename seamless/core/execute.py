@@ -264,7 +264,7 @@ def execute(name, code,
         sys.stdout, sys.stderr = old_stdio
         traceback.print_exc()
     finally:
-        if debug is not None:
+        if debug:
             try:
                 debug_post_hook(debug)
             except Exception:
