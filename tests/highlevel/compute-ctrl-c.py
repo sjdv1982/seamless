@@ -7,7 +7,7 @@ ctx = Context()
 def func():
     print("START")
     import time
-    time.sleep(1000)
+    time.sleep(20)
     return 42
 ctx.tf = func
 ctx.translate()

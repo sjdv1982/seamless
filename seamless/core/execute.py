@@ -9,6 +9,7 @@ import time
 import sys
 import os
 import signal
+from numpy import multiply
 import wurlitzer
 import debugpy
 
@@ -141,6 +142,8 @@ def execute(name, code,
       inputs, output_name, celltype, result_queue,
       debug = None,
     ):
+    if multiprocessing.current_process().name != "MainProcess":
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
     direct_print = False    
     if debug is None:
         debug = {}
