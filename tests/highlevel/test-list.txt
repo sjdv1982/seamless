@@ -158,3 +158,4 @@ r.py
    http://localhost:5813/ctx/result.png
   edit plot.R
   The PNG should update, the SVG should not
+  compute-ctrl-c.py: open with ipython and press ctrl+c
