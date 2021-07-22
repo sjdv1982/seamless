@@ -56,6 +56,7 @@ joincache.py
 reassign-transformer.py
 cascade.py
 environment0.py
+mount-write.py
 transformer-compiled.py
 transformer-redefine.py
 transformer-compiled-error.py

@@ -303,7 +303,7 @@ class Manager:
         if old_checksum is not None and old_checksum != checksum:
             cachemanager.decref_checksum(old_checksum, cell, independent, False)
         
-        print_debug("SET CHECKSUM", cell, "None:", checksum is None)
+        print_debug("SET CHECKSUM", cell, "None:", checksum is None, checksum == old_checksum)
         cell._checksum = checksum
         cell._void = void
         cell._status_reason = status_reason
@@ -332,7 +332,7 @@ class Manager:
                     buffer = buffer_cache.get_buffer(checksum)  # not async, so OK
                     self.mountmanager.add_cell_update(cell, checksum, buffer)
                 except Exception:
-                    traceback.print_exc()
+                    traceback.print_exc()            
             if cell._share is not None:
                 try:
                     self.sharemanager.add_cell_update(cell, checksum)
