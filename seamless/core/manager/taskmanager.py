@@ -398,7 +398,10 @@ class TaskManager:
                     curr_timeout = report
                 else:
                     curr_timeout = None
-            self.loop.run_until_complete(asyncio.sleep(0.001))
+            try:
+                self.loop.run_until_complete(asyncio.sleep(0.001))
+            except KeyboardInterrupt:
+                return
             ptasks = select_pending_tasks()
             if curr_timeout is not None:
                 curr_time = time.time()
@@ -496,11 +499,14 @@ class TaskManager:
                     curr_timeout = report
                 else:
                     curr_timeout = None
-            if len(ptasks) and ptasks != [None]:
-                futures = [ptask.future for ptask in ptasks if ptask]
-                await asyncio.wait(futures, timeout=0.05)  # this can go wrong, hence the timeout
-            else:
-                await asyncio.sleep(0.001)
+            try:
+                if len(ptasks) and ptasks != [None]:
+                    futures = [ptask.future for ptask in ptasks if ptask]
+                    await asyncio.wait(futures, timeout=0.05)  # this can go wrong, hence the timeout
+                else:
+                    await asyncio.sleep(0.001)
+            except KeyboardInterrupt:
+                return
             ptasks = select_pending_tasks()
             if curr_timeout is not None:
                 curr_time = time.time()
