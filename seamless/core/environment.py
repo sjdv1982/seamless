@@ -33,22 +33,22 @@ validate_XXX return a tuple
 - Element 1: error message
 """
 
-def validate_image(environment):
-    image = environment.get("image")
-    if image is None:
+def validate_docker(environment):
+    docker = environment.get("docker")
+    if docker is None:
         return None, None
-    err0 = "Malformed environment.image attribute"
-    if not isinstance(image, dict):
+    err0 = "Malformed environment.docker attribute"
+    if not isinstance(docker, dict):
         return False, err0
-    if "name" not in image:
+    if "name" not in docker:
         return False, err0
-    if "version" in image or "checksum" in image:
+    if "version" in docker or "checksum" in docker:
         return None, "Not implemented: version or checksum"
-    if image["name"] == DOCKER_IMAGE:
+    if docker["name"] == DOCKER_IMAGE:
         return True, None
     else:
-        err = "Cannot execute code locally: current image is '{}', whereas '{}' is required"
-        return None, err.format(DOCKER_IMAGE, image["name"])
+        err = "Cannot execute code locally: current Docker image name is '{}', whereas '{}' is required"
+        return None, err.format(DOCKER_IMAGE, docker["name"])
 
 def validate_capabilities(environment):
     capabilities = environment.get("capabilities")
@@ -113,7 +113,7 @@ def validate_environment(environment):
 
     result_conda = validate_conda_environment(environment)
     result_capabilities = validate_capabilities(environment)
-    result_image = validate_image(environment)
+    result_docker = validate_docker(environment)
     powers = environment.get("powers", [])
     
     for power in powers:
@@ -126,8 +126,8 @@ def validate_environment(environment):
     err = ""
     if result_capabilities[0] == False:
         err += "Capabilities:\n  " + str(result_capabilities[1]) + "\n"    
-    if result_image[0] == False:
-        err += "Image:\n  " + str(result_image[1]) + "\n"
+    if result_docker[0] == False:
+        err += "Docker:\n  " + str(result_docker[1]) + "\n"
     if result_conda[0] == False:
         err += "Conda:\n  " + str(result_conda[1]) + "\n"
     if len(err):
@@ -141,13 +141,13 @@ def validate_environment(environment):
             return
         if result_capabilities[1] is not None:
             err += "Capabilities:\n  " + str(result_capabilities[1]) + "\n"
-    if result_image[0] in (None, True):
-        if "image" in powers:
+    if result_docker[0] in (None, True):
+        if "docker" in powers:
             return
-        if result_image[0] == True:
+        if result_docker[0] == True:
             return
-        if result_image[1] is not None:
-            err += "Image:\n  " + str(result_image[1]) + "\n"
+        if result_docker[1] is not None:
+            err += "Docker:\n  " + str(result_docker[1]) + "\n"
     if result_conda[0] in (None, True):
         if "conda" in powers:
             return
@@ -156,7 +156,7 @@ def validate_environment(environment):
         if result_conda[1] is not None:
             err += "Conda:\n  " + str(result_conda[1]) + "\n"
     if not len(err):
-        if result_conda[0] is None and result_capabilities[0] is None and result_image[0] is None:
+        if result_conda[0] is None and result_capabilities[0] is None and result_docker[0] is None:
             return
         err = "Unknown environment error"
     raise ValueError("Environment error:\n" + err)
