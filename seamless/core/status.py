@@ -253,6 +253,8 @@ def format_worker_status(stat, as_child=False):
             result = reason.name.lower() + " => "
             pinresult = []
             for pinname, pstatus in pins.items():
+                if pinname == "META" and format_status(pstatus) == "unconnected":
+                    continue
                 if as_child:
                     pinresult.append(pinname)
                 else:
