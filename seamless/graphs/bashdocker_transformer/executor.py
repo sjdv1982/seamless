@@ -104,6 +104,7 @@ try:
 
         f.write(bash_header)
         f.write(docker_command)
+    options.update(docker_options)
     full_docker_command = """bash -c '''
 ls $(pwd) > /dev/null 2>&1 || (>&2 echo \"\"\"The Docker container cannot read the mounted temporary directory.
 Most likely, the container runs under a specific user ID,
@@ -114,7 +115,7 @@ Seamless user ID: {}\"\"\"; exit 126) && bash DOCKER-COMMAND'''""".format(os.get
         try:
             _creating_container = True
             container = docker_client.containers.create(
-                docker_image,
+                docker_image_,
                 full_docker_command,
                 **options
             )

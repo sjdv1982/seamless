@@ -27,7 +27,7 @@ pyzmq==22.0.*
 jedi==0.18.*
 parso==0.8.*
 jupyter-console==6.1.*
-docker==3.7.*
+docker==5.0.*
 itables==0.2.*
 debugpy==1.2.*
 lxml==4.6.*

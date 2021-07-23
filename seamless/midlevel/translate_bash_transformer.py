@@ -41,7 +41,9 @@ def translate_bash_transformer(
 
     if is_docker_transformer:
         from .translate_bashdocker_transformer import translate_bashdocker_transformer
-        docker_image = env.pop("docker")["name"]
+        docker = env.pop("docker")
+        docker_image = docker["name"]
+        docker_options = docker["options"]
         # TODO: pass on version and checksum as well?
         if "powers" not in env:
             env["powers"] = []
@@ -49,7 +51,8 @@ def translate_bash_transformer(
         return translate_bashdocker_transformer(
             node, root, namespace, inchannels, outchannels,
             has_meta_connection = has_meta_connection,
-            env=env, docker_image=docker_image
+            env=env, 
+            docker_image=docker_image, docker_options=docker_options
         )
 
 
