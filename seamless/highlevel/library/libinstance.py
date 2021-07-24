@@ -221,7 +221,7 @@ class LibInstance:
                     )
             elif par["type"] == "celldict":
                 value = {}
-                for k,v in argvalue.items():
+                for k,vv in argvalue.items():
                     if par["io"] == "input":
                         vv = InputCellWrapper(connection_wrapper, vv[0], vv[1])
                     elif par["io"] == "edit":
@@ -257,8 +257,10 @@ class LibInstance:
         ok = False
         try:
             exec_code(constructor, identifier, namespace, argnames, None)
-        except Exception:
+        except (TypeError, ValueError):
             self._exc(1, libctx)
+        except Exception:
+            self._exc(None, libctx)
         else:
             ok = True
         overlay_graph = overlay_context.get_graph()

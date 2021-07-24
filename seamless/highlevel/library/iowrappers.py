@@ -33,6 +33,8 @@ class ConnectionWrapper:
         else:
             if not isinstance(target, Cell):
                 raise TypeError("Target must be Cell, not {}".format(type(target)))
+            if target._parent() is None:
+                raise Exception("Target cell has no parent context")
             if target_subpath is None:
                 target._get_hcell().pop("checksum", None)
             target_full_path = self.basepath + target._path
