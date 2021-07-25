@@ -1,10 +1,9 @@
-def map_list(ctx, graph, inp, elision):
+def map_list(ctx, graph, inp, has_uniform, elision):
     #print("map_list", inp)
     from seamless.core import Cell as CoreCell
     from seamless.core import cell
     from seamless.core.structured_cell import StructuredCell
     from seamless.core.HighLevelContext import HighLevelContext
-    from seamless.core.unbound_context import UnboundContext
 
     length = len(inp)
     pseudo_connections = []
@@ -19,6 +18,9 @@ def map_list(ctx, graph, inp, elision):
         outchannels=[()],
         hash_pattern = {"!": "#"}
     )
+
+    if has_uniform:
+        ctx.uniform = cell("mixed")
 
     for n in range(length):
         hc = HighLevelContext(graph)
@@ -44,6 +46,18 @@ def map_list(ctx, graph, inp, elision):
         cs = inp[n]
         hci.set_checksum(cs)
 
+        if has_uniform:
+            if n == 0:
+                if not hasattr(hc, "uniform"):
+                    raise TypeError("map_list context must have a cell called 'uniform'")
+                if isinstance(hc.uniform, StructuredCell):
+                    raise TypeError("map_list context has a cell called 'uniform', but its celltype must be mixed, not structured")
+                if not isinstance(hc.uniform, CoreCell):
+                    raise TypeError("map_list context must have an attribute 'uniform' that is a cell, not a {}".format(type(hc.uniform)))
+            ctx.uniform.connect(hc.uniform)
+            con = ["..uniform"], ["ctx", subctx, "uniform"]
+            pseudo_connections.append(con)
+
         if n == 0:
             if not hasattr(hc, "result"):
                 raise TypeError("map_list context must have a cell called 'result'")
@@ -66,7 +80,7 @@ def map_list(ctx, graph, inp, elision):
 
 def map_list_nested(
   ctx, elision, elision_chunksize, graph, inp,
-  *, lib_module_dict, lib_codeblock, lib
+  *, lib_module_dict, lib_codeblock, lib, has_uniform
 ):
     from seamless.core import cell, macro, context, path, transformer
     length = len(inp)
@@ -85,6 +99,7 @@ def map_list_nested(
         ctx.graph = cell("plain").set(graph)
         ctx.elision = cell("bool").set(elision)
         ctx.elision_chunksize = cell("int").set(elision_chunksize)
+        ctx.has_uniform = cell("bool").set(has_uniform)
         chunk_index = 0
 
         macro_params = {
@@ -95,8 +110,11 @@ def map_list_nested(
             "lib_codeblock": {'celltype': 'plain'},
             "lib": {'celltype': 'plain', 'subcelltype': 'module'},
             'inp': {'celltype': 'plain'},
+            'has_uniform': {'celltype': 'bool'},
         }
 
+        if has_uniform:
+            ctx.uniform = cell("mixed")
         subresults = {}
         chunksize = elision_chunksize
         while chunksize * elision_chunksize < length:
@@ -113,6 +131,7 @@ def map_list_nested(
             ctx.main_code.connect(m.code)
             ctx.elision.connect(m.elision_)
             ctx.elision_chunksize.connect(m.elision_chunksize)
+            ctx.has_uniform.connect(m.has_uniform)
             ctx.graph.connect(m.graph)
             ctx.lib_module_dict.connect(m.lib_module_dict)
             ctx.lib_codeblock.connect(m.lib_codeblock)
@@ -123,10 +142,15 @@ def map_list_nested(
             subresults[subr] = subresult
             result_path = path(m.ctx).result
             result_path.connect(subresult)
-
+            input_cells = {}
+            if has_uniform:
+                uniform_path = path(m.ctx).uniform
+                ctx.uniform.connect(uniform_path)
+                input_cells = {ctx.uniform: uniform_path}
+            
             ctx._get_manager().set_elision(
                 macro=m,
-                input_cells={},
+                input_cells=input_cells,
                 output_cells={subresult: result_path,}
             )
 
@@ -155,21 +179,20 @@ def map_list_nested(
         p = path(ctx.get_result.ctx).result
         ctx.result = cell("mixed", hash_pattern={"!": "#"})
         p.connect(ctx.result)
-
     else:
-        lib.map_list(ctx, graph, inp, elision)
+        lib.map_list(ctx, graph, inp, has_uniform, elision)
     return ctx
 
-def main(ctx, elision_, elision_chunksize, graph, lib_module_dict, lib_codeblock, inp):
+def main(ctx, elision_, elision_chunksize, graph, lib_module_dict, lib_codeblock, inp, has_uniform):
     lib.map_list_nested(
         ctx, elision_, elision_chunksize, graph, inp,
         lib_module_dict=lib_module_dict,
         lib_codeblock=lib_codeblock,
-        lib=lib,
+        lib=lib, has_uniform=has_uniform
     )
     return ctx
 
-def top(ctx, elision_, elision_chunksize, graph, lib_module_dict, lib_codeblock, inp):
+def top(ctx, elision_, elision_chunksize, graph, lib_module_dict, lib_codeblock, inp, has_uniform):
     ctx.lib_module_dict = cell("plain").set(lib_module_dict)
     ctx.lib_codeblock = cell("plain").set(lib_codeblock)
     ctx.main_code = cell("python").set(lib_module_dict["map_list"]["main"])
@@ -181,15 +204,20 @@ def top(ctx, elision_, elision_chunksize, graph, lib_module_dict, lib_codeblock,
     ctx.graph = cell("plain").set(graph)
     ctx.elision = cell("bool").set(elision_)
     ctx.elision_chunksize = cell("int").set(elision_chunksize)
+    ctx.has_uniform = cell("bool").set(has_uniform)
 
+    if has_uniform:
+        ctx.uniform = cell("mixed")
+        
     macro_params = {
         'elision_': {'celltype': 'bool'},
         'elision_chunksize': {'celltype': 'int'},
         'graph': {'celltype': 'plain'},
-        "lib_module_dict": {'celltype': 'plain'},
-        "lib_codeblock": {'celltype': 'plain'},
-        "lib": {'celltype': 'plain', 'subcelltype': 'module'},
+        'lib_module_dict': {'celltype': 'plain'},
+        'lib_codeblock': {'celltype': 'plain'},
+        'lib': {'celltype': 'plain', 'subcelltype': 'module'},
         'inp': {'celltype': 'plain'},
+        'has_uniform': {'celltype': 'bool'},
     }
     ctx.top = macro(macro_params)
     m = ctx.top
@@ -198,6 +226,7 @@ def top(ctx, elision_, elision_chunksize, graph, lib_module_dict, lib_codeblock,
     ctx.main_code.connect(m.code)
     ctx.elision.connect(m.elision_)
     ctx.elision_chunksize.connect(m.elision_chunksize)
+    ctx.has_uniform.connect(m.has_uniform)
     ctx.graph.connect(m.graph)
     ctx.lib_module_dict.connect(m.lib_module_dict)
     ctx.lib_codeblock.connect(m.lib_codeblock)
@@ -207,8 +236,13 @@ def top(ctx, elision_, elision_chunksize, graph, lib_module_dict, lib_codeblock,
     ctx.result = cell("mixed", hash_pattern={"!": "#"})
     result_path.connect(ctx.result)
 
+    input_cells = {}
+    if has_uniform:
+        uniform_path = path(m.ctx).uniform
+        ctx.uniform.connect(uniform_path)
+        input_cells={ctx.uniform: uniform_path}
     ctx._get_manager().set_elision(
         macro=m,
-        input_cells={},
+        input_cells=input_cells,
         output_cells={ctx.result: result_path,}
     )
