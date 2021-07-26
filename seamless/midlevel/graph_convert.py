@@ -49,6 +49,7 @@ def graph_convert_pre07(graph, ctx):
                 for k in list(node["checksum"].keys()):
                     if k.startswith("input"):
                         node["checksum"].pop(k)
+                print("Warning: ignoring docker_options from antique Docker transformer")
                 auth.pop("docker_options")
             if "docker_image" in auth:
                 docker_image_checksum = auth.pop("docker_image")

@@ -1,4 +1,8 @@
-def constructor(ctx, libctx, context_graph, inp, keyorder0, result, elision, elision_chunksize, keyorder):
+def constructor(
+    ctx, libctx, context_graph, 
+    inp, keyorder0, uniform,
+    result, elision, elision_chunksize, keyorder
+):
     m = ctx.m = Macro()
     m.elision = elision
     m.graph = context_graph
@@ -19,6 +23,15 @@ def constructor(ctx, libctx, context_graph, inp, keyorder0, result, elision, eli
     ctx.inp2 = ctx.inp1
     m.inp = ctx.inp2
     m.pins.inp.celltype = "plain"
+
+    if uniform is not None:
+        c = ctx.uniform = Cell("mixed")
+        uniform.connect(c)
+        m.pins.uniform = {"io": "input", "celltype": "mixed"}
+        m.uniform = c
+        m.has_uniform = True
+    else:
+        m.has_uniform = False
 
     lib_module_dict = libctx.lib_module_dict.value
     ctx.lib_module_dict = Cell("plain").set(lib_module_dict)  # not strictly necessary to create a cell
@@ -72,6 +85,11 @@ constructor_params = {
         "type": "value",
         "io": "input",
         "default": []
+    },
+    "uniform": {
+        "type": "cell",
+        "io": "input",
+        "must_be_defined": False,
     },
     "result": {
         "type": "cell",

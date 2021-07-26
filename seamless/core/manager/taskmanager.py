@@ -331,9 +331,9 @@ class TaskManager:
         assert not asyncio.get_event_loop().is_running()
         manager = self.manager()
         manager.temprefmanager.purge()
-        run_mount = False
+        must_run_mount = True
         if not len(manager.mountmanager.mounts):
-            run_mount = True
+            must_run_mount = False
         last_mount_run = manager.mountmanager.last_run
 
         if timeout is not None:
@@ -385,9 +385,11 @@ class TaskManager:
                 print_wait_for(result)
             return result, True
 
-        while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or not run_mount:
-            if not run_mount and manager.mountmanager.last_run != last_mount_run:
-                run_mount = True
+        while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or must_run_mount:
+            mm = manager.mountmanager
+            if must_run_mount:
+                if not len(mm.cell_updates) and mm.last_run != last_mount_run:
+                    must_run_mount = False
             if timeout is not None:
                 if report is not None and report > 0:
                     curr_timeout=min(remaining, report)
@@ -421,6 +423,8 @@ class TaskManager:
                         if changed:
                             self.loop.run_until_complete(asyncio.sleep(0.1))
                             ptasks = [None]  # just to prevent the loop from breaking
+            if len(mm.cell_updates):
+                must_run_mount = True
         waitfor, background = print_report(verbose=False)
         manager.livegraph._flush_observations()
         if not len(waitfor) and get_tasks_func is None:
@@ -432,10 +436,10 @@ class TaskManager:
     async def computation(self, timeout, report, get_tasks_func=None):
         manager = self.manager()
         manager.temprefmanager.purge()
-        run_mount = False
+        must_run_mount = True
         last_mount_run = manager.mountmanager.last_run
         if not len(manager.mountmanager.mounts):
-            run_mount = True
+            must_run_mount = False
 
         if timeout is not None:
             timeout_time = time.time() + timeout
@@ -486,9 +490,11 @@ class TaskManager:
                 print_wait_for(result)
             return result, True
 
-        while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or not run_mount:
-            if not run_mount and manager.mountmanager.last_run != last_mount_run:
-                run_mount = True
+        while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or must_run_mount:
+            mm = manager.mountmanager
+            if must_run_mount:
+                if not len(mm.cell_updates) and mm.last_run != last_mount_run:
+                    must_run_mount = False
             if timeout is not None:
                 if report is not None and report > 0:
                     curr_timeout=min(remaining, report)
@@ -526,6 +532,9 @@ class TaskManager:
                         if changed:
                             await asyncio.sleep(0.1)
                             ptasks = [None]  # just to prevent the loop from breaking
+            if len(mm.cell_updates):
+                must_run_mount = True
+
         waitfor, background = print_report(verbose=False)
         manager.livegraph._flush_observations()
         if not len(waitfor) and get_tasks_func is None:

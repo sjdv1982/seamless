@@ -40,6 +40,7 @@ module.py
 bash.py
 docker_.py
 docker2.py
+docker_gpu.py: run only on a machine with nvidia-docker2 installed
 expression-exceptions.py
 highlink-schema.py
 highlink-schema-tf.py
@@ -56,6 +57,7 @@ joincache.py
 reassign-transformer.py
 cascade.py
 environment0.py
+mount-write.py
 transformer-compiled.py
 transformer-redefine.py
 transformer-compiled-error.py

@@ -257,8 +257,10 @@ class LibInstance:
         ok = False
         try:
             exec_code(constructor, identifier, namespace, argnames, None)
-        except Exception:
+        except (TypeError, ValueError):
             self._exc(1, libctx)
+        except Exception:
+            self._exc(None, libctx)
         else:
             ok = True
         overlay_graph = overlay_context.get_graph()

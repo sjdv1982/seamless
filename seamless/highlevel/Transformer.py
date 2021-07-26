@@ -278,23 +278,23 @@ You can set this dictionary directly, or you may assign .meta to a cell
     @property
     def docker_image(self):
         """Defines the Docker image in which a transformer should run
-        Getting this property is more-or-less syntactic sugar for:
-          Transformer.environment.get_image()["name"]
+        Getting this property is syntactic sugar for:
+          Transformer.environment.get_docker()["name"]
         Setting this property is more-or-less syntactic sugar for:
-          Transformer.environment.set_image({"name": ...})
+          Transformer.environment.set_docker({"name": ...})
         """
-        im = self.environment.get_image()
+        im = self.environment.get_docker()
         if im is None:
             return None
         return im["name"]
 
     @docker_image.setter
-    def docker_image(self, image):
-        im = self.environment.get_image()
+    def docker_image(self, docker):
+        im = self.environment.get_docker()
         if im is None:
             im = {}
-        im["name"] = image
-        self.environment.set_image(im)
+        im["name"] = docker
+        self.environment.set_docker(im)
 
     @property
     def header(self):

@@ -14,7 +14,7 @@ from ..core.environment import validate_conda_environment
 from ..compiler import languages_cson as languages_default, compilers_cson as compilers_default
 
 class Environment:
-    _props = ["_conda", "_which", "_powers", "_image"]
+    _props = ["_conda", "_which", "_powers", "_docker"]
     def __init__(self, parent=None):
         if parent is None:
             self._parent = lambda: None
@@ -23,7 +23,7 @@ class Environment:
         self._conda = None
         self._which = None
         self._powers = None
-        self._image = None
+        self._docker = None
 
     def _update(self):
         from .Context import Context
@@ -146,23 +146,26 @@ Currently supported:
         """
         return deepcopy(self._powers)
 
-    def set_image(self, image: dict):
-        """Dict of the Docker (or Singularity) image  
-        that defines the environment
-        
-        The dict must at least contain "name" 
-        and potentially "checksum" and "version" """
-        if image is not None and not isinstance(image, dict):
-            raise TypeError("Must be dict, not {}".format(type(image)))
-        if "name" not in image:
-            raise ValueError("Image dict must contain at least \"name\"")        
-        self._image = deepcopy(image)
+    def set_docker(self, docker: dict):
+        """Dict of the Docker (or Singularity) options
+that defines the environment
+
+The dict must at least contain "name" 
+and potentially "checksum", "version" and "options". 
+
+"options" corresponds to the parameters of the function
+client.containers.run of the Docker SDK for Python"""
+        if docker is not None and not isinstance(docker, dict):
+            raise TypeError("Must be dict, not {}".format(type(docker)))
+        if "name" not in docker:
+            raise ValueError("Docker dict must contain at least \"name\"")        
+        self._docker = deepcopy(docker)
         self._update()
 
-    def get_image(self):
-        """Name of the Docker (or Singularity) image  
+    def get_docker(self):
+        """Name of the Docker (or Singularity) config 
         that defines the environment"""
-        return self._image
+        return self._docker
 
     def _to_lowlevel(self):
         result = {}
@@ -173,15 +176,15 @@ Currently supported:
             result["conda"] = conda_env
         if self._powers is not None:
             result["powers"] = deepcopy(self._powers)
-        if self._image is not None:
-            result["image"] = self._image
+        if self._docker is not None:
+            result["docker"] = self._docker
         if not len(result):
             return None
         return result
         
 
 class ContextEnvironment(Environment):
-    _props = ["_conda", "_which", "_powers", "_image", "_languages", "_compilers", "_ipy_templates"]
+    _props = ["_conda", "_which", "_powers", "_docker", "_languages", "_compilers", "_ipy_templates"]
     def __init__(self, parent):
         super().__init__(parent)
         self._languages = None

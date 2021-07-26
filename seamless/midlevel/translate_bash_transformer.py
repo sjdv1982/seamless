@@ -24,7 +24,7 @@ def translate_bash_transformer(
     from ..core.environment import (
         validate_capabilities,
         validate_conda_environment,
-        validate_image
+        validate_docker
     )
 
     env0 = Environment(None)
@@ -32,16 +32,18 @@ def translate_bash_transformer(
     env = env0._to_lowlevel()
 
     is_docker_transformer = False
-    if env is not None and env.get("image") is not None:
+    if env is not None and env.get("docker") is not None:
         ok1 = validate_capabilities(env)[0]
         ok2 = validate_conda_environment(env)[0]
-        ok3 = validate_image(env)[0]
+        ok3 = validate_docker(env)[0]
         if not (ok1 or ok2 or ok3):
             is_docker_transformer = True
 
     if is_docker_transformer:
         from .translate_bashdocker_transformer import translate_bashdocker_transformer
-        docker_image = env.pop("image")["name"]
+        docker = env.pop("docker")
+        docker_image = docker["name"]
+        docker_options = docker["options"]
         # TODO: pass on version and checksum as well?
         if "powers" not in env:
             env["powers"] = []
@@ -49,7 +51,8 @@ def translate_bash_transformer(
         return translate_bashdocker_transformer(
             node, root, namespace, inchannels, outchannels,
             has_meta_connection = has_meta_connection,
-            env=env, docker_image=docker_image
+            env=env, 
+            docker_image=docker_image, docker_options=docker_options
         )
 
 

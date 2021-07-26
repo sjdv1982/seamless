@@ -17,7 +17,7 @@ sctx.add_zip(zipfile)
 
 def translate_bashdocker_transformer(
     node, root, namespace, inchannels, outchannels, *, 
-    docker_image, has_meta_connection, env
+    docker_image, docker_options, has_meta_connection, env
 ):
     from .translate import set_structured_cell_from_checksum
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
@@ -30,7 +30,7 @@ def translate_bashdocker_transformer(
     result_name = node["RESULT"]
     input_name = node["INPUT"]
     result_cell_name = result_name + "_CELL"
-    forbidden = [result_name, result_cell_name, "docker_command", "docker_image", "pins_"]
+    forbidden = [result_name, result_cell_name, "docker_command", "docker_image_", "docker_options", "pins_"]
     pin_intermediate = {}
     for pin in node["pins"].keys():
         pin_intermediate[pin] = input_name + "_PIN_" + pin
@@ -40,7 +40,8 @@ def translate_bashdocker_transformer(
 
     pins = node["pins"].copy()
     pins["docker_command"] = {"celltype": "str"}
-    pins["docker_image"] = {"celltype": "str"}
+    pins["docker_image_"] = {"celltype": "str"}
+    pins["docker_options"] = {"celltype": "plain"}
     pins["pins_"] = {"celltype": "plain"}
     pins0 = list(pins.keys())
     ctx.pins = cell("plain").set(pins0)
@@ -81,7 +82,8 @@ def translate_bashdocker_transformer(
         ctx.code.mount(**mount["code"])
 
     ctx.pins.connect(ctx.tf.pins_)
-    ctx.tf.docker_image.cell().set(docker_image)
+    ctx.tf.docker_image_.cell().set(docker_image)
+    ctx.tf.docker_options.cell().set(docker_options)
     ctx.code.connect(ctx.tf.docker_command)
     checksum = node.get("checksum", {})
     if "code" in checksum:
