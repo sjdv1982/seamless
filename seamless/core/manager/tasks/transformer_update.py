@@ -129,6 +129,7 @@ class TransformerResultUpdateTask(Task):
         from ....metalevel.debugmount import debugmountmanager        
         if debugmountmanager.is_mounted(transformer):
             debugmountmanager.debug_result(transformer, checksum)
+            return
 
         if checksum is None:
             manager.cancel_accessors(downstreams, True)

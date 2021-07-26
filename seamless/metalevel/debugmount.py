@@ -144,7 +144,6 @@ class DebugMountManager:
             input_pins[pinname] = checksum 
             celltypes[pinname] = c.celltype, c._subcelltype
             if checksum is None:
-                print("NOT OK", pinname)
                 ok = False
                 break
         else:
