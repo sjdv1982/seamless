@@ -97,6 +97,7 @@ Cannot do source mapping between container and host!"""
 
 class DebugMode:
     def __init__(self, transformer):
+        self._enabled = False
         self._tf = weakref.ref(transformer)
         self._direct_print = False
         self._mode = None
@@ -123,11 +124,13 @@ Only shells in full debug mode are possible, please specify this explicitly"""
                 raise ValueError(msg.format(node["language"]))
 
     def enable(self, mode=None):
-        if self._mode is not None:
+        if self._enabled:
             raise ValueError("Debug mode is already active.")
         tf = self._tf()
         if tf is None or tf._get_htf().get("UNTRANSLATED"):
-            raise ValueError("Transformer is untranslated.")        
+            raise ValueError("Transformer is untranslated.")
+        if mode is None:
+            mode = self._mode       
         if mode is not None:
             assert mode in ("full", "light"), mode
             if mode == "light":
@@ -177,6 +180,7 @@ Only full debug mode is possible, please specify this explicitly"""
             node = tf._get_htf()
             if node["compiled"]:
                 tf._get_tf().tf.integrator.debug_.set(True)
+        self._enabled = True
 
     @property
     def attach(self):
@@ -186,6 +190,7 @@ If True, the transformer will wait for a debugger to attach"""
 
     @attach.setter
     def attach(self, value: bool):
+        print("TODO: change attach while debugmode enabled")
         if not isinstance(value, bool):
             raise TypeError(type(value))
         self._attach = value
@@ -307,7 +312,7 @@ Debugger attach is {}
 
     def disable(self):
         raise NotImplementedError
-        self._mode = None
         debugmountmanager.remove_mount(self._mount)
+        self._enabled = False
 
 from .debugmount import debugmountmanager

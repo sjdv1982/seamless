@@ -147,15 +147,15 @@ def execute(name, code,
     direct_print = False    
     if debug is None:
         debug = {}
-    elif not debug.get("attach", False):
-        debug = {}
-    if debug != {}:
-        from ..metalevel.ide import debug_pre_hook, debug_post_hook
-        debug_pre_hook(debug)
     if debug.get("direct_print"):
         direct_print = True
     else:
         direct_print = DIRECT_PRINT
+    if not debug.get("attach", False):
+        debug = {}
+    if debug != {}:
+        from ..metalevel.ide import debug_pre_hook, debug_post_hook
+        debug_pre_hook(debug)
     if debug.get("exec-identifier"):
         identifier = debug["exec-identifier"]
     assert identifier is not None
@@ -269,13 +269,12 @@ def execute(name, code,
         sys.stdout, sys.stderr = old_stdio
         traceback.print_exc()
     finally:
+        sys.stdout, sys.stderr = old_stdio
         if debug:
             try:
                 debug_post_hook(debug)
             except Exception:
-                traceback.print_exc()
-        if not direct_print:
-            sys.stdout, sys.stderr = old_stdio
+                traceback.print_exc()        
         if not _exiting:
             try:
                 result_queue.close()
