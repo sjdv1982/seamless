@@ -101,6 +101,7 @@ class DebugMode:
         self._direct_print = False
         self._mode = None
         self._mount = None
+        self._attach = True
         self._ide = "vscode"  # hard-coded for 0.7
 
     def _get_core_transformer(self, force):
@@ -178,6 +179,18 @@ Only full debug mode is possible, please specify this explicitly"""
                 tf._get_tf().tf.integrator.debug_.set(True)
 
     @property
+    def attach(self):
+        """Debugger attach. 
+If True, the transformer will wait for a debugger to attach"""
+        return self._attach
+
+    @attach.setter
+    def attach(self, value: bool):
+        if not isinstance(value, bool):
+            raise TypeError(type(value))
+        self._attach = value
+
+    @property
     def mode(self):
         return self._mode
     
@@ -203,6 +216,8 @@ Only full debug mode is possible, please specify this explicitly"""
         }
         mode = self._mode        
         if mode == "light":
+            if not self._attach:
+                raise ValueError("attach=False is pointless in light mode")
             debug["direct_print"] = True
             tf = self._tf()
             node = tf._get_htf()
@@ -255,8 +270,9 @@ Only full debug mode is possible, please specify this explicitly"""
             tf = self._tf()
             debug["main_directory"] = self._mount.path
             print("""Entering full debug mode for {}
-Mounted main directory: {}            
-""".format(tf, debug["main_directory"]))
+Mounted main directory: {}
+Debugger attach is {}            
+""".format(tf, debug["main_directory"], "ON" if self._attach else "OFF"))
             debug["direct_print"] = True
             node = tf._get_htf()
             name = str(tf.path) + " Seamless transformer"
@@ -286,6 +302,7 @@ Mounted main directory: {}
             return None
         debug["ide"] = self._ide
         debug["mode"] = mode
+        debug["attach"] = self._attach    
         return debug
 
     def disable(self):

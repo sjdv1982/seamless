@@ -79,7 +79,8 @@ def _vscode_init():
 def _vscode_py_attach_create(debug):
     launch_json, launch_json_data = _vscode_init()
     entry = deepcopy(launch_json_py)
-    entry["name"] = debug["name"]
+    name = debug["name"]
+    entry["name"] = name
     entry["connect"]["port"] = int(debug["python_attach_port"])
     for source, target in debug.get("source_map", []):
         mapping = {

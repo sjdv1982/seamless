@@ -328,6 +328,7 @@ class TaskManager:
         dd.remove(task)
 
     def compute(self, timeout, report, get_tasks_func=None):
+        from ...metalevel.debugmount import debugmountmanager
         assert not asyncio.get_event_loop().is_running()
         manager = self.manager()
         manager.temprefmanager.purge()
@@ -417,12 +418,13 @@ class TaskManager:
                     break
             if get_tasks_func is None:
                 if not (len(self.tasks) or len(self.launching_tasks) or len(self.synctasks)):
-                    cyclic_scells = manager.livegraph.get_cyclic()
-                    if len(cyclic_scells):
-                        changed = manager.force_join(cyclic_scells)
-                        if changed:
-                            self.loop.run_until_complete(asyncio.sleep(0.1))
-                            ptasks = [None]  # just to prevent the loop from breaking
+                    if not debugmountmanager.taskmanager_has_mounts(self):
+                        cyclic_scells = manager.livegraph.get_cyclic()
+                        if len(cyclic_scells):
+                            changed = manager.force_join(cyclic_scells)
+                            if changed:
+                                self.loop.run_until_complete(asyncio.sleep(0.1))
+                                ptasks = [None]  # just to prevent the loop from breaking
             if len(mm.cell_updates):
                 must_run_mount = True
         waitfor, background = print_report(verbose=False)
@@ -434,6 +436,7 @@ class TaskManager:
             return waitfor, background
 
     async def computation(self, timeout, report, get_tasks_func=None):
+        from ...metalevel.debugmount import debugmountmanager
         manager = self.manager()
         manager.temprefmanager.purge()
         must_run_mount = True
@@ -526,12 +529,13 @@ class TaskManager:
                     break
             if get_tasks_func is None:
                 if not (len(self.tasks) or len(self.launching_tasks) or len(self.synctasks)):
-                    cyclic_scells = manager.livegraph.get_cyclic()
-                    if len(cyclic_scells):
-                        changed = manager.force_join(cyclic_scells)
-                        if changed:
-                            await asyncio.sleep(0.1)
-                            ptasks = [None]  # just to prevent the loop from breaking
+                    if not debugmountmanager.taskmanager_has_mounts(self):
+                        cyclic_scells = manager.livegraph.get_cyclic()
+                        if len(cyclic_scells):
+                            changed = manager.force_join(cyclic_scells)
+                            if changed:
+                                await asyncio.sleep(0.1)
+                                ptasks = [None]  # just to prevent the loop from breaking
             if len(mm.cell_updates):
                 must_run_mount = True
 

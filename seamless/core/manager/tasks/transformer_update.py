@@ -37,17 +37,18 @@ class TransformerUpdateTask(Task):
         taskmanager = manager.taskmanager
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
 
-        if transformer._void:
-            print("WARNING: transformer %s is void, shouldn't happen during transformer update" % transformer)
-            manager.cancel_transformer(transformer, True, StatusReasonEnum.ERROR)
-            return
-
+        if not has_debugmount:
+            if transformer._void:
+                print("WARNING: transformer %s is void, shouldn't happen during transformer update" % transformer)
+                manager.cancel_transformer(transformer, True, StatusReasonEnum.ERROR)
+                return
+    
         upstreams = livegraph.transformer_to_upstream[transformer]
         downstreams = livegraph.transformer_to_downstream[transformer]
-
+        
         if has_debugmount:
-            print("TF UPDATE DEBUGMOUNT, TODO", transformer)
-
+            await debugmountmanager.run(transformer)
+            return
         status_reason = None
         for pinname, accessor in upstreams.items():
             if pinname == "META":
@@ -120,9 +121,14 @@ class TransformerResultUpdateTask(Task):
         if transformer._void:
             print("WARNING: transformer %s is void, shouldn't happen during transformer update" % transformer)
             return
+
         livegraph = manager.livegraph
         downstreams = livegraph.transformer_to_downstream[transformer]
         checksum = transformer._checksum
+
+        from ....metalevel.debugmount import debugmountmanager        
+        if debugmountmanager.is_mounted(transformer):
+            debugmountmanager.debug_result(transformer, checksum)
 
         if checksum is None:
             manager.cancel_accessors(downstreams, True)
@@ -149,4 +155,3 @@ class TransformerResultUpdateTask(Task):
 
 from .accessor_update import AccessorUpdateTask
 from ...status import StatusReasonEnum
-from . import is_equal

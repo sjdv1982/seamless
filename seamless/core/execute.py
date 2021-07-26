@@ -147,7 +147,9 @@ def execute(name, code,
     direct_print = False    
     if debug is None:
         debug = {}
-    else:
+    elif not debug.get("attach", False):
+        debug = {}
+    if debug != {}:
         from ..metalevel.ide import debug_pre_hook, debug_post_hook
         debug_pre_hook(debug)
     if debug.get("direct_print"):

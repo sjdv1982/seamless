@@ -11,7 +11,7 @@ TODO: module pins!
 """
 
 import os, tempfile, shutil, functools
-from seamless.core.manager import livegraph
+
 SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
 
 class DebugMount:
@@ -19,6 +19,7 @@ class DebugMount:
         self.tf = tf
         self.path = path
         self.mount_ctx = None
+        self.result_pinname = None
     def mount(self, skip_pins):
         from ..core.context import context
         from ..core.macro_mode import macro_mode_on
@@ -27,6 +28,12 @@ class DebugMount:
         manager = tf._get_manager()
         livegraph = manager.livegraph
         upstreams = livegraph.transformer_to_upstream[tf]
+        for pinname, pin in tf._pins.items():
+            if pin.io == "output":
+                self.result_pinname = pinname
+                break
+        else:
+            raise Exception
         with macro_mode_on():
             self.mount_ctx = context(toplevel=True)
             for pinname, pin in tf._pins.items():
@@ -50,7 +57,8 @@ class DebugMount:
                 c = cellclass()
                 ext = extensions[cellclass]
                 filename = os.path.join(self.path, pinname) + ext
-                c.mount(filename, mode="rw", authority="cell", persistent=False)
+                mode = "w" if pinname == self.result_pinname else "rw"
+                c.mount(filename, mode=mode, authority="cell", persistent=False)
                 setattr(self.mount_ctx, pinname, c)
                 checksum = None
                 accessor = upstreams.get(pinname)
@@ -60,12 +68,19 @@ class DebugMount:
                 if checksum is not None:
                     c.set_checksum(checksum.hex())
         for pinname, pin in tf._pins.items():
-            c = getattr(self.mount_ctx, pinname)
-            c._set_observer(functools.partial(self._observe, pinname), False)
+            if pinname != self.result_pinname:
+                c = getattr(self.mount_ctx, pinname)
+                c._set_observer(functools.partial(self._observe, pinname), False)
 
     def _observe(self, pinname, value):
+        from ..core.manager.tasks.transformer_update import TransformerUpdateTask
+        from ..core.status import StatusReasonEnum
         print("OBS", pinname, value)
-        # ...
+        transformer = self.tf
+        manager = transformer._get_manager()
+        manager.taskmanager.cancel_transformer(transformer)
+        manager.cachemanager.transformation_cache.cancel_transformer(transformer, False)
+        TransformerUpdateTask(manager, transformer).launch()
 
     def destroy(self):
         self.mount_ctx.destroy()
@@ -99,5 +114,50 @@ class DebugMountManager:
             if tf._root() is not ctx:
                 continue
             self.remove_mount(self._mounts[tf])
+
+    def taskmanager_has_mounts(self, taskmanager):
+        for tf in list(self._mounts.keys()):
+            manager = tf._get_manager()
+            if manager.taskmanager is taskmanager:
+                return True
+        return False
+
+    def debug_result(self, transformer, checksum):
+        mount = self._mounts[transformer]
+        mount_ctx = mount.mount_ctx
+        result = getattr(mount_ctx, mount.result_pinname)
+        checksum2 = checksum.hex() if checksum is not None else None
+        result.set_checksum(checksum2)
+
+    async def run(self, transformer):
+        mount = self._mounts[transformer]
+        mount_ctx = mount.mount_ctx
+        input_pins = {}
+        celltypes = {}
+        for pinname in transformer._pins:
+            if pinname == "META":
+                continue
+            if pinname == mount.result_pinname:
+                continue
+            c = getattr(mount_ctx, pinname)
+            checksum = c._checksum
+            input_pins[pinname] = checksum 
+            celltypes[pinname] = c.celltype, c._subcelltype
+            if checksum is None:
+                print("NOT OK", pinname)
+                ok = False
+                break
+        else:
+            ok = True
+        if not ok:
+            self.debug_result(transformer, None)
+            return
+        result_cell = getattr(mount_ctx, mount.result_pinname)
+        outputpin = mount.result_pinname, result_cell.celltype, result_cell._subcelltype
+        manager = transformer._get_manager()
+        transformation_cache = manager.cachemanager.transformation_cache
+        await transformation_cache.update_transformer(
+            transformer, celltypes, input_pins, outputpin
+        )
 
 debugmountmanager = DebugMountManager()            
