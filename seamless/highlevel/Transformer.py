@@ -1,4 +1,5 @@
 from seamless.metalevel.debugmode import DebugMode
+from seamless.metalevel.debugmount import debugmountmanager
 import weakref
 import functools
 import pprint
@@ -488,6 +489,10 @@ You can set this dictionary directly, or you may assign .meta to a cell
                 assign_connection(parent, value._path, target_path, False)
                 translate = True
             else:
+                if self.debug.enabled and self.debug.mode == "full":
+                    mount = self._get_debugmount()
+                    mount_ctx = mount.mount_ctx
+                    return getattr(mount_ctx, attr).set(value)
                 tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
                 removed = parent.remove_connections(self._path + (attr,), endpoint="target")
@@ -548,7 +553,25 @@ You can set this dictionary directly, or you may assign .meta to a cell
         assert parent is not None
         return parent._get_node(self._path)
 
+    def _get_debugmount(self):
+        if not self.debug.enabled:
+            return None
+        if self.debug.mode != "full":
+            return None
+        node = self._get_htf()
+        tf = self._get_tf()
+        if node["language"] == "python":
+            tf2 = tf.tf
+        else:
+            tf2 = tf.tf.executor
+        return debugmountmanager._mounts[tf2]
+
+
     def _get_value(self, attr):
+        if self.debug.enabled and self.debug.mode == "full":
+            mount = self._get_debugmount()
+            mount_ctx = mount.mount_ctx
+            return getattr(mount_ctx, attr).value
         tf = self._get_tf(force=True)
         htf = self._get_htf()
         if attr == "code":
@@ -878,6 +901,10 @@ You can set this dictionary directly, or you may assign .meta to a cell
         if attr == "celltype":
             return "code"
         elif attr == "value":
+            if self.debug.enabled and self.debug.mode == "full":
+                mount = self._get_debugmount()
+                mount_ctx = mount.mount_ctx
+                return getattr(mount_ctx, "code").value
             tf = self._get_tf(force=True)
             return tf.code.value
         elif attr == "mount":
@@ -981,6 +1008,10 @@ You can set this dictionary directly, or you may assign .meta to a cell
         htf = self._get_htf()
         if htf.get("UNTRANSLATED"):
             return None
+        if attr == "value" and self.debug.enabled and self.debug.mode == "full":
+            mount = self._get_debugmount()
+            mount_ctx = mount.mount_ctx
+            return getattr(mount_ctx, htf["RESULT"]).value
         tf = self._get_tf(force=True)
         resultcell = getattr(tf, htf["RESULT"])
         if attr == "mount":

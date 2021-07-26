@@ -310,6 +310,10 @@ Debugger attach is {}
         debug["attach"] = self._attach    
         return debug
 
+    @property
+    def enabled(self):
+        return self._enabled
+
     def disable(self):
         raise NotImplementedError
         debugmountmanager.remove_mount(self._mount)
