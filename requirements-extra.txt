@@ -2,7 +2,7 @@ jupyter-client==5.3.3
 jupyter-console==6.1.0
 jupyter-core==4.6.1
 jupyterhub==1.0.0
-jupyterlab==1.2.1
+jupyterlab==1.2.21
 jupyterlab-server==1.0.6
 ipython==7.12.0
 mistune==0.8.4
