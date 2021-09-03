@@ -64,7 +64,6 @@ class DebugMount:
                 accessor = upstreams.get(pinname)
                 if accessor is not None:
                     checksum = accessor._checksum
-                print("PIN", pinname, checksum.hex() if checksum is not None else None)
                 if checksum is not None:
                     c.set_checksum(checksum.hex())
         for pinname, pin in tf._pins.items():
@@ -75,7 +74,6 @@ class DebugMount:
     def _observe(self, pinname, value):
         from ..core.manager.tasks.transformer_update import TransformerUpdateTask
         from ..core.status import StatusReasonEnum
-        print("OBS", pinname, value)
         transformer = self.tf
         manager = transformer._get_manager()
         manager.taskmanager.cancel_transformer(transformer)
