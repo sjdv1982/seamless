@@ -124,6 +124,7 @@ def build_interpreted_package(
     build_all_modules(
         p, module_workspace, 
         mtype="interpreted", 
+        compilers=None, languages=None, # only for compiled modules
         parent_module_name=parent_module_name,
         module_error_name=module_error_name,
         absolute_package_name=package_definition.get("__name__")
