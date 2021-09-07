@@ -257,6 +257,9 @@ class Cell(Base):
           which is mounted to a directory instead of a file.
           items that are themselves dictionaries are mounted to sub-directories.
           Other items are cast to str upon mounting.
+          
+          Mounting as directory is only supported for plain cells.
+
           Default: False
         """
         if self.celltype == "structured":
@@ -453,12 +456,14 @@ class Cell(Base):
         If the cell is defined, the checksum is available, even if
         the value may not be.
         """
-        parent = self._parent()
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             if "TEMP" in hcell:
-                cell = self._get_cell()
-                return cell.checksum
+                try:
+                    cell = self._get_cell()
+                    return cell.checksum
+                except Exception:
+                    raise AttributeError("TEMP value with unknown checksum")
             return hcell.get("checksum")
         else:
             try:
@@ -520,6 +525,7 @@ class Cell(Base):
         """Sets the checksum of the cell, as SHA3-256 hash"""
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
+            hcell.pop("TEMP", None)
             hcell["checksum"] = checksum
             return
         cell = self._get_cell()

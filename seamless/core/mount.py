@@ -41,7 +41,7 @@ def is_dummy_mount(mount):
     if mount is None:
         return True
     assert isinstance(mount, dict), mount
-    if not len(mount.keys()):
+    if (not len(mount.keys())) or mount.keys() == {"extension":None}.keys():
         return True
     return False
 
