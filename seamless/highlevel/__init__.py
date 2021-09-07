@@ -14,16 +14,16 @@ ConstantTypes = _allowed_types + (Silk, MixedBase, tuple)
 
 import inspect
 import os
+
 def set_resource(f):
-    from .Resource import Resource
     caller_frame = inspect.currentframe().f_back
     filename = inspect.getfile(caller_frame)
     dirname = os.path.dirname(filename)
     ff = os.path.join(dirname, f)
-    data = open(ff).read()
     if inspect.getmodule(caller_frame).__name__ == "__main__":
-        return Resource(ff, data)
+        return Resource(ff)
     else:
+        data = open(ff).read()
         return data
 
 def parse_function_code(code_or_func, identifier="<None>"):
@@ -60,6 +60,7 @@ from .Macro import Macro
 from .Cell import Cell
 from .Module import Module
 from .Link import Link
+from .Resource import Resource
 from ..midlevel.StaticContext import StaticContext
 
 def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, shares=True):
@@ -109,6 +110,6 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
 
 __all__ = [
     "Context", "Transformer", "Macro",
-    "Cell", "Link", "Graph", "StaticContext", "Module"
-    "load_graph"
+    "Cell", "Link", "Graph", "StaticContext", "Module",
+    "Resource", "load_graph"
 ]

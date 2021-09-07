@@ -289,7 +289,10 @@ class Context(Base, ContextHelpMixin):
           or attr == "path" or attr in ContextHelpMixin.__dict__:
             return super().__getattribute__(attr)
         path = (attr,)
-        return self._get_path(path)
+        try:
+            return self._get_path(path)
+        except AttributeError:
+            raise AttributeError(attr) from None
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
