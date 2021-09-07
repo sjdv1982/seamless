@@ -1,19 +1,8 @@
 import os, json
 from copy import deepcopy
 from seamless.core import cell, transformer, context
-from ..midlevel.StaticContext import StaticContext
+from ..metalevel.stdgraph import load as load_stdgraph
 
-import seamless
-seamless_dir = os.path.dirname(seamless.__file__)
-graphfile = os.path.join(seamless_dir,
-    "graphs", "bash_transformer.seamless"
-)
-zipfile = os.path.join(seamless_dir,
-    "graphs", "bash_transformer.zip"
-)
-graph = json.load(open(graphfile))
-sctx = StaticContext.from_graph(graph)
-sctx.add_zip(zipfile)
 
 def translate_bash_transformer(
         node, root, namespace, inchannels, outchannels,
@@ -26,6 +15,7 @@ def translate_bash_transformer(
         validate_conda_environment,
         validate_docker
     )
+    sctx = load_stdgraph("bash_transformer")
 
     env0 = Environment(None)
     env0._load(node.get("environment"))
@@ -43,7 +33,7 @@ def translate_bash_transformer(
         from .translate_bashdocker_transformer import translate_bashdocker_transformer
         docker = env.pop("docker")
         docker_image = docker["name"]
-        docker_options = docker["options"]
+        docker_options = docker.get("options", {})
         # TODO: pass on version and checksum as well?
         if "powers" not in env:
             env["powers"] = []
@@ -110,7 +100,7 @@ def translate_bash_transformer(
             "access_mode": "json", "content_type": "json"
         }
     ctx.tf = transformer(all_pins)
-    if node["debug"]:
+    if node.get("debug"):
         ctx.tf.debug = True
     ctx.code = cell("text")
     if "code" in mount:

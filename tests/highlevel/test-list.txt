@@ -166,3 +166,5 @@ debugmode-compiled-light.py
 debugmode-py-full.py
   Full debugging of a simple Python transformer in VSCode. Follow the instructions.
   compute-ctrl-c.py: open with ipython and press ctrl+c
+hack-bash-transformer-translation.py
+  Run with IPython and hack /tmp/execute.py

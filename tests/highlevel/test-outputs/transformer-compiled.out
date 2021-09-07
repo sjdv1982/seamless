@@ -1,20 +1,8 @@
 5
 
-g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
-
-
-
-g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+g++ -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_ddc81e9dc953985e1e54c944bbd1fefd8cd899621c7e31e780268559d6997082_module/main.o /tmp/seamless-extensions/seamless_module_ddc81e9dc953985e1e54c944bbd1fefd8cd899621c7e31e780268559d6997082_module/main.cpp
 
 
 5.0
-
-g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
-
-
-
-g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
-
-
 40.0
 Status: OK

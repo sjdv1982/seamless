@@ -1,20 +1,8 @@
 import os, json
 from seamless.core import cell, transformer, context
-from ..midlevel.StaticContext import StaticContext
+from ..metalevel.stdgraph import load as load_stdgraph
 
-import seamless
-seamless_dir = os.path.dirname(seamless.__file__)
-graphfile = os.path.join(seamless_dir,
-    "graphs", "compiled_transformer.seamless"
-)
-zipfile = os.path.join(seamless_dir,
-    "graphs", "compiled_transformer.zip"
-)
-graph = json.load(open(graphfile))
-sctx = StaticContext.from_graph(graph)
-sctx.add_zip(zipfile)
-
-def _init_from_graph(ctf):
+def _init_from_graph(ctf, sctx):
     ctf.gen_header_code = sctx.gen_header.code.cell()
     ctf.gen_header_params = sctx.gen_header_params.cell()
     ctf.gen_header = transformer(sctx.gen_header_params.value)
@@ -180,7 +168,8 @@ def translate_compiled_transformer(
 
     # Transformer itself
     ctf = ctx.tf = context()
-    _init_from_graph(ctf)
+    sctx = load_stdgraph("compiled_transformer")
+    _init_from_graph(ctf, sctx)
     ctf.integrator.debug_.cell().set(False)
 
     ctx.code = cell("text")

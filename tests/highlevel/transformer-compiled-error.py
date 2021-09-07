@@ -28,7 +28,8 @@ extern "C" int transform(int a, int b, double *result) {
 }"""
 ctx.translate()
 ctx.transform.result.example = 0.0 #example, just to fill the schema
-ctx.transform.main_module.link_options = ["-lstdc++"]
+ctx.transform.link_options = ["-lstdc++"]
+#ctx.transform.main_module.link_options also works
 ctx.compute()
 print(ctx.transform.exception)
 print("")

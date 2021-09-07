@@ -32,18 +32,21 @@ class CompiledObjectDict:
                             return CompiledObjectWrapper(self._worker(), attr)
                     return deepcopy(main_module.handle.data)
             return None
+        elif attr == "link_options":
+            return worker.link_options
         elif attr in module_attrs:
             htf = worker._get_htf()
             main_module = htf.get("main_module")
             if main_module is None:
                 return None
-            # TODO: in case of link_options, return a wrapper that triggers ctx.translate() upon modification
             return main_module.get(attr)
 
         return CompiledObjectWrapper(self._worker(), attr)
 
     def __setattr__(self, attr, value):
         worker = self._worker()
+        if attr == "link_options":
+            return setattr(worker, "link_options", value)
         if attr in module_attrs:
             assert isinstance(worker, Transformer)
             if worker._get_tf() is None:

@@ -325,6 +325,16 @@ languages: dict or None
     def __del__(self):
         if self._destroyed:
             return
+        if self._toplevel:
+            try:
+                from .macro import _global_paths
+                manager = self._get_manager()
+                if manager is not None:
+                    manager.destroy(from_del=True)
+            except Exception:
+                pass
+            if self._destroyed:
+                return
         self.__dict__["_destroyed"] = True
         print("Undestroyed %s (%s), mount points may remain" % (self, hex(id(self))))
 

@@ -3,11 +3,7 @@
 ERROR 1:
 
 
-g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
-
-
-
-g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+g++ -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_2bb15b281dc3161c19b6ef0f6086a5d750c05e37152534afa120d736fa0607c1_module/main.o /tmp/seamless-extensions/seamless_module_2bb15b281dc3161c19b6ef0f6086a5d750c05e37152534afa120d736fa0607c1_module/main.cpp
 
 
 *** executor ***
@@ -25,11 +21,7 @@ Compiled transformer returned non-zero value: 1
 ERROR 2:
 
 
-g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
-
-
-
-g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+g++ -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_3c169fa7b8652a1f44545e42965e08e56d3afe5c5f7580b05c81e4066f9da54d_module/main.o /tmp/seamless-extensions/seamless_module_3c169fa7b8652a1f44545e42965e08e56d3afe5c5f7580b05c81e4066f9da54d_module/main.cpp
 
 
 *** executor ***

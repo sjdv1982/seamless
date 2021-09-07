@@ -1,24 +1,15 @@
 import os, json
 from copy import deepcopy
 from seamless.core import cell, transformer, context
-from ..midlevel.StaticContext import StaticContext
-
-import seamless
-seamless_dir = os.path.dirname(seamless.__file__)
-graphfile = os.path.join(seamless_dir,
-    "graphs", "bashdocker_transformer.seamless"
-)
-zipfile = os.path.join(seamless_dir,
-    "graphs", "bashdocker_transformer.zip"
-)
-graph = json.load(open(graphfile))
-sctx = StaticContext.from_graph(graph)
-sctx.add_zip(zipfile)
+from ..metalevel.stdgraph import load as load_stdgraph
 
 def translate_bashdocker_transformer(
     node, root, namespace, inchannels, outchannels, *, 
     docker_image, docker_options, has_meta_connection, env
 ):
+
+    sctx = load_stdgraph("bashdocker_transformer")
+
     from .translate import set_structured_cell_from_checksum
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 

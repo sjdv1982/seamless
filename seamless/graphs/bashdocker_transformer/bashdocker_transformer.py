@@ -9,9 +9,8 @@ executor_file = "executor.py"
 
 ctx = Context()
 ctx.executor_code = set_resource(executor_file)
-ctx.executor_code._get_hcell()["language"] = "python"
-ctx.executor_code._get_hcell()["transformer"] = True
 ctx.executor_code.celltype = "code"
+ctx.executor_code.language = "python"
 ctx.translate()
 
 # 2: obtain graph and zip
