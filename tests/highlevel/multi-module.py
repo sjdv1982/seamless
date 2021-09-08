@@ -1,5 +1,6 @@
 tf_code = '''
 print(__name__)
+from .testmodule import q
 print(testmodule)
 print(testmodule.submodule)
 print(testmodule.submodule.q)
@@ -12,7 +13,10 @@ from seamless.highlevel import Transformer, Cell, Context, Module
 ctx = Context()
 ctx.testmodule = Module()
 ctx.testmodule.multi = True
-ctx.testmodule["__init__.py"] = "from . import submodule" 
+ctx.testmodule["__init__.py"] = """
+from .submodule import q
+from . import submodule
+""" 
 ctx.testmodule["submodule.py"] = "q = 10"
 ctx.testmodule.mount("/tmp/testmodule", authority="cell")
 
