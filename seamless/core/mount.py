@@ -12,6 +12,7 @@ _init() is invoked at startup:
 Periodically, conditional_read() and conditional_write() are invoked,
  that check if a read/write is necessary, and if so, invoke _read()/_write()
 """
+import asyncio
 from weakref import WeakValueDictionary, WeakKeyDictionary, WeakSet, ref
 import threading
 from threading import Thread, RLock, Event
@@ -23,6 +24,7 @@ import traceback
 from contextlib import contextmanager
 import json
 import functools
+import shutil
 
 from ..get_hash import get_hash
 
@@ -107,6 +109,17 @@ class MountItem:
         if "r" in self.mode:
             assert cell.has_independence(), cell # mount read mode only for authoritative cells
         exists = self._exists()
+        if self.mode == "rw" and self.authority == "cell":
+            if cell._checksum is None and cell._void is not None and cell.has_independence():
+                # cell is being calculated. High risk for a conflict
+                # All we can do is wait a bit, if the event loop is not running...
+                count = 0
+                while cell._checksum is None and count < 100:
+                    try:
+                        asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.01))
+                    except Exception:
+                        pass                    
+                    count += 1
         cell_checksum = cell._checksum
         cell_empty = (cell_checksum is None)
         if not cell_empty:
@@ -283,18 +296,45 @@ class MountItem:
         data = json.loads(file_buffer)
         if not isinstance(data, dict):
             return
+        all_dirs = set()
+        all_files = set()
         def write(subdata, subpath):
-            os.makedirs(os.path.join(*subpath), exist_ok=True)
+            curr_dir = os.path.abspath(os.path.join(*subpath))
+            all_dirs.add(curr_dir)
+            os.makedirs(curr_dir, exist_ok=True)
             for k,v in subdata.items():
                 subpath2 = subpath + (k,)
                 if isinstance(v, dict):
                     write(v, subpath2)
                 else:
                     vv = str(v)
-                    filename = os.path.join(*subpath2)
+                    filename = os.path.abspath(os.path.join(*subpath2))
+                    all_files.add(filename)
                     with open(filename, "w") as f:
                         f.write(vv + "\n")
         write( data, (self.path,) )
+        def _clean(path):
+            with os.scandir(path) as it:
+                for entry in it:
+                    path = os.path.abspath(entry.path)
+                    if entry.is_file():
+                        if path not in all_files:
+                            os.unlink(path)
+                    elif entry.is_dir():
+                        remove = False
+                        # leads to artifacts...
+                        # if path not in all_dirs:
+                        #    remove = True
+                        path2 = os.path.abspath(os.path.join(path, ".."))
+                        if path2 not in all_dirs:
+                            remove = True
+                        if remove:
+                            shutil.rmtree(path, ignore_errors=True)
+                        else:
+                            _clean(path)
+        if self.mode == "w" or self.authority == "cell":
+            _clean(self.path)
+
 
     def _write(self, file_buffer, with_none=False):
         if self._destroyed:

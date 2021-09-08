@@ -7,6 +7,6 @@ with macro_mode_on():
         "b": [3,4,5],
         "c": "Value C"
     })
-    ctx.c.mount("/tmp/mount-test", as_directory=True)
+    ctx.c.mount("/tmp/mount-test", as_directory=True, authority="cell")
 
 ctx.compute()
