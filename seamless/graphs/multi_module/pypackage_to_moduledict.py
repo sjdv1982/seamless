@@ -1,7 +1,7 @@
-result = {}
-if package_name is not None:
-    result["__name__"] = package_name
-from .analyze_dependencies import analyze_dependencies
+code = {}
+if absolute_package_name is not None and len(absolute_package_name):
+    code["__name__"] = absolute_package_name
+from .get_pypackage_dependencies import get_pypackage_dependencies
 def analyze(d, prefix):
     for k,v in d.items():
         if isinstance(v, dict):
@@ -18,7 +18,8 @@ def analyze(d, prefix):
         if len(prefix):
             f = prefix + "." + f
         pycode = v
-        deps0 = analyze_dependencies(pycode, package_name)
+        is_init = f.endswith("__init__")
+        deps0 = get_pypackage_dependencies(pycode, absolute_package_name, is_init)
         deps = []
         ff = f.split(".")
         for dep in deps0:
@@ -51,6 +52,8 @@ def analyze(d, prefix):
                 if len(dpref):
                     dep2 += dpref + "." 
                 dep2 += d
+            if dep2 == f:
+                continue
             deps.append(dep2)
         deps = sorted(list(deps))
         item = {
@@ -58,5 +61,10 @@ def analyze(d, prefix):
             "code": pycode,
             "dependencies": deps,
         }
-        result[f] = item
-analyze(package_dirdict, "")
+        code[f] = item
+analyze(pypackage_dirdict, "")
+result = {
+    "language": "python",
+    "type": "interpreted",
+    "code": code,
+}

@@ -1,0 +1,46 @@
+{
+  "code": {
+    "__init__": {
+      "code": "from . import mod4\nfrom .mod3 import testvalue",
+      "dependencies": [
+        ".mod3",
+        ".mod4"
+      ],
+      "language": "python"
+    },
+    "__name__": "testpackage",
+    "mod3": {
+      "code": "testvalue = 42\n\ndef testfunc(x):\n    return x",
+      "dependencies": [],
+      "language": "python"
+    },
+    "mod4": {
+      "code": "blah = 33",
+      "dependencies": [],
+      "language": "python"
+    },
+    "sub.__init__": {
+      "code": "",
+      "dependencies": [],
+      "language": "python"
+    },
+    "sub.mod1": {
+      "code": "from .. import testvalue\nfrom testpackage.mod3 import testfunc\nfrom ..mod4 import blah\ndef func():\n    return testvalue",
+      "dependencies": [
+        ".mod3",
+        ".mod4",
+        "__init__"
+      ],
+      "language": "python"
+    },
+    "sub.mod2": {
+      "code": "from .mod1 import func",
+      "dependencies": [
+        ".sub.mod1"
+      ],
+      "language": "python"
+    }
+  },
+  "language": "python",
+  "type": "interpreted"
+}

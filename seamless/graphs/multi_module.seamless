@@ -1,0 +1,48 @@
+{
+  "__seamless__": "0.7",
+  "connections": [],
+  "lib": [],
+  "nodes": [
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "6eecb3fa828fe350f25c25ea51f42b58487a1326841acd7ea2d2a453ebb2b6ab"
+      },
+      "datatype": "mixed",
+      "file_extension": "py",
+      "language": "python",
+      "mount": {
+        "authority": "file",
+        "mode": "r",
+        "path": "get_pypackage_dependencies.py",
+        "persistent": true
+      },
+      "path": [
+        "get_pypackage_dependencies_code"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "c90782cd196bf9e00f43b45a1c40b56b89f9b15a4221f14a37df21a24e08fb4c"
+      },
+      "datatype": "mixed",
+      "file_extension": "py",
+      "language": "python",
+      "mount": {
+        "authority": "file",
+        "mode": "r",
+        "path": "pypackage_to_moduledict.py",
+        "persistent": true
+      },
+      "path": [
+        "pypackage_to_moduledict_code"
+      ],
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

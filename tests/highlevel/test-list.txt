@@ -37,6 +37,7 @@ reactor-edit-macro.py
 delay.py
 module-simplified.py
 module.py
+multi-module.py: can also be run in non-interactive mode (mount /tmp/testmodule, perhaps enter light debug mode)
 bash.py
 docker_.py
 docker2.py

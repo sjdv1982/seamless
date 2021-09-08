@@ -1,0 +1,10 @@
+transformer
+<module 'transformer.testmodule'>
+<module 'transformer.testmodule.submodule'>
+10
+10
+
+Status: OK
+None
+<Silk: 10 >
+<Silk: 9 >

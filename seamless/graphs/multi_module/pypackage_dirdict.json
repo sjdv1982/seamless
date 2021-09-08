@@ -1,5 +1,5 @@
 {
-  "__init__.py": "from .mod3 import testvalue",
+  "__init__.py": "from . import mod4\nfrom .mod3 import testvalue",
   "mod3.py": "testvalue = 42\n\ndef testfunc(x):\n    return x",
   "mod4.py": "blah = 33",
   "sub": {

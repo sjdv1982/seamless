@@ -97,6 +97,7 @@ def build_interpreted_package(
     assert "__init__" in package_definition
     if parent_module_name is None:
         parent_module_name = full_module_name
+        module_workspace[full_module_name] = ModuleType(full_module_name)
     
     p = {}
     mapping = {}
