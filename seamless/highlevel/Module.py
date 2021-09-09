@@ -205,6 +205,34 @@ e.g. "subdirectory/code.py".
             hnode["multi"] = True
         else:
             hnode.pop("multi", None)
+        if self._parent() is not None:
+            self._parent()._translate()
+
+    @property
+    def internal_package_name(self):
+        """For Python packages, the name that is used in internal absolute imports
+
+For example, if a package contains "__init__.py", "spam.py" and "ham.py",
+then "foo.py" could import "spam.eggs" with a relative import ("from .spam import eggs").
+   
+Or, it could use an internal package name like "spamalot" and do
+"from spamalot.spam import eggs"
+"""
+        if not self.multi:
+            raise AttributeError("Only multi modules can have an internal package name")
+        hnode = self._get_hnode()
+        return hnode.get("internal_package_name")
+
+    @internal_package_name.setter
+    def internal_package_name(self, value: str):
+        if not self.multi:
+            raise AttributeError("Only multi modules can have an internal package name")
+        if not isinstance(value, str):
+            raise TypeError(type(value))
+        hnode = self._get_hnode()
+        hnode["internal_package_name"] = value
+        if self._parent() is not None:
+            self._parent()._translate()
 
     async def fingertip(self):
         """Puts the buffer of the code cell's checksum 'at your fingertips':

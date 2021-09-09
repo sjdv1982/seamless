@@ -137,7 +137,7 @@ def build_interpreted_package(
         parent_module_name=parent_module_name,
         module_error_name=module_error_name,
         module_debug_mounts=module_debug_mounts,
-        absolute_package_name=package_definition.get("__name__")
+        internal_package_name=package_definition.get("__name__")
     )
     return Package(mapping)
     
@@ -309,7 +309,7 @@ def build_all_modules(
     module_debug_mounts,
     mtype=None, parent_module_name=None,
     module_error_name=None,
-    absolute_package_name=None    
+    internal_package_name=None    
 ):
     full_module_names = {}
     all_modules = list(modules_to_build.keys())
@@ -341,9 +341,9 @@ def build_all_modules(
                 assert mod is not None, modname
                 full_module_names[modname] = mod[0]
                 module_workspace[modname4] = mod[1]
-                if absolute_package_name is not None:
+                if internal_package_name is not None:
                     pos = modname4.find(".")
-                    modname5 = absolute_package_name
+                    modname5 = internal_package_name
                     if pos > -1:
                         modname5 += modname4[pos:]
                     module_workspace[modname5] = mod[1]

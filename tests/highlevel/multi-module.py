@@ -41,3 +41,17 @@ ctx.testmodule.set(code)
 ctx.compute()
 print(ctx.tf.result.value)
 
+ctx.testmodule["submodule2.py"] = """
+from mytestmodule.submodule import q
+q2 = 2 * q
+""" 
+ctx.testmodule.internal_package_name = "mytestmodule"
+ctx.tf.code = """
+from .testmodule.submodule2 import q2
+result = q2
+"""
+ctx.compute()
+print(ctx.tf.exception)
+print(ctx.tf.result.value)
+
+

@@ -1,4 +1,4 @@
-from seamless.graphs.multi_module import testpackage
+from seamless.graphs.multi_module import mytestpackage
 from seamless.highlevel import Context, Cell, Module, Transformer, Resource
 
 get_pypackage_dependencies_file = "get_pypackage_dependencies.py"
@@ -29,12 +29,12 @@ mod.code = ctx.get_pypackage_dependencies_code
 tf = ctx.pypackage_to_moduledict = Transformer()
 tf.code = ctx.pypackage_to_moduledict_code
 ctx.pypackage_dirdict = Cell("plain")
-ctx.pypackage_dirdict.mount("testpackage", as_directory=True, mode="r")
+ctx.pypackage_dirdict.mount("mytestpackage", as_directory=True, mode="r")
 ctx.pypackage_dirdict_value = ctx.pypackage_dirdict
 ctx.pypackage_dirdict_value.celltype = "plain"
 ctx.pypackage_dirdict_value.mount("pypackage_dirdict.json", mode="w")
 tf.pypackage_dirdict = ctx.pypackage_dirdict
-tf.absolute_package_name = "testpackage"
+tf.internal_package_name = "mytestpackage"
 tf.get_pypackage_dependencies = mod
 ctx.pypackage_moduledict = tf
 ctx.pypackage_moduledict.celltype = "plain"

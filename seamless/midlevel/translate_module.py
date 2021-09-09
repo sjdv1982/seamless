@@ -68,13 +68,14 @@ def translate_module(node, root, namespace, inchannels, outchannels):
         subcontext.pypackage_to_moduledict_code = core_cell("python")
         subcontext.pypackage_to_moduledict_code.set(sctx.pypackage_to_moduledict_code.value)
         c = subcontext.gen_moduledict = transformer({
-            "absolute_package_name": ("input", "str"),
+            "internal_package_name": ("input", "str"),
             "pypackage_dirdict": ("input", "plain"),
             "get_pypackage_dependencies": ("input", "plain", "module"),
             "result": ("output", "plain")
         })
         subcontext.pypackage_to_moduledict_code.connect(c.code)
-        c.absolute_package_name.cell().set("")
+        internal_package_name = node.get("internal_package_name", "")
+        c.internal_package_name.cell().set(internal_package_name)
         codecell.connect(c.pypackage_dirdict)
 
         subcontext.gen_moduledict_helper = transformer({

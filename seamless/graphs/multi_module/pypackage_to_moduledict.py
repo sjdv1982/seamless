@@ -1,6 +1,6 @@
 code = {}
-if absolute_package_name is not None and len(absolute_package_name):
-    code["__name__"] = absolute_package_name
+if internal_package_name is not None and len(internal_package_name):
+    code["__name__"] = internal_package_name
 from .get_pypackage_dependencies import get_pypackage_dependencies
 def analyze(d, prefix):
     for k,v in d.items():
@@ -19,7 +19,7 @@ def analyze(d, prefix):
             f = prefix + "." + f
         pycode = v
         is_init = f.endswith("__init__")
-        deps0 = get_pypackage_dependencies(pycode, absolute_package_name, is_init)
+        deps0 = get_pypackage_dependencies(pycode, internal_package_name, is_init)
         deps = []
         ff = f.split(".")
         for dep in deps0:

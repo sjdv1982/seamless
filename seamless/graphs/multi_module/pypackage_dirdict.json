@@ -1,10 +1,10 @@
 {
-  "__init__.py": "from . import mod4\nfrom .mod3 import testvalue",
-  "mod3.py": "testvalue = 42\n\ndef testfunc(x):\n    return x",
-  "mod4.py": "blah = 33",
+  "__init__.py": "from . import mod4\nfrom .mod3 import testvalue\n",
+  "mod3.py": "testvalue = 42\n\ndef testfunc(x):\n    return x\n",
+  "mod4.py": "blah = 33\n",
   "sub": {
-    "__init__.py": "",
-    "mod1.py": "from .. import testvalue\nfrom testpackage.mod3 import testfunc\nfrom ..mod4 import blah\ndef func():\n    return testvalue",
-    "mod2.py": "from .mod1 import func"
+    "__init__.py": "\n",
+    "mod1.py": "from .. import testvalue\nfrom mytestpackage.mod3 import testfunc\nfrom ..mod4 import blah\ndef func():\n    return testvalue\n",
+    "mod2.py": "from .mod1 import func\n"
   }
 }
