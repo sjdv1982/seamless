@@ -210,11 +210,19 @@ class LiveGraph:
         targets = set()
         self._get_bilink_targets(cell, targets)
         targets.remove(cell)
+        cell_value = None
         for target in targets:
             if isinstance(target, Path):
                 continue
+            target_checksum = checksum
+            if checksum is not None:
+                if cell.celltype != target.celltype:
+                    if cell_value is None:
+                        cell_value = cell.value
+                    buf = serialize_sync(cell_value, target.celltype)
+                    target_checksum = calculate_checksum_sync(buf)
             manager.set_cell_checksum(
-                target, checksum,
+                target, target_checksum,
                 initial=False,
                 from_structured_cell=False,
                 trigger_bilinks=False
@@ -959,3 +967,5 @@ from ..worker import EditPin
 from ..runtime_reactor import RuntimeReactor
 from .tasks.upon_connection import UponBiLinkTask
 from .cancel import get_scell_state, scell_any_pending
+from ..protocol.calculate_checksum import calculate_checksum_sync
+from ..protocol.serialize import serialize_sync
