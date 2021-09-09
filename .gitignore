@@ -10,3 +10,4 @@ dist/
 */.ipynb_checkpoints/
 tests/highlevel/*.json
 tests/highlevel/context2-graph-raw.txt
+tests/highlevel/debugmount/*

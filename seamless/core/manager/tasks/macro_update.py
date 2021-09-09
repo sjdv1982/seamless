@@ -129,7 +129,8 @@ class MacroUpdateTask(Task):
         build_all_modules(
             modules_to_build, module_workspace,
             compilers=compilers,
-            languages=languages
+            languages=languages,
+            module_debug_mounts=None
         )
 
         if macro._gen_context is not None:

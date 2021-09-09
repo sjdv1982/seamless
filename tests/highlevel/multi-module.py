@@ -34,3 +34,10 @@ ctx.testmodule["submodule.py"] = "q = 9"
 ctx.compute()
 print(ctx.tf.result.value)
 
+code = ctx.testmodule.code
+print(code)
+code["submodule.py"] = code["submodule.py"].replace("q = 9", "q = 80")
+ctx.testmodule.set(code)
+ctx.compute()
+print(ctx.tf.result.value)
+

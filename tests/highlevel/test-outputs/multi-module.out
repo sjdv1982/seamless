@@ -8,3 +8,5 @@ Status: OK
 None
 <Silk: 10 >
 <Silk: 9 >
+{'__init__.py': '\nfrom .submodule import q\nfrom . import submodule\n', 'submodule.py': 'q = 9'}
+<Silk: 80 >

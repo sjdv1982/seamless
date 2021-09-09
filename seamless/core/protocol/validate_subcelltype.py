@@ -32,7 +32,7 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename):
         v = json.loads(value)
         """
         if not v.get("dependencies"):
-            build_module(v, module_error_name=None)
+            build_module(v, module_error_name=None, ...)
         """ # pointless; why validate some modules but not all, 
             # and anyway, the result may depend on compilers/languages
     else:

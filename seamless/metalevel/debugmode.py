@@ -1,11 +1,11 @@
 """
 ...
-You can switch from direct_print to another mode, but not vice versa.
+TODO: print mode (only direct_print)
+You can switch from print mode to another mode, but not vice versa.
 """
 from seamless import core
 import weakref
 import os
-
 
 python_attach_headers = {
     ("light", "vscode") : """Python source code mount to {host_path} detected.
@@ -17,6 +17,12 @@ In Visual Studio Code, set breakpoints in this file.""",
 
 In Visual Studio Code, set breakpoints in these files."""
 
+}
+
+python_attach_module_headers = {
+    ("light", "vscode") : """Python module {module_name}: Python source code mount to {module_mount_path} detected.
+
+In Visual Studio Code, set breakpoints in this file/directory.""",
 }
 
 python_attach_messages = {
@@ -77,6 +83,36 @@ def get_code_mount(transformer):
                 raise ValidationError(msg.format(codecell))
             if "mount" in node:
                 return node["mount"]
+
+def find_transformer_modules(tf):
+    from ..highlevel import Module
+    modules = {}
+    node = tf._get_htf()
+    parent = tf._parent()
+    connections = parent._graph[1]
+    
+    for pinname, pin in node["pins"].items():
+        if pin.get("celltype") != "plain":
+            continue
+        if pin.get("subcelltype") != "module":
+            continue
+        modules[pinname] = None
+
+        modulepinpath = tuple(node["path"]) + (pinname,)
+        for con in connections:
+            if con["type"] != "connection":
+                continue
+            if tuple(con["target"]) == modulepinpath:
+                modulepath = tuple(con["source"])
+                try:
+                    module = parent._get_path(modulepath)            
+                except AttributeError:
+                    continue
+                if not isinstance(module, Module):
+                    break
+                modules[pinname] = module
+                break
+    return modules
 
 docker_container = None
 docker_container_file = os.path.expanduser("~/DOCKER_CONTAINER")
@@ -247,10 +283,48 @@ If True, the transformer will wait for a debugger to attach"""
                     host_project_dir=host_project_dir,
                     name=name
                 ) + "\n"
+                modules = find_transformer_modules(tf)
+                module_mounts = {}
+                for module_name, module in modules.items():
+                    host_mount_path = None
+                    mmsg = "Python module {module_name}: "
+                    if module is None:
+                        mmsg += "NOT CONNECTED"
+                    else:
+                        mount_path = None
+                        module_mount = module._get_hnode().get("mount")
+                        if module_mount is not None:
+                            mount_path = module_mount.get("path")
+                            mount_path = os.path.abspath(mount_path)
+                        if mount_path is None:
+                            mmsg += "NOT MOUNTED"
+                        else:
+                            ok = True                            
+                            if hostcwd is not None: # source mapping is needed
+                                if not mount_path.startswith("/cwd"):
+                                    mmmsg = "code path {} does not start with /cwd, Seamless cannot do source mapping"
+                                    mmsg += mmmsg.format(mount_path)
+                                    ok = False
+                                else:
+                                    host_mount_path = os.path.relpath(mount_path, "/cwd")
+                                    host_mount_path = os.path.join(hostcwd, host_mount_path)
+                            if ok:
+                                if module.multi:                        
+                                    pass  # No special actions for multi-modules in light mode
+                                module_mounts[module_name] = {
+                                    "path": mount_path
+                                }
+                                mmsg = python_attach_module_headers[mode, self._ide]
+                    msg += "\n" + mmsg.format(
+                        module_name=module_name,
+                        module_mount_path=host_mount_path
+                    ) + "\n\n"
                 msg += python_attach_messages[self._ide].format(
                     host_project_dir=host_project_dir,
                     name=name
                 )
+                if module_mounts:
+                    debug["module_mounts"] = module_mounts
                 debug["python_attach_message"] = msg
             elif node["compiled"]:
                 debug["generic_attach"] = True

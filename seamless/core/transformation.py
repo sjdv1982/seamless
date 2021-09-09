@@ -490,15 +490,20 @@ class TransformationJob:
         module_workspace = {}
         compilers = self.transformation.get("__compilers__", default_compilers)
         languages = self.transformation.get("__languages__", default_languages)
+        module_debug_mounts = None
+        if debug is not None:
+            module_debug_mounts = debug.get("module_mounts")
         if debug is not None and debug.get("generic_attach"):
             main_code = debug.get("main-code")
             if main_code is not None and "module" in modules_to_build:
                 m = modules_to_build["module"]
                 if "objects" in m and "main" in m["objects"]:
                     m["objects"]["main"]["host_filename"] = main_code
+            
         full_module_names = build_all_modules(
             modules_to_build, module_workspace,
-            compilers=compilers, languages=languages
+            compilers=compilers, languages=languages,
+            module_debug_mounts=module_debug_mounts
         )
         assert code is not None
 

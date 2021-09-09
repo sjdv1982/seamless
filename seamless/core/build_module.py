@@ -34,7 +34,8 @@ class Package:
 
 def build_interpreted_module(
     full_module_name, module_definition, module_workspace,
-    module_error_name, parent_module_name=None
+    module_error_name, parent_module_name=None,
+    *, module_debug_mounts
 ):
     from ..ipython import ipython2python, execute as execute_ipython
     language = module_definition["language"]
@@ -44,11 +45,15 @@ def build_interpreted_module(
         return build_interpreted_package(
             full_module_name, language, code, module_workspace,
             parent_module_name=parent_module_name,
-            module_error_name=module_error_name
+            module_error_name=module_error_name,
+            module_debug_mounts=module_debug_mounts
         )
 
     assert isinstance(code, str), type(code)    
     package_name = None
+    filename = module_error_name + ".py"
+    if module_debug_mounts is not None and module_error_name in module_debug_mounts: # single-file modules
+        filename = module_debug_mounts[module_error_name]["path"]
     mod = ModuleType(full_module_name)
     if parent_module_name is not None:
         package_name = parent_module_name
@@ -75,7 +80,9 @@ def build_interpreted_module(
             execute_ipython(code, namespace)
         else:
             try:
-                exec(code, namespace)
+                from .cached_compile import cached_compile
+                code_obj = cached_compile(code, filename)
+                exec(code_obj, namespace)
             except ModuleNotFoundError as exc:
                 mname = module_error_name
                 excstr = traceback.format_exception_only(type(exc), exc)
@@ -91,7 +98,8 @@ def build_interpreted_module(
 
 def build_interpreted_package(
     full_module_name, language, package_definition, module_workspace,
-    *, parent_module_name, module_error_name
+    *, parent_module_name, module_error_name,
+    module_debug_mounts
 ):
     assert language == "python", language
     assert "__init__" in package_definition
@@ -128,6 +136,7 @@ def build_interpreted_package(
         compilers=None, languages=None, # only for compiled modules
         parent_module_name=parent_module_name,
         module_error_name=module_error_name,
+        module_debug_mounts=module_debug_mounts,
         absolute_package_name=package_definition.get("__name__")
     )
     return Package(mapping)
@@ -248,8 +257,9 @@ def build_compiled_module(full_module_name, checksum, module_definition, *, modu
     return mod
 
 def build_module(module_definition, module_workspace={}, *,
-     compilers, languages,
-     module_error_name, mtype=None, parent_module_name=None):
+     compilers, languages, module_debug_mounts,
+     module_error_name, mtype=None, parent_module_name=None,
+    ):
     if mtype is None:
         mtype = module_definition["type"]
     assert mtype in ("interpreted", "compiled"), mtype
@@ -260,24 +270,26 @@ def build_module(module_definition, module_workspace={}, *,
     if module_error_name is not None:
         full_module_name += "_" + module_error_name
     cached = False
-    if full_module_name in module_cache:
-        mod = module_cache[full_module_name]
-        if isinstance(mod, Package):
-            for k in mod.mapping:
-                if k in module_cache:
-                    module_workspace[k] = module_cache[k]
+    if module_debug_mounts is None:
+        if full_module_name in module_cache:
+            mod = module_cache[full_module_name]
+            if isinstance(mod, Package):
+                for k in mod.mapping:
+                    if k in module_cache:
+                        module_workspace[k] = module_cache[k]
+                    else:
+                        break
                 else:
-                    break
+                    cached = True
             else:
                 cached = True
-        else:
-            cached = True
     if not cached:
         if mtype == "interpreted":
             mod = build_interpreted_module(
                 full_module_name, module_definition, module_workspace,
                 parent_module_name=parent_module_name,
-                module_error_name=module_error_name
+                module_error_name=module_error_name,
+                module_debug_mounts=module_debug_mounts
             )
         elif mtype == "compiled":
             assert parent_module_name is None
@@ -294,9 +306,10 @@ def build_module(module_definition, module_workspace={}, *,
 def build_all_modules(
     modules_to_build, module_workspace, *, 
     compilers, languages,
+    module_debug_mounts,
     mtype=None, parent_module_name=None,
     module_error_name=None,
-    absolute_package_name=None
+    absolute_package_name=None    
 ):
     full_module_names = {}
     all_modules = list(modules_to_build.keys())
@@ -322,7 +335,8 @@ def build_all_modules(
                     module_def, module_workspace, 
                     compilers=compilers, languages=languages,
                     mtype=mtype, parent_module_name=modname2,
-                    module_error_name=modname3
+                    module_error_name=modname3,
+                    module_debug_mounts=module_debug_mounts
                 )
                 assert mod is not None, modname
                 full_module_names[modname] = mod[0]

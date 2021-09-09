@@ -25,9 +25,9 @@ except Exception:
     traceback.print_exc(limit=0)
 
 print()
-#ctx.tf.code.mount("debugmode-py-light-code.py", authority="cell")
+#ctx.tf.code.mount("debugmount/debugmode-py-light-code.py", authority="cell")
 ctx.code = ctx.tf.code.pull()
-ctx.code.mount("debugmode-py-light-code.py", authority="cell")
+ctx.code.mount("debugmount/debugmode-py-light-code.py", authority="cell")
 ctx.translate()
 
 ctx.tf.debug.enable()

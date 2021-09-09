@@ -250,7 +250,7 @@ class MountItem:
                             filemode = "r" # TODO: binary file for mixed cells => try to decode
                             with open(entry.path, filemode) as f:
                                 try:
-                                    data = f.read().strip("\n")
+                                    data = f.read().strip("\n") + "\n"
                                 except UnicodeDecodeError:
                                     continue
                                 except:

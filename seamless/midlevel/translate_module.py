@@ -42,19 +42,23 @@ def translate_module(node, root, namespace, inchannels, outchannels):
         mount = deepcopy(node["mount"])
         if node.get("multi"):
             mount["as_directory"] = True
-            codecell2_celltype = "plain"
+            codecell.mount(**mount)
         else:
-            codecell2_celltype = "text"
-        codecell2 = core_cell(codecell2_celltype)
-        subcontext.code2 = codecell2
-        codecell2.mount(**mount)
-        mode = mount.get("mode", "rw")
-        if mode == "rw" :
-            codecell2.bilink(codecell)
-        elif mode == "r":
-            codecell2.connect(codecell)
-        elif mode == "w":
-            codecell.connect(codecell2)
+            codecell2 = core_cell("mixed")
+            subcontext.code2 = codecell2
+            codecell3 = core_cell("text")
+            subcontext.code3 = codecell3
+            codecell3.mount(**mount)
+            mode = mount.get("mode", "rw")
+            if mode == "rw" :
+                codecell2.bilink(codecell)
+                codecell3.bilink(codecell2)
+            elif mode == "r":
+                codecell2.connect(codecell)
+                codecell3.connect(codecell2)
+            elif mode == "w":
+                codecell.connect(codecell2)
+                codecell2.connect(codecell3)
 
     subcontext.module_cell = core_cell("plain")
     if node.get("multi"):

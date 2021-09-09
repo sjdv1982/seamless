@@ -50,7 +50,8 @@ module = {
 from seamless.compiler import compilers, languages
 testmodule = build_module(
     module, module_error_name=None,
-    compilers=compilers, languages=languages
+    compilers=compilers, languages=languages,
+    module_debug_mounts=None
 )[1].lib
 print(testmodule.add(2,3))
 print(testmodule.add2(2,3))
