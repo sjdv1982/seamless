@@ -10,7 +10,7 @@ ctx.pypackage["submodule.py"] = """
 def get_square(value):
     return value**2
 """
-ctx.pypackage.mount("/tmp/pypackage", authority="cell")
+ctx.pypackage.mount("debugmount/pypackage", authority="cell")
 
 def func(a, b):
     from .pypackage import get_square
@@ -30,3 +30,4 @@ print(ctx.tf.result.value)
 
 ctx.tf.debug.enable("light")
 ctx.tf.a = 12
+ctx.compute()

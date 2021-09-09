@@ -52,8 +52,14 @@ def build_interpreted_module(
     assert isinstance(code, str), type(code)    
     package_name = None
     filename = module_error_name + ".py"
-    if module_debug_mounts is not None and module_error_name in module_debug_mounts: # single-file modules
-        filename = module_debug_mounts[module_error_name]["path"]
+    if module_debug_mounts is not None:
+        if module_error_name in module_debug_mounts: # single-file modules
+            filename = module_debug_mounts[module_error_name]["path"]
+        else:
+            module_path = module_error_name.split(".")
+            if module_path[0] in module_debug_mounts: # multi-file modules
+                dirname = module_debug_mounts[module_path[0]]["path"]
+                filename = os.path.join(dirname, module_path[1]) + ".py"
     mod = ModuleType(full_module_name)
     if parent_module_name is not None:
         package_name = parent_module_name
