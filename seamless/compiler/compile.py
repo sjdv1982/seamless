@@ -35,8 +35,8 @@ def compile(binary_objects, build_dir, *,
                 old_header = all_headers[headername]
                 if old_header != header:
                     raise Exception("Two different header versions for '%s'" % headername)
-                assert header["language"] in ("c", "cpp") # for now, only C/C++ headers; don't know file extensions otherwise
-                all_headers[headername] = header["code"]
+            assert header["language"] in ("c", "cpp") # for now, only C/C++ headers; don't know file extensions otherwise
+            all_headers[headername] = header
     try:
         if build_dir in locks:
             lock = locks[build_dir]
@@ -53,7 +53,8 @@ def compile(binary_objects, build_dir, *,
             if not build_dir_may_exist:
                 print("WARNING: compiler build dir %s already exists... this could be trouble!" % build_dir)
         os.chdir(build_dir)
-        for headername, headercode in all_headers:
+        for headername, header in all_headers.items():
+            headercode = header["code"]
             header_file = headername + ".h" # hard-code C/C++ for now
             with open(header_file, "w") as f:
                 f.write(headercode)
@@ -163,12 +164,7 @@ def complete(module_definition, compilers, languages):
         o["compile_flag"] = compiler["compile_flag"]
         o["output_flag"] = compiler["output_flag"]
 
-        headers = o.pop("headers", [])
-        o["headers"] = {}
-        for header in headers:
-            assert header in project_headers, (header, project_headers.keys())
-            project_header = deepcopy(project_headers[header])
-            o["headers"][header] = project_header
+        o["headers"] = deepcopy(project_headers)
     return m
 
 from . import find_language
