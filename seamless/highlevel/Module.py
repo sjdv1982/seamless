@@ -198,6 +198,8 @@ e.g. "subdirectory/code.py".
     def multi(self, value):
         if not isinstance(value, bool):
             raise TypeError(type(value))
+        if value and self.language != "python":
+            raise TypeError("Multi-modules must be written in Python")
         hnode = self._get_hnode()
         if value:
             mount = hnode.get("mount")
@@ -437,6 +439,8 @@ Or, it could use an internal package name like "spamalot" and do
 
     @language.setter
     def language(self, value):
+        if self.multi and value != "python":
+            raise TypeError("Multi-modules must be written in Python")
         if value not in ("python", "ipython"):
             raise NotImplementedError
         from ..compiler import find_language

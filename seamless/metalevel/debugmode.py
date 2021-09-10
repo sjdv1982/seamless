@@ -3,6 +3,7 @@
 TODO: print mode (only direct_print)
 You can switch from print mode to another mode, but not vice versa.
 """
+from typing import OrderedDict
 from seamless import core
 import weakref
 import os
@@ -40,7 +41,7 @@ generic_attach_messages = {
     "vscode": """Generic source code mount to {host_path} detected.
 
 In Visual Studio Code, set breakpoints in this file.
-
+{object_mount_message}
 In "Run and Debug", an entry "{name}" should be present.
 If not, make sure that {host_project_dir} is the primary directory of your VSCode workspace
 
@@ -83,6 +84,35 @@ def get_code_mount(transformer):
                 raise ValidationError(msg.format(codecell))
             if "mount" in node:
                 return node["mount"]
+
+def get_compiled_mounted_module_objects(transformer):
+    mmo = {}
+    from ..highlevel import Cell
+    node = transformer._get_htf()
+    modulepath = tuple(node["path"]) + ("_main_module",)
+    lp = len(modulepath)
+    parent = transformer._parent()
+    connections = parent._graph[1]
+    for con in connections:
+        if con["type"] != "connection":
+            continue
+        if con["target"][-1] != "code":
+            continue
+        if tuple(con["target"])[:lp] == modulepath:
+            objectname = con["target"][-2]
+            codecellpath = tuple(con["source"])
+            try:
+                codecell = parent._get_path(codecellpath)            
+            except AttributeError:
+                continue
+            if not isinstance(codecell, Cell):
+                break
+            node = codecell._get_hcell()
+            if node.get("UNTRANSLATED"):
+                continue
+            if "mount" in node:
+                mmo[objectname] = node["mount"]["path"]
+    return mmo
 
 def find_transformer_modules(tf):
     from ..highlevel import Module
@@ -275,7 +305,6 @@ If True, the transformer will wait for a debugger to attach"""
                     host_path = os.path.relpath(code_path, "/cwd")
                     host_path = os.path.join(hostcwd, host_path)
                     host_project_dir = hostcwd
-                    #debug["source_map"] = [(code_path, host_path)]
                     debug["source_map"] = [("/cwd", hostcwd)]
                 debug["exec-identifier"] = code_path
                 msg = python_attach_headers[mode, self._ide].format(
@@ -336,12 +365,46 @@ If True, the transformer will wait for a debugger to attach"""
                     host_path = os.path.relpath(code_path, "/cwd")
                     host_path = os.path.join(hostcwd, host_path)
                     host_project_dir = hostcwd
-                    #debug["source_map"] = [(code_path, host_path)]
                     debug["source_map"] = [("/cwd", hostcwd)]
-                debug["main-code"] = code_path
+                debug["mounted_module_objects"] = {
+                    "main": code_path
+                }
+                mmo_ok = OrderedDict()
+                mmo_not_ok = OrderedDict()
+                mmo = get_compiled_mounted_module_objects(tf)
+                object_mount_message = ""
+                for objname in sorted(mmo.keys()):
+                    objpath = mmo[objname]
+                    ok = True
+                    host_objpath = objpath
+                    if hostcwd is not None: 
+                        objpath2 = os.path.abspath(objpath)
+                        if not objpath2.startswith("/cwd"):
+                            ok = False
+                        objpath3 = os.path.relpath(objpath2, "/cwd")
+                        host_objpath = os.path.join(hostcwd, objpath3)                        
+                    if ok:
+                        debug["mounted_module_objects"][objname] = objpath
+                        mmo_ok[objname] = host_objpath
+                    else:
+                        mmo_not_ok[objname] = host_objpath
+                if mmo_ok:
+                    object_mount_message += "\nA source mount was detected for the following code objects:\n"
+                    for objname, host_objpath in mmo_ok.items():
+                        object_mount_message += "- {} => {}\n".format(objname, host_objpath)
+                    object_mount_message += "\n"
+                if mmo_not_ok:
+                    object_mount_message += """
+A source mount cannot be used (filename does not start with /cwd)
+for the following code objects:
+"""
+                    for objname, host_objpath in mmo_not_ok.items():
+                        object_mount_message += "- {} => {}\n".format(objname, host_objpath)
+                    object_mount_message += "\n"
                 msg = generic_attach_messages[self._ide].format(
                     host_path=host_path,
                     host_project_dir=host_project_dir,
+                    object_mount_message=object_mount_message,
                     name=name
                 )
                 debug["generic_attach_message"] = msg
@@ -372,7 +435,6 @@ Debugger attach is {}
                 )
                 debug["python_attach_message"] = msg
                 code_cell = getattr(self._mount.mount_ctx, "code")
-                #debug["main-code"] = code_cell._mount["path"]
                 debug["exec-identifier"] = code_cell._mount["path"]
             else:            
                 raise NotImplementedError

@@ -124,12 +124,12 @@ def _vscode_compiled_attach_create(debug):
     for n in range(len(pipeargs)):
         if pipeargs[n] is None:
             pipeargs[n] = docker_container
-    main = debug["main-code"]
-    main2 = os.path.splitext(main)[1]
-    main3 = os.path.relpath(main, "/cwd")
-    main3 = "${workspaceFolder}/" + main3
-    key = SEAMLESS_EXTENSION_DIR + "/" + debug["full_module_names"]["module"] + "/main" + main2
-    entry["sourceFileMap"][key] = main3
+    for objname, filename in debug.get("mounted_module_objects", {}).items():
+        ext = main2 = os.path.splitext(filename)[1]
+        filename2 = os.path.relpath(filename, "/cwd")
+        filename3 = "${workspaceFolder}/" + filename2
+        key = SEAMLESS_EXTENSION_DIR + "/" + debug["full_module_names"]["module"] + "/" + objname + ext
+        entry["sourceFileMap"][key] = filename3
     for source, target in debug.get("source_map", []):
         entry["sourceFileMap"][source] = target
     if "configurations" not in launch_json_data:

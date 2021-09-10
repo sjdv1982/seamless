@@ -67,12 +67,7 @@ def compile(binary_objects, build_dir, *,
               object_["compile_flag"],
             ]
             for opt in object_["options"]:
-                if opt.find("host_filename") > -1:
-                    host_filename = object_.get("host_filename")
-                    if host_filename is not None:
-                        cmd.append(opt.format(host_filename=host_filename))
-                else:
-                    cmd.append(opt)
+                cmd.append(opt)
             cmd += [
               object_["output_flag"],
               os.path.abspath(obj_file)
@@ -160,10 +155,6 @@ def complete(module_definition, compilers, languages):
                 options += profile_options
         else:
             options = list(debug_options)
-            if compiler_name in ("gcc", "g++", "gfortran", "gccgo"): 
-                pass # should no longer be necessary...
-                #options.append("-ffile-prefix-map={0}.{1}={2}".format(objectname, extension, "{host_filename}"))
-                #options.append("-ffile-prefix-map={0}.{1}=/SEAMLESS/{0}.{1}".format(objectname, extension)) # DOES NOT WORK
         o.pop("profile_options", None)
         o.pop("debug_options", None)
         o["options"] = options

@@ -7,7 +7,8 @@ from ...mime import language_to_mime
 
 properties = [
     "language", "code", "extension", "compiler", "target",
-    "options", "profile_options", "debug_options"
+    "options", "profile_options", "debug_options", 
+    "headers"
 ]
 
 class CompiledObjectWrapper:

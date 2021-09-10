@@ -160,16 +160,18 @@ r.py
    http://localhost:5813/ctx/result.png
   edit plot.R
   The PNG should update, the SVG should not
+compute-ctrl-c.py: open with ipython and press ctrl+c
 debugmode-py-light.py
   To debug a simple Python transformer in VSCode. Follow the instructions.
 debugmode-compiled-light.py
   To debug a simple C++ transformer in VSCode. Follow the instructions.
 debugmode-py-full.py
   Full debugging of a simple Python transformer in VSCode. Follow the instructions.
-  compute-ctrl-c.py: open with ipython and press ctrl+c
 debugmode-pymodule-light.py
   To debug a Python transformer with Python single-file module in VSCode. Follow the instructions.
 debugmode-pypackage-light.py
   To debug a Python transformer with Python package in VSCode. Follow the instructions.
+debugmode-compiledmodule-light.py
+  To debug a multi-file C/C++ transformer in VSCode. Follow the instructions.
 hack-bash-transformer-translation.py
   Run with IPython and hack /tmp/execute.py
