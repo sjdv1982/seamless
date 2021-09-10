@@ -3,7 +3,7 @@ from copy import deepcopy
 from .CompiledObjectWrapper import CompiledObjectWrapper
 Transformer = None
 
-module_attrs = "compiler_verbose", "target", "link_options"
+module_attrs = "compiler_verbose", "target", "link_options", "headers"
 
 class CompiledObjectDict:
     def __init__(self, worker):
@@ -11,6 +11,49 @@ class CompiledObjectDict:
         if Transformer is None:
             from ..Transformer import Transformer
         object.__setattr__(self,"_worker", weakref.ref(worker))
+
+    @property
+    def headers(self):
+        worker = self._worker()
+        if not worker._has_tf():
+            temp = worker._get_htf().get("TEMP", {})
+            if "_main_module" not in temp:
+                return None
+            return temp["_main_module"].get("headers")
+        else:
+            tf = worker._get_tf()
+            headers_cell = getattr(tf, "main_module_headers_CELL")
+            return headers_cell.value
+
+    def _set_headers(self, value):
+        worker = self._worker()
+        parent = worker._parent()
+        target_path = worker._path + ("_main_module", "headers",)
+        if isinstance(value, Cell):
+            from ..assign import assign_connection
+            assert value._parent() == parent
+            #TODO: check existing inchannel connections and links (cannot be the same or higher)
+            exempt = worker._exempt()
+            assign_connection(parent, value._path, target_path, False, exempt=exempt)
+            parent._translate()
+        else:
+            if isinstance(value, Resource):
+                value = value.data
+            if not worker._has_tf():
+                htf = worker._get_htf()
+                temp = htf.get("TEMP")
+                if temp is None:
+                    temp = {}
+                    htf["TEMP"] = temp
+                if "_main_module" not in temp:
+                    temp["_main_module"] = {}
+                main_module = temp["_main_module"]
+                main_module["headers"] = value
+                parent._translate()
+            else:
+                tf = worker._get_tf()
+                headers_cell = getattr(tf, "main_module_headers_CELL")
+                headers_cell.set(value)
 
     def __getattr__(self, attr):
         worker = self._worker()
@@ -47,6 +90,8 @@ class CompiledObjectDict:
         worker = self._worker()
         if attr == "link_options":
             return setattr(worker, "link_options", value)
+        if attr == "headers":
+            return self._set_headers(value)
         if attr in module_attrs:
             assert isinstance(worker, Transformer)
             if worker._get_tf() is None:
@@ -87,3 +132,5 @@ class CompiledObjectDict:
 
     def __delattr__(self, attr):
         raise NotImplementedError
+
+from ...highlevel.Cell import Cell, Resource

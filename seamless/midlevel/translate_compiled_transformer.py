@@ -96,7 +96,14 @@ def translate_compiled_transformer(
 
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
-    main_module_inchannels = [("objects",) + ic[1:] for ic in inchannels if ic[0] == "_main_module"] + [("link_options",)]
+    main_module_inchannels = [("link_options",), ("headers",)]
+    for ic in inchannels:
+        if ic[0] != "_main_module":
+            continue
+        if ic[1:] == ("headers",):
+            continue
+        else:
+            main_module_inchannels.append(("objects",) + ic[1:])
     inchannels = [ic for ic in inchannels if ic[0] != "_main_module"]
 
     parent = get_path(root, node["path"][:-1], None, None)
@@ -106,7 +113,7 @@ def translate_compiled_transformer(
 
     result_name = node["RESULT"]
     input_name = node["INPUT"]
-
+    
     inputpins = []
     all_inchannels = set(inchannels)
     pin_cells = {}
@@ -161,7 +168,7 @@ def translate_compiled_transformer(
     )
 
     for ic in main_module_inchannels:
-        if ic == "link_options":
+        if len(ic) == 1 and ic[-1] in ("link_options", "headers"):
             continue
         icpath = node["path"] + ("_main_module",) + ic[1:]
         namespace[icpath, "target"] = ctx.main_module.inchannels[ic], node
@@ -188,6 +195,15 @@ def translate_compiled_transformer(
     set_structured_cell_from_checksum(inp, inp_checksum)
     namespace[node["path"] + ("code",), "target"] = ctx.code, node
     namespace[node["path"] + ("code",), "source"] = ctx.code, node
+
+    # main module headers
+    headers_cell = cell("plain")
+    setattr(ctx, "main_module_headers_CELL", headers_cell)
+    headers_cell.connect(
+        ctx.main_module.inchannels[("headers",)]
+    )
+    namespace[node["path"] + ("_main_module", "headers"), "target"] = headers_cell, node        
+
 
     if has_meta_connection:
         ctx.meta = cell("plain")

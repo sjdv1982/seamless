@@ -7,8 +7,7 @@ from ...mime import language_to_mime
 
 properties = [
     "language", "code", "extension", "compiler", "target",
-    "options", "profile_options", "debug_options", 
-    "headers"
+    "options", "profile_options", "debug_options"
 ]
 
 class CompiledObjectWrapper:
@@ -116,7 +115,6 @@ class CompiledObjectWrapper:
             return data.get(attr)
         else:
             tf = worker._get_tf()
-            main_module = getattr(tf, "main_module")
             main_module = getattr(tf, "main_module")
             handle = main_module.handle
             if handle.data is None:

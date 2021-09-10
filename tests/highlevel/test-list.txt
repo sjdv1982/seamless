@@ -63,6 +63,7 @@ transformer-compiled.py
 transformer-redefine.py
 transformer-compiled-error.py
 transformer-compiled-module.py
+transformer-compiled-header.py
 twopi-graph-database.sh: run with Seamless database; delete job results (e.g. redis-cli flushall && rm -f ~/.seamless/database/*-*)
                       run as i=twopi-graph-database; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster

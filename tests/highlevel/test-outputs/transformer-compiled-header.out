@@ -1,0 +1,7 @@
+Warning: File path '/tmp/offset.h' has a different value, overwriting cell
+3041.0
+START
+3041.0
+START2
+3131.0
+{'offset': {'code': 'const int OFFSET = 3001;', 'language': 'c'}}
