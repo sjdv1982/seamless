@@ -354,14 +354,19 @@ class TransformationCache:
         if result_checksum is not None:
             if isinstance(transformer, Transformer):
                 #print("CACHE HIT", transformer, result_checksum.hex())
-                manager = transformer._get_manager()
-                manager._set_transformer_checksum(
-                    transformer,
-                    result_checksum,
-                    False,
-                    prelim=prelim
-                )
-                TransformerResultUpdateTask(manager, transformer).launch()
+                from ...metalevel.debugmount import debugmountmanager        
+                if debugmountmanager.is_mounted(transformer):
+                    debugmountmanager.debug_result(transformer, result_checksum)
+                    return
+                else:
+                    manager = transformer._get_manager()
+                    manager._set_transformer_checksum(
+                        transformer,
+                        result_checksum,
+                        False,
+                        prelim=prelim
+                    )
+                    TransformerResultUpdateTask(manager, transformer).launch()
         return tf_checksum, result_checksum, prelim
 
     def decref_transformation(self, transformation, transformer):

@@ -1,5 +1,4 @@
-from seamless.metalevel.debugmode import DebugMode
-from seamless.metalevel.debugmount import debugmountmanager
+from seamless.metalevel import debugmode, debugmount
 import weakref
 import functools
 import pprint
@@ -564,6 +563,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
             tf2 = tf.tf
         else:
             tf2 = tf.tf.executor
+        from ..metalevel.debugmode import debugmountmanager
         return debugmountmanager._mounts[tf2]
 
 
@@ -938,6 +938,17 @@ You can set this dictionary directly, or you may assign .meta to a cell
         htf = self._get_htf()
         if attr in htf["pins"]:
             return getattr(self, attr)
+        if self.debug.enabled and self.debug.mode == "full":
+            if attr != "value":
+                raise AttributeError(attr)
+            mount = self._get_debugmount()
+            mount_ctx = mount.mount_ctx
+            result = {}
+            for k in mount.tf._pins:
+                c = getattr(mount_ctx, k)
+                result[k] = c.value
+            return result
+            
         if attr not in ("value", "status", "exception"):
             tf = self._get_tf(force=True)
             inputcell = getattr(tf, htf["INPUT"])
@@ -987,7 +998,13 @@ You can set this dictionary directly, or you may assign .meta to a cell
             raise AttributeError(attr)
         if isinstance(value, Cell):
             raise TypeError(value)
+
         htf = self._get_htf()
+        if self.debug.enabled:
+            if attr in htf["pins"]:
+                return setattr(self, attr, value)
+            raise AttributeError(attr)
+
         if not self._has_tf():
             if isinstance(value, Resource):
                 value = value.data

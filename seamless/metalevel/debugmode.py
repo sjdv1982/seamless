@@ -246,6 +246,10 @@ Only full debug mode is possible, please specify this explicitly"""
             node = tf._get_htf()
             if node["compiled"]:
                 tf._get_tf().tf.integrator.debug_.set(True)
+            if core_transformer.status == "Status: OK":
+                from ..core.manager.tasks.transformer_update import TransformerUpdateTask
+                manager = core_transformer._get_manager()
+                TransformerUpdateTask(manager, core_transformer).launch()                
         self._enabled = True
 
     @property
@@ -452,7 +456,19 @@ Debugger attach is {}
 
     def disable(self):
         raise NotImplementedError
+        if not self._enabled:
+            raise ValueError("Debug mode is not active.")
         debugmountmanager.remove_mount(self._mount)
         self._enabled = False
+
+    def pull(self):
+        if not self._enabled:
+            raise ValueError("Debug mode is not active.")
+        if self._mode != "full":
+            raise ValueError("Debug mode must be 'full'")
+        tf = self._tf()
+        if tf is not None:
+            debugmount = tf._get_debugmount()
+            return debugmount.pull()
 
 from .debugmount import debugmountmanager

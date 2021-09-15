@@ -11,6 +11,7 @@ TODO: module pins!
 """
 
 import os, tempfile, shutil, functools
+from seamless.core.manager import livegraph
 
 SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
 
@@ -20,6 +21,7 @@ class DebugMount:
         self.path = path
         self.mount_ctx = None
         self.result_pinname = None
+        self._pulling = False
     def mount(self, skip_pins):
         from ..core.context import context
         from ..core.macro_mode import macro_mode_on
@@ -72,13 +74,38 @@ class DebugMount:
                 c._set_observer(functools.partial(self._observe, pinname), False)
 
     def _observe(self, pinname, value):
+        if self._pulling:
+            return
+        self._transformer_update()
+
+    def _transformer_update(self):
         from ..core.manager.tasks.transformer_update import TransformerUpdateTask
-        from ..core.status import StatusReasonEnum
         transformer = self.tf
         manager = transformer._get_manager()
         manager.taskmanager.cancel_transformer(transformer)
         manager.cachemanager.transformation_cache.cancel_transformer(transformer, False)
         TransformerUpdateTask(manager, transformer).launch()
+
+    def pull(self):
+        try:
+            self._pulling = True
+            transformer = self.tf
+            manager = transformer._get_manager()
+            livegraph = manager.livegraph
+            upstreams = livegraph.transformer_to_upstream[transformer]
+            
+            for pinname, accessor in upstreams.items():
+                checksum = None
+                if accessor is not None: #unconnected
+                    checksum = accessor._checksum
+                if checksum is not None:
+                    checksum = checksum.hex()
+                c = getattr(self.mount_ctx, pinname)
+                c.set_checksum(checksum)
+            self._pulling = False            
+            self._transformer_update()
+        finally:
+            self._pulling = False            
 
     def destroy(self):
         self.mount_ctx.destroy()

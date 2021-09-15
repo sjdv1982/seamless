@@ -1,5 +1,4 @@
 from seamless.highlevel import Context, Cell
-import traceback
 
 ctx = Context()
 
@@ -13,9 +12,15 @@ ctx.tf.a = 10
 ctx.tf.b = 20
 ctx.result = ctx.tf.result
 ctx.compute()
+print(ctx.tf.result.value, ctx.result.value)
 
 ctx.tf.debug.attach = False
 ctx.tf.debug.enable()
+ctx.compute()
+print(ctx.tf.result.value, ctx.result.value)
 ctx.tf.a = 11
 ctx.compute()
-
+print(ctx.tf.result.value, ctx.result.value)
+ctx.tf.debug.pull()
+ctx.compute()
+print(ctx.tf.result.value, ctx.result.value)
