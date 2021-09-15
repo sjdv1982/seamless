@@ -24,3 +24,10 @@ print(ctx.tf.result.value, ctx.result.value)
 ctx.tf.debug.pull()
 ctx.compute()
 print(ctx.tf.result.value, ctx.result.value)
+
+#ctx.tf.debug.disable()
+ctx.tf.debug.attach = True
+#ctx.tf.debug.enable()
+ctx.tf.a = 99
+ctx.compute()
+print(ctx.tf.result.value, ctx.result.value)

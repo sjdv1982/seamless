@@ -260,10 +260,18 @@ If True, the transformer will wait for a debugger to attach"""
 
     @attach.setter
     def attach(self, value: bool):
-        print("TODO: change attach while debugmode enabled")
         if not isinstance(value, bool):
             raise TypeError(type(value))
         self._attach = value
+        if self._enabled:
+            debug = self._to_lowlevel(silent=True)
+            core_transformer = self._get_core_transformer(force=False)
+            if core_transformer is not None:
+                on_off = "ON" if self._attach else "OFF"                
+                print("Debugger attach is {}".format(on_off))
+                core_transformer._debug = debug
+            else:
+                print("Debugger attach has changed: no effect on current debug mode")
 
     @property
     def mode(self):
@@ -281,7 +289,7 @@ If True, the transformer will wait for a debugger to attach"""
             raise TypeError(type(value))
         self._direct_print = value
 
-    def _to_lowlevel(self):
+    def _to_lowlevel(self, *, silent=False):
         debug = {
             "direct_print": self._direct_print,
             "python_attach": False,
@@ -415,7 +423,8 @@ for the following code objects:
         if mode == "full":
             tf = self._tf()
             debug["main_directory"] = self._mount.path
-            print("""Entering full debug mode for {}
+            if not silent:
+                print("""Entering full debug mode for {}
 Mounted main directory: {}
 Debugger attach is {}            
 """.format(tf, debug["main_directory"], "ON" if self._attach else "OFF"))
@@ -454,13 +463,6 @@ Debugger attach is {}
     def enabled(self):
         return self._enabled
 
-    def disable(self):
-        raise NotImplementedError
-        if not self._enabled:
-            raise ValueError("Debug mode is not active.")
-        debugmountmanager.remove_mount(self._mount)
-        self._enabled = False
-
     def pull(self):
         if not self._enabled:
             raise ValueError("Debug mode is not active.")
@@ -470,5 +472,24 @@ Debugger attach is {}
         if tf is not None:
             debugmount = tf._get_debugmount()
             return debugmount.pull()
+
+
+    def disable(self):
+        if not self._enabled:
+            raise ValueError("Debug mode is not active.")
+        tf = self._tf()
+        if tf is None:
+            return
+        core_transformer = self._get_core_transformer(force=False)
+        debugmountmanager.remove_mount(self._mount)
+        if core_transformer is not None:
+            from ..core.manager.tasks.transformer_update import TransformerUpdateTask
+            core_transformer._debug = None
+            node = tf._get_htf()
+            if node["compiled"]:
+                tf._get_tf().tf.integrator.debug_.set(False)
+            manager = core_transformer._get_manager()
+            TransformerUpdateTask(manager, core_transformer).launch()
+        self._enabled = False
 
 from .debugmount import debugmountmanager
