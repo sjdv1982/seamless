@@ -449,6 +449,16 @@ Debugger attach is {}
                 debug["python_attach_message"] = msg
                 code_cell = getattr(self._mount.mount_ctx, "code")
                 debug["exec-identifier"] = code_cell._mount["path"]
+                module_mounts = {}
+                for module_name in self._mount._modules:
+                    print("MOD!", module_name)
+                    mod_code_cell = getattr(self._mount.mount_ctx, module_name)
+                    mount_path = mod_code_cell._mount["path"]
+                    module_mounts[module_name] = {
+                        "path": mount_path
+                    }
+                if module_mounts:
+                    debug["module_mounts"] = module_mounts
             else:            
                 raise NotImplementedError
 

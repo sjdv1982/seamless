@@ -249,7 +249,6 @@ class DebugMountManager:
             pin = transformer._pins[pinname]
             if pinname in mount._modules:
                 _, _, checksum = mount._modules[pinname]
-                print("MOD", pinname, checksum)
             else:
                 c = getattr(mount_ctx, pinname)
                 checksum = c._checksum
