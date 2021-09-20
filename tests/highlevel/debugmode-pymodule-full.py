@@ -9,7 +9,6 @@ ctx.pymodule.code = """
 def get_square(value):
     return value**2
 """
-ctx.pymodule.mount("debugmount/test-pymodule.py", authority="cell")
 
 def func(a, b):
     from .pymodule import get_square
@@ -23,12 +22,14 @@ ctx.tf.b = 20
 ctx.tf.pymodule = ctx.pymodule
 
 ctx.code = ctx.tf.code.pull()
-ctx.code.mount("debugmount/debugmode-pymodule-light-code.py", authority="cell")
+
 ctx.compute()
 print(ctx.tf.result.value)
 
-ctx.tf.debug.enable("light")
+#ctx.tf.debug.attach = False
+ctx.tf.debug.enable("full")
+
 ctx.tf.a = 12
 ctx.compute()
-print(ctx.tf.exception)
 print(ctx.tf.result.value)
+print(ctx.tf.exception)

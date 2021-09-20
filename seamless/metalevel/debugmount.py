@@ -10,10 +10,43 @@ TODO: module pins!
 - Python: set the file names correctly 
 """
 
+from logging import warn
 import os, tempfile, shutil, functools
+from sys import modules
+from seamless.core.protocol.calculate_checksum import calculate_checksum_sync
+from seamless.core.protocol.serialize import serialize_sync
+from seamless.core.protocol.deserialize import deserialize_sync
 from seamless.core.manager import livegraph
 
 SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
+
+def pull_module(pinname, upstreams, manager):
+    accessor = upstreams.get(pinname)
+    checksum = None
+    if accessor is not None: #unconnected
+        checksum = accessor._checksum
+    if checksum is not None:
+        checksum2 = checksum.hex()
+        buffer = manager.resolve(checksum2)
+        if buffer is not None:
+            mod_def = deserialize_sync(buffer,checksum, "plain", True)
+            try:
+                mod_lang = mod_def["language"]
+                mod_type = mod_def["type"]
+                mod_code = mod_def["code"]
+            except Exception:
+                mod_lang, mod_type, mod_code = None, None, None
+    return mod_lang, mod_type, mod_code, checksum
+
+def analyze_mod_code(mod_code, pinname):
+    if mod_code is not None and not isinstance(mod_code, str):
+        if isinstance(mod_code, dict):
+            msg = "Module '{}' seems to contain a multi-module definition, not writing to file"
+        else:
+            msg = "Module '{}' contains an unknown data type, not mounting, not writing to file"
+        print(msg.format(pinname))
+        mod_code = None
+    return mod_code
 
 class DebugMount:
     def __init__(self, tf, path):
@@ -22,10 +55,12 @@ class DebugMount:
         self.mount_ctx = None
         self.result_pinname = None
         self._pulling = False
+        self._modules = {}
     def mount(self, skip_pins):
         from ..core.context import context
         from ..core.macro_mode import macro_mode_on
-        from ..core.cell import celltypes, subcelltypes, extensions
+        from ..core.cell import celltypes, subcelltypes, extensions, cell as core_cell
+        from ..mime import language_to_extension
         tf = self.tf
         manager = tf._get_manager()
         livegraph = manager.livegraph
@@ -50,32 +85,69 @@ class DebugMount:
                     else:
                         celltype = pin_cells[0].celltype
                         subcelltype = pin_cells[0]._subcelltype
-                if celltype == "module":
-                    raise NotImplementedError
-                if subcelltype is not None:
-                    cellclass = subcelltypes[subcelltype]
+                if subcelltype == "module":
+                    mod_lang, mod_type, mod_code, mod_cs = pull_module(
+                        pinname, upstreams, manager
+                    )
+                    if mod_lang is None:
+                        msg = "Module '{}' has unknown language, mounting to .txt file"
+                        print(msg.format(pinname))
+                        ext = ".txt"
+                    else:
+                        ext = "." + language_to_extension(mod_lang, "txt")
+                    mod_code = analyze_mod_code(mod_code, pinname)
+                    self._modules[pinname] = mod_lang, mod_type, mod_cs
+                    c = core_cell("text")                    
                 else:
-                    cellclass = celltypes[celltype]
-                c = cellclass()
-                ext = extensions[cellclass]
+                    if subcelltype is not None:
+                        cellclass = subcelltypes[subcelltype]
+                    else:
+                        cellclass = celltypes[celltype]
+                    c = cellclass()
+                    ext = extensions[cellclass]
                 filename = os.path.join(self.path, pinname) + ext
                 mode = "w" if pinname == self.result_pinname else "rw"
-                c.mount(filename, mode=mode, authority="cell", persistent=False)
+                c.mount(
+                    filename, mode=mode, 
+                    authority="cell", persistent=False
+                )
                 setattr(self.mount_ctx, pinname, c)
-                checksum = None
-                accessor = upstreams.get(pinname)
-                if accessor is not None:
-                    checksum = accessor._checksum
-                if checksum is not None:
-                    c.set_checksum(checksum.hex())
+                if subcelltype == "module":
+                    if mod_code is not None:
+                        c.set(mod_code)
+                else:
+                    checksum = None
+                    accessor = upstreams.get(pinname)
+                    if accessor is not None:
+                        checksum = accessor._checksum
+                    if checksum is not None:
+                        c.set_checksum(checksum.hex())
         for pinname, pin in tf._pins.items():
             if pinname != self.result_pinname:
                 c = getattr(self.mount_ctx, pinname)
                 c._set_observer(functools.partial(self._observe, pinname), False)
 
-    def _observe(self, pinname, value):
+    def _observe(self, pinname, checksum):
         if self._pulling:
             return
+        if pinname in self._modules:
+            from ..core.protocol.get_buffer import get_buffer
+            code = None
+            if checksum is not None:
+                checksum2 = bytes.fromhex(checksum)
+                code_buf = get_buffer(checksum2)
+                if code_buf is not None:
+                    code = deserialize_sync(code_buf, checksum2, "text", True)
+            mod_lang, mod_type, _ = self._modules[pinname]
+            new_value = {
+                "language": mod_lang,
+                "type": mod_type,
+            }
+            if code is not None:
+                new_value["code"] = code
+            new_value_buffer = serialize_sync(new_value, "plain")
+            new_checksum = calculate_checksum_sync(new_value_buffer)
+            self._modules[pinname] = mod_lang, mod_type, new_checksum
         self._transformer_update()
 
     def _transformer_update(self):
@@ -95,13 +167,23 @@ class DebugMount:
             upstreams = livegraph.transformer_to_upstream[transformer]
             
             for pinname, accessor in upstreams.items():
-                checksum = None
-                if accessor is not None: #unconnected
-                    checksum = accessor._checksum
-                if checksum is not None:
-                    checksum = checksum.hex()
-                c = getattr(self.mount_ctx, pinname)
-                c.set_checksum(checksum)
+                if pinname in self._modules:
+                    mod_lang, mod_type, mod_code, mod_cs = pull_module(
+                        pinname, upstreams, manager
+                    )
+                    mod_code = analyze_mod_code(mod_code, pinname)
+                    self._modules[pinname] = mod_lang, mod_type, mod_cs
+                    if mod_code is not None:
+                        c = getattr(self.mount_ctx, pinname)
+                        c.set(mod_code)
+                else:      
+                    checksum = None
+                    if accessor is not None: #unconnected
+                        checksum = accessor._checksum
+                    if checksum is not None:
+                        checksum = checksum.hex()
+                    c = getattr(self.mount_ctx, pinname)
+                    c.set_checksum(checksum)
             self._pulling = False            
             self._transformer_update()
         finally:
@@ -164,10 +246,19 @@ class DebugMountManager:
                 continue
             if pinname == mount.result_pinname:
                 continue
-            c = getattr(mount_ctx, pinname)
-            checksum = c._checksum
+            pin = transformer._pins[pinname]
+            if pinname in mount._modules:
+                _, _, checksum = mount._modules[pinname]
+                print("MOD", pinname, checksum)
+            else:
+                c = getattr(mount_ctx, pinname)
+                checksum = c._checksum
             input_pins[pinname] = checksum 
-            celltypes[pinname] = c.celltype, c._subcelltype
+            celltype, subcelltype = pin.celltype, pin.subcelltype
+            if celltype is None:
+                celltype, subcelltype = c.celltype, c._subcelltype 
+            celltypes[pinname] = celltype, subcelltype
+
             if checksum is None:
                 ok = False
                 break

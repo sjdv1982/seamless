@@ -21,6 +21,14 @@ for l in open(mimetypes_file, "r"):
             mimetypes_rev[extension] = mimetype
         mimetypes[mimetype].append(extension)
 
+def language_to_extension(language, fallback=None):
+    try:
+        return language_to_ext[language]
+    except KeyError:
+        if fallback is None:
+            raise KeyError(language) from None
+        return fallback
+
 language_to_ext = {
     "python": "py",
     "c": "c",

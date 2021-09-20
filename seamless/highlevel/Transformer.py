@@ -939,9 +939,11 @@ You can set this dictionary directly, or you may assign .meta to a cell
         if attr in htf["pins"]:
             return getattr(self, attr)
         if self.debug.enabled and self.debug.mode == "full":
-            if attr != "value":
-                raise AttributeError(attr)
             mount = self._get_debugmount()
+            if attr != "value":
+                if attr in ("status", "exception"):
+                    return getattr(mount.tf, attr)
+                raise AttributeError(attr)
             mount_ctx = mount.mount_ctx
             result = {}
             for k in mount.tf._pins:
