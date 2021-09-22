@@ -193,7 +193,8 @@ Only shells in full debug mode are possible, please specify this explicitly"""
         if self._enabled:
             raise ValueError("Debug mode is already active.")
         tf = self._tf()
-        if tf is None or tf._get_htf().get("UNTRANSLATED"):
+        node = tf._get_htf()
+        if tf is None or node.get("UNTRANSLATED"):
             raise ValueError("Transformer is untranslated.")
         if mode is None:
             mode = self._mode       
@@ -202,7 +203,7 @@ Only shells in full debug mode are possible, please specify this explicitly"""
             if mode == "light":
                 core_transformer = self._get_core_transformer(force=True)
                 try:
-                    validate_light_mode(self._tf())
+                    validate_light_mode(tf)
                 except ValidationError as exc:
                     reason = exc.args[0]
                     msg = """Cannot enter light debug mode. 
@@ -213,7 +214,7 @@ Only shells in full debug mode are possible, please specify this explicitly"""
                 pass
         else:
             try:
-                validate_light_mode(self._tf())
+                validate_light_mode(tf)
                 mode = "light"
             except ValidationError as exc:
                 reason = exc.args[0]
@@ -225,9 +226,14 @@ Reason: {}"""
                 mode = "full"
 
         if mode == "full":
-            core_transformer = self._get_core_transformer(force=False)            
+            core_transformer = self._get_core_transformer(force=False)
+            special = None
+            if tf.language == "bash":
+                raise NotImplementedError
+            elif node.get("compiled"):
+                special = "compiled"        
             self._mount = debugmountmanager.add_mount(
-                core_transformer
+                core_transformer, special=special
             )
         elif mode == "light":
             core_transformer = self._get_core_transformer(force=True)
@@ -243,8 +249,7 @@ Only full debug mode is possible, please specify this explicitly"""
         debug = self._to_lowlevel()
         if core_transformer is not None:
             core_transformer._debug = debug
-            node = tf._get_htf()
-            if node["compiled"]:
+            if node.get("compiled"):
                 tf._get_tf().tf.integrator.debug_.set(True)
             if core_transformer.status == "Status: OK":
                 from ..core.manager.tasks.transformer_update import TransformerUpdateTask
@@ -450,8 +455,7 @@ Debugger attach is {}
                 code_cell = getattr(self._mount.mount_ctx, "code")
                 debug["exec-identifier"] = code_cell._mount["path"]
                 module_mounts = {}
-                for module_name in self._mount._modules:
-                    print("MOD!", module_name)
+                for module_name in self._mount.modules:
                     mod_code_cell = getattr(self._mount.mount_ctx, module_name)
                     mount_path = mod_code_cell._mount["path"]
                     module_mounts[module_name] = {
@@ -459,7 +463,16 @@ Debugger attach is {}
                     }
                 if module_mounts:
                     debug["module_mounts"] = module_mounts
-            else:            
+            elif node["compiled"]:
+                debug["generic_attach"] = True
+                assert "module" in self._mount.modules, self._mount.modules.keys()
+                _, main_code, main_rest, _ = self._mount.modules["module"]
+                mounted_module_objects = {}
+                for objname in mounted_module_objects:
+                    code_cell = getattr(self._mount.mount_ctx, module_name)
+                    code_path = code_cell._mount["path"]
+                    mounted_module_objects[module_name] = code_path
+            else:
                 raise NotImplementedError
 
         if all([(f == False or f is None) for f in debug.values()]):

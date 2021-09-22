@@ -729,6 +729,8 @@ You can set this dictionary directly, or you may assign .meta to a cell
             if k in (htf["INPUT"], htf["RESULT"]):
                 if k == htf["INPUT"] and not len(htf["pins"]):
                     continue
+                if k == htf["RESULT"] and self.debug.enabled and self.debug.mode == "full":
+                    continue
                 cell = getattr(self, k)
                 status = cell.status
             elif k == "code":

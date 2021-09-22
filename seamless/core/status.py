@@ -86,6 +86,10 @@ def status_accessor(accessor):
     return StatusEnum.VOID, accessor._status_reason, None
 
 def status_transformer(transformer):
+    from ..metalevel.debugmount import debugmountmanager
+    if debugmountmanager.is_mounted(transformer):
+        if debugmountmanager.has_debug_result(transformer):
+            return WorkerStatus(StatusEnum.OK)
     prelim = transformer.preliminary
     checksum = transformer._checksum
     if checksum is not None and not prelim:
