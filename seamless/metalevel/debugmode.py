@@ -40,7 +40,7 @@ In that case, do Transformer.clear_exception()"""
 generic_attach_messages = {
     "vscode": """Generic source code mount to {host_path} detected.
 
-In Visual Studio Code, set breakpoints in this file.
+In Visual Studio Code, set breakpoints in this file/directory.
 {object_mount_message}
 In "Run and Debug", an entry "{name}" should be present.
 If not, make sure that {host_project_dir} is the primary directory of your VSCode workspace
@@ -464,14 +464,24 @@ Debugger attach is {}
                 if module_mounts:
                     debug["module_mounts"] = module_mounts
             elif node["compiled"]:
-                debug["generic_attach"] = True
                 assert "module" in self._mount.modules, self._mount.modules.keys()
-                _, main_code, main_rest, _ = self._mount.modules["module"]
                 mounted_module_objects = {}
-                for objname in mounted_module_objects:
-                    code_cell = getattr(self._mount.mount_ctx, module_name)
+                for objname in self._mount._object_codes:
+                    code_cell = getattr(self._mount.mount_ctx, objname)
+                    module_name = objname[len(module_tag)+len("module."):]
                     code_path = code_cell._mount["path"]
                     mounted_module_objects[module_name] = code_path
+                debug["mounted_module_objects"] = mounted_module_objects
+                if self._attach:
+                    debug["generic_attach"] = True
+                    msg = generic_attach_messages[self._ide].format(
+                        host_path=self._mount.path,
+                        host_project_dir=host_project_dir,
+                        object_mount_message="",
+                        name=name
+                    )
+                    debug["generic_attach_message"] = msg
+
             else:
                 raise NotImplementedError
 
@@ -479,7 +489,7 @@ Debugger attach is {}
             return None
         debug["ide"] = self._ide
         debug["mode"] = mode
-        debug["attach"] = self._attach    
+        debug["attach"] = self._attach
         return debug
 
     @property
@@ -515,4 +525,4 @@ Debugger attach is {}
             TransformerUpdateTask(manager, core_transformer).launch()
         self._enabled = False
 
-from .debugmount import debugmountmanager
+from .debugmount import debugmountmanager, module_tag

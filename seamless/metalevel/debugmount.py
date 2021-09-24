@@ -8,6 +8,9 @@ ctx is the root
 from copy import deepcopy
 from logging import warn
 import os, tempfile, shutil, functools
+
+from numpy import mod
+from seamless.core.build_module import build_compiled_module
 from sys import modules
 from seamless.core.protocol.calculate_checksum import calculate_checksum_sync
 from seamless.core.protocol.serialize import serialize_sync
@@ -27,6 +30,22 @@ def checksum_to_code(checksum):
         if code_buf is not None:
             code = deserialize_sync(code_buf, checksum2, "text", True)
     return code
+
+def integrate_compiled_module(mod_lang, mod_rest, object_codes):
+    new_value = deepcopy(mod_rest)
+    new_value["type"] = "compiled"
+    if mod_lang is not None:
+        new_value["language"] = mod_lang
+    for obj_name in object_codes:
+        obj_code = object_codes[obj_name]
+        pos = obj_name.index(".")
+        obj_name2 = obj_name[pos+1:]
+        assert "objects" in new_value and obj_name2 in new_value["objects"], obj_name2
+        new_value["objects"][obj_name2]["code"] = obj_code
+    new_value_buffer = serialize_sync(new_value, "plain")
+    new_checksum = calculate_checksum_sync(new_value_buffer)
+    buffer_cache.cache_buffer(new_checksum, new_value_buffer)
+    return new_checksum
 
 def pull_module(pinname, upstreams, manager):
     accessor = upstreams.get(pinname)
@@ -55,6 +74,8 @@ def pull_module(pinname, upstreams, manager):
                     mod_code = mod_def["code"]
             except Exception:
                 mod_type, mod_lang, mod_rest, mod_code = None, None, None, None
+    else:
+        mod_type, mod_lang, mod_rest, mod_code = None, None, None, None
     return mod_type, mod_lang, mod_rest, mod_code, checksum
 
 def analyze_mod_code(mod_code, pinname):
@@ -97,6 +118,7 @@ class DebugMount:
                 break
         else:
             raise Exception
+        assert not len(self.modules)  # cannot re-mount
         with macro_mode_on():
             self.mount_ctx = context(toplevel=True)
             pinname_to_cells = {}
@@ -118,6 +140,7 @@ class DebugMount:
                     )
                     if mod_type == "compiled":
                         print("Mounting compiled module")
+                        mod_rest["target"] = "debug"
                         obj_rest = mod_rest["objects"]
                         pinname_to_cells[pinname] = []
                         singleton = (pinname == "module" and list(mod_code.keys()) == ["main"])
@@ -146,6 +169,9 @@ class DebugMount:
                             c.set(obj_code)
                             self._object_codes[cellname] = obj_code
                             pinname_to_cells[pinname].append(cellname)
+                            mod_cs = integrate_compiled_module(mod_lang, mod_rest, self._object_codes)
+                        if mod_cs is not None:
+                            buffer_cache.incref(mod_cs, True)
                         self.modules[pinname] = mod_type, mod_lang, mod_rest, mod_cs
                         continue
                     if mod_lang is None:
@@ -155,6 +181,8 @@ class DebugMount:
                     else:
                         ext = "." + language_to_extension(mod_lang, "txt")
                     mod_code = analyze_mod_code(mod_code, pinname)
+                    if mod_cs is not None:
+                        buffer_cache.incref(mod_cs, True)
                     self.modules[pinname] = mod_type, mod_lang, mod_rest, mod_cs
                     c = core_cell("text")
                 else:
@@ -199,26 +227,18 @@ class DebugMount:
             pos = cellname2.index(".")
             module_name = cellname2[:pos]
             obj_name = cellname2[pos+1:]
-            mod_type, mod_lang, mod_rest, _ = self.modules[module_name]
+            mod_type, mod_lang, mod_rest, old_mod_cs = self.modules[module_name]
             assert mod_type == "compiled"
             code = checksum_to_code(checksum)
-            self._object_codes[cellname2] = code
-            new_value = deepcopy(mod_rest)
-            new_value["type"] = "compiled"
-            if mod_lang is not None:
-                new_value["language"] = mod_lang
-            for obj_name in self._object_codes:
-                obj_code = self._object_codes[obj_name]
-                pos = obj_name.index(".")
-                obj_name2 = obj_name[pos+1:]
-                assert "objects" in new_value and obj_name2 in new_value["objects"], obj_name2
-                new_value["objects"][obj_name2]["code"] = obj_code
-            new_value_buffer = serialize_sync(new_value, "plain")
-            new_checksum = calculate_checksum_sync(new_value_buffer)
+            self._object_codes[cellname] = code
+            new_checksum = integrate_compiled_module(mod_lang, mod_rest, self._object_codes)
+            buffer_cache.incref(new_checksum, True)
+            if old_mod_cs is not None:
+                buffer_cache.decref(old_mod_cs)
             self.modules[module_name] = mod_type, mod_lang, mod_rest, new_checksum            
         elif cellname in self.modules:
             code = checksum_to_code(checksum)
-            mod_type, mod_lang, mod_rest, _ = self.modules[cellname]
+            mod_type, mod_lang, mod_rest, old_mod_cs = self.modules[cellname]
             new_value = {
                 "language": mod_lang,
                 "type": mod_type,
@@ -227,6 +247,9 @@ class DebugMount:
                 new_value["code"] = code
             new_value_buffer = serialize_sync(new_value, "plain")
             new_checksum = calculate_checksum_sync(new_value_buffer)
+            buffer_cache.incref_buffer(new_checksum, new_value_buffer, True)
+            if old_mod_cs is not None:
+                buffer_cache.decref(old_mod_cs)
             self.modules[cellname] = mod_type, mod_lang, mod_rest, new_checksum
         self._transformer_update()
 
@@ -247,12 +270,37 @@ class DebugMount:
             upstreams = livegraph.transformer_to_upstream[transformer]
             
             for pinname, accessor in upstreams.items():
+                if pinname in self.skip_pins:
+                    continue
                 if pinname in self.modules:
                     mod_type, mod_lang, mod_rest, mod_code, mod_cs = pull_module(
                         pinname, upstreams, manager
                     )
+                    if self.special == "compiled" and pinname == "module":
+                        _, mod_lang_old, _, old_mod_cs = self.modules[pinname]
+                        mod_type = "compiled"
+                        mod_lang = mod_lang_old
+                        if mod_code is None:
+                            mod_code = {}
+                        for objname in mod_code:
+                            obj_code = mod_code[objname]
+                            cellname = module_tag + pinname + "." + objname
+                            c = getattr(self.mount_ctx, cellname, None)
+                            if c is not None:
+                                c.set(obj_code)
+                                self._object_codes[cellname] = obj_code
+                        if old_mod_cs is not None:
+                            buffer_cache.decref(old_mod_cs)
+                        if mod_cs is not None:
+                            buffer_cache.incref(mod_cs, True)
+                        self.modules[pinname] = mod_type, mod_lang, mod_rest, mod_cs
+                        continue
                     mod_code = analyze_mod_code(mod_code, pinname)
-                    self.modules[pinname] = mod_type, mod_lang, mod_rest, mod_code, mod_cs
+                    if old_mod_cs is not None:
+                        buffer_cache.decref(old_mod_cs)
+                    if mod_cs is not None:
+                        buffer_cache.incref(mod_cs)
+                    self.modules[pinname] = mod_type, mod_lang, mod_rest, mod_cs
                     if mod_code is not None:
                         c = getattr(self.mount_ctx, pinname)
                         c.set(mod_code)
@@ -270,8 +318,13 @@ class DebugMount:
             self._pulling = False            
 
     def destroy(self):
-        self.mount_ctx.destroy()
-        shutil.rmtree(self.path, ignore_errors=True)
+        try:
+            self.mount_ctx.destroy()
+            for _, _, _, checksum in self.modules.values():
+                if checksum is not None:
+                    buffer_cache.decref(checksum)
+        finally:
+            shutil.rmtree(self.path, ignore_errors=True)
 
 class DebugMountManager:
     def __init__(self):
@@ -375,5 +428,12 @@ class DebugMountManager:
         await transformation_cache.update_transformer(
             transformer, celltypes, input_pins, outputpin
         )
+    
+    def destroy(self):
+        for tf in list(self._mounts.keys()):
+            self.remove_mount(self._mounts[tf])
 
 debugmountmanager = DebugMountManager()            
+from ..core.cache.buffer_cache import buffer_cache
+import atexit
+atexit.register(debugmountmanager.destroy)

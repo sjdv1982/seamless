@@ -117,6 +117,7 @@ def _vscode_compiled_attach_create(debug):
     if docker_container is None:
         raise NotImplementedError  # compiled debug outside Docker container
     name = debug["name"]
+    mode = debug["mode"]
     entry = deepcopy(launch_json_compiled_docker)
     entry["name"] = name
     entry["processId"] = int(os.getpid())
@@ -125,10 +126,13 @@ def _vscode_compiled_attach_create(debug):
         if pipeargs[n] is None:
             pipeargs[n] = docker_container
     for objname, filename in debug.get("mounted_module_objects", {}).items():
-        ext = main2 = os.path.splitext(filename)[1]
-        filename2 = os.path.relpath(filename, "/cwd")
-        filename3 = "${workspaceFolder}/" + filename2
-        key = SEAMLESS_EXTENSION_DIR + "/" + debug["full_module_names"]["module"] + "/" + objname + ext
+        ext = os.path.splitext(filename)[1]
+        if mode == "light":
+            filename2 = os.path.relpath(filename, "/cwd")
+            filename3 = "${workspaceFolder}/" + filename2
+        else: # mode == "full
+            filename3 = os.path.abspath(filename)
+        key = SEAMLESS_EXTENSION_DIR + "/" + debug["full_module_names"]["module"] + "/" + objname + ext    
         entry["sourceFileMap"][key] = filename3
     for source, target in debug.get("source_map", []):
         entry["sourceFileMap"][source] = target

@@ -170,9 +170,15 @@ debugmode-py-full.py
   Full debugging of a simple Python transformer in VSCode. Follow the instructions.
 debugmode-pymodule-light.py
   To debug a Python transformer with Python single-file module in VSCode. Follow the instructions.
+debugmode-pymodule-full.py
+  Full debugging of a Python transformer with Python single-file module in VSCode. Follow the instructions.
 debugmode-pypackage-light.py
   To debug a Python transformer with Python package in VSCode. Follow the instructions.
 debugmode-compiledmodule-light.py
   To debug a multi-file C/C++ transformer in VSCode. Follow the instructions.
+debugmode-compiled-full.py
+  Full debugging of a simple C++ transformer in VSCode. Follow the instructions.
+debugmode-compiledmodule-full.py
+  Full debugging of a multi-file C/C++ transformer in VSCode. Follow the instructions.
 hack-bash-transformer-translation.py
   Run with IPython and hack /tmp/execute.py
