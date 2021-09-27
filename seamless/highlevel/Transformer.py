@@ -491,7 +491,13 @@ You can set this dictionary directly, or you may assign .meta to a cell
                 if self.debug.enabled and self.debug.mode == "full":
                     mount = self._get_debugmount()
                     mount_ctx = mount.mount_ctx
-                    return getattr(mount_ctx, attr).set(value)
+                    if htf["compiled"]:
+                        if attr not in mount.kwargs_cells:
+                            raise AttributeError(attr)
+                        attr2 = "KWARGS_" + attr
+                        return getattr(mount_ctx, attr2).set(value)
+                    else:
+                        return getattr(mount_ctx, attr).set(value)
                 tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
                 removed = parent.remove_connections(self._path + (attr,), endpoint="target")
@@ -568,12 +574,18 @@ You can set this dictionary directly, or you may assign .meta to a cell
 
 
     def _get_value(self, attr):
+        htf = self._get_htf()
         if self.debug.enabled and self.debug.mode == "full":
             mount = self._get_debugmount()
             mount_ctx = mount.mount_ctx
-            return getattr(mount_ctx, attr).value
+            if htf["compiled"]:
+                if attr not in mount.kwargs_cells:
+                    raise AttributeError(attr)
+                attr2 = "KWARGS_" + attr
+                return getattr(mount_ctx, attr2).value
+            else:
+                return getattr(mount_ctx, attr).value
         tf = self._get_tf(force=True)
-        htf = self._get_htf()
         if attr == "code":
             p = tf.code
             return p.data
@@ -948,9 +960,16 @@ You can set this dictionary directly, or you may assign .meta to a cell
                 raise AttributeError(attr)
             mount_ctx = mount.mount_ctx
             result = {}
-            for k in mount.tf._pins:
-                c = getattr(mount_ctx, k)
-                result[k] = c.value
+            if htf["compiled"]:
+                result = {}
+                for k in mount.kwargs_cells:
+                    kk = "KWARGS_" + k
+                    c = getattr(mount_ctx, kk)
+                    result[k] = c.value
+            else:
+                for k in mount.tf._pins:
+                    c = getattr(mount_ctx, k)
+                    result[k] = c.value
             return result
             
         if attr not in ("value", "status", "exception"):

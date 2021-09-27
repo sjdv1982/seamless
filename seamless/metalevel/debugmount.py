@@ -31,6 +31,23 @@ def checksum_to_code(checksum):
             code = deserialize_sync(code_buf, checksum2, "text", True)
     return code
 
+def parse_kwargs(checksum):
+    from ..core.protocol.get_buffer import get_buffer
+    if checksum is None:
+        return {}
+    buf = get_buffer(checksum)
+    if buf is None:
+        return buf
+    kwargs = deserialize_sync(buf, checksum, "mixed", True)
+    result = {}
+    for k,v in kwargs.items():
+        vbuf = serialize_sync(v, "mixed")
+        vchecksum = calculate_checksum_sync(vbuf)
+        if vchecksum is not None:
+            vchecksum = vchecksum.hex()
+        result[k] = vchecksum
+    return result
+
 def integrate_compiled_module(mod_lang, mod_rest, object_codes):
     new_value = deepcopy(mod_rest)
     new_value["type"] = "compiled"
@@ -46,6 +63,21 @@ def integrate_compiled_module(mod_lang, mod_rest, object_codes):
     new_checksum = calculate_checksum_sync(new_value_buffer)
     buffer_cache.cache_buffer(new_checksum, new_value_buffer)
     return new_checksum
+
+def integrate_kwargs(kwargs_checksums):
+    from ..core.protocol.get_buffer import get_buffer
+    result = {}
+    for kwarg, kwarg_checksum in kwargs_checksums.items():
+        if kwarg_checksum is None:
+            continue
+        buf = get_buffer(kwarg_checksum)
+        if buf is not None:
+            kwarg_value = deserialize_sync(buf, kwarg_checksum, "mixed", True)
+            result[kwarg] = kwarg_value        
+    result_buffer = serialize_sync(result, "mixed")
+    result_checksum = calculate_checksum_sync(result_buffer)
+    buffer_cache.cache_buffer(result_checksum, result_buffer)
+    return result_checksum
 
 def pull_module(pinname, upstreams, manager):
     accessor = upstreams.get(pinname)
@@ -98,6 +130,7 @@ class DebugMount:
         self.modules = {}
         self._pulling = False
         self._object_codes = {}
+        self.kwargs_cells = {}
 
     def mount(self, skip_pins):
         from ..core.context import context
@@ -127,6 +160,28 @@ class DebugMount:
                     continue
                 celltype = pin.celltype
                 subcelltype = pin.subcelltype
+                if pinname == "kwargs" and self.special == "compiled":
+                    checksum = None
+                    accessor = upstreams.get(pinname)
+                    if accessor is not None:
+                        checksum = accessor._checksum
+                    kwargs_checksums = parse_kwargs(checksum)
+                    self.kwargs_cells = set(kwargs_checksums.keys())
+                    pinname_to_cells["kwargs"] = []
+                    for kwargs_cell in self.kwargs_cells:
+                        c = core_cell("mixed")
+                        filename = os.path.join(self.path, kwargs_cell) + ".mixed"
+                        cellname = "KWARGS_" + kwargs_cell                        
+                        setattr(self.mount_ctx, cellname, c)
+                        pinname_to_cells["kwargs"].append(cellname)
+                        c.mount(
+                            filename, mode="rw", 
+                            authority="cell", persistent=False
+                        )
+                        kwargs_checksum = kwargs_checksums.get(kwargs_cell)
+                        if kwargs_checksum is not None:
+                            c.set_checksum(kwargs_checksum)                    
+                    continue
                 if celltype is None:                
                     pin_cells = manager.cell_from_pin(pin)
                     if len(pin_cells) == 0:
@@ -222,6 +277,11 @@ class DebugMount:
     def _observe(self, cellname:str, checksum):
         if self._pulling:
             return
+        if cellname.startswith("KWARGS_"):
+            cellname2 = cellname[len("KWARGS_"):]
+            if cellname2 in self.kwargs_cells:
+                self._transformer_update()
+                return
         if cellname.startswith(module_tag):
             cellname2 = cellname[len(module_tag):]
             pos = cellname2.index(".")
@@ -308,10 +368,19 @@ class DebugMount:
                     checksum = None
                     if accessor is not None: #unconnected
                         checksum = accessor._checksum
-                    if checksum is not None:
-                        checksum = checksum.hex()
-                    c = getattr(self.mount_ctx, pinname)
-                    c.set_checksum(checksum)
+                    if pinname == "kwargs" and self.special == "compiled":
+                        kwargs_checksums = parse_kwargs(checksum)
+                        for k, cs in kwargs_checksums.items():
+                            if k not in self.kwargs_cells:
+                                continue
+                            kk = "KWARGS_" + k
+                            c = getattr(self.mount_ctx, kk)
+                            c.set_checksum(cs)
+                    else:
+                        if checksum is not None:
+                            checksum = checksum.hex()
+                        c = getattr(self.mount_ctx, pinname)
+                        c.set_checksum(checksum)
             self._pulling = False            
             self._transformer_update()
         finally:
@@ -404,6 +473,14 @@ class DebugMountManager:
             else:
                 if pinname in mount.modules:
                     _, _, _, checksum = mount.modules[pinname]
+                elif pinname == "kwargs" and mount.special == "compiled":
+                    kwargs_checksums = {}
+                    for kwarg in mount.kwargs_cells:
+                        cellname = "KWARGS_" + kwarg
+                        c = getattr(mount_ctx, cellname)
+                        kwargs_checksums[kwarg] = c._checksum
+                    checksum = integrate_kwargs(kwargs_checksums)
+                    celltype, subcelltype = "mixed", None
                 else:
                     c = getattr(mount_ctx, pinname)
                     checksum = c._checksum
