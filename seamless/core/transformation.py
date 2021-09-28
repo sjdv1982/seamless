@@ -10,8 +10,8 @@ import time
 import atexit
 import json
 
-from multiprocessing import Process
-from .execute import Queue, execute
+from multiprocessing import Process, JoinableQueue as Queue
+from .execute import execute
 from .injector import transformer_injector as injector
 from .build_module import build_all_modules
 from ..compiler import compilers as default_compilers, languages as default_languages
@@ -518,6 +518,11 @@ class TransformationJob:
         running = False
         try:
             python_attach_port = None
+
+            if multiprocessing.get_start_method(allow_none=True) is None:
+                multiprocessing.set_start_method("fork")
+            assert multiprocessing.get_start_method(allow_none=False) == "fork"
+
             queue = Queue()
             outputname, celltype, subcelltype = self.outputpin
             args = (
@@ -536,6 +541,7 @@ class TransformationJob:
             kwargs = {}
             if debug is not None:
                 kwargs["debug"] = debug
+
             self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=True)
             self.executor.start()
             running = True

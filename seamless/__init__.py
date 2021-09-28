@@ -1,15 +1,10 @@
 """Seamless: framework for interoperable interactive computing
 
-Copyright 2016-2020, Sjoerd de Vries
+Copyright 2016-2021, Sjoerd de Vries
 """
-
 import sys
-import time
-import functools
 import traceback
-
 import asyncio
-
 import logging
 logger = logging.getLogger("seamless")
 

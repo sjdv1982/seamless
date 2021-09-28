@@ -3,7 +3,6 @@ Works well under Linux, should work well under OSX"""
 
 import traceback
 import multiprocessing
-from multiprocessing import Process
 import functools
 import time
 import sys
@@ -32,9 +31,6 @@ def unsilk(value):
         return result
     else:
         return value
-
-from multiprocessing import JoinableQueue as Queue
-
 
 def return_preliminary(result_queue, celltype, value):
     #print("return_preliminary", value)
