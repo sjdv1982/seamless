@@ -439,6 +439,26 @@ class TransformationCache:
                         fut.cancel()
                 job.future.cancel()
 
+    def build_semantic_cache(self, transformation):
+        semantic_cache = {}
+        for k,v in transformation.items():
+            if k in ("__compilers__", "__languages__", "__meta__"):
+                continue
+            if k in ("__output__", "__as__"):
+                continue
+            if k == "__env__":
+                continue
+            celltype, subcelltype, sem_checksum = v
+            if syntactic_is_semantic(celltype, subcelltype):
+                continue
+            semkey = (sem_checksum, celltype, subcelltype)
+            try:
+                checksums = self.semantic_to_syntactic_checksums[semkey]
+            except KeyError:
+                raise KeyError(sem_checksum.hex(), celltype, subcelltype) from None
+            semantic_cache[semkey] = checksums
+        return semantic_cache
+
     def run_job(self, transformation, tf_checksum):
         transformers = self.transformations_to_transformers[tf_checksum]
         if tf_checksum in self.transformation_exceptions:
@@ -469,23 +489,7 @@ class TransformationCache:
             tftxt = ",".join(tfs)
             print_info("Executing transformer: {}".format(tftxt))
 
-        semantic_cache = {}
-        for k,v in transformation.items():
-            if k in ("__compilers__", "__languages__", "__meta__"):
-                continue
-            if k in ("__output__", "__as__"):
-                continue
-            if k == "__env__":
-                continue
-            celltype, subcelltype, sem_checksum = v
-            if syntactic_is_semantic(celltype, subcelltype):
-                continue
-            semkey = (sem_checksum, celltype, subcelltype)
-            try:
-                checksums = self.semantic_to_syntactic_checksums[semkey]
-            except KeyError:
-                raise KeyError(sem_checksum.hex(), celltype, subcelltype) from None
-            semantic_cache[semkey] = checksums
+        semantic_cache = self.build_semantic_cache(transformation)
         job = TransformationJob(
             tf_checksum, codename,
             transformation, semantic_cache,

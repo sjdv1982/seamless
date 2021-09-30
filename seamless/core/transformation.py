@@ -107,6 +107,80 @@ async def acquire_python_attach_port(tf_checksum):
 def free_python_attach_port(port):
     _python_attach_ports[port] = None
 
+
+async def build_transformation_namespace(transformation, semantic_cache, codename):
+    namespace = {
+        "__name__": "transformer",
+        "__package__": "transformer",
+    }
+    code = None
+    inputs = []
+    namespace["PINS"] = {}
+    modules_to_build = {}
+    as_ = transformation.get("__as__", {})
+    for pinname in sorted(transformation.keys()):
+        if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__"):
+            continue
+        if pinname == "__output__":
+            continue
+        celltype, subcelltype, sem_checksum = transformation[pinname]
+        if syntactic_is_semantic(celltype, subcelltype):
+            checksum = sem_checksum
+        else:
+            # For now, assume that the first syntactic checksum gives a value
+            semkey = sem_checksum, celltype, subcelltype
+            checksum = semantic_cache[semkey][0]
+        if checksum is None:
+            continue
+        # fingertipping must have happened before
+        buffer = get_buffer(checksum)
+        assert buffer is not None
+        try:
+            value = await deserialize(buffer, checksum, celltype, False)
+        except Exception as exc:
+            e = traceback.format_exc()
+            raise Exception(pinname, e) from None
+        if value is None:
+            raise CacheMissError(pinname, codename)
+        if pinname == "code":
+            code = value
+        elif (celltype, subcelltype) == ("plain", "module"):
+            modules_to_build[pinname] = value
+        else:
+            pinname_as = as_.get(pinname, pinname)
+            namespace["PINS"][pinname_as] = value
+            namespace[pinname_as] = value
+            inputs.append(pinname_as)
+    for pinname in transformation:
+        if pinname in (
+            "__output__", "__env__", "__compilers__", 
+            "__languages__", "__as__", "__meta__"
+        ):
+            continue
+        celltype, _, _ = transformation[pinname]
+        if celltype != "silk":
+            continue
+        schema_pinname = pinname + "_SCHEMA"
+        schema_pin = transformation.get(schema_pinname)
+        schema = None
+        if schema_pin is not None:
+            schema_celltype, _, _ = schema_pin
+            assert schema_celltype == "plain", (schema_pinname, schema_celltype)
+            schema = namespace[schema_pinname]
+        pinname_as = as_.get(pinname, pinname)
+        if schema is None and isinstance(namespace[pinname_as], Scalar):
+            continue
+        if schema is None:
+            schema = {}
+        v = Silk(
+            data=namespace[pinname_as],
+            schema=schema
+        )
+        namespace["PINS"][pinname_as] = v
+        namespace[pinname_as] = v
+    return code, inputs, namespace, modules_to_build
+
+
 ###############################################################################
 # Remote jobs
 ###############################################################################
@@ -409,79 +483,14 @@ class TransformationJob:
             validate_environment(env)
             if "powers" in env and "ipython" in env["powers"]:
                 with_ipython_kernel = True
-        values = {}
-        namespace = {
-            "__name__": "transformer",
-            "__package__": "transformer",
-        }
-        inputs = []
-        code = None
+
         logs = [None, None]
         lock = await acquire_lock(self.checksum)
-        namespace["PINS"] = {}
-        modules_to_build = {}
-        as_ = self.transformation.get("__as__", {})
-        for pinname in sorted(self.transformation.keys()):
-            if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__"):
-                continue
-            if pinname == "__output__":
-                continue
-            celltype, subcelltype, sem_checksum = self.transformation[pinname]
-            if syntactic_is_semantic(celltype, subcelltype):
-                checksum = sem_checksum
-            else:
-                # For now, assume that the first syntactic checksum gives a value
-                semkey = sem_checksum, celltype, subcelltype
-                checksum = self.semantic_cache[semkey][0]
-            if checksum is None:
-                values[pinname] = None
-                continue
-            # fingertipping must have happened before
-            buffer = get_buffer(checksum)
-            assert buffer is not None
-            try:
-                value = await deserialize(buffer, checksum, celltype, False)
-            except Exception as exc:
-                e = traceback.format_exc()
-                raise Exception(pinname, e) from None
-            if value is None:
-                raise CacheMissError(pinname, self.codename)
-            if pinname == "code":
-                code = value
-            elif (celltype, subcelltype) == ("plain", "module"):
-                modules_to_build[pinname] = value
-            else:
-                pinname_as = as_.get(pinname, pinname)
-                namespace["PINS"][pinname_as] = value
-                namespace[pinname_as] = value
-                inputs.append(pinname_as)
-        for pinname in self.transformation:
-            if pinname in (
-                "__output__", "__env__", "__compilers__", 
-                "__languages__", "__as__", "__meta__"
-            ):
-                continue
-            celltype, _, _ = self.transformation[pinname]
-            if celltype != "silk":
-                continue
-            schema_pinname = pinname + "_SCHEMA"
-            schema_pin = self.transformation.get(schema_pinname)
-            schema = None
-            if schema_pin is not None:
-                schema_celltype, _, _ = schema_pin
-                assert schema_celltype == "plain", (schema_pinname, schema_celltype)
-                schema = namespace[schema_pinname]
-            pinname_as = as_.get(pinname, pinname)
-            if schema is None and isinstance(namespace[pinname_as], Scalar):
-                continue
-            if schema is None:
-                schema = {}
-            v = Silk(
-                data=namespace[pinname_as],
-                schema=schema
-            )
-            namespace["PINS"][pinname_as] = v
-            namespace[pinname_as] = v
+
+        tf_namespace = await build_transformation_namespace(
+            self.transformation, self.semantic_cache, self.codename
+        )
+        code, inputs, namespace, modules_to_build = tf_namespace
 
         debug = None
         if self.debug is not None:
