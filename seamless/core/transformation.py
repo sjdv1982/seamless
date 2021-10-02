@@ -107,6 +107,25 @@ async def acquire_python_attach_port(tf_checksum):
 def free_python_attach_port(port):
     _python_attach_ports[port] = None
 
+def get_transformation_inputs_output(transformation):
+    inputs = []
+    as_ = transformation.get("__as__", {})
+    for pinname in sorted(transformation.keys()):
+        if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__"):
+            continue
+        if pinname == "__output__":
+            continue
+        if pinname == "code":
+            continue
+        celltype, subcelltype, _ = transformation[pinname]
+        if (celltype, subcelltype) == ("plain", "module"):
+            pass
+        else:
+            pinname_as = as_.get(pinname, pinname)
+            inputs.append(pinname_as)
+    outputpin = transformation["__output__"]
+    outputname, output_celltype, output_subcelltype = outputpin
+    return inputs, outputname, output_celltype, output_subcelltype
 
 async def build_transformation_namespace(transformation, semantic_cache, codename):
     namespace = {
@@ -178,7 +197,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
         )
         namespace["PINS"][pinname_as] = v
         namespace[pinname_as] = v
-    return code, inputs, namespace, modules_to_build
+    return code, namespace, modules_to_build
 
 
 ###############################################################################
@@ -212,9 +231,6 @@ class TransformationJob:
                 continue
             if pinname != "__output__":
                 assert transformation[pinname][2] is not None, pinname
-        outputpin = transformation["__output__"]
-        outputname, celltype, subcelltype = outputpin
-        self.outputpin = outputpin
         self.job_id = TransformationJob._job_id_counter + 1
         TransformationJob._job_id_counter += 1
         self.transformation = transformation
@@ -487,10 +503,12 @@ class TransformationJob:
         logs = [None, None]
         lock = await acquire_lock(self.checksum)
 
+        io = get_transformation_inputs_output(self.transformation) 
+        inputs, outputname, output_celltype, output_subcelltype = io
         tf_namespace = await build_transformation_namespace(
             self.transformation, self.semantic_cache, self.codename
         )
-        code, inputs, namespace, modules_to_build = tf_namespace
+        code, namespace, modules_to_build = tf_namespace
 
         debug = None
         if self.debug is not None:
@@ -515,7 +533,7 @@ class TransformationJob:
                 return None
             try:
                 await validate_subcelltype(
-                    result_buffer, celltype, subcelltype,
+                    result_buffer, output_celltype, output_subcelltype,
                     self.codename
                 )
                 result_checksum = await calculate_checksum(result_buffer)
@@ -533,13 +551,13 @@ class TransformationJob:
             assert multiprocessing.get_start_method(allow_none=False) == "fork"
 
             queue = Queue()
-            outputname, celltype, subcelltype = self.outputpin
+            
             args = (
                 self.codename, code,
                 with_ipython_kernel,
                 injector, module_workspace,
                 self.codename,
-                namespace, inputs, outputname, celltype, queue,                
+                namespace, inputs, outputname, output_celltype, queue,                
             )
             if debug is not None:
                 if debug.get("python_attach"):

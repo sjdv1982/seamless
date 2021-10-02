@@ -11,15 +11,17 @@ if [ $nkernels -gt 1 ]; then
     echo '*****************************************************' > /dev/stderr
     echo '* Multiple running Jupyter kernels found' > /dev/stderr
     echo '*****************************************************' > /dev/stderr
-    echo 'In the notebook, execute:' > /dev/stderr
+    echo 'You will need to specify a kernel using: "--existing KERNEL_CONNECTION_FILE.json"' > /dev/stderr
     echo '' > /dev/stderr
-    echo 'from ipykernel.zmqshell import get_connection_file; get_connection_file() '> /dev/stderr
+    echo '1. If you want to connect to a Seamless transformer debug shell:' > /dev/stderr
+    echo 'simply type again Transformer.debug.shell() to get the kernel connection file.' > /dev/stderr
     echo '' > /dev/stderr
-    echo 'Below, type "jupyter console --existing kernel-XXX.json"' > /dev/stderr
-    echo ' where kernel-XXX.json is the connection file'  > /dev/stderr
-    echo 'Opening bash shell, please exit when done...' > /dev/stderr
-    bash
-    exit
+    echo '2. If you want to connect to a kernel that was started with' > /dev/stderr
+    echo ' Jupyter notebook, Jupyterlab or Jupyter console, execute there the following code:' > /dev/stderr
+    echo '' > /dev/stderr
+    echo 'from ipykernel.zmqshell import get_connection_file; get_connection_file()'> /dev/stderr
+    echo '' > /dev/stderr
+    exit 1
 fi
 
 jupyter console --existing

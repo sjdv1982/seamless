@@ -1,12 +1,9 @@
-"""
-...
-TODO: print mode (only direct_print)
-You can switch from print mode to another mode, but not vice versa.
-"""
+import functools
+import sys
 from typing import OrderedDict
-from seamless import core
 import weakref
 import os
+import asyncio
 
 python_attach_headers = {
     ("light", "vscode") : """Python source code mount to {host_path} detected.
@@ -170,6 +167,7 @@ class DebugMode:
         self._mount = None
         self._attach = True
         self._ide = "vscode"  # hard-coded for 0.7
+        self._shellname = None
 
     def _get_core_transformer(self, force):
         tf = self._tf()
@@ -189,42 +187,15 @@ class DebugMode:
 Only shells in full debug mode are possible, please specify this explicitly"""
                 raise ValueError(msg.format(node["language"]))
 
-    def enable(self, mode=None):
+    def enable(self, mode):
         if self._enabled:
             raise ValueError("Debug mode is already active.")
         tf = self._tf()
         node = tf._get_htf()
         if tf is None or node.get("UNTRANSLATED"):
             raise ValueError("Transformer is untranslated.")
-        if mode is None:
-            mode = self._mode       
-        if mode is not None:
-            assert mode in ("full", "light"), mode
-            if mode == "light":
-                core_transformer = self._get_core_transformer(force=True)
-                try:
-                    validate_light_mode(tf)
-                except ValidationError as exc:
-                    reason = exc.args[0]
-                    msg = """Cannot enter light debug mode. 
-    Reason: {}"""
-                    msg = msg.format(reason) + "\n"
-                    raise ValidationError(msg) from None
-            elif mode == "full":
-                pass
-        else:
-            try:
-                validate_light_mode(tf)
-                mode = "light"
-            except ValidationError as exc:
-                reason = exc.args[0]
-                msg = """Cannot enter light debug mode. 
-Reason: {}"""
-                print("*" * 80)
-                print(msg.format(reason))
-                print("*" * 80)
-                mode = "full"
 
+        assert mode in ("full", "light"), mode
         if mode == "full":
             core_transformer = self._get_core_transformer(force=False)
             special = None
@@ -237,6 +208,15 @@ Reason: {}"""
             )
         elif mode == "light":
             core_transformer = self._get_core_transformer(force=True)
+            try:
+                validate_light_mode(tf)
+            except ValidationError as exc:
+                reason = exc.args[0]
+                msg = """Cannot enter light debug mode. 
+Reason: {}"""
+                msg = msg.format(reason) + "\n"
+                raise ValidationError(msg) from None
+
             code_mount = get_code_mount(tf)
             hostcwd = os.environ.get("HOSTCWD")
             code_path = os.path.abspath(code_mount["path"])
@@ -506,6 +486,58 @@ Debugger attach is {}
             debugmount = tf._get_debugmount()
             return debugmount.pull()
 
+    def _push_from_shell(self, inputname, value):
+        if not self.enabled or self.mode != "full":
+            return
+        c = getattr(self._mount.mount_ctx, inputname, None)
+        if c is None:
+            print("Cannot push '{}', not mounted as such".format(inputname))
+        c.set(value) # observer should take care of the rest
+        
+    async def _new_shell(self):
+        from ..core.cache.transformation_cache import transformation_cache
+        from ..core.transformation import get_transformation_inputs_output
+        tf = self._tf()
+        ctf = self._get_core_transformer(force=True)
+        tf_checksum = transformation_cache.transformer_to_transformations.get(ctf)
+        transformation = transformation_cache.transformations[tf_checksum]
+        if transformation is None:
+            print("Cannot create shell for '{}': transformation does not exist", file=sys.stderr)
+        io = get_transformation_inputs_output(transformation)
+        inputs, outputname, _, _ = io
+        if self._shellname is None: # No shells exist
+            shellname0 = str(tf.path[1:])
+            if tf.language == "bash":
+                shellname = shellserver.new_bashshellhub(shellname0)
+            elif tf.language in ("python", "ipython"):
+                ipython_language = (tf.language == "ipython")
+                shellname = shellserver.new_pyshellhub(
+                    shellname0, inputs, outputname, ipython_language,
+                    push_callback=self._push_from_shell
+
+                )
+            self._shellname = shellname 
+        await shellserver.new_shell_from_transformation(
+            self._shellname, transformation
+        )
+
+    def shell(self):
+        if not self._enabled:
+            raise ValueError("Debug mode is not active.")
+        if self._mode != "full":
+            raise ValueError("Debug mode must be 'full'")
+        coro = asyncio.ensure_future(self._new_shell())
+        if not asyncio.get_event_loop().is_running():
+            asyncio.get_event_loop().run_until_complete(coro)
+
+    def shells(self):
+        if not self._enabled:
+            raise ValueError("Debug mode is not active.")
+        if self._mode != "full":
+            raise ValueError("Debug mode must be 'full'")
+        if self._shellname is None:
+            return
+        return shellserver.list_shells(self._shellname)
 
     def disable(self):
         if not self._enabled:
@@ -523,6 +555,10 @@ Debugger attach is {}
                 tf._get_tf().tf.integrator.debug_.set(False)
             manager = core_transformer._get_manager()
             TransformerUpdateTask(manager, core_transformer).launch()
+        if self._shellname is not None:
+            shellserver.destroy_shellhub(self._shellname)
+            self._shellname = None
         self._enabled = False
 
 from .debugmount import debugmountmanager, module_tag
+from .shellserver import shellserver

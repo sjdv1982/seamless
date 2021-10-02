@@ -12,7 +12,7 @@ ctx.tf = func
 ctx.tf.a = 10
 ctx.tf.b = 20
 try:
-    ctx.tf.debug.enable()
+    ctx.tf.debug.enable("light")
 except Exception:
     traceback.print_exc(limit=0)
 ctx.compute()
@@ -30,8 +30,7 @@ ctx.code = ctx.tf.code.pull()
 ctx.code.mount("debugmount/debugmode-py-light-code.py", authority="cell")
 ctx.translate()
 
-ctx.tf.debug.enable()
-assert ctx.tf.debug.mode == "light", ctx.tf.debug.mode
+ctx.tf.debug.enable("light")
 
 import traceback
 print("Error 1")

@@ -45,8 +45,7 @@ if exc is not None:
 ctx.code.mount("debugmount/debugmode-compiled-light-code.cpp", authority="cell")
 ctx.compute()
 
-ctx.transform.debug.enable()
-assert ctx.transform.debug.mode == "light", ctx.transform.debug.mode
+ctx.transform.debug.enable("light")
 
 print("START")
 ctx.a = 11
