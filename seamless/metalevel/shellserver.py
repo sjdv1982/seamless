@@ -31,8 +31,8 @@ In a bash terminal, you can connect to the shell with:
 PYBANNER = """**********************************************************************
 Seamless IPython shell {name}.
 
-The shell contains the values of the code and inputs
-of the debugged transformer ".{name}", as they were when the shell was created. 
+The shell contains the *current* values of the code and inputs
+of the debugged transformer sandbox ".{name}". 
 The shell is not synchronized with value updates from elsewhere. 
 
 In the shell, you can:
@@ -41,6 +41,30 @@ In the shell, you can:
 - Push modified code or inputs back to the debugged transformer,
   using "push('code')" or "push(input name)"
 - Kill the shell with "quit()"
+
+**********************************************************************
+"""
+
+BASHMESSAGE = """**********************************************************************
+Seamless bash shell directory {name}.
+
+The shell directory contains the *current* values of the code and inputs
+of the debugged transformer sandbox ".{name}". 
+
+To access it, open a bash terminal and do:
+
+  {bash_command}
+
+Then do:
+
+  source ./ENVIRONMENT.sh
+
+to load the transformer's pin environment variables
+
+The bash code is written to "transform.sh"
+The other file names in the shell directory correspond to the pin names, 
+as expected by the bash code. 
+The files are not synchronized with the files in the sandbox directory. 
 
 **********************************************************************
 """
@@ -401,7 +425,7 @@ class BashShellHub(ShellHub):
     SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
     if SEAMLESS_DEBUGGING_DIRECTORY is None:
         raise Exception("SEAMLESS_DEBUGGING_DIRECTORY undefined")
-    dir = tempfile.mkdtemp(dir=SEAMLESS_DEBUGGING_DIRECTORY)
+    dir = tempfile.mkdtemp(dir=SEAMLESS_DEBUGGING_DIRECTORY, prefix="shell-")
     """
 
 
