@@ -113,10 +113,21 @@ class ShellDict(dict):
             raise KeyError(attr) from None
 
     def _set_code(self, value):
+        from ..core.cached_compile import analyze_code
         if callable(value):
             value = inspect.getsource(value)
+        else:
+            mode, func_name = analyze_code(value, "transform")
+            if mode == "function":
+                value = textwrap.dedent(value)
+                try:
+                    exec(value, self)
+                except Exception:
+                    exc = traceback.format_exc()
+                    self._push_queue.put((-1, exc))
         if value is not None:
             value = textwrap.dedent(value)
+
         super().__setitem__("code", value)
 
     def __setitem__(self, attr, value):
@@ -257,6 +268,7 @@ def start_shell(
                 ipython_language=ipython_language
             )
             shelldict.update(namespace)
+            shelldict._set_code(shelldict["code"])
 
             app.kernel.user_ns = shelldict
             app.shell.set_completer_frame()    
