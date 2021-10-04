@@ -10,7 +10,7 @@ python_attach_headers = {
 In Visual Studio Code, set breakpoints in this file.""",
 
     ("sandbox", "vscode") : """The source code has been mounted to files inside the directory:
-{main_directory}.
+{main_directory} .
 
 In Visual Studio Code, set breakpoints in these files."""
 
@@ -28,7 +28,7 @@ If not, make sure that {host_project_dir} is the primary directory of your VSCod
 
 Transformer execution will now be halted until the VSCode debugger attaches itself.
 
-If the transformer is restarted by Seamless while the debugger is active, both will fail. 
+If the transformer is restarted by Seamless while the debugger is active, both may fail. 
 In that case, do Transformer.clear_exception()"""
 
 }

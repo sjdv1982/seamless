@@ -403,7 +403,7 @@ class DebugMountManager:
         #print("ADD MOUNT", tf)
         if SEAMLESS_DEBUGGING_DIRECTORY is None:
             raise Exception("SEAMLESS_DEBUGGING_DIRECTORY undefined")
-        path = tempfile.mkdtemp(dir=SEAMLESS_DEBUGGING_DIRECTORY)
+        path = tempfile.mkdtemp(dir=SEAMLESS_DEBUGGING_DIRECTORY, prefix="sandbox-")
         mount = DebugMount(tf, path, special=special)
         self._mounts[tf] = mount
         mount.mount(skip_pins=skip_pins)
