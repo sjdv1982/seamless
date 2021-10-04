@@ -312,6 +312,9 @@ class PyShellHub(ShellHub):
         self.output_name = output_name
         self.ipython_language = ipython_language
         self.push_callback = push_callback
+        if multiprocessing.get_start_method(allow_none=True) is None:
+            multiprocessing.set_start_method("fork")
+        assert multiprocessing.get_start_method(allow_none=False) == "fork"
         self.push_queue = multiprocessing.Queue()        
 
     def new_shell(self, namespace, module_workspace):
@@ -322,6 +325,9 @@ class PyShellHub(ShellHub):
             self.push_queue, self.inputs, self.output_name,
             self.ipython_language
         )
+        if multiprocessing.get_start_method(allow_none=True) is None:
+            multiprocessing.set_start_method("fork")
+        assert multiprocessing.get_start_method(allow_none=False) == "fork"
         process = Process(target=start_shell, args=args, daemon=True)
         self.shells[name] = process, connection_file
         self.shellnames.append(name)
