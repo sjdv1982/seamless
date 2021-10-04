@@ -182,5 +182,9 @@ debugmode-compiledmodule-sandbox.py
   Sandbox debugging of a multi-file C/C++ transformer in VSCode. Follow the instructions.
 debugmode-py-shell.py  
   Debug IPython shell for a Python transformer. Follow the instructions.
+debugmode-bash-shell.py  
+  Debug bash shell. Follow the instructions.
+debugmode-docker-shell.py  
+  Debug bash shell, with Docker image. Follow the instructions.
 hack-bash-transformer-translation.py
   Run with IPython and hack /tmp/execute.py

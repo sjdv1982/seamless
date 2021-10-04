@@ -45,6 +45,10 @@ try:
     os.chdir(tempdir)
     signal.signal(signal.SIGTERM, sighandler)
     for pin in pins_:
+        if pin == "pins_":
+            continue
+        if pin == "bashcode":
+            continue
         v = PINS[pin]
         if isinstance(v, Silk):
             v = v.unsilk

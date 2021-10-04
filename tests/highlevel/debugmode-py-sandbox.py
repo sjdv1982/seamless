@@ -15,7 +15,7 @@ ctx.compute()
 print(ctx.tf.result.value, ctx.result.value)
 
 ctx.tf.debug.attach = False
-ctx.tf.debug.enable("sandbox")
+ctx.tf.debug.enable("sandbox", sandbox_name="py-sandbox")
 ctx.compute()
 print(ctx.tf.result.value, ctx.result.value)
 ctx.tf.a = 11

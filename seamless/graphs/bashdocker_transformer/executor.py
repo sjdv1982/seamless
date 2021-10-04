@@ -65,6 +65,10 @@ try:
     env = {}
     options["environment"] = env
     for pin in pins_:
+        if pin == "pins_":
+            continue
+        if pin in ["docker_command", "docker_image_", "docker_options"]:
+            continue
         v = PINS[pin]
         if isinstance(v, Silk):
             v = v.unsilk

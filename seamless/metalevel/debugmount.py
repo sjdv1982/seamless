@@ -141,6 +141,8 @@ class DebugMount:
         self.skip_pins = skip_pins
         if self.special is not None:
             skip_pins += ["code", "input_name", "result_name"]
+            if self.special == "bash":
+                skip_pins.append("pins_")            
         tf = self.tf
         manager = tf._get_manager()
         livegraph = manager.livegraph
@@ -184,11 +186,13 @@ class DebugMount:
                     continue
                 if celltype is None:                
                     pin_cells = manager.cell_from_pin(pin)
+                    if isinstance(pin_cells, tuple):
+                        pin_cells = [pin_cells]
                     if len(pin_cells) == 0:
                         celltype = "mixed"
                     else:
-                        celltype = pin_cells[0].celltype
-                        subcelltype = pin_cells[0]._subcelltype
+                        celltype = pin_cells[0][0].celltype
+                        subcelltype = pin_cells[0][0]._subcelltype
                 if subcelltype == "module":
                     mod_type, mod_lang, mod_rest, mod_code, mod_cs = pull_module(
                         pinname, upstreams, manager
@@ -399,11 +403,22 @@ class DebugMountManager:
     def __init__(self):
         self._mounts = {}
 
-    def add_mount(self, tf, skip_pins=[], *, special=None):
+    def add_mount(self, tf, skip_pins=[], *, special=None, prefix=None):
         #print("ADD MOUNT", tf)
         if SEAMLESS_DEBUGGING_DIRECTORY is None:
             raise Exception("SEAMLESS_DEBUGGING_DIRECTORY undefined")
-        path = tempfile.mkdtemp(dir=SEAMLESS_DEBUGGING_DIRECTORY, prefix="sandbox-")
+        path = None
+        if prefix is None:
+            prefix = ""
+        else:
+            first_dir = os.path.join(SEAMLESS_DEBUGGING_DIRECTORY, "sandbox-"+prefix)
+            if not os.path.exists(first_dir):
+                path = first_dir
+                os.makedirs(path)
+            else:
+                prefix += "-"
+        if path is None:
+            path = tempfile.mkdtemp(dir=SEAMLESS_DEBUGGING_DIRECTORY, prefix="sandbox-"+prefix)
         mount = DebugMount(tf, path, special=special)
         self._mounts[tf] = mount
         mount.mount(skip_pins=skip_pins)

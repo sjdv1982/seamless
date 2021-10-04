@@ -3,12 +3,21 @@ import inspect
 import logging
 import multiprocessing
 from queue import Empty
+import subprocess
 import sys
 import textwrap
 import time
 import traceback
 import os
 from multiprocessing.context import Process
+
+import os,shutil
+import tempfile
+from typing import OrderedDict
+import numpy as np
+import json
+from silk import Silk
+from silk.mixed.get_form import get_form
 
 DOCKER_CONTAINER = None
 docker_container_file = os.path.expanduser("~/DOCKER_CONTAINER")
@@ -59,7 +68,7 @@ Then do:
 
   source ./ENVIRONMENT.sh
 
-to load the transformer's pin environment variables
+to load the transformer's pin environment variables.
 
 The bash code is written to "transform.sh"
 The other file names in the shell directory correspond to the pin names, 
@@ -141,7 +150,7 @@ class ShellDict(dict):
         if callable(value):
             value = inspect.getsource(value)
         else:
-            mode, func_name = analyze_code(value, "transform")
+            mode, _ = analyze_code(value, "transform")
             if mode == "function":
                 value = textwrap.dedent(value)
                 try:
@@ -420,13 +429,142 @@ In a bash terminal, you can connect to each shell with:"""
         forked_processes[process] = time.time()
 
 class BashShellHub(ShellHub):
-    pass #...
-    """
-    SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
-    if SEAMLESS_DEBUGGING_DIRECTORY is None:
-        raise Exception("SEAMLESS_DEBUGGING_DIRECTORY undefined")
-    dir = tempfile.mkdtemp(dir=SEAMLESS_DEBUGGING_DIRECTORY, prefix="shell-")
-    """
+
+        
+    def new_shell(self, namespace, _):
+        name = self.new_shell_name()
+        docker_image = namespace.get("docker_image_", None)
+
+        SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
+        if SEAMLESS_DEBUGGING_DIRECTORY is None:
+            raise Exception("SEAMLESS_DEBUGGING_DIRECTORY undefined")
+        shelldir = tempfile.mkdtemp(dir=SEAMLESS_DEBUGGING_DIRECTORY, prefix="shell-"+ name)
+
+        pins_ = namespace["pins_"]
+        if docker_image is None: # graphs/bash_transformer
+            bashcode = namespace["bashcode"]
+        else: # graphs/bash_transformer
+            bashcode = namespace["docker_command"]
+        PINS = namespace["PINS"]
+        old_cwd = os.getcwd()
+        env = OrderedDict()
+        # from seamless/graphs/bash_transformer/executor.py
+        try:
+            os.chdir(shelldir)
+            for pin in pins_:
+                if pin == "pins_":
+                    continue
+                if docker_image is None:
+                    if pin == "bashcode":
+                        continue
+                else:
+                    if pin in ["docker_command", "docker_image_", "docker_options"]:
+                        continue
+
+                v = PINS[pin]
+                if isinstance(v, Silk):
+                    v = v.unsilk
+                storage, form = get_form(v)
+                if storage.startswith("mixed"):
+                    raise TypeError("pin '%s' has '%s' data" % (pin, storage))
+                if storage == "pure-plain":
+                    if isinstance(form, str):
+                        vv = str(v)
+                        if not vv.endswith("\n"): vv += "\n"
+                        if len(vv) <= 1000:
+                            env[pin] = vv
+                    else:
+                        vv = json.dumps(v)
+                    with open(pin, "w") as pinf:
+                        pinf.write(vv)
+                elif isinstance(v, bytes):
+                    with open(pin, "bw") as pinf:
+                        pinf.write(v)
+                else:
+                    if v.dtype == np.uint8 and v.ndim == 1:
+                        vv = v.tobytes()
+                        with open(pin, "bw") as pinf:
+                            pinf.write(vv)
+                    else:
+                        with open(pin, "bw") as pinf:
+                            np.save(pinf,v,allow_pickle=False)
+
+            gen_env_code = ""
+            for v in env:
+                gen_env_code += "declare -p {}\n".format(v)
+            try:
+                gen_env_process = subprocess.run(
+                    gen_env_code, capture_output=True, shell=True, check=True,
+                    executable='/bin/bash',
+                    env=env
+                )
+            except subprocess.CalledProcessError as exc:
+                stderr = exc.stderr
+                try:
+                    stderr = stderr.decode()
+                except:
+                    pass
+                print(stderr)
+            gen_env_value = gen_env_process.stdout
+            with open("ENVIRONMENT.sh", "wb") as f:
+                f.write(gen_env_value)
+
+            bashcode2 = """#!/bin/bash
+set -u -e
+"""
+            bashcode2 += bashcode
+            with open("transform.sh", "w") as f:
+                f.write(bashcode2)
+            os.chmod("transform.sh", 0o777)
+
+        finally:
+            os.chdir(old_cwd)
+
+        if docker_image is None:
+            bash_command = "cd {}".format(shelldir)
+        else:
+            bash_command = """docker run --rm -it \\
+    -v {shelldir}:/run \\
+    --workdir /run \\
+    -u $(id -u ${{USER}}):$(id -g ${{USER}}) \\
+    {docker_image} bash
+  
+If the Docker image "{docker_image}" requires root, eliminate the line starting with -u.
+""".format(
+            shelldir=shelldir,
+            docker_image=docker_image
+        )
+        print(BASHMESSAGE.format(
+            name=name,
+            bash_command=bash_command
+        ))
+
+        self.shells[name] = shelldir, bash_command
+        self.shellnames.append(name)
+
+
+    def destroy_shell(self, name):
+        if name not in self.shells:
+            raise KeyError(name)
+        shelldir, _ = self.shells.pop(name)            
+        self.shellnames.remove(name)
+        shutil.rmtree(shelldir, ignore_errors=True)
+
+    def _cleanup_shells(self):
+        pass
+
+    def list_shells(self):
+        if not len(self.shells):
+            return
+        result = "In a bash terminal, you can connect to the shell with:"
+        if len(self.shellnames) > 1:
+            result = """Multiple shells are available.
+In a bash terminal, you can connect to each shell with:"""
+        for name in self.shellnames:
+            name2 = name + ": " if len(self.shellnames) > 1 else ""
+            _, bash_command = self.shells[name]
+            result += "\n" + name2 + bash_command
+        return result
 
 
 class ShellServer:

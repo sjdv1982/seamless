@@ -147,6 +147,9 @@ if os.path.exists(docker_container_file):
         docker_container = f.read().strip()
     
 def validate_light_mode(transformer):
+    if transformer.language == "bash":
+        raise ValidationError("""Light debug mode does not make sense for a bash/docker transformer. 
+Use sandbox mode instead.""")
     env = os.environ
     hostcwd = env.get("HOSTCWD")
     if docker_container is not None and hostcwd is None:
@@ -176,17 +179,18 @@ class DebugMode:
             return tf2.tf
         elif node["compiled"]:
             return tf2.tf.executor
+        elif node["language"] == "bash":
+            return tf2.tf
         else:
-            # bash, ipython, ipy_template, and py_bridge languages.
-            # bash and py_bridge could be supported in the future
+            # ipython, ipy_template, and py_bridge languages.
+            # py_bridge could be supported in the future
             if not force:
                 return None  
             else:
-                msg = """Attach-and-debug with breakpoints is not possible for language {}
-Only shells in sandbox debug mode are possible, please specify this explicitly"""
+                msg = "Attach-and-debug with breakpoints is not possible for language '{}'"
                 raise ValueError(msg.format(node["language"]))
 
-    def enable(self, mode):
+    def enable(self, mode, sandbox_name=None):
         if self._enabled:
             raise ValueError("Debug mode is already active.")
         tf = self._tf()
@@ -196,17 +200,16 @@ Only shells in sandbox debug mode are possible, please specify this explicitly""
 
         assert mode in ("sandbox", "light"), mode
         if mode == "sandbox":
-            core_transformer = self._get_core_transformer(force=False)
             special = None
             if tf.language == "bash":
-                raise NotImplementedError
+                special = "bash"
             elif node.get("compiled"):
                 special = "compiled"        
+            core_transformer = self._get_core_transformer(force=True)
             self._mount = debugmountmanager.add_mount(
-                core_transformer, special=special
+                core_transformer, special=special, prefix=sandbox_name
             )
         elif mode == "light":
-            core_transformer = self._get_core_transformer(force=True)
             try:
                 validate_light_mode(tf)
             except ValidationError as exc:
@@ -216,13 +219,14 @@ Reason: {}"""
                 msg = msg.format(reason) + "\n"
                 raise ValidationError(msg) from None
 
+            core_transformer = self._get_core_transformer(force=True)
             code_mount = get_code_mount(tf)
             hostcwd = os.environ.get("HOSTCWD")
             code_path = os.path.abspath(code_mount["path"])
             if hostcwd is not None and not code_path.startswith("/cwd"):
                 msg = """HOSTCWD is defined, but code path {} does not start with /cwd
 Seamless cannot do source mapping. 
-Only sandbox debug mode is possible, please specify this explicitly"""
+Only sandbox debug mode is possible."""
                 raise ValidationError(msg.format(code_mount["path"]))
         self._mode = mode
         debug = self._to_lowlevel()
@@ -248,6 +252,9 @@ If True, the transformer will wait for a debugger to attach"""
             raise TypeError(type(value))
         self._attach = value
         if self._enabled:
+            if value and self.mode == "sandbox":
+                if self._mount.special == "bash":
+                    raise ValidationError("Attach-and-debug with breakpoints is not supported for bash/docker transformers.")
             debug = self._to_lowlevel(silent=True)
             core_transformer = self._get_core_transformer(force=False)
             if core_transformer is not None:
@@ -284,7 +291,7 @@ If True, the transformer will wait for a debugger to attach"""
         mode = self._mode        
         if mode == "light":
             if not self._attach:
-                raise ValueError("attach=False is pointless in light mode")
+                raise ValueError("attach=False is pointless in light debug mode")
             debug["direct_print"] = True
             tf = self._tf()
             node = tf._get_htf()
@@ -407,20 +414,25 @@ for the following code objects:
         if mode == "sandbox":
             tf = self._tf()
             debug["main_directory"] = self._mount.path
+            node = tf._get_htf()
             if not silent:
                 print("""Entering sandbox debug mode for {}
-Mounted main directory: {}
-Debugger attach is {}            
-""".format(tf, debug["main_directory"], "ON" if self._attach else "OFF"))
-            debug["direct_print"] = True
-            node = tf._get_htf()
+Mounted main directory: {}""".format(tf, debug["main_directory"]))
+                if node["language"] == "bash":
+                    self._attach = False
+                    print("""NOTE: The mounted files contents are synchronized with the Seamless sandbox, but they do NOT correspond with the files that the bash code sees
+To create a directory where you can manually execute bash code, do Transformer.debug.shell()
+""")
+                else:
+                    print("Debugger attach is {}".format("ON" if self._attach else "OFF"))
+                    debug["direct_print"] = True            
             name = str(tf.path) + " Seamless transformer"
             debug["name"] = name
             host_project_dir = os.getcwd()
             hostcwd = os.environ.get("HOSTCWD")
             if hostcwd is not None:
                 host_project_dir = hostcwd
-            if node["language"] == "python":
+            if node["language"] == "python":                
                 debug["python_attach"] = True
                 msg = python_attach_headers[mode, self._ide].format(
                     main_directory=self._mount.path,
@@ -460,8 +472,11 @@ Debugger attach is {}
                         name=name
                     )
                     debug["generic_attach_message"] = msg
-
+            elif node["language"] == "bash":
+                # No attach of any kind...
+                pass
             else:
+                # TODO: ipython?
                 raise NotImplementedError
 
         if all([(f == False or f is None) for f in debug.values()]):

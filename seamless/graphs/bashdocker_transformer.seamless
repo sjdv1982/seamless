@@ -6,9 +6,10 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "af96195a7c0076a484443453073e330bde1111e0b370507960d85d0478d437ef"
+        "value": "6d9738afcf8f3d258143921879990a65fb71f4e7a24e45057dfb6d15a141def2"
       },
       "datatype": "mixed",
+      "file_extension": "py",
       "language": "python",
       "mount": {
         "authority": "file",
@@ -19,7 +20,6 @@
       "path": [
         "executor_code"
       ],
-      "transformer": true,
       "type": "cell"
     }
   ],
