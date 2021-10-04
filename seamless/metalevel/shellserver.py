@@ -20,8 +20,8 @@ PYMESSAGE = """*****************************************************************
 Seamless IPython shell {name} started.
 
 The shell contains the *current* values of the code and inputs
-of the debugged transformer. The shell is not synchronized with
-value updates from elsewhere. 
+of the debugged transformer sandbox. The shell is not auto-synchronized with
+the sandbox. 
 
 In a bash terminal, you can connect to the shell with:
   {CONSOLE_COMMAND} {connection_file}
