@@ -15,7 +15,7 @@ ctx.compute()
 print(ctx.tf.result.value, ctx.result.value)
 
 ctx.tf.debug.attach = False
-ctx.tf.debug.enable("full")
+ctx.tf.debug.enable("sandbox")
 ctx.compute()
 print(ctx.tf.result.value, ctx.result.value)
 ctx.tf.a = 11
@@ -27,7 +27,7 @@ print(ctx.tf.result.value, ctx.result.value)
 
 #ctx.tf.debug.disable()
 ctx.tf.debug.attach = True
-#ctx.tf.debug.enable("full")
+#ctx.tf.debug.enable("sandbox")
 ctx.tf.a = 99
 ctx.compute()
 print(ctx.tf.result.value, ctx.result.value)

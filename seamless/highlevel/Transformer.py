@@ -488,7 +488,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
                 assign_connection(parent, value._path, target_path, False)
                 translate = True
             else:
-                if self.debug.enabled and self.debug.mode == "full":
+                if self.debug.enabled and self.debug.mode == "sandbox":
                     mount = self._get_debugmount()
                     mount_ctx = mount.mount_ctx
                     if htf["compiled"]:
@@ -561,7 +561,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
     def _get_debugmount(self):
         if not self.debug.enabled:
             return None
-        if self.debug.mode != "full":
+        if self.debug.mode != "sandbox":
             return None
         node = self._get_htf()
         tf = self._get_tf()
@@ -575,7 +575,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
 
     def _get_value(self, attr):
         htf = self._get_htf()
-        if self.debug.enabled and self.debug.mode == "full":
+        if self.debug.enabled and self.debug.mode == "sandbox":
             mount = self._get_debugmount()
             mount_ctx = mount.mount_ctx
             if htf["compiled"]:
@@ -741,7 +741,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
             if k in (htf["INPUT"], htf["RESULT"]):
                 if k == htf["INPUT"] and not len(htf["pins"]):
                     continue
-                if k == htf["RESULT"] and self.debug.enabled and self.debug.mode == "full":
+                if k == htf["RESULT"] and self.debug.enabled and self.debug.mode == "sandbox":
                     continue
                 cell = getattr(self, k)
                 status = cell.status
@@ -915,7 +915,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         if attr == "celltype":
             return "code"
         elif attr == "value":
-            if self.debug.enabled and self.debug.mode == "full":
+            if self.debug.enabled and self.debug.mode == "sandbox":
                 mount = self._get_debugmount()
                 mount_ctx = mount.mount_ctx
                 return getattr(mount_ctx, "code").value
@@ -952,7 +952,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         htf = self._get_htf()
         if attr in htf["pins"]:
             return getattr(self, attr)
-        if self.debug.enabled and self.debug.mode == "full":
+        if self.debug.enabled and self.debug.mode == "sandbox":
             mount = self._get_debugmount()
             if attr != "value":
                 if attr in ("status", "exception"):
@@ -1048,7 +1048,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         htf = self._get_htf()
         if htf.get("UNTRANSLATED"):
             return None
-        if attr == "value" and self.debug.enabled and self.debug.mode == "full":
+        if attr == "value" and self.debug.enabled and self.debug.mode == "sandbox":
             mount = self._get_debugmount()
             mount_ctx = mount.mount_ctx
             return getattr(mount_ctx, htf["RESULT"]).value

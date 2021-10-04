@@ -27,7 +27,7 @@ ctx.compute()
 print(ctx.tf.result.value)
 
 #ctx.tf.debug.attach = False
-ctx.tf.debug.enable("full")
+ctx.tf.debug.enable("sandbox")
 
 ctx.tf.a = 12
 ctx.compute()

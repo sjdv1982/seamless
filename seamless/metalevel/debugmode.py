@@ -1,4 +1,3 @@
-import functools
 import sys
 from typing import OrderedDict
 import weakref
@@ -10,7 +9,7 @@ python_attach_headers = {
 
 In Visual Studio Code, set breakpoints in this file.""",
 
-    ("full", "vscode") : """The source code has been mounted to files inside the directory:
+    ("sandbox", "vscode") : """The source code has been mounted to files inside the directory:
 {main_directory}.
 
 In Visual Studio Code, set breakpoints in these files."""
@@ -184,7 +183,7 @@ class DebugMode:
                 return None  
             else:
                 msg = """Attach-and-debug with breakpoints is not possible for language {}
-Only shells in full debug mode are possible, please specify this explicitly"""
+Only shells in sandbox debug mode are possible, please specify this explicitly"""
                 raise ValueError(msg.format(node["language"]))
 
     def enable(self, mode):
@@ -195,8 +194,8 @@ Only shells in full debug mode are possible, please specify this explicitly"""
         if tf is None or node.get("UNTRANSLATED"):
             raise ValueError("Transformer is untranslated.")
 
-        assert mode in ("full", "light"), mode
-        if mode == "full":
+        assert mode in ("sandbox", "light"), mode
+        if mode == "sandbox":
             core_transformer = self._get_core_transformer(force=False)
             special = None
             if tf.language == "bash":
@@ -223,7 +222,7 @@ Reason: {}"""
             if hostcwd is not None and not code_path.startswith("/cwd"):
                 msg = """HOSTCWD is defined, but code path {} does not start with /cwd
 Seamless cannot do source mapping. 
-Only full debug mode is possible, please specify this explicitly"""
+Only sandbox debug mode is possible, please specify this explicitly"""
                 raise ValidationError(msg.format(code_mount["path"]))
         self._mode = mode
         debug = self._to_lowlevel()
@@ -405,11 +404,11 @@ for the following code objects:
                     name=name
                 )
                 debug["generic_attach_message"] = msg
-        if mode == "full":
+        if mode == "sandbox":
             tf = self._tf()
             debug["main_directory"] = self._mount.path
             if not silent:
-                print("""Entering full debug mode for {}
+                print("""Entering sandbox debug mode for {}
 Mounted main directory: {}
 Debugger attach is {}            
 """.format(tf, debug["main_directory"], "ON" if self._attach else "OFF"))
@@ -479,15 +478,15 @@ Debugger attach is {}
     def pull(self):
         if not self._enabled:
             raise ValueError("Debug mode is not active.")
-        if self._mode != "full":
-            raise ValueError("Debug mode must be 'full'")
+        if self._mode != "sandbox":
+            raise ValueError("Debug mode must be 'sandbox'")
         tf = self._tf()
         if tf is not None:
             debugmount = tf._get_debugmount()
             return debugmount.pull()
 
     def _push_from_shell(self, inputname, value):
-        if not self.enabled or self.mode != "full":
+        if not self.enabled or self.mode != "sandbox":
             return
         c = getattr(self._mount.mount_ctx, inputname, None)
         if c is None:
@@ -524,8 +523,8 @@ Debugger attach is {}
     def shell(self):
         if not self._enabled:
             raise ValueError("Debug mode is not active.")
-        if self._mode != "full":
-            raise ValueError("Debug mode must be 'full'")
+        if self._mode != "sandbox":
+            raise ValueError("Debug mode must be 'sandbox'")
         coro = asyncio.ensure_future(self._new_shell())
         if not asyncio.get_event_loop().is_running():
             asyncio.get_event_loop().run_until_complete(coro)
@@ -533,8 +532,8 @@ Debugger attach is {}
     def shells(self):
         if not self._enabled:
             raise ValueError("Debug mode is not active.")
-        if self._mode != "full":
-            raise ValueError("Debug mode must be 'full'")
+        if self._mode != "sandbox":
+            raise ValueError("Debug mode must be 'sandbox'")
         if self._shellname is None:
             return
         return shellserver.list_shells(self._shellname)

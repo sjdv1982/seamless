@@ -42,7 +42,7 @@ if exc is not None:
     print(exc)
 
 ctx.transform.debug.attach = False
-ctx.transform.debug.enable("full")
+ctx.transform.debug.enable("sandbox")
 ctx.a = 11
 ctx.compute()
 ctx.transform.debug.pull()
