@@ -263,6 +263,9 @@ class Manager:
                 self.update_schemacell(cell, value)
             self.taskmanager.add_synctask(update_schema, (), {}, False)
 
+        if initial:
+            self.trigger_all_fallbacks(cell)
+
     def _set_cell_checksum(self,
         cell, checksum, void, status_reason=None, prelim=False, trigger_bilinks=True
     ):
@@ -469,29 +472,11 @@ class Manager:
         task.launch()
 
     def _get_cell_checksum_and_void(self, cell):
-        """
-        count = 0
-        while 1:
-            if asyncio.get_event_loop().is_running():
-                break
-            if self._destroyed or cell._destroyed:
-                break
-
-            try:
-                # This will make the cell checksum current
-                task = CellChecksumTask(self, cell)
-                task.launch_and_await()
-                break
-            except asyncio.CancelledError:
-                pass
-
-            count += 1
-            if count == 100:
-                # This cell has been canceled 100 times... what can we do?
-                # Let's return our best guess
-                return cell._checksum, cell._void
-        """
-        return cell._checksum, cell._void
+        fallback = self.get_fallback(cell)
+        if fallback is not None:
+            return fallback._checksum, fallback._void
+        else:
+            return cell._checksum, cell._void
 
     @mainthread
     def get_cell_checksum(self, cell):
@@ -725,6 +710,86 @@ If origin_task is provided, that task is not cancelled."""
             msg = "Neither %s (governing %s) nor %s (governing %s) was created by current macro %s"
             raise Exception(msg % (source_macro, source, target_macro, target, current_macro))
         return path_source, path_target
+
+    def get_fallback(self, cell):
+        if isinstance(cell, StructuredCell):
+            cell = cell._data
+        return self.livegraph.cell_to_fallback[cell]
+
+    def set_fallback(self, cell, fallback_cell):
+        print("manager.set_fallback", cell, fallback_cell)
+        if isinstance(cell, StructuredCell):
+            cell = cell._data
+        if len(self.livegraph.cell_to_reverse_fallbacks[cell]):
+            msg = "Can't set fallback for cell {}, it is already a fallback for other cells"
+            raise ValueError(msg.format(cell))
+        if isinstance(fallback_cell, StructuredCell):
+            fallback_cell = fallback_cell._data
+        other_livegraph = fallback_cell._get_manager().livegraph
+        if other_livegraph.cell_to_fallback[fallback_cell]:
+            msg = "Cell {} can't be a fallback, it has already another cell as fallback"
+            raise ValueError(msg.format(fallback_cell))
+        if cell._destroyed:
+            return
+        self.livegraph.cell_to_fallback[cell] = fallback_cell
+
+    def add_reverse_fallback(self, fallback_cell, cell):
+        # Just for bookkeeping; assumes that the cell's manager has received a .set_fallback already
+        if isinstance(cell, StructuredCell):
+            cell = cell._data
+        if isinstance(fallback_cell, StructuredCell):
+            fallback_cell = fallback_cell._data
+        self.livegraph.cell_to_reverse_fallbacks[fallback_cell].add(cell)
+
+    def remove_reverse_fallback(self, fallback_cell, cell):
+        # Just for bookkeeping; assumes that the cell's manager has received a .set_fallback already
+        if isinstance(cell, StructuredCell):
+            cell = cell._data
+        if isinstance(fallback_cell, StructuredCell):
+            fallback_cell = fallback_cell._data
+        if fallback_cell._destroyed:
+            return
+        self.livegraph.cell_to_reverse_fallbacks[fallback_cell].discard(cell)
+
+    def clear_fallback(self, cell):
+        from .tasks.structured_cell import update_structured_cell
+        print("manager.clear_fallback", cell)
+        if cell._destroyed:
+            return
+        if isinstance(cell, StructuredCell):
+            sc = cell
+            cell = sc._data
+        else:
+            sc = self.livegraph.datacells[cell]
+        if sc is not None:
+            cell.structured_cell_trigger(sc)
+            update_structured_cell(sc, cell.checksum, from_fallback=False)
+        else:
+            CellUpdateTask(self, cell).launch()
+
+        self.livegraph.cell_to_fallback[cell] = None
+
+    def trigger_fallback(self, checksum, reverse_fallback):
+        from .tasks.structured_cell import update_structured_cell
+        other_manager = reverse_fallback._get_manager()
+        other_livegraph = other_manager.livegraph
+        if isinstance(reverse_fallback, StructuredCell):
+            sc = reverse_fallback
+        else:
+            sc = other_livegraph.datacells[reverse_fallback]
+        if sc is not None:
+            other_manager.structured_cell_trigger(sc)
+            update_structured_cell(sc, checksum, from_fallback=True)
+        else:
+            CellUpdateTask(other_manager, reverse_fallback).launch()
+
+    def trigger_all_fallbacks(self, cell):
+        checksum = cell._checksum
+        reverse_fallbacks = self.livegraph.cell_to_reverse_fallbacks[cell]
+        if len(reverse_fallbacks):
+            print("TRIGGER ALL FALLBACKS", cell, cell.value)        
+        for reverse_fallback in reverse_fallbacks:
+            self.trigger_fallback(checksum, reverse_fallback)
 
     ##########################################################################
     # API section V: Destruction

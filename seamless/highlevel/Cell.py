@@ -36,6 +36,7 @@ class Cell(Base):
     _virtual_path = None
     _node = None
     _subpath = ()
+    _fallback = None
 
     def __init__(self, celltype=None, *, parent=None, path=None):
         assert (parent is None) == (path is None)
@@ -225,6 +226,10 @@ class Cell(Base):
             cell = self._get_cell()
             return getattr(cell, attr)
         return self._get_subcell(attr)
+
+    @property
+    def fallback(self):
+        return Fallback(self)
 
     def mount(
         self, path, mode="rw", authority="file", *,
@@ -924,3 +929,4 @@ from .SchemaWrapper import SchemaWrapper
 from .proxy import Proxy
 from ..midlevel.util import STRUC_ID
 from .synth_context import SynthContext
+from .Fallback import Fallback

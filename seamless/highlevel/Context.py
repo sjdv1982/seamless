@@ -12,6 +12,7 @@ import zipfile
 from zipfile import ZipFile, ZipInfo
 from io import BytesIO
 import json
+from weakref import WeakSet
 
 import logging
 logger = logging.getLogger("seamless")
@@ -132,6 +133,7 @@ class Context(Base, ContextHelpMixin):
     _environment = None
     _libroot = None
     _untranslatable = False
+    _reverse_fallbacks = WeakSet()  # Fallback objects from other Contexts, that use a fallback cell in this Context
 
     @classmethod
     def from_graph(cls, graph, manager, *, mounts=True, shares=True, share_namespace=None, zip=None):
@@ -831,6 +833,7 @@ class Context(Base, ContextHelpMixin):
                 else:
                     raise TypeError(type(child))
 
+            self._activate_fallbacks()
             for traitlet in self._traitlets.values():
                 try:
                     traitlet._connect_seamless()
@@ -843,6 +846,16 @@ class Context(Base, ContextHelpMixin):
             self._translating = False
 
         livegraph._flush_observations()
+
+    def _activate_fallbacks(self):
+        for fallback in self._reverse_fallbacks:
+            fallback._activate()
+        for cell in self._children.values():
+            if not isinstance(cell, Cell):
+                continue
+            fallback = cell._fallback
+            if fallback is not None:
+                fallback._activate()    
 
     def _get_shares(self):
         shares = {}

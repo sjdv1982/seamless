@@ -39,9 +39,14 @@ class CellUpdateTask(Task):
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
         await taskmanager.await_cell(cell, self.taskid, self._root())
 
+        fallback = manager.get_fallback(cell)
+
         locknr = await acquire_evaluation_lock(self)
         try:
-            checksum = cell._checksum
+            if fallback is not None:
+                checksum = fallback._checksum
+            else:
+                checksum = cell._checksum
             assert checksum is not None, cell
             assert not cell._structured_cell # cell update is not for StructuredCell cells
             livegraph = manager.livegraph

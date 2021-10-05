@@ -729,7 +729,7 @@ class CancellationCycle:
             if downstreams is None:
                 if worker._destroyed:
                     return
-                raise KeyError(workwr)
+                raise KeyError(worker)
             for pinname in outputpins:
                 accessors = all_downstreams[pinname]
                 downstreams += accessors

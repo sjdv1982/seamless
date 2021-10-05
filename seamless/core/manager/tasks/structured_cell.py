@@ -17,6 +17,59 @@ def is_empty(cell):
         return True
     return False
 
+def _update_structured_cell(
+    sc, checksum, manager, *,
+    check_canceled, 
+    prelim, from_fallback
+):
+    has_fallback = (manager.get_fallback(sc._data) is not None)
+    if len(sc.outchannels) and (from_fallback or not has_fallback):
+        livegraph = manager.livegraph
+        downstreams = livegraph.paths_to_downstream[sc._data]
+        cs = checksum
+        if isinstance(checksum, str):
+            cs = bytes.fromhex(checksum)
+        taskmanager = manager.taskmanager
+
+        accessors_to_cancel = []
+        for out_path in sc.outchannels:
+            for accessor in downstreams[out_path]:
+                if accessor._void or accessor._checksum is not None:
+                    accessors_to_cancel.append(accessor)
+                else:
+                    taskmanager.cancel_accessor(accessor)
+
+        if len(accessors_to_cancel):
+            manager.cancel_accessors(accessors_to_cancel, False)
+
+        # Chance that the above line cancels our own task
+        if check_canceled():
+            return
+
+        for out_path in sc.outchannels:
+            for accessor in downstreams[out_path]:
+                #print("!SC VALUE", sc, out_path, accessor._void)
+                #  manager.cancel_accessor(accessor)  # already done above
+                accessor.build_expression(livegraph, cs)
+                if prelim is not None:
+                    accessor._prelim = prelim[out_path]
+                else:
+                    accessor._prelim = False
+                AccessorUpdateTask(manager, accessor).launch()
+
+    if not from_fallback:
+        if sc._data is not sc.auth:
+            sc._data._set_checksum(checksum, from_structured_cell=True)
+        manager.trigger_all_fallbacks(sc._data)
+    sc._exception = None
+
+def update_structured_cell(sc, checksum, *, from_fallback):
+    manager = sc._get_manager()
+    return _update_structured_cell(
+        sc, checksum, manager,
+        check_canceled=lambda: False, prelim=None, from_fallback=from_fallback
+    )
+
 class StructuredCellTask(Task):
     def __init__(self, manager, structured_cell):
         super().__init__(manager)
@@ -171,6 +224,9 @@ class StructuredCellJoinTask(StructuredCellTask):
 
         checksum = None
         from_cache = False
+        has_auth = None
+        has_inchannel = None
+        prelim = None
         if not any_prelim:
             checksum = manager.cachemanager.get_join_cache(join_dict)
             if checksum is not None:
@@ -369,51 +425,16 @@ class StructuredCellJoinTask(StructuredCellTask):
                             return
 
             if ok:
-                if len(sc.outchannels):
-                    livegraph = manager.livegraph
-                    cachemanager = manager.cachemanager
-                    downstreams = livegraph.paths_to_downstream[sc._data]
-                    cs = bytes.fromhex(checksum)
-                    taskmanager = manager.taskmanager
-
-                    accessors_to_cancel = []
-                    for out_path in sc.outchannels:
-                        for accessor in downstreams[out_path]:
-                            if accessor._void or accessor._checksum is not None:
-                                accessors_to_cancel.append(accessor)
-                            else:
-                                taskmanager.cancel_accessor(accessor)
-
-                    if len(accessors_to_cancel):
-                        manager.cancel_accessors(accessors_to_cancel, False)
-
-                    # Chance that the above line cancels our own task
-                    if self._canceled:
-                        return
-
-                    for out_path in sc.outchannels:
-                        for accessor in downstreams[out_path]:
-                            #print("!SC VALUE", sc, out_path, accessor._void)
-                            #  manager.cancel_accessor(accessor)  # already done above
-                            accessor.build_expression(livegraph, cs)
-                            if from_cache:
-                                accessor._prelim = False
-                            else:
-                                accessor._prelim = prelim[out_path]
-                            AccessorUpdateTask(manager, accessor).launch()
-
-            if ok:
                 if (not from_cache) and (has_auth or has_inchannel):
                     assert checksum is not None
-                if sc._data is not sc.auth:
-                    sc._data._set_checksum(checksum, from_structured_cell=True)
-                sc._exception = None
-
+                _update_structured_cell(sc, checksum, manager,
+                    check_canceled=lambda: self._canceled, 
+                    prelim=prelim, from_fallback=False
+                )
                 if not from_cache and not any_prelim:
                     manager.cachemanager.set_join_cache(join_dict, checksum)
-
-            for inchannel in sc.inchannels.values():
-                inchannel._save_state()
+                for inchannel in sc.inchannels.values():
+                    inchannel._save_state()
         finally:
             release_evaluation_lock(locknr)
             if not self._canceled:

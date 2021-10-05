@@ -66,6 +66,8 @@ class LiveGraph:
         self.macro_elision = {}
         self.cell_to_macro_elision = {}
         self.cell_from_macro_elision = {}
+        self.cell_to_fallback = {}
+        self.cell_to_reverse_fallbacks = {}
 
         self.datacells = {}
         self.buffercells = {}
@@ -86,6 +88,8 @@ class LiveGraph:
         self.cell_to_downstream[cell] = []
         self.cell_to_editpins[cell] = []
         self.cell_or_path_to_bilink[cell] = []
+        self.cell_to_fallback[cell] = None
+        self.cell_to_reverse_fallbacks[cell] = weakref.WeakSet()
         self.schemacells[cell] = []
 
     def register_transformer(self, transformer):
@@ -876,6 +880,8 @@ class LiveGraph:
         self.cell_to_downstream.pop(cell)
         self.cell_or_path_to_bilink.pop(cell)
         self.cell_parsing_exceptions.pop(cell, None)
+        self.cell_to_fallback.pop(cell)
+        self.cell_to_reverse_fallbacks.pop(cell)
 
     @destroyer
     def destroy_macropath(self, macropath):
@@ -905,6 +911,8 @@ class LiveGraph:
             "expression_to_accessors",
             "cell_to_upstream",
             "cell_to_downstream",
+            "cell_to_fallback",
+            "cell_to_reverse_fallbacks",
             "cell_or_path_to_bilink",
             "paths_to_upstream",
             "paths_to_downstream",
