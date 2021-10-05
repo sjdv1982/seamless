@@ -173,6 +173,39 @@ class Manager:
     # API section II: Actions
     ##########################################################################
 
+    def _upon_set_cell_checksum(self, cell, checksum, void, trigger_bilinks):
+        livegraph = self.livegraph
+        if checksum is not None:
+            for traitlet in cell._traitlets:
+                # TODO: block the async mainloop during the receive_update call
+                try:
+                    traitlet.receive_update(checksum)
+                except Exception:
+                    traceback.print_exc()
+        if not is_dummy_mount(cell._mount):
+            try:
+                buffer = buffer_cache.get_buffer(checksum)  # not async, so OK
+                self.mountmanager.add_cell_update(cell, checksum, buffer)
+            except Exception:
+                traceback.print_exc()            
+        if cell._share is not None:
+            try:
+                self.sharemanager.add_cell_update(cell, checksum)
+            except Exception:
+                traceback.print_exc()
+        if checksum is not None and trigger_bilinks:
+            try:
+                self.livegraph.activate_bilink(cell, checksum)
+            except Exception:
+                traceback.print_exc()
+        if (void or checksum is not None) and not len(livegraph._destroying):
+            if cell in livegraph.cell_from_macro_elision:
+                elision = livegraph.cell_from_macro_elision[cell]
+                if elision.macro.ctx is not None and not elision.macro.ctx._destroyed:
+                    #print("UP!", cell, void, checksum.hex() if checksum is not None else None)
+                    elision.update()
+
+
     @run_in_mainthread
     def set_cell_checksum(self,
         cell, checksum, *,
@@ -288,7 +321,6 @@ class Manager:
             status_reason = None
 
         livegraph = self.livegraph
-        schema_value = None
         if len(livegraph.schemacells[cell]):
             independent = True
             value = None
@@ -323,35 +355,7 @@ class Manager:
                         traceback.print_exc()
                 else:
                     livegraph._observing.append((cell, cs))
-            if checksum is not None:
-                for traitlet in cell._traitlets:
-                    # TODO: block the async mainloop during the receive_update call
-                    try:
-                        traitlet.receive_update(checksum)
-                    except Exception:
-                        traceback.print_exc()
-            if not is_dummy_mount(cell._mount):
-                try:
-                    buffer = buffer_cache.get_buffer(checksum)  # not async, so OK
-                    self.mountmanager.add_cell_update(cell, checksum, buffer)
-                except Exception:
-                    traceback.print_exc()            
-            if cell._share is not None:
-                try:
-                    self.sharemanager.add_cell_update(cell, checksum)
-                except Exception:
-                    traceback.print_exc()
-            if checksum is not None and trigger_bilinks:
-                try:
-                    self.livegraph.activate_bilink(cell, checksum)
-                except Exception:
-                    traceback.print_exc()
-            if (void or checksum is not None) and not len(livegraph._destroying):
-                if cell in livegraph.cell_from_macro_elision:
-                    elision = livegraph.cell_from_macro_elision[cell]
-                    if elision.macro.ctx is not None and not elision.macro.ctx._destroyed:
-                        #print("UP!", cell, void, checksum.hex() if checksum is not None else None)
-                        elision.update()
+            self._upon_set_cell_checksum(cell, checksum, void, trigger_bilinks)
 
     def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, *,
       prelim=False, from_cancel_system=False
@@ -759,13 +763,14 @@ If origin_task is provided, that task is not cancelled."""
             sc = cell
             cell = sc._data
         else:
-            sc = self.livegraph.datacells[cell]
+            sc = self.livegraph.datacells.get(cell)
         self.livegraph.cell_to_fallback[cell] = None
         if sc is not None:
             self.structured_cell_trigger(sc)
             update_structured_cell(sc, cell.checksum, from_fallback=False)
         else:
             CellUpdateTask(self, cell).launch()
+        self._upon_set_cell_checksum(cell, cell.checksum, cell.void, True)
 
     def trigger_fallback(self, checksum, reverse_fallback):
         from .tasks.structured_cell import update_structured_cell
@@ -773,13 +778,17 @@ If origin_task is provided, that task is not cancelled."""
         other_livegraph = other_manager.livegraph
         if isinstance(reverse_fallback, StructuredCell):
             sc = reverse_fallback
+            reverse_fallback = sc._data
         else:
-            sc = other_livegraph.datacells[reverse_fallback]
+            sc = other_livegraph.datacells.get(reverse_fallback)
         if sc is not None:
             other_manager.structured_cell_trigger(sc)
             update_structured_cell(sc, checksum, from_fallback=True)
         else:
             CellUpdateTask(other_manager, reverse_fallback).launch()
+        other_manager._upon_set_cell_checksum(
+            reverse_fallback, checksum, False, True
+        )
 
     def trigger_all_fallbacks(self, cell):
         checksum = cell._checksum

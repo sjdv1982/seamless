@@ -93,6 +93,7 @@ class CellUpdateTask(Task):
                     if macro._in_elision:
                         MacroUpdateTask(manager, macro).launch()
 
+            manager.trigger_all_fallbacks(cell)
             return None
         finally:
             release_evaluation_lock(locknr)

@@ -189,3 +189,12 @@ debugmode-docker-shell.py
   Debug bash shell, with Docker image. Follow the instructions.
 hack-bash-transformer-translation.py
   Run with IPython and hack /tmp/execute.py
+fallback-mount-share.py
+  Run with IPython, modify /tmp/a and /tmp/b . 
+  Check "curl localhost:5813/ctx/a"
+  Do:
+  - fctx.aa = ...
+  - ctx.translate(force=True)
+  - ctx.a.fallback(None)
+  - ctx.a.fallback(fctx.aa)
+  - fctx.translate(force=True)

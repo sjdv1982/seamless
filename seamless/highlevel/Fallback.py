@@ -15,7 +15,7 @@ def set_fallback(cell, fallback_cell):
             fallback_core_cell = None
 
     old_fallback = manager.get_fallback(core_cell)
-    if old_fallback is not None:
+    if old_fallback is not None and not old_fallback._destroyed:
         fallback_manager = old_fallback._get_manager()
         fallback_manager.remove_reverse_fallback(old_fallback, core_cell)
 

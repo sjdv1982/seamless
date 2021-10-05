@@ -16,6 +16,14 @@ from ..get_hash import get_hash
 import logging
 logger = logging.getLogger("seamless")
 
+def get_fallback_checksum(cell):
+    manager = cell._get_manager()
+    fallback = manager.get_fallback(cell)
+    if fallback is None:
+        return cell._checksum
+    else:
+        return fallback._checksum
+
 class ShareItem:
     last_exc = None
     _destroyed = False
@@ -70,7 +78,7 @@ class ShareItem:
                 raise Exception(msg % (cell, self.path))
             self._namespace = name
 
-            cell_checksum = cell._checksum
+            cell_checksum = get_fallback_checksum(cell)
             cell_pending = manager.taskmanager.is_pending(cell)
             cell_empty = (cell_checksum is None)
             _, cached_share = sharemanager.cached_shares.get((name, self.path), (None, None))
@@ -113,7 +121,7 @@ class ShareItem:
             if not cell_pending:
                 # If the cell is pending, a running task will later call manager._set_cell_checksum,
                 #   which will call sharemanager.add_cell_update, which will call us again
-                self.share.set_checksum(cell._checksum)
+                self.share.set_checksum(get_fallback_checksum(cell))
 
     def update(self, checksum):
         # called by shareserver, or from init
@@ -216,7 +224,7 @@ class ShareManager:
                     cellname=cellname
                 )
                 self.shares[cell] = new_share_item
-                checksum = cell._checksum
+                checksum = get_fallback_checksum(cell)
                 if checksum is not None:
                     self.cell_updates[cell] = checksum
         self.share_updates.clear()
