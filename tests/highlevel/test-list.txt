@@ -130,6 +130,7 @@ share-pdb-docker.seamless/.zip: to test using:
       --add-zip /seamless/seamless/graphs/status-visualization.zip
     In that case, open also http://localhost:5813/status/index.html
 plotting.py
+test-copy.py
 environment.py
    Can be run automatically in a standard container,
     and will exit at some point because Rust is not installed

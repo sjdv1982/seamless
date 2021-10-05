@@ -1,5 +1,4 @@
 import inspect
-from copy import deepcopy
 from types import LambdaType
 from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda
 import textwrap
@@ -62,6 +61,7 @@ from .Module import Module
 from .Link import Link
 from .Resource import Resource
 from ..midlevel.StaticContext import StaticContext
+from .copy import copy
 
 def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, shares=True):
     """Load a Context from graph.
@@ -111,5 +111,5 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
 __all__ = [
     "Context", "Transformer", "Macro",
     "Cell", "Link", "Graph", "StaticContext", "Module",
-    "Resource", "load_graph"
+    "Resource", "load_graph", "copy"
 ]
