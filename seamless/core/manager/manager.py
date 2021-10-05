@@ -717,7 +717,7 @@ If origin_task is provided, that task is not cancelled."""
         return self.livegraph.cell_to_fallback[cell]
 
     def set_fallback(self, cell, fallback_cell):
-        print("manager.set_fallback", cell, fallback_cell)
+        #print("manager.set_fallback", cell, fallback_cell)
         if isinstance(cell, StructuredCell):
             cell = cell._data
         if len(self.livegraph.cell_to_reverse_fallbacks[cell]):
@@ -753,7 +753,6 @@ If origin_task is provided, that task is not cancelled."""
 
     def clear_fallback(self, cell):
         from .tasks.structured_cell import update_structured_cell
-        print("manager.clear_fallback", cell)
         if cell._destroyed:
             return
         if isinstance(cell, StructuredCell):
@@ -761,13 +760,12 @@ If origin_task is provided, that task is not cancelled."""
             cell = sc._data
         else:
             sc = self.livegraph.datacells[cell]
+        self.livegraph.cell_to_fallback[cell] = None
         if sc is not None:
-            cell.structured_cell_trigger(sc)
+            self.structured_cell_trigger(sc)
             update_structured_cell(sc, cell.checksum, from_fallback=False)
         else:
             CellUpdateTask(self, cell).launch()
-
-        self.livegraph.cell_to_fallback[cell] = None
 
     def trigger_fallback(self, checksum, reverse_fallback):
         from .tasks.structured_cell import update_structured_cell
@@ -786,8 +784,6 @@ If origin_task is provided, that task is not cancelled."""
     def trigger_all_fallbacks(self, cell):
         checksum = cell._checksum
         reverse_fallbacks = self.livegraph.cell_to_reverse_fallbacks[cell]
-        if len(reverse_fallbacks):
-            print("TRIGGER ALL FALLBACKS", cell, cell.value)        
         for reverse_fallback in reverse_fallbacks:
             self.trigger_fallback(checksum, reverse_fallback)
 

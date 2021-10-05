@@ -29,17 +29,17 @@ print()
 
 print(3)
 fallback_ctx.translate(force=True)
+fallback_ctx.compute()
 print(ctx.result.value, ctx.reresult.value)
 fallback_ctx.result2 = 45
 fallback_ctx.compute()
 print(ctx.result.value, ctx.reresult.value)
 print()
-exit(0)
 
 print(4)
 ctx.a = 10
 ctx.compute()
-print(ctx.result.value, ctx.reresult.value)
+print(ctx.tf.result.value, ctx.result.value, ctx.reresult.value)
 print()
 
 print(5)
@@ -55,18 +55,17 @@ print(6)
 fallback_ctx.a2 = 2
 ctx.result.fallback(fallback_ctx.result2)
 ctx.a.fallback(fallback_ctx.a2)
+fallback_ctx.compute()
 ctx.compute()
-print(ctx.result.value)
+print(ctx.a.value, ctx.tf.result.value, ctx.result.value, ctx.reresult.value)
 fallback_ctx.a2 = 3
+fallback_ctx.compute()
 ctx.compute()
-print(ctx.result.value)
+print(ctx.a.value, ctx.tf.result.value, ctx.result.value, ctx.reresult.value)
 ctx.result.fallback(None)
 ctx.compute()
-print(ctx.result.value)
+print(ctx.a.value, ctx.tf.result.value, ctx.result.value, ctx.reresult.value)
 ctx.b = 4
 ctx.compute()
-print(ctx.result.value)
+print(ctx.a.value, ctx.tf.result.value, ctx.result.value, ctx.reresult.value)
 print()
-
-
-# TODO: test only_none

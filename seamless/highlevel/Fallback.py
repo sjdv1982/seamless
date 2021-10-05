@@ -43,9 +43,8 @@ class Fallback:
             raise TypeError(type(cell))
         self._cell = weakref.ref(cell)  # high-level cell!
         self._fallback_cell = None      # high-level cell!
-        self._only_none = False
 
-    def __call__(self, fallback_cell, only_none:bool=False):
+    def __call__(self, fallback_cell):
         if fallback_cell is not None:
             if not isinstance(fallback_cell, Cell):
                 raise TypeError(type(fallback_cell))
@@ -53,7 +52,6 @@ class Fallback:
         if cell is None:
             return
         cell._fallback = self
-        self._only_none = only_none
         if fallback_cell is None:
             return self._clear()
         self._fallback_cell = weakref.ref(fallback_cell)
@@ -92,8 +90,6 @@ class Fallback:
             self._clear()
             return None
         result = "Fallback from {} to {}".format(cell, fb)
-        if self._only_none:
-            result += ", only_none = True"
         return result
 
 from .Cell import Cell

@@ -22,13 +22,15 @@ def _update_structured_cell(
     check_canceled, 
     prelim, from_fallback
 ):
-    has_fallback = (manager.get_fallback(sc._data) is not None)
-    if len(sc.outchannels) and (from_fallback or not has_fallback):
+    fallback = manager.get_fallback(sc._data)
+    if len(sc.outchannels):
         livegraph = manager.livegraph
         downstreams = livegraph.paths_to_downstream[sc._data]
         cs = checksum
         if isinstance(checksum, str):
             cs = bytes.fromhex(checksum)
+        if fallback is not None:
+            cs = fallback._checksum
         taskmanager = manager.taskmanager
 
         accessors_to_cancel = []
