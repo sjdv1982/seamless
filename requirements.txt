@@ -11,7 +11,7 @@ ruamel.yaml.clib==0.2.*
 speg==0.3.*
 jsonschema==3.2.*
 websockets==9.1.*
-aiohttp==3.6.*
+aiohttp==3.7.*
 aiohttp_cors==0.7.*
 async_timeout==3.0.*
 multidict==4.7.*
@@ -20,7 +20,7 @@ yarl==1.4.*
 redis==3.3.*
 pandas==1.2.*
 IPython==7.23.*
-notebook==6.3.*
+notebook==6.4.*
 tornado==6.1.*
 ipykernel==5.5.*
 pyzmq==22.0.*
