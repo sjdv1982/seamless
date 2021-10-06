@@ -45,9 +45,9 @@ TF DUPLEX Status: executing, 20.0 %
 RESULT        0.300 Status: preliminary
 RESULT DUPLEX 0.300 Status: preliminary
 
-PROGRESS 3
 TF        Status: executing, 20.0 %
 TF DUPLEX Status: executing, 20.0 %
+PROGRESS 3
 RESULT        0.300 Status: preliminary
 RESULT DUPLEX 0.300 Status: preliminary
 

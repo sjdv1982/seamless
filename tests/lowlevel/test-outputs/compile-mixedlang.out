@@ -1,15 +1,15 @@
 
-gfortran -c obj1.f90 -O3 -fno-automatic -fcray-pointer -ffast-math -march=native -fPIC -p -g -o obj1.o
+gfortran -c -O3 -fno-automatic -fcray-pointer -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_a093566274bbbd05e6d9840650da9a211d68330633e73ced866208efe10c186a/obj1.o /tmp/seamless-extensions/seamless_module_a093566274bbbd05e6d9840650da9a211d68330633e73ced866208efe10c186a/obj1.f90
 
-g++ -c obj2.cpp -O3 -ffast-math -march=native -fPIC -p -g -o obj2.o
+g++ -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_a093566274bbbd05e6d9840650da9a211d68330633e73ced866208efe10c186a/obj2.o /tmp/seamless-extensions/seamless_module_a093566274bbbd05e6d9840650da9a211d68330633e73ced866208efe10c186a/obj2.cpp
 
 
 5.0
 10.0
 
-gfortran -c obj1.f90 -O3 -fno-automatic -fcray-pointer -ffast-math -march=native -fPIC -p -g -o obj1.o
+gfortran -c -O3 -fno-automatic -fcray-pointer -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_a093566274bbbd05e6d9840650da9a211d68330633e73ced866208efe10c186a_testmodule/obj1.o /tmp/seamless-extensions/seamless_module_a093566274bbbd05e6d9840650da9a211d68330633e73ced866208efe10c186a_testmodule/obj1.f90
 
-g++ -c obj2.cpp -O3 -ffast-math -march=native -fPIC -p -g -o obj2.o
+g++ -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_a093566274bbbd05e6d9840650da9a211d68330633e73ced866208efe10c186a_testmodule/obj2.o /tmp/seamless-extensions/seamless_module_a093566274bbbd05e6d9840650da9a211d68330633e73ced866208efe10c186a_testmodule/obj2.cpp
 
 
 ADD2 50.0

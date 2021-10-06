@@ -1,10 +1,10 @@
 
-gfortran -c main.f90 -O3 -fno-automatic -fcray-pointer -ffast-math -march=native -fPIC -p -g -o main.o
+gfortran -c -O3 -fno-automatic -fcray-pointer -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_ed4e20376241f301ee8006d6165583a265ee9dce795657b78bb2e51b54a812f6/main.o /tmp/seamless-extensions/seamless_module_ed4e20376241f301ee8006d6165583a265ee9dce795657b78bb2e51b54a812f6/main.f90
 
 
 5.0
 
-gfortran -c main.f90 -O3 -fno-automatic -fcray-pointer -ffast-math -march=native -fPIC -p -g -o main.o
+gfortran -c -O3 -fno-automatic -fcray-pointer -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_ed4e20376241f301ee8006d6165583a265ee9dce795657b78bb2e51b54a812f6_testmodule/main.o /tmp/seamless-extensions/seamless_module_ed4e20376241f301ee8006d6165583a265ee9dce795657b78bb2e51b54a812f6_testmodule/main.f90
 
 
 ADD 25.0

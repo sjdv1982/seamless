@@ -1,5 +1,5 @@
 
-g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+g++ -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_07ac28967dc673c73d17970c819db32845aab0f0b7f6c7baae4cc359cea5bff7_testmodule/main.o /tmp/seamless-extensions/seamless_module_07ac28967dc673c73d17970c819db32845aab0f0b7f6c7baae4cc359cea5bff7_testmodule/main.cpp
 
 
 ADD 8.141592979431152
