@@ -1,5 +1,4 @@
 from seamless.metalevel import debugmode, debugmount
-import weakref
 import functools
 import pprint
 import json
@@ -19,6 +18,7 @@ from silk import Silk
 from .compiled import CompiledObjectDict
 from silk.mixed.get_form import get_form
 from .Environment import Environment
+from .HelpMixin import HelpMixin
 
 # removed celltype="mixed" as of Seamless 0.7
 default_pin = {
@@ -53,7 +53,7 @@ def new_transformer(ctx, path, code, pins, hash_pattern):
     ctx._graph[0][path] = transformer
     return transformer
 
-class Transformer(Base):
+class Transformer(Base, HelpMixin):
     """Transforms input values to a result value
 
     See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for documentation
@@ -378,7 +378,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         hctx._translate()
 
     def __setattr__(self, attr, value):
-        if attr.startswith("_") or attr in type(self).__dict__:
+        if attr.startswith("_") or hasattr(type(self), attr):
             return object.__setattr__(self, attr, value)
         else:
             return self._setattr(attr, value)
@@ -808,7 +808,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
+        if hasattr(type(self), attr) or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         return self._getattr(attr)
 
@@ -1271,6 +1271,8 @@ You can set this dictionary directly, or you may assign .meta to a cell
 
 
     def __delattr__(self, attr):
+        if attr.startswith("_"):
+            return super().__delattr__(attr)
         return delattr(self.pins, attr)
         # TODO: self.self.pins...
 

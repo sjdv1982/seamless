@@ -1,7 +1,3 @@
-import weakref
-import inspect
-import traceback
-import threading
 from types import LambdaType
 from .Base import Base
 from .Resource import Resource
@@ -10,6 +6,7 @@ from ..core.lambdacode import lambdacode
 from silk import Silk
 from silk.mixed import MixedBase
 from ..mime import get_mime, language_to_mime, ext_to_mime
+from .HelpMixin import HelpMixin
 
 celltypes = (
     "structured", "text", "code", "plain", "mixed", "binary",
@@ -27,7 +24,7 @@ def get_new_cell(path):
         "UNTRANSLATED": True,
     }
 
-class Cell(Base):
+class Cell(Base, HelpMixin):
     """Cell class. Contains a piece of data in Seamless.
 
     See http://sjdv1982.github.io/seamless/sphinx/html/cell.html for documentation
@@ -42,8 +39,11 @@ class Cell(Base):
         assert (parent is None) == (path is None)
         if parent is not None:
             self._init(parent, path)
-        if celltype is not None:
-            self.celltype = celltype
+            if celltype is not None:
+                self.celltype = celltype
+        else:
+            if celltype is not None:
+                self._TEMP_celltype = celltype
 
     def _init(self, parent, path):
         super().__init__(parent=parent, path=path)
@@ -210,7 +210,7 @@ class Cell(Base):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
+        if hasattr(type(self), attr) or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         hcell = self._get_hcell()
         if attr == "schema":
@@ -380,7 +380,8 @@ class Cell(Base):
         parent = self._parent()
         hcell = self._get_hcell()
         if hcell.get("UNTRANSLATED"):
-            #return hcell["TEMP"]
+            if self._path[0] == "HELP":
+                return hcell.get("TEMP")
             return None
         try:
             cell = self._get_cell()
@@ -604,7 +605,8 @@ class Cell(Base):
 
     @property
     def celltype(self):
-        """The type of the cell is by default "structured".
+        """The type of the cell is by default "structured",
+        unless it is a help cell, which are "text" by default.
 
         Non-structured celltypes are:
 
@@ -889,6 +891,8 @@ class Cell(Base):
             cell._set_observer(self._observe_cell)
 
     def __delattr__(self, attr):
+        if attr.startswith("_"):
+            return super().__delattr__(attr)
         if attr in ("share", "mount"):
             hcell = self._get_hcell2()
             if attr in hcell:

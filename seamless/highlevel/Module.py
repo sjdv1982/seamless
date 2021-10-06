@@ -459,6 +459,8 @@ Or, it could use an internal package name like "spamalot" and do
         codecell._set_observer(self._observe_codecell)
 
     def __delattr__(self, attr):
+        if attr.startswith("_"):
+            return super().__delattr__(attr)
         if attr == "mount":
             hnode = self._get_hnode2()
             if attr in hnode:

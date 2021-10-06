@@ -192,6 +192,8 @@ class CompiledObjectWrapper:
                     return main_module_handle[objname].pop(attr, None)
 
     def __delattr__(self, attr):
+        if attr.startswith("_"):
+            return super().__delattr__(attr)
         return self._delattr(attr)
 
     def __dir__(self):

@@ -9,7 +9,15 @@ class SelfWrapper:
         self._cls = type(wrapped)
 
     def _get_prop(self, attr):
-        return self._cls.__dict__[attr]
+        try:
+            return self._cls.__dict__[attr]
+        except KeyError:
+            for base in self._cls.__bases__:
+                try:
+                    return base.__dict__[attr]
+                except KeyError:
+                    pass
+            raise KeyError(attr) from None
 
     def __getattr__(self, attr):
         if attr not in self._attributelist:

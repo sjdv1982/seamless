@@ -35,7 +35,7 @@ def print_error(*args):
 
 
 from .Base import Base
-from .Help import ContextHelpMixin
+from .HelpMixin import HelpMixin
 from ..core import macro_mode
 from ..core.macro_mode import macro_mode_on, get_macro_mode, until_macro_mode_off
 from ..core.context import context
@@ -115,7 +115,7 @@ def get_zip(buffer_dict):
     archive.close()
     return result
 
-class Context(Base, ContextHelpMixin):
+class Context(Base, HelpMixin):
     """Context class. Organizes cells and workers hierarchically.
 
     See http://sjdv1982.github.io/seamless/sphinx/html/context.html for documentation
@@ -283,12 +283,10 @@ class Context(Base, ContextHelpMixin):
         setattr(self, attr, value)
 
     def __getattribute__(self, attr):
-        if attr == "__doc__":
-            return self._get_doc()
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__ \
-          or attr == "path" or attr in ContextHelpMixin.__dict__:
+        if hasattr(type(self), attr) or attr in self.__dict__ \
+          or attr == "path":
             return super().__getattribute__(attr)
         path = (attr,)
         try:
@@ -323,6 +321,8 @@ class Context(Base, ContextHelpMixin):
             assign(self, attr2, value)
 
     def __delattr__(self, attr):
+        if attr.startswith("_"):
+            return super().__delattr__(attr)
         self._destroy_path((attr,))
 
     def _add_traitlet(self, path, trigger):
@@ -369,6 +369,7 @@ class Context(Base, ContextHelpMixin):
     @property
     def self(self):
         attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
+        attributelist += [k for k in HelpMixin.__dict__ if not k.startswith("_")]
         return SelfWrapper(self, attributelist)
 
     @property
@@ -1181,9 +1182,7 @@ class Context(Base, ContextHelpMixin):
     def __del__(self):
         self._destroy()
 
-class SubContext(Base):
-    def __init__(self, parent, path):
-        super().__init__(parent, path)
+class SubContext(Base, HelpMixin):
 
     def __getitem__(self, attr):
         if not isinstance(attr, str):
@@ -1198,7 +1197,7 @@ class SubContext(Base):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if attr in type(self).__dict__ or attr in self.__dict__ or attr == "path":
+        if hasattr(type(self), attr) or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         parent = self._get_top_parent()
         path = self._path + (attr,)
@@ -1206,6 +1205,9 @@ class SubContext(Base):
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
+            return object.__setattr__(self, attr, value)
+        members = {k:v for k,v in inspect.getmembers(type(self))}
+        if attr in members and isinstance(members[attr], property):
             return object.__setattr__(self, attr, value)
         parent = self._get_top_parent()
         path = self._path + (attr,)
@@ -1223,6 +1225,8 @@ class SubContext(Base):
             assign(parent, path, value)
 
     def __delattr__(self, attr):
+        if attr.startswith("_"):
+            return super().__delattr__(attr)
         parent = self._get_top_parent()
         path = self._path + (attr,)
         parent._destroy_path(path)

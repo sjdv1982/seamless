@@ -81,6 +81,7 @@ channel.py
 environment3.py
 meta.py
 fallback.py
+help.py: Can also be run non-interactively with IPython. See the source code for mounts and shares
 high-in-low.py
 high-in-low2.py
 high-in-low3.py

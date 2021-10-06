@@ -533,6 +533,8 @@ class Macro(Base):
         schemacell._set_observer(self._observe_schema)
 
     def __delattr__(self, attr):
+        if attr.startswith("_"):
+            return super().__delattr__(attr)
         node = self._get_node()
         raise NotImplementedError #remove pin
 

@@ -69,7 +69,7 @@ def under_libinstance_control(nodedict, path):
         return node
     return None
 
-def assign_constant(ctx, path, value):
+def assign_constant(ctx, path, value, help_context=False):
     old = None
     if path in ctx._children:
         old = ctx._children[path]
@@ -107,16 +107,18 @@ def assign_constant(ctx, path, value):
         else:
             raise AttributeError(path) #already exists, but not a Cell or Module
     if old is None:
-        child = Cell(parent=ctx, path=path) #inserts itself as child
+        Cell(parent=ctx, path=path) #inserts itself as child
         cell = get_new_cell(path)
+        if help_context:
+            cell["celltype"] = "text"
     else:
         cell = old._get_hcell()
     if callable(value):
         code, _, _ = parse_function_code(value)
         if old is None:
-            cell.celltype = "python"
+            cell["celltype"] = "python"
             value = code
-        elif old.celltype in ("python", "ipython"):
+        elif old["celltype"] in ("python", "ipython"):
             value = code
 
     cell["TEMP"] = value
@@ -459,7 +461,7 @@ def assign_to_subcell(cell, path, value):
         raise TypeError(value)
 
 
-def assign(ctx, path, value):
+def assign(ctx, path, value, *, help_context=False):
     from .Context import Context, SubContext
     from .library.libinstance import LibInstance
     from .library import Library, LibraryContainer
@@ -471,14 +473,18 @@ def assign(ctx, path, value):
         raise Exception(msg.format(path))
     if isinstance(value, (Library, LibraryContainer)):
         raise TypeError("Library must be included first")
-    if isinstance(value, (IncludedLibrary, IncludedLibraryContainer)):
+    elif isinstance(value, (IncludedLibrary, IncludedLibraryContainer)):
         raise TypeError("Library must be instantiated first")
-    if isinstance(value, Transformer):
+    elif isinstance(value, Transformer):
+        if help_context:
+            raise TypeError(type(value))
         if value._path is None:
             value._init(ctx, path)
         else:
             value._assign_to(ctx, path)
     elif isinstance(value, Macro):
+        if help_context:
+            raise TypeError(type(value))
         value._init(ctx, path)
     elif isinstance(value, Cell):
         if value._parent() is None:
@@ -488,6 +494,12 @@ def assign(ctx, path, value):
                 cellnode = get_new_cell(path)
             else:
                 cellnode["path"] = path
+            if hasattr(value, "_TEMP_celltype"):
+                celltype = value._TEMP_celltype
+                del value._TEMP_celltype
+                cellnode["celltype"] = celltype
+            elif help_context:
+                cellnode["celltype"] = "text"
             ctx._graph.nodes[path] = cellnode
         else:
             assert value._get_top_parent() is ctx, value
@@ -503,7 +515,7 @@ def assign(ctx, path, value):
         v = value
         if isinstance(value, Resource):
             v = value.data
-        new_cell = assign_constant(ctx, path, v)
+        new_cell = assign_constant(ctx, path, v, help_context=help_context)
         if new_cell:
             ctx._translate()
         else:
@@ -520,6 +532,8 @@ def assign(ctx, path, value):
         assign_context(ctx, path, value)
         ctx._translate()
     elif isinstance(value, Module):
+        if help_context:
+            raise TypeError(type(value))
         if value._parent() is None:
             value._init(ctx, path)
             node = deepcopy(value._node)
@@ -539,9 +553,13 @@ def assign(ctx, path, value):
             assign_connection(ctx, value._path, path, True)
             ctx._translate()
     elif isinstance(value, LibInstance):
+        if help_context:
+            raise TypeError(type(value))
         assign_libinstance(ctx, path, value)
         ctx._translate()
     elif callable(value):
+        if help_context:
+            raise TypeError("callable")
         if path in ctx._children:
             old = ctx._children[path]
             if isinstance(old, Cell):
@@ -560,6 +578,8 @@ def assign(ctx, path, value):
         check_libinstance_subcontext_binding(ctx, path)
         ctx._translate()
     elif isinstance(value, Link):
+        if help_context:
+            raise TypeError(type(value))
         value._init(ctx, path)
         ctx._translate()
     elif isinstance(value, CompiledObjectDict):
