@@ -12,10 +12,10 @@ REMOVE SERVANT semantic_to_syntactic
 Traceback (most recent call last):
   File "simple-communion-slave.py", line 32, in <module>
     loop.run_forever()
-  File "/opt/conda/lib/python3.7/asyncio/base_events.py", line 539, in run_forever
+  File "/opt/conda/lib/python3.8/asyncio/base_events.py", line 570, in run_forever
     self._run_once()
-  File "/opt/conda/lib/python3.7/asyncio/base_events.py", line 1739, in _run_once
+  File "/opt/conda/lib/python3.8/asyncio/base_events.py", line 1823, in _run_once
     event_list = self._selector.select(timeout)
-  File "/opt/conda/lib/python3.7/selectors.py", line 468, in select
+  File "/opt/conda/lib/python3.8/selectors.py", line 468, in select
     fd_event_list = self._selector.poll(timeout, max_ev)
 KeyboardInterrupt

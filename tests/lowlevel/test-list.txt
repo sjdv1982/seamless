@@ -85,29 +85,35 @@ mount-cson.py:
      - run with ipython3 -i
      - then open /tmp/test.cson and /tmp/test.json, manipulate resp. monitor them
 mount-plain.py: see above, minus the .cson
-mount-as-directory.py: see above, minus the .cson
+mount-as-directory.py: see mount.py
 
 simple-communion: run "python3 -u simple-communion-slave.py > test-outputs/simple-communion-slave.out 2>&1"
      then "python3 -u simple-communion-master.py > test-outputs/simple-communion-master.out 2>&1" in a different terminal,
      then Ctrl-C simple-communion-slave.py
      The output is available in simple-communion-[master/slave].out
-simple-debug.py
+simple-debug.py: Run in Visual Studio Code. Can't set breakpoints.
 mount.ipynb
-communion-peer[12].sh: run communion-peer1.sh > test-outputs/communion-peer1.out 2>&1,
+communion-peer[12].sh: run ./communion-peer1.sh > test-outputs/communion-peer1.out 2>&1,
      then run "./communion-peer2.sh > test-outputs/communion-peer2.out 2>&1" in a different terminal,
      then Ctrl-C communion-peer1.sh
      The output is available in communion-peer[12].out
 compile-debug.py
-     - Run with ipython3 -i . Run gdb from a second shell into the container
+     - Run with ipython3 -i . 
+       Run gdb from a second shell into the container. 
      To make this work, you will need to do one of the following:
      - run the gdb shell as privileged root, i.e. as "docker exec -u root -it --privileged container_name bash"
      OR
      - disable kernel hardening in your host (/proc/sys/kernel/yama/ptrace_scope, set the value to 0)
-
+     In GDB:
+       attach to the process.
+       Type "break addfunc", then "signal SIGUSR1" .
+       Type "step", "print(a)", and "cont" (2x)
+     print(a) will show 2.
+     Afterwards, you will see "ADD 8.141592979431152" in Seamless.
 transformation-raw-conda.py
      First run this, and it should give an error
      then install Tensorflow with "pip install tensorflow", and then it should work 
-
+     Make sure that "conda list -f tensorflow" works correctly.
 
 NOTES
 =====

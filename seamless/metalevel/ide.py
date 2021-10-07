@@ -149,7 +149,7 @@ def _vscode_compiled_attach_create(debug):
 def debug_pre_hook(debug):
     if debug is None:
         return
-    ide = debug["ide"]
+    ide = debug.get("ide")
     if debug.get("python_attach"):
         if ide != "vscode":
             raise NotImplementedError
@@ -160,12 +160,14 @@ def debug_pre_hook(debug):
 def debug_post_hook(debug):
     if debug is None:
         return
-    ide = debug["ide"]
+    ide = debug.get("ide")
     if debug.get("python_attach"):
         if ide != "vscode":
             raise NotImplementedError
         return _vscode_attach_cleanup(debug)            
     if debug.get("generic_attach"):
+        if ide is None:
+            return
         if ide != "vscode":
             raise NotImplementedError
         return _vscode_attach_cleanup(debug)

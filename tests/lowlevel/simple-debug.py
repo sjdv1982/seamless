@@ -10,7 +10,13 @@ ctx.tf = transformer({
     "b": "input",
     "c": "output"
 })
-ctx.tf.python_debug = True
+ctx.tf._debug = {
+    "direct_print": True,
+    "ide": "vscode",
+    "name": "Seamless .tf",
+    "attach": True,
+    "python_attach": True
+}
 ctx.cell1_unilink = unilink(ctx.cell1)
 ctx.cell1_unilink.connect(ctx.tf.a)
 ctx.cell2.connect(ctx.tf.b)
@@ -30,7 +36,6 @@ ctx.compute()
 print(ctx.result.value, ctx.status)
 
 func="""def func(a,b):
-    from seamless import pdb; pdb.set_trace()
     return a + b + 2000
 """
 ctx.code.set(func)
