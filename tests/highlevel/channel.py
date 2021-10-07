@@ -1,5 +1,5 @@
 from seamless.highlevel import Context
-from seamless import stdlib
+from seamless.highlevel import stdlib
 
 ctx = Context()
 ctx.include(stdlib.channel)

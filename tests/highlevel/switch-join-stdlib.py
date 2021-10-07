@@ -1,6 +1,6 @@
-# Adapted from /seamless/stdlib/switch-join/switch-join.py
+# Adapted from /seamless/highlevel/stdlib/switch-join/switch-join.py
 from seamless.highlevel import Context, Cell
-from seamless import stdlib
+from seamless.highlevel import stdlib
 
 ctx = Context()
 ctx.include(stdlib.switch)

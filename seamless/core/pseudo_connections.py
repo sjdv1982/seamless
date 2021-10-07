@@ -1,10 +1,10 @@
 def set_pseudo_connections(ctx, path, pseudo_connections):
-    from ..highlevel.Context import Context
     if ctx is None:
         return
-    assert isinstance(ctx, Context)
-    if pseudo_connections is None:
+    if not pseudo_connections:
         return
+    from ..highlevel.Context import Context
+    assert isinstance(ctx, Context)
     connections = []
     for source, target in pseudo_connections:
         strip = 1

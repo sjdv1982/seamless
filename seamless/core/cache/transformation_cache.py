@@ -55,7 +55,7 @@ def print_error(*args):
     logger.error(msg)
 
 class RemoteTransformer:
-    debug = None
+    _debug = None
     _exception_to_clear = None
     def __init__(self, tf_checksum, peer_id):
         self.tf_checksum = tf_checksum

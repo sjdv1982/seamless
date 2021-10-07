@@ -108,8 +108,10 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
             zip=zip
         )
 
+from . import stdlib
+
 __all__ = [
     "Context", "Transformer", "Macro",
     "Cell", "Link", "Graph", "StaticContext", "Module",
-    "Resource", "load_graph", "copy"
+    "Resource", "load_graph", "copy", "stdlib"
 ]

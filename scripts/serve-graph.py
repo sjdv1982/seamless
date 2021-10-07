@@ -134,7 +134,7 @@ if shareserver_address is not None:
     seamless.shareserver.DEFAULT_ADDRESS = shareserver_address
     print("Setting shareserver address to: {}".format(shareserver_address))
 
-import seamless.stdlib
+import seamless.highlevel.stdlib
 
 from seamless.highlevel import load_graph, Context
 graph = json.load(args.graph)
