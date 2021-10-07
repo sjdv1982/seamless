@@ -1,17 +1,19 @@
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/manager/tasks/evaluate_expression.py", line 125, in _run
-    await validate_subcelltype(
-  File "/seamless/seamless/core/protocol/validate_subcelltype.py", line 34, in validate_subcelltype
-    build_module(v, module_error_name=None)
-  File "/seamless/seamless/core/build_module.py", line 250, in build_module
+  File "/seamless/seamless/core/transformation.py", line 358, in _execute
+    result, logs = await self._execute_local(
+  File "/seamless/seamless/core/transformation.py", line 524, in _execute_local
+    full_module_names = build_all_modules(
+  File "/seamless/seamless/core/build_module.py", line 340, in build_all_modules
+    mod = build_module(
+  File "/seamless/seamless/core/build_module.py", line 304, in build_module
     mod = build_compiled_module(
-  File "/seamless/seamless/core/build_module.py", line 188, in build_compiled_module
+  File "/seamless/seamless/core/build_module.py", line 238, in build_compiled_module
     raise BuildModuleError(stderr)
 seamless.core.build_module.BuildModuleError: 
-g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+g++ -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_834025c276fbf5fc7e04a238fe9f51e2395b3ae1ee021a175aa00eb33b6fcb0a_module/main.o /tmp/seamless-extensions/seamless_module_834025c276fbf5fc7e04a238fe9f51e2395b3ae1ee021a175aa00eb33b6fcb0a_module/main.cpp
 ******************** ERROR ********************
-main.cpp:1:1: error: ‘lambda’ does not name a type
+/tmp/seamless-extensions/seamless_module_834025c276fbf5fc7e04a238fe9f51e2395b3ae1ee021a175aa00eb33b6fcb0a_module/main.cpp:1:1: error: ‘lambda’ does not name a type
     1 | lambda a,b: a + b
       | ^~~~~~
 
@@ -34,11 +36,7 @@ If your transform() function is written in C++, don't forget to add 'extern "C" 
 int transform(int a, int b, double *result);
 ********************************************************************************
 
-g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
-
-
-
-g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+g++ -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_ddc81e9dc953985e1e54c944bbd1fefd8cd899621c7e31e780268559d6997082_module/main.o /tmp/seamless-extensions/seamless_module_ddc81e9dc953985e1e54c944bbd1fefd8cd899621c7e31e780268559d6997082_module/main.cpp
 
 
 5.0

@@ -22,7 +22,8 @@ On instance:
 {}
 <Silk: test >
 {}
-{'connections': [],
+{'__seamless__': '0.7',
+ 'connections': [],
  'lib': [],
  'nodes': [{'celltype': 'structured',
             'checksum': {'auth': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',
@@ -63,7 +64,8 @@ On instance:
 
 /simplest.py EXCEPTION
 
-{'connections': [],
+{'__seamless__': '0.7',
+ 'connections': [],
  'lib': [],
  'nodes': [{'celltype': 'structured',
             'checksum': {'auth': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783',

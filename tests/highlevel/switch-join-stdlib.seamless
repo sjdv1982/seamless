@@ -1,4 +1,5 @@
 {
+  "__seamless__": "0.7",
   "connections": [
     {
       "source": [
@@ -266,6 +267,7 @@
       "celltype": "float",
       "checksum": {},
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "a1"
       ],
@@ -275,6 +277,7 @@
       "celltype": "float",
       "checksum": {},
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "a2"
       ],
@@ -286,6 +289,7 @@
         "value": "4fe9376824bc1528486e8fc63a93f677e1172bcf21e05b257677f11e68805c56"
       },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "a3"
       ],
@@ -378,7 +382,6 @@
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
-      "debug": false,
       "hash_pattern": {
         "*": "#"
       },
@@ -405,7 +408,6 @@
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
-      "debug": false,
       "hash_pattern": {
         "*": "#"
       },
@@ -432,7 +434,6 @@
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
-      "debug": false,
       "hash_pattern": {
         "*": "#"
       },
@@ -452,6 +453,7 @@
         "value": "5a8c475b7188e372b9d838a6aae919d4cf0fd299f3173999babe60544b300812"
       },
       "datatype": "mixed",
+      "hash_pattern": null,
       "path": [
         "output"
       ],

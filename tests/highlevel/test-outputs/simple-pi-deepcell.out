@@ -1,4 +1,5 @@
 {
+  "__seamless__": "0.7",
   "connections": [
     {
       "source": [
@@ -32,7 +33,6 @@
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
-      "debug": false,
       "hash_pattern": {
         "*": "#"
       },
@@ -41,9 +41,7 @@
         "doubleit"
       ],
       "pins": {
-        "a": {
-          "celltype": "mixed"
-        }
+        "a": {}
       },
       "type": "transformer"
     },
@@ -83,6 +81,6 @@
 
 <Silk: 3.141592653589793 >
 <Silk: 6.283185307179586 >
-ee852afe79c59c61d14f05cf48bf7d6a  twopi-deepcell.seamless
-cf4330501754933f4152e555a7ea538f  twopi-deepcell-result.seamless
+227e12888875dc351af91a112e35eeca  twopi-deepcell.seamless
+b9278d14cf393a7831e4fc1c6c796957  twopi-deepcell-result.seamless
 f52ebcf56bc009698617d96c2bdd7189  twopi-deepcell-result.zip
