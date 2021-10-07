@@ -104,6 +104,9 @@ languages: dict or None
         manager = context._manager
         if manager is not None:
             self._set_manager(manager)
+            if not get_macro_mode():
+                mountmanager = manager.mountmanager
+                mountmanager.scan(context._root())
 
     def _set_manager(self, manager):
         self._manager = manager

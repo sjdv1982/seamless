@@ -740,6 +740,9 @@ class MountManager:
         except Exception:
             print("Error: cannot remove directory %s" % dirpath)
 
+    @staticmethod
+    def scan(ctx):
+        return scan(ctx)
 
     def clear(self):
         for cell in list(self.mounts.keys()):

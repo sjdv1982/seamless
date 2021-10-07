@@ -48,20 +48,6 @@ print(ctx.mymacro.ctx.result.value) #None
 ctx.compute()
 print(ctx.mymacro.ctx.result.value) #3002
 
-def mount_check():
-    from seamless.core.mount import mountmanager #singleton
-    paths = mountmanager.paths[ctx._root()]
-    for c in (ctx.macrocode, ctx.param, ctx.mymacro.ctx.a, ctx.mymacro.ctx.b, ctx.mymacro.ctx.code):
-        path = c._mount["path"]
-        assert c in mountmanager.mounts, c
-        assert path in paths, (c, path)
-        assert mountmanager.mounts[c].path == path, (c, path, mountmanager.mounts[c].path)
-
-    open("/tmp/mount-test/param.json").read()
-    open("/tmp/mount-test/mymacro/a.json").read()
-
-mount_check()
-
 print("Change 0")
 ctx.param.set(-10)
 ctx.compute()
@@ -80,7 +66,6 @@ else:
     if ctx.mymacro.ctx.hasattr("d"):
         print(ctx.mymacro.ctx.d.value)
     print(ctx.mymacro.ctx.result.value)
-    mount_check()
 
 print("Change 1")
 ctx.param.set(2)
@@ -100,7 +85,6 @@ else:
     if ctx.mymacro.ctx.hasattr("d"):
         print(ctx.mymacro.ctx.d.value)
     print(ctx.mymacro.ctx.result.value)
-    mount_check()
 
 print("Change 2")
 ctx.macrocode.set(
@@ -112,8 +96,6 @@ try:
     ctx.mymacro.ctx
 except AttributeError:
     pass
-else:
-    mount_check()
 
 print("Change 3")
 ctx.macrocode.set(
@@ -132,7 +114,6 @@ else:
     if ctx.mymacro.ctx.hasattr("d"):
         print(ctx.mymacro.ctx.d.value)
     print(ctx.mymacro.ctx.result.value)
-    mount_check()
 
 print("Change 4")
 ctx.macrocode.set(
@@ -156,8 +137,6 @@ if ctx.mymacro.ctx.hasattr("d"):
     print(ctx.mymacro.ctx.d.value)
 print(ctx.mymacro.ctx.result.value)
 
-mount_check()
-
 print("Change 6")
 ctx.param.set(999)
 ctx.compute()
@@ -173,7 +152,5 @@ else:
     if ctx.mymacro.ctx.hasattr("d"):
         print(ctx.mymacro.ctx.d.value)
     print(ctx.mymacro.ctx.result.value)
-
-    mount_check()
 
 print("STOP")

@@ -2,6 +2,8 @@ import json
 import seamless
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer,  StructuredCell
+import os
+os.makedirs("/tmp/mount-test", exist_ok=True)
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.tf = transformer({
@@ -11,6 +13,7 @@ with macro_mode_on():
     })
     ctx.a = cell("plain").set({"x": 2})
     ctx.b = cell("plain").set(2)
+    ctx.b.mount("/tmp/mount-test/b.json", authority="cell")
     ctx.a.connect(ctx.tf.a)
     ctx.b.connect(ctx.tf.b)
     ctx.code = cell("transformer").set("a['x'] + b")

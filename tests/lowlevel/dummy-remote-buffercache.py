@@ -3,6 +3,8 @@ The first one returns None; status should indicate that buffer is not available
 The second one raises an Exception; status should indicate that the buffer is remote
 The third one gives the correct result after 0.5 second
 """
+from seamless.core.cache.buffer_cache import buffer_cache
+buffer_cache.buffer_cache.clear()  # to remove stdlib caches
 
 import asyncio
 import seamless
@@ -51,7 +53,6 @@ with macro_mode_on():
 
 ctx.compute()
 
-from seamless.core.cache.buffer_cache import buffer_cache
 from seamless.core.protocol.calculate_checksum import checksum_cache
 
 # Comment out the next line to get a cache miss

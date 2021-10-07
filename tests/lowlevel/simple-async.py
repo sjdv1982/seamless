@@ -1,5 +1,6 @@
 import seamless
 from seamless.core import context, cell, transformer, unilink
+import traceback
 
 try:
     seamless.database_sink.connect()
@@ -60,4 +61,14 @@ async def main():
     print(ctx.result.value, ctx.status)
 
 import asyncio
-asyncio.run(main())
+
+future = asyncio.ensure_future(main())
+asyncio.get_event_loop().run_until_complete(future)
+
+"""
+# Will not work
+try:
+    asyncio.run(main())
+except Exception:
+    traceback.print_exc(limit=0)
+"""

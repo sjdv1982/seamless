@@ -64,7 +64,7 @@ class RemoteTransformer:
 
 class DummyTransformer:
     _status_reason = None
-    debug = None
+    _debug = None
     _exception_to_clear = None
     def __init__(self, tf_checksum):
         self.tf_checksum = tf_checksum

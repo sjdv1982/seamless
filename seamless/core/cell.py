@@ -85,6 +85,10 @@ class Cell(SeamlessBase):
             checksum, initial, from_structured_cell = self._initial_checksum
             self._set_checksum(checksum.hex(), initial, from_structured_cell)
             self._initial_checksum = None
+        if not get_macro_mode():
+            if self._mount is not None:
+                mountmanager = manager.mountmanager
+                mountmanager.scan(ctx._root())
 
     @property
     def celltype(self):
@@ -352,9 +356,6 @@ class Cell(SeamlessBase):
         assert is_dummy_mount(self._mount) #Only the mountmanager may modify this further!
         if self._mount_kwargs is None:
             raise NotImplementedError #cannot mount this type of cell
-        if self._context is not None and isinstance(self._context(), Context):
-            msg = "Mounting is not possible after a cell has been bound to a context"
-            raise Exception(msg)
 
         kwargs = self._mount_kwargs
         if self._mount is None:
@@ -617,6 +618,8 @@ cellclasses = {
 }
 
 def cell(celltype="mixed", **kwargs):
+    if celltype is None:
+        celltype = "mixed"
     cellclass = cellclasses[celltype]
     return cellclass(**kwargs)
 

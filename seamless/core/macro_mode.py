@@ -81,7 +81,6 @@ def macro_mode_on(macro=None):
     global _macro_mode, _curr_macro
     if _macro_mode:
         raise Exception("macro mode cannot be re-entrant")
-        assert not _macro_mode
     _macro_mode = True
     _curr_macro = macro
     old_context = macro._gen_context if macro is not None else None

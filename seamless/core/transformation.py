@@ -343,7 +343,7 @@ class TransformationJob:
         while not transformation_cache.active:
             await asyncio.sleep(0.05)
         clients = list(communion_client_manager.clients["transformation"])
-        if self.debug is not None:
+        if self.debug is None:
             await self._probe_remote(clients)
         if self.remote:
             self.remote_futures = None

@@ -23,5 +23,5 @@
 }
 
 b'19\n'
-72.6 ns +- 1.1 ns per loop (mean +- std. dev. of 7 runs, 10000000 loops each)
+78.8 ns +- 3.61 ns per loop (mean +- std. dev. of 7 runs, 10000000 loops each)
 

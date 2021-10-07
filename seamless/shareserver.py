@@ -123,7 +123,7 @@ class Share:
     @property
     def binary(self):
         if self.celltype == "mixed":
-            binary = True
+            binary = "maybe"
             if self.mimetype is not None and self.mimetype.startswith("text"):
                 binary = False
         elif self.celltype in ("bytes", "binary"):
@@ -178,7 +178,7 @@ class Share:
 
         return marker
 
-    async def set_buffer(self, buffer, marker=None):
+    async def set_buffer(self, buffer, marker=None, *, binary_buffer):
         if marker is not None and marker <= self._marker:
             if marker == self._marker:
                 return
@@ -366,11 +366,22 @@ class ShareNamespace:
             return await share.set_checksum(checksum, marker)
         else:            
             if share.binary:
-                buffer0 = value.encode("ascii")
-                buffer = base64.b64decode(buffer0)
+                try:
+                    buffer0 = value.encode("ascii")
+                    buffer = base64.b64decode(buffer0)
+                    binary_buffer = True
+                except Exception as exc:
+                    if share.binary == "maybe":
+                        buffer = value
+                        binary_buffer = False
+                    else:
+                        raise exc from None
             else:                
                 buffer = value
-            return await share.set_buffer(buffer, marker)
+                binary_buffer = False
+            return await share.set_buffer(
+                buffer, marker, binary_buffer=binary_buffer
+            )
 
     async def put(self, key, value, mode, marker):
         share = self.shares[key]

@@ -75,6 +75,9 @@ class Manager:
     _highlevel_refs = 0
     _last_ctx = None
     def __init__(self):
+        self._destroyed = True
+        from seamless import check_original_event_loop
+        check_original_event_loop()
         global is_dummy_mount
         from .livegraph import LiveGraph
         from .cachemanager import CacheManager
@@ -86,6 +89,7 @@ class Manager:
         self.cachemanager = CacheManager(self)
         self.taskmanager = TaskManager(self)
         self.cancel_cycle = CancellationCycle(self)
+        self._destroyed = False
         loop_run_synctasks = self.taskmanager.loop_run_synctasks()
         asyncio.ensure_future(loop_run_synctasks)
 
