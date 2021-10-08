@@ -175,6 +175,8 @@ class DebugMode:
         tf = self._tf()
         node = tf._get_htf()
         tf2 = tf._get_tf()
+        if tf2 is None:
+            return None
         if node["language"] == "python":
             return tf2.tf
         elif node["compiled"]:
@@ -189,6 +191,13 @@ class DebugMode:
             else:
                 msg = "Attach-and-debug with breakpoints is not possible for language '{}'"
                 raise ValueError(msg.format(node["language"]))
+
+    def on_translate(self):
+        if not self.enabled:
+            if self.direct_print:
+                tf = self._get_core_transformer(force=False)
+                if tf is not None:
+                    tf._debug = {"direct_print": True}
 
     def enable(self, mode, sandbox_name=None):
         if self._enabled:

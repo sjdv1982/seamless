@@ -18,7 +18,9 @@ print(ctx.myresult.value)
 
 ctx2 = Context()
 ctx2.sub = ctx
+ctx2.sub.transform.debug.direct_print = True
 ctx2.sub2 = ctx
+ctx2.sub2.transform.debug.direct_print = True
 ctx2.translate()
 print(ctx2.sub.myresult.value)
 ctx2.compute()

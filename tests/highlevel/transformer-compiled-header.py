@@ -17,7 +17,7 @@ headers = {
 }
 ctx.headers = headers
 ctx.offset_header = Cell("text").set("const int OFFSET = 1001;")
-ctx.offset_header.mount("/tmp/offset.h", authority="file")
+ctx.offset_header.mount("/tmp/offset.h", authority="cell")
 ctx.headers.offset.code = ctx.offset_header
 
 def build_transformer():

@@ -808,6 +808,9 @@ class Context(Base, HelpMixin):
             assert self._gen_context._get_manager() is self._manager
             self._connect_share()
             ok = True
+            for childname, child in self._children.items():
+                if isinstance(child, Transformer):
+                    child.debug.on_translate()
         finally:
             if not ok:
                 livegraph._hold_observations = False
