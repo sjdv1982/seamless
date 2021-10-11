@@ -498,6 +498,8 @@ def assign(ctx, path, value, *, help_context=False):
                 celltype = value._TEMP_celltype
                 del value._TEMP_celltype
                 cellnode["celltype"] = celltype
+                if celltype == "code" and "language" not in cellnode:
+                    cellnode["language"] = "python"
             elif help_context:
                 cellnode["celltype"] = "text"
             ctx._graph.nodes[path] = cellnode

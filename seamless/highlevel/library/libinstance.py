@@ -298,7 +298,7 @@ class LibInstance:
             libpath = self._temp_libpath
             arguments = self._temp_arguments
         lib = self.get_lib()
-        params = lib["params"]        
+        params = lib["params"]
         if attr not in arguments:
             if attr == "ctx":
                 parent = self._parent()
@@ -320,8 +320,6 @@ class LibInstance:
         argname = attr
         parent = self._parent()
         par = params[argname]
-        if par["io"] == "output":
-            return Proxy(parent, self._path + (argname,), "r")
         argvalue = arguments[argname]
         if par["type"] == "cell":
             if isinstance(argvalue, list):
