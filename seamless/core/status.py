@@ -83,7 +83,12 @@ def status_accessor(accessor):
         return StatusEnum.OK, None, accessor._prelim
     if not accessor._void:
         return StatusEnum.PENDING, None, None
-    return StatusEnum.VOID, accessor._status_reason, None
+    source = accessor.source
+    status_reason = accessor._status_reason
+    status_reason2 = getattr(source, "_status_reason", None)
+    if status_reason2 == StatusReasonEnum.INVALID:
+        status_reason = StatusReasonEnum.INVALID
+    return StatusEnum.VOID, status_reason, None
 
 def status_transformer(transformer):
     from ..metalevel.debugmount import debugmountmanager

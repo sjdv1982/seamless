@@ -623,30 +623,34 @@ You can set this dictionary directly, or you may assign .meta to a cell
         1. The construction of the input object (Transformer.inp).
            The input object is cell-like, see Cell.exception for more details.
 
-        2. The execution of the transformer. For Python/IPython cells, this
+        2. The construction of the individual input values 
+           that are inserted into the transformer namespace before execution.
+
+        3. The execution of the transformer. For Python/IPython cells, this
            is the exception directly raised in code. For Bash/Docker cells,
            exceptions are raised upon non-zero exit codes.
            For compiled transformers, this stage is subdivided into
            generating the C header, compiling the code module, and executing
            the compiled code.
 
-        3. The construction of the result object (Transformer.result).
+        4. The construction of the result object (Transformer.result).
            The result object is cell-like, see Cell.exception for more details.
 
         """
+        class PlaceHolder: pass
         htf = self._get_htf()
         if htf.get("UNTRANSLATED"):
             return "This transformer is untranslated; run 'ctx.translate()' or 'await ctx.translation()'"
         tf = self._get_tf(force=True).tf
         if htf["compiled"]:
             attrs = (
-                htf["INPUT"], "code",
+                htf["INPUT"], "code", PlaceHolder,
                 "gen_header", "integrator", "executor",
                 htf["RESULT"]
             )
         else:
             attrs = (
-                htf["INPUT"], "code",
+                htf["INPUT"], "code", PlaceHolder,
                 "ipy_template_code", "apply_ipy_template", "ipy_code", "tf",
                 htf["RESULT"]
             )
@@ -654,8 +658,19 @@ You can set this dictionary directly, or you may assign .meta to a cell
         exc = ""
         for k in attrs:
             if k == "code":
-                code_cell = self._get_tf(force=True).code
+                tf = self._get_tf(force=True)
+                code_cell = tf.code
                 curr_exc = code_cell.exception
+            elif k is PlaceHolder:
+                k = "input pins"
+                exc2 = {}
+                for childname in tf.children:
+                    if childname.endswith("_PIN"):
+                        c = getattr(tf, childname)
+                        if c._status_reason == StatusReasonEnum.INVALID:
+                            exc2[childname[:-4]] = c.exception
+                if len(exc2):
+                    curr_exc = exc2
             elif k == "tf":
                 if len(exc):
                     return exc
@@ -682,9 +697,14 @@ You can set this dictionary directly, or you may assign .meta to a cell
                     if isinstance(curr_exc, dict) and list(curr_exc.keys()) == ["module"]:
                         curr_exc = curr_exc["module"]    
                 if isinstance(curr_exc, dict):
-                    curr_exc = pprint.pformat(curr_exc, width=100)
+                    curr_exc2 = ""
+                    for kk in curr_exc:
+                        curr_exc2 += "  +++ " + kk + " +++\n"        
+                        curr_exc2 += str(curr_exc[kk]).strip("\n") + "\n" 
+                        curr_exc2 += "  +++ /" + kk + " +++\n"
+                    curr_exc = curr_exc2
                 exc += "*** " + k + " ***\n"
-                exc += str(curr_exc)
+                exc += str(curr_exc).strip("\n") + "\n" 
                 exc += "*** /" + k + " ***\n"
         if not len(exc):
             return None
@@ -1293,3 +1313,4 @@ You can set this dictionary directly, or you may assign .meta to a cell
 
 from .synth_context import SynthContext
 from .assign import check_libinstance_subcontext_binding
+from ..core.status import StatusReasonEnum

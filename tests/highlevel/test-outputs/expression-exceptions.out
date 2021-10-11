@@ -33,9 +33,15 @@ None
 
 <Silk: 30 >
 <Silk: None >
-{'x': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783 cannot '
-      'be re-interpreted from mixed to int\n'
-      '\n'
-      'Original exception:\n'
-      '\n'
-      "invalid literal for int() with base 10: 'test'"}
+*tf*: Status: upstream => x invalid
+
+*** input pins ***
+  +++ x +++
+c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783 cannot be re-interpreted from mixed to int
+
+Original exception:
+
+invalid literal for int() with base 10: 'test'
+  +++ /x +++
+*** /input pins ***
+

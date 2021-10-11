@@ -60,5 +60,6 @@ print(ctx.tf.result.value)
 ctx.tf.x = "test"
 ctx.compute()
 print(ctx.tf.result.value)
-from pprint import pprint
-pprint(ctx.tf.exception)
+print(ctx.tf.status)
+print()
+print(ctx.tf.exception)
