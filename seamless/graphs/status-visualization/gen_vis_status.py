@@ -4,9 +4,7 @@ rnodes = []
 rconnections = []
 path_to_id = {}
 
-
-graph = graph.unsilk
-status = status_.unsilk
+status = status_
 
 color_mapping = {
     1: "red",

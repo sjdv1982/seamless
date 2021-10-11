@@ -1,4 +1,5 @@
 {
+  "__seamless__": "0.7",
   "connections": [
     {
       "source": [
@@ -62,14 +63,13 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "44dd359f679d191a4b266bd60740e573342a8dcef5b0635a06c8dfc38fc500a4",
+        "code": "c46036f2b4bedb3189c51bec953fdb96d99d748ab3fa17f0e433ff0d4cf4efab",
         "input": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
         "input_buffer": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
-      "debug": false,
       "hash_pattern": {
         "*": "#"
       },
@@ -86,12 +86,8 @@
         "gen_vis_status"
       ],
       "pins": {
-        "graph": {
-          "celltype": "mixed"
-        },
-        "status_": {
-          "celltype": "mixed"
-        }
+        "graph": {},
+        "status_": {}
       },
       "type": "transformer"
     },
