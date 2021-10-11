@@ -565,7 +565,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
             return None
         node = self._get_htf()
         tf = self._get_tf()
-        if node["language"] == "python":
+        if node["language"] in ("python", "ipython", "bash"):
             tf2 = tf.tf
         else:
             tf2 = tf.tf.executor

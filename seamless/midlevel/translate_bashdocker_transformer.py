@@ -30,7 +30,7 @@ def translate_bashdocker_transformer(
         assert (not len(c)) or c[0] not in forbidden #should have been checked by highlevel
 
     pins = node["pins"].copy()
-    pins["docker_command"] = {"celltype": "str"}
+    pins["docker_command"] = {"celltype": "text"}
     pins["docker_image_"] = {"celltype": "str"}
     pins["docker_options"] = {"celltype": "plain"}
     pins["pins_"] = {"celltype": "plain"}

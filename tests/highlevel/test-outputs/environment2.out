@@ -29,15 +29,15 @@ int transform(int a, int b, int *result);
 
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 251, in _execute
+  File "/seamless/seamless/core/transformation.py", line 358, in _execute
     result, logs = await self._execute_local(
-  File "/seamless/seamless/core/transformation.py", line 461, in _execute_local
-    build_all_modules(
-  File "/seamless/seamless/core/build_module.py", line 318, in build_all_modules
+  File "/seamless/seamless/core/transformation.py", line 524, in _execute_local
+    full_module_names = build_all_modules(
+  File "/seamless/seamless/core/build_module.py", line 340, in build_all_modules
     mod = build_module(
-  File "/seamless/seamless/core/build_module.py", line 282, in build_module
+  File "/seamless/seamless/core/build_module.py", line 302, in build_module
     completed_module_definition = complete(module_definition, compilers, languages)
-  File "/seamless/seamless/compiler/compile.py", line 139, in complete
+  File "/seamless/seamless/compiler/compile.py", line 141, in complete
     raise ValueError("No compiler defined for compiled language '{}'".format(lang))
 ValueError: No compiler defined for compiled language 'go'
 *** /executor ***
@@ -66,23 +66,22 @@ ValueError: No compiler defined for compiled language 'go'
 
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 251, in _execute
+  File "/seamless/seamless/core/transformation.py", line 358, in _execute
     result, logs = await self._execute_local(
-  File "/seamless/seamless/core/transformation.py", line 461, in _execute_local
-    build_all_modules(
-  File "/seamless/seamless/core/build_module.py", line 318, in build_all_modules
+  File "/seamless/seamless/core/transformation.py", line 524, in _execute_local
+    full_module_names = build_all_modules(
+  File "/seamless/seamless/core/build_module.py", line 340, in build_all_modules
     mod = build_module(
-  File "/seamless/seamless/core/build_module.py", line 284, in build_module
+  File "/seamless/seamless/core/build_module.py", line 304, in build_module
     mod = build_compiled_module(
-  File "/seamless/seamless/core/build_module.py", line 221, in build_compiled_module
+  File "/seamless/seamless/core/build_module.py", line 238, in build_compiled_module
     raise BuildModuleError(stderr)
 seamless.core.build_module.BuildModuleError: 
-go build  -buildmode=c-archive -o _PACKAGE__1.a main.go
+go build  -buildmode=c-archive -o /tmp/seamless-extensions/seamless_module_4f8253ac01040ccc3a7c50000771cc349728a45d75ae16755695299f1320b325_module/_PACKAGE__1.a /tmp/seamless-extensions/seamless_module_4f8253ac01040ccc3a7c50000771cc349728a45d75ae16755695299f1320b325_module/main.go
 ******************** ERROR ********************
 /bin/sh: 1: go: not found
 
 ******************** /ERROR ********************
-
 *** /executor ***
 
 
