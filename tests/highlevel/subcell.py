@@ -43,7 +43,9 @@ def func(q,z):
     return q.c * q.f - q.g + q.d + 2 * z
 ctx.tf2 = func
 ctx.tf2.q = ctx.q
+ctx.tf2.q.celltype = "silk"
 ctx.tf2.z = ctx.z
+ctx.tf2.z.celltype = "silk"
 ctx.qq = ctx.tf2
 ctx.compute()
 print(ctx.qq.value) #309
