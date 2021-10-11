@@ -7,7 +7,7 @@ Cells define the input data as well as the source code of the computations, and 
 
 %post
     export PATH=/opt/conda/bin:$PATH
-    git clone --depth 1 https://github.com/sjdv1982/seamless.git --branch experimental seamless-tempdir
+    git clone --depth 1 https://github.com/sjdv1982/seamless.git --branch master seamless-tempdir
     cd seamless-tempdir
     cp -r scripts /seamless-scripts
     cp -r tools /seamless-tools
