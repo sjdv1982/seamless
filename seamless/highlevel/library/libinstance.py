@@ -1,5 +1,6 @@
 import traceback
 import weakref, json
+import functools
 from copy import deepcopy
 
 from traitlets.traitlets import Instance
@@ -320,6 +321,11 @@ class LibInstance:
         argname = attr
         parent = self._parent()
         par = params[argname]
+        if par["io"] == "output":
+            return Proxy(
+                parent, self._path + (argname,), "r", 
+                getter=functools.partial(self._output_getter, argname),    
+            )        
         argvalue = arguments[argname]
         if par["type"] == "cell":
             if isinstance(argvalue, list):
@@ -328,6 +334,21 @@ class LibInstance:
         else:
             value = argvalue
         return value
+
+    def _output_getter(self, argname, attr):
+        if self._bound is not None:
+            hnode = self._get_node()
+            arguments = hnode["arguments"]
+        else:
+            arguments = self._temp_arguments
+        lib = self.get_lib()
+        params = lib["params"]
+        parent = self._parent()
+        par = params[argname]
+        argvalue = arguments[argname]
+        value = parent._children.get(argvalue)
+        return getattr(value, attr)
+
 
     def __dir__(self):        
         hnode = self._get_node()

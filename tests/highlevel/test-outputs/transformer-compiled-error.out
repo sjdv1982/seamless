@@ -7,7 +7,6 @@ g++ -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/sea
 
 
 *** executor ***
-
 *************************************************
 * Standard output
 *************************************************

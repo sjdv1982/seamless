@@ -2,7 +2,6 @@ RUN MACRO 20
 <Silk: 200 >
 Status: OK None
 re-translate
-RUN MACRO 20
 <Silk: 200 >
 Status: OK None
 change b to 10
