@@ -1,14 +1,19 @@
-ee852afe79c59c61d14f05cf48bf7d6a  twopi.seamless
-ee852afe79c59c61d14f05cf48bf7d6a  /tmp/twopi-database.seamless
+227e12888875dc351af91a112e35eeca  twopi.seamless
+227e12888875dc351af91a112e35eeca  /tmp/twopi-database.seamless
 OUTGOING jobmaster-service jobslave
 INCOMING jobslave jobmaster-service
 ADD SERVANT buffer
-ADD SERVANT buffer_length
 ADD SERVANT buffer
-ADD SERVANT semantic_to_syntactic
 ADD SERVANT buffer_length
+ADD SERVANT buffer_length
+ADD SERVANT semantic_to_syntactic
 ADD SERVANT semantic_to_syntactic
 ADD SERVANT transformation
 Set up a communion outgoing port 8602
+REMOVE SERVANT buffer
+REMOVE SERVANT buffer_length
+REMOVE SERVANT semantic_to_syntactic
+REMOVE SERVANT transformation
 Set up a communion outgoing port 8600
-50a2645d5d9e1fe0045c71aa66ed269b  twopi-colored-service.seamless
+Set up a communion outgoing port 8600
+18ad9916938d414527c499ebe7e53407  twopi-colored-service.seamless

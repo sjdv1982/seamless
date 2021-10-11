@@ -177,14 +177,14 @@ class DebugMode:
         tf2 = tf._get_tf()
         if tf2 is None:
             return None
-        if node["language"] == "python":
+        if node["language"] in ("python", "ipython"):
             return tf2.tf
         elif node["compiled"]:
             return tf2.tf.executor
         elif node["language"] == "bash":
             return tf2.tf
         else:
-            # ipython, ipy_template, and py_bridge languages.
+            # ipy_template and py_bridge languages.
             # py_bridge could be supported in the future
             if not force:
                 return None  

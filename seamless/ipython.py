@@ -2,6 +2,7 @@ from IPython.core.inputsplitter import IPythonInputSplitter
 from ipykernel.inprocess.ipkernel import InProcessKernel
 from ipykernel.inprocess.manager import InProcessKernelManager
 from ipykernel.zmqshell import ZMQInteractiveShell
+import sys
 
 class MyInProcessKernel(InProcessKernel):
     #get rid of singleton shell instance!
@@ -27,9 +28,9 @@ def execute(code, namespace):
 
     result = kernel.shell.run_cell(code, False)
     if result.error_before_exec is not None:
-        err = result.error_before_exec
-    else:
-        err = result.error_in_exec
+        print(result.error_before_exec, file=sys.stderr)
+    if result.error_in_exec is not None:
+        print(result.error_in_exec, file=sys.stderr)
     if not result.success:
         if kernel.shell._last_traceback:
             for tb in kernel.shell._last_traceback:
