@@ -6,6 +6,7 @@ https://github.com/oetiker/aio-reverse-proxy/blob/master/paraview-proxy.py'
 
 from aiohttp import web
 from aiohttp import client
+import aiohttp_cors
 import aiohttp
 import asyncio
 import logging
@@ -14,24 +15,54 @@ import pprint
 #logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-baseUrl = 'http://0.0.0.0:8080'
-mountPoint = '/fakeUuid'
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument(
+  "port",
+  help="Port to listen to",
+  type=int
+)
+parser.add_argument(
+  "http",
+  help="URL to forward HTTP requests to",
+  type=str,
+)
+
+parser.add_argument(
+  "ws",
+  help="URL to forward WebSocket requests to",
+  type=str,
+)
+
+args = parser.parse_args()
+
+if not args.http.startswith("http://"):
+    if args.http.startswith("https://"):
+        raise ValueError("HTTP URL must start with http://, HTTPS not supported")
+    raise ValueError("HTTP URL must start with http://")
+
+if not args.ws.startswith("ws://"):
+    if args.ws.startswith("wss://"):
+        raise ValueError("WebSocket URL must start with ws://, WSS not supported")
+    raise ValueError("WebSocket URL must start with ws://")
+
 
 async def handler(req):
-    proxyPath = req.match_info.get('proxyPath','no proxyPath placeholder defined')
+    tail = req.match_info.get('tail')
     reqH = req.headers.copy()
     
     # handle the websocket request
     
-    if reqH['connection'] == 'Upgrade' and reqH['upgrade'] == 'websocket' and req.method == 'GET':
+    if reqH.get('connection') == 'Upgrade' and reqH.get('upgrade') == 'websocket' and req.method == 'GET':
 
       ws_server = web.WebSocketResponse()
       await ws_server.prepare(req)
       logger.info('##### WS_SERVER %s' % pprint.pformat(ws_server))
 
       client_session = aiohttp.ClientSession(cookies=req.cookies)
+      url = args.ws.strip("/") + "/" + tail
       async with client_session.ws_connect(
-        baseUrl+proxyPath,
+        url,
       ) as ws_client:
         logger.info('##### WS_CLIENT %s' % pprint.pformat(ws_client))
 
@@ -59,28 +90,40 @@ async def handler(req):
         return ws_server
     else:
       # handle normal requests by passing them on downstream
+      url = args.http.strip("/") + "/" + tail
       async with client.request(
-          req.method,baseUrl+proxyPath,
+          req.method, url,
           headers = reqH,
           allow_redirects=False,
           data = await req.read()
       ) as res:
           headers = res.headers.copy()
-          del headers['content-length']
           body = await res.read()
-          # the paraview visualizer needs some patching to properly find
-          # its constituating parts
-          if proxyPath == '/Visualizer.js':
-            body = body.replace(b'"/ws"',b'"%s/ws"' % mountPoint.encode(),1)
-            body = body.replace(b'"/paraview/"',b'"%s/paraview/"' % mountPoint.encode(),1)
-            logger.info("fixed Visualizer.js paths on the fly")
           return web.Response(
             headers = headers,
             status = res.status,
             body = body
           )
-      return ws_server
 
-app = web.Application()
-app.router.add_route('*',mountPoint + '{proxyPath:.*}', handler)
-web.run_app(app,port=3985)
+app = web.Application(
+    client_max_size=1024**3
+)
+app.add_routes([
+    web.get('/{tail:.*}', handler),
+])
+
+cors = aiohttp_cors.setup(app, defaults={
+    "*": aiohttp_cors.ResourceOptions(
+            allow_credentials=True,
+            expose_headers="*",
+            allow_headers="*",
+            allow_methods=["GET"]
+        )
+})
+
+# Configure CORS on all routes.
+for route in list(app.router.routes()):
+    cors.add(route)    
+
+if __name__ == "__main__":
+    web.run_app(app,port=args.port)
