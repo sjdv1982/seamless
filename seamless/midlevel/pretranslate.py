@@ -29,6 +29,7 @@ def pretranslate(ctx, graph, libinstance_nodes={},prev_overlay_nodes={}):
         )
         libinstance._bound = weakref.ref(ctx)
         result = libinstance._run()
+        # TODO: hold on to exception!
         if libinstance.exception is not None:
             continue
         curr_graph, curr_nodes, curr_connections = result

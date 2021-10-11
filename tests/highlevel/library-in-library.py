@@ -28,7 +28,7 @@ lib.subtract.params = {
         "io": "input",
         "type": "value",
         "default": None,
-        "must_be_defined": False,
+        "must_be_defined": True,
     },
     "result": {
         "io": "output",

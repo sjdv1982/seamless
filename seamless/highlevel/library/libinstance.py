@@ -18,7 +18,11 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
         if par["type"] == "value":
             value = argvalue
             if value is None:
-                continue
+                if not (par.get("must_be_defined") == False):
+                    if "default" not in par:
+                        raise ValueError("%s must be defined" % argname)
+                else:                
+                    continue
         elif par["type"] == "cell":
             path = argvalue
             if isinstance(path, list):
