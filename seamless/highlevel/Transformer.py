@@ -641,7 +641,8 @@ You can set this dictionary directly, or you may assign .meta to a cell
         htf = self._get_htf()
         if htf.get("UNTRANSLATED"):
             return "This transformer is untranslated; run 'ctx.translate()' or 'await ctx.translation()'"
-        tf = self._get_tf(force=True).tf
+        tf0 = self._get_tf(force=True)
+        tf = tf0.tf
         if htf["compiled"]:
             attrs = (
                 htf["INPUT"], "code", PlaceHolder,
@@ -658,15 +659,13 @@ You can set this dictionary directly, or you may assign .meta to a cell
         exc = ""
         for k in attrs:
             if k == "code":
-                tf = self._get_tf(force=True)
-                code_cell = tf.code
-                curr_exc = code_cell.exception
+                curr_exc = tf0.exception
             elif k is PlaceHolder:
                 k = "input pins"
                 exc2 = {}
-                for childname in tf.children:
+                for childname in tf0.children:
                     if childname.endswith("_PIN"):
-                        c = getattr(tf, childname)
+                        c = getattr(tf0, childname)
                         if c._status_reason == StatusReasonEnum.INVALID:
                             exc2[childname[:-4]] = c.exception
                 if len(exc2):
