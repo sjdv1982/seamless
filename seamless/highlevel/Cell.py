@@ -18,7 +18,7 @@ def get_new_cell(path):
     return {
         "path": path,
         "type": "cell",
-        "celltype": "structured",
+        #"celltype": "structured",  # or "text" for help cells
         "datatype": "mixed",
         "hash_pattern": None,
         "UNTRANSLATED": True,
@@ -39,11 +39,8 @@ class Cell(Base, HelpMixin):
         assert (parent is None) == (path is None)
         if parent is not None:
             self._init(parent, path)
-            if celltype is not None:
-                self.celltype = celltype
-        else:
-            if celltype is not None:
-                self._TEMP_celltype = celltype
+        if celltype is not None:
+            self.celltype = celltype
 
     def _init(self, parent, path):
         super().__init__(parent=parent, path=path)
@@ -53,6 +50,8 @@ class Cell(Base, HelpMixin):
     def independent(self):
         """True if the cell has no dependencies"""
         parent = self._parent()
+        if parent is None:
+            return True
         connections = parent._graph.connections
         path = self._path
         lp = len(path)
@@ -625,7 +624,7 @@ class Cell(Base, HelpMixin):
     def celltype(self, value):
         assert value in celltypes, value
         hcell = self._get_hcell2()
-        if hcell["celltype"] == value:
+        if hcell.get("celltype", "structured") == value:
             return
         if hcell.get("UNTRANSLATED"):
             cellvalue = hcell.get("TEMP")

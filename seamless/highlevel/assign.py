@@ -111,6 +111,8 @@ def assign_constant(ctx, path, value, help_context=False):
         cell = get_new_cell(path)
         if help_context:
             cell["celltype"] = "text"
+        else:
+            cell["celltype"] = "structured"
     else:
         cell = old._get_hcell()
     if callable(value):
@@ -494,14 +496,11 @@ def assign(ctx, path, value, *, help_context=False):
                 cellnode = get_new_cell(path)
             else:
                 cellnode["path"] = path
-            if hasattr(value, "_TEMP_celltype"):
-                celltype = value._TEMP_celltype
-                del value._TEMP_celltype
-                cellnode["celltype"] = celltype
-                if celltype == "code" and "language" not in cellnode:
-                    cellnode["language"] = "python"
-            elif help_context:
-                cellnode["celltype"] = "text"
+            if "celltype" not in cellnode:
+                if help_context:
+                    cellnode["celltype"] = "text"
+                else:
+                    cellnode["celltype"] = "structured"
             ctx._graph.nodes[path] = cellnode
         else:
             assert value._get_top_parent() is ctx, value
@@ -575,6 +574,10 @@ def assign(ctx, path, value, *, help_context=False):
         if path not in ctx._children:
             Cell(parent=ctx, path=path) #inserts itself as child
             node = get_new_cell(path)
+            if help_context:
+                node["celltype"] = "text"
+            else:
+                node["celltype"] = "structured"
             ctx._graph[0][path] = node
         assign_connection(ctx, value._virtual_path, path, False)
         check_libinstance_subcontext_binding(ctx, path)
