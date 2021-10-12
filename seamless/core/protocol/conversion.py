@@ -232,7 +232,6 @@ async def reformat(checksum, buffer, celltype, target_celltype, fingertip_mode=F
             await deserialize(buffer, checksum, "plain", copy=False)
             return checksum
         except Exception:
-            import traceback; traceback.print_exc()
             done = False
     if not done:
         value = await deserialize(buffer, checksum, celltype, copy=False)
