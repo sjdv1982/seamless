@@ -84,6 +84,8 @@ meta.py
 fallback.py
 eager.py: FAILS as of 0.7 (https://github.com/sjdv1982/seamless/issues/90)
 help.py: Can also be run non-interactively with IPython. See the source code for mounts and shares
+webinterface.sh: open with bash inside the Seamless Docker container.
+                 Can also be run interactively, see line 6 of the code
 high-in-low.py
 high-in-low2.py
 high-in-low3.py
