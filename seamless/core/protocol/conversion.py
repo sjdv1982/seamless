@@ -50,7 +50,8 @@ conversion_reinterpret = set([ # conversions that do not change checksum, but ar
 
 conversion_reformat = set([ # conversions that are guaranteed to work (if the input is valid), but may change checksum
     ("plain", "text"), # if old value is a string: new buffer is old value; else: no change
-    ("text", "plain"),   # use json.dumps, or repr
+    ("text", "plain"),   # if json.loads works, checksum stays the same. Else, json.dumps, or repr
+    ("text", "str"),   # use json.dumps, or repr
     ("str", "text"),   # use json.loads, or eval. assert isinstance(str)
     ("str", "bytes"),   # str => text => bytes
     ("bytes", "str"),    # bytes => text => str
@@ -84,10 +85,9 @@ conversion_possible = set([ # conversions that (may) change checksum and are not
 ###
 
 conversion_equivalent = { #equivalent conversions
-    ("text", "mixed"): ("text", "plain"),
-    ("text", "str"): ("text", "plain"),
-    ("python", "str"): ("text", "plain"),
+    ("python", "str"): ("text", "str"),
     ("ipython", "str"): ("text", "plain"),
+    ("text", "mixed"): ("text", "plain"),
     ("python", "plain"): ("text", "plain"),
     ("ipython", "plain"): ("text", "plain"),
     ("python", "mixed"): ("text", "plain"),
@@ -219,15 +219,31 @@ async def reinterpret(checksum, buffer, celltype, target_celltype):
 
 async def reformat(checksum, buffer, celltype, target_celltype, fingertip_mode=False):
     key = (celltype, target_celltype)
+    done = False
     if key == ("text", "checksum"):
         if checksum is None:
             value = None
         else:
             value = checksum.hex()
         new_buffer = await serialize(value, "plain")
-    else:
+        done = True
+    elif key == ("text", "plain"):
+        try:
+            await deserialize(buffer, checksum, "plain", copy=False)
+            return checksum
+        except Exception:
+            import traceback; traceback.print_exc()
+            done = False
+    if not done:
         value = await deserialize(buffer, checksum, celltype, copy=False)
-        if key == ("plain", "text"):
+        if key == ("plain", "str"):
+            if isinstance(value, str):
+                new_buffer = await serialize(value, target_celltype)
+            else:
+                if fingertip_mode:
+                    buffer_cache.cache_buffer(checksum, buffer)
+                return checksum
+        elif key == ("plain", "text"):
             if isinstance(value, str):
                 new_buffer = await serialize(value, target_celltype)
             else:
