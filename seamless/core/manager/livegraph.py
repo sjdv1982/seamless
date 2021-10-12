@@ -1,3 +1,4 @@
+import asyncio
 import traceback
 import weakref
 from functools import update_wrapper
@@ -42,6 +43,19 @@ def destroyer(func):
     update_wrapper(wrapper, func)
     return wrapper
 
+async def do_bilink(buffer, checksum, celltype, target_celltype, manager, target_cell):
+    from ..protocol.evaluate import evaluate_from_buffer
+    expression_result_checksum = await evaluate_from_buffer(
+        checksum, buffer,
+        celltype, target_celltype,
+        fingertip_mode=False
+    )
+    manager.set_cell_checksum(
+        target_cell, expression_result_checksum,
+        initial=False,
+        from_structured_cell=False,
+        trigger_bilinks=False
+    )
 
 class LiveGraph:
     def __init__(self, manager):
@@ -202,7 +216,7 @@ class LiveGraph:
                 self._get_bilink_targets(source2, targets)
         else:
             for path in source._paths:
-                self._get_bilink_targets(path, targets)
+                self._get_bilink_targets(path, targets)    
 
     def activate_bilink(self, cell, checksum):
         if isinstance(cell, Path):
@@ -218,15 +232,16 @@ class LiveGraph:
         for target in targets:
             if isinstance(target, Path):
                 continue
-            target_checksum = checksum
             if checksum is not None:
                 if cell.celltype != target.celltype:
-                    if cell_value is None:
-                        cell_value = cell.value
-                    buf = serialize_sync(cell_value, target.celltype)
-                    target_checksum = calculate_checksum_sync(buf)
+                    coro = do_bilink(
+                        cell.buffer,
+                        checksum, cell.celltype, target.celltype,
+                        manager, target
+                    )
+                    asyncio.ensure_future(coro)
             manager.set_cell_checksum(
-                target, target_checksum,
+                target, checksum,
                 initial=False,
                 from_structured_cell=False,
                 trigger_bilinks=False
