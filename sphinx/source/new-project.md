@@ -205,14 +205,14 @@ Alternatively, for a solo project, do the obvious (install Seamless, create a ne
 4. Set up your `~/.ssh/config`.  Below is an example for a machine *gateway* that is accessible directly, and a machine
 *workstation* that is only accessible from *gateway*:
 ```
-Host workstation
-    HostName 192.168.1.86
-    User yourname
-
 Host gateway
     HostName 999.999.1.99
     User yourname
-    ProxyCommand ssh -q -W %h:%p workstation
+
+Host workstation
+    HostName 192.168.1.86
+    User yourname
+    ProxyCommand ssh -q -W %h:%p gateway
 ```
 To verify that it works, do `ssh workstation` and/or `ssh gateway` from the command line.
 
