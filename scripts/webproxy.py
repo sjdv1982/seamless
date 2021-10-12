@@ -94,6 +94,7 @@ async def handler(req):
       async with client.request(
           req.method, url,
           headers = reqH,
+          params=req.query,
           allow_redirects=False,
           data = await req.read()
       ) as res:
@@ -110,6 +111,8 @@ app = web.Application(
 )
 app.add_routes([
     web.get('/{tail:.*}', handler),
+    web.put('/{tail:.*}', handler),
+    web.patch('/{tail:.*}', handler),
 ])
 
 cors = aiohttp_cors.setup(app, defaults={
@@ -117,7 +120,7 @@ cors = aiohttp_cors.setup(app, defaults={
             allow_credentials=True,
             expose_headers="*",
             allow_headers="*",
-            allow_methods=["GET"]
+            allow_methods=["GET", "PATCH", "PUT"]
         )
 })
 
