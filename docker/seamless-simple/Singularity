@@ -8,21 +8,23 @@ Cells define the input data as well as the source code of the computations, and 
 %post
     export PATH=/opt/conda/bin:$PATH
     export RPY2_CFFI_MODE=ABI
-    git clone --depth 1 https://github.com/sjdv1982/seamless.git --branch master seamless-tempdir
+    git clone --depth 1 https://github.com/sjdv1982/seamless.git --branch stable seamless-tempdir
     cd seamless-tempdir
     cp -r scripts /seamless-scripts
     cp -r tools /seamless-tools
-    apt update && apt install -y gfortran gdb
-    conda install 'python==3.7.3' pip
+    apt update && apt install -y gfortran gdb    
+    conda install 'python==3.8.8' pip
     pip install -r requirements.txt
     pip install -r requirements-extra.txt
     cd ..
     rm -rf seamless-tempdir
-    conda install -c rpbs silk seamless-framework
+    conda install -c rpbs -c conda-forge silk seamless-framework --yes && \
+    conda install -c conda-forge matplotlib psutil --yes && \
+    conda install conda --yes
 
 %labels
     Maintainer Sjoerd de Vries <sjoerd.de-vries@inserm.fr>
-    Version 0.6
+    Version 0.7
 
 %environment
     PATH=/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
