@@ -1,9 +1,12 @@
 FROM continuumio/miniconda3
 LABEL author="Sjoerd de Vries <sjoerd.de-vries@inserm.fr>"
-LABEL version="0.6"
+LABEL version="0.7"
 USER root
-RUN apt update && apt install -y gfortran gdb
-RUN conda install 'python==3.7.3' pip
-RUN pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements.txt
-RUN pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements-extra.txt
-RUN conda install -c rpbs silk seamless-framework
+RUN conda install 'python==3.8.8' pip
+RUN export RPY2_CFFI_MODE=ABI && pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/stable/requirements.txt
+RUN pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/stable/requirements-extra.txt
+RUN conda install -c rpbs  -c conda-forge silk seamless-framework --yes && \
+  conda install -c conda-forge matplotlib psutil --yes && \
+  conda install conda --yes
+#RUN apt update && apt install -y gfortran gdb
+

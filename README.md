@@ -390,9 +390,12 @@ Alternative installations
 conda create -n seamless
 conda activate seamless
 conda install 'python==3.8.8' pip
+export RPY2_CFFI_MODE=ABI
 pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/stable/requirements.txt
 pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/stable/requirements-extra.txt
 conda install -c rpbs  -c conda-forge silk seamless-framework
+conda install -c conda-forge matplotlib psutil
+conda install conda
 ```
 
 Don't install the Seamless command line tools. Instead of commands like `seamless-bash`, `seamless-ipython`, `seamless-jupyter`, simply do `conda activate seamless` and type `python`, `ipython` or `jupyter notebook`. The source code of the Seamless command line tools is at `https://github.com/sjdv1982/seamless/tree/master/docker/commands`.
