@@ -1,0 +1,10 @@
+{'docker': {'name': 'some_docker_image'}}
+{'name': 'some_docker_image'}
+some_docker_image
+{'docker': {'name': 'some_docker_image'}}
+{'name': 'some_docker_image'}
+some_docker_image
+lambda a: 42
+{'docker': {'name': 'some_docker_image'}}
+{'name': 'some_docker_image'}
+some_docker_image

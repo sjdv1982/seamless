@@ -54,6 +54,20 @@ class Environment:
         json.dumps(state)
         return state
 
+    def _sync(self):
+        from .Context import Context
+        from .Transformer import Transformer
+        parent = self._parent()
+        if parent is None:
+            return
+        if isinstance(parent, Context):
+            pass
+        elif isinstance(parent, Transformer):
+            node = parent._get_htf()
+            state = node.get("environment", None)
+            if state is not None:
+                self._load(state)
+
     def _load(self, state):
         old_state = self._save()
         if state != old_state:
@@ -71,6 +85,7 @@ particular programming languages.
 
 For transformer execution, please define the conda environment 
 for transformers individually (Transformer.environment)"""
+        self._sync()
         if format != "yaml":
             raise NotImplementedError(format)  # must be yaml for now
         if conda is None:
@@ -92,12 +107,14 @@ particular programming languages.
 
 For transformer execution, please define the conda environment 
 for transformers individually (Transformer.environment)"""        
+        self._sync()
         if format != "yaml":
             raise NotImplementedError(format)  # must be yaml for now
         return self._conda
 
     def set_which(self, which, format):
         """List of binaries that must be available in the command line path, using "which" """
+        self._sync()
         if format != "plain":
             raise NotImplementedError(format)  # must be plain Python for now
         if which is None:
@@ -114,6 +131,7 @@ for transformers individually (Transformer.environment)"""
 
     def get_which(self, which, format):
         """List of binaries that must be available in the command line path, using "which" """
+        self._sync()
         if format != "plain":
             raise NotImplementedError(format)  # must be plain Python for now
         return deepcopy(self._which)
@@ -125,6 +143,7 @@ Currently supported:
 - "ipython": have get_ipython available
 - "conda": have conda available to install new packages dynamically
         """
+        self._sync()
         if powers is None:
             self._powers = None
             self._update()
@@ -144,6 +163,7 @@ Currently supported:
 - "ipython": have get_ipython available
 - "conda": have conda available to install new packages dynamically
         """
+        self._sync()
         return deepcopy(self._powers)
 
     def set_docker(self, docker: dict):
@@ -155,6 +175,7 @@ and potentially "checksum", "version" and "options".
 
 "options" corresponds to the parameters of the function
 client.containers.run of the Docker SDK for Python"""
+        self._sync()
         if docker is not None and not isinstance(docker, dict):
             raise TypeError("Must be dict, not {}".format(type(docker)))
         if "name" not in docker:
@@ -165,6 +186,7 @@ client.containers.run of the Docker SDK for Python"""
     def get_docker(self):
         """Name of the Docker (or Singularity) config 
         that defines the environment"""
+        self._sync()
         return self._docker
 
     def _to_lowlevel(self):
