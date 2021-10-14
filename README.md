@@ -1,13 +1,24 @@
 Seamless: a cell-based reactive programming framework
 =====================================================
 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main)
+
 Seamless is a framework to set up protocols (workflows) and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations, and all cells can be edited interactively.
 
-The main application domains are scientific computing, scientific web services, data visualization, and interactive development of algorithms.
+The main application domains are data science, scientific computing, software prototyping, and interactive web services.
 
 Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible. Unlike other workflow systems, Seamless graphs are self-contained and do not depend on the content of external files, URLs, identifiers, version numbers, or other kinds of metadata.
 
 ### Documentation: <http://sjdv1982.github.io/seamless>
+
+Try out Seamless
+================
+
+You can try out Seamless in your browser, without any installation,
+thanks to the Binder project. Click on the badge below:
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb)
+
 
 Supported platforms
 ===================
