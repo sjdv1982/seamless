@@ -68,6 +68,7 @@ twopi-graph-database.sh: run with Seamless database; delete job results (e.g. re
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
 twopi-graph-service.sh: same as above; run as i=twopi-graph-service
 load-graph.py
+load-graph2.py
 load-graph-static.py
 vault.bash: run as i=vault; seamless-devel ./$i.bash > test-outputs/$i.out 2>&1
 library.py

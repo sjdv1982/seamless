@@ -136,6 +136,17 @@ if shareserver_address is not None:
 
 import seamless.highlevel.stdlib
 
+if args.database:
+    params = {}
+    db_host = env.get("SEAMLESS_DATABASE_HOST")
+    if db_host is not None:
+        params["host"] = db_host
+    db_port = env.get("SEAMLESS_DATABASE_PORT")
+    if db_port is not None:
+        params["port"] = db_port
+    seamless.database_sink.connect(**params)
+    seamless.database_cache.connect(**params)
+
 from seamless.highlevel import load_graph, Context
 graph = json.load(args.graph)
 if args.zipfile is None and not args.add_zip:
@@ -147,16 +158,6 @@ else:
     for zipf in args.add_zip:
         ctx.add_zip(zipf)
     ctx.set_graph(graph, mounts=args.mounts, shares=args.shares)
-if args.database:
-    params = {}
-    db_host = env.get("SEAMLESS_DATABASE_HOST")
-    if db_host is not None:
-        params["host"] = db_host
-    db_port = env.get("SEAMLESS_DATABASE_PORT")
-    if db_port is not None:
-        params["port"] = db_port
-    seamless.database_sink.connect(**params)
-    seamless.database_cache.connect(**params)
 ctx.translate()
 
 if args.status_graph:

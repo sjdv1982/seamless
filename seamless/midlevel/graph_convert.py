@@ -59,7 +59,7 @@ def graph_convert_pre07(graph, ctx):
                 docker_image = json.loads(docker_image)
                 if "environment" not in node:
                     node["environment"] = {}
-                node["environment"]["image"] = {
+                node["environment"]["docker"] = {
                     "name": docker_image 
                 }
     connections_to_remove = []
