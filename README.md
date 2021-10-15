@@ -431,3 +431,5 @@ More examples
 <https://github.com/sjdv1982/seamless/tree/master/examples>
 
 <https://github.com/sjdv1982/seamless/tree/master/tests/highlevel>
+
+### Documentation: <http://sjdv1982.github.io/seamless>
