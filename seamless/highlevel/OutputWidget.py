@@ -123,16 +123,17 @@ class OutputWidget:
                 self.mimetype = tmimetype
         if outdated:
             value = "<Outdated>"
-        if isinstance(value, Silk):
-            value = value.unsilk
-        try:
-            form, _ = get_form(value)
-            if form == "pure-plain":
-                pass
-            elif form == "pure-binary":
-                value = value.tolist()
-        except:
-            value = "<Cannot be displayed>"
+        if self.celltype != "bytes":
+            if isinstance(value, Silk):
+                value = value.unsilk
+            try:
+                form, _ = get_form(value)
+                if form == "pure-plain":
+                    pass
+                elif form == "pure-binary":
+                    value = value.tolist()
+            except:
+                value = "<Cannot be displayed>"
         if self.DOC_name == "Pretty":
             value = str(value)
         self.value = value
