@@ -352,8 +352,10 @@ def context(**kwargs):
     from .macro import Macro
     if get_macro_mode():
         macro = curr_macro()
+        """
         if macro is not None and isinstance(macro, Macro):
             assert "toplevel" not in kwargs or kwargs["toplevel"] == False
+        """
         return UnboundContext(**kwargs)
     else:
         ctx = Context(**kwargs)

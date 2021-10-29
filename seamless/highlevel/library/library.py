@@ -196,7 +196,7 @@ class Library:
         if add_zip:
             ctx.add_zip(self._zip)
         ctx._set_lib(path, lib)
-        for libdep in self._graph["lib"]:
+        for libdep in self._graph.get("lib", {}):
             libdep_path = tuple(libdep["path"])
             ctx._set_lib(libdep_path, libdep)
 
