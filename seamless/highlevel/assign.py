@@ -446,8 +446,14 @@ def assign_to_subcell(cell, path, value):
             match="all"
         )
         removed = (removed1 or removed2)
+        untranslated = cell._get_hcell().get("UNTRANSLATED")
         if removed:
             ctx._translate()
+        if untranslated:
+            raise Exception("""This cell is untranslated.
+You must first translate the cell before assigning constants to sub-values.
+Run 'ctx.translate()' or 'await ctx.translation()'
+""")
         handle = cell.handle
         for p in path[:-1]:
             if isinstance(p, int):
