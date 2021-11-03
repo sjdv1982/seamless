@@ -13,7 +13,13 @@ def _set_subpath(value, path, subvalue):
         else:
             value[head] = subvalue
         return
-    if head not in value:
+    if isinstance(value, dict):
+        in_value = (head in value)
+    elif isinstance(value, list):
+        in_value = (len(value) > head)
+    else:
+        raise TypeError(value)
+    if not in_value:
         head2 = path[1]
         if isinstance(head2, int):
             item = []
