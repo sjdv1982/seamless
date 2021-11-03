@@ -19,6 +19,8 @@ def get_argument_value(name, value):
 
 def parse_argument(argname, argvalue, parameter):
     par = parameter
+    if argvalue is None and par.get("must_be_defined") == False:
+        return None
     if par["type"] == "value":
         value = get_argument_value(argname, argvalue)
     elif par["type"] == "context":

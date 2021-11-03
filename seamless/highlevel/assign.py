@@ -529,6 +529,8 @@ def assign(ctx, path, value, *, help_context=False):
             check_libinstance_subcontext_binding(ctx, path)
         if isinstance(value, Resource):
             node = ctx._graph.nodes[path]
+            if node["type"] != "cell":
+                raise TypeError(node["type"])
             node["mount"] = {
                 "path": value.filename,
                 "mode": "r",

@@ -111,8 +111,7 @@ def build_structured_cell(
     c = context(toplevel=False)
     setattr(ctx, name2, c)
     if mount is not None:
-        mount.pop("as_directory", None)
-        c.mount(**mount)
+        raise TypeError('Structured cell "{}" is not mountable'.format(name))
     c.data = core_cell("mixed")
     c.data._hash_pattern = hash_pattern
     c.auth = core_cell("mixed")

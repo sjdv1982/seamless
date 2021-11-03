@@ -1,17 +1,15 @@
 {
+  "__seamless__": "0.7",
   "connections": [],
   "lib": [],
   "nodes": [
     {
-      "celltype": "structured",
+      "celltype": "code",
       "checksum": {
-        "auth": "c9ed29e8e0785dcbfb0515926496f6ceb3cc93f0380286be16dd47c384146e68",
-        "buffer": "c9ed29e8e0785dcbfb0515926496f6ceb3cc93f0380286be16dd47c384146e68",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "c9ed29e8e0785dcbfb0515926496f6ceb3cc93f0380286be16dd47c384146e68"
+        "value": "011f1cc0903541db5a9e92ddae48a396028ffa5db9052ce663676336175d12e9"
       },
       "datatype": "mixed",
-      "hash_pattern": null,
+      "language": "python",
       "mount": {
         "authority": "file",
         "mode": "r",
@@ -24,15 +22,12 @@
       "type": "cell"
     },
     {
-      "celltype": "structured",
+      "celltype": "code",
       "checksum": {
-        "auth": "ee4a697fac84775575757d13de834ae27db280eef37809ef56b53c420fd00e41",
-        "buffer": "ee4a697fac84775575757d13de834ae27db280eef37809ef56b53c420fd00e41",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "ee4a697fac84775575757d13de834ae27db280eef37809ef56b53c420fd00e41"
+        "value": "4a067f6409432b7f3f28ce21139ed3e67469341c11b6e13082488e4306b3630a"
       },
       "datatype": "mixed",
-      "hash_pattern": null,
+      "language": "python",
       "mount": {
         "authority": "file",
         "mode": "r",
@@ -47,7 +42,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "6a912ae3c4d5e08a55d953570562908ac88b6974ad0aee808da1bf217ea7d378"
+        "value": "ace25e1de72c520389e765d39426f19072712fdd761b7223012ebd153e5afa8e"
       },
       "datatype": "mixed",
       "language": "python",
@@ -59,10 +54,10 @@
     {
       "celltype": "structured",
       "checksum": {
-        "auth": "178ca1a44e2dd1ad6ccf54f18dc47e8e7ea9c974157d45a4c2047b45d3654919",
-        "buffer": "178ca1a44e2dd1ad6ccf54f18dc47e8e7ea9c974157d45a4c2047b45d3654919",
+        "auth": "dd30e83df6e0adec80f1c6817f34e1438d3f806de7f70533a080bdb4a8df0fe3",
+        "buffer": "dd30e83df6e0adec80f1c6817f34e1438d3f806de7f70533a080bdb4a8df0fe3",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "178ca1a44e2dd1ad6ccf54f18dc47e8e7ea9c974157d45a4c2047b45d3654919"
+        "value": "dd30e83df6e0adec80f1c6817f34e1438d3f806de7f70533a080bdb4a8df0fe3"
       },
       "datatype": "mixed",
       "hash_pattern": null,
