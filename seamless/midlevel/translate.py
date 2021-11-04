@@ -354,7 +354,7 @@ def translate(graph, ctx, environment):
             translate_module(node, ctx, namespace, inchannels, outchannels)
         elif t == "libinstance":
             msg = "Libinstance '%s' was not removed during pre-translation"
-            raise TypeError(msg % str(path))
+            raise TypeError(msg % ("." + ".".join(path)))
         else:
             raise TypeError(t)
         node.pop("UNTRANSLATED", None)

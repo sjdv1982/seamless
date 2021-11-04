@@ -55,7 +55,7 @@ class IncludedLibrary:
         arguments = {}
         for argname, argvalue in kwargs2.items():
             par = self._params[argname]
-            arguments[argname] = parse_argument(argname, argvalue, par)
+            arguments[argname] = parse_argument(argname, argvalue, par, parent=self._ctx)
 
         libinstance = LibInstance(self._ctx, libpath=self._path, arguments=arguments)
         return libinstance

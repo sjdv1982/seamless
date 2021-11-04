@@ -414,7 +414,10 @@ class LibInstance:
                 if par["type"] == "kwargs":
                     if parname not in arguments:
                         arguments[parname] = {}
-                    arguments[parname][attr] = parse_argument(attr, value, params[parname])
+                    arguments[parname][attr] = parse_argument(
+                        attr, value, params[parname],
+                        parent=self._parent()
+                    )
                     break
             else:
                 if attr in self._get_api_methods():
