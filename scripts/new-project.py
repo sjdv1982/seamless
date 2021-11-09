@@ -94,7 +94,7 @@ PROJNAME = "%s"
 
 import os, sys, shutil
 
-from seamless.highlevel import Context, Cell, Transformer
+from seamless.highlevel import Context, Cell, Transformer, Module, Macro
 
 ctx = None
 webctx = None
