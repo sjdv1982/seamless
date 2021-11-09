@@ -187,10 +187,10 @@ def assign_transformer_copy(ctx, path, tf):
     for con in list(connections):
         if con["type"] != "connection":
             continue
-        c = con["source"]
+        c = con["target"]
         if c[:lp] == tf_path:
             con2 = deepcopy(con)
-            con2["source"] = path + c[lp:]
+            con2["target"] = path + c[lp:]
             connections.append(con2)
     tf = Transformer(
         parent=ctx,
