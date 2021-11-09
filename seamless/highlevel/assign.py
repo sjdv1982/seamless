@@ -173,6 +173,32 @@ def assign_transformer(ctx, path, func):
         assert ctx._children[path] is tf
         ctx._translate()
 
+
+def assign_transformer_copy(ctx, path, tf):
+    if path in ctx._children:
+        ctx._destroy_path(path)
+
+    tf_path = tf._path
+    tf_node = deepcopy(tf._get_htf())
+    tf_node["path"] = path
+    nodes, connections = ctx._graph[:2]
+    nodes[path] = tf_node
+    lp = len(tf_path)
+    for con in list(connections):
+        if con["type"] != "connection":
+            continue
+        c = con["source"]
+        if c[:lp] == tf_path:
+            con2 = deepcopy(con)
+            con2["source"] = path + c[lp:]
+            connections.append(con2)
+    tf = Transformer(
+        parent=ctx,
+        path=path,
+    ) #inserts itself as child
+    assert ctx._children[path] is tf
+    ctx._translate()
+
 def assign_libinstance(ctx, path, libinstance):
     libinstance._bind(ctx, path)
 
@@ -469,6 +495,7 @@ def assign(ctx, path, value, *, help_context=False):
     from .library import Library, LibraryContainer
     from .library.include import IncludedLibrary, IncludedLibraryContainer
     from .proxy import Proxy
+    from .Transformer import TransformerCopy
     nodedict = ctx._graph[0]
     if under_libinstance_control(nodedict, path):
         msg = "Cannot assign to path under libinstance control: {}"
@@ -569,6 +596,12 @@ def assign(ctx, path, value, *, help_context=False):
                     check_libinstance_subcontext_binding(ctx, path)
                     return result
         assign_transformer(ctx, path, value)
+    elif isinstance(value, TransformerCopy):
+        tf = value.transformer()
+        if tf is None:
+            raise Exception("Transformer no longer exists")
+        assert tf._parent() is ctx
+        assign_transformer_copy(ctx, path, tf)
     elif isinstance(value, (Proxy, SchemaWrapper)):
         assert value._parent()._parent() is ctx
         if path not in ctx._children:

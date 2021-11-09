@@ -44,6 +44,7 @@ expression-exceptions.py
 highlink-schema.py
 highlink-schema-tf.py
 test-copy.py
+test-copy-tf-assign.py
 traitlet.py
 traitlet2.py: The exact output is dependent on random memory locations
 simple.py

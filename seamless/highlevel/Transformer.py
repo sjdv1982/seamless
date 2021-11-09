@@ -1,3 +1,4 @@
+import weakref
 from seamless.metalevel import debugmode, debugmount
 import functools
 import pprint
@@ -807,6 +808,9 @@ You can set this dictionary directly, or you may assign .meta to a cell
             raise AttributeError("Only for compiled transformers")
         return deepcopy(htf.get("link_options", []))
 
+    def copy(self):
+        return TransformerCopy(self)
+
     @link_options.setter
     def link_options(self, link_options):
         htf = self._get_htf()
@@ -1309,6 +1313,10 @@ You can set this dictionary directly, or you may assign .meta to a cell
 
     def __repr__(self):
         return str(self)
+
+class TransformerCopy:
+    def __init__(self, transformer):
+        self.transformer = weakref.ref(transformer)
 
 from .synth_context import SynthContext
 from .assign import check_libinstance_subcontext_binding
