@@ -25,11 +25,13 @@ def load_vault(dirname, incref=False):
     if not os.path.exists(dirname):
         raise ValueError(dirname)
     result = []
+    ok = False
     for dep in ("independent", "dependent"):
         for size in ("small", "big"):
             dirn = os.path.join(dirname, dep, size)
             if not os.path.exists(dirn):
-                raise ValueError(dirn)
+                continue
+            ok = True
             for _, _, files in os.walk(dirn):
                 for filename in files:
                     if filename.startswith("."):
@@ -42,6 +44,8 @@ def load_vault(dirname, incref=False):
                     if incref:
                         buffer_cache.incref(checksum2, authoritative=False)
                     result.append(checksum)
+    if not ok:
+        raise ValueError("{} does seem to be a Seamless vault".format(dirname))
     return result
 
 from ..core.cache.buffer_cache import buffer_cache
