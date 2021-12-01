@@ -79,6 +79,9 @@ vault/dependent/small/*
 # 4. Backups of the Seamless graph. Comment out the following line to put them under version control
 graph/*.seamless.bak*
 
+# In all cases, at least keep an empty directory for the vaults
+!vault/*/*/.gitkeep
+
 """
 
 if os.path.exists(".gitignore"):

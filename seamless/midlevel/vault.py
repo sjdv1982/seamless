@@ -8,6 +8,8 @@ def save_vault(dirname, annotated_checksums, buffer_dict):
         for size in ("small", "big"):
             dirn = os.path.join(dirname, dep, size)
             os.makedirs(dirn, exist_ok=True)
+            with open(os.path.join(dirn, ".gitkeep"), "w") as f:
+                pass
             dirs[dep, size] = dirn
 
     for checksum, is_dependent in annotated_checksums:
@@ -30,6 +32,8 @@ def load_vault(dirname, incref=False):
                 raise ValueError(dirn)
             for _, _, files in os.walk(dirn):
                 for filename in files:
+                    if filename.startswith("."):
+                        continue
                     checksum = filename
                     checksum2 = bytes.fromhex(checksum)
                     with open(os.path.join(dirn, filename), "rb") as f:

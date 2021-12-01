@@ -47,7 +47,7 @@ def constructor(
     fallback_mode,
     upstream,
     modified, conflict,
-    merged, state
+    merged, state, base
 ):
     assert fallback_mode in ("upstream", "modified", "no"), fallback_mode
     m = ctx.m = Macro()
@@ -65,6 +65,12 @@ def constructor(
     modified.link(ctx.modified)
     m.pins.modified = {"io": "edit", "celltype": "text"}
     m.modified = ctx.modified
+
+    if base is not None:
+        ctx.base = Cell("text")
+        base.link(ctx.base)
+        m.pins.base = {"io": "edit", "celltype": "text"}
+        m.base = ctx.base
 
     ctx.conflict = Cell("text")
     conflict.link(ctx.conflict)
@@ -92,6 +98,12 @@ constructor_params = {
         "celltype": "text",
         "io": "input"
     },
+    "base": {
+        "type": "cell",
+        "celltype": "text",
+        "io": "edit",
+        "must_be_defined": False,
+    }, 
     "modified": {
         "type": "cell",
         "celltype": "text",
@@ -118,7 +130,9 @@ constructor_params = {
 ctx.constructor_params = constructor_params
 ctx.macro_code = Cell("code").set(macro_code)
 ctx.code_start = set_resource("cell-merge-START.py")
+ctx.code_start.celltype = "code"
 ctx.code_update = set_resource("cell-merge-UPDATE.py")
+ctx.code_update.celltype = "code"
 
 ctx.compute()
 
@@ -167,6 +181,13 @@ mount(ctx.merged, "w")
 ctx.state = Cell("str")
 mount(ctx.state, "w")
 
+base = None
+# base: disable / enable to test "base"
+ctx.base = Cell("text")
+mount(ctx.base)
+base = ctx.base
+# /base
+
 ctx.compute()
 
 ctx.merge = ctx.lib.merge(
@@ -174,6 +195,7 @@ ctx.merge = ctx.lib.merge(
     modified=ctx.modified,
     conflict=ctx.conflict,
     merged=ctx.merged,
+    base=base,
     state=ctx.state
 )
 
@@ -181,6 +203,10 @@ ctx.compute()
 print(ctx.status)
 print(ctx.merged.value)
 print(ctx.state.value)
+print(ctx.merge.exception)
+print(ctx.merge.ctx.m.exception)
+print(ctx.merge.ctx.m.ctx.base.value)
+
 if ctx.state.value != "passthrough":
     import sys
     sys.exit()

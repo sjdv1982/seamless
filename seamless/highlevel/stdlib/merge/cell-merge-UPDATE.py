@@ -44,8 +44,8 @@ def main():
     violations = []
     if PINS.upstream_stage.updated:
         violations.append("upstream_stage")
-    if PINS.base.updated and state != "passthrough":
-        violations.append("base")
+    #if PINS.base.updated and state != "passthrough":
+    #    violations.append("base")
 
     zero_modify = (not PINS.modified.defined)
 

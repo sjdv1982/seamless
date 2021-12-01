@@ -17,8 +17,15 @@ def get_argument_value(name, value):
         raise TypeError("'%s' must be value, not '%s'" % (name, type(value)))
     return _get_value(name, value)
 
-def parse_argument(argname, argvalue, parameter):
+def parse_argument(argname, argvalue, parameter, *, parent=None):
+    if parent is not None:
+        if isinstance(argvalue, (Cell, Context, SubContext)):
+            if argvalue._parent() is not parent:
+                msg = "%s '%s' must belong to the same toplevel Context as the parent"
+                raise TypeError(msg % (type(argvalue).__name__, argname))
     par = parameter
+    if argvalue is None and par.get("must_be_defined") == False:
+        return None
     if par["type"] == "value":
         value = get_argument_value(argname, argvalue)
     elif par["type"] == "context":
