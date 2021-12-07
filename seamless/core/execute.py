@@ -147,6 +147,7 @@ def execute(name, code,
         direct_print = True
     else:
         direct_print = DIRECT_PRINT
+    direct_print_file = debug.get("direct_print_file")
     if not debug.get("attach", False):
         debug = {}
     if debug != {}:
@@ -163,6 +164,7 @@ def execute(name, code,
         ok = False        
 
         sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+        direct_print_filehandle = None
 
         if debug.get("python_attach"):
             port = int(debug["python_attach_port"])  # MUST be set right before forking
@@ -196,6 +198,10 @@ def execute(name, code,
                 pass
 
         if direct_print:
+            if direct_print_file is not None:
+                direct_print_filehandle = open(direct_print_file, "w", buffering=1)
+                sys.stdout = direct_print_filehandle
+                sys.stderr = direct_print_filehandle
             result = _execute(name, code,
                 with_ipython_kernel,
                 injector, module_workspace,
@@ -266,6 +272,8 @@ def execute(name, code,
         traceback.print_exc()
     finally:
         sys.stdout, sys.stderr = old_stdio
+        if direct_print_filehandle is not None:
+            direct_print_filehandle.close()
         if debug:
             try:
                 debug_post_hook(debug)

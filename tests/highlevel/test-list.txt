@@ -171,6 +171,7 @@ r.py
   edit plot.R
   The PNG should update, the SVG should not
 compute-ctrl-c.py: open with ipython, type "ctx.compute()" and press ctrl+c
+delay-direct-print-file: open with ipython, monitor /tmp/direct-print.out, change ctx.tf1.a and ctx.tf1.delay
 debugmode-py-light.py
   To debug a simple Python transformer in VSCode. Follow the instructions.
 debugmode-compiled-light.py

@@ -164,7 +164,8 @@ class DebugMode:
     def __init__(self, transformer):
         self._enabled = False
         self._tf = weakref.ref(transformer)
-        self._direct_print = False
+        self._direct_print = None
+        self._direct_print_file = None
         self._mode = None
         self._mount = None
         self._attach = True
@@ -192,12 +193,22 @@ class DebugMode:
                 msg = "Attach-and-debug with breakpoints is not possible for language '{}'"
                 raise ValueError(msg.format(node["language"]))
 
+    def _get_direct_print_settings(self):
+        result = {}
+        if self._direct_print in (True, False):
+            result["direct_print"] = self._direct_print
+        else:
+            assert self._direct_print is None
+            result["direct_print"] = self.enabled
+        result["direct_print_file"] = self._direct_print_file
+        return result
+
     def on_translate(self):
         if not self.enabled:
-            if self.direct_print:
-                tf = self._get_core_transformer(force=False)
-                if tf is not None:
-                    tf._debug = {"direct_print": True}
+            tf = self._get_core_transformer(force=False)
+            if tf is not None:
+                debug = self._get_direct_print_settings()
+                tf._debug = debug
 
     def enable(self, mode, sandbox_name=None):
         if self._enabled:
@@ -237,6 +248,7 @@ Reason: {}"""
 Seamless cannot do source mapping. 
 Only sandbox debug mode is possible."""
                 raise ValidationError(msg.format(code_mount["path"]))
+            self._direct_print = True
         self._mode = mode
         debug = self._to_lowlevel()
         if core_transformer is not None:
@@ -280,28 +292,40 @@ If True, the transformer will wait for a debugger to attach"""
     @property
     def direct_print(self):
         """Causes the transformer to directly print any messages,
-        instead of buffering them and storing them in Transformer.logs"""
+instead of buffering them and storing them in Transformer.logs.
+If this value is None, direct print is True if debugging is enabled."""
         return self._direct_print
 
     @direct_print.setter
     def direct_print(self, value):
-        if not isinstance(value, bool):
+        if not isinstance(value, bool) and value is not None:
             raise TypeError(type(value))
         self._direct_print = value
 
+    @property
+    def direct_print_file(self):
+        """File name for direct print messages.
+If this value is None, the default stdout and stderr are used."""
+        return self._direct_print_file
+
+    @direct_print_file.setter
+    def direct_print_file(self, value):
+        if not isinstance(value, str) and value is not None:
+            raise TypeError(type(value))
+        self._direct_print_file = value
+
     def _to_lowlevel(self, *, silent=False):
         debug = {
-            "direct_print": self._direct_print,
             "python_attach": False,
             "python_attach_message": None,
             "generic_attach": False,
             "generic_attach_message": None,
         }
+        debug.update(self._get_direct_print_settings())
         mode = self._mode        
         if mode == "light":
             if not self._attach:
                 raise ValueError("attach=False is pointless in light debug mode")
-            debug["direct_print"] = True
             tf = self._tf()
             node = tf._get_htf()
             code_mount = get_code_mount(tf)
@@ -569,7 +593,8 @@ To create a directory where you can manually execute bash code, do Transformer.d
         if tf is None:
             return
         core_transformer = self._get_core_transformer(force=False)
-        debugmountmanager.remove_mount(self._mount)
+        if self._mount is not None:
+            debugmountmanager.remove_mount(self._mount)
         if core_transformer is not None:
             from ..core.manager.tasks.transformer_update import TransformerUpdateTask
             core_transformer._debug = None
