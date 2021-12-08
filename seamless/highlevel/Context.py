@@ -744,6 +744,11 @@ class Context(Base, HelpMixin):
                     raise Exception(msg.format(child))
         env = self.environment._parse_and_validate()
         graph = pretranslate(self, graph0)
+        old_runtime_nodes = set()
+        if self._runtime_graph is not None:
+            old_nodes = set(self._graph.nodes)
+            old_runtime_nodes = set(self._runtime_graph.nodes)
+            old_runtime_nodes = old_runtime_nodes.difference(old_nodes)
         if graph is not graph0:
             libinstance_nodes = {node["path"]: node for node in graph["nodes"]}
             self._runtime_graph = Graph(
@@ -808,7 +813,9 @@ class Context(Base, HelpMixin):
             assert self._gen_context._get_manager() is self._manager
             self._connect_share()
             ok = True
-            for childname, child in self._children.items():
+            for child_path, child in self._children.items():
+                if child_path in old_runtime_nodes:
+                    continue
                 if isinstance(child, Transformer):
                     child.debug.on_translate()
         finally:

@@ -630,26 +630,42 @@ class TransformationJob:
             if python_attach_port is not None:
                 free_python_attach_port(python_attach_port)
             release_lock(lock)
+        assert result_buffer is not None
         result_checksum = await get_result_checksum(result_buffer)
+        assert result_checksum is not None
         buffer_cache.cache_buffer(result_checksum, result_buffer)
+        try:
+            result_str = result_buffer.decode()
+            if len(result_str) > 10000:
+                skipped = len(result_str)-5000-4960
+                result_str2 = result_str[:4960]
+                result_str2 += "\n...(skipped %d characters)...\n" % skipped
+                result_str2 += result_str[-5000:]
+                result_str = result_str2
 
-        if logs[0] is None and logs[1] is None:
-            logstr = None
-        elif logs[0] is not None and logs[1] is None:
-            logstr = logs[0]
-        elif logs[0] is None and logs[1] is not None:
-            logstr = logs[1]
-        else:
-            logstr = """*************************************************
+        except UnicodeDecodeError:
+            result_str = "<binary buffer of length {}, checksum {}>".format(
+                len(result_buffer), result_checksum.hex()
+            )
+        logstr = """*************************************************
+* Result
+*************************************************
+{}
+""".format(result_str)
+        if logs[0] is not None:
+            logstr += """*************************************************
 * Standard output
 *************************************************
 {}
-*************************************************
-*************************************************
+""".format(logs[0])
+        if logs[1] is not None:
+            logstr += """*************************************************
 * Standard error
 *************************************************
 {}
-""".format(logs[0], logs[1])
+""".format(logs[1])
+
+        logstr += "*************************************************"
         return result_checksum, logstr
 
 
