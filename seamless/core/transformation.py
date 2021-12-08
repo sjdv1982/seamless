@@ -636,6 +636,10 @@ class TransformationJob:
         buffer_cache.cache_buffer(result_checksum, result_buffer)
         try:
             result_str = result_buffer.decode()
+            try:
+                result_str = str(json.loads(result_str))
+            except:
+                pass
             if len(result_str) > 10000:
                 skipped = len(result_str)-5000-4960
                 result_str2 = result_str[:4960]
