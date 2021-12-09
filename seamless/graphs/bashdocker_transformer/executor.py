@@ -79,7 +79,7 @@ try:
             if isinstance(form, str):
                 vv = str(v)
                 if not vv.endswith("\n"): vv += "\n"
-                if len(vv) <= 1000:
+                if pin.find(".") == -1 and len(vv) <= 1000:
                     env[pin] = vv
             else:
                 vv = json.dumps(v)
@@ -148,7 +148,7 @@ Seamless user ID: {}\"\"\"; exit 126) && bash DOCKER-COMMAND'''""".format(os.get
             for bufline in logs:
                 try:
                     line = bufline.decode()
-                    print(line)
+                    print(line,end="")
                 except UnicodeDecodeError:
                     sys.stdout.buffer.write(bufline)                
             exit_status = container.wait()['StatusCode']

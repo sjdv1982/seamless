@@ -16,7 +16,7 @@ for lnr, l in enumerate(data):
 ctx.code = "python -u pycode.py $lines > RESULT"
 ctx.tf = lambda lines, testdata: None
 ctx.tf.language = "bash"
-ctx.tf.docker_image = "rpbs/seamless"
+ctx.tf.docker_image = "continuumio/anaconda3"
 ctx.tf.testdata = "a \nb \nc \nd \ne \nf \n"
 ctx.tf.testdata.celltype = "text"
 ctx.tf.lines = 3

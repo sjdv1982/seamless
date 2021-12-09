@@ -57,6 +57,8 @@ In the shell, you can:
 BASHMESSAGE = """**********************************************************************
 Seamless bash shell directory {name}.
 
+Location: {shelldir}
+
 The shell directory contains the *current* values of the code and inputs
 of the debugged transformer sandbox ".{name}". 
 
@@ -327,6 +329,7 @@ class ShellHub:
                 name = self.name + "-" + str(ind)
                 if name not in self.shells:
                     break
+                ind += 1
         return name
 
     def new_shell(self, *args, **kwargs):
@@ -438,7 +441,11 @@ class BashShellHub(ShellHub):
         SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
         if SEAMLESS_DEBUGGING_DIRECTORY is None:
             raise Exception("SEAMLESS_DEBUGGING_DIRECTORY undefined")
-        shelldir = tempfile.mkdtemp(dir=SEAMLESS_DEBUGGING_DIRECTORY, prefix="shell-"+ name)
+        shelldir = os.path.join(SEAMLESS_DEBUGGING_DIRECTORY, "shell-" + name)
+        if not os.path.exists(shelldir):
+            os.mkdir(shelldir)
+        else:
+            shelldir = tempfile.mkdtemp(dir=SEAMLESS_DEBUGGING_DIRECTORY, prefix="shell-"+ name)
 
         pins_ = namespace["pins_"]
         if docker_image is None: # graphs/bash_transformer
@@ -471,7 +478,7 @@ class BashShellHub(ShellHub):
                     if isinstance(form, str):
                         vv = str(v)
                         if not vv.endswith("\n"): vv += "\n"
-                        if len(vv) <= 1000:
+                        if pin.find(".") == -1 and len(vv) <= 1000:
                             env[pin] = vv
                     else:
                         vv = json.dumps(v)
@@ -505,6 +512,7 @@ class BashShellHub(ShellHub):
                 except:
                     pass
                 print(stderr)
+                raise exc from None
             gen_env_value = gen_env_process.stdout
             with open("ENVIRONMENT.sh", "wb") as f:
                 f.write(gen_env_value)
@@ -536,6 +544,7 @@ If the Docker image "{docker_image}" requires root, eliminate the line starting 
         )
         print(BASHMESSAGE.format(
             name=name,
+            shelldir=shelldir,
             bash_command=bash_command
         ))
 

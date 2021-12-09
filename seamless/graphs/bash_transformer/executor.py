@@ -59,7 +59,7 @@ try:
             if isinstance(form, str):
                 vv = str(v)
                 if not vv.endswith("\n"): vv += "\n"
-                if len(vv) <= 1000:
+                if pin.find(".") == -1 and len(vv) <= 1000:
                     env[pin] = vv
             else:
                 vv = json.dumps(v)
