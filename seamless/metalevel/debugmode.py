@@ -166,6 +166,7 @@ class DebugMode:
         self._tf = weakref.ref(transformer)
         self._direct_print = None
         self._direct_print_file = None
+        self._logs_file = None
         self._mode = None
         self._mount = None
         self._attach = True
@@ -193,7 +194,7 @@ class DebugMode:
                 msg = "Attach-and-debug with breakpoints is not possible for language '{}'"
                 raise ValueError(msg.format(node["language"]))
 
-    def _get_direct_print_settings(self):
+    def _get_logs_settings(self):
         result = {}
         if self._direct_print in (True, False):
             result["direct_print"] = self._direct_print
@@ -201,13 +202,15 @@ class DebugMode:
             assert self._direct_print is None
             result["direct_print"] = self.enabled
         result["direct_print_file"] = self._direct_print_file
+        if self._logs_file is not None:
+            result["logs_file"] = self._logs_file
         return result
 
     def on_translate(self):
         if not self.enabled:
             tf = self._get_core_transformer(force=False)
             if tf is not None:
-                debug = self._get_direct_print_settings()
+                debug = self._get_logs_settings()
                 tf._debug = debug
 
     def enable(self, mode, sandbox_name=None):
@@ -314,6 +317,17 @@ If this value is None, the default stdout and stderr are used."""
             raise TypeError(type(value))
         self._direct_print_file = value
 
+    @property
+    def logs_file(self):
+        """File name to store Transformer.logs"""
+        return self._logs_file
+
+    @logs_file.setter
+    def logs_file(self, value):
+        if not isinstance(value, str) and value is not None:
+            raise TypeError(type(value))
+        self._logs_file = value
+
     def _to_lowlevel(self, *, silent=False):
         debug = {
             "python_attach": False,
@@ -321,7 +335,7 @@ If this value is None, the default stdout and stderr are used."""
             "generic_attach": False,
             "generic_attach_message": None,
         }
-        debug.update(self._get_direct_print_settings())
+        debug.update(self._get_logs_settings())
         mode = self._mode        
         if mode == "light":
             if not self._attach:

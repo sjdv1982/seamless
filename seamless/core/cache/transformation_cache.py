@@ -649,8 +649,19 @@ class TransformationCache:
                 exc = SeamlessTransformationError(exc_str)
             self.transformation_exceptions[tf_checksum] = exc
             self._set_exc(transformers, exc)
-            return
-        self.set_transformation_result(tf_checksum, result_checksum, False)
+        else:
+            self.set_transformation_result(tf_checksum, result_checksum, False)
+        for tf in transformers:
+            debug = tf._debug
+            if debug is None:
+                continue
+            logs_file = debug.get("logs_file")
+            if logs_file is not None:
+                try:
+                    with open(logs_file, "w") as lf:
+                        lf.write(tf.logs)
+                except Exception:
+                    pass
 
     def set_transformation_result(self, tf_checksum, result_checksum, prelim):
         from ..manager.tasks.transformer_update import (

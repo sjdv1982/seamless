@@ -158,7 +158,7 @@ def execute(name, code,
     ):
     if multiprocessing.current_process().name != "MainProcess":
         signal.signal(signal.SIGINT, signal.SIG_IGN)
-    direct_print = False    
+    direct_print = False
     if debug is None:
         debug = {}
     if debug.get("direct_print"):
@@ -166,6 +166,13 @@ def execute(name, code,
     else:
         direct_print = DIRECT_PRINT
     direct_print_file = debug.get("direct_print_file")
+    logs_file = debug.get("logs_file")
+    if logs_file is not None:
+        try:
+            with open(logs_file, "w"):
+                pass
+        except Exception:
+            pass
     if not debug.get("attach", False):
         debug = {}
     if debug != {}:

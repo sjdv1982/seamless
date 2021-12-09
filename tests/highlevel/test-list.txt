@@ -33,6 +33,7 @@ macro.py
 macro-elision.py
 reactor-edit-macro.py
 delay.py
+delay-logs-file.py
 module-simplified.py
 module.py
 multi-module.py: can also be run in non-interactive mode (mount /tmp/testmodule, perhaps enter light debug mode)
