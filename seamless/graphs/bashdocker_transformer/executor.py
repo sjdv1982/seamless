@@ -9,7 +9,7 @@ from silk import Silk
 from silk.mixed.get_form import get_form
 from requests.exceptions import ConnectionError
 from urllib3.exceptions import ProtocolError
-from seamless.core.transformation import SeamlessTransformationError
+from seamless.core.transformation import SeamlessStreamTransformationError
 
 resultfile = "RESULT"
 
@@ -139,26 +139,22 @@ Seamless user ID: {}\"\"\"; exit 126) && bash DOCKER-COMMAND'''""".format(os.get
                                     a1, a2 = exc3.args
                                     if a1 == 2 or a2 == "No such file or directory":
                                         msg = "Cannot connect to Docker; did you expose the Docker socket to Seamless?"
-            raise SeamlessTransformationError(msg) from None
+            raise SeamlessStreamTransformationError(msg) from None
         finally:
             _creating_container = False
         try:
             container.start()
+            logs = container.logs(stdout=True, stderr=True, stream=True)
+            for bufline in logs:
+                try:
+                    line = bufline.decode()
+                    print(line)
+                except UnicodeDecodeError:
+                    sys.stdout.buffer.write(bufline)                
             exit_status = container.wait()['StatusCode']
 
-            stdout = container.logs(stdout=True, stderr=False)
-            try:
-                stdout = stdout.decode()
-            except:
-                pass
-            stderr = container.logs(stdout=False, stderr=True)
-            try:
-                stderr = stderr.decode()
-            except:
-                pass
-
             if exit_status != 0:
-                raise SeamlessTransformationError("""
+                raise SeamlessStreamTransformationError("""
 Docker transformer exception
 ============================
 
@@ -169,15 +165,7 @@ Exit code: {}
 *************************************************
 {}
 *************************************************
-* Standard output
-*************************************************
-{}
-*************************************************
-* Standard error
-*************************************************
-{}
-*************************************************
-""".format(exit_status, docker_command, stdout, stderr)) from None
+""".format(exit_status, docker_command)) from None
         except ConnectionError as exc:
             msg = "Unknown connection error"
             if len(exc.args) == 1:
@@ -192,7 +180,7 @@ Exit code: {}
                                     a1, a2 = exc3.args
                                     if a1 == 2 or a2 == "No such file or directory":
                                         msg = "Cannot connect to Docker; did you expose the Docker socket to Seamless?"
-            raise SeamlessTransformationError(msg) from None
+            raise SeamlessStreamTransformationError(msg) from None
 
         if not os.path.exists(resultfile):
             msg = """
@@ -207,40 +195,7 @@ Error: Result file/folder RESULT does not exist
 {}
 *************************************************
 """.format(docker_command)
-            try:
-                stdout = container.logs(stdout=True, stderr=False)
-                try:
-                    stdout = stdout.decode()
-                except Exception:
-                    pass
-                if len(stdout):
-                    msg += """*************************************************
-* Standard output
-*************************************************
-{}
-*************************************************
-""".format(stdout)
-                stderr = container.logs(stdout=False, stderr=True)
-                try:
-                    stderr = stderr.decode()
-                except Exception:
-                    pass
-                if len(stderr):
-                    msg += """*************************************************
-* Standard error
-*************************************************
-{}
-*************************************************
-""".format(stderr)
-            except Exception:
-                pass
-
-            raise SeamlessTransformationError(msg)
-        else:
-            if len(stdout):
-                print(stdout)
-            if len(stderr):
-                print(stderr, file=sys.stderr)
+            raise SeamlessStreamTransformationError(msg)
     finally:
         if not _sys_exit:
             try:
