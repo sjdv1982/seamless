@@ -206,13 +206,27 @@ class Transformer(Worker):
 
     @property
     def logs(self):
+        from .transformation import RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError
         manager = self._get_manager()
         transformation_cache = manager.cachemanager.transformation_cache
         transformation = transformation_cache.transformer_to_transformations.get(self)
         if transformation is None:
             return None
         logs = transformation_cache.transformation_logs.get(transformation)
-        return logs
+        if logs is not None:
+            return logs
+
+        exc = transformation_cache.transformation_exceptions.get(transformation)
+        if exc is None:
+            return None
+        if isinstance(exc, (RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError)):
+            return exc.args[0]
+        s = traceback.format_exception(
+            value=exc,
+            etype=type(exc),
+            tb=exc.__traceback__
+        )
+        return "".join(s)
 
     @property
     def void(self):

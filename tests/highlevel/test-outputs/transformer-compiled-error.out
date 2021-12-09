@@ -7,13 +7,14 @@ g++ -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/sea
 
 
 *** executor ***
+Compiled transformer returned non-zero value: 1
+
 *************************************************
 * Standard output
 *************************************************
 transform 2 3
 
 *************************************************
-Compiled transformer returned non-zero value: 1
 *** /executor ***
 
 

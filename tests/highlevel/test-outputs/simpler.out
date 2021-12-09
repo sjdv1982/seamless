@@ -57,6 +57,13 @@ TRANSFORMER EXCEPTION Traceback (most recent call last):
     return 3 * a + b
 TypeError: unsupported operand type(s) for +: 'int' and 'str'
 
+*************************************************
+* Standard output
+*************************************************
+RUN!
+
+*************************************************
+
 START2
 RUN!
 <Silk: None >
@@ -72,6 +79,13 @@ TRANSFORMER EXCEPTION Traceback (most recent call last):
   File "Seamless transformer: .transform.tf", line 3, in triple_it_b
     return 3 * a + b
 TypeError: unsupported operand type(s) for +: 'int' and 'str'
+
+*************************************************
+* Standard output
+*************************************************
+RUN!
+
+*************************************************
 
 START3
 <Silk: 39 >

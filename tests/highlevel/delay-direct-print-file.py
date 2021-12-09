@@ -4,7 +4,8 @@ import asyncio
 ctx = Context()
 
 def func(a, delay):
-    print("FUNC", a, delay)
+    import sys
+    print("FUNC", a, delay, file=sys.stderr)
     import time
     for n in range(int(delay)):
         print("DELAY", n+1, delay)
