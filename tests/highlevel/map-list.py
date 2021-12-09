@@ -12,6 +12,8 @@ ctx.add.b = ctx.inp0.b
 ctx.add.c = ctx.uniform
 ctx.result = Cell("mixed")
 ctx.result = ctx.add
+ctx.subc = Context()
+ctx.subc.blah = 1000
 ctx.compute()
 
 mapped_ctx = ctx

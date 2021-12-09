@@ -7,11 +7,11 @@ Tutorial
 
 ## A1. How to use Seamless
 
-Seamless is meant to bring together proga
+Seamless is meant to bring together ...
 Intro:
 - Seamless CLI
-- new project
-- example (link to simple cells)
+- example (link to simple cells) + status
+- new project + status + web form (link to C5.)
 - Interactive programming, interactive workflows.
   Blurring between programmer and user. 
   More like Jupyter than like NextFlow (link)
@@ -21,14 +21,11 @@ In-depth (no pre-requisites):
 - Docker commands
 - link: files are bad, database, job manager
 
-## A2. Help system
+## A2. Getting help
 
 Intro:
-- Accessing the help system
 - Link to reference documentation.
-
-In-depth (pre-requisites: intro for B1,):
-- Managing help contexts, HTML
+- Accessing the help system
 
 # Part B. Seamless basics
 
@@ -125,9 +122,6 @@ Intro:
 Intermediate:
 - Mount as directory
 
-
-
-
 ## C3. HTTP sharing
 
 Intro:
@@ -171,11 +165,14 @@ Intro:
     - Filename in mount
     - Link to "why files are bad"
 
+## C7. Creating help for others
+- Managing help contexts, HTML
+
 # Part D. Software development with Seamless
 
 ## D1. Structured cells
 Intro:
-- Subcells
+- Subcells and path building
 - Silk (link to Silk::example, Silk::validation)
 - Limitations: mount, read-only share with mimetype
 
@@ -223,7 +220,7 @@ In-depth:
 ## D5. Debugging Seamless transformers
 Intro:
 - Link to "compiled and interpreted"
-- Debug mode (feature TODO)
+- Debug mode 
 
 ## D6. Polyglot and modules
 Intro:
