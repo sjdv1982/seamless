@@ -415,6 +415,8 @@ class TransformationCache:
         self.transformations.pop(tf_checksum)
         if not dummy:
             self.transformations_to_transformers.pop(tf_checksum)
+            self.transformation_logs.pop(tf_checksum, None)
+            # TODO: clear transformation_exceptions also at some moment??
         for pinname in transformation:
             if pinname in ("__output__", "__languages__", "__compilers__", "__as__", "__meta__"):
                 continue
@@ -607,7 +609,7 @@ class TransformationCache:
         if cancelled:
             return
 
-
+        logs = None
         if job._hard_cancelled:
             exc = HardCancelError()
             print_debug("Hard cancel:", job.codename)
@@ -618,6 +620,17 @@ class TransformationCache:
                 self.transformation_logs[tf_checksum] = logs
                 if result_checksum is None:
                     exc = SeamlessUndefinedError()
+            else:
+                if isinstance(exc, (RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError)):
+                    logs = exc.args[0]
+                else:
+                    s = traceback.format_exception(
+                        value=exc,
+                        etype=type(exc),
+                        tb=exc.__traceback__
+                    )
+                    logs = "".join(s)
+                self.transformation_logs[tf_checksum] = logs
 
         if exc is not None and job.remote:
             try:
@@ -651,17 +664,18 @@ class TransformationCache:
             self._set_exc(transformers, exc)
         else:
             self.set_transformation_result(tf_checksum, result_checksum, False)
-        for tf in transformers:
-            debug = tf._debug
-            if debug is None:
-                continue
-            logs_file = debug.get("logs_file")
-            if logs_file is not None:
-                try:
-                    with open(logs_file, "w") as lf:
-                        lf.write(tf.logs)
-                except Exception:
-                    pass
+        if logs is not None:
+            for tf in transformers:
+                debug = tf._debug
+                if debug is None:
+                    continue
+                logs_file = debug.get("logs_file")
+                if logs_file is not None:
+                    try:
+                        with open(logs_file, "w") as lf:
+                            lf.write(logs)
+                    except Exception:
+                        pass
 
     def set_transformation_result(self, tf_checksum, result_checksum, prelim):
         from ..manager.tasks.transformer_update import (
@@ -958,6 +972,9 @@ from ..protocol.conversion import convert
 from ..protocol.deserialize import deserialize
 from ..protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
 from .database_client import database_cache, database_sink
-from ..transformation import TransformationJob, SeamlessTransformationError
+from ..transformation import (
+    TransformationJob, SeamlessTransformationError, 
+    SeamlessStreamTransformationError, RemoteJobError
+)
 from ..status import SeamlessInvalidValueError, SeamlessUndefinedError, StatusReasonEnum
 from ..transformer import Transformer
