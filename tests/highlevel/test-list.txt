@@ -37,6 +37,7 @@ module-simplified.py
 module.py
 multi-module.py: can also be run in non-interactive mode (mount /tmp/testmodule, perhaps enter light debug mode)
 bash.py
+bash-debug.py
 docker_.py
 docker2.py
 docker_gpu.py: run only on a machine with nvidia-docker2 installed
