@@ -22,6 +22,7 @@ ctx.tf.testdata.celltype = "text"
 ctx.tf.lines = 3
 ctx.tf.code = ctx.code
 ctx.tf["pycode.py"] = ctx.pycode
+ctx.tf["pycode.py"].celltype = "text"
 ctx.tf.debug.direct_print = True
 ctx.compute()
 print(ctx.tf.logs)

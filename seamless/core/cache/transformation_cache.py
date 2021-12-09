@@ -54,6 +54,25 @@ def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
 
+OLD_LOG = """*************************************************
+Unknown
+*************************************************
+
+This transformer was executed previously, but its log was not kept.
+"""
+
+def _write_logs_file(tf, logs):
+    debug = tf._debug
+    if debug is None:
+        return
+    logs_file = debug.get("logs_file")
+    if logs_file is not None:
+        try:
+            with open(logs_file, "w") as lf:
+                lf.write(logs)
+        except Exception:
+            pass
+
 class RemoteTransformer:
     _debug = None
     _exception_to_clear = None
@@ -271,11 +290,13 @@ class TransformationCache:
             transformation_build_exception=transformation_build_exception
         )
         if result is not None:
-            tf_checksum, result_checksum, prelim = result
-            if result_checksum is None or prelim:
+            tf_checksum, tf_exc, result_checksum, prelim = result
+            if tf_exc is None and (result_checksum is None or prelim):
                 job = self.run_job(transformation, tf_checksum)
                 if job is not None:
                     await asyncio.shield(job.future)
+            elif tf_exc is not None:
+                self._set_exc([transformer], tf_checksum, tf_exc)
 
 
     async def remote_wait(self, tf_checksum, peer_id):
@@ -305,9 +326,8 @@ class TransformationCache:
         #print("INCREF", tf_checksum.hex(), transformer)
 
         if tf_checksum not in self.transformations:
-            tf = []
             buffer_cache.incref_buffer(tf_checksum, tf_buffer, False)
-            self.transformations_to_transformers[tf_checksum] = tf
+            self.transformations_to_transformers[tf_checksum] = []
             self.transformations[tf_checksum] = transformation
             if tf_checksum in self.transformation_results:
                 result_checksum, prelim = self.transformation_results[tf_checksum]
@@ -322,14 +342,24 @@ class TransformationCache:
                 else:
                     celltype, subcelltype, sem_checksum = transformation[pinname]
                 buffer_cache.incref(sem_checksum, (pinname == "__env__"))
-        else:
-            tf = self.transformations_to_transformers[tf_checksum]
 
-        if transformer._debug is not None:
+        tf = self.transformations_to_transformers[tf_checksum]
+        if transformer not in tf:
+            tf.append(transformer)
+        if tf_checksum in self.transformation_results:
+            if tf_checksum not in self.transformation_logs:
+                self.transformation_logs[tf_checksum] = OLD_LOG
+            for transf in tf:
+                _write_logs_file(transf, self.transformation_logs[tf_checksum])        
+
+        tf_exc = self.transformation_exceptions.get(tf_checksum)
+        if transformer._debug:
             self.clear_exception(transformer)
+            tf_exc = None
         if transformer._exception_to_clear:
             self.clear_exception(tf_checksum=tf_checksum)
             transformer._exception_to_clear = False
+            tf_exc = None
 
         if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
             old_tf_checksum = None
@@ -337,8 +367,7 @@ class TransformationCache:
             old_tf_checksum = self.transformer_to_transformations[transformer]
         if old_tf_checksum != tf_checksum:
             if isinstance(transformer, Transformer):
-                self.transformer_to_transformations[transformer] = tf_checksum
-            tf.append(transformer)
+                self.transformer_to_transformations[transformer] = tf_checksum            
             if old_tf_checksum is not None:
                 #print("INCREF WITH OLD",  tf_checksum.hex(), old_tf_checksum.hex())
                 old_transformation = self.transformations[old_tf_checksum]
@@ -347,7 +376,7 @@ class TransformationCache:
         if transformation_build_exception is not None:
             self.transformation_exceptions[tf_checksum] = transformation_build_exception
             transformers = self.transformations_to_transformers[tf_checksum]
-            self._set_exc(transformers, transformation_build_exception)
+            self._set_exc(transformers, tf_checksum, transformation_build_exception)
             return
             
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
@@ -367,7 +396,7 @@ class TransformationCache:
                         prelim=prelim
                     )
                     TransformerResultUpdateTask(manager, transformer).launch()
-        return tf_checksum, result_checksum, prelim
+        return tf_checksum, tf_exc, result_checksum, prelim
 
     def decref_transformation(self, transformation, transformer):
         ###import traceback; traceback.print_stack()
@@ -465,7 +494,7 @@ class TransformationCache:
         transformers = self.transformations_to_transformers[tf_checksum]
         if tf_checksum in self.transformation_exceptions:
             exc = self.transformation_exceptions[tf_checksum]
-            self._set_exc(transformers, exc)
+            self._set_exc(transformers, tf_checksum, exc)
             return
         for transformer in self.transformations_to_transformers[tf_checksum]:
             transformer._status_reason = StatusReasonEnum.EXECUTING
@@ -556,8 +585,19 @@ class TransformationCache:
                 fut.cancel()
         future.cancel()
 
-    def _set_exc(self, transformers, exc):
+    def _set_exc(self, transformers, tf_checksum, exc):
         # TODO: offload to provenance? unless hard-canceled
+        if tf_checksum not in self.transformation_logs:
+            if isinstance(exc, (RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError)):
+                logs = exc.args[0]
+            else:
+                s = traceback.format_exception(
+                    value=exc,
+                    etype=type(exc),
+                    tb=exc.__traceback__
+                )
+                logs = "".join(s)
+            self.transformation_logs[tf_checksum] = logs        
         for transformer in list(transformers):
             if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
                 continue
@@ -621,16 +661,7 @@ class TransformationCache:
                 if result_checksum is None:
                     exc = SeamlessUndefinedError()
             else:
-                if isinstance(exc, (RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError)):
-                    logs = exc.args[0]
-                else:
-                    s = traceback.format_exception(
-                        value=exc,
-                        etype=type(exc),
-                        tb=exc.__traceback__
-                    )
-                    logs = "".join(s)
-                self.transformation_logs[tf_checksum] = logs
+                self.transformation_logs.pop(tf_checksum, None)
 
         if exc is not None and job.remote:
             try:
@@ -661,21 +692,12 @@ class TransformationCache:
                         exc_str = exc_str[len(h)+1:].lstrip().rstrip("\n")
                 exc = SeamlessTransformationError(exc_str)
             self.transformation_exceptions[tf_checksum] = exc
-            self._set_exc(transformers, exc)
+            self._set_exc(transformers, tf_checksum, exc)
         else:
             self.set_transformation_result(tf_checksum, result_checksum, False)
         if logs is not None:
             for tf in transformers:
-                debug = tf._debug
-                if debug is None:
-                    continue
-                logs_file = debug.get("logs_file")
-                if logs_file is not None:
-                    try:
-                        with open(logs_file, "w") as lf:
-                            lf.write(logs)
-                    except Exception:
-                        pass
+                _write_logs_file(tf, logs)
 
     def set_transformation_result(self, tf_checksum, result_checksum, prelim):
         from ..manager.tasks.transformer_update import (
@@ -906,11 +928,14 @@ class TransformationCache:
                 transformation_build_exception=None 
             )
             if result is not None:
-                tf_checksum, result_checksum, prelim = result
-                if result_checksum is None or prelim:
+                tf_checksum, tf_exc, result_checksum, prelim = result
+                if tf_exc is None and (result_checksum is None or prelim):
                     job = self.run_job(transformation, tf_checksum)
                     if job is not None:
                         await asyncio.shield(job.future)
+                elif tf_exc is not None:                    
+                    self._set_exc([transformer], tf_checksum, tf_exc)
+
         coro = incref_and_run()
         fut = asyncio.ensure_future(coro)
         last_result_checksum = None

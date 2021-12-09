@@ -176,10 +176,11 @@ and potentially "checksum", "version" and "options".
 "options" corresponds to the parameters of the function
 client.containers.run of the Docker SDK for Python"""
         self._sync()
-        if docker is not None and not isinstance(docker, dict):
-            raise TypeError("Must be dict, not {}".format(type(docker)))
-        if "name" not in docker:
-            raise ValueError("Docker dict must contain at least \"name\"")        
+        if docker is not None:
+            if not isinstance(docker, dict):
+                raise TypeError("Must be dict, not {}".format(type(docker)))
+            if "name" not in docker:
+                raise ValueError("Docker dict must contain at least \"name\"")        
         self._docker = deepcopy(docker)
         self._update()
 

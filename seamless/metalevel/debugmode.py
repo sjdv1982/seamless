@@ -162,7 +162,6 @@ Cannot do source mapping between container and host!"""
 
 class DebugMode:
     def __init__(self, transformer):
-        self._enabled = False
         self._tf = weakref.ref(transformer)
         self._direct_print = None
         self._direct_print_file = None
@@ -201,7 +200,8 @@ class DebugMode:
         else:
             assert self._direct_print is None
             result["direct_print"] = self.enabled
-        result["direct_print_file"] = self._direct_print_file
+        if self._direct_print_file is not None:
+            result["direct_print_file"] = self._direct_print_file
         if self._logs_file is not None:
             result["logs_file"] = self._logs_file
         return result
@@ -211,10 +211,12 @@ class DebugMode:
             tf = self._get_core_transformer(force=False)
             if tf is not None:
                 debug = self._get_logs_settings()
+                if debug == {"direct_print": False}:
+                    debug = None
                 tf._debug = debug
 
     def enable(self, mode, sandbox_name=None):
-        if self._enabled:
+        if self._mode is not None:
             raise ValueError("Debug mode is already active.")
         tf = self._tf()
         node = tf._get_htf()
@@ -262,7 +264,6 @@ Only sandbox debug mode is possible."""
                 from ..core.manager.tasks.transformer_update import TransformerUpdateTask
                 manager = core_transformer._get_manager()
                 TransformerUpdateTask(manager, core_transformer).launch()                
-        self._enabled = True
 
     @property
     def attach(self):
@@ -275,7 +276,7 @@ If True, the transformer will wait for a debugger to attach"""
         if not isinstance(value, bool):
             raise TypeError(type(value))
         self._attach = value
-        if self._enabled:
+        if self.enabled:
             if value and self.mode == "sandbox":
                 if self._mount.special == "bash":
                     raise ValidationError("Attach-and-debug with breakpoints is not supported for bash/docker transformers.")
@@ -304,6 +305,7 @@ If this value is None, direct print is True if debugging is enabled."""
         if not isinstance(value, bool) and value is not None:
             raise TypeError(type(value))
         self._direct_print = value
+        self._tf()._parent()._translate()
 
     @property
     def direct_print_file(self):
@@ -316,6 +318,7 @@ If this value is None, the default stdout and stderr are used."""
         if not isinstance(value, str) and value is not None:
             raise TypeError(type(value))
         self._direct_print_file = value
+        self._tf()._parent()._translate()
 
     @property
     def logs_file(self):
@@ -327,6 +330,7 @@ If this value is None, the default stdout and stderr are used."""
         if not isinstance(value, str) and value is not None:
             raise TypeError(type(value))
         self._logs_file = value
+        self._tf()._parent()._translate()
 
     def _to_lowlevel(self, *, silent=False):
         debug = {
@@ -535,10 +539,10 @@ To create a directory where you can manually execute bash code, do Transformer.d
 
     @property
     def enabled(self):
-        return self._enabled
+        return self._mode is not None
 
     def pull(self):
-        if not self._enabled:
+        if not self.enabled:
             raise ValueError("Debug mode is not active.")
         if self._mode != "sandbox":
             raise ValueError("Debug mode must be 'sandbox'")
@@ -583,7 +587,7 @@ To create a directory where you can manually execute bash code, do Transformer.d
         )
 
     def shell(self):
-        if not self._enabled:
+        if not self.enabled:
             raise ValueError("Debug mode is not active.")
         if self._mode != "sandbox":
             raise ValueError("Debug mode must be 'sandbox'")
@@ -592,7 +596,7 @@ To create a directory where you can manually execute bash code, do Transformer.d
             asyncio.get_event_loop().run_until_complete(coro)
 
     def shells(self):
-        if not self._enabled:
+        if not self.enabled:
             raise ValueError("Debug mode is not active.")
         if self._mode != "sandbox":
             raise ValueError("Debug mode must be 'sandbox'")
@@ -601,7 +605,7 @@ To create a directory where you can manually execute bash code, do Transformer.d
         return shellserver.list_shells(self._shellname)
 
     def disable(self):
-        if not self._enabled:
+        if not self.enabled:
             raise ValueError("Debug mode is not active.")
         tf = self._tf()
         if tf is None:
@@ -620,7 +624,7 @@ To create a directory where you can manually execute bash code, do Transformer.d
         if self._shellname is not None:
             shellserver.destroy_shellhub(self._shellname)
             self._shellname = None
-        self._enabled = False
+        self._mode = None
 
 from .debugmount import debugmountmanager, module_tag
 from .shellserver import shellserver
