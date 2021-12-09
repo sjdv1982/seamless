@@ -19,7 +19,7 @@ with open("COMMAND", "w") as f:
 
 try:
     docker_client = docker_module.from_env()
-    docker_image = "jupyter/scipy-notebook"
+    docker_image = "continuumio/anaconda3"
     options = {}
     if "volumes" not in options:
         options["volumes"] = {}

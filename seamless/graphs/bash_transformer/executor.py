@@ -6,7 +6,7 @@ import json
 import sys
 from io import BytesIO
 from silk import Silk
-from seamless.core.transformation import SeamlessTransformationError
+from seamless.core.transformation import SeamlessStreamTransformationError
 from silk.mixed.get_form import get_form
 from seamless import subprocess
 from subprocess import PIPE
@@ -59,7 +59,7 @@ try:
             if isinstance(form, str):
                 vv = str(v)
                 if not vv.endswith("\n"): vv += "\n"
-                if len(vv) <= 1000:
+                if pin.find(".") == -1 and len(vv) <= 1000:
                     env[pin] = vv
             else:
                 vv = json.dumps(v)
@@ -76,49 +76,38 @@ try:
             else:
                 with open(pin, "bw") as pinf:
                     np.save(pinf,v,allow_pickle=False)
-    try:
-        bash_header = """set -u -e
+    bash_header = """set -u -e
 trap 'jobs -p | xargs -r kill' EXIT
 """
-        bashcode2 = bash_header + bashcode
-        process = subprocess.run(
-            bashcode2, capture_output=True, shell=True, check=True,
-            executable='/bin/bash',
-            env=env
-        )
-    except subprocess.CalledProcessError as exc:
-        stdout = exc.stdout
+    bashcode2 = bash_header + bashcode
+    process = subprocess.Popen(            
+        bashcode2, shell=True, 
+        stdout = subprocess.PIPE,
+        stderr = subprocess.STDOUT,
+        executable='/bin/bash',
+        env=env
+    )
+    for line in process.stdout:
         try:
-            stdout = stdout.decode()
-        except:
+            line = line.decode()
+        except UnicodeDecodeError:
             pass
-        stderr = exc.stderr
-        try:
-            stderr = stderr.decode()
-        except:
-            pass
-        raise SeamlessTransformationError("""
+        print(line,end="")
+    process.wait()
+
+    if process.returncode:
+        raise SeamlessStreamTransformationError("""
 Bash transformer exception
 ==========================
+
+Error: Return code {}
 
 *************************************************
 * Command
 *************************************************
 {}
 *************************************************
-
-*************************************************
-* Standard output
-*************************************************
-{}
-*************************************************
-
-*************************************************
-* Standard error
-*************************************************
-{}
-*************************************************
-""".format(bashcode, stdout, stderr)) from None
+""".format(process.returncode, bashcode)) from None
     if not os.path.exists(resultfile):
         msg = """
 Bash transformer exception
@@ -132,44 +121,7 @@ Error: Result file/folder RESULT does not exist
 {}
 *************************************************
 """.format(bashcode)
-        try:
-            stdout = process.stdout.decode()
-            if len(stdout):
-                msg += """*************************************************
-* Standard output
-*************************************************
-{}
-*************************************************
-""".format(stdout)
-            stderr = process.stderr.decode()
-            if len(stderr):
-                msg += """*************************************************
-* Standard error
-*************************************************
-{}
-*************************************************
-""".format(stderr)
-
-        except:
-            pass
-
-        raise SeamlessTransformationError(msg)
-    else:
-        stdout = process.stdout
-        try:
-            stdout = stdout.decode()
-        except:
-            pass
-        if len(stdout):
-            print(stdout)
-
-        stderr = process.stderr
-        try:
-            stderr = stderr.decode()
-        except:
-            pass
-        if len(stderr):
-            print(stderr, file=sys.stderr)
+        raise SeamlessStreamTransformationError(msg)
 
     if os.path.isdir(resultfile):
         result0 = {}

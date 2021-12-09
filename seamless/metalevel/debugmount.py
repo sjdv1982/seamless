@@ -517,10 +517,13 @@ class DebugMountManager:
         outputpin = mount.result_pinname, result_cell.celltype, result_cell._subcelltype
         manager = transformer._get_manager()
         transformation_cache = manager.cachemanager.transformation_cache
-        await transformation_cache.update_transformer(
-            transformer, celltypes, input_pins, outputpin
-        )
-    
+        try:
+            await transformation_cache.update_transformer(
+                transformer, celltypes, input_pins, outputpin
+            )
+        except Exception:
+            pass
+            
     def destroy(self):
         for tf in list(self._mounts.keys()):
             self.remove_mount(self._mounts[tf])

@@ -195,14 +195,7 @@ class Transformer(Worker):
         exc = transformation_cache.transformation_exceptions.get(transformation)
         if exc is None:
             return None
-        if isinstance(exc, (RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError)):
-            return exc.args[0]
-        s = traceback.format_exception(
-            value=exc,
-            etype=type(exc),
-            tb=exc.__traceback__
-        )
-        return "".join(s)
+        return self.logs
 
     @property
     def logs(self):
@@ -212,7 +205,8 @@ class Transformer(Worker):
         if transformation is None:
             return None
         logs = transformation_cache.transformation_logs.get(transformation)
-        return logs
+        if logs is not None:
+            return logs
 
     @property
     def void(self):

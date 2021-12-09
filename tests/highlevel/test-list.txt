@@ -2,6 +2,7 @@
 #   python3 -u TEST.py > test-outputs/TEST.out 2>&1
 #   Best also to test using "ipython3 TEST.py", since re-translation may work differently
 #   Before each release, the test set must be run under seamless-devel AND under the Conda environment!
+#   Docker tests require continuumio/anaconda3 to be pulled
 bytes-conversion.py
 mime.py
 test-html.py
@@ -33,13 +34,16 @@ macro.py
 macro-elision.py
 reactor-edit-macro.py
 delay.py
+delay-logs-file.py
 module-simplified.py
 module.py
 multi-module.py: can also be run in non-interactive mode (mount /tmp/testmodule, perhaps enter light debug mode)
 bash.py
+bash-debug.py
 docker_.py
 docker2.py
 docker_gpu.py: run only on a machine with nvidia-docker2 installed
+docker-debug.py
 expression-exceptions.py
 highlink-schema.py
 highlink-schema-tf.py
@@ -171,6 +175,7 @@ r.py
   edit plot.R
   The PNG should update, the SVG should not
 compute-ctrl-c.py: open with ipython, type "ctx.compute()" and press ctrl+c
+delay-direct-print-file: open with ipython, monitor /tmp/direct-print.out, change ctx.tf1.a and ctx.tf1.delay
 debugmode-py-light.py
   To debug a simple Python transformer in VSCode. Follow the instructions.
 debugmode-compiled-light.py

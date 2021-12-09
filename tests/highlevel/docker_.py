@@ -24,7 +24,7 @@ mkdir RESULT
 mv test.npy RESULT
 mv test.txt RESULT
 """
-ctx.tf.docker_image = "rpbs/seamless"
+ctx.tf.docker_image = "continuumio/anaconda3"
 del ctx.result.mount
 ctx.result.celltype = "structured"
 ctx.result_npy = ctx.result["test.npy"]

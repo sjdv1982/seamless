@@ -111,14 +111,29 @@ or
                         exc = traceback.format_exc()
                         return (1, exc)
 
+class FakeStdStreamBuf:
+    def __init__(self, parent):
+        self._parent = parent
+    def write(self, v):
+        if not isinstance(v, bytes):
+            raise TypeError(type(v))
+        parent = self._parent
+        parent._buf += v
+        if parent._direct_print:
+            parent._real.buffer.write(v)
+
 class FakeStdStream:
-    def __init__(self, real):
-        self._buf = ""
+    def __init__(self, real, direct_print):
+        self._buf = b""
         self._real = real
+        self._direct_print = direct_print
+        self.buffer = FakeStdStreamBuf(self)
     def isatty(self):
         return False
-    def write(self, v):
-        self._buf += str(v)
+    def write(self, v):        
+        self._buf += str(v).encode()
+        if self._direct_print:
+            self._real.write(v)
     def writelines(self, sequence):
         for s in sequence:
             self.write(s)
@@ -127,7 +142,10 @@ class FakeStdStream:
     def flush(self):
         pass
     def read(self):
-        return self._buf
+        try:
+            return self._buf.decode()
+        except UnicodeDecodeError:
+            return self._buf
     def readable(self):
         return True
 
@@ -140,13 +158,21 @@ def execute(name, code,
     ):
     if multiprocessing.current_process().name != "MainProcess":
         signal.signal(signal.SIGINT, signal.SIG_IGN)
-    direct_print = False    
+    direct_print = False
     if debug is None:
         debug = {}
     if debug.get("direct_print"):
         direct_print = True
     else:
         direct_print = DIRECT_PRINT
+    direct_print_file = debug.get("direct_print_file")
+    logs_file = debug.get("logs_file")
+    if logs_file is not None:
+        try:
+            with open(logs_file, "w"):
+                pass
+        except Exception:
+            pass
     if not debug.get("attach", False):
         debug = {}
     if debug != {}:
@@ -161,8 +187,6 @@ def execute(name, code,
         old_stdio = sys.stdout, sys.stderr
 
         ok = False        
-
-        sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
         if debug.get("python_attach"):
             port = int(debug["python_attach_port"])  # MUST be set right before forking
@@ -195,7 +219,8 @@ def execute(name, code,
             except DebuggerAttached:
                 pass
 
-        if direct_print:
+                sys.stdout = direct_print_filehandle
+                sys.stderr = direct_print_filehandle
             result = _execute(name, code,
                 with_ipython_kernel,
                 injector, module_workspace,
@@ -203,58 +228,60 @@ def execute(name, code,
                 inputs, output_name, celltype, result_queue
             )
         else:
-            stdout, stderr = FakeStdStream(sys.stdout), FakeStdStream(sys.stderr)
+            direct_print_filehandle = None
+            if direct_print:
+                if direct_print_file is not None:
+                    direct_print_filehandle = open(direct_print_file, "w", buffering=1)
+            if direct_print_filehandle is not None:
+                stdout = FakeStdStream(direct_print_filehandle, direct_print)
+                stderr = FakeStdStream(direct_print_filehandle, direct_print)
+            else:
+                stdout = FakeStdStream(sys.stdout, direct_print)
+                stderr = FakeStdStream(sys.stderr, direct_print)
             sys.stdout, sys.stderr = stdout, stderr
-            with wurlitzer.pipes() as (stdout2, stderr2):
-                result = _execute(name, code,
-                    with_ipython_kernel,
-                    injector, module_workspace,
-                    identifier, namespace,
-                    inputs, output_name, celltype, result_queue
-                )
+            result = _execute(name, code,
+                with_ipython_kernel,
+                injector, module_workspace,
+                identifier, namespace,
+                inputs, output_name, celltype, result_queue
+            )
 
         msg_code, msg = result
         if msg_code == 2: # SeamlessTransformationError, propagate
             result_queue.put((1, msg))
         elif msg_code in (1, 10):
             std = ""
-            if not direct_print:
-                sout = stdout.read() + stdout2.read()
-                sys.stdout, sys.stderr = old_stdio
-                if len(sout):
-                    if not len(std):
-                        std = "\n"
-                    std += """*************************************************
+            sout = stdout.read()
+            sys.stdout, sys.stderr = old_stdio
+            if len(sout):
+                if not len(std):
+                    std = "\n"
+                std += """*************************************************
 * Standard output
 *************************************************
 {}
 *************************************************
 """.format(sout)
-                serr = stderr.read() + stderr2.read()
-                if len(serr):
-                    if not len(std):
-                        std += "\n"
-                    std +="""*************************************************
+            serr = stderr.read()
+            if len(serr):
+                if not len(std):
+                    std += "\n"
+                std +="""*************************************************
 * Standard error
 *************************************************
 {}
 *************************************************
 """.format(serr)
             if len(std):
-                msg = std + msg
+                msg = msg + std
             result_queue.put((1, msg))
         else:
-            if not direct_print:
-                """ # does not normally work...
-                sys.stdout.write(stdout.read() + stdout2.read())
-                sys.stderr.write(stderr.read() + stderr2.read())
-                """
-                content = stdout.read() + stdout2.read()
-                if len(content):
-                    result_queue.put((4, (0, content)))
-                content = stderr.read() + stderr2.read()
-                if len(content):
-                    result_queue.put((4, (1, content)))
+            content = stdout.read()
+            if len(content):
+                result_queue.put((4, (0, content)))
+            content = stderr.read()
+            if len(content):
+                result_queue.put((4, (1, content)))
             result_queue.put(result)
         ok = True
     except SystemExit:
@@ -266,6 +293,8 @@ def execute(name, code,
         traceback.print_exc()
     finally:
         sys.stdout, sys.stderr = old_stdio
+        if direct_print_filehandle is not None:
+            direct_print_filehandle.close()
         if debug:
             try:
                 debug_post_hook(debug)

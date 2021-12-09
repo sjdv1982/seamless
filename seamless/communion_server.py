@@ -349,7 +349,9 @@ class CommunionServer:
                 transformation_build_exception=None
             )
             if result is not None:
-                tf_checksum, result_checksum, prelim = result
+                tf_checksum, tf_exc, result_checksum, prelim = result
+                if tf_exc is not None:
+                    raise tf_exc
                 if result_checksum is None or prelim:
                     job = tcache.run_job(transformation, tf_checksum)
                     if job is not None:

@@ -291,6 +291,9 @@ You can set this dictionary directly, or you may assign .meta to a cell
 
     @docker_image.setter
     def docker_image(self, docker):
+        if docker is None:
+            self.environment.set_docker(None)
+            return
         im = self.environment.get_docker()
         if im is None:
             im = {}
@@ -941,7 +944,10 @@ You can set this dictionary directly, or you may assign .meta to a cell
             if self.debug.enabled and self.debug.mode == "sandbox":
                 mount = self._get_debugmount()
                 mount_ctx = mount.mount_ctx
-                return getattr(mount_ctx, "code").value
+                attr = "code"
+                if self.self.language == "bash":
+                    attr = "bashcode"
+                return getattr(mount_ctx, attr).value
             tf = self._get_tf(force=True)
             return tf.code.value
         elif attr == "mount":
