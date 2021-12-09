@@ -61,7 +61,7 @@ Unknown
 This transformer was executed previously, but its log was not kept.
 """
 
-def _write_logs_file(tf, logs):
+def _write_logs_file(tf, logs, *, clear_direct_print_file=False):
     debug = tf._debug
     if debug is None:
         return
@@ -72,6 +72,15 @@ def _write_logs_file(tf, logs):
                 lf.write(logs)
         except Exception:
             pass
+    if clear_direct_print_file:
+        direct_print_file = debug.get("direct_print_file")
+        if direct_print_file is not None:
+            try:
+                with open(direct_print_file, "w") as lf:
+                    lf.write("< Result was retrieved from cache >\n")
+            except Exception:
+                pass
+
 
 class RemoteTransformer:
     _debug = None
@@ -350,7 +359,10 @@ class TransformationCache:
             if tf_checksum not in self.transformation_logs:
                 self.transformation_logs[tf_checksum] = OLD_LOG
             for transf in tf:
-                _write_logs_file(transf, self.transformation_logs[tf_checksum])        
+                _write_logs_file(
+                    transf, self.transformation_logs[tf_checksum],
+                    clear_direct_print_file=True
+                )        
 
         tf_exc = self.transformation_exceptions.get(tf_checksum)
         if transformer._debug:
@@ -598,6 +610,9 @@ class TransformationCache:
                 )
                 logs = "".join(s)
             self.transformation_logs[tf_checksum] = logs        
+        else:
+            logs = self.transformation_logs[tf_checksum]
+
         for transformer in list(transformers):
             if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
                 continue
@@ -615,6 +630,7 @@ class TransformationCache:
                 void=True,
                 reason=status_reason
             )
+            _write_logs_file(transformer, logs)
 
     def job_done(self, job, _):
         if self._destroyed:
@@ -649,7 +665,6 @@ class TransformationCache:
         if cancelled:
             return
 
-        logs = None
         if job._hard_cancelled:
             exc = HardCancelError()
             print_debug("Hard cancel:", job.codename)
@@ -695,9 +710,10 @@ class TransformationCache:
             self._set_exc(transformers, tf_checksum, exc)
         else:
             self.set_transformation_result(tf_checksum, result_checksum, False)
-        if logs is not None:
-            for tf in transformers:
-                _write_logs_file(tf, logs)
+            logs = self.transformation_logs.get(tf_checksum)
+            if logs is not None:
+                for tf in transformers:
+                    _write_logs_file(tf, logs)
 
     def set_transformation_result(self, tf_checksum, result_checksum, prelim):
         from ..manager.tasks.transformer_update import (
