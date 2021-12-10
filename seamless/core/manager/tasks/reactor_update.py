@@ -164,7 +164,11 @@ class ReactorUpdateTask(Task):
         rtreactor.module_workspace.update(module_workspace)
         rtreactor.values.update(values)
         rtreactor.updated = updated
-        rtreactor.execute()
+        for pinname in ("code_start", "code_update", "code_stop"):
+            if pinname not in rtreactor.values:
+                break
+        else:
+            rtreactor.execute()
 
 
 class ReactorResultTask(Task):
