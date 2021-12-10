@@ -39,7 +39,9 @@ def _get_subpath(value, path):
         return value
     head = path[0]
     if isinstance(value, _array_types):
-        if head >= len(value):
+        if not isinstance(head, int):
+            sub_curr_value = None
+        elif head >= len(value):
             sub_curr_value = None
         else:
             sub_curr_value = value[head]
