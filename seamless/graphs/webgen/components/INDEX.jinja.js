@@ -79,6 +79,17 @@ function seamless_update(cell, value, encoding) {
   else if (encoding == "text") {
     ctx[cell].set(value)
   }
+  else if (encoding == "pybool") {
+    if (value == 'True\n') {
+      ctx[cell].set(1)  
+    }
+    else if (value == 'False\n') {
+      ctx[cell].set(0)  
+    }
+    else {
+      console.log(`Cannot parse server value of cell '${cell}' as Python bool`)
+    }
+  }
 }
 
 
@@ -114,3 +125,4 @@ const app = new Vue({
 })
 
 vm = app.$mount('#app')
+

@@ -34,7 +34,7 @@ def ident():
             idents.add(result)
             return result
 
-encodings = ["text", "json"]
+encodings = ["text", "json", "pybool"]
 defaults = {
     "int": 0,
     "float": 0.0,

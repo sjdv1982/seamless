@@ -101,6 +101,16 @@ for node in graph["nodes"]:
             cell["component"] = "fileupload"
             share["write"] = True
         share["encoding"] = "text"
+    elif celltype == "bool":
+        share["read"] = True
+        params["title"] = "Cell " + cellname.capitalize()
+        cell["component"] = "checkbox"
+        if node["share"].get("readonly", True):
+            params["editable"] = False
+        else:
+            share["write"] = True
+            params["editable"] = True
+        share["encoding"] = "pybool"
     else:
         raise NotImplementedError(celltype)
     cell.update({

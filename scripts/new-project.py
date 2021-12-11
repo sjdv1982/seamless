@@ -176,7 +176,7 @@ async def load():
             return filename
 
         ctx.save_graph(backup("graph/" + PROJNAME + ".seamless"))
-        webctx.save_graph(backup("graph/" + PROJNAME + "-monitoring.seamless"))
+        webctx.save_graph(backup("graph/" + PROJNAME + "-webctx.seamless"))
         ctx.save_vault("vault")
         webctx.save_vault("vault")
 
