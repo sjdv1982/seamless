@@ -26,10 +26,10 @@ PROGRESS 1
 Waiting for: Seamless transformer: .tf.tf
 PROGRESS 2
 
-Bash transformer exception
-==========================
+Docker transformer exception
+============================
 
-Error: Return code 1
+Exit code: 1
 
 *************************************************
 * Command

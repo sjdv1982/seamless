@@ -1,9 +1,9 @@
 import asyncio
 from copy import deepcopy
 import json
-from ast import literal_eval
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from silk.mixed.io import deserialize as mixed_deserialize
+import builtins
 
 from .calculate_checksum import lrucache2
 
@@ -45,39 +45,14 @@ def _deserialize(buffer, checksum, celltype):
         value, _ = mixed_deserialize(buffer)
     elif celltype == "bytes":
         value = buffer
-    elif celltype == "str":
+    elif celltype in ("str", "int", "float", "bool"):
         s = buffer.decode()
         assert s.endswith("\n")
         try:
             value = json.loads(s)
         except json.JSONDecodeError:
             raise ValueError(s) from None
-        if not isinstance(value, str):
-            raise ValueError(value)
-    elif celltype == "int":
-        s = buffer.decode()
-        assert s.endswith("\n")
-        value = literal_eval(s)
-        if isinstance(value, (float, bool)):
-            value = int(value)
-        if not isinstance(value, int):
-            raise ValueError(value)
-    elif celltype == "float":
-        s = buffer.decode()
-        assert s.endswith("\n")
-        value = literal_eval(s)
-        if isinstance(value, (int, bool)):
-            value = float(value)
-        if not isinstance(value, float):
-            raise ValueError(value)
-    elif celltype == "bool":
-        s = buffer.decode()
-        assert s.endswith("\n")
-        try:
-            value = literal_eval(s.replace("true", "True").replace("false", "False"))
-        except ValueError:
-            raise ValueError(s) from None
-        if not isinstance(value, bool):
+        if not isinstance(value, getattr(builtins, celltype)):
             raise ValueError(value)
     elif celltype == "checksum":
         value, storage = mixed_deserialize(buffer)

@@ -1,13 +1,6 @@
 Status: {
   "tf": "error"
 }
-
-*************************************************
-* Standard output
-*************************************************
-TEST
-
-*************************************************
 Traceback (most recent call last):
   File "/seamless/seamless/core/execute.py", line 67, in _execute
     exec_code(
@@ -16,6 +9,13 @@ Traceback (most recent call last):
   File "Seamless transformer: .tf", line 1, in <module>
     print('TEST'); raise Exception(a)
 Exception: 1
+
+*************************************************
+* Standard output
+*************************************************
+TEST
+
+*************************************************
 
 Status: OK
 None

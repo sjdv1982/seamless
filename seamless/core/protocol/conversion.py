@@ -29,6 +29,7 @@ conversion_trivial = set([ # conversions that do not change checksum and are gua
     ("str", "plain"),
     ("str", "mixed"),
     ("binary", "mixed"),
+    ("int", "plain"), ("float", "plain"), ("bool", "plain"),
 ])
 
 # buffer-to-nothing
@@ -39,11 +40,10 @@ conversion_reinterpret = set([ # conversions that do not change checksum, but ar
     ("text", "cson"),
     ("text", "yaml"),
     ("text", "int"), ("text", "float"), ("text", "bool"),
-    ("plain", "str"), ("plain", "int"), ("plain", "float"), ("plain", "bool"),
+    ("plain", "str"), 
     ("mixed", "plain"), ("mixed", "binary"),
-    ("mixed", "str"), ("mixed", "int"), ("mixed", "float"), ("mixed", "bool"),
-    ("int", "text"), ("float", "text"), ("bool", "text"),
-    ("int", "plain"), ("float", "plain"), ("bool", "plain"),
+    ("mixed", "str"), 
+    ("int", "text"), ("float", "text"), ("bool", "text"),    
 ])
 
 # buffer-to-buffer
@@ -80,6 +80,8 @@ conversion_possible = set([ # conversions that (may) change checksum and are not
                                             # np.dtype(S..) is a special case:
                                             #   it dumps a pure buffer, not numpy format
     ("bytes", "binary"),  ("bytes", "mixed"),  # inverse of the above
+    ("plain", "int"), ("plain", "float"), ("plain", "bool"), 
+    ("mixed", "int"), ("mixed", "float"), ("mixed", "bool"),
 ])
 
 ###
@@ -190,12 +192,7 @@ def check_conversions():
                 done.append(conv)
 
 async def reinterpret(checksum, buffer, celltype, target_celltype):
-
     try:
-        if len(buffer) > 1000 and celltype in ("plain", "mixed") \
-            and target_celltype in ("int", "float", "bool"):
-                raise SeamlessConversionError
-
         # Special cases
         key = (celltype, target_celltype)
         if key == ("mixed", "plain"):
@@ -256,6 +253,9 @@ async def reformat(checksum, buffer, celltype, target_celltype, fingertip_mode=F
     return result
 
 async def convert(checksum, buffer, celltype, target_celltype, fingertip_mode=False):
+    if len(buffer) > 1000 and celltype in ("plain", "mixed") \
+        and target_celltype in ("int", "float", "bool"):
+            raise SeamlessConversionError
     key = (celltype, target_celltype)
     try:
         if key == ("cson", "plain"):

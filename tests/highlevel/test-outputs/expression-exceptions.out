@@ -24,7 +24,8 @@ Original exception:
 invalid literal for int() with base 10: 'test2'
 b None
 ********************************************************************************
-c ValueError: blah
+c ValueError: 'blah'
+
 None
 
 ********************************************************************************
@@ -37,7 +38,7 @@ None
 
 *** input pins ***
   +++ x +++
-c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783 cannot be re-interpreted from mixed to int
+c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783 cannot be converted from mixed to int
 
 Original exception:
 
