@@ -110,7 +110,7 @@ for node in graph["nodes"]:
         else:
             share["write"] = True
             params["editable"] = True
-        share["encoding"] = "pybool"
+        share["encoding"] = "json"
     else:
         raise NotImplementedError(celltype)
     cell.update({
