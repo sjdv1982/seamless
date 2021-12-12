@@ -317,6 +317,13 @@ class Cell(SeamlessBase):
         manager.connect(self, None, target, target_subpath)
         return self
 
+    def connect_from(self, source):
+        """connects the cell from a source
+
+        Target can be a cell, pin, outchannel or unilink"""
+        source.connect(self)
+        return self
+
     def bilink(self, target):
         """Create a bidirectional unilink between two cells"""
         from .unilink import UniLink
