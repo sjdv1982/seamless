@@ -18,6 +18,7 @@ filesystemlike.py
 context.py
 context2.py
 scratch.py
+conversion-transformer.py
 transformer-bracket.py
 simpler-tf-print.py
 function_like_error.py
