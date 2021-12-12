@@ -60,7 +60,7 @@ try:
                 vv = str(v)
                 if not vv.endswith("\n"): vv += "\n"
                 if pin.find(".") == -1 and len(vv) <= 1000:
-                    env[pin] = vv
+                    env[pin] = vv.rstrip("\n")
             else:
                 vv = json.dumps(v)
             with open(pin, "w") as pinf:
