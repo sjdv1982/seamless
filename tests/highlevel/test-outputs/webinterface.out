@@ -15,7 +15,7 @@ or:
 
 Opened the seamless share update server at port 5138
 Opened the seamless REST server at port 5813
-[22;0t]0;IPython: highlevel/webinterface-filesWarning: File path 'web/components' has a different value, overwriting cell
+[22;0t]0;IPython: cwd/webinterface-filesWarning: File path 'web/components' has a different value, overwriting cell
 Opened the seamless share update server at port 5138
 Opened the seamless REST server at port 5813
 *** define_graph() function is empty. Loading 'graph/testproject.seamless' ***
@@ -33,12 +33,6 @@ Project loaded.
 
     Run save() to save the project
     
-WARNING: reactor Seamless reactor: .merge_index_js.ctx.m.macro.ctx.merge is void, shouldn't happen during reactor update
-WARNING: reactor Seamless reactor: .merge_index_js.ctx.m.macro.ctx.merge is void, shouldn't happen during reactor update
-WARNING: reactor Seamless reactor: .merge_index_html.ctx.m.macro.ctx.merge is void, shouldn't happen during reactor update
-WARNING: reactor Seamless reactor: .merge_index_html.ctx.m.macro.ctx.merge is void, shouldn't happen during reactor update
-WARNING: reactor Seamless reactor: .merge_index_html.ctx.m.macro.ctx.merge is void, shouldn't happen during reactor update
-WARNING: reactor Seamless reactor: .merge_index_html.ctx.m.macro.ctx.merge is void, shouldn't happen during reactor update
 
 
 

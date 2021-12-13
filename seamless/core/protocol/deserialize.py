@@ -53,7 +53,7 @@ def _deserialize(buffer, checksum, celltype):
         except json.JSONDecodeError:
             raise ValueError(s) from None
         if not isinstance(value, getattr(builtins, celltype)):
-            raise ValueError(value)
+            value = getattr(builtins, celltype)(value)
     elif celltype == "checksum":
         value, storage = mixed_deserialize(buffer)
         if storage != "pure-plain":

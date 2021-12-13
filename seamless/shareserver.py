@@ -203,6 +203,15 @@ class Share:
         await task
 
         checksum = task.result()
+        value = await deserialize(buffer, checksum, self.celltype, False)
+        new_buffer = await serialize(value, self.celltype)
+
+        task = self._calc_checksum(new_buffer)
+        task = asyncio.ensure_future(task)
+        self._calc_checksum_task = task
+        await task
+
+        checksum = task.result()
         buffer_cache.cache_buffer(checksum, buffer)
         return self.set_checksum(checksum, marker)
 
@@ -954,6 +963,8 @@ shareserver = ShareServer()
 
 from .core.cache.buffer_cache import buffer_cache
 from .core.protocol.calculate_checksum import calculate_checksum
+from .core.protocol.deserialize import deserialize
+from .core.protocol.serialize import serialize
 from .core.protocol.get_buffer import get_buffer, CacheMissError
 from .communion_server import CommunionError
 from .mime import get_mime
