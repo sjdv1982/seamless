@@ -1,0 +1,6 @@
+Field to display a HTML cell using an iframe
+
+Parameters:
+- title (string).
+- height (CSS unit string)
+

@@ -1,0 +1,44 @@
+def constructor(
+    ctx, libctx,
+    fallback_mode,
+    upstream,
+    modified, conflict,
+    merged, state, base
+):
+    assert fallback_mode in ("upstream", "modified", "no"), fallback_mode
+    m = ctx.m = Macro()
+    m.code = libctx.macro_code.value
+    m.fallback_mode = fallback_mode
+    m.code_start = libctx.code_start.value
+    m.code_update = libctx.code_update.value
+
+    ctx.upstream = Cell("text")
+    upstream.connect(ctx.upstream)
+    m.pins.upstream = {"io": "input", "celltype": "text"}
+    m.upstream = ctx.upstream
+
+    ctx.modified = Cell("text")
+    modified.link(ctx.modified)
+    m.pins.modified = {"io": "edit", "celltype": "text"}
+    m.modified = ctx.modified
+
+    if base is not None:
+        ctx.base = Cell("text")
+        base.link(ctx.base)
+        m.pins.base = {"io": "edit", "celltype": "text"}
+        m.base = ctx.base
+
+    ctx.conflict = Cell("text")
+    conflict.link(ctx.conflict)
+    m.pins.conflict = {"io": "edit", "celltype": "text"}
+    m.conflict = ctx.conflict
+
+    ctx.merged = Cell("text")
+    merged.connect_from(ctx.merged)
+    m.pins.merged = {"io": "output", "celltype": "text"}
+    ctx.merged = m.merged
+
+    ctx.state = Cell("text")
+    state.connect_from(ctx.state)
+    m.pins.state = {"io": "output", "celltype": "text"}
+    ctx.state = m.state

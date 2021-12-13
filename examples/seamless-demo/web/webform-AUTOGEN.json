@@ -1,0 +1,118 @@
+{
+  "cells": {
+    "limit": {
+      "celltype": "float",
+      "component": "slider",
+      "params": {
+        "auto_read": true,
+        "max": 100,
+        "min": 0,
+        "title": "Cell Limit"
+      },
+      "share": {
+        "encoding": "json",
+        "read": true,
+        "write": true
+      }
+    },
+    "markerline": {
+      "celltype": "str",
+      "component": "input",
+      "params": {
+        "auto_read": true,
+        "editable": true,
+        "title": "Cell Markerline"
+      },
+      "share": {
+        "encoding": "json",
+        "read": true,
+        "write": true
+      }
+    },
+    "mirror": {
+      "celltype": "float",
+      "component": "slider",
+      "params": {
+        "auto_read": true,
+        "max": 100,
+        "min": 0,
+        "title": "Cell Mirror"
+      },
+      "share": {
+        "encoding": "json",
+        "read": true,
+        "write": true
+      }
+    },
+    "period": {
+      "celltype": "float",
+      "component": "slider",
+      "params": {
+        "auto_read": true,
+        "max": 100,
+        "min": 0,
+        "title": "Cell Period"
+      },
+      "share": {
+        "encoding": "json",
+        "read": true,
+        "write": true
+      }
+    },
+    "png": {
+      "celltype": "bytes",
+      "component": "",
+      "params": {
+        "auto_read": true,
+        "title": "Cell Png"
+      },
+      "share": {
+        "encoding": "text",
+        "read": true
+      }
+    }
+  },
+  "extra_components": [
+    {
+      "cell": "limit",
+      "component": "",
+      "id": "EXAMPLE_ID",
+      "params": {}
+    }
+  ],
+  "index": {
+    "title": "Seamless webform"
+  },
+  "transformers": {
+    "filter_plot": {
+      "component": "transformer-status",
+      "params": {
+        "title": "Transformer filter_plot"
+      }
+    },
+    "gen_wave": {
+      "component": "transformer-status",
+      "params": {
+        "title": "Transformer gen_wave"
+      }
+    },
+    "plot2png": {
+      "component": "transformer-status",
+      "params": {
+        "title": "Transformer plot2png"
+      }
+    },
+    "plot2txt": {
+      "component": "transformer-status",
+      "params": {
+        "title": "Transformer plot2txt"
+      }
+    },
+    "txt2plot": {
+      "component": "transformer-status",
+      "params": {
+        "title": "Transformer txt2plot"
+      }
+    }
+  }
+}

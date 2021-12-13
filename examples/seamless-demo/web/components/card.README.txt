@@ -1,0 +1,5 @@
+Text area, cannot be edited.
+
+Parameters:
+- title (string).
+

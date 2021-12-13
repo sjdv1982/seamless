@@ -1,0 +1,5 @@
+Field to display a HTML cell
+
+Parameters:
+- title (string).
+
