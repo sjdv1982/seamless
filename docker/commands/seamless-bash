@@ -8,8 +8,10 @@ set -u -e
 gdbflags='' ###
 HOSTCWD=`pwd`
 
-SEAMLESS_DEBUGGING_DIRECTORY=/tmp/seamless-debug
-mkdir -p ${SEAMLESS_DEBUGGING_DIRECTORY}
+if [[ ! -v SEAMLESS_DEBUGGING_DIRECTORY ]]; then 
+  SEAMLESS_DEBUGGING_DIRECTORY=/tmp/seamless-debug
+  mkdir -p ${SEAMLESS_DEBUGGING_DIRECTORY}
+fi
 containerID=$(docker run --rm \
   $gdbflags \
   -e DOCKER_IMAGE=rpbs/seamless \

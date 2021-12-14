@@ -14,8 +14,11 @@ HOSTCWD=`pwd`
 # gdbflags='--cap-add SYS_PTRACE --security-opt=seccomp:unconfined --security-opt=apparmor:unconfined'
 gdbflags='' ###
 
-SEAMLESS_DEBUGGING_DIRECTORY=/tmp/seamless-debug
-mkdir -p ${SEAMLESS_DEBUGGING_DIRECTORY}
+if [[ ! -v SEAMLESS_DEBUGGING_DIRECTORY ]]; then 
+  SEAMLESS_DEBUGGING_DIRECTORY=/tmp/seamless-debug
+  mkdir -p ${SEAMLESS_DEBUGGING_DIRECTORY}
+fi
+
 containerID=$(docker run --rm \
    $gdbflags \
    -e "DOCKER_IMAGE=rpbs/seamless" \
@@ -27,6 +30,7 @@ containerID=$(docker run --rm \
   -e HOSTCWD=$HOSTCWD \
   -v $HOSTCWD:/cwd \
   -v /tmp:/tmp \
+  -v ${SEAMLESS_DEBUGGING_DIRECTORY}:${SEAMLESS_DEBUGGING_DIRECTORY} \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --group-add $(getent group docker | cut -d: -f3) \
   --workdir /cwd \

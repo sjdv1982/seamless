@@ -9,10 +9,17 @@ set -u -e
 # gdbflags='--cap-add SYS_PTRACE --security-opt=seccomp:unconfined --security-opt=apparmor:unconfined'
 gdbflags='' ###
 
+if [[ ! -v SEAMLESS_DEBUGGING_DIRECTORY ]]; then 
+  SEAMLESS_DEBUGGING_DIRECTORY=/tmp/seamless-debug
+  mkdir -p ${SEAMLESS_DEBUGGING_DIRECTORY}
+fi
+
 docker run --rm \
   $gdbflags \
   -e DOCKER_IMAGE=rpbs/seamless \
+  -e "SEAMLESS_DEBUGGING_DIRECTORY=${SEAMLESS_DEBUGGING_DIRECTORY}" \
   -v /tmp:/tmp \
+  -v ${SEAMLESS_DEBUGGING_DIRECTORY}:${SEAMLESS_DEBUGGING_DIRECTORY} \
   -v `pwd`:/home/jovyan/cwd \
   --network=host \
   --hostname localhost \

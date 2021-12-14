@@ -15,12 +15,19 @@ if [ ! -f load-project.py ]; then
   exit 1
 fi
 
+if [[ ! -v SEAMLESS_DEBUGGING_DIRECTORY ]]; then 
+  SEAMLESS_DEBUGGING_DIRECTORY=/tmp/seamless-debug
+  mkdir -p ${SEAMLESS_DEBUGGING_DIRECTORY}
+fi
+
 docker run --rm -it \
   $gdbflags \
   -e DOCKER_IMAGE=rpbs/seamless \
+  -e "SEAMLESS_DEBUGGING_DIRECTORY=${SEAMLESS_DEBUGGING_DIRECTORY}" \
   --network=host \
   -v `pwd`:/cwd \
   -v /tmp:/tmp \
+  -v ${SEAMLESS_DEBUGGING_DIRECTORY}:${SEAMLESS_DEBUGGING_DIRECTORY} \
   --workdir /cwd \
   -u `id -u` \
   --group-add users \

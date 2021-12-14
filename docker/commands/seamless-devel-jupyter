@@ -7,15 +7,22 @@ seamlessdir=$SEAMLESSDIR
 # gdbflags='--cap-add SYS_PTRACE --security-opt=seccomp:unconfined --security-opt=apparmor:unconfined'
 gdbflags='' ###
 
+if [[ ! -v SEAMLESS_DEBUGGING_DIRECTORY ]]; then 
+  SEAMLESS_DEBUGGING_DIRECTORY=/tmp/seamless-debug
+  mkdir -p ${SEAMLESS_DEBUGGING_DIRECTORY}
+fi
+
 docker run --rm \
   $gdbflags \
   -e DOCKER_IMAGE=rpbs/seamless \
   -v `pwd`:/home/jovyan/cwd -v $seamlessdir:/seamless \
   -e "PYTHONPATH=/seamless" \
+  -e "SEAMLESS_DEBUGGING_DIRECTORY=${SEAMLESS_DEBUGGING_DIRECTORY}" \
   --network=host \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --group-add $(getent group docker | cut -d: -f3) \
   -v /tmp:/tmp \
+  -v ${SEAMLESS_DEBUGGING_DIRECTORY}:${SEAMLESS_DEBUGGING_DIRECTORY} \
   --hostname localhost \
   --workdir /home/jovyan \
   -u `id -u` \

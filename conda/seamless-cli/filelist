@@ -1,4 +1,3 @@
-seamless
 seamless-add-zip
 seamless-bash
 seamless-bash-trusted
@@ -19,4 +18,3 @@ seamless-serve-graph-interactive
 seamless-serve-graph-trusted
 seamless-serve-graph-trusted-interactive
 seamless-shell-existing
-seamless-trusted
