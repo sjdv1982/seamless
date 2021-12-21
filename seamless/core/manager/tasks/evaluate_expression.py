@@ -103,18 +103,25 @@ class EvaluateExpressionTask(Task):
                             ).run()
                             mode, result = await get_subpath(value, expression.hash_pattern, expression.path)
                             if mode == "checksum":
+                                expression_celltype = expression.celltype
+                                result_hash_pattern = expression.result_hash_pattern
+                                if result_hash_pattern == "##":
+                                    assert expression_celltype == "mixed"
+                                    expression_celltype = "bytes"
+                                    result_hash_pattern = "#"
+
                                 if expression.target_celltype == "mixed":
-                                    assert expression.result_hash_pattern == "#", expression.result_hash_pattern
+                                    assert result_hash_pattern == "#", result_hash_pattern
                                 need_buf = needs_buffer_evaluation(
                                     expression.checksum,
-                                    expression.celltype,
+                                    expression_celltype,
                                     expression.target_celltype,
                                     self.fingertip_mode
                                 )
                                 if not need_buf:
                                     result = await evaluate_from_checksum(
                                         result,
-                                        expression.celltype, 
+                                        expression_celltype, 
                                         expression.target_celltype, 
                                     )
                                     expression_result_checksum = result
@@ -123,7 +130,7 @@ class EvaluateExpressionTask(Task):
                                     result_buffer0 = await GetBufferTask(manager, result).run()                                    
                                     expression_result_checksum = await evaluate_from_buffer(
                                         result, result_buffer0, 
-                                        expression.celltype,
+                                        expression_celltype,
                                         expression.target_celltype
                                     )
                                     result_buffer = None

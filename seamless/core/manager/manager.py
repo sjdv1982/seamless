@@ -223,7 +223,7 @@ class Manager:
 
   If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph)
   If "from_structured_cell" is True, the function is triggered by StructuredCell state maintenance routines
-  In both cases, the caller is responsible for bookkeeping, such as incref/decref of checksums inside a deep structure
+  This function takes care of the incref/decref of checksums inside a deep structure
 
   If "initial" is true, but "from_structured_cell" is not, the cell must be a simple cell
 
@@ -312,6 +312,10 @@ class Manager:
         Therefore, the direct or indirect call of _sync versions of coroutines
         (e.g. deserialize_sync, which launches coroutines and waits for them)
         IS NOT ALLOWED
+
+        On the other hand, since cachemanager.incref_checksum is called,
+         deep structures have their contained checksums automatically incref'ed, 
+         and decref'ed for the old value
         """
         if cell._destroyed:
             return

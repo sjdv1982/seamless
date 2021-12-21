@@ -118,8 +118,10 @@ class AccessorUpdateTask(Task):
                 result_hash_pattern = expression.result_hash_pattern
                 if result_hash_pattern == "#":
                     result_hash_pattern = None  # equivalent
-                path = accessor.write_accessor.path
                 target_hash_pattern = target._hash_pattern
+                if target_hash_pattern == "#":
+                    target_hash_pattern = None  # equivalent
+                path = accessor.write_accessor.path                
                 if path is not None and target_hash_pattern is not None:
                     target_hash_pattern = access_hash_pattern(target_hash_pattern, path)
                 ### Code below is for simple hash patterns.
@@ -129,40 +131,27 @@ class AccessorUpdateTask(Task):
                 # This is to be implemented later.
 
                 if result_checksum is not None and result_hash_pattern != target_hash_pattern:
-                    explicit_convert = False
                     if result_hash_pattern is None:
-                        if target_hash_pattern == "#" or target_hash_pattern is None:
-                            pass
-                        else:
-                            explicit_convert = True
-                    elif result_hash_pattern == "##":  # raw buffer
-                        if target_hash_pattern != "##":
-                            explicit_convert = True
+                        # re-encode with target hash pattern
+                        new_result_checksum = await apply_hash_pattern(result_checksum, target_hash_pattern)
+                        result_checksum = new_result_checksum
                     else:
-                        explicit_convert = True
-
-                    if explicit_convert:
-                        if result_hash_pattern is None:
-                            # re-encode with target hash pattern                        
-                            new_result_checksum = await apply_hash_pattern(result_checksum, target_hash_pattern)
-                            result_checksum = new_result_checksum
-                        else:                        
-                            result_buffer = await GetBufferTask(manager, result_checksum).run()
-                            if result_buffer is None:
-                                raise CacheMissError(result_checksum)
-                            deep_result_value = await DeserializeBufferTask(manager, result_buffer, result_checksum, "plain", False).run()
-                            mode, subpath_result = await get_subpath(deep_result_value, result_hash_pattern, ())
-                            if mode == "checksum":
-                                raise ValueError(result_hash_pattern) # result_hash_pattern should have been '#' (None)
-                            new_result_value = subpath_result
-                            if target_hash_pattern is None or target_hash_pattern == "#":
-                                target_buffer = await SerializeToBufferTask(manager, new_result_value, "mixed", True).run()
-                            else:
-                                target_deep_value , _ = await value_to_deep_structure(new_result_value, target_hash_pattern)
-                                target_buffer = await SerializeToBufferTask(manager, target_deep_value, "mixed", True).run()
-                            target_checksum = await CalculateChecksumTask(manager, target_buffer).run()
-                            buffer_cache.cache_buffer(target_checksum, target_buffer)
-                            result_checksum = target_checksum
+                        result_buffer = await GetBufferTask(manager, result_checksum).run()
+                        if result_buffer is None:
+                            raise CacheMissError(result_checksum)
+                        deep_result_value = await DeserializeBufferTask(manager, result_buffer, result_checksum, "plain", False).run()
+                        mode, subpath_result = await get_subpath(deep_result_value, result_hash_pattern, ())
+                        if mode == "checksum":
+                            raise ValueError(result_hash_pattern) # should have been '#'
+                        new_result_value = subpath_result
+                        if target_hash_pattern is None or target_hash_pattern == "#":
+                            target_buffer = await SerializeToBufferTask(manager, new_result_value, "mixed", True).run()
+                        else:
+                            target_deep_value , _ = await value_to_deep_structure(new_result_value, target_hash_pattern)
+                            target_buffer = await SerializeToBufferTask(manager, target_deep_value, "mixed", True).run()
+                        target_checksum = await CalculateChecksumTask(manager, target_buffer).run()
+                        buffer_cache.cache_buffer(target_checksum, target_buffer)
+                        result_checksum = target_checksum
                 ###
 
                 if path is None:

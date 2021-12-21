@@ -556,8 +556,11 @@ class Cell(Base, HelpMixin):
     def data(self):
         """Returns the data of the cell
 
-        This is normally the same as the value,
-        but must not be modified"""
+        In case of deep cells, the underlying checksums are NOT expanded to values
+        
+        Otherwise, this is normally the same as the value,
+        but must not be modified        
+        """
         cell = self._get_cell()
         return cell.data
 

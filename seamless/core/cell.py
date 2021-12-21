@@ -178,12 +178,14 @@ class Cell(SeamlessBase):
     @property
     def value(self):
         """Returns a copy of the cell's value
+        In case of deep cells, the underlying checksums are expanded to values
         cell.set(cell.value) is guaranteed to have no effect"""
         return self._get_value(copy=True)
 
     @property
     def data(self):
         """Returns the cell's value, without making a copy
+        In case of deep cells, the underlying checksums are NOT expanded to values
         cell.set(cell.data) is NOT guaranteed to have no effect"""
         return self._get_value(copy=False)
 

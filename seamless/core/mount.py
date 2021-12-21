@@ -86,7 +86,8 @@ class MountItem:
                 authority = "cell"
         self.authority = authority
         if as_directory:
-            assert cell.celltype == "plain", cell.celltype  # TODO: as_directory mounting of mixed cells
+            assert cell.celltype == "mixed", cell.celltype
+            assert cell.hash_pattern == {"*": "#"}, cell.hash_pattern
         self.as_directory = as_directory
         self.kwargs = kwargs
         self.last_checksum = None
@@ -398,26 +399,7 @@ class MountItem:
 
     def _get_mtime(self):
         if self.as_directory:
-            if not os.path.exists(self.path) or not os.path.isdir(self.path):
-                return None
-            stat = os.stat(self.path)
-            mtime = stat.st_mtime
-            try:
-                def scan_(path):
-                    nonlocal mtime
-                    with os.scandir(path) as it:
-                        for entry in it:
-                            if entry.is_file() or entry.is_dir():
-                                f_mtime = entry.stat().st_mtime
-                                #print(entry.path, f_mtime)
-                                if mtime is None or f_mtime > mtime:
-                                    mtime = f_mtime
-                            if entry.is_dir():
-                                scan_(entry.path)
-                scan_(self.path)
-            except RuntimeError:
-                pass
-            return mtime
+            raise Exception  # invoke mount directory instead.
         else:
             stat = os.stat(self.path)
             mtime = stat.st_mtime

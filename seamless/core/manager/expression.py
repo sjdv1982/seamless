@@ -79,7 +79,10 @@ class Expression:
         if self.hash_pattern is None:
             return None
         if len(self.path) == 1:
-            return '#'
+            if self.hash_pattern == {"*": "##"}:
+                return '##'
+            else:
+                return '#'
         elif len(self.path) > 1:
             return None
         ###
