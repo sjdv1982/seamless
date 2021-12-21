@@ -352,7 +352,7 @@ class DatabaseServer:
         elif type == "buffer length":
             if not isinstance(value, int):
                 raise DatabaseError("Malformed SET buffer length request")
-            length = bytes(value)
+            length = str(value).encode()
             key = "bfl-" + checksum
             for sink, sink_config in self.db_sinks:
                 await sink.set(key, length)
