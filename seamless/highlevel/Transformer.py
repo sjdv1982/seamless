@@ -664,6 +664,8 @@ You can set this dictionary directly, or you may assign .meta to a cell
         for k in attrs:
             if k == "code":
                 curr_exc = tf0.exception
+                if curr_exc is None:
+                    curr_exc = tf0.code.exception
             elif k is PlaceHolder:
                 k = "input pins"
                 exc2 = {}
@@ -709,6 +711,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
                 exc += "*** " + k + " ***\n"
                 exc += str(curr_exc).strip("\n") + "\n" 
                 exc += "*** /" + k + " ***\n"
+            curr_exc = None
         if not len(exc):
             return None
         return exc
