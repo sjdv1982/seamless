@@ -19,11 +19,11 @@ Traceback (most recent call last):
     set_subpath(self._auth_value, self.hash_pattern, path, value)
   File "/seamless/seamless/core/protocol/expression.py", line 151, in set_subpath_sync
     sub_structure, _ = value_to_deep_structure_sync(
-  File "/seamless/seamless/core/protocol/deep_structure.py", line 418, in value_to_deep_structure_sync
+  File "/seamless/seamless/core/protocol/deep_structure.py", line 467, in value_to_deep_structure_sync
     asyncio.get_event_loop().run_until_complete(fut)
   File "/opt/conda/lib/python3.8/asyncio/base_events.py", line 616, in run_until_complete
     return future.result()
-  File "/seamless/seamless/core/protocol/deep_structure.py", line 389, in value_to_deep_structure
+  File "/seamless/seamless/core/protocol/deep_structure.py", line 438, in value_to_deep_structure
     raise DeepStructureError(hash_pattern, value) from None
 seamless.core.protocol.deep_structure.DeepStructureError: 
   Invalid deep structure: 20

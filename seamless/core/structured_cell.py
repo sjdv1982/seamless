@@ -336,7 +336,7 @@ class StructuredCell(SeamlessBase):
             return self.handle
         backend = StructuredCellBackend(self)
         monitor = Monitor(backend)
-        if self.hash_pattern == {"*": "#"}:
+        if self.hash_pattern in ({"*": "#"}, {"*": "##"}):
             mixed_object = MixedDict(monitor, ())
         elif self.hash_pattern == {"!": "#"}:
             mixed_object = MixedList(monitor, ())

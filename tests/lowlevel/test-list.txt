@@ -66,6 +66,7 @@ macro3.py
 pin-as.py
 checksum-cell.py
 structured_cell/simple-deepcell.py
+structured_cell/simple-deepcell-rawbuffer.py
 structured_cell/channels-deepcell.py
 structured_cell/schema.py
 structured_cell/schema-deepcell.py

@@ -8,7 +8,7 @@ RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
    $(lsb_release -cs) \
    stable" && sudo apt update && sudo apt install -y docker-ce-cli
 RUN conda install -c conda-forge r-base r-cairo
-RUN pip install -r requirements.txt && conda install -c rpbs silk && jupyter-nbextension enable nglview --py --sys-prefix
+RUN pip install -r requirements.txt && conda install -c rpbs 'silk>=0.1.6' && jupyter-nbextension enable nglview --py --sys-prefix
 RUN mkdir /home/jovyan/software && \
     ln -s /seamless/seamless /home/jovyan/software/seamless && \
     ln -s /seamless/tests /home/jovyan/seamless-tests && \

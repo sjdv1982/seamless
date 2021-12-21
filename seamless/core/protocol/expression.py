@@ -65,7 +65,10 @@ def get_subpath_sync(value, hash_pattern, path):
         elif isinstance(result, str):
             checksum = bytes.fromhex(result)
             buffer = get_buffer(checksum)
-            value = deserialize_sync(buffer, checksum, "mixed", copy=True)
+            if hash_pattern == {"*": "##"} and len(path) == 1:
+                value = deserialize_raw(buffer)
+            else:
+                value = deserialize_sync(buffer, checksum, "mixed", copy=True)
             return value
         else:
             sub_structure, sub_hash_pattern = result
@@ -136,7 +139,10 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
     if value is None:
         cs = None
     else:
-        buffer = serialize_sync(subvalue, "mixed")
+        if hash_pattern == {"*": "##"}:
+            buffer = serialize_raw(subvalue)
+        else:
+            buffer = serialize_sync(subvalue, "mixed")
         checksum = calculate_checksum_sync(buffer)
         buffer_cache.cache_buffer(checksum, buffer)
         cs = checksum.hex()
@@ -163,16 +169,19 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
             )
 
     elif mode == 2:
-        _, pre_path, curr_sub_checksum, post_path = result
+        _, pre_path, curr_sub_checksum, post_path, is_raw  = result
 
         curr_sub_value = None
         if len(post_path):
             if curr_sub_checksum is not None:
                 curr_sub_checksum = bytes.fromhex(curr_sub_checksum)
                 curr_sub_buffer = get_buffer(curr_sub_checksum)
-                curr_sub_value = deserialize_sync(
-                    curr_sub_buffer, curr_sub_checksum, "mixed", copy=True
-                )
+                if is_raw:
+                    curr_sub_value = deserialize_raw(curr_sub_buffer)
+                else:
+                    curr_sub_value = deserialize_sync(
+                        curr_sub_buffer, curr_sub_checksum, "mixed", copy=True
+                    )
             _set_subpath(curr_sub_value, post_path, subvalue)
             new_sub_value = curr_sub_value
         else:
@@ -180,9 +189,12 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
 
         new_sub_cs = None
         if new_sub_value is not None:
-            new_sub_buffer = serialize_sync(
-                new_sub_value, "mixed", use_cache=(len(post_path) == 0)
-            )
+            if hash_pattern == {"*": "##"}:
+                new_sub_buffer = serialize_raw(new_sub_value)
+            else:
+                new_sub_buffer = serialize_sync(
+                    new_sub_value, "mixed", use_cache=(len(post_path) == 0)
+                )
             new_sub_checksum = calculate_checksum_sync(new_sub_buffer)
             buffer_cache.cache_buffer(new_sub_checksum, new_sub_buffer)
             new_sub_cs = new_sub_checksum.hex()
@@ -199,12 +211,16 @@ async def set_subpath_checksum(value, hash_pattern, path, subchecksum, sub_buffe
     """Sets the subpath of a mixed cell by its subchecksum
     subchecksum must already be encoded with the correct sub-hash-pattern
     sub_buffer corresponds to the buffer of subchecksum
+    is_raw: If the checksum is a raw buffer (text or bytes), rather than of a mixed buffer (JSON, numpy or mixed)
     If the path has the same depth as the hash pattern, then sub_buffer may be None
     """
-    if hash_pattern is None:
+    if hash_pattern is None or hash_pattern == "##":
         if subchecksum is not None:
             assert sub_buffer is not None
-        subvalue = await deserialize(sub_buffer, subchecksum, "mixed", copy=True)
+        if hash_pattern == "##":
+            subvalue = deserialize_raw(sub_buffer)
+        else:
+            subvalue = await deserialize(sub_buffer, subchecksum, "mixed", copy=True)
         _set_subpath(value, path, subvalue)
         return
     deep_structure = value
@@ -251,7 +267,10 @@ async def set_subpath(value, hash_pattern, path, subvalue):
     if value is None:
         cs = None
     else:
-        buffer = await serialize(subvalue, "mixed")
+        if hash_pattern == {"*": "##"}:
+            buffer = serialize_raw(subvalue)
+        else:
+            buffer = await serialize(subvalue, "mixed")
         checksum = await calculate_checksum(buffer)
         buffer_cache.cache_buffer(checksum, buffer)
         cs = checksum.hex()
@@ -278,23 +297,29 @@ async def set_subpath(value, hash_pattern, path, subvalue):
             )
 
     elif mode == 2:
-        _, pre_path, curr_sub_checksum, post_path = result
+        _, pre_path, curr_sub_checksum, post_path, is_raw = result
 
         curr_sub_value = None
         assert len(post_path)
         if curr_sub_checksum is not None:
             curr_sub_checksum = bytes.fromhex(curr_sub_checksum)
             curr_sub_buffer = get_buffer(curr_sub_checksum)
-            curr_sub_value = await deserialize(
-                curr_sub_buffer, curr_sub_checksum, "mixed", copy=True
-            )
+            if is_raw:
+                curr_sub_value = deserialize_raw(curr_sub_buffer)    
+            else:
+                curr_sub_value = await deserialize(
+                    curr_sub_buffer, curr_sub_checksum, "mixed", copy=True
+                )
         _set_subpath(curr_sub_value, post_path, subvalue)
         new_sub_value = curr_sub_value
         new_sub_cs = None
         if new_sub_value is not None:
-            new_sub_buffer = await serialize(
-                new_sub_value, "mixed", use_cache=False
-            )
+            if is_raw:
+                new_sub_buffer = await serialize_raw_async(new_sub_value, use_cache=False)
+            else:
+                new_sub_buffer = await serialize(
+                    new_sub_value, "mixed", use_cache=False
+                )
             new_sub_checksum = await calculate_checksum(new_sub_buffer)
             buffer_cache.cache_buffer(new_sub_checksum, new_sub_buffer)
             new_sub_cs = new_sub_checksum.hex()
@@ -310,6 +335,7 @@ async def set_subpath(value, hash_pattern, path, subvalue):
 
 
 from .deep_structure import (
+    deserialize_raw, serialize_raw, serialize_raw_async,
     write_deep_structure, set_deep_structure,
     value_to_deep_structure, value_to_deep_structure_sync,
     deep_structure_to_value, deep_structure_to_value_sync,

@@ -1,0 +1,40 @@
+{}
+<Silk: {} >
+<Silk: {} >
+START
+{'x': '"test"\n', 'y': '"test2"\n', 'z': '"test3"\n'}
+<Silk: {'x': '"test"\n', 'y': '"test2"\n', 'z': '"test3"\n'} >
+<Silk: {'x': '"test"\n', 'y': '"test2"\n', 'z': '"test3"\n'} >
+{'x': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783', 'y': '3aace618e0d578104c110b4930ab376755695261858720cc631cbe62390cd61a', 'z': '153477a48af62df19f94c15f623fba4835f15f64502d98d4c95a6816387f4d62'}
+<Silk: "test"
+ > <Silk: "test2"
+ > <Silk: "test3"
+ >
+"test"
+ "test2"
+ "test3"
+
+{'p': '10\n', 'q': '20\n', 'r': '30\n'}
+<Silk: {'p': '10\n', 'q': '20\n', 'r': '30\n'} >
+<Silk: {'p': '10\n', 'q': '20\n', 'r': '30\n'} >
+10
+ 20
+ 30
+
+START2
+{'p': b'\x89PNG\r\n\x1a\n\x00\x00', 'q': array([115, 116, 117, 118, 119], dtype=uint8), 'r': 'TEST!', 'x': 'BUF', 'y': 'BUF2\n', 'z': '42\n'}
+p b'\x89PNG\r\n\x1a\n\x00\x00'
+q b"\x93NUMPY\x01\x00v\x00{'descr': '|u1', 'fortran_order': False, 'shape': (5,), }                                                            \nstuvw"
+r b'TEST!'
+x b'BUF'
+y b'BUF2\n'
+z b'42\n'
+
+<Silk: {'p': b'\x89PNG\r\n\x1a\n\x00\x00', 'q': array([115, 116, 117, 118, 119], dtype=uint8), 'r': 'TEST!', 'x': 'BUF', 'y': 'BUF2\n', 'z': '42\n'} >
+BUF <class 'str'> BUF2
+ <class 'str'> 42
+ <class 'str'>
+b'\x89PNG\r\n\x1a\n\x00\x00' <class 'bytes'>
+[115 116 117 118 119] <class 'numpy.ndarray'>
+TEST! <class 'str'>
+STOP

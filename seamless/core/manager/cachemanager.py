@@ -300,7 +300,7 @@ class CacheManager:
             for path in paths:
                 subchecksum = bytes.fromhex(inchannels[path])
                 sub_buffer = None
-                if hash_pattern is None or access_hash_pattern(hash_pattern, path) != "#":
+                if hash_pattern is None or access_hash_pattern(hash_pattern, path) not in ("#", '##'):
                     sub_buffer = await self._fingertip(subchecksum, must_have_cell=False, done=done)
                 await set_subpath_checksum(value, hash_pattern, path, subchecksum, sub_buffer)
             buf = await SerializeToBufferTask(
