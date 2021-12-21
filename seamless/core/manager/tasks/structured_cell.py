@@ -13,6 +13,8 @@ def is_empty(cell):
     if cell is None:
         return True
     cs = cell._checksum
+    if cs is not None:
+        cs = cs.hex()
     if cs is None or cs == empty_dict_checksum:
         return True
     return False
@@ -181,7 +183,7 @@ class StructuredCellAuthTask(StructuredCellTask):
 
 class StructuredCellJoinTask(StructuredCellTask):
 
-    async def _run(self):
+    async def _run(self):        
         from ...status import StatusReasonEnum
         sc = self.structured_cell
         await self.await_sc_tasks(auth=False)
@@ -400,6 +402,8 @@ class StructuredCellJoinTask(StructuredCellTask):
             
             if ok and (not from_cache) and value is not None:
                 schema = sc.get_schema()
+                if schema == {}:
+                    schema = None
             if ok and (not from_cache) and value is not None and schema is not None:
                 if schema is not None:
                     if sc.hash_pattern is None:
