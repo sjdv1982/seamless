@@ -94,6 +94,9 @@ class Expression:
         d = self._hash_dict()
         return json.dumps(d, indent=2, sort_keys=True)
 
+    def __repr__(self):
+        return str(self)
+
     def _get_hash(self):
         return get_hash(str(self)+"\n").hex()
 
