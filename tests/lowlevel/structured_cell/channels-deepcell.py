@@ -25,7 +25,7 @@ ctx.upstream.set({"a": 10, "b": {"x": 20}, "c": [1,2,3]})
 ctx.compute()
 print(ctx.a.value, ctx.b.value, ctx.c.value)
 
-# Take 2, make upstream a deep cell now
+# Take 2, make upstream a deep cell now instead of sc
 ctx = context(toplevel=True)
 ctx.data = cell("mixed")
 ctx.sc = StructuredCell(

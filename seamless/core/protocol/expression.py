@@ -211,10 +211,9 @@ async def set_subpath_checksum(value, hash_pattern, path, subchecksum, sub_buffe
     """Sets the subpath of a mixed cell by its subchecksum
     subchecksum must already be encoded with the correct sub-hash-pattern
     sub_buffer corresponds to the buffer of subchecksum
-    is_raw: If the checksum is a raw buffer (text or bytes), rather than of a mixed buffer (JSON, numpy or mixed)
     If the path has the same depth as the hash pattern, then sub_buffer may be None
     """
-    if hash_pattern is None or hash_pattern == "##":
+    if hash_pattern is None or hash_pattern == "#" or hash_pattern == "##":
         if subchecksum is not None:
             assert sub_buffer is not None
         if hash_pattern == "##":
@@ -250,7 +249,7 @@ async def set_subpath_checksum(value, hash_pattern, path, subchecksum, sub_buffe
             )
     elif mode == 2:
         new_sub_cs = cs   # cs is already in correct hash pattern encoding
-        _, pre_path, curr_sub_checksum, post_path = result
+        _, pre_path, _, _ = result
         result = write_deep_structure(
             new_sub_cs, deep_structure, hash_pattern, pre_path,
             create=True

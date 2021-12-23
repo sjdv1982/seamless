@@ -84,24 +84,23 @@ def validate_deep_structure(deep_structure, hash_pattern):
 
 def access_hash_pattern(hash_pattern, path):
     """Access a hash pattern using path, returning the sub-hash pattern"""
-
-    validate_hash_pattern(hash_pattern)
+    
     ###  To support complicated hash patterns, code must be changed in other places as well
     ###  In particular: the Expression class and Accessor update tasks
     ###
     if hash_pattern is None:
-        if not len(path):
+        if path is None or not len(path):
             return hash_pattern
         return None
-    if path is None or len(path) == 0:
+
+    validate_hash_pattern(hash_pattern)
+    if path is None or not len(path):
         return hash_pattern
     if len(path) == 1:
         if hash_pattern in ("#", "##"):
             return None
-        elif hash_pattern is None:
-            return "#"
         else:
-            return hash_pattern
+            return access_hash_pattern(hash_pattern["*"], ())
     else:
         return None
     ###

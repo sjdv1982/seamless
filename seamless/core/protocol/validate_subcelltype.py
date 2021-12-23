@@ -11,6 +11,8 @@ import json
 validation_cache = set()
 
 async def validate_subcelltype(checksum, celltype, subcelltype, codename):
+    if checksum is None:
+        return
     if celltype != "python":
         if celltype == "plain" and subcelltype == "module":
             pass
