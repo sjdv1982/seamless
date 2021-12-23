@@ -43,7 +43,7 @@ async def validate_subcelltype(checksum, celltype, subcelltype, codename):
 
         if subcelltype in ("reactor", "macro"):
             mode, _ = analyze_code(value, codename)
-            if mode in ("expression", "lambda"):
+            if mode == "lambda":
                 err = "subcelltype '%s' does not support code mode '%s'" % (subcelltype, mode)
                 raise SyntaxError((codename, err))
 
