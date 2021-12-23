@@ -590,7 +590,7 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path):
         old_checksum = deep_structure
         assert isinstance(old_checksum, str)
         bytes.fromhex(old_checksum)
-        return 2, (), old_checksum, path, (hash_pattern == "#")
+        return 2, (), old_checksum, path, (hash_pattern == "##")
 
     validate_deep_structure(deep_structure, hash_pattern)
     assert isinstance(deep_structure, (list, dict)), deep_structure
