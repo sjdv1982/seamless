@@ -6,6 +6,13 @@ import database_backends
 from silk.mixed.io.serialization import deserialize
 import gc
 
+# TODO: buffer length => buffer info
+# TODO: author ID, to be specified upon connection
+#  (authentication must happen upstream of Seamless!)
+#  to be stored with transformation result and buffer info
+# Add a new request "transformation rich result",
+#   which returns a dict with the checksum but also other info,
+#   specifically the author.
 buffercodes = (
     "buf", # persistent buffer
     "nbf", # non-persistent buffer (may be evicted; should be stored in Redis with an expiry)

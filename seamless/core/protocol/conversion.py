@@ -1,10 +1,100 @@
-# Conversions. Note that they operate at a checksum/buffer level, and only used for no-path write accessors.
-#   In contrast, write accessors with a path operate at a value level.
-#   Both source and target object are deserialized, and target_object[path] = source.
+"""
+Conversions. Note that they operate at a checksum/buffer level.
+  Values are not built, unless the deserialization is really simple (e.g. json.loads)
+  Conversions imply that that there is neither a access path not a hash pattern.
+  In contrast, expressions with a path or a hash pattern operate at a value level.
+  VALUE-LEVEL CONVERSION IS NOT DEALT WITH HERE: it is evaluate_expression that does that.
+   (Both source and target object are deserialized, and target_object[path] = source,
+    taking into account hash pattern.)
+Conversions that always require a value-level evaluation are considered "forbidden",
+ as they must be done elsewhere.
 
-# text (with no double quotes around *the buffer*),
-# python, ipython, cson, yaml, plain, binary, mixed
-# str (with double quotes around *the buffer*), bytes, int, float, bool
+In hash patterns, "#" stands for a checksum-of-mixed, and "##" for a checksum-of-bytes.
+
+Type hierarchy:
+
+bytes: Buffer and value are the same.
+ mixed: combination of plain and binary.
+  binary: value is Numpy array/struct. Buffer is value with np.save.
+   binary-bytes (1D array of dtype S). NOT a subtype of bytes!
+    If you convert them to bytes, do value.tobytes() .
+  plain: Buffer is JSON. Value is what is trivially JSON-serializable. 
+   str (with double quotes around *the buffer*), int, float, bool
+ text (with no double quotes around *the buffer*). 
+ Buffer is UTF-8. Value is Python string (read buffer in text mode / buffer.decode())
+  cson: special case, as it is a superset of JSON, i.e "plain" is a subtype
+  yaml: also a superset of JSON
+  ipython
+    python 
+checksum. Special case: the *value* is a checksum string (checksum.hex())
+  The *checksum* of a checksum cell is therefore the checksum-of a checksum string.
+  Also, when converted to a checksum cell, the checksum of a deep cell remains the same.
+  However, as all hash patterns, this is handled by evaluate_expression and not here.
+  Note that a checksum never holds a reference to the checksum value(s) it contains.
+
+In principle, all conversion from a subclass to a superclass is trivial.
+This includes str to plain.
+All conversion from a superclass to a subclass is "reinterpret", including plain to str.
+One exception is between binary/mixed and bytes, since bytes is not a strict superclass.
+This one is "forbidden", as it requires a value.
+Another exception is plain and cson/yaml.
+These conversions are indeed trivial/forbidden for "plain", but not
+ for the subclasses of plain (str, bool, int, float), which are forbidden.
+Finally, "mixed" to a subtype of "mixed" requires a value evaluation, hence forbidden.
+
+("bytes", "binary") *normally* doesn't change checksum,
+but it does if it a single Numpy array of dtype "S".
+Hence, the same for ("bytes", "mixed").
+This requires also a value evaluation, hence forbidden.
+
+Text conversion rules:
+- Texts are UTF-8-encoded byte strings. So conversion to bytes is trivial.
+  Conversion from bytes is "reinterpret", dependent on the success of buffer.decode()
+  (UTF-8 is default in Python)
+- Between text and str works as expected. 
+  The value remains unchanged, the buffer gets quotes added/removed (json.dumps)
+- Text to plain tries to interpret the text as JSON. Failure gives an exception.
+  (i.e. "reinterpret") . 
+  Text to a subclass-of-plain then checks for the data type.
+- Plain to text dumps the cell as JSON text, i.e. "trivial"
+
+Checksum cells: the *value* of the checksum cell:
+- If a checksum string, it can be promoted to any celltype
+- If a dict or list, it can be promoted to plain or to mixed.
+  Mixed cells must have the correct hash pattern.
+  This is only validated for simple hash patterns.
+All of these promotions are value-based and therefore "forbidden" 
+(handled by evaluate_expression)
+
+TODO: get_buffer_info.
+./core/protocol/evaluate.py needs to be reworked.
+On top of the evaluation caches, a "buffer info" dict is needed.
+Unlike the evaluation caches, this is shared via database cache/sinks
+ whenever appropriate.
+contents of the buffer info:
+- buffer length
+- is_utf8
+- is_json (implies is_utf8, not is_json, not is_seamless_mixed)
+- json_type (dict, list, str, bool, float; implies is_json)
+- is_numpy (implies not is_json, not is_seamless_mixed)
+- dtype, shape (implies is_numpy)
+- is_seamless_mixed (implies not is_json, not is_numpy)
+For conversions ("valid" means "preserves checksum". not valid means a failure):
+- is_utf8: bytes to text is valid. otherwise, not valid.
+- is_json: bytes/text/cson/yaml/mixed to plain is valid. otherwise, not valid.
+- json_type: bytes/text/cson/yaml/mixed to that particular type is valid.
+   otherwise, not valid for conversion-to-float/int/bool, unless str/float/int/bool
+- is_numpy: mixed to binary is valid. Otherwise, not valid.
+  if dtype is S and no shape:
+      bytes to mixed is valid. Otherwise (but is_numpy), reformat.
+      Same for bytes to binary.
+- is_seamless_mixed:
+   bytes to mixed is valid. Otherwise, (and not is_numpy, not is_json), invalid
+buffer_info contains nothing about valid conversion to python/ipython/cson/yaml.
+=> 
+The database may return other fields as well.
+TODO: high-level classes on top of deep cells. See https://github.com/sjdv1982/seamless/issues/108
+"""
 
 class SeamlessConversionError(ValueError):
     def __str__(self):
@@ -16,20 +106,22 @@ class SeamlessConversionError(ValueError):
 
 import numpy as np
 
-conversion_trivial = set([ # conversions that do not change checksum and are guaranteed to work (if the input is valid)
-    ("text", "bytes"), # Use UTF-8, which can encode any Unicode string. This is already what Seamless uses internally
-    ("python", "text"),
-    ("python", "ipython"),
+conversion_trivial = set([ # conversions that do not change checksum and are guaranteed to work (if the input is valid)    
+    ("text", "bytes"), 
     ("ipython", "text"),
+    ("python", "ipython"),
     ("cson", "text"),
     ("yaml", "text"),
     ("plain", "cson"),
     ("plain", "yaml"),
+
+    ("mixed", "bytes"),
+    ("binary", "mixed"),
     ("plain", "mixed"),
     ("str", "plain"),
-    ("str", "mixed"),
-    ("binary", "mixed"),
-    ("int", "plain"), ("float", "plain"), ("bool", "plain"),
+    ("int", "plain"),
+    ("float", "plain"),
+    ("bool", "plain"),
 ])
 
 # buffer-to-nothing
@@ -43,18 +135,21 @@ conversion_reinterpret = set([ # conversions that do not change checksum, but ar
     ("plain", "str"), 
     ("mixed", "plain"), ("mixed", "binary"),
     ("mixed", "str"), 
-    ("int", "text"), ("float", "text"), ("bool", "text"),    
+    ("int", "text"), ("float", "text"), ("bool", "text"),
+    
 ])
 
 # buffer-to-buffer
 
 conversion_reformat = set([ # conversions that are guaranteed to work (if the input is valid), but may change checksum
     ("plain", "text"), # if old value is a string: new buffer is old value; else: no change
-    ("text", "plain"),   # if json.loads works, checksum stays the same. Else, json.dumps, or repr
-    ("text", "str"),   # use json.dumps, or repr
-    ("str", "text"),   # use json.loads, or eval. assert isinstance(str)
-    ("str", "bytes"),   # str => text => bytes
-    ("bytes", "str"),    # bytes => text => str
+    ###("text", "plain"),   # if json.loads works, checksum stays the same. Else, json.dumps, or repr
+    # change so that it MUST be json!
+
+    ####("text", "str"),   # use json.dumps, or repr
+    #### ("str", "text"),   # use json.loads, or eval. assert isinstance(str)
+    ###("str", "bytes"),   # str => text => bytes
+    ###("bytes", "str"),    # bytes => text => str
     ("int", "str"), ("float", "str"), ("bool", "str"),
     ("int", "float"), ("bool", "int"),
     ("float", "int"), ("int", "bool"),
@@ -87,7 +182,7 @@ conversion_possible = set([ # conversions that (may) change checksum and are not
 ###
 
 conversion_equivalent = { #equivalent conversions
-    ("python", "str"): ("text", "str"),
+    ("python", "str"): ("text", "plain"),
     ("ipython", "str"): ("text", "plain"),
     ("text", "mixed"): ("text", "plain"),
     ("python", "plain"): ("text", "plain"),
@@ -129,7 +224,7 @@ conversion_forbidden = set([ # forbidden conversions.
     ("cson", "bytes"), ("cson", "str"), ("cson", "int"), ("cson", "float"), ("cson", "bool"),
     ("yaml", "python"), ("yaml", "ipython"), ("yaml", "cson"), ("yaml", "binary"),
     ("yaml", "bytes"), ("yaml", "str"), ("yaml", "int"), ("yaml", "float"), ("yaml", "bool"),
-    ("plain", "binary"), ("plain", "bytes"),
+    ("plain", "binary"),
     ("binary", "text"), ("binary", "python"), ("binary", "ipython"),
     ("binary", "cson"), ("binary", "yaml"), ("binary", "plain"),
     ("mixed", "cson"), ("mixed", "yaml"),

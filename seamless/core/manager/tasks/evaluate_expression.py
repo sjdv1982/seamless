@@ -1,3 +1,5 @@
+# See ../protocol/conversion.py for documentation about conversions.
+
 import traceback, asyncio
 import sys
 from asyncio import CancelledError
