@@ -1,15 +1,16 @@
 """
 Conversions. Note that they operate at a checksum/buffer level.
+  Conversions that always require a value-level evaluation are considered "forbidden",
+   as they must be done elsewhere.
   Values are not built, unless the deserialization is really simple (e.g. json.loads)
   Conversions imply that that there is neither a access path not a hash pattern.
   In contrast, expressions with a path or a hash pattern operate at a value level.
   VALUE-LEVEL CONVERSION IS NOT DEALT WITH HERE: it is evaluate_expression that does that.
    (Both source and target object are deserialized, and target_object[path] = source,
     taking into account hash pattern.)
-Conversions that always require a value-level evaluation are considered "forbidden",
- as they must be done elsewhere.
+  THEREFORE, DEEP CELLS ARE ALSO NOT HANDLED HERE.
+  REASON: conversion.py does not handle any kind of caching.
 
-In hash patterns, "#" stands for a checksum-of-mixed, and "##" for a checksum-of-bytes.
 
 Type hierarchy:
 
@@ -28,7 +29,7 @@ bytes: Buffer and value are the same.
     python 
 checksum. Special case: the *value* is a checksum string (checksum.hex())
   The *checksum* of a checksum cell is therefore the checksum-of a checksum string.
-  Also, when converted to a checksum cell, the checksum of a deep cell remains the same.
+  Deep cells: when converted to a checksum cell, the checksum of a deep cell remains the same.
   However, as all hash patterns, this is handled by evaluate_expression and not here.
   Note that a checksum never holds a reference to the checksum value(s) it contains.
 
@@ -65,6 +66,8 @@ Checksum cells: the *value* of the checksum cell:
   This is only validated for simple hash patterns.
 All of these promotions are value-based and therefore "forbidden" 
 (handled by evaluate_expression)
+
+TODO: impose limits of 1000 chars for buffers of int, float, bool
 
 TODO: get_buffer_info.
 ./core/protocol/evaluate.py needs to be reworked.
@@ -109,13 +112,15 @@ import numpy as np
 conversion_trivial = set([ # conversions that do not change checksum and are guaranteed to work (if the input is valid)    
     ("text", "bytes"), 
     ("ipython", "text"),
+    ("python", "text"),
     ("python", "ipython"),
     ("cson", "text"),
     ("yaml", "text"),
     ("plain", "cson"),
     ("plain", "yaml"),
 
-    ("mixed", "bytes"),
+    ("plain", "bytes"),
+
     ("binary", "mixed"),
     ("plain", "mixed"),
     ("str", "plain"),
@@ -124,134 +129,198 @@ conversion_trivial = set([ # conversions that do not change checksum and are gua
     ("bool", "plain"),
 ])
 
-# buffer-to-nothing
-
-conversion_reinterpret = set([ # conversions that do not change checksum, but are not guaranteed to work (raise exception).
-    ("text", "python"),
-    ("text", "ipython"),
-    ("text", "cson"),
-    ("text", "yaml"),
-    ("text", "int"), ("text", "float"), ("text", "bool"),
-    ("plain", "str"), 
-    ("mixed", "plain"), ("mixed", "binary"),
-    ("mixed", "str"), 
-    ("int", "text"), ("float", "text"), ("bool", "text"),
-    
-])
-
-# buffer-to-buffer
-
-conversion_reformat = set([ # conversions that are guaranteed to work (if the input is valid), but may change checksum
-    ("plain", "text"), # if old value is a string: new buffer is old value; else: no change
-    ###("text", "plain"),   # if json.loads works, checksum stays the same. Else, json.dumps, or repr
-    # change so that it MUST be json!
-
-    ####("text", "str"),   # use json.dumps, or repr
-    #### ("str", "text"),   # use json.loads, or eval. assert isinstance(str)
-    ###("str", "bytes"),   # str => text => bytes
-    ###("bytes", "str"),    # bytes => text => str
-    ("int", "str"), ("float", "str"), ("bool", "str"),
-    ("int", "float"), ("bool", "int"),
-    ("float", "int"), ("int", "bool"),
-    ("text", "checksum"),
-    ("checksum", "plain"),
-])
-
-conversion_possible = set([ # conversions that (may) change checksum and are not guaranteed to work (raise exception)
-    ("mixed", "python"), ("mixed", "ipython"), ("plain", "python"), ("plain", "ipython"),
-    ("str", "python"), ("str", "ipython"),
+conversion_reinterpret = set() # conversions that do not change checksum, but are not guaranteed to work (raise exception).
+for source, target in conversion_trivial:
+    conversion_reinterpret.add((target, source))
+conversion_reinterpret.difference_update(set([
     ("ipython", "python"),
     ("cson", "plain"),
     ("yaml", "plain"),
-    ("binary", "str"), ("binary", "int"), ("binary", "float"), ("binary", "bool"),
-    ("bytes", "text"), # Assume UTF-8 (being a subset of UTF-8, ASCII is fine too)
-                       # If this is not so, an error is typically raised (UTF-8 is not a charmap!)
-    ("str", "int"), ("str", "float"), ("str", "bool"),
-    ("int", "binary"), ("float", "binary"), ("bool", "binary"),
-    ("mixed", "text"),
-    ("plain", "python"), ("plain", "ipython"),
-    ("binary", "bytes"), ("mixed", "bytes"),# mixed must be pure-binary
-                                            # This will dump the binary buffer in numpy format
-                                            # np.dtype(S..) is a special case:
-                                            #   it dumps a pure buffer, not numpy format
-    ("bytes", "binary"),  ("bytes", "mixed"),  # inverse of the above
-    ("plain", "int"), ("plain", "float"), ("plain", "bool"), 
-    ("mixed", "int"), ("mixed", "float"), ("mixed", "bool"),
+]))
+
+conversion_reformat = set([ # conversions that are guaranteed to work (if the input is valid), but may change checksum
+    # special cases:
+    ("bytes", "binary"), # for numpy buffer format (magic numpy string), trivial. Else, create np.dtype(S) array from bytes buffer.
+    ("bytes", "mixed"), # as above, but Seamless-mixed buffer format (MAGIC_SEAMLESS_MIXED string) is also trivial.
+    ("binary", "bytes"), # for np.dtype(S..), get value.tobytes(); else trivial 
+    ("mixed", "bytes"), # ("binary", "bytes") if binary (magic numpy string); else trivial
+
+    ("plain", "text"), # if value is a string, value stays the same; else checksum stays the same
+    ("text", "plain"), # if json.loads works, checksum stays the same; else value stays the same.
+    ("text", "str"),   # value stays the same
+    ("str", "text"),   # value stays the same
+    ("cson", "plain"), # run CSON parser
+    ("yaml", "plain"), # run YAML parser
+    
+    ("ipython", "python"),  # convert to Python code
+    
+    # simple value conversions:
+    ("int", "str"), ("float", "str"), ("bool", "str"),
+    ("int", "float"), ("bool", "int"),
+    ("float", "int"), ("int", "bool"), 
+    ("float", "bool"), ("bool", "float"),
+])
+
+conversion_possible = set([ # conversions that (may) change checksum and are not guaranteed to work (raise exception)    
+    # simple value conversions:                       
+    ("binary", "int"), ("binary", "float"), ("binary", "bool"),
+    ("str", "int"), ("str", "float"), ("str", "bool"),    
+    ("mixed", "str"), ("mixed", "int"), ("mixed", "float"), ("mixed", "bool"),
 ])
 
 ###
 
 conversion_equivalent = { #equivalent conversions
-    ("python", "str"): ("text", "plain"),
-    ("ipython", "str"): ("text", "plain"),
-    ("text", "mixed"): ("text", "plain"),
-    ("python", "plain"): ("text", "plain"),
-    ("ipython", "plain"): ("text", "plain"),
-    ("python", "mixed"): ("text", "plain"),
-    ("ipython", "mixed"): ("text", "plain"),
-    ("cson", "mixed"): ("cson", "plain"),
-    ("yaml", "mixed"): ("yaml", "plain"),
+    # special cases
+    # 1. text_subtype-to-str. Do not promote to text-to-plain!
+    ("cson", "str"): ("text", "str"),
+    ("yaml", "str"): ("text", "str"),
+    ("text", "mixed"): ("text", "str"), # NOT text-to-plain. 
+                                        # But mixed => text does go mixed => plain => text
+    ("cson", "mixed"): ("text", "str"), # NOT cson-to-plain
+    ("yaml", "mixed"): ("text", "str"), # NOT yaml-to-plain
+    ("python", "str"): ("text", "str"),
+    ("ipython", "str"): ("text", "str"),
+    ("python", "mixed"): ("text", "str"),
+    ("ipython", "mixed"): ("text", "str"),
+    ("python", "plain"): ("text", "str"),
+    ("ipython", "plain"): ("text", "str"),    
+    # 2. str-to-text_subtype. Do not promote to plain-to-text!
+    ("str", "cson"): ("str", "text"),
+    ("str", "yaml"): ("str", "text"),
+    ("str", "python"): ("str", "text"),
+    ("str", "ipython"): ("str", "text"),
+
+    # apply specific converter to generalized outputs    
+    ("python", "bytes"): ("python", "text"),
+    ("ipython", "bytes"): ("ipython", "text"),
+    ("str", "mixed"): ("str", "binary"),
     ("int", "mixed"): ("int", "plain"),
     ("float", "mixed"): ("float", "plain"),
     ("bool", "mixed"): ("bool", "plain"),
+            
+    # apply generic converter to specified inputs
+    ("str", "binary"): ("plain", "binary"),
+    ("float", "binary"): ("plain", "binary"),
+    ("int", "binary"): ("plain", "binary"),
+    ("bool", "binary"): ("plain", "binary"),    
+    ("python", "binary"): ("text", "binary"),
+    ("ipython", "binary"): ("text", "binary"),
+    ("cson", "bytes"): ("text", "bytes"),
+    ("yaml", "bytes"): ("text", "bytes"),
+    ("str", "bytes"): ("plain", "bytes"),
+    ("int", "bytes"): ("plain", "bytes"),
+    ("float", "bytes"): ("plain", "bytes"),
+    ("bool", "bytes"): ("plain", "bytes"),
+    ("int", "text"): ("plain", "text"),
+    ("float", "text"): ("plain", "text"),
+    ("bool", "text"): ("plain", "text"),
 
-    ("binary", "checksum"): ("text", "checksum"),
-    ("python", "checksum"): ("text", "checksum"),
-    ("ipython", "checksum"): ("text", "checksum"),
-    ("transformer", "checksum"): ("text", "checksum"),
-    ("reactor", "checksum"): ("text", "checksum"),
-    ("macro", "checksum"): ("text", "checksum"),
-    ("plain", "checksum"): ("text", "checksum"),
-    ("cson", "checksum"): ("text", "checksum"),
-    ("mixed", "checksum"): ("text", "checksum"),  # if no hash pattern!
-    ("yaml", "checksum"): ("text", "checksum"),
-    ("str", "checksum"): ("text", "checksum"),
-    ("bytes", "checksum"): ("text", "checksum"),
-    ("int", "checksum"): ("text", "checksum"),
-    ("float", "checksum"): ("text", "checksum"),
-    ("bool", "checksum"): ("text", "checksum"),
-
-    ("checksum", "mixed"): ("checksum", "plain")
 }
 
-conversion_forbidden = set([ # forbidden conversions.
-    ("text", "binary"),
-    ("python", "cson"), ("python", "yaml"), ("python", "binary"),
-    ("python", "bytes"), ("python", "int"), ("python", "float"), ("python", "bool"),
-    ("ipython", "cson"), ("ipython", "yaml"), ("ipython", "binary"),
-    ("ipython", "bytes"), ("ipython", "int"), ("ipython", "float"), ("ipython", "bool"),
-    ("cson", "python"), ("cson", "ipython"), ("cson", "yaml"), ("cson", "binary"),
-    ("cson", "bytes"), ("cson", "str"), ("cson", "int"), ("cson", "float"), ("cson", "bool"),
-    ("yaml", "python"), ("yaml", "ipython"), ("yaml", "cson"), ("yaml", "binary"),
-    ("yaml", "bytes"), ("yaml", "str"), ("yaml", "int"), ("yaml", "float"), ("yaml", "bool"),
-    ("plain", "binary"),
-    ("binary", "text"), ("binary", "python"), ("binary", "ipython"),
-    ("binary", "cson"), ("binary", "yaml"), ("binary", "plain"),
-    ("mixed", "cson"), ("mixed", "yaml"),
-    ("str", "cson"), ("str", "yaml"),
-    ("str", "binary"),
-    ("bytes", "python"), ("bytes", "ipython"), ("bytes", "cson"), ("bytes", "yaml"), ("bytes", "plain"),
-    ("bytes", "float"), ("bytes", "int"), ("bytes", "bool"),
-    ("int", "python"), ("float", "python"), ("bool", "python"),
-    ("int", "ipython"), ("float", "ipython"), ("bool", "ipython"),
-    ("int", "cson"), ("float", "cson"), ("bool", "cson"),
-    ("int", "yaml"), ("float", "yaml"), ("bool", "yaml"),
-    ("int", "bytes"), ("float", "bytes"), ("bool", "bytes"),
-    ("bool", "float"), ("float", "bool"),
-    ("checksum", "binary"),
-    ("checksum", "text"),
-    ("checksum", "python"),
-    ("checksum", "ipython"),
-    ("checksum", "transformer"),
-    ("checksum", "reactor"),
-    ("checksum", "macro"),
-    ("checksum", "cson"),
-    ("checksum", "yaml"),
-    ("checksum", "str"),
+conversion_chain = { #(A,C): B means convert A => B => C
+    ("mixed", "text"): "plain",
+    ("mixed", "cson"): "text",
+    ("mixed", "yaml"): "text",
+    ("mixed", "ipython"): "text",
+    ("mixed", "python"): "text",
+
+    ("binary", "text"): "plain",
+    ("binary", "cson"): "text",
+    ("binary", "yaml"): "text",
+    ("binary", "ipython"): "text",
+    ("binary", "python"): "text",
+
+    ("bytes", "str"): "plain",
+    ("bytes", "float"): "plain",
+    ("bytes", "int"): "plain",
+    ("bytes", "bool"): "plain",
+
+    ("bytes", "cson"): "text",
+    ("bytes", "yaml"): "text",
+    ("bytes", "ipython"): "text",
+    ("bytes", "python"): "text",
+    ("binary", "str"): "bytes",
+    ("plain", "python"): "text",
+    ("plain", "ipython"): "text",
+
+    ("text", "binary"): "mixed",
+    ("text", "float"): "plain",
+    ("text", "int"): "plain",
+    ("text", "bool"): "plain",
+
+    ("cson", "binary"): "plain",
+    ("yaml", "binary"): "plain",
+    ("cson", "yaml"): "plain",
+    ("yaml", "cson"): "plain",
+    ("cson", "int"): "plain",
+    ("cson", "float"): "plain",
+    ("cson", "bool"): "plain",
+    ("yaml", "int"): "plain",
+    ("yaml", "float"): "plain",
+    ("yaml", "bool"): "plain",
+
+    ("int", "cson"): "plain",
+    ("int", "yaml"): "plain",
+    ("float", "cson"): "plain",
+    ("float", "yaml"): "plain",
+    ("bool", "cson"): "plain",
+    ("bool", "yaml"): "plain",
+
+}
+
+conversion_forbidden = set([ 
+    # These conversions must be handled elsewhere (with caching and/or values)
+
+    # value conversions. Invalid for many values.
+    ("binary", "plain"),  # use json_encode
+    ("plain", "binary"),  # must be a list; parse with numpy, and dtype must not be "object"
+                          # or: must be a scalar
+    ("python", "cson"),
+    ("python", "yaml"),
+    ("python", "int"),
+    ("python", "float"),
+    ("python", "bool"),
+    ("ipython", "cson"),
+    ("ipython", "yaml"),
+    ("ipython", "int"),
+    ("ipython", "float"),
+    ("ipython", "bool"),
+    ("cson", "python"),
+    ("cson", "ipython"),
+    ("yaml", "python"),
+    ("yaml", "ipython"),
+    ("int", "python"), ("int", "ipython"),
+    ("float", "python"), ("float", "ipython"),
+    ("bool", "python"), ("bool", "ipython"),
+
+    # conversions from/to checksum.
     ("checksum", "bytes"),
+    ("checksum", "mixed"),
+    ("checksum", "binary"),
+    ("checksum", "plain"),
+    ("checksum", "str"),
     ("checksum", "int"),
     ("checksum", "float"),
     ("checksum", "bool"),
+    ("checksum", "text"),
+    ("checksum", "cson"),
+    ("checksum", "yaml"),
+    ("checksum", "python"),
+    ("checksum", "ipython"),
+    ("bytes", "checksum"),
+    ("mixed", "checksum"),
+    ("binary", "checksum"),
+    ("plain", "checksum"),
+    ("str", "checksum"),
+    ("int", "checksum"),
+    ("float", "checksum"),
+    ("bool", "checksum"),
+    ("text", "checksum"),
+    ("cson", "checksum"),
+    ("yaml", "checksum"),
+    ("python", "checksum"),
+    ("ipython", "checksum"),
 
 ])
 
@@ -262,6 +331,7 @@ def check_conversions():
         conversion_reinterpret,
         conversion_possible,
         conversion_equivalent,
+        conversion_chain,
         conversion_forbidden
     )
     for celltype1 in celltypes:
@@ -279,9 +349,12 @@ def check_conversions():
                     raise Exception("Missing conversion: %s" % str(conv))
                 elif covered > 1:
                     raise Exception("Duplicate conversion: %s" % str(conv))
-                if conv not in conversion_equivalent:
+                if conv not in conversion_equivalent and conv not in conversion_chain:
                     break
-                conv = conversion_equivalent[conv]
+                if conv in conversion_equivalent:
+                    conv = conversion_equivalent[conv]
+                elif conv in conversion_chain:
+                    conv = (conversion_chain[conv], conv[1])
                 if conv in done:
                     raise Exception("Circular equivalence: %s" % str(conv))
                 done.append(conv)
