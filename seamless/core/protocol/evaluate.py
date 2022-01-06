@@ -28,12 +28,19 @@ For example: "'2'" (text) can be converted to "2" (int), but this has a differen
 """
 evaluation_cache_3 = {}
 
+celltype_mapping = {
+    "silk": "mixed",
+    "transformer": "python",
+    "reactor": "python",
+    "macro": "python",
+}
 
 def needs_buffer_evaluation(checksum, celltype, target_celltype, fingertip_mode=False):
-    if celltype == "silk":
-        celltype = "mixed"
-    if target_celltype == "silk":
-        target_celltype = "mixed"
+    celltype = celltype_mapping.get(celltype, celltype)
+    target_celltype = celltype_mapping.get(target_celltype, target_celltype)
+    raise NotImplementedError # conversion_chain, conversion_values
+    # TODO: buffer_info!
+
     if celltype == target_celltype:
         return False
     if (checksum, celltype) not in evaluation_cache_1:
@@ -63,10 +70,9 @@ def needs_buffer_evaluation(checksum, celltype, target_celltype, fingertip_mode=
         raise TypeError((celltype, target_celltype)) # should never happen
 
 async def evaluate_from_checksum(checksum, celltype, target_celltype):
-    if celltype == "silk":
-        celltype = "mixed"
-    if target_celltype == "silk":
-        target_celltype = "mixed"
+    celltype = celltype_mapping.get(celltype, celltype)
+    target_celltype = celltype_mapping.get(target_celltype, target_celltype)
+    raise NotImplementedError # conversion_chain, conversion_values
     if celltype == target_celltype:
         return checksum
     assert (checksum, celltype) in evaluation_cache_1
@@ -89,10 +95,9 @@ async def evaluate_from_checksum(checksum, celltype, target_celltype):
         raise TypeError((celltype, target_celltype)) # should never happen
 
 async def evaluate_from_buffer(checksum, buffer, celltype, target_celltype, fingertip_mode=False):
-    if celltype == "silk":
-        celltype = "mixed"
-    if target_celltype == "silk":
-        target_celltype = "mixed"
+    celltype = celltype_mapping.get(celltype, celltype)
+    target_celltype = celltype_mapping.get(target_celltype, target_celltype)
+    raise NotImplementedError # conversion_chain, conversion_values
     if (celltype, target_celltype) in conversion_equivalent:
         celltype, target_celltype = conversion_equivalent[celltype, target_celltype]
     if celltype == target_celltype or (celltype, target_celltype) in conversion_trivial:
@@ -126,6 +131,8 @@ from .conversion import (
     conversion_reinterpret,
     conversion_possible,
     conversion_equivalent,
+    conversion_chain,
+    conversion_values,
     conversion_forbidden,
     reinterpret,
     reformat,

@@ -218,7 +218,7 @@ from .deserialize_buffer import DeserializeBufferTask
 from .serialize_buffer import SerializeToBufferTask
 from ..expression import Expression
 from ...protocol.evaluate import needs_buffer_evaluation, evaluate_from_checksum, evaluate_from_buffer
-from ...protocol.conversion import conversion_forbidden, SeamlessConversionError
+from ...protocol.conversion import SeamlessConversionError
 from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.expression import get_subpath
 from .checksum import CalculateChecksumTask

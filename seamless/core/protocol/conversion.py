@@ -75,24 +75,37 @@ On top of the evaluation caches, a "buffer info" dict is needed.
 Unlike the evaluation caches, this is shared via database cache/sinks
  whenever appropriate.
 contents of the buffer info:
-- buffer length
+- buffer length: note that float, int, bool have a max length of 1000.
 - is_utf8
-- is_json (implies is_utf8, not is_json, not is_seamless_mixed)
+- is_json: json.loads will work (implies is_utf8, not is_numpy, not is_seamless_mixed)
 - json_type (dict, list, str, bool, float; implies is_json)
+- json_array: homogeneous json array. implies json_type=list.
 - is_numpy (implies not is_json, not is_seamless_mixed)
 - dtype, shape (implies is_numpy)
-- is_seamless_mixed (implies not is_json, not is_numpy)
+- is_seamless_mixed (magic Seamless mixed string; implies not is_json, not is_numpy)
+- "str-text" conversion field. If the buffer can be a text, stores its checksum-as-str
+- "text-str" conversion field. If the buffer can be a str, stores its checksum-as-text
+- "binary-bytes" conversion field (see below)
+- "bytes-binary" conversion field (see below)
+- "binary-json" conversion field. Result of ("binary", "plain") conversion.
+- "json-binary" conversion field. Result of ("plain", "binary") conversion.
 For conversions ("valid" means "preserves checksum". not valid means a failure):
 - is_utf8: bytes to text is valid. otherwise, not valid.
 - is_json: bytes/text/cson/yaml/mixed to plain is valid. otherwise, not valid.
 - json_type: bytes/text/cson/yaml/mixed to that particular type is valid.
    otherwise, not valid for conversion-to-float/int/bool, unless str/float/int/bool
+- json_array: conversion to Numpy array will work.
 - is_numpy: mixed to binary is valid. Otherwise, not valid.
-  if dtype is S and no shape:
+  if dtype is S and empty shape:
       bytes to mixed is valid. Otherwise (but is_numpy), reformat.
       Same for bytes to binary.
+      Reformatted checksum can be stored under "binary-bytes" field
+      This is just for caching, as this conversion is always valid.
 - is_seamless_mixed:
    bytes to mixed is valid. Otherwise, (and not is_numpy, not is_json), invalid
+- bytes-binary: gives the checksum of the np.dtype(S...) array corresponding to the bytes.
+  This is just for caching, as this conversion is always valid.
+
 buffer_info contains nothing about valid conversion to python/ipython/cson/yaml.
 => 
 The database may return other fields as well.
@@ -146,7 +159,7 @@ conversion_reformat = set([ # conversions that are guaranteed to work (if the in
     ("mixed", "bytes"), # ("binary", "bytes") if binary (magic numpy string); else trivial
 
     ("plain", "text"), # if value is a string, value stays the same; else checksum stays the same
-    ("text", "plain"), # if json.loads works, checksum stays the same; else value stays the same.
+    ("text", "plain"), # if json.loads works, checksum stays the same; else value stays the same (becomes str).
     ("text", "str"),   # value stays the same
     ("str", "text"),   # value stays the same
     ("cson", "plain"), # run CSON parser
@@ -185,7 +198,7 @@ conversion_equivalent = { #equivalent conversions
     ("ipython", "mixed"): ("text", "str"),
     ("python", "plain"): ("text", "str"),
     ("ipython", "plain"): ("text", "str"),    
-    # 2. str-to-text_subtype. Do not promote to plain-to-text!
+    # 2. str-to-text_subtype. Plain-to-text or str-to-text are the same here.
     ("str", "cson"): ("str", "text"),
     ("str", "yaml"): ("str", "text"),
     ("str", "python"): ("str", "text"),
@@ -219,13 +232,13 @@ conversion_equivalent = { #equivalent conversions
 }
 
 conversion_chain = { #(A,C): B means convert A => B => C
-    ("mixed", "text"): "plain",
+    ("mixed", "text"): "plain",   # special case
     ("mixed", "cson"): "text",
     ("mixed", "yaml"): "text",
     ("mixed", "ipython"): "text",
     ("mixed", "python"): "text",
 
-    ("binary", "text"): "plain",
+    ("binary", "text"): "plain", # special case
     ("binary", "cson"): "text",
     ("binary", "yaml"): "text",
     ("binary", "ipython"): "text",
@@ -240,7 +253,7 @@ conversion_chain = { #(A,C): B means convert A => B => C
     ("bytes", "yaml"): "text",
     ("bytes", "ipython"): "text",
     ("bytes", "python"): "text",
-    ("binary", "str"): "bytes",
+    ("binary", "str"): "bytes",  # binary => bytes (special case) => plain => str
     ("plain", "python"): "text",
     ("plain", "ipython"): "text",
 
@@ -269,30 +282,13 @@ conversion_chain = { #(A,C): B means convert A => B => C
 
 }
 
-conversion_forbidden = set([ 
+conversion_values = set([ 
     # These conversions must be handled elsewhere (with caching and/or values)
 
     # value conversions. Invalid for many values.
     ("binary", "plain"),  # use json_encode
-    ("plain", "binary"),  # must be a list; parse with numpy, and dtype must not be "object"
-                          # or: must be a scalar
-    ("python", "cson"),
-    ("python", "yaml"),
-    ("python", "int"),
-    ("python", "float"),
-    ("python", "bool"),
-    ("ipython", "cson"),
-    ("ipython", "yaml"),
-    ("ipython", "int"),
-    ("ipython", "float"),
-    ("ipython", "bool"),
-    ("cson", "python"),
-    ("cson", "ipython"),
-    ("yaml", "python"),
-    ("yaml", "ipython"),
-    ("int", "python"), ("int", "ipython"),
-    ("float", "python"), ("float", "ipython"),
-    ("bool", "python"), ("bool", "ipython"),
+    ("plain", "binary"),  # value must be a list; parse with numpy, and dtype must not be "object"
+                          # or: value must be a scalar
 
     # conversions from/to checksum.
     ("checksum", "bytes"),
@@ -324,6 +320,27 @@ conversion_forbidden = set([
 
 ])
 
+conversion_forbidden = set([ 
+    # completely forbidden conversions.
+    ("python", "cson"),
+    ("python", "yaml"),
+    ("python", "int"),
+    ("python", "float"),
+    ("python", "bool"),
+    ("ipython", "cson"),
+    ("ipython", "yaml"),
+    ("ipython", "int"),
+    ("ipython", "float"),
+    ("ipython", "bool"),
+    ("cson", "python"),
+    ("cson", "ipython"),
+    ("yaml", "python"),
+    ("yaml", "ipython"),
+    ("int", "python"), ("int", "ipython"),
+    ("float", "python"), ("float", "ipython"),
+    ("bool", "python"), ("bool", "ipython"),
+])
+
 def check_conversions():
     categories = (
         conversion_trivial,
@@ -332,6 +349,7 @@ def check_conversions():
         conversion_possible,
         conversion_equivalent,
         conversion_chain,
+        conversion_values,
         conversion_forbidden
     )
     for celltype1 in celltypes:
@@ -351,6 +369,8 @@ def check_conversions():
                     raise Exception("Duplicate conversion: %s" % str(conv))
                 if conv not in conversion_equivalent and conv not in conversion_chain:
                     break
+                if conv in conversion_equivalent and conv in conversion_chain:
+                    raise Exception("Duplicate conversion mapping: %s" % str(conv))                
                 if conv in conversion_equivalent:
                     conv = conversion_equivalent[conv]
                 elif conv in conversion_chain:
