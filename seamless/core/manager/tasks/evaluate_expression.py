@@ -45,7 +45,8 @@ class EvaluateExpressionTask(Task):
             if not self.fingertip_mode:
                 result_checksum = \
                     cachemanager.expression_to_result_checksum.get(expression)            
-            if result_checksum is None:
+            if result_checksum is None:                
+                raise Exception # TODO: core.evaluate.py
                 source_checksum = expression.checksum
                 source_hash_pattern = expression.hash_pattern
                 from_cache = False
@@ -76,6 +77,7 @@ class EvaluateExpressionTask(Task):
                 ### /Hash pattern equivalence
 
                 conversion_forbidden = False
+                # TODO: reason out forbidden conversions now
                 if result_hash_pattern in ("#", "##"):
                     source_buffer = await GetBufferTask(manager, source_checksum).run()
                     if source_buffer is None:
@@ -218,7 +220,7 @@ from .deserialize_buffer import DeserializeBufferTask
 from .serialize_buffer import SerializeToBufferTask
 from ..expression import Expression
 from ...protocol.evaluate import needs_buffer_evaluation, evaluate_from_checksum, evaluate_from_buffer
-from ...protocol.conversion import SeamlessConversionError
+from ...conversion import SeamlessConversionError
 from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.expression import get_subpath
 from .checksum import CalculateChecksumTask

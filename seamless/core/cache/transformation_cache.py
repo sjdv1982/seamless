@@ -1009,7 +1009,7 @@ transformation_cache = TransformationCache()
 from .tempref import temprefmanager
 from .buffer_cache import buffer_cache
 from ..protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
-from ..protocol.conversion import convert
+from ..conversion import convert
 from ..protocol.deserialize import deserialize
 from ..protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
 from .database_client import database_cache, database_sink

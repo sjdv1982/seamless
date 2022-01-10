@@ -1,3 +1,38 @@
+
+"""
+TODO: evaluate_expression: 
+copy and adapt from tasks/evaluate_expression.py. Copy back the value-based conversion (worst case, line 131)
+
+All functions here are co-routines and require a cachemanager.
+
+1. check if expression is completely trivial 
+  (same celltype, same hash pattern, no path)
+  if so, return
+2.
+- If source celltype is "checksum", get the value checksum, and consider source celltype = "bytes"
+- Consider target celltype "checksum" as celltype "mixed" with target hash pattern = source hash pattern
+- Define result hash pattern = source hash pattern with path applied
+3. 
+If path, result hash pattern and target hash pattern are all non-empty:
+Check if result hash pattern is target hash pattern.
+If this description succeeds, get the deep cell buffer and apply the path, and return the checksum directly.
+4. 
+Try to describe the expression as A => B => C:
+A. Checksum + source hash pattern + path => result checksum + no source hash pattern + no path
+B. convert result checksum to target checksum
+C. encode target checksum using target hash pattern.  
+If this description fails, a value-based conversion is needed.       
+If this description succeeds:
+Conversion is done in convert.py
+The conversion may return True (trivial success), a checksum (success), False (unconditional failure),
+or None/-1 (conditional failure). In case of conditional failure, a value-based conversion is needed.
+5. Value-based conversion. 
+Not done here, but in evaluate_expression, as a series of tasks.
+
+
+"""
+
+raise NotImplementedError # TODO: rip below. Rip all caches, as they will be stored in buffer_info now.
 """
 Caches:
 """
@@ -125,7 +160,7 @@ async def evaluate_from_buffer(checksum, buffer, celltype, target_celltype, fing
     else:
         raise TypeError((celltype, target_celltype)) # should never happen
 
-from .conversion import (
+from ..conversion import (
     conversion_trivial,
     conversion_reformat,
     conversion_reinterpret,
@@ -134,9 +169,10 @@ from .conversion import (
     conversion_chain,
     conversion_values,
     conversion_forbidden,
-    reinterpret,
-    reformat,
-    convert
+    ###reinterpret,
+    ###reformat,
+    ###convert
 )
 
 from ..cache.buffer_cache import buffer_cache
+from .convert import convert

@@ -344,5 +344,5 @@ sharemanager = ShareManager(0.2)
 
 from ..shareserver import shareserver
 from .protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
-from .protocol.conversion import convert
+from .conversion import convert
 from .protocol.calculate_checksum import calculate_checksum

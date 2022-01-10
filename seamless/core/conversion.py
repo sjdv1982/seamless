@@ -72,43 +72,11 @@ TODO: impose limits of 1000 chars for buffers of int, float, bool
 TODO: get_buffer_info.
 ./core/protocol/evaluate.py needs to be reworked.
 On top of the evaluation caches, a "buffer info" dict is needed.
+See buffer_info.py.
 Unlike the evaluation caches, this is shared via database cache/sinks
- whenever appropriate.
-contents of the buffer info:
-- buffer length: note that float, int, bool have a max length of 1000.
-- is_utf8
-- is_json: json.loads will work (implies is_utf8, not is_numpy, not is_seamless_mixed)
-- json_type (dict, list, str, bool, float; implies is_json)
-- json_array: homogeneous json array. implies json_type=list.
-- is_numpy (implies not is_json, not is_seamless_mixed)
-- dtype, shape (implies is_numpy)
-- is_seamless_mixed (magic Seamless mixed string; implies not is_json, not is_numpy)
-- "str-text" conversion field. If the buffer can be a text, stores its checksum-as-str
-- "text-str" conversion field. If the buffer can be a str, stores its checksum-as-text
-- "binary-bytes" conversion field (see below)
-- "bytes-binary" conversion field (see below)
-- "binary-json" conversion field. Result of ("binary", "plain") conversion.
-- "json-binary" conversion field. Result of ("plain", "binary") conversion.
-For conversions ("valid" means "preserves checksum". not valid means a failure):
-- is_utf8: bytes to text is valid. otherwise, not valid.
-- is_json: bytes/text/cson/yaml/mixed to plain is valid. otherwise, not valid.
-- json_type: bytes/text/cson/yaml/mixed to that particular type is valid.
-   otherwise, not valid for conversion-to-float/int/bool, unless str/float/int/bool
-- json_array: conversion to Numpy array will work.
-- is_numpy: mixed to binary is valid. Otherwise, not valid.
-  if dtype is S and empty shape:
-      bytes to mixed is valid. Otherwise (but is_numpy), reformat.
-      Same for bytes to binary.
-      Reformatted checksum can be stored under "binary-bytes" field
-      This is just for caching, as this conversion is always valid.
-- is_seamless_mixed:
-   bytes to mixed is valid. Otherwise, (and not is_numpy, not is_json), invalid
-- bytes-binary: gives the checksum of the np.dtype(S...) array corresponding to the bytes.
-  This is just for caching, as this conversion is always valid.
+ whenever appropriate. The database may return other fields as well.
 
-buffer_info contains nothing about valid conversion to python/ipython/cson/yaml.
-=> 
-The database may return other fields as well.
+
 TODO: high-level classes on top of deep cells. See https://github.com/sjdv1982/seamless/issues/108
 """
 
@@ -122,7 +90,8 @@ class SeamlessConversionError(ValueError):
 
 import numpy as np
 
-conversion_trivial = set([ # conversions that do not change checksum and are guaranteed to work (if the input is valid)    
+conversion_trivial = set([ 
+    # conversions that do not change checksum and are guaranteed to work (if the input is valid)    
     ("text", "bytes"), 
     ("ipython", "text"),
     ("python", "text"),
@@ -142,7 +111,8 @@ conversion_trivial = set([ # conversions that do not change checksum and are gua
     ("bool", "plain"),
 ])
 
-conversion_reinterpret = set() # conversions that do not change checksum, but are not guaranteed to work (raise exception).
+conversion_reinterpret = set() 
+# conversions that do not change checksum, but are not guaranteed to work (raise exception).
 for source, target in conversion_trivial:
     conversion_reinterpret.add((target, source))
 conversion_reinterpret.difference_update(set([
@@ -151,7 +121,8 @@ conversion_reinterpret.difference_update(set([
     ("yaml", "plain"),
 ]))
 
-conversion_reformat = set([ # conversions that are guaranteed to work (if the input is valid), but may change checksum
+conversion_reformat = set([ 
+    # conversions that are guaranteed to work (if the input is valid), but may change checksum
     # special cases:
     ("bytes", "binary"), # for numpy buffer format (magic numpy string), trivial. Else, create np.dtype(S) array from bytes buffer.
     ("bytes", "mixed"), # as above, but Seamless-mixed buffer format (MAGIC_SEAMLESS_MIXED string) is also trivial.
