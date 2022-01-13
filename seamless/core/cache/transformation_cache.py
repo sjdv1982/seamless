@@ -237,11 +237,13 @@ class TransformationCache:
         metabuf = await serialize(meta, "plain")
         meta_checksum = get_hash(metabuf)
         buffer_cache.cache_buffer(meta_checksum, metabuf)
+        buffer_cache.guarantee_buffer_info(meta_checksum, "plain")
         transformation["__meta__"] = meta_checksum
         if transformer.env is not None:
             envbuf = await serialize(transformer.env, "plain")
             env_checksum = get_hash(envbuf)
             buffer_cache.cache_buffer(env_checksum, envbuf)
+            buffer_cache.guarantee_buffer_info(env_checksum, "plain")
             transformation["__env__"] = env_checksum
         transformation_build_exception = None
         for pinname, checksum in inputpin_checksums.items():

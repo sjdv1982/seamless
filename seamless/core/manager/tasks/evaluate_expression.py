@@ -33,7 +33,7 @@ class EvaluateExpressionTask(Task):
             return
         cachemanager = self.manager().cachemanager
 
-        locknr = await acquire_evaluation_lock(self)
+        locknr = await acquire_evaluation_lock(self)        
         try:
 
             source_celltype = expression.celltype
@@ -46,7 +46,7 @@ class EvaluateExpressionTask(Task):
                 result_checksum = \
                     cachemanager.expression_to_result_checksum.get(expression)            
             if result_checksum is None:                
-                raise Exception # TODO: core.evaluate.py
+                raise Exception # TODO: core/evaluate.py . use await conversion(...) with our own value conversion callback  
                 source_checksum = expression.checksum
                 source_hash_pattern = expression.hash_pattern
                 from_cache = False
@@ -179,7 +179,7 @@ class EvaluateExpressionTask(Task):
                     if result_checksum is not None and result_buffer is not None:
                         buffer_cache.cache_buffer(result_checksum, result_buffer)
 
-                    await validate_subcelltype(
+                    celltype(
                         result_checksum,
                         target_celltype,
                         expression.target_subcelltype,
@@ -221,7 +221,6 @@ from .serialize_buffer import SerializeToBufferTask
 from ..expression import Expression
 from ...protocol.evaluate import needs_buffer_evaluation, evaluate_from_checksum, evaluate_from_buffer
 from ...conversion import SeamlessConversionError
-from ...protocol.validate_subcelltype import validate_subcelltype
 from ...protocol.expression import get_subpath
 from .checksum import CalculateChecksumTask
 from ...cache.buffer_cache import buffer_cache, CacheMissError

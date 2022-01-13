@@ -12,18 +12,6 @@ logger = logging.getLogger("seamless")
 
 deserialize_cache = lrucache2(10)
 
-def validate_checksum(v):
-    if isinstance(v, str):
-        bytes.fromhex(v)
-    elif isinstance(v, list):
-        for vv in v:
-            validate_checksum(vv)
-    elif isinstance(v, dict):
-        for vv in v.values():
-            validate_checksum(vv)
-    else:
-        raise TypeError(v)
-
 def _deserialize(buffer, checksum, celltype):
     if celltype == "silk":
         celltype = "mixed"
@@ -31,8 +19,8 @@ def _deserialize(buffer, checksum, celltype):
     logger.debug("DESERIALIZE: buffer of length {}, checksum {}".format(len(buffer), checksum.hex()))
     if celltype in text_types2:
         s = buffer.decode()
-        assert s.endswith("\n")
-        value = s[:-1]
+        value = s.rstrip("\n")
+        validate_text_celltype(value, checksum, celltype)
     elif celltype == "plain":
         value, storage = mixed_deserialize(buffer)
         if storage != "pure-plain":
@@ -47,11 +35,11 @@ def _deserialize(buffer, checksum, celltype):
         value = buffer
     elif celltype in ("str", "int", "float", "bool"):
         s = buffer.decode()
-        assert s.endswith("\n")
+        s = s.rstrip("\n")
         try:
             value = json.loads(s)
         except json.JSONDecodeError:
-            raise ValueError(s) from None
+            raise ValueError from None
         if not isinstance(value, getattr(builtins, celltype)):
             value = getattr(builtins, celltype)(value)
     elif celltype == "checksum":
@@ -100,7 +88,6 @@ async def deserialize(buffer, checksum, celltype, copy):
         deserialize_cache[checksum, celltype] = value
         if copy:
             value = deepcopy(value)
-    evaluation_cache_1.add((checksum, celltype))
     if not copy:
         id_value = id(value)
         serialize_cache[id_value, celltype] = buffer, value
@@ -133,7 +120,6 @@ def deserialize_sync(buffer, checksum, celltype, copy):
         deserialize_cache[checksum, celltype] = value
         if copy:
             value = deepcopy(value)
-    evaluation_cache_1.add((checksum, celltype))
     if not copy:
         id_value = id(value)
         serialize_cache[id_value, celltype] = buffer, value
@@ -141,5 +127,6 @@ def deserialize_sync(buffer, checksum, celltype, copy):
 
 
 from .serialize import serialize_cache
-from .evaluate import evaluation_cache_1
 from ..cell import text_types2
+from .evaluate import validate_text_celltype
+from ..convert import validate_checksum

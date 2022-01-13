@@ -287,6 +287,7 @@ class StructuredCell(SeamlessBase):
         buf = serialize(self._schema_value, "plain")
         checksum = calculate_checksum(buf)
         buffer_cache.cache_buffer(checksum, buf)
+        buffer_cache.guarantee_buffer_info(checksum, "plain")
         if checksum is not None:
             checksum = checksum.hex()
         self.schema._set_checksum(checksum, from_structured_cell=True)

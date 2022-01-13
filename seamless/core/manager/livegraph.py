@@ -990,5 +990,4 @@ from ..worker import EditPin
 from ..runtime_reactor import RuntimeReactor
 from .tasks.upon_connection import UponBiLinkTask
 from .cancel import get_scell_state, scell_any_pending
-from ..protocol.calculate_checksum import calculate_checksum_sync
-from ..protocol.serialize import serialize_sync
+

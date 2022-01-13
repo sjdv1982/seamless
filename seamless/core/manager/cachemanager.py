@@ -1,3 +1,4 @@
+from re import S
 import weakref
 import copy
 from ..cache.buffer_cache import buffer_cache
@@ -223,7 +224,6 @@ class CacheManager:
 
     async def _fingertip(self, checksum, *, must_have_cell, done):
         from ..cache import CacheMissError
-        from ..cache.transformation_cache import calculate_checksum
         from .tasks.evaluate_expression import EvaluateExpressionTask
         from .tasks.deserialize_buffer import DeserializeBufferTask
         from .tasks.serialize_buffer import SerializeToBufferTask
@@ -321,19 +321,20 @@ class CacheManager:
                 remote = min(remote, c_remote)
                 c_recompute = rmap[cell._fingertip_recompute]
                 recompute = min(recompute, c_recompute)
+                break
 
         if must_have_cell and not has_cell:
             raise CacheMissError(checksum.hex())
 
         if recompute - remote in (0, 1) and remote > 0:
-            buffer_length = buffer_cache.get_buffer_length(checksum)
-            if buffer_length is None:
-                buffer_length = await get_buffer_length_remote(
+            buffer_info = buffer_cache.get_buffer_info(checksum)
+            if buffer_info is None:
+                buffer_info = await get_buffer_info_remote(
                     checksum,
                     remote_peer_id=None
                 )
-            if buffer_length is not None:
-                if buffer_length <= RECOMPUTE_OVER_REMOTE:
+            if buffer_info is not None:
+                if buffer_info.get("length", 0) <= RECOMPUTE_OVER_REMOTE:
                     remote = recompute + 1
 
         if remote > recompute:
@@ -372,6 +373,24 @@ class CacheManager:
             join_dict = self.rev_join_cache[checksum]
             coro = fingertip_join(checksum, join_dict)
             coros.append(coro)
+
+        if not len(coros):
+            # Heroic attempt to get a reverse conversion from any buffer_info
+            attr_list = (
+                "str2text", "text2str", "binary2bytes", "bytes2binary",
+                "binary2json", "json2binary"
+            )
+            checksum_hex = checksum.hex()
+            for source_checksum, buffer_info in buffer_cache.buffer_info.items():
+                for attr in attr_list:
+                    if getattr(buffer_info, attr) == checksum_hex:
+                        expr_celltype, expr_target_celltype = attr.replace("json", "plain").split("2")
+                        expr = Expression(
+                            source_checksum, None, expr_celltype, expr_target_celltype, None,
+                            hash_pattern=None, target_hash_pattern=None
+                        )
+                        coros.append(fingertip_expression(expr))
+
 
         all_tasks = [asyncio.ensure_future(c) for c in coros]
         try:

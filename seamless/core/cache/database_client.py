@@ -4,6 +4,12 @@ import json
 
 session = requests.Session()
 
+# TODO: make all set_X requests non-blocking, 
+# by adding them into a queue and processing them 
+#  in a different thread.
+# (and have a set_X(key, value1) in the queue 
+# superseded by a subsequent set_X(key, value2) request)
+
 class DatabaseBase:
     active = False
     PROTOCOL = ("seamless", "database", "0.0.2")
@@ -104,11 +110,11 @@ class DatabaseSink(DatabaseBase):
         }
         self.send_request(request)
 
-    def set_buffer_length(self, checksum, length):
+    def set_buffer_info(self, checksum, buffer_info):
         request = {
-            "type": "buffer length",
+            "type": "buffer info",
             "checksum": checksum.hex(),
-            "value": length,
+            "value": buffer_info,
         }
         self.send_request(request)
 
@@ -172,9 +178,9 @@ class DatabaseCache(DatabaseBase):
             assert checksum == verify_checksum, "Database corruption!!! Checksum {}".format(checksum.hex())
             return result
 
-    def get_buffer_length(self, checksum):
+    def get_buffer_info(self, checksum):
         request = {
-            "type": "buffer length",
+            "type": "buffer info",
             "checksum": checksum.hex(),
         }
         response = self.send_request(request)

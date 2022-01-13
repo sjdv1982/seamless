@@ -11,6 +11,8 @@ import atexit
 import json
 
 from multiprocessing import Process, JoinableQueue as Queue
+
+from seamless.core.manager.tasks import checksum
 from .execute import execute
 from .injector import transformer_injector as injector
 from .build_module import build_all_modules
@@ -531,12 +533,17 @@ class TransformationJob:
         async def get_result_checksum(result_buffer):
             if result_buffer is None:
                 return None
-            try:
-                await validate_subcelltype(
-                    result_buffer, output_celltype, output_subcelltype,
+            try:                
+                result_checksum = await calculate_checksum(result_buffer)
+                # execute.py will have done a successful serialization for output_celltype
+                buffer_cache.guarantee_buffer_info(
+                    result_checksum, output_celltype
+                )
+                validate_evaluation_subcelltype(
+                    result_checksum, result_buffer, 
+                    output_celltype, output_subcelltype,
                     self.codename
                 )
-                result_checksum = await calculate_checksum(result_buffer)
             except Exception:
                 raise SeamlessInvalidValueError(result)
             return result_checksum
@@ -676,9 +683,8 @@ class TransformationJob:
 
 from .protocol.get_buffer import get_buffer
 from .protocol.deserialize import deserialize
-from .protocol.serialize import serialize
 from .protocol.calculate_checksum import calculate_checksum
-from .protocol.validate_subcelltype import validate_subcelltype
+from .protocol.evaluate import validate_evaluation_subcelltype
 from .cache import CacheMissError
 from .cache.buffer_cache import buffer_cache
 from .cache.transformation_cache import transformation_cache, syntactic_is_semantic

@@ -1,4 +1,154 @@
+import numpy as np
+import warnings
 
+text_validation_celltype_cache = set()
+
+def validate_text_celltype(text, checksum, celltype):
+    assert celltype in text_types2
+    if (checksum, celltype) in text_validation_celltype_cache:
+        return
+    validate_text(text, celltype, "evaluate")
+    text_validation_celltype_cache.add((checksum, celltype))
+
+def has_validated_evaluation(checksum, celltype):
+    if checksum is None:
+        return True
+    if celltype == "bytes":
+        return True
+    if celltype == "checksum":
+        return True  # celltype=checksum is never validated
+    if (checksum, celltype) in text_validation_celltype_cache:
+        return True
+    buffer_info = buffer_cache.get_buffer_info(checksum, remote=False)
+    if buffer_info is None:
+        return False
+    return verify_buffer_info(buffer_info, celltype)
+        
+text_subcelltype_validation_cache = set()
+
+def has_validated_evaluation_subcelltype(checksum, celltype, subcelltype):
+    if not has_validated_evaluation(checksum, celltype):
+        # Should never happen
+        return False
+    if checksum is None:
+        return True
+    if celltype != "python":
+        return True
+    if subcelltype not in ("reactor", "macro", "transformer"):
+        return True
+    key = (checksum, celltype, subcelltype)
+    if key in text_subcelltype_validation_cache:
+        return True
+    return False
+        
+def validate_evaluation_subcelltype(checksum, buffer, celltype, subcelltype, codename):
+    assert has_validated_evaluation(checksum, celltype)  # buffer_cache.guarantee_buffer_info(checksum, celltype) must have been called!
+    if has_validated_evaluation_subcelltype(checksum, celltype, subcelltype):
+        return
+    if codename is None:
+        codename = "<Unknown>"
+    key = (checksum, celltype, subcelltype)
+    value = buffer.decode()[:-1]
+
+    mode, _ = analyze_code(value, codename)
+    if subcelltype == "transformer":
+        pass
+    elif subcelltype in ("reactor", "macro"):
+        if mode == "lambda":
+            err = "subcelltype '%s' does not support code mode '%s'" % (subcelltype, mode)
+            raise SyntaxError((codename, err))
+
+    text_subcelltype_validation_cache.add(key)
+
+async def conversion(checksum, celltype, target_celltype, value_conversion_callback=value_conversion):
+    result = try_convert(checksum, celltype, target_celltype)
+    if result == True:
+        return checksum
+    elif isinstance(result, bytes):
+        return result
+    elif result == False:
+        raise SeamlessConversionError("Checksum cannot be converted")
+
+    buffer_info = buffer_cache.get_buffer_info(checksum)
+    conv_chain = make_conversion_chain(celltype, target_celltype)
+
+    curr_celltype = celltype  
+    curr_checksum = checksum 
+    for next_celltype in conv_chain:
+        conv = (curr_celltype, next_celltype)
+        result = try_convert_single(
+            curr_checksum, curr_celltype, next_celltype,
+            buffer_info=buffer_info, get_buffer_local=True,
+        )
+        if result == True:
+            pass
+        elif isinstance(result, bytes):
+            curr_checksum = result
+        elif (result is None or result == -1) and conv in conversion_values:
+            result = await value_conversion_callback(curr_checksum, curr_celltype, next_celltype)
+        else:
+            raise SeamlessConversionError("Unexpected conversion error")
+
+        curr_celltype = next_celltype
+
+    return result
+
+async def value_conversion(checksum, source_celltype, target_celltype):
+    """Reference implementation of value conversion
+    Does no heroic (i.e. fingertipping) efforts to get a buffer
+    Does not use the Task system, so no fine-grained coalescence/cancellation"""
+    if source_celltype == "checksum":
+        buffer = buffer_cache.get_buffer(checksum)
+        if buffer is None:
+            raise CacheMissError(checksum)
+        checksum_text = await deserialize(buffer, "plain", copy=False)
+        validate_checksum(checksum_text)
+        if not isinstance(checksum_text, str):
+            raise SeamlessConversionError("Cannot convert deep cell in value conversion")
+        checksum2 = bytes.fromhex(checksum_text)
+        return try_convert(checksum2, "bytes", target_celltype)
+
+    buffer = buffer_cache.get_buffer(checksum)
+    if buffer is None:
+        raise CacheMissError(checksum)
+    source_value = await deserialize(buffer, source_celltype, copy=False)
+    conv = (source_celltype, target_celltype)
+    try:
+        if conv == ("binary", "plain"):
+            target_value = json_encode(source_value)
+        elif conv == ("plain", "binary"):
+            try:
+                if isinstance(source_value, (int, float, bool)):
+                    target_value = np.array(source_value)
+                    buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", True)
+                else:         
+                    if not isinstance(source_value, list):
+                        raise ValueError
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")  
+                        target_value = np.array(source_value)
+                        if target_value.dtype == object:
+                            raise ValueError
+                    buffer_cache.update_buffer_info(checksum, "is_json_numeric_array", True)
+            except ValueError as exc:
+                buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", False, update_remote=False)
+                buffer_cache.update_buffer_info(checksum,"is_json_numeric_array", False)
+                raise exc from None
+    except Exception as exc:
+        msg0 = "%s cannot be converted from %s to %s"
+        msg = msg0 % (checksum.hex(), source_celltype, target_celltype)
+        full_msg = msg + "\n\nOriginal exception:\n\n" + str(exc)
+        raise SeamlessConversionError(full_msg) from None
+    target_buffer = await serialize(target_value, target_celltype)
+    target_checksum = await calculate_checksum(target_buffer)
+    buffer_cache.cache_buffer(target_checksum, target_buffer)
+    if conv == ("plain", "binary"):
+        buffer_cache.update_buffer_info(target_checksum, "shape", target_value.shape, update_remote=False)
+        buffer_cache.update_buffer_info(target_checksum, "dtype", str(target_value.dtype))
+
+    buffer_cache.guarantee_buffer_info(target_checksum, target_celltype)
+    return target_checksum
+    
 """
 TODO: evaluate_expression: 
 copy and adapt from tasks/evaluate_expression.py. Copy back the value-based conversion (worst case, line 131)
@@ -32,7 +182,11 @@ Not done here, but in evaluate_expression, as a series of tasks.
 
 """
 
-raise NotImplementedError # TODO: rip below. Rip all caches, as they will be stored in buffer_info now.
+#raise NotImplementedError # TODO: rip below. 
+# Only use validate_text_evaluation_cache, 
+#  since for all others, successful deserialization means value validation!
+
+'''
 """
 Caches:
 """
@@ -159,8 +313,10 @@ async def evaluate_from_buffer(checksum, buffer, celltype, target_celltype, fing
         raise TypeError((celltype, target_celltype))
     else:
         raise TypeError((celltype, target_celltype)) # should never happen
+'''
 
 from ..conversion import (
+    SeamlessConversionError,
     conversion_trivial,
     conversion_reformat,
     conversion_reinterpret,
@@ -174,5 +330,14 @@ from ..conversion import (
     ###convert
 )
 
+from ..convert import make_conversion_chain, try_convert, try_convert_single
+from ..cache import CacheMissError
 from ..cache.buffer_cache import buffer_cache
-from .convert import convert
+from ..cell import cell, text_types2
+from ..convert import try_conversion, validate_checksum, validate_text
+from ..cached_compile import analyze_code
+from ..buffer_info import verify_buffer_info
+from ..protocol.serialize import serialize
+from ..protocol.deserialize import deserialize
+from ..protocol.calculate_checksum import calculate_checksum
+from ..protocol.json import json_encode

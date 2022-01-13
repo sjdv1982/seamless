@@ -1,70 +1,341 @@
 """
-Note that all routines use buffer_cache.
-
-try_convert/try_conversion may return:
-  True (trivial success)
-  A checksum (success)
-  -1 (future success)
-  None (future success or failure)
-  False (unconditional failure),
-
-## Strategy for try_convert, sync:
-
-Conversion is checksum + source_celltype + target_celltype => checksum .
-optional arguments: buffer, buffer_info
-flag: values_as_false: 
-
-1. Convert conversion to a chain of conversions. Iterate over each. 
-First don't pass on buffer and set values_as_false (to quickly find undoable chains); 
-  if None or -1, re-run with the buffer and values_as_false to the original
-2. If buffer_info present:
-     Run convert_with_buffer_info and set result. If not None/-1, return result.
-   Else:
-     Check for:
-      - trivial conversion (return True)
-      - values (return None, or False if values_as_false)
-      - reinterpret/possible (set result to None)
-      - reformat (set result to -1)
-      - forbidden conversion (return False)
-3. 
-If buffer present:
-    - Evaluate converter using buffer, return result.
-Else:
-    - return None
-
-## Strategy for try_conversion, async:
-Conversion is checksum + source_celltype + target_celltype => checksum .
-extra arguments: cachemanager, database
-
-flag: failure_as_exception, buffer_local, buffer_remote 
-
-1. Convert conversion to a chain of async conversions. Run each using an async construct 
-that runs in parallel and terminates on first exception
-First unset buffer_local and buffer_remote, and set failure_as_exception (to quickly find undoable chains); 
-  if None or -1, re-run with buffer_local set to the original, and set failure_as_exception to True.
-  if None or -1, re-rerun with all arguments set to the original.
-2.
-    Check for:
-    - trivial conversion (return True)
-    - values (return None, or, if not buffer_local/_remote: False, or exception if false_as_exception)
-    - reinterpret/possible (set result to None)
-    - reformat (set result to -1)
-    - forbidden conversion (return False, or exception if false_as_exception)
-3. Obtain buffer_info locally or remotely.
-   Run convert_with_buffer_info and set result. If not None/-1, return result.
-   If False, raise exception if false_as_exception
-4. If not buffer_local, return result.
-   Else, try to obtain buffer using local cache, evaluate converter using buffer, return result.
-5. If not buffer_remote, return result.
-   Else, try to obtain buffer remotely, evaluate converter using buffer, return result.
-
-## do_convert, do_conversion
-Will either return a checksum (success) or None (failure)
-For async: extra arguments: cachemanager, database
-
-Will do try_conversion, and if that fails with None or -1, do an value conversion.
-Value conversion will use sync/async versions of (de)serialize and calculate_checksum,
-(instead of the Tasks in the value conversion in evaluate_expression.py)
-
-
+Handles all conversions that can be done using checksum and buffer alone,
+ i.e. without value conversion.
+Conversions involving paths or hash patterns are also out-of-scope
 """
+
+import ast
+import json
+import numpy as np
+
+def validate_text(text, celltype, code_filename):
+    try:
+        if celltype == "text":
+            return
+        if celltype == "python":
+            ast.parse(text, filename=code_filename)
+        elif celltype == "ipython":
+            ipython2python(text)
+        elif celltype == "cson":
+            cson2json(text)
+        elif celltype == "yaml":
+            yaml.load(text)            
+    except Exception:
+        raise ValueError from None
+
+def validate_checksum(v):
+    if isinstance(v, str):
+        bytes.fromhex(v)
+    elif isinstance(v, list):
+        for vv in v:
+            validate_checksum(vv)
+    elif isinstance(v, dict):
+        for vv in v.values():
+            validate_checksum(vv)
+    else:
+        raise ValueError
+
+def make_conversion_chain(source_celltype, target_celltype):
+    """Returns a chain of conversions to go from source to target celltype """
+    conv = (source_celltype, target_celltype)    
+    chain = []
+    while conv in conversion_equivalent:
+        conv = conversion_equivalent[conv]
+        if conv[0] != source_celltype:
+            source_celltype = conv[0]
+            chain.append(source_celltype)
+    if conv in conversion_chain:
+        intermediate = conversion_chain[conv]
+        chain += make_conversion_chain(source_celltype, intermediate)
+        chain += make_conversion_chain(intermediate, target_celltype)
+    else:
+        chain.append(target_celltype)    
+    return chain
+
+def try_convert(
+    checksum, source_celltype, target_celltype,
+    *, buffer=None, buffer_info=None
+):
+    """
+    try_convert may return:
+    True (trivial success)
+    A checksum (success)
+    -1 (future success)
+    None (future success or failure)
+    False (unconditional failure)
+    An SeamlessConversionError is raised if a "reinterpret" or "possible" conversion fails
+    """
+
+    if source_celltype == target_celltype:
+        return checksum
+
+    """
+    Convert conversion to a chain of conversions. Iterate over each. 
+    First don't pass on buffer (to quickly find undoable chains)
+     and don't break on value conversion (again, to detect undoable steps after)
+    Then, if None or -1, re-run with the buffer if there, and try to obtain the buffer.
+    """
+    conv_chain = make_conversion_chain(source_celltype, target_celltype)
+
+    try_convert_params = (
+        {
+            "buffer": None,
+            "buffer_info": None,
+            "break_on_value": False
+        },
+        {
+            "buffer": True,
+            "buffer_info": buffer_info,
+            "get_buffer_local": True,
+            "break_on_value": True
+        },
+        {
+            "buffer": True,
+            "buffer_info": buffer_info,
+            "get_buffer_local": True,
+            "get_buffer_remote": True,
+            "break_on_value": True
+        },
+    )
+
+    for params in try_convert_params:
+        curr_celltype = source_celltype  
+        curr_checksum = checksum 
+        curr_buffer = buffer
+        for next_celltype in conv_chain:
+            curr_params = params.copy()
+            if curr_params["buffer"]:
+                curr_params["buffer"] = curr_buffer
+            break_on_value = curr_params.pop("break_on_value")
+            result = try_convert_single(
+                curr_checksum, curr_celltype, next_celltype,
+                **curr_params
+            )
+            if result == True:
+                pass
+            elif isinstance(result, bytes):
+                curr_checksum = result
+                curr_buffer = None
+            elif result is None or result == -1:
+                if break_on_value:
+                    conv = (curr_celltype, next_celltype)
+                    if conv in conversion_values:
+                        return None
+            elif result == False:                
+                return False
+
+            curr_celltype = next_celltype
+        
+        if result is not None and result != -1:
+            break
+
+    return result
+
+def try_convert_single(
+    checksum, source_celltype, target_celltype,
+    *, buffer=None, buffer_info=None,
+    get_buffer_local=False, get_buffer_remote=False
+):
+    """"Does a single step of a try_convert chain.
+    Return values are the same as for try_convert"""
+
+    conv = (source_celltype, target_celltype)
+
+    if conv in conversion_equivalent:
+        conv = conversion_equivalent[conv]
+        source_celltype, target_celltype = conv
+
+    if conv in conversion_chain:
+        raise SeamlessConversionError("Chained conversions must be handled upstream")
+
+    if buffer_info:
+        result = convert_from_buffer_info(buffer_info, source_celltype, target_celltype)
+        if result is not None and result != -1:
+            return result
+    else:
+        if conv in conversion_trivial:
+            return True
+        elif conv in conversion_values:
+            result = None
+        elif conv in conversion_reinterpret or conv in conversion_possible:
+            result = None
+        elif conv in conversion_reformat:
+            result = -1
+        elif conv in conversion_forbidden:
+            return False
+        
+    if result is None:
+        if conv in conversion_values:
+            return None
+    
+    # "result" is now None or -1, and not a value conversion
+    
+    if buffer is None and (get_buffer_local or get_buffer_remote):
+        buffer = buffer_cache.get_buffer(checksum, remote=get_buffer_remote)
+    if buffer is not None:
+        result = _convert_from_buffer(checksum, buffer, source_celltype, target_celltype)
+    
+    return result
+
+def _convert_reinterpret(checksum, buffer, target_celltype, *, source_celltype):
+    # conversions that do not change checksum, but are not guaranteed to work (raise exception).
+    exc = None
+    if target_celltype == "binary":
+        ok = buffer.startswith(MAGIC_NUMPY)
+        buffer_cache.update_buffer_info(checksum, "is_numpy", ok)
+    else:
+        assert target_celltype in ("plain", "text", "python", "ipython", "cson", "yaml")
+        try:
+            text = buffer.decode().rstrip("\n")
+            ok = True
+        except Exception as exc:
+            ok = False
+        buffer_cache.update_buffer_info(checksum, "is_utf8", ok)
+        if target_celltype == "plain":
+            try:
+                json.loads(text)
+                ok = True
+            except Exception as exc:
+                ok = False
+            buffer_cache.update_buffer_info(checksum, "is_json", ok)
+        else:
+            validate_text(text, target_celltype, "convert_from_buffer")
+    if ok:                
+        return checksum
+    else:
+        msg0 = "%s cannot be re-interpreted from %s to %s"
+        msg = msg0 % (checksum.hex(), source_celltype, target_celltype)
+        full_msg = msg + "\n\nOriginal exception:\n\n" + str(exc)
+        raise SeamlessConversionError(full_msg) from None
+
+def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
+    # conversions that are guaranteed to work (if the input is valid), but may change checksum
+    target_buffer = None
+    target_checksum = None
+    if target_celltype in ("int", "float", "bool") or (
+      source_celltype in ("int", "float", "bool") and target_celltype == "str"
+    ):
+        source_value = deserialize_sync(buffer, source_celltype, copy=False)
+        type_class = getattr(__builtins__, target_celltype)
+        target_value = type_class(source_value)
+    else:
+        conv = (source_celltype, target_celltype)
+        if conv == ("bytes", "binary") or conv == ("bytes", "mixed"):
+            if buffer.startswith(MAGIC_NUMPY):
+                buffer_cache.guarantee_buffer_info(checksum, target_celltype)
+                return checksum
+            elif target_celltype == "mixed" and buffer.startswith(MAGIC_SEAMLESS_MIXED):
+                buffer_cache.guarantee_buffer_info(checksum, target_celltype)
+                return checksum
+            else:
+                # byte array
+                target_value = np.array(buffer)
+
+        elif conv == ("binary", "bytes") or conv == ("mixed", "bytes"):
+            if source_celltype == "binary" or buffer.startswith(MAGIC_NUMPY):
+                source_value = deserialize_sync(buffer, checksum, "binary", copy=False)
+                if source_value.dtype.char == "S":
+                    target_buffer = source_value.tobytes()
+            if target_buffer is None:
+                return checksum
+        elif conv == ("plain", "text"):
+            source_value = deserialize_sync(buffer, checksum, source_celltype, copy=False)
+            if isinstance(source_value, str):
+                target_value = source_value
+            else:
+                buffer_cache.guarantee_buffer_info(checksum, target_celltype)
+                return checksum
+        elif conv == ("text", "plain"):
+            try:
+                deserialize_sync(buffer, checksum, "plain", copy=False)
+                buffer_cache.guarantee_buffer_info(checksum, target_celltype)
+                return checksum
+            except Exception:
+                text = deserialize_sync(buffer, checksum, "text", copy=False)
+                target_buffer = serialize_sync(text, "str")
+        elif conv == ("text", "str") or conv == ("str", "text"):
+            source_value = deserialize_sync(buffer, checksum, source_celltype, copy=False)
+        elif conv == ("cson", "plain") or conv == ("yaml", "plain") or conv == ("ipython", "python"):
+            text = deserialize_sync(buffer, checksum, "text", copy=False)
+            if source_celltype == "cson":
+                target_value = cson2json(text)
+            elif conv == ("ipython", "python"):
+                target_value = ipython2python(text)
+            else: # yaml
+                target_value = yaml.load(text)
+        else:
+            raise AssertionError
+    if target_buffer is None:
+        target_buffer = serialize_sync(target_value, target_celltype)
+    if target_checksum is None:
+        target_checksum = calculate_checksum_sync(target_buffer)
+    buffer_cache.cache_buffer(target_checksum, target_buffer)
+    buffer_cache.guarantee_buffer_info(target_checksum, target_celltype)
+
+def _convert_possible(checksum, buffer, source_celltype, target_celltype):
+    exc = None
+    try:
+        if (source_celltype, target_celltype) == ("mixed", "str"):
+            if buffer.startswith(MAGIC_NUMPY):
+                raise TypeError("Numpy format")
+            if buffer.startswith(MAGIC_SEAMLESS_MIXED):
+                raise TypeError("Seamless mixed buffer format")
+        source_value = deserialize_sync(buffer, source_celltype, copy=False)
+        if isinstance(source_value, (dict, list)):
+            raise TypeError(type(source_value))
+        elif isinstance(source_value, np.ndarray): 
+            if source_value.ndim:
+                raise TypeError((type(source_value), source_value.ndim))
+        type_class = getattr(__builtins__, target_celltype)
+        target_value = type_class(source_value)
+    except Exception as exc:
+        msg0 = "%s cannot be converted from %s to %s"
+        msg = msg0 % (checksum.hex(), source_celltype, target_celltype)
+        full_msg = msg + "\n\nOriginal exception:\n\n" + str(exc)
+        raise SeamlessConversionError(full_msg) from None
+
+    target_buffer = serialize_sync(target_value, target_celltype)
+    target_checksum = calculate_checksum_sync(target_buffer)
+    buffer_cache.cache_buffer(target_checksum, target_buffer)
+    buffer_cache.guarantee_buffer_info(target_checksum, target_celltype)
+    return target_checksum
+
+def _convert_from_buffer(checksum, buffer, source_celltype, target_celltype):
+        if len(buffer) > 1000 and target_celltype in ("int", "float", "bool"):
+            raise SeamlessConversionError("Buffer too long")
+        conv = (source_celltype, target_celltype)
+        if conv in conversion_reinterpret:
+            return _convert_reinterpret(checksum, buffer, target_celltype, source_celltype=source_celltype)
+        elif conv in conversion_reformat:
+            return _convert_reformat(checksum, buffer, source_celltype, target_celltype)
+        elif conv in conversion_possible:
+            return _convert_possible(checksum, buffer, source_celltype, target_celltype)
+        else:
+            return None
+
+from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
+
+import ruamel.yaml
+yaml = ruamel.yaml.YAML(typ='safe')
+
+from .protocol.cson import cson2json
+from silk.mixed import MAGIC_NUMPY
+
+from ..ipython import ipython2python
+
+from .conversion import (
+    conversion_trivial,
+    conversion_reformat,
+    conversion_reinterpret,
+    conversion_possible,
+    conversion_equivalent,
+    conversion_chain,
+    conversion_values,
+    conversion_forbidden,
+    SeamlessConversionError
+)
+from .buffer_info import convert_from_buffer_info
+from .cache.buffer_cache import buffer_cache
+from .protocol.calculate_checksum import calculate_checksum_sync
+from .protocol.deserialize import deserialize_sync
+from .protocol.serialize import serialize_sync

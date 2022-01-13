@@ -1,6 +1,7 @@
 import traceback
 from . import Task
 import asyncio
+import numpy as np
 
 class SetCellValueTask(Task):
     # For values that come from the command line
@@ -52,13 +53,18 @@ class SetCellValueTask(Task):
                 assert buffer is None or isinstance(buffer, bytes)
                 checksum = await CalculateChecksumTask(manager, buffer).run()
             if checksum is not None:
-                await validate_subcelltype(
-                    checksum, cell._celltype, cell._subcelltype,
+                buffer_cache.guarantee_buffer_info(checksum, cell._celltype)
+                if isinstance(value, np.ndarray):
+                    buffer_cache.update_buffer_info(checksum, "shape", value.shape, update_remote=False)
+                    buffer_cache.update_buffer_info(checksum, "dtype", str(value.dtype))
+                validate_evaluation_subcelltype(
+                    checksum, buffer,
+                    cell._celltype, cell._subcelltype,
                     str(cell)
                 )
                 manager.cancel_cell(cell, void=False, origin_task=self)
                 checksum_cache[checksum] = buffer
-                buffer_cache.cache_buffer(checksum, buffer)
+                buffer_cache.cache_buffer(checksum, buffer)                
                 manager._set_cell_checksum(self.cell, checksum, False)
                 livegraph.cell_parsing_exceptions.pop(cell, None)
                 CellUpdateTask(manager, cell, origin_reactor=self.origin_reactor).launch()
@@ -78,7 +84,7 @@ class SetCellValueTask(Task):
             taskmanager.cell_to_value.pop(cell, None)
         return None
 
-from ...protocol.validate_subcelltype import validate_subcelltype
+from ...protocol.evaluate import validate_evaluation_subcelltype
 from ...protocol.calculate_checksum import checksum_cache
 from ...status import StatusReasonEnum
 from ...protocol.deep_structure import value_to_deep_structure
