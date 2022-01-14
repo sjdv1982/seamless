@@ -60,7 +60,12 @@ def validate_evaluation_subcelltype(checksum, buffer, celltype, subcelltype, cod
 
     text_subcelltype_validation_cache.add(key)
 
-async def conversion(checksum, celltype, target_celltype, value_conversion_callback=value_conversion):
+async def conversion(
+    checksum, celltype, target_celltype, 
+    *, fingertip_mode, value_conversion_callback=None
+):
+    if value_conversion_callback is None:
+        value_conversion_callback = value_conversion
     result = try_convert(checksum, celltype, target_celltype)
     if result == True:
         return checksum
@@ -69,7 +74,9 @@ async def conversion(checksum, celltype, target_celltype, value_conversion_callb
     elif result == False:
         raise SeamlessConversionError("Checksum cannot be converted")
 
-    buffer_info = buffer_cache.get_buffer_info(checksum)
+    buffer_info = None
+    if not fingertip_mode:
+        buffer_info = buffer_cache.get_buffer_info(checksum)
     conv_chain = make_conversion_chain(celltype, target_celltype)
 
     curr_celltype = celltype  
@@ -152,6 +159,7 @@ async def value_conversion(checksum, source_celltype, target_celltype):
 """
 TODO: evaluate_expression: 
 copy and adapt from tasks/evaluate_expression.py. Copy back the value-based conversion (worst case, line 131)
+TAKE FINGERTIP MODE
 
 All functions here are co-routines and require a cachemanager.
 
@@ -173,7 +181,7 @@ B. convert result checksum to target checksum
 C. encode target checksum using target hash pattern.  
 If this description fails, a value-based conversion is needed.       
 If this description succeeds:
-Conversion is done in convert.py
+Conversion is done using "convert" coroutine. PROPAGATE FINGERTIP MODE!
 The conversion may return True (trivial success), a checksum (success), False (unconditional failure),
 or None/-1 (conditional failure). In case of conditional failure, a value-based conversion is needed.
 5. Value-based conversion. 
