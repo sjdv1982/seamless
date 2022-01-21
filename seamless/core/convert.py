@@ -163,7 +163,9 @@ def try_convert_single(
             result = -1
         elif conv in conversion_forbidden:
             return False
-        
+        else:
+            raise AssertionError(conv)
+            
     if result is None:
         if conv in conversion_values:
             return None
@@ -271,6 +273,7 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
         target_checksum = calculate_checksum_sync(target_buffer)
     buffer_cache.cache_buffer(target_checksum, target_buffer)
     buffer_cache.guarantee_buffer_info(target_checksum, target_celltype)
+    return target_checksum
 
 def _convert_possible(checksum, buffer, source_celltype, target_celltype):
     exc = None

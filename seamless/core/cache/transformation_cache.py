@@ -8,7 +8,6 @@ class HardCancelError(Exception):
     def __str__(self):
         return self.__class__.__name__
 
-from seamless.core.protocol.serialize import serialize
 import sys
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
@@ -143,8 +142,8 @@ async def syntactic_to_semantic(
             raise CacheMissError(checksum.hex()) from None
         buffer_cache.cache_buffer(checksum, buffer)
     if celltype in ("cson", "yaml"):
-        semantic_checksum = await convert(
-            checksum, buffer, celltype, "plain"
+        semantic_checksum = try_convert(
+            checksum,  celltype, "plain", buffer=buffer,
         )
     elif celltype == "python":
         value = await deserialize(buffer, checksum, "python", False)
@@ -1011,7 +1010,6 @@ transformation_cache = TransformationCache()
 from .tempref import temprefmanager
 from .buffer_cache import buffer_cache
 from ..protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
-from ..conversion import convert
 from ..protocol.deserialize import deserialize
 from ..protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
 from .database_client import database_cache, database_sink
@@ -1021,3 +1019,5 @@ from ..transformation import (
 )
 from ..status import SeamlessInvalidValueError, SeamlessUndefinedError, StatusReasonEnum
 from ..transformer import Transformer
+from ..convert import try_convert
+from ..protocol.serialize import serialize

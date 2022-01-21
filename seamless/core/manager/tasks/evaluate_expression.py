@@ -1,10 +1,249 @@
 # See ../protocol/conversion.py for documentation about conversions.
 
+from tkinter import E
 import traceback, asyncio
 import sys
 from asyncio import CancelledError
+import warnings
+import numpy as np
 
 from . import Task
+from silk.json_util import json_encode
+
+celltype_mapping = {
+    "silk": "mixed",
+    "transformer": "python",
+    "reactor": "python",
+    "macro": "python",
+}
+
+async def value_conversion(
+    checksum, source_celltype, target_celltype, *, 
+    manager, fingertip_mode
+):
+    cachemanager = manager.cachemanager
+    if source_celltype == "checksum":
+        if fingertip_mode:
+            buffer = await GetBufferTask(manager, checksum).run()
+        else:
+            buffer = await cachemanager.fingertip(checksum)
+        if buffer is None:
+            raise CacheMissError(checksum)
+        checksum_text = await DeserializeBufferTask(
+            manager, buffer, checksum, "plain", copy=False
+        ).run()
+        validate_checksum(checksum_text)
+        if not isinstance(checksum_text, str):
+            raise SeamlessConversionError("Cannot convert deep cell in value conversion")
+        checksum2 = bytes.fromhex(checksum_text)
+        return try_convert(checksum2, "bytes", target_celltype)
+
+    if fingertip_mode:
+        buffer = await GetBufferTask(manager, checksum).run()
+    else:
+        buffer = await cachemanager.fingertip(checksum)
+    if buffer is None:
+        raise CacheMissError(checksum)
+    source_value = await DeserializeBufferTask(
+        manager, buffer, source_celltype, copy=False
+    ).run()
+    conv = (source_celltype, target_celltype)
+    try:
+        if conv == ("binary", "plain"):
+            target_value = json_encode(source_value)
+        elif conv == ("plain", "binary"):
+            try:
+                if isinstance(source_value, (int, float, bool)):
+                    target_value = np.array(source_value)
+                    buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", True)
+                else:         
+                    if not isinstance(source_value, list):
+                        raise ValueError
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")  
+                        target_value = np.array(source_value)
+                        if target_value.dtype == object:
+                            raise ValueError
+                    buffer_cache.update_buffer_info(checksum, "is_json_numeric_array", True)
+            except ValueError as exc:
+                buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", False, update_remote=False)
+                buffer_cache.update_buffer_info(checksum,"is_json_numeric_array", False)
+                raise exc from None
+    except Exception as exc:
+        msg0 = "%s cannot be converted from %s to %s"
+        msg = msg0 % (checksum.hex(), source_celltype, target_celltype)
+        full_msg = msg + "\n\nOriginal exception:\n\n" + str(exc)
+        raise SeamlessConversionError(full_msg) from None
+    target_buffer = await SerializeToBufferTask(
+        manager, target_value, target_celltype
+    ).run()
+    target_checksum = await CalculateChecksumTask(manager, buffer).run()
+    buffer_cache.cache_buffer(target_checksum, target_buffer)
+    if conv == ("plain", "binary"):
+        buffer_cache.update_buffer_info(target_checksum, "shape", target_value.shape, update_remote=False)
+        buffer_cache.update_buffer_info(target_checksum, "dtype", str(target_value.dtype))
+
+    buffer_cache.guarantee_buffer_info(target_checksum, target_celltype)
+    return target_checksum
+
+
+async def _evaluate_expression(self, expression, manager, fingertip_mode):
+    # Get the expression result checksum from cache.
+    cachemanager = manager.cachemanager    
+    if not fingertip_mode:
+        result_checksum = \
+            cachemanager.expression_to_result_checksum.get(expression)
+        if result_checksum is not None:
+            return result_checksum
+
+    locknr = await acquire_evaluation_lock(self)
+    try:
+        result_checksum = None
+        result_buffer = None
+        result_value = None
+        source_checksum = expression.checksum
+        source_hash_pattern = expression.hash_pattern
+        source_celltype = expression.celltype
+        source_celltype = celltype_mapping.get(source_celltype, source_celltype)
+        target_celltype = expression.target_celltype
+        target_celltype = celltype_mapping.get(target_celltype, target_celltype)
+
+        trivial_path = (expression.path is None or expression.path == [] or expression.path == ())
+        result_hash_pattern = expression.result_hash_pattern          
+        target_hash_pattern = expression.target_hash_pattern
+
+        if result_hash_pattern not in (None, "#", "##") and target_celltype == "checksum":
+            # Special case. Deep cells converted to "checksum" remain unchanged
+            result_hash_pattern = None
+            source_celltype = "checksum"
+        else:
+            if result_hash_pattern == "##":
+                source_celltype = "bytes"
+            if target_hash_pattern == "##":
+                target_celltype = "bytes"
+
+        try:
+            conv = (source_celltype, target_celltype)
+            if conv in conversion_forbidden:
+                msg = "Forbidden conversion from {} to {}"
+                raise SeamlessConversionError(msg.format(source_celltype, target_celltype))
+
+            ### Hash pattern equivalence. Code below is for simple hash patterns.
+            # More complex hash patterns may be also be equivalent, which can be determined:
+            # - Statically, e.g. {"x": "##"} == {"*": "#"}
+            # - Dynamically, e.g. {"x": "#", "y": {"!": "#"} } == {"x": "#"} if y is absent in the value
+            # This is to be implemented later. For now, there are no complex hash patterns in Seamless.
+
+            hash_pattern_equivalent = False
+            if source_celltype == target_celltype:
+                hash_pattern_equivalent = (result_hash_pattern == target_hash_pattern)
+
+            ### /Hash pattern equivalence
+
+            if result_hash_pattern in ("#", "##"):
+                source_buffer = await GetBufferTask(manager, source_checksum).run()
+                if source_buffer is None:
+                    raise CacheMissError(source_checksum)
+                deep_source_value = await DeserializeBufferTask(manager, source_buffer, source_checksum, "plain", False).run()
+                mode, subpath_result = await get_subpath(deep_source_value, source_hash_pattern, expression.path)
+                if subpath_result is not None:
+                    assert mode == "checksum"
+                source_checksum = subpath_result
+                result_hash_pattern = None
+                trivial_path = True
+
+            if trivial_path and result_hash_pattern is None or hash_pattern_equivalent:        
+                result_checksum = await conversion(
+                    source_checksum, source_celltype,
+                    target_celltype, fingertip_mode=fingertip_mode,
+                    value_conversion_callback=value_conversion
+                )
+                needs_value_conversion = False
+            else:
+                needs_value_conversion = True
+
+            if needs_value_conversion:
+                if fingertip_mode:
+                    buffer = await GetBufferTask(manager, source_checksum).run()
+                else:
+                    buffer = await cachemanager.fingertip(source_checksum)
+                value = await DeserializeBufferTask(
+                    manager, buffer, source_checksum,
+                    source_celltype, copy=False
+                ).run()
+                mode, result = await get_subpath(value, source_hash_pattern, expression.path)
+                assert mode in ("checksum", "value"), mode
+                if result is None:
+                    result_checksum = None
+                elif mode == "checksum":
+                    assert source_hash_pattern is not None
+                    buffer2 = await GetBufferTask(manager, result).run()
+                    result_value = await DeserializeBufferTask(
+                        manager, buffer2, result, source_celltype,
+                        copy=False
+                    )
+                elif mode == "value":
+                    use_value = True                    
+                    result_value = result                             
+
+                if use_value:
+                    result_buffer = await SerializeToBufferTask(
+                        manager, result_value,
+                        expression.target_celltype,
+                        use_cache=True
+                    ).run()
+                    if result_buffer is not None:
+                        result_checksum = await CalculateChecksumTask(
+                            manager, result_buffer
+                        ).run()
+
+
+            if target_hash_pattern not in (None, "#", "##"):
+                result_checksum = await apply_hash_pattern(result_checksum, target_hash_pattern)
+
+        except asyncio.CancelledError as exc:
+            if self._canceled:
+                raise exc from None
+            else:
+                fexc = traceback.format_exc()
+                expression.exception = fexc
+            result_checksum = None
+        except Exception as exc:
+            if isinstance(exc, (CacheMissError, SeamlessConversionError)):
+                expression.exception = str(exc)
+                if isinstance(exc, CacheMissError):
+                    expression.exception = "CacheMissError: " + expression.exception
+                ###print(exc, file=sys.stderr))
+            else:
+                fexc = traceback.format_exc()
+                expression.exception = fexc
+                ###print(fexc, file=sys.stderr)
+            result_checksum = None
+            
+        if result_checksum is not None:
+            if expression.target_subcelltype is not None:
+                validate_evaluation_subcelltype(
+                    result_checksum,
+                    result_buffer,
+                    target_celltype,
+                    expression.target_subcelltype,
+                    codename="expression"
+                )
+            if result_buffer is not None:
+                buffer_cache.cache_buffer(result_checksum, result_buffer)
+
+            if result_checksum != expression.checksum:
+                cachemanager.incref_checksum(
+                    result_checksum,
+                    expression,
+                    False,
+                    True
+                )
+
+        cachemanager.expression_to_result_checksum[expression] = result_checksum
+        return result_checksum
+    finally:
+        release_evaluation_lock(locknr)
 
 class EvaluateExpressionTask(Task):
     """ Evaluates an expression
@@ -31,199 +270,23 @@ class EvaluateExpressionTask(Task):
         manager = self.manager()
         if manager is None or manager._destroyed:
             return
-        cachemanager = self.manager().cachemanager
+        return await _evaluate_expression(self, expression, manager, self.fingertip_mode)
 
-        locknr = await acquire_evaluation_lock(self)        
-        try:
-
-            source_celltype = expression.celltype
-            target_celltype = expression.target_celltype
-
-            # Get the expression result checksum from cache.
-            result_checksum = None
-            from_cache = True
-            if not self.fingertip_mode:
-                result_checksum = \
-                    cachemanager.expression_to_result_checksum.get(expression)            
-            if result_checksum is None:                
-                raise Exception # TODO: core/evaluate.py . use await conversion(...) with our own value conversion callback  
-                source_checksum = expression.checksum
-                source_hash_pattern = expression.hash_pattern
-                from_cache = False
-                trivial_path = (expression.path is None or expression.path == [] or expression.path == ())
-                result_hash_pattern = expression.result_hash_pattern          
-                target_hash_pattern = expression.target_hash_pattern
-
-                if result_hash_pattern not in (None, "#", "##") and target_celltype == "checksum":
-                    # Special case. Deep cells converted to "checksum" remain unchanged
-                    result_hash_pattern = None
-                    source_celltype = "checksum"
-                else:
-                    if result_hash_pattern == "##":
-                        source_celltype = "bytes"
-                    if target_hash_pattern == "##":
-                        target_celltype = "bytes"
-
-                ### Hash pattern equivalence. Code below is for simple hash patterns.
-                # More complex hash patterns may be also be equivalent, which can be determined:
-                # - Statically, e.g. {"x": "##"} == {"*": "#"}
-                # - Dynamically, e.g. {"x": "#", "y": {"!": "#"} } == {"x": "#"} if y is absent in the value
-                # This is to be implemented later. For now, there are no complex hash patterns in Seamless.
-
-                hash_pattern_equivalent = False
-                if source_celltype == target_celltype:
-                    hash_pattern_equivalent = (result_hash_pattern == target_hash_pattern)
-
-                ### /Hash pattern equivalence
-
-                conversion_forbidden = False
-                # TODO: reason out forbidden conversions now
-                if result_hash_pattern in ("#", "##"):
-                    source_buffer = await GetBufferTask(manager, source_checksum).run()
-                    if source_buffer is None:
-                        raise CacheMissError(source_checksum)
-                    deep_source_value = await DeserializeBufferTask(manager, source_buffer, source_checksum, "plain", False).run()
-                    mode, subpath_result = await get_subpath(deep_source_value, source_hash_pattern, expression.path)
-                    if subpath_result is not None:
-                        assert mode == "checksum"
-                    source_checksum = subpath_result
-                    source_hash_pattern = None
-                    trivial_path = True
-
-                need_buf = None
-                try:
-                    need_buf = needs_buffer_evaluation(
-                        source_checksum,
-                        source_celltype,
-                        target_celltype,
-                        self.fingertip_mode
-                    )
-                    need_value = False
-                    if not trivial_path:
-                        need_value = True
-                    elif not hash_pattern_equivalent:
-                        if source_hash_pattern is not None:
-                            need_value = True
-                except TypeError:     
-                    conversion_forbidden = True               
-                    need_value = True
-
-                try:
-                    result_buffer = None
-                    # If the expression is trivial, obtain its result checksum directly                    
-                    if trivial_path and hash_pattern_equivalent:
-                        result_checksum = source_checksum
-                    elif trivial_path and not need_value and not need_buf: 
-                        result_checksum = await evaluate_from_checksum(
-                            source_checksum, source_celltype,
-                            target_celltype
-                        )
-                    else:
-                        buffer = await GetBufferTask(manager, source_checksum).run()
-                        if not need_value:
-                            # Evaluate from buffer
-                            result_checksum = await evaluate_from_buffer(
-                                source_checksum, buffer,
-                                source_celltype, target_celltype,
-                                fingertip_mode=self.fingertip_mode
-                            )
-                        else:
-                            # Worst case. We have to deserialize the buffer, and evaluate the expression path on that.
-                            value = await DeserializeBufferTask(
-                                manager, buffer, source_checksum,
-                                source_celltype, copy=False
-                            ).run()
-                            mode, result = await get_subpath(value, source_hash_pattern, expression.path)
-                            use_value = False
-                            if result is None:
-                                result_checksum = None
-                            elif mode == "checksum":
-                                assert source_hash_pattern is not None
-                                if conversion_forbidden or need_buf:
-                                    buffer2 = await GetBufferTask(manager, result).run()
-                                if conversion_forbidden:
-                                    result_value = await DeserializeBufferTask(
-                                        manager, buffer2, result, source_celltype,
-                                        copy=False
-                                    )
-                                    use_value = True
-                                elif need_buf:
-                                    result_checksum = await evaluate_from_buffer(
-                                        result, buffer2,
-                                        source_celltype, target_celltype,
-                                        fingertip_mode=self.fingertip_mode
-                                    )
-                                else:
-                                    result_checksum = await evaluate_from_checksum(
-                                        result, source_celltype,
-                                        target_celltype
-                                    )
-                            elif mode == "value":
-                                use_value = True
-                                result_value = result                             
-                            if use_value:
-                                result_buffer = await SerializeToBufferTask(
-                                    manager, result_value,
-                                    expression.target_celltype,
-                                    use_cache=True
-                                ).run()
-                                if result_buffer is not None:
-                                    result_checksum = await CalculateChecksumTask(
-                                        manager, result_buffer
-                                    ).run()
-
-                    if target_hash_pattern not in (None, "#", "##"):
-                        result_buffer = None
-                        result_checksum = await apply_hash_pattern(result_checksum, target_hash_pattern)
-
-                    if result_checksum is not None and result_buffer is not None:
-                        buffer_cache.cache_buffer(result_checksum, result_buffer)
-
-                    celltype(
-                        result_checksum,
-                        target_celltype,
-                        expression.target_subcelltype,
-                        codename="expression"
-                    )
-                except asyncio.CancelledError as exc:
-                    if self._canceled:
-                        raise exc from None
-                    else:
-                        fexc = traceback.format_exc()
-                        expression.exception = fexc
-                    result_checksum = None
-                except Exception as exc:
-                    if isinstance(exc, (CacheMissError, SeamlessConversionError)):
-                        expression.exception = str(exc)
-                        ###print(exc, file=sys.stderr))
-                    else:
-                        fexc = traceback.format_exc()
-                        expression.exception = fexc
-                        ###print(fexc, file=sys.stderr)
-                    result_checksum = None
-                    
-
-                if not from_cache and result_checksum is not None:
-                    if result_checksum != expression.checksum:
-                        cachemanager.incref_checksum(
-                            result_checksum,
-                            expression,
-                            False,
-                            True
-                        )
-            return result_checksum
-        finally:
-            release_evaluation_lock(locknr)
+async def evaluate_expression(expression):
+    manager = Manager()
+    result = await EvaluateExpressionTask(manager, expression).run()
+    return result
 
 from .get_buffer import GetBufferTask
 from .deserialize_buffer import DeserializeBufferTask
 from .serialize_buffer import SerializeToBufferTask
 from ..expression import Expression
-from ...protocol.evaluate import needs_buffer_evaluation, evaluate_from_checksum, evaluate_from_buffer
-from ...conversion import SeamlessConversionError
+from ...protocol.evaluate import conversion, validate_checksum, try_convert, validate_evaluation_subcelltype
+from ...conversion import SeamlessConversionError, conversion_forbidden
 from ...protocol.expression import get_subpath
 from .checksum import CalculateChecksumTask
 from ...cache.buffer_cache import buffer_cache, CacheMissError
 from . import acquire_evaluation_lock, release_evaluation_lock
 from ...protocol.deep_structure import access_hash_pattern, apply_hash_pattern, value_to_deep_structure
 from ...protocol.expression import get_subpath
+from ..manager import Manager

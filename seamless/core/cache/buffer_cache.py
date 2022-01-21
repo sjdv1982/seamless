@@ -1,11 +1,14 @@
 import time
 import weakref
 import traceback
+import copy
 from weakref import WeakValueDictionary
 import functools
 from collections import namedtuple
 
 from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
+
+from seamless.core.buffer_info import BufferInfo
 
 from .database_client import database_sink, database_cache
 
@@ -273,16 +276,14 @@ class BufferCache:
         else:
             remotes = [False]
         for do_remote in remotes:
-            buffer_info = database_cache.get_buffer_info(checksum, remote=do_remote)
+            buffer_info = database_cache.get_buffer_info(checksum)
             if buffer_info is not None:
-                length = buffer_info.get("length")
-                if length is not None:
-                    return length
+                return buffer_info
             buf = self.get_buffer(checksum, remote=do_remote)
             if buf is not None:
                 length = len(buf)
                 self.update_buffer_info(checksum, "length", length, fetch_remote=False)
-                return length
+                return self.buffer_info[checksum]
 
     def update_buffer_info(self, checksum, attr, value, *, fetch_remote=True, update_remote=True):
         co_flags = {
@@ -309,20 +310,20 @@ class BufferCache:
                     buffer_info_remote.update(buffer_info)
                     buffer_info = buffer_info_remote
                 self.buffer_info[checksum] = buffer_info
-        old_buffer_info = buffer_info.copy()
+        old_buffer_info = copy.copy(buffer_info)
         if buffer_info is None:
-            buffer_info = {}
+            buffer_info = BufferInfo(checksum, {})
             self.buffer_info[checksum] = buffer_info
         buffer_info[attr] = value
         if value:
             for f in co_flags.get(attr, []):
-                self.update_buffer_info(attr, True, update_remote=False)
+                self.update_buffer_info(checksum, f, True, update_remote=False)
         elif value == False:
             for f in anti_flags.get(attr, []):
-                self.update_buffer_info(attr, False, update_remote=False)
+                self.update_buffer_info(checksum, f, False, update_remote=False)
         if update_remote:
             if old_buffer_info != buffer_info:
-                database_cache.set_buffer_info(checksum, buffer_info)
+                database_sink.set_buffer_info(checksum, buffer_info)
 
     def guarantee_buffer_info(self, checksum, celltype):
         """Modify buffer_info to reflect that checksum is surely deserializable into celltype
@@ -337,7 +338,7 @@ class BufferCache:
             # parsability as IPython/python/cson/yaml is out-of-scope for buffer info
             celltype = "text"
 
-        old_buffer_info = self.buffer_info.get(checksum).copy()
+        old_buffer_info = copy.copy(self.buffer_info.get(checksum))
 
         if celltype == "mixed":
             buffer = self.get_buffer(checksum, remote=False)
@@ -358,7 +359,7 @@ class BufferCache:
         buffer_info = self.buffer_info.get(checksum)
 
         if old_buffer_info != buffer_info:
-            database_cache.set_buffer_info(checksum, buffer_info)
+            database_sink.set_buffer_info(checksum, buffer_info)
              
 
     def buffer_check(self, checksum):

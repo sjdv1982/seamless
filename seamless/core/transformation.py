@@ -12,7 +12,6 @@ import json
 
 from multiprocessing import Process, JoinableQueue as Queue
 
-from seamless.core.manager.tasks import checksum
 from .execute import execute
 from .injector import transformer_injector as injector
 from .build_module import build_all_modules

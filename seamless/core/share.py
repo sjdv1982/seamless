@@ -260,7 +260,7 @@ class ShareManager:
                     )
                 if buffer is not None:
                     try:
-                        checksum = await convert(checksum, buffer, "cson", "plain")
+                        checksum = await conversion(checksum, "cson", "plain", buffer=buffer)
                     except ValueError:
                         from_buffer = True
             if from_buffer:
@@ -344,5 +344,5 @@ sharemanager = ShareManager(0.2)
 
 from ..shareserver import shareserver
 from .protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
-from .conversion import convert
+from ..core.protocol.evaluate import conversion
 from .protocol.calculate_checksum import calculate_checksum

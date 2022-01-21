@@ -91,8 +91,11 @@ async def conversion(
             pass
         elif isinstance(result, bytes):
             curr_checksum = result
-        elif (result is None or result == -1) and conv in conversion_values:
-            result = await value_conversion_callback(curr_checksum, curr_celltype, next_celltype)
+        elif (result is None or result == -1):
+            if conv in conversion_values:
+                result = await value_conversion_callback(curr_checksum, curr_celltype, next_celltype)
+            else:
+                raise CacheMissError(curr_checksum.hex())
         else:
             raise SeamlessConversionError("Unexpected conversion error")
 
@@ -156,193 +159,13 @@ async def value_conversion(checksum, source_celltype, target_celltype):
     buffer_cache.guarantee_buffer_info(target_checksum, target_celltype)
     return target_checksum
     
-"""
-TODO: evaluate_expression: 
-copy and adapt from tasks/evaluate_expression.py. Copy back the value-based conversion (worst case, line 131)
-TAKE FINGERTIP MODE
 
-All functions here are co-routines and require a cachemanager.
-
-1. check if expression is completely trivial 
-  (same celltype, same hash pattern, no path)
-  if so, return
-2.
-- If source celltype is "checksum", get the value checksum, and consider source celltype = "bytes"
-- Consider target celltype "checksum" as celltype "mixed" with target hash pattern = source hash pattern
-- Define result hash pattern = source hash pattern with path applied
-3. 
-If path, result hash pattern and target hash pattern are all non-empty:
-Check if result hash pattern is target hash pattern.
-If this description succeeds, get the deep cell buffer and apply the path, and return the checksum directly.
-4. 
-Try to describe the expression as A => B => C:
-A. Checksum + source hash pattern + path => result checksum + no source hash pattern + no path
-B. convert result checksum to target checksum
-C. encode target checksum using target hash pattern.  
-If this description fails, a value-based conversion is needed.       
-If this description succeeds:
-Conversion is done using "convert" coroutine. PROPAGATE FINGERTIP MODE!
-The conversion may return True (trivial success), a checksum (success), False (unconditional failure),
-or None/-1 (conditional failure). In case of conditional failure, a value-based conversion is needed.
-5. Value-based conversion. 
-Not done here, but in evaluate_expression, as a series of tasks.
-
-
-"""
-
-#raise NotImplementedError # TODO: rip below. 
-# Only use validate_text_evaluation_cache, 
-#  since for all others, successful deserialization means value validation!
-
-'''
-"""
-Caches:
-"""
-
-"""
-1: (deserialization)
-- set of (checksum, celltype) tuples
-=> means that the buffer with the checksum can be deserialized for "celltype"
-"""
-evaluation_cache_1 = set()
-
-"""
-2: (reinterpretation)
-- set of (checksum, celltype, target_celltype) tuples
-=> Means that the value (deserialized from the buffer with the checksum using
-celltype) can be re-interpreted, without a change of checksum
-For example: "2" (plain) can be interpreted as "2" (int), which have the same checksum.
-"""
-
-evaluation_cache_2 = set()
-
-"""
-3: (conversion)
-- pairs of (checksum, celltype, target_celltype) => converted_checksum
-=> Means that the value (deserialized from the buffer with the checksum using
-celltype) can be converted to target_celltype , with a change in checksum.
-For example: "'2'" (text) can be converted to "2" (int), but this has a different checksum.
-"""
-evaluation_cache_3 = {}
-
-celltype_mapping = {
-    "silk": "mixed",
-    "transformer": "python",
-    "reactor": "python",
-    "macro": "python",
-}
-
-def needs_buffer_evaluation(checksum, celltype, target_celltype, fingertip_mode=False):
-    celltype = celltype_mapping.get(celltype, celltype)
-    target_celltype = celltype_mapping.get(target_celltype, target_celltype)
-    raise NotImplementedError # conversion_chain, conversion_values
-    # TODO: buffer_info!
-
-    if celltype == target_celltype:
-        return False
-    if (checksum, celltype) not in evaluation_cache_1:
-        # TODO: promotion
-        # e.g. a buffer that correctly evaluates as plain, will also compute to mixed
-        return True
-    if (celltype, target_celltype) in conversion_equivalent:
-        celltype, target_celltype = conversion_equivalent[celltype, target_celltype]
-    if (celltype, target_celltype) in conversion_trivial:
-        return False
-    key = (checksum, celltype, target_celltype)
-    if (celltype, target_celltype) in conversion_reinterpret:
-        if fingertip_mode:
-            return True
-        return key not in evaluation_cache_2
-    elif (celltype, target_celltype) in conversion_reformat:
-        if fingertip_mode:
-            return True
-        return key not in evaluation_cache_3
-    elif (celltype, target_celltype) in conversion_possible:
-        if fingertip_mode:
-            return True
-        return key not in evaluation_cache_3
-    elif (celltype, target_celltype) in conversion_forbidden:
-        raise TypeError((celltype, target_celltype))
-    else:
-        raise TypeError((celltype, target_celltype)) # should never happen
-
-async def evaluate_from_checksum(checksum, celltype, target_celltype):
-    celltype = celltype_mapping.get(celltype, celltype)
-    target_celltype = celltype_mapping.get(target_celltype, target_celltype)
-    raise NotImplementedError # conversion_chain, conversion_values
-    if celltype == target_celltype:
-        return checksum
-    assert (checksum, celltype) in evaluation_cache_1
-    if (celltype, target_celltype) in conversion_equivalent:
-        celltype, target_celltype = conversion_equivalent[celltype, target_celltype]
-    if (celltype, target_celltype) in conversion_trivial:
-        return checksum
-
-    key = (checksum, celltype, target_celltype)
-    if (celltype, target_celltype) in conversion_reinterpret:
-        assert key in evaluation_cache_2
-        return checksum
-    elif (celltype, target_celltype) in conversion_reformat:
-        return evaluation_cache_3[key]
-    elif (celltype, target_celltype) in conversion_possible:
-        return evaluation_cache_3[key]
-    elif (celltype, target_celltype) in conversion_forbidden:
-        raise TypeError((celltype, target_celltype))
-    else:
-        raise TypeError((celltype, target_celltype)) # should never happen
-
-async def evaluate_from_buffer(checksum, buffer, celltype, target_celltype, fingertip_mode=False):
-    celltype = celltype_mapping.get(celltype, celltype)
-    target_celltype = celltype_mapping.get(target_celltype, target_celltype)
-    raise NotImplementedError # conversion_chain, conversion_values
-    if (celltype, target_celltype) in conversion_equivalent:
-        celltype, target_celltype = conversion_equivalent[celltype, target_celltype]
-    if celltype == target_celltype or (celltype, target_celltype) in conversion_trivial:
-        if fingertip_mode:
-            buffer_cache.cache_buffer(checksum, buffer)
-        return checksum
-
-    key = (checksum, celltype, target_celltype)
-    if (celltype, target_celltype) in conversion_reinterpret:
-        await reinterpret(checksum, buffer, celltype, target_celltype)
-        evaluation_cache_2.add(key)
-        if fingertip_mode:
-            buffer_cache.cache_buffer(checksum, buffer)
-        return checksum
-    elif (celltype, target_celltype) in conversion_reformat:
-        result = await reformat(checksum, buffer, celltype, target_celltype, fingertip_mode=fingertip_mode)
-        evaluation_cache_3[key] = result
-        return result
-    elif (celltype, target_celltype) in conversion_possible:
-        result = await convert(checksum, buffer, celltype, target_celltype, fingertip_mode=fingertip_mode)
-        evaluation_cache_3[key] = result
-        return result
-    elif (celltype, target_celltype) in conversion_forbidden:
-        raise TypeError((celltype, target_celltype))
-    else:
-        raise TypeError((celltype, target_celltype)) # should never happen
-'''
-
-from ..conversion import (
-    SeamlessConversionError,
-    conversion_trivial,
-    conversion_reformat,
-    conversion_reinterpret,
-    conversion_possible,
-    conversion_equivalent,
-    conversion_chain,
-    conversion_values,
-    conversion_forbidden,
-    ###reinterpret,
-    ###reformat,
-    ###convert
-)
-
-from ..convert import make_conversion_chain, try_convert, try_convert_single
+from ..convert import make_conversion_chain, try_convert, try_convert_single, SeamlessConversionError
 from ..cache import CacheMissError
 from ..cache.buffer_cache import buffer_cache
-from ..cell import cell, text_types2
-from ..convert import try_conversion, validate_checksum, validate_text
+from ..cell import text_types2
+from ..convert import validate_checksum, validate_text
+from ..conversion import conversion_values
 from ..cached_compile import analyze_code
 from ..buffer_info import verify_buffer_info
 from ..protocol.serialize import serialize

@@ -65,6 +65,20 @@ class BufferInfo:
                     raise TypeError(type(value))
         super().__setattr__(attr, value)
 
+    def __setitem__(self, item, value):
+        return setattr(self, item, value)
+
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+    def update(self, other):
+        if not isinstance(other, BufferInfo):
+            raise TypeError
+        for attr in self.__slots__:
+            v = getattr(other, attr)
+            if v is not None:
+                setattr(self, attr, v)
+
 def validate_buffer_info(buffer_info, celltype):
     """Raises an ValueError exception if buffer_info is certainly incompatible with celltype"""
     self = buffer_info   
