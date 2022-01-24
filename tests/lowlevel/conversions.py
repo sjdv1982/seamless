@@ -64,12 +64,12 @@ print("ctx.plain", ctx.plain.data)
 print("*** Stage 3a ***")
 ctx.txt3.connect(ctx.plain2)
 ctx.compute()
-print("ctx.plain2", ctx.plain2.data)
+print("ctx.plain2", ctx.plain2.data, type(ctx.plain2.data).__name__) # list
 
 print("*** Stage 3b ***")
-ctx.txt3.connect(ctx.mixed)
+ctx.txt3.connect(ctx.mixed)  # NOT text-to-plain!
 ctx.compute()
-print("ctx.mixed", ctx.mixed.data)
+print("ctx.mixed", ctx.mixed.data, type(ctx.mixed.data).__name__) # str
 
 print("*** Stage 4 ***")
 ctx.ipy = cell("ipython").set("""
@@ -80,6 +80,7 @@ x = 42
 ctx.py = cell("python")
 ctx.ipy.connect(ctx.py)
 ctx.compute()
+print("ctx.ipy", ctx.ipy.data)
 print("ctx.py", ctx.py.data)
 print()
 

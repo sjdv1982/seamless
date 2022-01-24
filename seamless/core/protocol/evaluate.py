@@ -17,6 +17,9 @@ def has_validated_evaluation(checksum, celltype):
         return True
     if celltype == "checksum":
         return True  # celltype=checksum is never validated
+    if celltype in ("ipython", "python", "cson", "yaml"):
+        # parsability as IPython/python/cson/yaml is out-of-scope for buffer info
+        celltype = "text"
     if (checksum, celltype) in text_validation_celltype_cache:
         return True
     buffer_info = buffer_cache.get_buffer_info(checksum, remote=False)
@@ -42,7 +45,7 @@ def has_validated_evaluation_subcelltype(checksum, celltype, subcelltype):
     return False
         
 def validate_evaluation_subcelltype(checksum, buffer, celltype, subcelltype, codename):
-    assert has_validated_evaluation(checksum, celltype)  # buffer_cache.guarantee_buffer_info(checksum, celltype) must have been called!
+    assert has_validated_evaluation(checksum, celltype), celltype  # buffer_cache.guarantee_buffer_info(checksum, celltype) must have been called!
     if has_validated_evaluation_subcelltype(checksum, celltype, subcelltype):
         return
     if codename is None:

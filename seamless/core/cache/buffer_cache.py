@@ -355,6 +355,8 @@ class BufferCache:
             self.update_buffer_info(checksum, "is_json", True, update_remote=False)
         elif celltype == "text":
             self.update_buffer_info(checksum, "is_utf8", True, update_remote=False)
+        elif celltype in ("str", "int", "float", "bool"):
+            self.update_buffer_info(checksum, "json_type", celltype, update_remote=False)
 
         buffer_info = self.buffer_info.get(checksum)
 

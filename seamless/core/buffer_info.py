@@ -79,7 +79,7 @@ class BufferInfo:
             if v is not None:
                 setattr(self, attr, v)
 
-def validate_buffer_info(buffer_info, celltype):
+def validate_buffer_info(buffer_info:BufferInfo, celltype):
     """Raises an ValueError exception if buffer_info is certainly incompatible with celltype"""
     self = buffer_info   
     if celltype == "bytes":
@@ -88,15 +88,15 @@ def validate_buffer_info(buffer_info, celltype):
         # Not validated by buffer_info
         pass
     elif celltype == "mixed":
-        if self.is_json == False and self.is_numpy == False and self.is_seamless_dict == False:
+        if self.is_json == False and self.is_numpy == False and self.is_seamless_mixed == False:
             raise ValueError
     elif celltype == "binary":
-        if self.is_json or self.is_seamless_dict:
+        if self.is_json or self.is_seamless_mixed:
             raise ValueError
     elif celltype in ("plain", "str", "int", "float", "bool"):
         if self.is_utf8 == False:
             raise ValueError
-        if self.is_numpy or self.is_seamless_dict:
+        if self.is_numpy or self.is_seamless_mixed:
             raise ValueError
         if celltype != "plain":
             if self.json_type in ("dict", "list"):

@@ -1,8 +1,5 @@
 """
-Conversions. Note that they operate at a checksum/buffer level.
-  Conversions that always require a value-level evaluation are considered "forbidden",
-   as they must be done elsewhere.
-  Values are not built, unless the deserialization is really simple (e.g. json.loads)
+Conversions. Note that they operate at a checksum/buffer level, i.e. are "cheap".
   Conversions imply that that there is neither a access path not a hash pattern.
   In contrast, expressions with a path or a hash pattern operate at a value level.
   VALUE-LEVEL CONVERSION IS NOT DEALT WITH HERE: it is evaluate_expression that does that.
@@ -67,15 +64,7 @@ Checksum cells: the *value* of the checksum cell:
 All of these promotions are value-based and therefore "forbidden" 
 (handled by evaluate_expression)
 
-TODO: impose limits of 1000 chars for buffers of int, float, bool
-
-TODO: get_buffer_info.
-./core/protocol/evaluate.py needs to be reworked.
-On top of the evaluation caches, a "buffer info" dict is needed.
-See buffer_info.py.
-Unlike the evaluation caches, this is shared via database cache/sinks
- whenever appropriate. The database may return other fields as well.
-
+There is a limit of 1000 chars for buffers of int, float, bool
 
 TODO: high-level classes on top of deep cells. See https://github.com/sjdv1982/seamless/issues/108
 """
@@ -119,6 +108,7 @@ conversion_reinterpret.difference_update(set([
     ("ipython", "python"),
     ("cson", "plain"),
     ("yaml", "plain"),
+    ("plain", "str"), ("plain", "int"), ("plain", "float"), ("plain", "bool"),
 ]))
 
 conversion_reformat = set([ 
@@ -149,6 +139,7 @@ conversion_possible = set([ # conversions that (may) change checksum and are not
     # simple value conversions:                       
     ("binary", "int"), ("binary", "float"), ("binary", "bool"),
     ("str", "int"), ("str", "float"), ("str", "bool"),    
+    ("plain", "str"), ("plain", "int"), ("plain", "float"), ("plain", "bool"),
     ("mixed", "str"), ("mixed", "int"), ("mixed", "float"), ("mixed", "bool"),
 ])
 

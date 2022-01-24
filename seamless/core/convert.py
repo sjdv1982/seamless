@@ -7,6 +7,7 @@ Conversions involving paths or hash patterns are also out-of-scope
 import ast
 import json
 import numpy as np
+import builtins
 
 def validate_text(text, celltype, code_filename):
     try:
@@ -217,8 +218,8 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
     if target_celltype in ("int", "float", "bool") or (
       source_celltype in ("int", "float", "bool") and target_celltype == "str"
     ):
-        source_value = deserialize_sync(buffer, source_celltype, copy=False)
-        type_class = getattr(__builtins__, target_celltype)
+        source_value = deserialize_sync(buffer, checksum, source_celltype, copy=False)
+        type_class = getattr(builtins, target_celltype)
         target_value = type_class(source_value)
     else:
         conv = (source_celltype, target_celltype)
@@ -238,6 +239,7 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
                 source_value = deserialize_sync(buffer, checksum, "binary", copy=False)
                 if source_value.dtype.char == "S":
                     target_buffer = source_value.tobytes()
+                    assert target_buffer is not None
             if target_buffer is None:
                 return checksum
         elif conv == ("plain", "text"):
@@ -255,8 +257,9 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
             except Exception:
                 text = deserialize_sync(buffer, checksum, "text", copy=False)
                 target_buffer = serialize_sync(text, "str")
+                assert target_buffer is not None
         elif conv == ("text", "str") or conv == ("str", "text"):
-            source_value = deserialize_sync(buffer, checksum, source_celltype, copy=False)
+            target_value = deserialize_sync(buffer, checksum, source_celltype, copy=False)
         elif conv == ("cson", "plain") or conv == ("yaml", "plain") or conv == ("ipython", "python"):
             text = deserialize_sync(buffer, checksum, "text", copy=False)
             if source_celltype == "cson":
@@ -283,13 +286,13 @@ def _convert_possible(checksum, buffer, source_celltype, target_celltype):
                 raise TypeError("Numpy format")
             if buffer.startswith(MAGIC_SEAMLESS_MIXED):
                 raise TypeError("Seamless mixed buffer format")
-        source_value = deserialize_sync(buffer, source_celltype, copy=False)
+        source_value = deserialize_sync(buffer, checksum, source_celltype, copy=False)
         if isinstance(source_value, (dict, list)):
             raise TypeError(type(source_value))
         elif isinstance(source_value, np.ndarray): 
             if source_value.ndim:
                 raise TypeError((type(source_value), source_value.ndim))
-        type_class = getattr(__builtins__, target_celltype)
+        type_class = getattr(builtins, target_celltype)
         target_value = type_class(source_value)
     except Exception as exc:
         msg0 = "%s cannot be converted from %s to %s"
