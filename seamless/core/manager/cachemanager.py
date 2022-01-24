@@ -161,7 +161,7 @@ class CacheManager:
             if cell._hash_pattern is not None:
                 incref_hash_pattern = True
         elif isinstance(refholder, Expression):
-            #print("INCREF EXPRESSION", refholder._get_hash(), result)
+            #print("INCREF EXPRESSION", refholder, result)
             assert not authoritative
             assert refholder not in self.inactive_expressions
             if not result:
@@ -183,8 +183,8 @@ class CacheManager:
             assert not result
             assert self.inchannel_to_ref[refholder] is None
             self.inchannel_to_ref[refholder] = checksum
-        elif isinstance(refholder, Library):
-            pass
+        #elif isinstance(refholder, Library): # yagni??
+        #    pass
         else:
             raise TypeError(type(refholder))
 
@@ -481,14 +481,14 @@ class CacheManager:
 checksum: {}
 refholder: {}
 is authoritative: {}
-is result: {}
+is result checksum: {}
 """.format(checksum.hex(), refholder, authoritative, result))
             return
         #print("cachemanager DECREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if len(self.checksum_refs[checksum]) == 0:
             buffer_cache.decref(checksum)
             self.checksum_refs.pop(checksum)
-
+        
     def destroy_cell(self, cell):
         ref = self.cell_to_ref[cell]
         if ref is not None:
@@ -534,7 +534,7 @@ is result: {}
             checksum = ref
             self.decref_checksum(checksum, expression, False, False)
         ref = self.expression_to_result_checksum[expression]
-        if ref is not None:
+        if ref is not None and ref != expression.checksum:
             checksum = ref
             self.decref_checksum(checksum, expression, False, True)
         self.inactive_expressions.add(expression)
@@ -574,7 +574,6 @@ is result: {}
 from ..cell import Cell
 from ..transformer import Transformer
 from ..structured_cell import Inchannel
-from ..reactor import Reactor
 from .expression import Expression
 from ..protocol.deep_structure import deep_structure_to_checksums
 from ..protocol.deserialize import deserialize
