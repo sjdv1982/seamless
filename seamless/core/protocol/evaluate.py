@@ -45,6 +45,7 @@ def has_validated_evaluation_subcelltype(checksum, celltype, subcelltype):
     return False
         
 def validate_evaluation_subcelltype(checksum, buffer, celltype, subcelltype, codename):
+    assert buffer is not None
     assert has_validated_evaluation(checksum, celltype), celltype  # buffer_cache.guarantee_buffer_info(checksum, celltype) must have been called!
     if has_validated_evaluation_subcelltype(checksum, celltype, subcelltype):
         return
