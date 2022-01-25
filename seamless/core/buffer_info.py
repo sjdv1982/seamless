@@ -124,7 +124,7 @@ def verify_buffer_info(buffer_info:BufferInfo, celltype:str):
         # Not validated by buffer_info; return True
         return True
     elif celltype == "mixed":
-        if self.is_json or self.is_numpy or self.is_seamless_dict:
+        if self.is_json or self.is_numpy or self.is_seamless_mixed:
             return True
     elif celltype == "binary":
         if self.is_numpy:

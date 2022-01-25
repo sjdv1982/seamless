@@ -240,8 +240,8 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 cachemanager.incref_checksum(
                     result_checksum,
                     expression,
-                    False,
-                    True
+                    authoritative=False,
+                    result=True
                 )
 
         cachemanager.expression_to_result_checksum[expression] = result_checksum

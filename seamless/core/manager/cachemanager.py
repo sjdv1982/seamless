@@ -105,16 +105,16 @@ class CacheManager:
                 self.incref_checksum(
                     checksum,
                     expression,
-                    False,
-                    False
+                    authoritative=False,
+                    result=False
                 )
             checksum = self.expression_to_result_checksum.get(expression)
-            if checksum is not None:
+            if checksum is not None and checksum != expression.checksum:
                 self.incref_checksum(
                     checksum,
                     expression,
-                    False,
-                    True
+                    authoritative=False,
+                    result=True
                 )
             return True
         else:
