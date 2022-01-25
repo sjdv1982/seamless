@@ -325,10 +325,12 @@ class BufferCache:
             if old_buffer_info != buffer_info:
                 database_sink.set_buffer_info(checksum, buffer_info)
 
-    def guarantee_buffer_info(self, checksum, celltype):
+    def guarantee_buffer_info(self, checksum:bytes, celltype:str):
         """Modify buffer_info to reflect that checksum is surely deserializable into celltype
         """
         # for mixed: if possible, retrieve the buffer locally to check for things like is_numpy etc.
+        if not isinstance(checksum, bytes):
+            raise TypeError(type(checksum))
         if celltype == "bytes":
             return
         if celltype == "checksum":

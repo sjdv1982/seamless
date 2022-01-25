@@ -1,9 +1,7 @@
 # See ../protocol/conversion.py for documentation about conversions.
 
-from tkinter import E
+
 import traceback, asyncio
-import sys
-from asyncio import CancelledError
 import warnings
 import numpy as np
 
@@ -123,6 +121,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 target_celltype = "bytes"
 
         try:
+            done = False
             conv = (source_celltype, target_celltype)
             if conv in conversion_forbidden:
                 msg = "Forbidden conversion from {} to {}"
@@ -152,12 +151,13 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 result_hash_pattern = None
                 trivial_path = True
 
-            if trivial_path and result_hash_pattern is None or hash_pattern_equivalent:        
+            if trivial_path and (result_hash_pattern is None or hash_pattern_equivalent):        
                 result_checksum = await conversion(
                     source_checksum, source_celltype,
                     target_celltype, fingertip_mode=fingertip_mode,
                     value_conversion_callback=value_conversion
                 )
+                done = True
                 needs_value_conversion = False
             else:
                 needs_value_conversion = True
@@ -174,6 +174,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 mode, result = await get_subpath(value, source_hash_pattern, expression.path)
                 assert mode in ("checksum", "value"), mode
                 if result is None:
+                    done = True
                     result_checksum = None
                 elif mode == "checksum":
                     assert source_hash_pattern is not None
@@ -186,7 +187,8 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                     use_value = True                    
                     result_value = result                             
 
-                if use_value:
+                if (not done) and use_value:
+                    result_checksum = None
                     result_buffer = await SerializeToBufferTask(
                         manager, result_value,
                         expression.target_celltype,
@@ -196,9 +198,9 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                         result_checksum = await CalculateChecksumTask(
                             manager, result_buffer
                         ).run()
+                    done = True
 
-
-            if target_hash_pattern not in (None, "#", "##"):
+            if not done and target_hash_pattern not in (None, "#", "##"):
                 result_checksum = await apply_hash_pattern(result_checksum, target_hash_pattern)
 
         except asyncio.CancelledError as exc:

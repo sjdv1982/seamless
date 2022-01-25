@@ -78,6 +78,13 @@ class BufferInfo:
             v = getattr(other, attr)
             if v is not None:
                 setattr(self, attr, v)
+    
+    def get(self, attr, default):
+        value = getattr(self, attr)
+        if value is None:
+            return default
+        else:
+            return value
 
 def validate_buffer_info(buffer_info:BufferInfo, celltype):
     """Raises an ValueError exception if buffer_info is certainly incompatible with celltype"""

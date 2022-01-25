@@ -62,8 +62,11 @@ def _update_structured_cell(
                 AccessorUpdateTask(manager, accessor).launch()
 
     if not from_fallback:
+        cs = checksum
+        if isinstance(checksum, str):
+            cs = bytes.fromhex(checksum)
         if sc._data is not sc.auth:
-            sc._data._set_checksum(checksum, from_structured_cell=True)
+            sc._data._set_checksum(cs, from_structured_cell=True)
         manager.trigger_all_fallbacks(sc._data)
     sc._exception = None
 
@@ -425,13 +428,14 @@ class StructuredCellJoinTask(StructuredCellTask):
             if ok:
                 if (not from_cache) and (has_auth or has_inchannel):
                     assert checksum is not None
-                buffer_cache.guarantee_buffer_info(checksum, "mixed")
-                _update_structured_cell(sc, checksum, manager,
+                cs = bytes.fromhex(checksum)
+                buffer_cache.guarantee_buffer_info(cs, "mixed")
+                _update_structured_cell(sc, cs, manager,
                     check_canceled=lambda: self._canceled, 
                     prelim=prelim, from_fallback=False
                 )
                 if not from_cache and not any_prelim:
-                    manager.cachemanager.set_join_cache(join_dict, checksum)
+                    manager.cachemanager.set_join_cache(join_dict, cs)
                 for inchannel in sc.inchannels.values():
                     inchannel._save_state()
         finally:

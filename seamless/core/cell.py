@@ -240,12 +240,14 @@ class Cell(SeamlessBase):
         if self._context is None:
             self._initial_val = None
             if checksum is not None:
-                checksum = bytes.fromhex(checksum)
+                if isinstance(checksum, str):
+                    checksum = bytes.fromhex(checksum)
                 self._initial_checksum = checksum, initial, from_structured_cell
         else:
             manager = self._get_manager()
             if checksum is not None:
-                checksum = bytes.fromhex(checksum)
+                if isinstance(checksum, str):
+                    checksum = bytes.fromhex(checksum)
             manager.set_cell_checksum(
               self, checksum,
               initial=initial,
