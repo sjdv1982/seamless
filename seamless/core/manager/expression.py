@@ -40,6 +40,10 @@ class Expression:
             assert target_celltype == "mixed"
         self._target_hash_pattern = target_hash_pattern
         self._checksum = checksum
+        if path is None:
+            path = ()
+        if len(path):
+            assert celltype in ("mixed", "plain", "binary")
         self._path = path
         self._celltype = celltype
         self._target_celltype = target_celltype

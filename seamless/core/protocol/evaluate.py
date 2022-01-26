@@ -111,11 +111,17 @@ async def value_conversion(checksum, source_celltype, target_celltype):
     """Reference implementation of value conversion
     Does no heroic (i.e. fingertipping) efforts to get a buffer
     Does not use the Task system, so no fine-grained coalescence/cancellation"""
+    if target_celltype == "checksum":
+        target_buffer = checksum.hex().encode()
+        target_checksum = await calculate_checksum(target_buffer)
+        buffer_cache.cache_buffer(target_checksum, target_buffer)
+        return target_checksum
+
     if source_celltype == "checksum":
         buffer = buffer_cache.get_buffer(checksum)
         if buffer is None:
             raise CacheMissError(checksum)
-        checksum_text = await deserialize(buffer, "plain", copy=False)
+        checksum_text = await deserialize(buffer, "checksum", copy=False)
         validate_checksum(checksum_text)
         if not isinstance(checksum_text, str):
             raise SeamlessConversionError("Cannot convert deep cell in value conversion")

@@ -26,6 +26,8 @@ def validate_text(text, celltype, code_filename):
 
 def validate_checksum(v):
     if isinstance(v, str):
+        if len(v) != 64:
+            raise ValueError
         bytes.fromhex(v)
     elif isinstance(v, list):
         for vv in v:

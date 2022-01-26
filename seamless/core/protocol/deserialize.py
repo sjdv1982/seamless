@@ -43,10 +43,14 @@ def _deserialize(buffer, checksum, celltype):
         if not isinstance(value, getattr(builtins, celltype)):
             value = getattr(builtins, celltype)(value)
     elif celltype == "checksum":
-        value, storage = mixed_deserialize(buffer)
-        if storage != "pure-plain":
-            raise TypeError
-        validate_checksum(value)
+        try:
+            value = buffer.decode()
+            validate_checksum(value)
+        except (ValueError, UnicodeDecodeError):
+            value, storage = mixed_deserialize(buffer)
+            if storage != "pure-plain":
+                raise TypeError
+            validate_checksum(value)
     else:
         raise TypeError(celltype)
 

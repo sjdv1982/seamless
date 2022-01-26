@@ -1,6 +1,7 @@
 # See ../protocol/conversion.py for documentation about conversions.
 
 
+import functools
 import traceback, asyncio
 import warnings
 import numpy as np
@@ -20,6 +21,11 @@ async def value_conversion(
     manager, fingertip_mode
 ):
     cachemanager = manager.cachemanager
+    if target_celltype == "checksum":
+        target_buffer = checksum.hex().encode()
+        target_checksum = await CalculateChecksumTask(manager, target_buffer).run()
+        buffer_cache.cache_buffer(target_checksum, target_buffer)
+        return target_checksum
     if source_celltype == "checksum":
         if fingertip_mode:
             buffer = await GetBufferTask(manager, checksum).run()
@@ -28,7 +34,7 @@ async def value_conversion(
         if buffer is None:
             raise CacheMissError(checksum)
         checksum_text = await DeserializeBufferTask(
-            manager, buffer, checksum, "plain", copy=False
+            manager, buffer, checksum, "checksum", copy=False
         ).run()
         validate_checksum(checksum_text)
         if not isinstance(checksum_text, str):
@@ -43,7 +49,7 @@ async def value_conversion(
     if buffer is None:
         raise CacheMissError(checksum)
     source_value = await DeserializeBufferTask(
-        manager, buffer, source_celltype, copy=False
+        manager, buffer, checksum, source_celltype, copy=False
     ).run()
     conv = (source_celltype, target_celltype)
     try:
@@ -67,6 +73,8 @@ async def value_conversion(
                 buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", False, update_remote=False)
                 buffer_cache.update_buffer_info(checksum,"is_json_numeric_array", False)
                 raise exc from None
+        else:
+            raise AssertionError(conv)
     except Exception as exc:
         msg0 = "%s cannot be converted from %s to %s"
         msg = msg0 % (checksum.hex(), source_celltype, target_celltype)
@@ -140,7 +148,10 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
             ### /Hash pattern equivalence
 
             if result_hash_pattern in ("#", "##"):
-                source_buffer = await GetBufferTask(manager, source_checksum).run()
+                if fingertip_mode:
+                    source_buffer = await GetBufferTask(manager, source_checksum).run()
+                else:
+                    source_buffer = await cachemanager.fingertip(source_checksum)
                 if source_buffer is None:
                     raise CacheMissError(source_checksum)
                 deep_source_value = await DeserializeBufferTask(manager, source_buffer, source_checksum, "plain", False).run()
@@ -151,12 +162,37 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 result_hash_pattern = None
                 trivial_path = True
 
-            if trivial_path and (result_hash_pattern is None or hash_pattern_equivalent):        
+            if source_celltype == "checksum" and target_hash_pattern is not None:
+                if fingertip_mode:
+                    buffer = await GetBufferTask(manager, source_checksum).run()
+                else:
+                    buffer = await cachemanager.fingertip(source_checksum)
+                if buffer is None:
+                    raise CacheMissError(source_checksum)
+                deep_structure = await DeserializeBufferTask(
+                    manager, buffer, source_checksum, "checksum", copy=False
+                ).run()
+                if isinstance(deep_structure, str):
+                    raise Exception("Checksum cell does not refer to a deep cell structure")
+                validate_checksum(deep_structure)
+                result_checksum = source_checksum
+                done = True
+                needs_value_conversion = False
+            elif trivial_path and result_hash_pattern is None:
+                value_conversion_callback = functools.partial(
+                    value_conversion,
+                    manager=manager,
+                    fingertip_mode=fingertip_mode
+                )
                 result_checksum = await conversion(
                     source_checksum, source_celltype,
                     target_celltype, fingertip_mode=fingertip_mode,
-                    value_conversion_callback=value_conversion
+                    value_conversion_callback=value_conversion_callback
                 )
+                done = True
+                needs_value_conversion = False
+            elif trivial_path and hash_pattern_equivalent: #deepcell-to-deepcell
+                result_checksum = source_checksum
                 done = True
                 needs_value_conversion = False
             else:
@@ -178,7 +214,12 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                     result_checksum = None
                 elif mode == "checksum":
                     assert source_hash_pattern is not None
-                    buffer2 = await GetBufferTask(manager, result).run()
+                    if fingertip_mode:
+                        buffer2 = await GetBufferTask(manager, result).run()
+                    else:
+                        buffer2 = await cachemanager.fingertip(result)
+                    if buffer2 is None:
+                        raise CacheMissError(result)
                     result_value = await DeserializeBufferTask(
                         manager, buffer2, result, source_celltype,
                         copy=False
@@ -224,7 +265,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
             
         if result_checksum is not None:
             if expression.target_subcelltype is not None:
-                # validate subcelltype only if we can get a result buffer
+                # validate subcelltype only if we can get a result buffer without heroics
                 if result_buffer is None:
                     result_buffer = await GetBufferTask(manager, result_checksum).run()
                 if result_buffer is not None:
