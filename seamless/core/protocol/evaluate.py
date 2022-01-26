@@ -66,10 +66,12 @@ def validate_evaluation_subcelltype(checksum, buffer, celltype, subcelltype, cod
 
 async def conversion(
     checksum, celltype, target_celltype, 
-    *, fingertip_mode, value_conversion_callback=None
+    *, fingertip_mode, value_conversion_callback=None,buffer=None
 ):
     if value_conversion_callback is None:
         value_conversion_callback = value_conversion
+    if buffer is not None:
+        buffer_cache.cache_buffer(checksum, buffer)
     result = try_convert(checksum, celltype, target_celltype)
     if result == True:
         return checksum
