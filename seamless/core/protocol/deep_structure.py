@@ -100,7 +100,10 @@ def access_hash_pattern(hash_pattern, path):
         if hash_pattern in ("#", "##"):
             return None
         else:
-            return access_hash_pattern(hash_pattern["*"], ())
+            if "!" in hash_pattern:
+                return access_hash_pattern(hash_pattern["!"], ())
+            else:
+                return access_hash_pattern(hash_pattern["*"], ())
     else:
         return None
     ###

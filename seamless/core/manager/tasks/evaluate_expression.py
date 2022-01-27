@@ -208,7 +208,11 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 result_hash_pattern = None
                 trivial_path = True
 
-            if source_celltype == "checksum" and target_hash_pattern is not None:
+            if source_celltype == "checksum" and target_celltype == "checksum":
+                result_checksum = source_checksum
+                done = True
+                needs_value_conversion = False
+            elif source_celltype == "checksum" and target_hash_pattern is not None:
                 if fingertip_mode:
                     buffer = await GetBufferTask(manager, source_checksum).run()
                 else:
