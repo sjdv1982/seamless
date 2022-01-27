@@ -3,7 +3,7 @@ Status: OK Status: OK Status: OK 10 {'x': 20} [1, 2, 3]
 None 483a8e5b50fd3a764330e1c7b9f298bfb53851ba6299f266b0c35235e60cf55e 483a8e5b50fd3a764330e1c7b9f298bfb53851ba6299f266b0c35235e60cf55e
 Status: invalid Status: OK Status: OK
 Traceback (most recent call last):
-  File "/seamless/seamless/core/manager/tasks/evaluate_expression.py", line 192, in _evaluate_expression
+  File "/seamless/seamless/core/manager/tasks/evaluate_expression.py", line 285, in _evaluate_expression
     result_buffer = await SerializeToBufferTask(
   File "/seamless/seamless/core/manager/tasks/__init__.py", line 137, in run
     await asyncio.shield(self.future)
