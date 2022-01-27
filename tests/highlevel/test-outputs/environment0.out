@@ -1,7 +1,7 @@
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 358, in _execute
+  File "/seamless/seamless/core/transformation.py", line 359, in _execute
     result, logs = await self._execute_local(
-  File "/seamless/seamless/core/transformation.py", line 499, in _execute_local
+  File "/seamless/seamless/core/transformation.py", line 500, in _execute_local
     validate_environment(env)
   File "/seamless/seamless/core/environment.py", line 162, in validate_environment
     raise ValueError("Environment error:\n" + err)

@@ -2,7 +2,6 @@ START
 SERIALIZE TO BUFFER {'a': 2}
 <Silk: {'a': 2} >
 RE-TRANSLATE 1
-SERIALIZE TO BUFFER {'a': 2}
 <Silk: {'a': 2} >
 DONE
 RE-TRANSLATE 2

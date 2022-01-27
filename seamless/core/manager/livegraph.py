@@ -44,11 +44,12 @@ def destroyer(func):
     return wrapper
 
 async def do_bilink(buffer, checksum, celltype, target_celltype, manager, target_cell):
-    from ..protocol.evaluate import evaluate_from_buffer
-    expression_result_checksum = await evaluate_from_buffer(
-        checksum, buffer,
+    from ..protocol.evaluate import conversion
+    expression_result_checksum = await conversion(
+        checksum,
         celltype, target_celltype,
-        fingertip_mode=False
+        fingertip_mode=False,
+        buffer=buffer
     )
     manager.set_cell_checksum(
         target_cell, expression_result_checksum,

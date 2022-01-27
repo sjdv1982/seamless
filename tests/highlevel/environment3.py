@@ -60,6 +60,7 @@ def transform(*, int a):
             s += log(n*nn+1)/10000.0
     return s
 """
+ctx.compute()
 
 # Set the language as Cython
 #   => fail, unknown language

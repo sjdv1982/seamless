@@ -150,9 +150,6 @@ class Transformer(Worker):
         tcache = manager.cachemanager.transformation_cache
         tcache.hard_cancel(self)
 
-    def shell(self):
-        raise NotImplementedError
-
     def _get_status(self):
         from .status import status_transformer
         status = status_transformer(self)

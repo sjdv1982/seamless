@@ -324,13 +324,22 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 if result_buffer is None:
                     result_buffer = await GetBufferTask(manager, result_checksum).run()
                 if result_buffer is not None:
-                    validate_evaluation_subcelltype(
-                        result_checksum,
-                        result_buffer,
-                        target_celltype,
-                        expression.target_subcelltype,
-                        codename="expression"
-                    )
+                    try:
+                        validate_evaluation_subcelltype(
+                            result_checksum,
+                            result_buffer,
+                            target_celltype,
+                            expression.target_subcelltype,
+                            codename="expression"
+                        )
+                    except Exception as exc:
+                        if self._canceled:
+                            raise exc from None
+                        else:
+                            fexc = traceback.format_exc()
+                            expression.exception = fexc
+                        return None  
+
             if result_buffer is not None:
                 buffer_cache.cache_buffer(result_checksum, result_buffer)
 
