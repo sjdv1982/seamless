@@ -39,7 +39,10 @@ def _deserialize(buffer, checksum, celltype):
         try:
             value = json.loads(s)
         except json.JSONDecodeError:
-            raise ValueError from None
+            msg = s
+            if len(msg) > 1000:
+                msg = s[:920] + "..." + s[-50:] 
+            raise ValueError(msg) from None
         if not isinstance(value, getattr(builtins, celltype)):
             value = getattr(builtins, celltype)(value)
     elif celltype == "checksum":

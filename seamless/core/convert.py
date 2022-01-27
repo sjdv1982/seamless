@@ -22,12 +22,18 @@ def validate_text(text, celltype, code_filename):
         elif celltype == "yaml":
             yaml.load(text)            
     except Exception:
-        raise ValueError from None
+        msg = text
+        if len(text) > 1000:
+            msg = text[:920] + "..." + text[-50:]
+        raise ValueError(msg) from None
 
 def validate_checksum(v):
     if isinstance(v, str):
         if len(v) != 64:
-            raise ValueError
+            msg = v
+            if len(v) > 1000:
+                msg = v[:920] + "..." + v[-50:]
+            raise ValueError(msg)
         bytes.fromhex(v)
     elif isinstance(v, list):
         for vv in v:
@@ -36,7 +42,7 @@ def validate_checksum(v):
         for vv in v.values():
             validate_checksum(vv)
     else:
-        raise ValueError
+        raise TypeError(type(v))
 
 def make_conversion_chain(source_celltype, target_celltype):
     """Returns a chain of conversions to go from source to target celltype """

@@ -134,6 +134,9 @@ async def value_conversion(checksum, source_celltype, target_celltype):
     buffer = buffer_cache.get_buffer(checksum)
     if buffer is None:
         raise CacheMissError(checksum)
+    msg = buffer
+    if len(msg) > 1000:
+        msg = msg[:920] + "..." + msg[-50:]
     source_value = await deserialize(buffer, source_celltype, copy=False)
     conv = (source_celltype, target_celltype)
     try:
@@ -146,12 +149,12 @@ async def value_conversion(checksum, source_celltype, target_celltype):
                     buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", True)
                 else:         
                     if not isinstance(source_value, list):
-                        raise ValueError
+                        raise ValueError(msg)
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")  
                         target_value = np.array(source_value)
                         if target_value.dtype == object:
-                            raise ValueError
+                            raise ValueError(msg)
                     buffer_cache.update_buffer_info(checksum, "is_json_numeric_array", True)
             except ValueError as exc:
                 buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", False, update_remote=False)

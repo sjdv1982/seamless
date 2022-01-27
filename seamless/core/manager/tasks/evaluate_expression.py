@@ -94,6 +94,9 @@ async def value_conversion(
     source_value = await DeserializeBufferTask(
         manager, buffer, checksum, source_celltype, copy=False
     ).run()
+    msg = buffer
+    if len(msg) > 1000:
+        msg = msg[:920] + "..." + msg[-50:]
     conv = (source_celltype, target_celltype)
     try:
         if conv == ("binary", "plain"):
@@ -105,12 +108,12 @@ async def value_conversion(
                     buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", True)
                 else:         
                     if not isinstance(source_value, list):
-                        raise ValueError
+                        raise ValueError(msg)
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")  
                         target_value = np.array(source_value)
                         if target_value.dtype == object:
-                            raise ValueError
+                            raise ValueError(msg)
                     buffer_cache.update_buffer_info(checksum, "is_json_numeric_array", True)
             except ValueError as exc:
                 buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", False, update_remote=False)
