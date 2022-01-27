@@ -85,6 +85,16 @@ class BufferInfo:
             return default
         else:
             return value
+    
+    def as_dict(self):
+        result = {}
+        for attr in self.__slots__:
+            if attr == "checksum":
+                continue
+            v = getattr(self, attr)
+            if v is not None:
+                result[attr] = v
+        return result
 
 def validate_buffer_info(buffer_info:BufferInfo, celltype):
     """Raises an ValueError exception if buffer_info is certainly incompatible with celltype"""

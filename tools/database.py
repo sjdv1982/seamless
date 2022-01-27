@@ -255,6 +255,7 @@ class DatabaseServer:
                 if not sink_config.get("cache"):
                     continue
                 await sink.set(key, result)
+            return result
         elif type == "semantic-to-syntactic":
             try:
                 celltype, subcelltype = request["celltype"], request["subcelltype"]
@@ -365,7 +366,7 @@ class DatabaseServer:
                 BufferInfo(checksum, value)
             except Exception:
                 raise DatabaseError("Malformed SET buffer info request") from None
-            buffer_info = json.dumps(value)
+            buffer_info = json.dumps(value).encode()
             key = "bfi-" + checksum
             for sink, sink_config in self.db_sinks:
                 await sink.set(key, buffer_info)

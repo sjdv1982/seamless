@@ -2,6 +2,8 @@ import requests
 import numpy as np
 import json
 
+from ..buffer_info import BufferInfo
+
 session = requests.Session()
 
 # TODO: make all set_X requests non-blocking, 
@@ -110,11 +112,11 @@ class DatabaseSink(DatabaseBase):
         }
         self.send_request(request)
 
-    def set_buffer_info(self, checksum, buffer_info):
+    def set_buffer_info(self, checksum, buffer_info:BufferInfo):
         request = {
             "type": "buffer info",
             "checksum": checksum.hex(),
-            "value": buffer_info,
+            "value": buffer_info.as_dict(),
         }
         self.send_request(request)
 
@@ -185,7 +187,7 @@ class DatabaseCache(DatabaseBase):
         }
         response = self.send_request(request)
         if response is not None:
-            return int(response.json())
+            return BufferInfo(checksum, response.json())
 
     def get_compile_result(self, checksum):
         request = {
