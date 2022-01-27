@@ -19,16 +19,6 @@ def is_empty(cell):
         return True
     return False
 
-def has_validators(schema:dict):
-    if schema is None:
-        return False
-    if "validators" in schema:
-        return True
-    for subschema in schema.get("properties", {}).values():
-        if has_validators(subschema):
-            return True
-    return False
-
 def _update_structured_cell(
     sc, checksum, manager, *,
     check_canceled, 
@@ -409,23 +399,22 @@ class StructuredCellJoinTask(StructuredCellTask):
                     else:
                         data_value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
             
-            if ok and (not from_cache) and data_value is not None:
-                if has_validators(schema):
-                    if sc.hash_pattern is None:
-                        true_value = copy.deepcopy(data_value)
-                    else:
-                        # This is very expensive!!
-                        mode, true_value = await get_subpath(data_value, sc.hash_pattern, ())
-                        assert mode == "value"
-                    s = Silk(data=true_value, schema=schema)
-                    try:
-                        s.validate()
-                    except ValidationError:
-                        sc._exception = traceback.format_exc(limit=0)
-                        ok = False
-                    except Exception:
-                        sc._exception = traceback.format_exc()
-                        ok = False
+            if ok and (not from_cache) and data_value is not None and schema is not None:
+                if sc.hash_pattern is None:
+                    true_value = copy.deepcopy(data_value)
+                else:
+                    # This is very expensive!!
+                    mode, true_value = await get_subpath(data_value, sc.hash_pattern, ())
+                    assert mode == "value"                    
+                s = Silk(data=true_value, schema=schema)
+                try:
+                    s.validate()
+                except ValidationError:
+                    sc._exception = traceback.format_exc(limit=0)
+                    ok = False
+                except Exception:
+                    sc._exception = traceback.format_exc()
+                    ok = False
 
             if not from_cache:
                 if sc._mode != SCModeEnum.FORCE_JOINING:
