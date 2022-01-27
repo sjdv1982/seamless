@@ -232,7 +232,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                     target_celltype, fingertip_mode=fingertip_mode,
                     value_conversion_callback=value_conversion_callback
                 )
-                done = True
+                done = False  # still need to account for target hash pattern
                 needs_value_conversion = False
             elif trivial_path and hash_pattern_equivalent: #deepcell-to-deepcell
                 result_checksum = source_checksum

@@ -128,7 +128,7 @@ class StructuredCellAuthTask(StructuredCellTask):
         sc = self.structured_cell
         await self.await_sc_tasks(auth=True)
 
-        data_value = sc._auth_value
+        data_value = sc._auth_value  # obeys hash pattern (if there is one), i.e. is a deep structure not a raw value
         locknr = await acquire_evaluation_lock(self)
         try:
             if data_value is None:
@@ -186,7 +186,7 @@ class StructuredCellAuthTask(StructuredCellTask):
 
 class StructuredCellJoinTask(StructuredCellTask):
 
-    async def _run(self):        
+    async def _run(self):
         from ...status import StatusReasonEnum
         sc = self.structured_cell
         await self.await_sc_tasks(auth=False)
@@ -242,7 +242,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                 from_cache = True
                 ok = True
         try:
-            data_value = None
+            data_value = None  # obeys hash pattern (if there is one), i.e. is a deep structure not a raw value
             if not from_cache:
                 prelim = {}
                 for out_path in sc.outchannels:
@@ -461,5 +461,5 @@ from ...cache import CacheMissError
 from ...cache.buffer_cache import buffer_cache
 from silk.Silk import Silk, ValidationError
 from ..cancel import get_scell_state, SCModeEnum
-from ...protocol.expression import get_subpath, set_subpath, set_subpath_checksum, access_hash_pattern
+from ...protocol.expression import get_subpath, set_subpath_checksum, access_hash_pattern, value_to_deep_structure
 from . import acquire_evaluation_lock, release_evaluation_lock

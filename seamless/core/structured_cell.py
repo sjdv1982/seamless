@@ -111,8 +111,8 @@ class StructuredCell(SeamlessBase):
         self._auth_joining = False  #  an auth task is ongoing
         self._joining = False  #  a join task is ongoing
 
-        self._auth_value = None
-        self._auth_checksum = None
+        self._auth_value = None    # obeys hash pattern
+        self._auth_checksum = None  # obeys hash pattern
         self._auth_invalid = False
         self._schema_value = None
 
