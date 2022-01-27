@@ -127,8 +127,9 @@ async def value_conversion(checksum, source_celltype, target_celltype):
         validate_checksum(checksum_text)
         if not isinstance(checksum_text, str):
             raise SeamlessConversionError("Cannot convert deep cell in value conversion")
-        checksum2 = bytes.fromhex(checksum_text)
-        return try_convert(checksum2, "bytes", target_celltype)
+        checksum2 = bytes.fromhex(checksum_text)        
+        #return try_convert(checksum2, "bytes", target_celltype) # No, for now trust the "checksum" type
+        return checksum2
 
     buffer = buffer_cache.get_buffer(checksum)
     if buffer is None:

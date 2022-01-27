@@ -16,6 +16,48 @@ celltype_mapping = {
     "macro": "python",
 }
 
+async def inter_deepcell_conversion(manager, value, source_hash_pattern, target_hash_pattern):
+    #{"*": "#"}, {"!": "#"}, {"*": "##"}
+    if source_hash_pattern == {"*": "#"} and target_hash_pattern == {"!": "#"}:
+        result = [value[k] for k in sorted(value.keys())]
+    elif source_hash_pattern == {"*": "#"} and target_hash_pattern == {"*": "##"}:
+        result = {}
+        for k in value:
+            source_checksum = value[k]
+            target_checksum = try_convert(source_checksum, "mixed", "bytes")
+            if target_checksum is None:
+                raise CacheMissError(target_checksum)
+            result[k] = target_checksum
+    elif source_hash_pattern == {"!": "#"} and target_hash_pattern == {"*": "#"}:
+        result = {k:v for k,v in enumerate(value)}
+    elif source_hash_pattern == {"!": "#"} and target_hash_pattern == {"*": "##"}:
+        result = {}
+        for k, source_checksum in enumerate(value):
+            target_checksum = try_convert(source_checksum, "mixed", "bytes")
+            if target_checksum is None:
+                raise CacheMissError(target_checksum)
+            result[k] = target_checksum
+    elif source_hash_pattern == {"*": "##"} and target_hash_pattern == {"*": "#"}:
+        result = {}
+        for k in value:
+            source_checksum = value[k]
+            target_checksum = try_convert(source_checksum, "bytes", "mixed")
+            if target_checksum is None:
+                raise CacheMissError(target_checksum)
+            result[k] = target_checksum
+    elif source_hash_pattern == {"*": "##"} and target_hash_pattern == {"!": "#"}:
+        result = []
+        for k in sorted(value.keys()):
+            source_checksum = value[k]
+            target_checksum = try_convert(source_checksum, "bytes", "mixed")
+            if target_checksum is None:
+                raise CacheMissError(target_checksum)
+            result.append(target_checksum)
+    else:
+        result = None
+    return result
+
+
 async def value_conversion(
     checksum, source_celltype, target_celltype, *, 
     manager, fingertip_mode
@@ -40,7 +82,8 @@ async def value_conversion(
         if not isinstance(checksum_text, str):
             raise SeamlessConversionError("Cannot convert deep cell in value conversion")
         checksum2 = bytes.fromhex(checksum_text)
-        return try_convert(checksum2, "bytes", target_celltype)
+        #return try_convert(checksum2, "bytes", target_celltype) # No, for now trust the "checksum" type
+        return checksum2
 
     if fingertip_mode:
         buffer = await GetBufferTask(manager, checksum).run()
@@ -207,26 +250,35 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                     manager, buffer, source_checksum,
                     source_celltype, copy=False
                 ).run()
-                mode, result = await get_subpath(value, source_hash_pattern, expression.path)
-                assert mode in ("checksum", "value"), mode
-                if result is None:
-                    done = True
-                    result_checksum = None
-                elif mode == "checksum":
-                    assert source_hash_pattern is not None
-                    if fingertip_mode:
-                        buffer2 = await GetBufferTask(manager, result).run()
-                    else:
-                        buffer2 = await cachemanager.fingertip(result)
-                    if buffer2 is None:
-                        raise CacheMissError(result)
-                    result_value = await DeserializeBufferTask(
-                        manager, buffer2, result, source_celltype,
-                        copy=False
+                full_value = True
+                if trivial_path:
+                    result_value = await inter_deepcell_conversion(
+                        manager, value, 
+                        source_hash_pattern, target_hash_pattern
                     )
-                elif mode == "value":
-                    use_value = True                    
-                    result_value = result                             
+                    if result_value is not None:
+                        full_value = False
+                if full_value:
+                    mode, result = await get_subpath(value, source_hash_pattern, expression.path)
+                    assert mode in ("checksum", "value"), mode
+                    if result is None:
+                        done = True
+                        result_checksum = None
+                    elif mode == "checksum":
+                        assert source_hash_pattern is not None
+                        if fingertip_mode:
+                            buffer2 = await GetBufferTask(manager, result).run()
+                        else:
+                            buffer2 = await cachemanager.fingertip(result)
+                        if buffer2 is None:
+                            raise CacheMissError(result)
+                        result_value = await DeserializeBufferTask(
+                            manager, buffer2, result, source_celltype,
+                            copy=False
+                        )
+                    elif mode == "value":
+                        use_value = True                    
+                        result_value = result                             
 
                 if (not done) and use_value:
                     result_checksum = None
