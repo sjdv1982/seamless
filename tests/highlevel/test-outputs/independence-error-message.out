@@ -8,6 +8,6 @@ Exception: Cannot mount Seamless Cell: .b in read mode: this cell is not fully i
 Traceback (most recent call last):
   File "independence-error-message.py", line 15, in <module>
     ctx.b.share(readonly=False)
-  File "/seamless/seamless/highlevel/Cell.py", line 848, in share
+  File "/seamless/seamless/highlevel/Cell.py", line 851, in share
     raise Exception(msg.format(self))
 Exception: Seamless Cell: .b: Non-readonly HTTP share is not possible. This cell is not fully independent, i.e. it has incoming connections

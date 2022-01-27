@@ -222,16 +222,19 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 done = True
                 needs_value_conversion = False
             elif trivial_path and result_hash_pattern is None:
-                value_conversion_callback = functools.partial(
-                    value_conversion,
-                    manager=manager,
-                    fingertip_mode=fingertip_mode
-                )
-                result_checksum = await conversion(
-                    source_checksum, source_celltype,
-                    target_celltype, fingertip_mode=fingertip_mode,
-                    value_conversion_callback=value_conversion_callback
-                )
+                if source_celltype == target_celltype:
+                    result_checksum = source_checksum
+                else:
+                    value_conversion_callback = functools.partial(
+                        value_conversion,
+                        manager=manager,
+                        fingertip_mode=fingertip_mode
+                    )            
+                    result_checksum = await conversion(
+                        source_checksum, source_celltype,
+                        target_celltype, fingertip_mode=fingertip_mode,
+                        value_conversion_callback=value_conversion_callback
+                    )
                 done = False  # still need to account for target hash pattern
                 needs_value_conversion = False
             elif trivial_path and hash_pattern_equivalent: #deepcell-to-deepcell

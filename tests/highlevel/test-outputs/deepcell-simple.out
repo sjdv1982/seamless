@@ -1,4 +1,4 @@
-{'path': ('a',), 'type': 'cell', 'celltype': 'structured', 'datatype': 'mixed', 'hash_pattern': {'*': '#'}, 'UNTRANSLATED': True, 'TEMP': {'test': 1, 'test2': 2}}
+{"TEMP": {"test": 1, "test2": 2}, "UNTRANSLATED": true, "celltype": "structured", "datatype": "mixed", "hash_pattern": {"*": "#"}, "path": ["a"], "type": "cell"}
 {'test': 'bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d', 'test2': '191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba'}
 <Silk: {'test': 1, 'test2': 2} >
 {'*': '#'}

@@ -316,6 +316,10 @@ class Manager:
         On the other hand, since cachemanager.incref_checksum is called,
          deep structures have their contained checksums automatically incref'ed, 
          and decref'ed for the old value
+        NOTE: this function blindly assumes that the checksum is parseable
+         for the cell's celltype, and in fact triggers a guarantee.
+        If you are paranoid about this, do not call this function unless you
+         have verified the parsability yourself.
         """
         if cell._destroyed:
             return
@@ -347,6 +351,8 @@ class Manager:
             cachemanager.decref_checksum(old_checksum, cell, independent, False)
         
         print_debug("SET CHECKSUM", cell, "None:", checksum is None, checksum == old_checksum)
+        if checksum is not None:
+            buffer_cache.guarantee_buffer_info(checksum, cell.celltype)
         cell._checksum = checksum
         cell._void = void
         cell._status_reason = status_reason

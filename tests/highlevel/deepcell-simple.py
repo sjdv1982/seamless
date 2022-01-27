@@ -1,8 +1,9 @@
+import json
 from seamless.highlevel import Context
 ctx = Context()
 ctx.a = {"test": 1, "test2": 2}
 ctx.a.hash_pattern = {"*": "#"}
-print(ctx.a._get_hcell())
+print(json.dumps(ctx.a._get_hcell(), sort_keys=True))
 ctx.compute()
 print(ctx.a._get_cell().data)
 print(ctx.a._get_cell().value)
