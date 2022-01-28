@@ -625,6 +625,8 @@ class Cell(Base, HelpMixin):
 
     @celltype.setter
     def celltype(self, value):
+        if not isinstance(value, str):
+            raise TypeError(type(value))
         assert value in celltypes, value
         hcell = self._get_hcell2()
         if hcell.get("celltype", "structured") == value:

@@ -61,16 +61,22 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
             for k,v in argvalue.items():
                 if isinstance(v, list):
                     v = tuple(v)
-                vv = parent._children.get(v)
-                if vv is None and extra_nodes is not None:
-                    value_node = extra_nodes.get(v) 
-                    if value_node is not None:
-                        vv = value_node, v
-                else:
-                    if isinstance(vv, SubCell) or not isinstance(vv, Cell):
-                        msg = "%s['%s'] must be Cell, not '%s'"
-                        raise TypeError(msg % (argname, k, type(vv)))
-                    vv = vv._get_hcell(), v
+                vv = None
+                if path is not None:
+                    vv = parent._children.get(v)
+                    if vv is not None:
+                        if isinstance(vv, SubCell) or not isinstance(vv, Cell):
+                            msg = "%s['%s'] must be Cell, not '%s'"
+                            raise TypeError(msg % (argname, k, type(vv)))
+                        vv = vv._get_hcell(), v
+                    if vv is None and extra_nodes is not None:
+                        vv_node = extra_nodes.get(v) 
+                        if vv_node is not None:
+                            vv = vv_node, v
+                if vv is None:
+                    if v is not None:
+                        raise Exception("Non-existing cell '%s'", v)
+
                 value[k] = vv
 
         elif par["type"] == "kwargs":
@@ -87,6 +93,7 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
                         if isinstance(vv, SubCell) or not isinstance(vv, Cell):
                             msg = "%s['%s'] must be Cell, not '%s'"
                             raise TypeError(msg % (argname, k, type(vv)))
+                        vv = vv._get_hcell(), v
                         value[k] = "cell", vv
                     else: # value
                         value[k] = "value", v
@@ -245,7 +252,7 @@ class LibInstance:
                 for k,v0 in argvalue.items():
                     vtype, v = v0
                     if vtype == "cell":
-                        value[k] = "cell", InputCellWrapper(connection_wrapper, v)
+                        value[k] = "cell", InputCellWrapper(connection_wrapper, v[0], v[1])
                     else: # value
                         value[k] = "value", v
 
