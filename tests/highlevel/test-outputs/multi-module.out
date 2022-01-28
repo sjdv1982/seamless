@@ -1,22 +1,23 @@
-*************************************************
-* Result
-*************************************************
-10
-*************************************************
-* Standard output
-*************************************************
-transformer
-<module 'transformer.testmodule'>
-<module 'transformer.testmodule.submodule'>
-10
-10
-
-*************************************************
-Status: OK
-None
-<Silk: 10 >
-<Silk: 9 >
-{'__init__.py': '\nfrom .submodule import q\nfrom . import submodule\n', 'submodule.py': 'q = 9'}
-<Silk: 80 >
-None
-<Silk: 160 >
+Traceback (most recent call last):
+  File "multi-module.py", line 23, in <module>
+    ctx.compute()
+  File "/seamless/seamless/highlevel/Context.py", line 355, in compute
+    self.translate()
+  File "/seamless/seamless/highlevel/Context.py", line 399, in translate
+    return self._do_translate(force=force, explicit=True)
+  File "/seamless/seamless/highlevel/Context.py", line 57, in func2
+    func(*args, **kwargs)
+  File "/seamless/seamless/highlevel/Context.py", line 722, in _do_translate
+    return self._do_translate2(graph0, force=force, explicit=explicit)
+  File "/seamless/seamless/highlevel/Context.py", line 800, in _do_translate2
+    translate(
+  File "/seamless/seamless/midlevel/translate.py", line 354, in translate
+    translate_module(node, ctx, namespace, inchannels, outchannels)
+  File "/seamless/seamless/midlevel/translate_module.py", line 45, in translate_module
+    codecell.mount(**mount)
+  File "/seamless/seamless/core/cell.py", line 383, in mount
+    MountItem(None, self, dummy=True, **self._mount) #to validate parameters
+  File "/seamless/seamless/core/mount.py", line 89, in __init__
+    assert cell.celltype == "mixed", cell.celltype
+AssertionError: plain
+Undestroyed Seamless context: <toplevel> (0x7f355a3c6250), mount points may remain

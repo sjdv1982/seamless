@@ -19,6 +19,15 @@ class Inchannel:
         self._last_state = (self._void, self._checksum, self._status_reason)
 
     @property
+    def exception(self):
+        sc = self.structured_cell()
+        livegraph = sc._get_manager().livegraph
+        accessor = livegraph.paths_to_upstream[sc.buffer][self.subpath]
+        if accessor is None:
+            return None
+        return accessor.exception
+
+    @property
     def hash_pattern(self):
         return self.structured_cell().hash_pattern
 
@@ -212,7 +221,7 @@ class StructuredCell(SeamlessBase):
         else:
             if self.hash_pattern is None:
                 if not len(path):
-                    self._auth_value = value
+                    self._auth_value = deepcopy(value)
                 elif self._auth_value is None:
                     if isinstance(path[0], str):
                         self._auth_value = {}

@@ -33,11 +33,11 @@ class SynthContext:
         parent = self._parent()
         if parent._runtime_graph is None:
             return []
-        dirs = []
+        dirs = set()
         for npath in parent._runtime_graph.nodes:
             if len(npath) > lp and npath[:lp] == path:
-                dirs.append(npath[lp])
-        return dirs
+                dirs.add(npath[lp])
+        return list(dirs)
 
     @property
     def children(self):

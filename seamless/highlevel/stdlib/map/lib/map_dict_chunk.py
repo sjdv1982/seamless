@@ -63,26 +63,10 @@ def map_dict_chunk(ctx, chunksize, graph, inp, keyorder, has_uniform, elision, l
 
         chunk_ctx = context()
         setattr(ctx, "chunk_%d" % (n+1), chunk_ctx)
-        chunk_ctx.inputchunk_deep = cell("mixed", hash_pattern={"*": "#"})
-        chunk_ctx.inputchunk_deep.set(inputchunk)
-        chunk_ctx.inputchunk_deep2 = cell("plain")
-        chunk_ctx.inputchunk_deep.connect(chunk_ctx.inputchunk_deep2)
         chunk_ctx.inputchunk_checksum = cell("checksum")
-        chunk_ctx.inputchunk_deep2.connect(chunk_ctx.inputchunk_checksum)
-
-        # chunk_ctx.inputchunk_checksum has the correct checksum, but there is no valid conversion
-        #  (because it is unsafe).
-        # Use a macro to do it
-        chunk_ctx.get_inputchunk = macro({
-            "inputchunk_checksum": {"io": "input", "celltype": "checksum"}
-        })
-        get_inputchunk = lib_module_dict["helper"]["get_inputchunk_dict"]
-        chunk_ctx.get_inputchunk.code.cell().set(get_inputchunk)
-        chunk_ctx.inputchunk_checksum.connect(chunk_ctx.get_inputchunk.inputchunk_checksum)
-        p = path(chunk_ctx.get_inputchunk.ctx).inputchunk
+        chunk_ctx.inputchunk_checksum.set(inputchunk)
         chunk_ctx.inputchunk = cell("mixed", hash_pattern={"*": "#"})
-        p.connect(chunk_ctx.inputchunk)
-
+        chunk_ctx.inputchunk_checksum.connect(chunk_ctx.inputchunk)
 
         if first:
             if not hasattr(hc, "result"):
@@ -94,9 +78,11 @@ def map_dict_chunk(ctx, chunksize, graph, inp, keyorder, has_uniform, elision, l
 
         chunk_ctx.inputchunk.connect(hci)
         chunk_ctx.result = cell("mixed", hash_pattern = {"*": "#"})
-        chunk_ctx.result_deep = cell("checksum")
+        chunk_ctx.result_checksum = cell("checksum")
+        chunk_ctx.result_deep = cell("plain")
         hc.result.connect(chunk_ctx.result)
-        chunk_ctx.result.connect(chunk_ctx.result_deep)
+        chunk_ctx.result.connect(chunk_ctx.result_checksum)
+        chunk_ctx.result_checksum.connect(chunk_ctx.result_deep)
         chunk_ctx.result_deep.connect(ctx.sc.inchannels[(n+1,)])
         con = ["ctx", subctx, "result"], ["..result"]
         pseudo_connections.append(con)
@@ -108,25 +94,14 @@ def map_dict_chunk(ctx, chunksize, graph, inp, keyorder, has_uniform, elision, l
     merge_subresults = lib_module_dict["helper"]["merge_subresults_chunk"]
     ctx.merge_subresults = transformer({
         "subresults": {"io": "input", "celltype": "plain"},
-        "result": {"io": "output", "celltype": "plain"}
+        "result": {"io": "output", "celltype": "checksum"}
     })
     ctx.merge_subresults.code.cell().set(merge_subresults)
     ctx.subresults.connect(ctx.merge_subresults.subresults)
-    ctx.result_deep = cell("plain")
-    ctx.merge_subresults.result.connect(ctx.result_deep)
-
-    # ctx.result_deep has the correct checksum, but there is no valid conversion
-    #  (because it is unsafe).
-    # Use a macro to do it
-    ctx.get_result = macro({
-        "result_checksum": {"io": "input", "celltype": "checksum"}
-    })
-    get_result = lib_module_dict["helper"]["get_result_dict"]
-    ctx.get_result.code.cell().set(get_result)
-    ctx.result_deep.connect(ctx.get_result.result_checksum)
-    p = path(ctx.get_result.ctx).result
+    ctx.result_checksum = cell("checksum")
+    ctx.merge_subresults.result.connect(ctx.result_checksum)
     ctx.result = cell("mixed", hash_pattern={"*": "#"})
-    p.connect(ctx.result)
+    ctx.result_checksum.connect(ctx.result)
 
 
     if not elision:
@@ -225,21 +200,8 @@ def map_dict_chunk_nested(
         for subr,c in subresults.items():
             c.connect(getattr(tf, subr))
 
-        ctx.all_subresults = cell("plain")
-        tf.result.connect(ctx.all_subresults)
-
-        # ctx.all_subresults has the correct checksum, but there is no valid conversion
-        #  (because it is unsafe).
-        # Use a macro to do it
-        ctx.get_result = macro({
-            "result_checksum": {"io": "input", "celltype": "checksum"}
-        })
-        get_result = lib_module_dict["helper"]["get_result_dict"]
-        ctx.get_result.code.cell().set(get_result)
-        ctx.all_subresults.connect(ctx.get_result.result_checksum)
-        p = path(ctx.get_result.ctx).result
         ctx.result = cell("mixed", hash_pattern={"*": "#"})
-        p.connect(ctx.result)
+        tf.result.connect(ctx.result)
 
     else:
         lib.map_dict_chunk(ctx, chunksize, graph, inp, keyorder, has_uniform, elision, lib_module_dict)

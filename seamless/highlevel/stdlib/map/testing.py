@@ -75,7 +75,6 @@ def test_map_list_N_uniform(mylib):
         print("ADD", a, b, c)
         return a + b + c
     ctx.add.tf = add
-    ctx.add.tf.debug = True
     ctx.add.tf.a = ctx.add.inp.a
     ctx.add.tf.b = ctx.add.inp.b
     ctx.add.tf.c = ctx.add.uniform
@@ -160,7 +159,6 @@ def test_map_list_uniform(mylib):
         print("ADD", a, b)
         return a + b
     ctx.add.tf = add
-    ctx.add.tf.debug = True
     ctx.add.tf.a = ctx.add.inp
     ctx.add.tf.b = ctx.add.uniform2.b
     ctx.add.result = ctx.add.tf
@@ -250,7 +248,6 @@ def test_map_dict_uniform(mylib):
         print("ADD", a, b)
         return a + b
     ctx.add.tf = add
-    ctx.add.tf.debug = True
     ctx.add.tf.a = ctx.add.inp
     ctx.add.tf.b = ctx.add.uniform
     ctx.add.result = ctx.add.tf
@@ -317,12 +314,10 @@ def test_map_dict_chunk(mylib):
     )
     ctx.compute()
     print(ctx.mapping.ctx.status)
-    print(ctx.mapping.ctx.m.ctx.top.exception)
     print(ctx.result.value)
     ctx.mapping.keyorder0 = ctx.keyorder.value
     ctx.compute()
-    print(ctx.result.value)
-    print("UP")
+    print(ctx.result.value)    
     inp = ctx.inp.value
     inp.update({
         "a": 80,
@@ -352,7 +347,6 @@ def test_map_dict_chunk_uniform(mylib):
             result[key] = a[key] * factor
         return result
     ctx.mul.tf = mul
-    ctx.mul.tf.debug = True
     ctx.mul.tf.a = ctx.mul.inp
     ctx.mul.tf.factor = ctx.mul.uniform
     ctx.mul.result = ctx.mul.tf
@@ -377,7 +371,6 @@ def test_map_dict_chunk_uniform(mylib):
     )
     ctx.compute()
     print(ctx.mapping.ctx.status)
-    print(ctx.mapping.ctx.m.ctx.top.exception)
     print(ctx.result.value)
     ctx.factor = 13
     ctx.compute()

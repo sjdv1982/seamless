@@ -201,9 +201,9 @@ class StructuredCellCancellation:
         tasks = taskmanager.structured_cell_to_task[scell]
         for task in tasks:
             if isinstance(task, StructuredCellAuthTask):
-                if not task._started:
+                if not existing and not task._started:
                     existing = True
-                    break
+                    continue
             task.cancel()
         if not existing:
             StructuredCellAuthTask(taskmanager.manager, scell).launch()

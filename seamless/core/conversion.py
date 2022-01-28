@@ -58,9 +58,11 @@ Text conversion rules:
 
 Checksum cells: the *value* of the checksum cell:
 - If a checksum string, it can be promoted to any celltype
-- If a dict or list, it can be promoted to plain or to mixed.
+- If a dict or list, it can be promoted to plain or to a deep cell (mixed).
   Mixed cells must have the correct hash pattern.
-  This is only validated for simple hash patterns.
+  This is not validated!
+  Plain cells will take the value "as-is", i.e. as if the checksums were text.
+  In that case, no checksum references are being maintained!
 All of these promotions are value-based and therefore "forbidden" 
 (handled by evaluate_expression)
 
