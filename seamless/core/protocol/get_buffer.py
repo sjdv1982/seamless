@@ -92,8 +92,6 @@ def get_buffer(checksum):
 - Check for a local checksum-to-buffer cache hit (synchronous)
 - Else, check database cache
 - Else, check transformation cache (if it hits, make buffer of it)
-- Else, await remote checksum-to-buffer cache
-- Else, the checksum will be fingertipped (if enabled)
 - If successful, add the buffer to local and/or database cache (with a tempref or a permanent ref).
 - If all fails, raise CacheMissError
 """
