@@ -778,7 +778,8 @@ class Context(Base, HelpMixin):
                 ok1 = self._manager.livegraph.check_destroyed()
                 ok2 = self._manager.taskmanager.check_destroyed()
                 if not ok1 or not ok2:
-                    raise Exception("Cannot re-translate, since clean-up of old context was incomplete")
+                    pass ###
+                    #raise Exception("Cannot re-translate, since clean-up of old context was incomplete")
             import_before_translate(graph)
             """ KLUDGE
             The translation process does NOT happen in one async step; it will start launching tasks

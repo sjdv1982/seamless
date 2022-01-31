@@ -61,6 +61,15 @@ def test_map_list_N(mylib):
     ctx.compute()
     print(ctx.result.value)
 
+    def add2(a, b):
+        print("ADD2", a, b)
+        return a + b + 1
+    #ctx.add.q = 12
+    ctx.add.tf.code = add2
+    ctx.compute()
+    print(ctx.result.value)
+
+
 def test_map_list_N_uniform(mylib):
     from seamless.highlevel import Context, Cell
     ctx = Context()
