@@ -12,6 +12,7 @@ from .HelpMixin import HelpMixin
 
 class DeepCellBase(Base, HelpMixin):
     _node = None
+    _virtual_path = None
 
     def __init__(self, *, parent=None, path=None):
         assert (parent is None) == (path is None)
@@ -95,6 +96,14 @@ class DeepCellBase(Base, HelpMixin):
         cell = self._get_cell()
         return deepcopy(cell.data)
 
+    @property
+    def handle(self):
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            raise AttributeError
+        cell = self._get_cell()
+        return cell.handle_hash
+
     def _set(self, value):
         from ..core.structured_cell import StructuredCell
         hcell = self._get_hcell2()
@@ -154,6 +163,15 @@ Use DeepCell.data instead."""
                 p2 = p2._context()
             p = p2
         return p
+
+    def __setattr__(self, attr, value):
+        if attr.startswith("_") or hasattr(type(self), attr):
+            return object.__setattr__(self, attr, value)
+        return self._setattr(attr, value)
+
+    def _setattr(self, attr, value):
+        from .assign import assign_to_deep_subcell
+        assign_to_deep_subcell(self, attr, value)
 
     def _get_cell(self):
         parent = self._parent()
@@ -262,6 +280,23 @@ Use DeepCell.data instead."""
         if cell.schema is not None:
             cell.schema._set_observer(self._observe_schema)
 
+    def _get_subcell(self, attr):
+        hcell = self._get_hcell()
+        parent = self._parent()
+        readonly = False ### TODO
+        return DeepSubCell(
+            parent, self,
+            attr, readonly=readonly
+        )
+
+    def __getattribute__(self, attr):
+        if attr.startswith("_"):
+            return super().__getattribute__(attr)
+        if hasattr(type(self), attr) or attr in self.__dict__ or attr == "path":
+            return super().__getattribute__(attr)
+        hcell = self._get_hcell()
+        return self._get_subcell(attr)
+
     def __dir__(self):
         result = [p for p in type(self).__dict__ if not p.startswith("_")]
         return result
@@ -275,6 +310,13 @@ Use DeepCell.data instead."""
 class DeepCell(DeepCellBase):
     _new_func = get_new_deepcell
 
+    def __getitem__(self, item):
+        if isinstance(item, str):
+            return self._get_subcell(item)
+        else:
+            raise TypeError(item)
+
+
 def get_new_deeplistcell(path):
     return {
         "path": path,
@@ -285,4 +327,13 @@ def get_new_deeplistcell(path):
 class DeepListCell(DeepCellBase):
     _new_func = get_new_deeplistcell
 
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            return self._get_subcell(item)
+        elif isinstance(item, slice):
+            raise NotImplementedError  # TODO: x[min:max] outchannels
+        else:
+            raise TypeError(item)
+
 from .synth_context import SynthContext
+from .SubCell import DeepSubCell

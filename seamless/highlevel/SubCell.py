@@ -82,3 +82,48 @@ class SubCell(Cell):
 
     def __str__(self):
         return "Seamless SubCell: %s" % ".".join(self._path)
+
+
+class DeepSubCell(SubCell):
+
+    def __init__(self, parent, cell, attr, readonly):
+        assert isinstance(cell, DeepCell)
+        assert not isinstance(cell, SubCell)
+        fullpath = cell._path + (attr,)
+        Cell.__init__(self, parent=parent, path=fullpath)
+        self._cell = weakref.ref(cell)
+        self._readonly = readonly
+        self._attr = attr
+        self._subpath = (attr,)
+
+    def __getattr__(self, attr):
+        if attr.startswith("_"):
+            return super().__getattribute__(attr)
+        if attr in type(self).__dict__ or attr in self.__dict__:
+            return super().__getattribute__(attr)
+        raise AttributeError
+
+    @property
+    def value(self):
+        cell = self._cell()
+        celldata = cell.data
+        if celldata is None:
+            return None
+        attr = self._attr
+        if isinstance(attr, int):
+            if len(celldata) <= attr:
+                return None
+            checksum = celldata[attr]
+        else:
+            checksum = getattr(celldata, attr)
+        return self._parent().resolve(checksum, "mixed")
+
+    def __setattr__(self, attr, value):
+        if attr.startswith("_"):
+            return object.__setattr__(self, attr, value)
+        raise AttributeError(attr)
+
+    def __str__(self):
+        return "Seamless DeepSubCell: %s" % ".".join(self._path)
+
+from .DeepCell import DeepCell
