@@ -311,28 +311,19 @@ class StructuredCellCancellation:
                     # The forced join task might have gone wrong;
                     # or it succeeded, but later on, all valid inchannels were voided
                     pass
-                if scell._exception is not None:
-                    reason = StatusReasonEnum.INVALID
-                else:
-                    reason = StatusReasonEnum.UNDEFINED
+                reason = _get_scell_status_reason(scell)                
                 print_debug("***CANCEL***: marked for void %s (from joining)" % scell)
                 self.cycle().to_void.append((scell, reason))
             elif self.mode == SCModeEnum.PENDING:
                 # The last pending inchannel got void-canceled
                 assert scell._data._checksum is None, (scell, old_state, new_state, self.mode)
-                if scell._exception is not None:
-                    reason = StatusReasonEnum.INVALID
-                else:
-                    reason = StatusReasonEnum.UNDEFINED
+                reason = _get_scell_status_reason(scell)
                 print_debug("***CANCEL***: marked for void (from pending) %s" % scell)
                 self.cycle().to_void.append((scell, reason))
             elif self.mode == SCModeEnum.EQUILIBRIUM:
                 # The last valued inchannel got void-canceled
                 assert scell._data._checksum is not None, (scell, old_state, new_state, self.mode)
-                if scell._exception is not None:
-                    reason = StatusReasonEnum.INVALID
-                else:
-                    reason = StatusReasonEnum.UNDEFINED
+                reason = _get_scell_status_reason(scell)
                 print_debug("***CANCEL***: marked for void (from equilibrium) %s" % scell)
                 self.cycle().to_void.append((scell, reason))
             else:
@@ -1059,8 +1050,16 @@ class CancellationCycle:
                 scell._mode = SCModeEnum.FORCE_JOINING
             return True  # change
 
-
-
+def _get_scell_status_reason(scell):
+    if scell._exception is not None:
+        reason = StatusReasonEnum.INVALID
+    else:
+        if not len(scell.inchannels):
+            reason = StatusReasonEnum.UNDEFINED
+        else:
+            reason = StatusReasonEnum.UPSTREAM
+    return reason
+    
 from ..utils import overlap_path
 from ..manager.accessor import Accessor
 from ..cell import Cell
