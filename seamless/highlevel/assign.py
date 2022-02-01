@@ -21,7 +21,7 @@ from . import ConstantTypes
 from silk.mixed import MixedBase
 from silk import Silk
 from .Cell import Cell, get_new_cell
-from .DeepCell import DeepCell, get_new_deepcell
+from .DeepCell import DeepCellBase
 from .Module import Module, get_new_module
 from .Resource import Resource
 from .pin import PinWrapper
@@ -545,12 +545,12 @@ def assign(ctx, path, value, *, help_context=False):
                 _remove_independent_mountshares(target._get_hcell())
             assign_connection(ctx, value._path, path, True)
         ctx._translate()
-    elif isinstance(value, DeepCell):
+    elif isinstance(value, DeepCellBase):
         if value._parent() is None:
             value._init(ctx, path)
             cellnode = deepcopy(value._node)
             if cellnode is None:
-                cellnode = get_new_deepcell(path)
+                cellnode = type(value)._new_func(path)
             else:
                 cellnode["path"] = path
             ctx._graph.nodes[path] = cellnode

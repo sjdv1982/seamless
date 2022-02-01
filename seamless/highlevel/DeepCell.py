@@ -10,7 +10,7 @@ def get_new_deepcell(path):
 from .Base import Base
 from .HelpMixin import HelpMixin
 
-class DeepCell(Base, HelpMixin):
+class DeepCellBase(Base, HelpMixin):
     _node = None
 
     def __init__(self, *, parent=None, path=None):
@@ -142,6 +142,10 @@ class DeepCell(Base, HelpMixin):
 Use DeepCell.data instead."""
         raise AttributeError(msg)
 
+    @property
+    def schema(self):
+        raise AttributeError("DeepCell schemas are currently disabled.")
+
     def _get_cell_subpath(self, cell, subpath):
         p = cell
         for path in subpath:
@@ -174,7 +178,7 @@ Use DeepCell.data instead."""
         except AttributeError:
             pass
         if self._node is None:
-            self._node = get_new_deepcell(None)
+            self._node = self._new_func(None)
         return self._node
 
     def _observe_cell(self, checksum):
@@ -267,5 +271,18 @@ Use DeepCell.data instead."""
 
     def __repr__(self):
         return str(self)
+
+class DeepCell(DeepCellBase):
+    _new_func = get_new_deepcell
+
+def get_new_deeplistcell(path):
+    return {
+        "path": path,
+        "type": "deeplistcell",
+        "UNTRANSLATED": True,
+    }
+
+class DeepListCell(DeepCellBase):
+    _new_func = get_new_deeplistcell
 
 from .synth_context import SynthContext

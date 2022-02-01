@@ -57,7 +57,7 @@ from .Context import Context
 from .Transformer import Transformer
 from .Macro import Macro
 from .Cell import Cell
-from .DeepCell import DeepCell
+from .DeepCell import DeepCell, DeepListCell
 from .Module import Module
 from .Link import Link
 from .Resource import Resource
@@ -113,7 +113,7 @@ from . import stdlib
 
 __all__ = [
     "Context", "Transformer", "Macro",
-    "Cell", "DeepCell",
+    "Cell", "DeepCell", "DeepListCell",
     "Link", "Graph", "StaticContext", "Module",
     "Resource", "load_graph", "copy", "stdlib"
 ]
