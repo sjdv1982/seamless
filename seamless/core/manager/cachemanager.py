@@ -1,6 +1,9 @@
 from re import S
 import weakref
 import copy
+import functools
+
+from seamless.core.status import StatusReasonEnum
 from ..cache.buffer_cache import buffer_cache
 from ... import get_dict_hash
 
@@ -39,10 +42,13 @@ def new_deep_buffer_coro_id():
 
 deep_buffer_coros = []
 
+invalid_deep_buffers = set()
 
 async def decref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
     while deep_buffer_coros[0] != deep_buffer_coro_id:
         await asyncio.sleep(0.01)
+    if (checksum, get_dict_hash(hash_pattern)) in invalid_deep_buffers:
+        return
     try:
         deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
         sub_checksums = deep_structure_to_checksums(
@@ -82,7 +88,7 @@ class CacheManager:
         self.reactor_exceptions = {}
         self.join_cache = {}
         self.rev_join_cache = {}
-
+        
         # for now, just a single global transformation cache
         from ..cache.transformation_cache import transformation_cache
         self.transformation_cache = transformation_cache
@@ -205,8 +211,9 @@ class CacheManager:
             deep_buffer_coro_id = new_deep_buffer_coro_id()
             deep_buffer_coros.append(deep_buffer_coro_id)
             coro = incref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
-            asyncio.ensure_future(coro)
-
+            future = asyncio.ensure_future(coro)
+            done_callback = functools.partial(incref_deep_buffer_done, self, checksum, refholder, authoritative, result)
+            future.add_done_callback(done_callback)
 
     async def fingertip(self, checksum, *, must_have_cell=False):
         """Tries to put the checksum's corresponding buffer 'at your fingertips'
@@ -449,11 +456,12 @@ class CacheManager:
             self.cell_to_ref[refholder] = None
             cell = refholder
             if cell._hash_pattern is not None:
-                deep_buffer = buffer_cache.get_buffer(checksum)
-                deep_buffer_coro_id = new_deep_buffer_coro_id()
-                deep_buffer_coros.append(deep_buffer_coro_id)
-                coro = decref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
-                asyncio.ensure_future(coro)
+                if (checksum, get_dict_hash(cell._hash_pattern)) not in invalid_deep_buffers:
+                    deep_buffer = buffer_cache.get_buffer(checksum)
+                    deep_buffer_coro_id = new_deep_buffer_coro_id()
+                    deep_buffer_coros.append(deep_buffer_coro_id)
+                    coro = decref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
+                    asyncio.ensure_future(coro)
 
         elif isinstance(refholder, Expression):
             # Special case, since we never actually clear expression caches,
@@ -469,8 +477,8 @@ class CacheManager:
         elif isinstance(refholder, Inchannel):
             assert self.inchannel_to_ref[refholder] is not None
             self.inchannel_to_ref[refholder] = None
-        elif isinstance(refholder, Library):
-            pass
+        #elif isinstance(refholder, Library):  ## yagni??
+        #    pass
         else:
             raise TypeError(type(refholder))
         try:
@@ -570,6 +578,19 @@ is result checksum: {}
         checksum = get_dict_hash(join_dict)
         self.join_cache[checksum] = result_checksum
         self.rev_join_cache[result_checksum] = join_dict
+
+def incref_deep_buffer_done(cachemanager:CacheManager, checksum, cell, authoritative, result, future):
+    if future.exception() is not None:        
+        invalid_deep_buffers.add((checksum, get_dict_hash(cell._hash_pattern)))
+        manager = cachemanager.manager()
+        # crude, but hard to do otherwise. If this happens, we have encountered a Seamless bug anyway
+        if cell._structured_cell is None or cell._structured_cell.schema is cell:
+            manager.cancel_cell(cell, void=True)
+        else:
+            sc = cell._structured_cell
+            sc._exception = future.exception()
+            manager._set_cell_checksum(sc._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
+            manager.structured_cell_trigger(sc, void=True)
 
 from ..cell import Cell
 from ..transformer import Transformer
