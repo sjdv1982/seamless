@@ -426,7 +426,7 @@ def _value_to_objects(value, hash_pattern, objects):
             if key.startswith("!"):
                 result = []
                 sub_hash_pattern = hash_pattern[key]
-                assert isinstance(value, list), value
+                assert isinstance(value, (list, np.ndarray)), value
                 for sub_value in value:
                     sub_result = _value_to_objects(
                         sub_value, sub_hash_pattern, objects

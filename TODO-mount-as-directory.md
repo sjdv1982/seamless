@@ -1,6 +1,7 @@
-0. Run a test to determine a reasonable cell budget (step 11)
+-1. Run a test to determine a reasonable cell budget (step 11)
 UPDATE: see step 11
-00: Fix the fact that you cannot set a deep list from a Numpy array (DeepStructureError).
+0: Fix the fact that you cannot set a deep list from a Numpy array (DeepStructureError).
+====> here
 1. Make Dataset, Repository, DeepCell, DeepListCell classes.
 They correspond to the following low-level deep cells:
  Dataset: hash pattern {"*": "!!"} (dict-of-byte-cells)
