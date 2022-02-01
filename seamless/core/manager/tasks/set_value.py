@@ -78,8 +78,8 @@ class SetCellValueTask(Task):
             manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.INVALID, origin_task=self)
         except Exception as exc:
             exc = traceback.format_exc()
-            livegraph.cell_parsing_exceptions[self.cell] = exc
             manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.INVALID, origin_task=self)
+            livegraph.cell_parsing_exceptions[self.cell] = exc
         finally:
             taskmanager.cell_to_value.pop(cell, None)
         return None

@@ -198,7 +198,18 @@ def fill_checksum(manager, node, temp_path, composite=True):
             code = inspect.getsource(temp_value)
             code = textwrap.dedent(code)
             temp_value = code
-    buf = serialize(temp_value, datatype, use_cache=False)
+    try:
+        buf = serialize(temp_value, datatype, use_cache=False)
+    except Exception:
+        try:
+            str_temp_value = str(temp_value)
+            if len(str_temp_value) > 100:
+                str_temp_value = str_temp_value[:75] + "..." + str_temp_value[-20:]
+            str_temp_value = "'" + str_temp_value + "'"
+        except Exception:
+            str_temp_value = ""
+        print(".{}: cannot serialize temporary value {} to {}".format("".join(node["path"]), str_temp_value, datatype))
+        return
     checksum = calculate_checksum(buf)
 
     if checksum is None:
@@ -312,4 +323,4 @@ def fill_checksums(mgr, nodes, *, path=None):
             if node is not None and old_checksum is not None:
                 node["checksum"] = old_checksum
     if first_exc is not None:
-        raise first_exc
+        raise first_exc from None
