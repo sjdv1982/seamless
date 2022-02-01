@@ -868,7 +868,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         elif attr == htf["INPUT"]:
             getter = self._inputgetter
             dirs = [
-              "value", "buffered", "data", "checksum",
+              "value", "buffered", "_data", "checksum",
               "schema", "example", "status", "exception",
               "add_validator", "handle"
             ] + list(htf["pins"].keys())
@@ -882,7 +882,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         elif attr == htf["RESULT"]:
             getter = self._resultgetter
             dirs = [
-              "value", "buffered", "data", "checksum",
+              "value", "buffered", "_data", "checksum",
               "schema", "example", "exception",
               "add_validator"
             ]
@@ -1013,7 +1013,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
             tf = self._get_tf(force=True)
             inputcell = getattr(tf, htf["INPUT"])
             return inputcell.value
-        elif attr == "data":
+        elif attr == "_data":
             return inputcell.data
         elif attr == "buffered":
             return inputcell.buffer.value
@@ -1045,7 +1045,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
 
     def _inputsetter(self, attr, value):
         if attr in (
-          "value", "data", "buffered",
+          "value", "_data", "buffered",
           "checksum", "handle", "schema",
           "example", "status", "exception",
           "add_validator"
@@ -1090,8 +1090,8 @@ You can set this dictionary directly, or you may assign .meta to a cell
             raise Exception("Result cells cannot be mounted")
         if attr == "value":
             return resultcell.value
-        elif attr == "data":
-            return resultcell.data
+        elif attr == "_data":
+            return resultcell._data
         elif attr == "buffered":
             return resultcell.buffer.value
         elif attr == "checksum":

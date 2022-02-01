@@ -182,6 +182,39 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
 
     return child
 
+def translate_deepcell(node, root, namespace, inchannels, outchannels):
+    path = node["path"]
+    parent = get_path(root, path[:-1], None, None)
+    name = path[-1]
+    hash_pattern = {"*": "#"}
+    child = build_structured_cell(
+        parent, name,
+        inchannels, outchannels,
+        fingertip_no_remote=node.get("fingertip_no_remote", False),
+        fingertip_no_recompute=node.get("fingertip_no_recompute", False),
+        hash_pattern=hash_pattern,
+        mount=None
+    )
+    for inchannel in inchannels:
+        cname = child.inchannels[inchannel].subpath
+        if cname == "self":
+            cpath = path
+        else:
+            if isinstance(cname, str):
+                cname = (cname,)
+            cpath = path + cname
+        namespace[cpath, "target"] = child.inchannels[inchannel], node
+    for outchannel in outchannels:
+        cpath = path + outchannel
+        namespace[cpath, "source"] = child.outchannels[outchannel], node
+    
+    setattr(parent, name, child)
+    checksum = node.get("checksum")
+    if checksum is not None:
+        set_structured_cell_from_checksum(child, checksum)
+    return child
+
+
 def translate_connection(node, namespace, ctx):
     from ..core.cell import Cell
     from ..core.structured_cell import Inchannel, Outchannel
@@ -349,6 +382,9 @@ def translate(graph, ctx, environment):
         elif t == "cell":
             inchannels, outchannels = find_channels(path, connection_paths)
             translate_cell(node, ctx, namespace, inchannels, outchannels)
+        elif t == "deepcell":
+            inchannels, outchannels = find_channels(path, connection_paths)
+            translate_deepcell(node, ctx, namespace, inchannels, outchannels)
         elif t == "module":
             inchannels, outchannels = find_channels(path, connection_paths)
             translate_module(node, ctx, namespace, inchannels, outchannels)

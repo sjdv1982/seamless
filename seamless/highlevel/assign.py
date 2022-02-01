@@ -3,7 +3,6 @@ from copy import deepcopy
 import json
 import weakref
 
-
 def check_libinstance_subcontext_binding(ctx, path):
     for node in ctx._graph.nodes.values():
         if node["type"] == "libinstance":
@@ -22,6 +21,7 @@ from . import ConstantTypes
 from silk.mixed import MixedBase
 from silk import Silk
 from .Cell import Cell, get_new_cell
+from .DeepCell import DeepCell, get_new_deepcell
 from .Module import Module, get_new_module
 from .Resource import Resource
 from .pin import PinWrapper
@@ -545,6 +545,29 @@ def assign(ctx, path, value, *, help_context=False):
                 _remove_independent_mountshares(target._get_hcell())
             assign_connection(ctx, value._path, path, True)
         ctx._translate()
+    elif isinstance(value, DeepCell):
+        if value._parent() is None:
+            value._init(ctx, path)
+            cellnode = deepcopy(value._node)
+            if cellnode is None:
+                cellnode = get_new_deepcell(path)
+            else:
+                cellnode["path"] = path
+            ctx._graph.nodes[path] = cellnode
+        else:
+            assert value._get_top_parent() is ctx, value
+            try:
+                target = get_path(ctx, path, namespace = None, is_target=True)
+            except AttributeError:
+                target = None
+            raise NotImplementedError ###
+            """
+            if isinstance(target, Cell):
+                _remove_independent_mountshares(target._get_hcell())
+            assign_connection(ctx, value._path, path, True)
+            """
+        ctx._translate()
+
     elif isinstance(value, (Resource, ConstantTypes)):
         v = value
         if isinstance(value, Resource):

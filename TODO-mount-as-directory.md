@@ -25,6 +25,7 @@ a Cell("plain") with mount:as_directory as a Repository.
 NOTE: especially important for webgen! 
 4. Rip hash patterns from Cell, and adapt examples to use DeepCell, DeepListCell.
 Write tests.
+NOTE: rip Resource?
 5. 
 - Re-design database.py so that the default YAML normally works well,
 and that there is a subfolder for download pages/buffer info pages

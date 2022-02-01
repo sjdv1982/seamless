@@ -1,4 +1,3 @@
-from types import LambdaType
 from .Base import Base
 from .Resource import Resource
 from .SelfWrapper import SelfWrapper
@@ -7,6 +6,8 @@ from silk import Silk
 from silk.mixed import MixedBase
 from ..mime import get_mime, language_to_mime, ext_to_mime
 from .HelpMixin import HelpMixin
+
+from copy import deepcopy
 
 celltypes = (
     "structured", "text", "code", "plain", "mixed", "binary",
@@ -553,16 +554,14 @@ class Cell(Base, HelpMixin):
         self.handle.set(value)
 
     @property
-    def data(self):
+    def _data(self):
         """Returns the data of the cell
 
-        In case of deep cells, the underlying checksums are NOT expanded to values
+        This is normally the same as the value.
         
-        Otherwise, this is normally the same as the value,
-        but must not be modified        
         """
         cell = self._get_cell()
-        return cell.data
+        return deepcopy(cell.data)
 
     def _set(self, value):
         from ..core.structured_cell import StructuredCell

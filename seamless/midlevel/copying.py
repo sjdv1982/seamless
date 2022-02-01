@@ -138,6 +138,9 @@ def fill_checksum(manager, node, temp_path, composite=True):
     if node["type"] == "cell":
         celltype = node["celltype"]
         hash_pattern = node.get("hash_pattern")
+    elif node["type"] == "deepcell":
+        celltype = "mixed"
+        hash_pattern = {"*": "#"}
     elif node["type"] == "module":
         celltype = "plain"
     elif node["type"] == "transformer":
@@ -299,6 +302,8 @@ def fill_checksums(mgr, nodes, *, path=None):
                 else:
                     temp_path = "value"
                 fill_checksum(mgr, node, temp_path, composite=False)
+            elif node["type"] == "deepcell":
+                fill_checksum(mgr, node, "auth", composite=False)
             elif node["type"] == "module":
                 fill_checksum(mgr, node, None, composite=False)
             else:

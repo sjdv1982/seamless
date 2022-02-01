@@ -104,4 +104,4 @@ print("TRANSFORMER INPUT STATUS", ctx.transform.inp.status)
 print("TRANSFORMER STATUS", ctx.transform.status)
 
 print(ctx.transform.inp.schema)
-print(ctx.transform.inp.data)
+print(ctx.transform.inp.value)
