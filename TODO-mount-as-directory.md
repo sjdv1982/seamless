@@ -46,6 +46,15 @@ e. Provide a link to a bufferinfo page for all relevant checksums.
 MAKE A BIG WARNING IF LOADING-BY-NAME IS DONE WITHIN LOAD-PROJECT!
 This will make load-project not reproducible!!!
 - Add a database command to load all entries in a download page in local file cache. File cache can be inside the database dir, but also an outside directory. Do the same for bufferinfo entries.
+UPDATE: 
+a. load-by-name in a different API (seamless.fair)
+b. Allow a list-of-allowed-checksums to be stored, by name. 
+   Dataset.load(name) will invoke this.
+   Possible to restrict allowed checksums only to this.
+   Is also necessary to allow Dataset.share()  
+   (list of allowed checksums becomes dropdown menu, restriction is security feature)
+   Allow blacklist or whitelist checksum to be stored in Deepcell/Dataset
+   (Destroys name-of-directory database hit for Dataset)
 6. Add filename support to transformers, as outlined in https://github.com/sjdv1982/seamless/issues/108. Make bash/docker transformers accept Dataset inputs, leading to directory checksum requests.
 Write tests, e.g. a hhblits search where the database path is a Dataset
 checksum.

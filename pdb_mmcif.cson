@@ -1,0 +1,318 @@
+f# $SDB = $SEAMLESS_DATABASE_DIR. If undefined, exit
+{
+    "directory": {
+        # "collection" is an internal name for the directory
+        "collection": "pdb_mmcif_zip"        
+        "path": "/mnt/backup/mmCIF" 
+        "cross_device": false    # must be false in order to create hardlinks
+    }
+
+    "actions": [
+        # possible actions: inode_table, download_index, 
+        # intern_collection, transform_collection, copy_collection
+        # dataset, deepcell
+
+        # 1. The original files
+        {
+            # Create $SDB/inodes/pdb_mmcif_zip.csv
+            # containing file-inode-to-checksum table    
+            # Does not require directory "cross_device" to be False 
+            #  but file inodes will change if the directory is moved to another device            
+            "action": "inode_table"
+        }
+        {
+            # Create $SDB/download_indexes/pdb_mmcif_zip.json
+            # containing checksum-to-list-of-URLS index
+            # Requires "inode_table" action
+            "action": "download_index"
+
+            # regular expression (Python re module)
+            #   for the source files in "directory"
+            # Creates capturing groups to be used in URL strings
+            "source_file": "(.{2})/(.{4})\.cif\.gz"
+            
+            # Each URL can be:
+            # - a URL string
+            # - a dict containing "url" (URL string) and "format" (gz, zip, bz2)
+            # URL strings use the capturing groups from the regular expression
+            # These are substituted using Python str.format(...)
+            # Unnamed capturing groups are available as {1}, {2}, etc.
+            # Named capturing groups are available as {name1}, {name2}, etc.
+            
+            "urls": [
+                "https://files.rcsb.org/download/{2}.cif.gz",
+                "https://www.ebi.ac.uk/pdbe/entry-files/download/{2}.cif.gz"
+                "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{1}/{2}.cif.gz"
+            ]        
+        }
+        {
+            # Create $SDB/buffers/<checksum> for each checksum
+            # Requires "inode_table" action
+            "action": "intern_collection"
+            # if hardlink:
+            #   then files are created as hardlinks, so no extra disk space is used
+            #   requires directory cross_device to be False 
+            "hardlink": true
+
+            # NOTE: this action is only necessary if the goal is to serve directly 
+            #  the contents of the directory, as buffers to Seamless
+            #  If we only aim to define datasets, deepcells and download indices,
+            #   and consumers have to then obtain the underlying content buffers 
+            #   by themselves, this action can be skipped.
+        }
+        {
+            # Builds a <source file name>-to-<checksum> dict,
+            #  that is a Dataset deep structure (dict-of-bytes-checksums)
+            # Requires "inode_table" action
+
+            # Serialize this deep structure and write the buffer to 
+            #  $SDB/datasets/pdb_mmcif_zip.json  (the directory collection)
+            #  (with Seamless conventions to write JSON)
+            # Calculate the deep structure checksum, and create a hardlink to the buffer in:
+            #   $SDB/buffers/<deep checksum>
+        
+            "action": "dataset"
+
+            # Write the deep checksum under the key "pdb_mmcif_zip" (the directory collection)
+            #  into $SDB/datasets.json
+            # Under the same key, write a link to the directory path, 
+            #  for Seamless transformers that operate on the directory directly.
+            #
+            # The target collection can be the directory (requires cross_device=False) 
+            #  or a collection created with copy_collection.
+            # A fully internal collection (such a generated with transform_collection) is not suitable.
+            # Note: Since the directory path is directly shared with Seamless, make sure
+            #  that Seamless has no write permissions to it!
+        }
+
+        # 2. The unzipped files
+        {
+            # Applies a transformation on each checksum, to create checksum2
+
+            # Create $SDB/buffers/<checksum2> for each checksum
+            # If checksum is checksum2, a hard-link is created if possible
+
+            # Create $SDB/transforms/pdb_mmcif_unzip.csv, with a checksum-to-checksum2 table
+            "action": "transform_collection"
+            # Command to execute. Can be unzip, gunzip, bunzip2, or undefined
+            "command": "gunzip"
+            
+            # Seamless can convert the buffers to a specified celltype
+            # "bytes" means no conversion.
+            # Actually, we could have specified "text" since we know that .cif files
+            #  are text files.
+            # If a conversion would have been made, 
+            #  bufferinfo entries would have been added into
+            #  $SDB/buffer_info/pdb_mmcif_zip.json
+            #  and $SDB/buffer_info/pdb_mmcif_unzip0.json            
+            "celltype": "bytes"
+            
+            # collection name, so that future actions can refer to it.
+            "collection": "pdb_mmcif_unzip0"
+        }
+        {
+            # Creates a copy of the collection with a new file structure layout
+            # Create $SDB/files/<collection>/<target file name> for each <source file name>            
+            "action": "copy_collection"
+
+            # Create $SDB/collections/pdb_mmcif_unzip.csv with the checksum of each target file
+            "collection": "pdb_mmcif_unzip"
+
+            # Instead of the original directory, we take a transformed collection as source
+            # This means that instead of the contents of source_file, we will copy the transformed buffer
+            #  located in $SDB/buffers/<checksum2>
+            "source_collection": "pdb_mmcif_unzip0"
+
+            # Note that since we use a transformed directory as input, 
+            # the source file names are that of the untransformed directory   
+            #         
+            # regular expression (Python re module)
+            # Creates capturing groups to be used in target_file
+            "source_file": "(.{2})/(.{4})\.cif\.gz"
+
+            # The target directory will have the .gz eliminated
+            "target_file": "(.{2})/(.{4})\.cif"
+
+            # if hardlink:
+            #   then files are created as hardlinks, so no extra disk space is used
+            # If we would use the original source_collection (default)
+            #   its cross_device would have to be False 
+            # But since we use a transformed collection as input, 
+            #  this is not actually necessary, since it is fully internal,
+            #  and hardlinking will always work.
+            "hardlink": true
+        }        
+
+        {
+            # Create $SDB/download_indexes/pdb_mmcif_unzip.json
+            # containing checksum-to-list-of-URLs index
+            # Here, we operate on a copied collection
+            #  Source files and checksums are then obtained from $SDB/collections/pdb_mmcif_unzip.csv 
+            "action": "download_index"
+
+            "source_collection": "pdb_mmcif_unzip"
+                        
+            # regular expression (Python re module)
+            #   for the source files in the collection
+            # Creates capturing groups to be used in URL strings
+            "source_file": "(.{2})/(.{4})\.cif"
+                        
+            "urls": [
+                "https://files.rcsb.org/download/{2}.cif",
+                "https://www.ebi.ac.uk/pdbe/entry-files/download/{2}.cif"
+                "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{1}/{2}.cif"
+                {
+                    "url": "https://files.rcsb.org/download/{2}.cif.gz",
+                    "format": "gz"
+                }
+                {
+                    "url": "https://www.ebi.ac.uk/pdbe/entry-files/download/{2}.cif.gz",
+                    "format": "gz"
+                }
+                {
+                    "url": "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{1}/{2}.cif.gz",
+                    "format": "gz"
+                }
+            ]
+        }
+        {
+            # See above for an explanation of the "dataset" action.
+            # Here, we will build a dataset for the unzipped files            
+
+            # Here, we operate on a copied collection
+            #  (transform_collection without copy_collection won't do; we need source_file entries)
+            #  Checksums are then obtained for each source file from $SDB/collections/pdb_mmcif_unzip.csv 
+
+            "action": "dataset"
+
+            "source_collection": "pdb_mmcif_unzip"
+
+                
+            # Add the deep checksum under the key "pdb_mmcif_unzip" to $SDB/datasets.json
+            # Under the same key, store a link to the directory path, which is 
+            # $SDB/files/pdb_mmcif_unzip/
+        }
+
+        {
+            # See above for an explanation of transform_collection.
+            # The goal here is to convert to "mixed", so that we can build a deepcell.
+            # In effect, since .cif is text, the conversion to mixed means that we
+            #  wrap the contents in double quotes (so that json.load works)
+
+            "action": "transform_collection"          
+            "source_collection": "pdb_mmcif_unzip"
+
+            # Since a conversion is made, 
+            #  bufferinfo entries are added to
+            #  $SDB/buffer_info/pdb_mmcif_unzip.json
+            #  and $SDB/buffer_info/pdb_mmcif_unzip_mixed.json
+            # Note that all content of buffer_info files is always served, regardless of filename
+
+            "celltype": "mixed"
+
+            "collection": "pdb_mmcif_unzip_mixed"
+        }
+
+        {
+            # Builds a <source file name>-to-<checksum> dict,
+            #  that is a Deepcell deep structure (dict-of-mixed-checksums)
+            # Serialize this deep structure and write the buffer to 
+            #  $SDB/deepcells/pdb_mmcif_unzip_mixed.json 
+            #  (with Seamless conventions to write JSON)
+            # Calculate the deep structure checksum, and create a hardlink to the buffer in:
+            #   $SDB/buffers/<deep checksum>
+            
+            "action": "deepcell"
+
+            # Requires a source collection that is a transformed collection with celltype="mixed"
+            #  Source file entries are obtained from the untransformed collection
+            #  ($SDB/collections/pdb_mmcif_unzip.csv)
+            # This also gives us the untransformed checksum
+            #  these are then mapped using the checksum-to-checksum2 table in 
+            #  $SDB/transforms/pdb_mmcif_unzip_mixed.csv
+        
+            "source_collection": "pdb_mmcif_unzip_mixed"
+            
+            # regular expression (Python re module)
+            #   for the source files obtained above from "pdb_mmcif_unzip"
+            # Creates capturing groups to be used in target keys
+            "source_file": "(.{2})/(.{4})\.cif"
+            
+            # Target key to be used in the deep cell. 
+            # This will be just a four-character PDB code (e.g. 1avx)
+            "target_key": "{2}"
+
+            # Add the deep checksum under the key "pdb_mmcif_unzip_mixed" to $SDB/deepcells.json
+            # Unlike datasets, deep cells have no directory path
+        }
+
+        # 3. The unzipped files, with a flattened directory structure
+
+        {
+            # See above for an explanation of the "copy_collection" action.
+            "action": "copy_collection"
+
+            "collection": "pdb_mmcif_unzip_flat"
+
+            # We can take another copied collection as the source collection
+            # (transform_collection without copy_collection won't do; we need source_file entries)
+            "source_collection": "pdb_mmcif_unzip"
+
+            "source_file": "(.{2})/(.{4})\.cif"
+
+            # The target directory will have a flattened layout
+            "target_file": "{2}.cif"
+
+            "hardlink": true
+        }        
+
+        {
+            # See above for an explanation of the "dataset" action.
+
+            "action": "dataset"
+
+            "source_collection": "pdb_mmcif_unzip_flat"
+        }
+
+
+        {
+            # See above for an explanation of the "download_index" action.
+
+            "action": "download_index"
+
+            "source_collection": "pdb_mmcif_unzip_flat"
+                        
+            "source_file": "(.{2})(.{2})\.cif"
+                                
+            "urls": [
+                {
+                    "url": "https://files.rcsb.org/download/{1}{2}.cif",
+                    "celltype": "text"
+                }
+                {
+                    "url": "https://www.ebi.ac.uk/pdbe/entry-files/download/{1}{2}.cif",
+                    "celltype": "text"
+                }
+                {
+                    "url": "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{1}/{1}{2}.cif",
+                    "celltype": "text"
+                }
+                {
+                    "url": "https://files.rcsb.org/download/{1}{2}.cif.gz",
+                    "format": "gz"
+                    "celltype": "text"
+                }
+                {
+                    "url": "https://www.ebi.ac.uk/pdbe/entry-files/download/{1}{2}.cif.gz",
+                    "format": "gz"
+                    "celltype": "text"
+                }
+                {
+                    "url": "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{1}/{1}{2}.cif.gz",
+                    "format": "gz"
+                    "celltype": "text"
+                }
+            ]
+        }
+    ]
+}
