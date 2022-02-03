@@ -1,4 +1,4 @@
-f# $SDB = $SEAMLESS_DATABASE_DIR. If undefined, exit
+# $SDB = $SEAMLESS_DATABASE_DIR. If undefined, exit
 {
     "directory": {
         # "collection" is an internal name for the directory
