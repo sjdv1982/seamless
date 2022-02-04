@@ -8,23 +8,24 @@
     }
 
     "actions": [
-        # possible actions: inode_table, download_index, 
-        # intern_collection, transform_collection, copy_collection
-        # dataset, deepcell
+
+        # Implicit action: build inode table
+        # Creates/updates $SDB/inodes/pdb_mmcif_zip.csv
+        #  containing file-inode-to-checksum+mtime table    
+        # Does not require directory "cross_device" to be False 
+        #  but file inodes will change if the directory is moved to another device            
+        # If this action does not update the table, the rest of the actions
+        #  is aborted, unless --force is used
+
+        # Possible actions: 
+        #   intern_collection, transform_collection, copy_collection
+        #   build_download_index, dataset, deepcell
 
         # 1. The original files
         {
-            # Create $SDB/inodes/pdb_mmcif_zip.csv
-            # containing file-inode-to-checksum table    
-            # Does not require directory "cross_device" to be False 
-            #  but file inodes will change if the directory is moved to another device            
-            "action": "inode_table"
-        }
-        {
             # Create $SDB/download_indexes/pdb_mmcif_zip.json
             # containing checksum-to-list-of-URLS index
-            # Requires "inode_table" action
-            "action": "download_index"
+            "action": "build_download_index"
 
             # regular expression (Python re module)
             #   for the source files in "directory"
@@ -36,18 +37,17 @@
             # - a dict containing "url" (URL string) and "format" (gz, zip, bz2)
             # URL strings use the capturing groups from the regular expression
             # These are substituted using Python str.format(...)
-            # Unnamed capturing groups are available as {1}, {2}, etc.
+            # Unnamed capturing groups are available as {0}, {1}, etc.
             # Named capturing groups are available as {name1}, {name2}, etc.
             
             "urls": [
-                "https://files.rcsb.org/download/{2}.cif.gz",
-                "https://www.ebi.ac.uk/pdbe/entry-files/download/{2}.cif.gz"
-                "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{1}/{2}.cif.gz"
+                "https://files.rcsb.org/download/{1}.cif.gz",
+                "https://www.ebi.ac.uk/pdbe/entry-files/download/{1}.cif.gz"
+                "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{0}/{1}.cif.gz"
             ]        
         }
         {
             # Create $SDB/buffers/<checksum> for each checksum
-            # Requires "inode_table" action
             "action": "intern_collection"
             # if hardlink:
             #   then files are created as hardlinks, so no extra disk space is used
@@ -63,7 +63,6 @@
         {
             # Builds a <source file name>-to-<checksum> dict,
             #  that is a Dataset deep structure (dict-of-bytes-checksums)
-            # Requires "inode_table" action
 
             # Serialize this deep structure and write the buffer to 
             #  $SDB/datasets/pdb_mmcif_zip.json  (the directory collection)
@@ -148,7 +147,7 @@
             # containing checksum-to-list-of-URLs index
             # Here, we operate on a copied collection
             #  Source files and checksums are then obtained from $SDB/collections/pdb_mmcif_unzip.csv 
-            "action": "download_index"
+            "action": "build_download_index"
 
             "source_collection": "pdb_mmcif_unzip"
                         
@@ -158,19 +157,19 @@
             "source_file": "(.{2})/(.{4})\.cif"
                         
             "urls": [
-                "https://files.rcsb.org/download/{2}.cif",
-                "https://www.ebi.ac.uk/pdbe/entry-files/download/{2}.cif"
-                "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{1}/{2}.cif"
+                "https://files.rcsb.org/download/{1}.cif",
+                "https://www.ebi.ac.uk/pdbe/entry-files/download/{1}.cif"
+                "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{0}/{1}.cif"
                 {
-                    "url": "https://files.rcsb.org/download/{2}.cif.gz",
+                    "url": "https://files.rcsb.org/download/{1}.cif.gz",
                     "format": "gz"
                 }
                 {
-                    "url": "https://www.ebi.ac.uk/pdbe/entry-files/download/{2}.cif.gz",
+                    "url": "https://www.ebi.ac.uk/pdbe/entry-files/download/{1}.cif.gz",
                     "format": "gz"
                 }
                 {
-                    "url": "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{1}/{2}.cif.gz",
+                    "url": "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{0}/{1}.cif.gz",
                     "format": "gz"
                 }
             ]
@@ -240,7 +239,7 @@
             
             # Target key to be used in the deep cell. 
             # This will be just a four-character PDB code (e.g. 1avx)
-            "target_key": "{2}"
+            "target_key": "{1}"
 
             # Add the deep checksum under the key "pdb_mmcif_unzip_mixed" to $SDB/deepcells.json
             # Unlike datasets, deep cells have no directory path
@@ -261,7 +260,7 @@
             "source_file": "(.{2})/(.{4})\.cif"
 
             # The target directory will have a flattened layout
-            "target_file": "{2}.cif"
+            "target_file": "{1}.cif"
 
             "hardlink": true
         }        
@@ -276,9 +275,9 @@
 
 
         {
-            # See above for an explanation of the "download_index" action.
+            # See above for an explanation of the "build_download_index" action.
 
-            "action": "download_index"
+            "action": "build_download_index"
 
             "source_collection": "pdb_mmcif_unzip_flat"
                         
@@ -286,29 +285,29 @@
                                 
             "urls": [
                 {
-                    "url": "https://files.rcsb.org/download/{1}{2}.cif",
+                    "url": "https://files.rcsb.org/download/{0}{1}.cif",
                     "celltype": "text"
                 }
                 {
-                    "url": "https://www.ebi.ac.uk/pdbe/entry-files/download/{1}{2}.cif",
+                    "url": "https://www.ebi.ac.uk/pdbe/entry-files/download/{0}{1}.cif",
                     "celltype": "text"
                 }
                 {
-                    "url": "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{1}/{1}{2}.cif",
+                    "url": "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{0}/{0}{1}.cif",
                     "celltype": "text"
                 }
                 {
-                    "url": "https://files.rcsb.org/download/{1}{2}.cif.gz",
+                    "url": "https://files.rcsb.org/download/{0}{1}.cif.gz",
                     "format": "gz"
                     "celltype": "text"
                 }
                 {
-                    "url": "https://www.ebi.ac.uk/pdbe/entry-files/download/{1}{2}.cif.gz",
+                    "url": "https://www.ebi.ac.uk/pdbe/entry-files/download/{0}{1}.cif.gz",
                     "format": "gz"
                     "celltype": "text"
                 }
                 {
-                    "url": "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{1}/{1}{2}.cif.gz",
+                    "url": "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{0}/{0}{1}.cif.gz",
                     "format": "gz"
                     "celltype": "text"
                 }

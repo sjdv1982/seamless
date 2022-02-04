@@ -1,0 +1,257 @@
+#!/usr/bin/env python
+
+import os
+import json
+import cson
+import csv
+from ruamel.yaml import YAML
+yaml = YAML(typ='safe')
+from hashlib import sha3_256
+import time
+import re
+
+def get_hash(content, hex=False):
+    if isinstance(content, str):
+        content = content.encode()
+    if not isinstance(content, bytes):
+        raise TypeError(type(content))
+    hash = sha3_256(content)
+    result = hash.digest()
+    if hex:
+        result = result.hex()
+    return result
+
+def err(*args, **kwargs):
+    print("ERROR: " + args[0], *args[1:], **kwargs)
+    exit(1)
+
+def report(*args_, **kwargs):
+    if not args.verbose:
+        return
+    print(*args_, **kwargs)
+
+def write_csv(d:dict, filename):
+    with open(filename, 'w', newline='') as csvfile:
+        csvwriter = csv.writer(csvfile, delimiter=' ',
+                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        for key, value in d.items():
+            if isinstance(value, list):
+                csvwriter.writerow([key] + value)
+            elif isinstance(value, tuple):
+                csvwriter.writerow([key] + list(value))
+            else:
+                csvwriter.writerow([key, value])
+
+def load_csv(filename):
+    result = {}
+    with open(filename, newline='') as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+        for row in spamreader:
+            if len(row) == 2:
+                result[row[0]] = row[1]
+            else:
+                result[row[0]] = row[1:]
+    return result
+
+def write_json(d:dict, filename):
+    with open(filename, "w") as f:
+        txt = json.dumps(d, sort_keys=True, indent=2)
+        txt = txt.strip("\n") + "\n"
+        f.write(txt)
+
+SDB = os.environ.get("SEAMLESS_DATABASE_DIR")
+if SDB is None:
+    err("SEAMLESS_DATABASE_DIR undefined")
+
+def get_subdir(subdirname):
+    subdir = os.path.join(SDB, subdirname)
+    if not os.path.exists(subdir):
+        os.mkdir(subdir)
+        report("Created {}".format(subdir))
+    if not os.path.isdir(dirpath):
+        err("{} is not a directory".format(dirpath))
+    return subdir
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "actionfile",
+    help="Database action file (json, cson or yaml) to run",
+    type=argparse.FileType('r')
+)
+parser.add_argument(
+    "--verbose", "-v",
+    action="store_true"
+)
+parser.add_argument(
+    "--force", "-f",
+    action="store_true"
+)
+
+args = parser.parse_args()
+afname = args.actionfile.name
+if afname.endswith(".json"):
+    loader = json.load
+elif afname.endswith(".cson"):
+    loader = cson.load
+elif afname.endswith(".yaml"):
+    loader = yaml.load
+else:
+    err("actionfile must be .json, .cson or .yaml")
+
+try:
+    actiondict = loader(args.actionfile)
+except Exception as exc:
+    err("could not parse actionfile")
+
+report("Loaded actionfile:")
+report(json.dumps(actiondict, indent=2))
+
+
+# TODO: probably run actions against a JSON schema...
+ok = False
+if isinstance(actiondict, dict):
+    while 1:
+        if "directory" not in actiondict:
+            break
+        if "actions" not in actiondict:
+            break
+        ok = True
+        break
+if not ok:
+    err("malformatted actionfile")
+# /TODO
+
+default_collection_name = actiondict["directory"]["collection"]
+dirpath = actiondict["directory"]["path"]
+if not os.path.exists(dirpath):
+    err("{} does not exist".format(dirpath))
+if not os.path.isdir(dirpath):
+    err("{} is not a directory".format(dirpath))
+
+# Build inode table
+inode_dir = get_subdir("inodes")
+inode_table_file = os.path.join(inode_dir, default_collection_name) + ".csv"
+try:
+    old_inode_table = load_csv(inode_table_file)
+except Exception as exc:
+    old_inode_table = {}
+
+inode_table = {}
+inode_to_entry = {}
+nfiles = 0
+inodes_changed = False
+last_inode_write = time.time()
+for root, dirnames, filenames in os.walk(dirpath, followlinks=False):
+    nfiles += len(filenames)
+for root, dirnames, filenames in sorted(os.walk(dirpath, followlinks=False)):
+    for filename in filenames:
+        filepath = os.path.join(root, filename)
+        if not root.startswith(dirpath): # would be weird...
+            report("Error in {}".format(filepath))
+            continue
+        entry = os.path.join(root[len(dirpath):], filename).lstrip("/")
+        try:
+            inode = str(os.stat(filepath, follow_symlinks=False).st_ino)
+            mtime = str(os.stat(filepath, follow_symlinks=False).st_mtime)
+        except OSError:
+            report("Error in {}".format(filepath))
+            continue
+        
+        inode_to_entry[inode] = entry
+        from_cache = False
+        if inode in old_inode_table:
+            v = old_inode_table[inode]
+            if isinstance(v, list) and len(v) == 2:
+                old_checksum, old_mtime = v
+                if mtime == old_mtime:
+                    inode_table[inode] = v
+                    from_cache = True
+
+        if not from_cache:            
+            try:
+                content = open(filepath, "rb").read()
+            except OSError:
+                report("Error in {}".format(filepath))
+                continue
+            checksum = get_hash(content, hex=True)
+            inode_table[inode] = [checksum, mtime]
+            inodes_changed = True
+
+            if len(inode_table) % 1000 == 0:
+                report("Calculated checksums for {}/{} files".format(
+                    len(inode_table), nfiles
+                ))
+        elapsed_time = time.time()
+        if elapsed_time - last_inode_write > 20:
+            report("Save intermediate inode table to {}".format(inode_table_file)) 
+            curr_inode_table = old_inode_table.copy()
+            curr_inode_table.update(inode_table)
+            write_csv(inode_table, inode_table_file)
+            last_inode_write = elapsed_time
+
+if not inodes_changed:
+    if args.force:
+        report("Inode table unchanged, but execution is forced")
+    else:
+        print("""Inode table unchanged. 
+Unless the action file was modified, there is nothing to do. 
+Use --force to force execution""")
+        exit(0)
+else:
+    report("Write inode table to {}".format(inode_table_file))
+    write_csv(inode_table, inode_table_file)
+
+report("Running actions")
+collections = {
+    default_collection_name: {
+        "default": True
+    }
+}
+for action in actiondict.get("actions", []):
+    name = action["action"]
+    if name == "intern_collection":
+        raise NotImplementedError(action)
+    elif name == "transform_collection":
+        raise NotImplementedError(action)
+    elif name == "copy_collection":
+        raise NotImplementedError(action)
+    
+    elif name == "build_download_index":
+        download_index = {}
+        source_collection_name = action.get("source_collection", default_collection_name)
+        source_collection = collections[source_collection_name]
+        if source_collection.get("default"):
+            entries = inode_to_entry.values()            
+        elif source_collection.get("copied"):
+            raise NotImplementedError
+        else:
+            msg = 'Action "build_download_index": source collection "{}" must be default or copied'
+            err(msg.format(source_collection_name))
+        urls = action["urls"]
+        regex = re.compile(action["source_file"])
+        for entry in entries:
+            unnamed_capturing_groups = regex.match(entry).groups()
+            named_capturing_groups = regex.match(entry).groupdict()
+            target_urls = []
+            for urldict in urls:
+                if isinstance(urldict, str):
+                    urldict = {"url": urldict}
+                target = {}
+                for attr in "format", "celltype":
+                    if attr in urldict:
+                        target[attr] = urldict[attr]
+                target["url"] = urldict["url"].format(
+                    *unnamed_capturing_groups,
+                    **named_capturing_groups
+                )
+                target_urls.append(target)
+            download_index[entry] = target_urls
+        download_index_dir = get_subdir("download_indexes")
+        download_index_file = os.path.join(inode_dir, source_collection_name) + ".json"
+        report("Write download index to {}".format(download_index_file))
+        write_json(download_index, download_index_file)
+    elif name == "dataset":
+        raise NotImplementedError(action)
+    elif name == "deepcell":
+        raise NotImplementedError(action)                
