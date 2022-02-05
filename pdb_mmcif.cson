@@ -49,16 +49,22 @@
         {
             # Create $SDB/buffers/<checksum> for each checksum
             "action": "intern_collection"
-            # if hardlink:
-            #   then files are created as hardlinks, so no extra disk space is used
-            #   requires directory cross_device to be False 
-            "hardlink": true
 
             # NOTE: this action is only necessary if the goal is to serve directly 
             #  the contents of the directory, as buffers to Seamless
             #  If we only aim to define datasets, deepcells and download indices,
             #   and consumers have to then obtain the underlying content buffers 
             #   by themselves, this action can be skipped.
+
+            # if hardlink:
+            #   then files are created as hardlinks, so no extra disk space is used
+            #   requires directory cross_device to be False 
+            #
+            # NOTE: this requires discipline!!! 
+            # If the external file changes, but database-run-actions is not re-run, 
+            #  then buffers/<checksum> points to a file with the wrong checksum!!!
+            "hardlink": true
+
         }
         {
             # Builds a <source file name>-to-<checksum> dict,
@@ -80,8 +86,9 @@
             # The target collection can be the directory (requires cross_device=False) 
             #  or a collection created with copy_collection.
             # A fully internal collection (such a generated with transform_collection) is not suitable.
-            # Note: Since the directory path is directly shared with Seamless, make sure
+            # NOTE: Since the directory path is directly shared with Seamless, make sure
             #  that Seamless has no write permissions to it!
+            # NOTE: if the directory path is external, don't modify anything in it!
         }
 
         # 2. The unzipped files
