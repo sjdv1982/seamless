@@ -21,6 +21,12 @@
         #   intern_collection, transform_collection, copy_collection
         #   build_download_index, dataset, deepcell
 
+        # NOTE: re-running an action after a change does NOT always clean up
+        # old files.
+        # - intern_collection does only if hardlink
+        # - transform_collection does not clean up old transform results
+        # - copy_collection does clean up
+
         # 1. The original files
         {
             # Create $SDB/download_indexes/pdb_mmcif_zip.json
@@ -137,7 +143,7 @@
             "source_file": "(.{2})/(.{4})\.cif\.gz"
 
             # The target directory will have the .gz eliminated
-            "target_file": "(.{2})/(.{4})\.cif"
+            "target_file": "{0}/{1}.cif"
 
             # if hardlink:
             #   then files are created as hardlinks, so no extra disk space is used
