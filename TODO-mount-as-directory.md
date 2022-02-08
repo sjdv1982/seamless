@@ -63,7 +63,7 @@ Write tests, e.g. a hhblits search where the database path is a Dataset
 checksum.
 Adapt Cloudless with Shell deployment + file name rewrite and test if 
 the dataset folder name is transferred.
-7. fix the bug in the "DEBUGGING IN PROGRESS" commit (c9708d77598)
+7. DONE: fix the bug in the "DEBUGGING IN PROGRESS" commit (c9708d77598)
 8. Allow cells in a subcontext to be marked as "input" or "output".
 A subcontext will not translate unless all "inputs" have been connected.
 .status of the subcontext and all its members will reflect this.
