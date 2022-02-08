@@ -6,7 +6,6 @@ import cson
 import csv
 from ruamel.yaml import YAML
 yaml = YAML(typ='safe')
-from hashlib import sha3_256
 import time
 import re
 import shutil
@@ -14,16 +13,9 @@ import subprocess
 import multiprocessing
 import concurrent.futures
 
-def get_hash(content, hex=False):
-    if isinstance(content, str):
-        content = content.encode()
-    if not isinstance(content, bytes):
-        raise TypeError(type(content))
-    hash = sha3_256(content)
-    result = hash.digest()
-    if hex:
-        result = result.hex()
-    return result
+from seamless import get_hash
+from seamless.core.protocol.serialize import serialize_sync as serialize
+from seamless.core.protocol.deserialize import deserialize_sync as deserialize
 
 def err(*args, **kwargs):
     print("ERROR: " + args[0], *args[1:], **kwargs)
@@ -58,9 +50,12 @@ def load_csv(filename):
     return result
 
 def get_plain_buffer(d:dict):
+    """
     txt = json.dumps(d, sort_keys=True, indent=2)
     txt = txt.strip("\n") + "\n"
     return txt.encode()
+    """
+    return serialize(d, "plain")
 
 def write_json(d:dict, filename):
     with open(filename, "wb") as f:
@@ -84,16 +79,47 @@ def intern_buffer(checksum, filename, hardlink):
     else:
         shutil.copyfile(filename, buffer_file)
 
-def do_transform(cmd, tfs):
+def do_transform(cmd, source_celltype, target_celltype, tfs):
     result = []
     for checksum, filename in tfs:
-        proc = subprocess.run(cmd + [filename], stdout=subprocess.PIPE, text=False)
-        if proc.returncode != 0:
-            if proc.returncode == -2:
-                raise KeyboardInterrupt
-            print("Error in transforming {}".format(filename))            
-        buf = proc.stdout
+        if cmd is not None:
+            proc = subprocess.run(cmd + [filename], stdout=subprocess.PIPE, text=False)
+            if proc.returncode != 0:
+                if proc.returncode == -2:
+                    raise KeyboardInterrupt
+                print("Error in transforming {}".format(filename))            
+            buf = proc.stdout
+        else:
+            with open(filename, "rb") as f:
+                buf = f.read()
         result_checksum = get_hash(buf, hex=True)
+        if source_celltype != target_celltype:
+            """
+            # too memory-intensive...
+            cs = bytes.fromhex(result_checksum)
+            conversion_result = try_convert(cs, source_celltype, target_celltype, buffer=buf)
+            if conversion_result == True:
+                result_checksum2 = result_checksum
+            elif isinstance(conversion_result, bytes):
+                result_checksum2 = conversion_result.hex()
+            elif isinstance(conversion_result, str):
+                result_checksum2 = bytes.fromhex(conversion_result).hex()
+            else:
+                raise Exception
+            if result_checksum2 != result_checksum:
+                result_checksum = result_checksum2
+                buf = buffer_cache.get_buffer(result_checksum2)
+            """
+            value = deserialize(buf, bytes.fromhex(result_checksum), source_celltype, copy=False)
+            if source_celltype == "bytes":
+                try:
+                    value = value.decode()
+                except Exception:
+                    pass
+            newbuf = serialize(value, target_celltype)
+            result_checksum2 = get_hash(newbuf, hex=True)
+            buf = newbuf
+            result_checksum = result_checksum2
         buffer_file = os.path.join(buffer_dir, result_checksum)
         if os.path.exists(buffer_file):
             # We trust that the buffer is correct...
@@ -263,6 +289,7 @@ else:
 report("Running actions")
 collections = {
     default_collection_name: {
+        "name": default_collection_name,
         "default": True
     }
 }
@@ -273,7 +300,12 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
     for action in actions:
         name = action["action"]
         
-        report("Action {}".format(name))
+        title = action.get("collection")
+        if title is None:
+            title = action.get("source_collection", default_collection_name)
+        elif "source_collection" in action:
+            title = action["source_collection"] + " => " + title
+        report('Action {} "{}"'.format(name, title))
         if name == "intern_collection":
             source_collection_name = action.get("source_collection", default_collection_name)
             source_collection = collections[source_collection_name]        
@@ -290,7 +322,7 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
                     intern_buffer(checksum, filename, hardlink)
                     
             elif source_collection.get("copied"):
-                raise NotImplementedError
+                raise NotImplementedError # TODO: make a test for this
             else:
                 msg = 'Action "intern_collection": source collection "{}" must be default or copied'
                 err(msg.format(source_collection_name))
@@ -299,14 +331,18 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
 
         elif name == "transform_collection":
             nproc = max(int(multiprocessing.cpu_count()/2), 1)
-            target_collection_name = action["collection"]            
-            if action.get("celltype") not in (None, "bytes"):
-                raise NotImplementedError
+            target_collection_name = action["collection"]
             command = action.get("command")
             assert command in ("gunzip", "unzip", "bunzip2", None)
-            if command != "gunzip":
-                raise NotImplementedError
-            cmd = ["gunzip", "-c"]
+            if command == "gunzip":
+                cmd = ["gunzip", "-c"]
+            elif command == "bunzip2":
+                cmd = ["bunzip2", "-c"]
+            elif command == "unzip":
+                cmd = ["unzip", "-p"]
+            else:
+                cmd = None
+            target_celltype = action.get("celltype")
             source_collection_name = action.get("source_collection", default_collection_name)
             source_collection = collections[source_collection_name]        
             buffer_dir = get_subdir("buffers")
@@ -321,7 +357,9 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
             tfs = []
             ntransform = 0
             if source_collection.get("default"):
-                origin_collection = default_collection_name
+                origin_collection_name = default_collection_name
+                origin_collection = collections[default_collection_name]
+                source_celltype = "bytes"
                 done_checksums = set()
                 for inode in inode_table:
                     checksum, _ = inode_table[inode]
@@ -340,10 +378,33 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
                     tf = os.path.join(dirpath, entry)
                     tfs.append((checksum, tf))
             elif source_collection.get("transformed"):
-                raise NotImplementedError
-                origin_collection = source_collection["origin"]
+                raise NotImplementedError # TODO: make a test for this
+                origin_collection_name = source_collection["origin"]
+                origin_collection = collections[origin_collection_name]
+                source_celltype = source_collection.get("celltype", "bytes")
             elif source_collection.get("copied"):
-                raise NotImplementedError
+                origin_collection = source_collection
+                origin_collection_name = source_collection["name"]
+                source_celltype = source_collection.get("celltype", "bytes")
+                collection_dir = get_subdir("collections")
+                source_collection_dir = os.path.join(collection_dir, source_collection_name)
+                result_file = os.path.join(collection_dir, source_collection_name) + ".csv"
+                result = load_csv(result_file)
+                done_checksums = set()
+                for entry, checksum in result.items():
+                    if checksum in old_transform:
+                        result_checksum = old_transform[checksum]
+                        result_checksum_file = os.path.join(buffer_dir, result_checksum)
+                        if os.path.exists(result_checksum_file):
+                            ntransform += 1
+                            transform[checksum] = result_checksum
+                            continue                
+                    if checksum in done_checksums:
+                        continue
+                    ntransform += 1                
+                    done_checksums.add(checksum)
+                    tf = os.path.join(source_collection_dir, entry)
+                    tfs.append((checksum, tf))
             else:
                 raise AssertionError(source_collection)
 
@@ -351,12 +412,19 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
             chunksize = 100
             last_transform_write = time.time()
             curr_tfs = []
+            assert source_celltype is not None
+            if target_celltype is None:
+                target_celltype = source_celltype
             for n in range(len(tfs)):
                 tf = tfs[n]
                 curr_tfs.append(tf)
                 last = (n == len(tfs) - 1)
                 if len(curr_tfs) == chunksize or last: 
-                    future = executor.submit(do_transform, cmd, curr_tfs)
+                    future = executor.submit(
+                        do_transform, cmd, 
+                        source_celltype, target_celltype,
+                        curr_tfs
+                    )
                     futures.append(future)
                     curr_tfs = []
                 while len(futures) and (len(futures) == nproc or last):
@@ -384,8 +452,10 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
             assert not len(futures)
             write_csv(transform, transform_file)
             collections[target_collection_name] = {
+                "name": target_collection_name,
                 "transformed": True,
-                "origin": origin_collection
+                "celltype": target_celltype,
+                "origin": origin_collection_name
             }
                         
         elif name == "copy_collection":
@@ -398,18 +468,26 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
             interned = False
             can_hardlink = False
             if source_collection.get("default"):
+                celltype = None
                 origin_collection_name = default_collection_name
+                origin_collection = collections[origin_collection_name]
                 can_hardlink = cross_device
                 if origin_collection.get("interned"):
                     interned = True
             elif source_collection.get("transformed"):
                 origin_collection_name = source_collection["origin"]
+                origin_collection = collections[origin_collection_name]
                 can_hardlink = True
                 interned = True
+                celltype = source_collection["celltype"]
+                if celltype == "bytes":
+                    celltype = None
             elif source_collection.get("copied"):
-                raise NotImplementedError # TODO: a test for this
                 can_hardlink = True
                 interned = True
+                celltype = source_collection.get("celltype")
+                if celltype == "bytes":
+                    celltype = None
             else:
                 raise AssertionError(source_collection)
             hardlink = action["hardlink"]
@@ -417,18 +495,23 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
                 msg = 'Action "copy_collection": source collection "{}" cannot be hardlinked'
                 err(msg.format(source_collection_name))
 
-            origin_collection = collections[origin_collection_name]
             raw_filenames = {}
+            origin_checksums = {}
             if origin_collection.get("default"):
-                origin_checksums = {}
-                filenames = {}
                 for inode in inode_table:
                     checksum, _ = inode_table[inode]
                     entry = inode_to_entry[inode]
                     origin_checksums[entry] = checksum
                     raw_filenames[entry] = os.path.join(dirpath, entry)
             elif origin_collection.get("copied"):
-                raise NotImplementedError
+                collection_dir = get_subdir("collections")
+                origin_collection_dir = os.path.join(collection_dir, origin_collection["name"])
+                result_file = os.path.join(collection_dir, origin_collection_name) + ".csv"
+                result = load_csv(result_file)
+                deepcell = {}
+                for entry, checksum in result.items():
+                    origin_checksums[entry] = checksum
+                    raw_filenames[entry] = os.path.join(origin_collection_dir, entry)
             else:
                 raise AssertionError(origin_collection)
 
@@ -507,8 +590,11 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
                         os.remove(target_file)
             write_csv(result, result_file)
             collections[target_collection_name] = {
+                "name": target_collection_name,
                 "copied": True,
             }
+            if celltype is not None:
+                collections[target_collection_name]["celltype"] = celltype
         
         elif name == "build_download_index":
             source_collection_name = action.get("source_collection", default_collection_name)
@@ -516,7 +602,10 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
             if source_collection.get("default"):
                 entries = inode_to_entry.values()
             elif source_collection.get("copied"):
-                raise NotImplementedError
+                collection_dir = get_subdir("collections")
+                result_file = os.path.join(collection_dir, source_collection_name) + ".csv"
+                result = load_csv(result_file)
+                entries = result.keys()
             else:
                 msg = 'Action "build_download_index": source collection "{}" must be default or copied'
                 err(msg.format(source_collection_name))
@@ -564,7 +653,10 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
                     entry = inode_to_entry[inode]
                     dataset[entry] = checksum        
             elif source_collection.get("copied"):
-                raise NotImplementedError
+                collection_dir = get_subdir("collections")
+                result_file = os.path.join(collection_dir, target_collection_name) + ".csv"
+                result = load_csv(result_file)
+                dataset = result
             else:
                 msg = 'Action "dataset": source collection "{}" must be default or copied'
                 err(msg.format(source_collection_name))
@@ -578,4 +670,80 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
             intern_buffer(dataset_checksum, dataset_file, hardlink=True)
         
         elif name == "deepcell":
-            raise NotImplementedError(action)                
+            source_collection_name = action.get("source_collection", default_collection_name)
+            source_collection = collections[source_collection_name]
+            deepcell_dir = get_subdir("deepcells")
+            deepcell_file = os.path.join(deepcell_dir, source_collection_name) + ".json"
+            if os.path.exists(deepcell_file):
+                old_deepcell = json.load(open(deepcell_file))
+                old_deepcell_checksum = get_hash(get_plain_buffer(old_deepcell), hex=True)
+                old_deepcell_inode = str(os.stat(deepcell_file).st_ino)
+            else:
+                old_deepcell_checksum = None
+            deepcell = {}
+            if source_collection.get("default"):
+                celltype = None
+            elif source_collection.get("copied"):
+                celltype = source_collection.get("celltype")
+            elif source_collection.get("transformed"):
+                celltype = source_collection.get("celltype")
+            else:
+                celltype = None
+            
+            if celltype != "mixed":
+                msg = 'Action "deepcell": source collection "{}" must have celltype "mixed"'
+                err(msg.format(source_collection_name))
+
+            regex = re.compile(action["source_file"])
+            target_key_template = action["target_key"]
+
+            if source_collection.get("copied"):
+                raise NotImplementedError # TODO: a test for this
+                collection_dir = get_subdir("collections")
+                result_file = os.path.join(collection_dir, source_collection_name) + ".csv"
+                result = load_csv(result_file)
+                deepcell0 = result
+            elif source_collection.get("transformed"):
+                transform_dir = get_subdir("transforms")
+                transform_file = os.path.join(transform_dir, source_collection_name) + ".csv"
+                transform = load_csv(transform_file)
+                origin_collection_name = source_collection["origin"]
+                origin_collection = collections[origin_collection_name]
+
+                if origin_collection.get("default"):
+                    raise NotImplementedError # TODO: a test for this
+                    origin_checksums = {}
+                    deepcell0 = {}
+                    for inode in inode_table:
+                        checksum, _ = inode_table[inode]
+                        entry = inode_to_entry[inode]
+                        deepcell0[entry] = transform[checksum]
+                elif origin_collection.get("copied"):
+                    collection_dir = get_subdir("collections")
+                    result_file = os.path.join(collection_dir, origin_collection_name) + ".csv"
+                    result = load_csv(result_file)
+                    deepcell0 = {}
+                    for entry, checksum in result.items():
+                        deepcell0[entry] = transform[checksum]
+                else:
+                    raise AssertionError(origin_collection)
+            else:
+                raise AssertionError(source_collection)
+
+            deepcell = {}
+            for entry, checksum in deepcell0.items():
+                unnamed_capturing_groups = regex.match(entry).groups()
+                named_capturing_groups = regex.match(entry).groupdict()                
+                target_entry = target_key_template.format(
+                    *unnamed_capturing_groups,
+                    **named_capturing_groups
+                )
+                deepcell[target_entry] = checksum
+
+            deepcell_checksum = get_hash(get_plain_buffer(deepcell), hex=True)
+            print("Computed deepcell for {}: deep buffer checksum {}".format(source_collection_name, deepcell_checksum))
+            if old_deepcell_checksum is not None and deepcell_checksum != old_deepcell_checksum:
+                remove_stale_buffer_hardlink(old_deepcell_checksum, old_deepcell_inode)
+            report("Write deepcell deep buffer to {}".format(deepcell_file))
+            write_json(deepcell, deepcell_file)
+            intern_buffer(deepcell_checksum, deepcell_file, hardlink=True)
