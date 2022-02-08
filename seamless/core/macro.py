@@ -77,8 +77,10 @@ class Macro(Worker):
         manager = self._get_manager()
         ok = False
         assert self._gen_context is None
-        try:
-            self._paths = weakref.WeakValueDictionary()
+        try:    
+            for path in list(self._paths.keys()):
+                mp = self._paths.pop(path)
+                mp.destroy()        
             with macro_mode_on(self):
                 unbound_ctx = UnboundContext(toplevel=False, macro=True)
                 ubmanager = unbound_ctx._realmanager
