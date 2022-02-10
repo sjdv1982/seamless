@@ -40,7 +40,7 @@
             
             # Each URL can be:
             # - a URL string
-            # - a dict containing "url" (URL string) and "format" (gz, zip, bz2)
+            # - a dict containing "url" (URL string) and "compression" (gz, zip, bz2)
             # URL strings use the capturing groups from the regular expression
             # These are substituted using Python str.format(...)
             # Unnamed capturing groups are available as {0}, {1}, etc.
@@ -175,15 +175,15 @@
                 "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{0}/{1}.cif"
                 {
                     "url": "https://files.rcsb.org/download/{1}.cif.gz",
-                    "format": "gz"
+                    "compression": "gz"
                 }
                 {
                     "url": "https://www.ebi.ac.uk/pdbe/entry-files/download/{1}.cif.gz",
-                    "format": "gz"
+                    "compression": "gz"
                 }
                 {
                     "url": "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{0}/{1}.cif.gz",
-                    "format": "gz"
+                    "compression": "gz"
                 }
             ]
         }
@@ -311,17 +311,17 @@
                 }
                 {
                     "url": "https://files.rcsb.org/download/{0}{1}.cif.gz",
-                    "format": "gz"
+                    "compression": "gz"
                     "celltype": "text"
                 }
                 {
                     "url": "https://www.ebi.ac.uk/pdbe/entry-files/download/{0}{1}.cif.gz",
-                    "format": "gz"
+                    "compression": "gz"
                     "celltype": "text"
                 }
                 {
                     "url": "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{0}/{0}{1}.cif.gz",
-                    "format": "gz"
+                    "compression": "gz"
                     "celltype": "text"
                 }
             ]
