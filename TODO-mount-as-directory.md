@@ -55,12 +55,15 @@ b. Allow a list-of-allowed-checksums to be stored, by name.
    (list of allowed checksums becomes dropdown menu, restriction is security feature)
    Allow blacklist or whitelist checksum to be stored in Deepcell/Dataset
    (Destroys name-of-directory database hit for Dataset)
+UPDATE2: Seamless database and FAIR server are now distinct, but make
+tools to export contents of the database dir (notably, /downloads,
+/datasets, /deepcells, and deep buffers in /buffers) to a FAIR server dir.
 6. Add filename support to transformers, as outlined in https://github.com/sjdv1982/seamless/issues/108. Make bash/docker transformers accept Dataset inputs, leading to directory checksum requests.
 Write tests, e.g. a hhblits search where the database path is a Dataset
 checksum.
 Adapt Cloudless with Shell deployment + file name rewrite and test if 
 the dataset folder name is transferred.
-7. fix the bug in the "DEBUGGING IN PROGRESS" commit (c9708d77598)
+7. DONE: fix the bug in the "DEBUGGING IN PROGRESS" commit (c9708d77598)
 8. Allow cells in a subcontext to be marked as "input" or "output".
 A subcontext will not translate unless all "inputs" have been connected.
 .status of the subcontext and all its members will reflect this.

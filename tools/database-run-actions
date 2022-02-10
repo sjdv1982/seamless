@@ -80,6 +80,12 @@ def intern_buffer(checksum, filename, hardlink):
         shutil.copyfile(filename, buffer_file)
 
 def do_transform(cmd, source_celltype, target_celltype, tfs):
+    # TODO: 
+    # For conversion, try to use buffer_info entries in $SDB, and write them also!
+    #
+    # For cmd, try to synthesize a TransformationJob:
+    #  e.g. bash transformer "ln -s inp inp.gz && gunzip -c inp.gz"
+    # re-use existing TransformationJob results from jobs/, and write them also!
     result = []
     for checksum, filename in tfs:
         if cmd is not None:
