@@ -1,7 +1,9 @@
+
 -1. Run a test to determine a reasonable cell budget (step 11)
 UPDATE: see step 11
 0: Fix the fact that you cannot set a deep list from a Numpy array (DeepStructureError).
 ====> here
+UPDATE: first do Fairserver plan
 1. Make Dataset, Repository, DeepCell, DeepListCell classes.
 They correspond to the following low-level deep cells:
  Dataset: hash pattern {"*": "!!"} (dict-of-byte-cells)
@@ -14,14 +16,16 @@ DeepCell/DeepListCell support also inchannels.
 They are inter-convertible (i.e. connectable) among themselves
 and also to ordinary structured/simple cells. This is already supported
 by the conversion engine, since the classes get translated as deep cells.
-There will also be transformer pin celltype "dataset", "repository", "deepcell", "deeplistcell".
+There will also be transformer pin celltype "dataset", "deepcell", "deeplistcell". No celltype repository, as it is converted to a normal mixed cell. Assigning a transformer pin to a Dataset, DeepCell, DeepListCell creates a
+pin of that celltype. Assigning it to a Repository creates a "dataset" pin in case of a bash transformer, a "mixed" pin otherwise. Pins of "dataset", "deepcell", "deeplistcell" are not part of the normal .inp structured cell and 
+are hence not amenable to transformer input schemas.
 NOTE: execution order checksum is a part of Dataset/DeepCell as well!
-2. Finish core/mount_directory. Support continuous mount only for Repository and Modules! 
+2. Finish core/mount_directory. Support continuous mount only for Repository and Modules! For those, .mount is *always* to a diretory
 Support load_directory/write_directory only for Datasets, Repositories and Modules!
 Write tests, adapt tests/highlevel/multi-module.py and graphs/multi_module/ accordingly.
 3. Bump __seamless__ version of .seamless files to 0.8.
-Rip mount.as_directory from high-level Cell. Change it to Module/dataset. Add a loader so that __seamless__ < 0.8 (or None) will interpret
-a Cell("plain") with mount:as_directory as a Repository.
+Rip mount.as_directory from high-level Cell. Add a loader so that __seamless__ < 0.8 (or None) will interpret
+a Cell("plain") with mount:as_directory as a Repository with .mount.
 NOTE: especially important for webgen! 
 4. Rip hash patterns from Cell, and adapt examples to use DeepCell, DeepListCell.
 Write tests.
@@ -30,7 +34,7 @@ NOTE: rip Resource?
 - Re-design database.py so that the default YAML normally works well,
 and that there is a subfolder for download pages/buffer info pages
 of named datasets.
-- For Dataset (not Repository), support loading-by-name.
+- For Dataset/Deepcell (not Repository), support loading-by-name.
 This will obtain and then set: checksum, and execution order checksum.
 Name may include version, format (e.g. gzip)
 The RPBS will have a name server that does:
@@ -73,6 +77,10 @@ construction. Transformer with "scatter" flags get upgraded to Subcontext. This 
 Alternatively, "input"/"output" cells and transformer pins that are 
 *already* of the celltype Dataset/DeepCell/DeepListCell can have a "scatter_chunk" parameter, for map_dict_chunk evaluation. This does not
 change the celltype of what they are connected to (the context/transformer will still operate on a deep dict/list, albeit a much smaller one). TODO: need then an API to get execution order (for incremental)!
+Make sure that any scattered Subcontext/Transformer has no .mount or .share!
+Also, modifying the value of a cell/pin CANNOT be relayed to the low level
+(there are many low-level copies!) and a re-translation is necessary.
+Tell this to the user when they make such a modification!
 10. Add a status redirection mechanism to catch error messages agnostic of the internal stdlib.map
 11. "Internal elision". Have a cell budget (say, 10 000 cells). Wait with macro execution until the cell budget is below max. Elide macros immediately after their execution if the cell budget is above max.
 UPDATE: 40 000 (low level) cells can be created in 5 minutes, without memory problems. This corresponds to a one-transformer high-level context mapped over 2 000 entries. 
@@ -92,3 +100,50 @@ In any case, RPBS elision server is very needed!
 - communion server
 - protocol.get_buffer.py
 - cachemanager
+
+
+Fairserver plan
+===============
+- Add bufferinfo r/w support to database-run-actions
+- database-run-actions: For all deepcells and datasets together, store a single file content.json with the total content (summed buffer lengths of all entries) for each deepcell/dataset.
+
+Fair server requests:
+Human and machine. For now, just machine.
+If unknown, just return 404.
+1. /machine/page/<name of fairpage>
+- Description
+- Link to web page
+- List of entries. Each entry:
+  - deep checksum
+  - version number (only required if no date)
+  - date (only required if no date)
+  - type: deep cell or dataset
+  - index size: size of the deep buffer itself
+  - content size: see above.
+  - latest: yes or no. Only one entry can be latest.
+2. /machine/find/<checksum>
+   Response:
+   - name of fairpage
+   - fairpage entry (see above)
+3. /machine/download/<checksum>
+   Download page for the deep buffer
+4. /machine/deepbuffer/<checksum>
+   Deep buffer (= entry index) content 
+5. /machine/get_entry?page=...&version=...&date=...
+   /machine/get_checksum?page=...&version=...&date=...
+   /machine/latest/page
+
+fair-add-entry:
+Requires FAIRSERVER_DIR to be defined.
+Requires SEAMLESS_DATABASE_DIR to be defined.
+Copies data from the latter to the former.
+Arguments:
+ page_name: name of page. Requires that FAIRSERVER_DIR/page_templates/page_name.cson is defined in FAIRSERVER_DIR/ . Parses first any existing entries from 
+ FAIRSERVER_DIR/pages/page_name.json
+
+ collection_name: collection name in SEAMLESS_DATABASE_DIR. Must be a deepcell or dataset. As collection names are unique, it is auto-figured-out which of the two it is
+ .
+--version:(only required if no date)
+--date:(only required if no date)
+--increment-download-index. If set, the download index will be merged with the download index in FAIRSERVER_DIR for the latest existing entry. If not, the download index is copied into a new file.
+--no-latest: Do not set "latest" on the added entry
