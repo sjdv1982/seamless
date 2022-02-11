@@ -176,11 +176,11 @@ class DatabaseCache(DatabaseBase):
         response = self.send_request(request)
         if response is not None:
             result = response.content
-            verify_checksum = get_hash(result)
+            verify_checksum = calculate_checksum(result)
             assert checksum == verify_checksum, "Database corruption!!! Checksum {}".format(checksum.hex())
             return result
 
-    def get_buffer_info(self, checksum):
+    def get_buffer_info(self, checksum) -> BufferInfo:
         request = {
             "type": "buffer info",
             "checksum": checksum.hex(),
@@ -203,4 +203,4 @@ database_sink = DatabaseSink()
 database_cache = DatabaseCache()
 
 from silk.mixed.io.serialization import serialize
-from ...get_hash import get_hash
+from ...calculate_checksum import calculate_checksum

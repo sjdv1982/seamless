@@ -4,7 +4,7 @@ from .. import subprocess
 import numpy as np
 import os
 from copy import deepcopy
-from ..get_hash import get_hash
+from ..calculate_checksum import calculate_checksum
 import shutil
 
 from threading import RLock

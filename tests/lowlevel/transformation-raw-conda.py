@@ -1,6 +1,6 @@
 import inspect, textwrap
 
-from seamless import get_hash
+from seamless import calculate_checksum
 from seamless.core.cache.buffer_cache import buffer_cache
 from seamless.core.cache.transformation_cache import (
     transformation_cache, DummyTransformer, tf_get_buffer, 
@@ -56,19 +56,19 @@ async def build_transformation():
     for k,v in inp.items():
         celltype, value = v
         buf = await serialize(value, celltype)
-        checksum = get_hash(buf)
+        checksum = calculate_checksum(buf)
         buffer_cache.cache_buffer(checksum, buf)
         sem_checksum = await get_semantic_checksum(checksum, celltype, k)
         transformation[k] = celltype, None, sem_checksum
 
     envbuf = await serialize(environment, "plain")
-    checksum = get_hash(envbuf)
+    checksum = calculate_checksum(envbuf)
     buffer_cache.cache_buffer(checksum, envbuf)
     transformation["__env__"] = checksum
 
     tf_buf = tf_get_buffer(transformation)
     print(tf_buf.decode())
-    tf_checksum = get_hash(tf_buf)
+    tf_checksum = calculate_checksum(tf_buf)
     buffer_cache.cache_buffer(tf_checksum, tf_buf)
     
     tf = DummyTransformer(tf_checksum)

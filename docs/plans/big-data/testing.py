@@ -4,8 +4,8 @@ See also auth-*py.
 
 - Data overhead is now at ~6.5 ms / MB.
   A lot of the data overhead comes from json.dumps. This is to build mixed cells.
-  The rest is from get_hash.
-  Pure Python version (with get_hash and dumps) is at 6.3 ms / MB,
+  The rest is from calculate_checksum.
+  Pure Python version (with calculate_checksum and dumps) is at 6.3 ms / MB,
   so the rest of the data overhead is fine!
 
 - Database upload overhead is about the same (7 ms / MB) with a flatfile backend

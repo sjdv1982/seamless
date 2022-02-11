@@ -34,5 +34,5 @@ print(ctx2.sub2.myresult.value)
 
 graph = ctx.get_graph()
 j = json.dumps(graph, sort_keys=True, indent=2)
-from seamless import get_hash
-print(get_hash(j).hex())
+from seamless import calculate_checksum
+print(calculate_checksum(j).hex())

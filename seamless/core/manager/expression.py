@@ -1,6 +1,6 @@
 import weakref
 import json
-from ...get_hash import get_hash
+from ...calculate_checksum import calculate_checksum
 import numpy as np
 from weakref import WeakValueDictionary
 
@@ -102,6 +102,6 @@ class Expression:
         return str(self)
 
     def _get_hash(self):
-        return get_hash(str(self)+"\n").hex()
+        return calculate_checksum(str(self)+"\n").hex()
 
 from ..protocol.deep_structure import access_hash_pattern

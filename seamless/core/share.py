@@ -11,7 +11,7 @@ import itertools
 import functools
 import asyncio
 
-from ..get_hash import get_hash
+from ..calculate_checksum import calculate_checksum
 
 import logging
 logger = logging.getLogger("seamless")

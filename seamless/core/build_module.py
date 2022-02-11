@@ -7,7 +7,7 @@ import tempfile
 import pprint
 import traceback
 from types import ModuleType
-from ..get_hash import get_dict_hash
+from ..calculate_checksum import calculate_dict_checksum
 from ..compiler.locks import locks, locklock
 from ..compiler import compile, complete
 from ..compiler.build_extension import build_extension_cffi
@@ -218,7 +218,7 @@ def build_compiled_module(full_module_name, checksum, module_definition, *, modu
         remaining_objects = {}
         object_checksums = {}
         for object_file, object_ in objects.items():
-            object_checksum = get_dict_hash(object_)
+            object_checksum = calculate_dict_checksum(object_)
             binary_code = database_cache.get_compile_result(object_checksum)
             if binary_code is not None:
                 binary_objects[object_file] = binary_code
@@ -270,7 +270,7 @@ def build_module(module_definition, module_workspace={}, *,
         mtype = module_definition["type"]
     assert mtype in ("interpreted", "compiled"), mtype
     json.dumps(module_definition)
-    checksum = get_dict_hash(module_definition)
+    checksum = calculate_dict_checksum(module_definition)
     dependencies = module_definition.get("dependencies")
     full_module_name = "seamless_module_" + checksum.hex()
     if module_error_name is not None:
@@ -300,7 +300,7 @@ def build_module(module_definition, module_workspace={}, *,
         elif mtype == "compiled":
             assert parent_module_name is None
             completed_module_definition = complete(module_definition, compilers, languages)
-            completed_checksum = get_dict_hash(completed_module_definition)
+            completed_checksum = calculate_dict_checksum(completed_module_definition)
             mod = build_compiled_module(
               full_module_name, completed_checksum, completed_module_definition,
               module_error_name=module_error_name

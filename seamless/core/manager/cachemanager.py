@@ -5,7 +5,7 @@ import functools
 
 from seamless.core.status import StatusReasonEnum
 from ..cache.buffer_cache import buffer_cache
-from ... import get_dict_hash
+from ... import calculate_dict_checksum
 
 import json
 import asyncio
@@ -47,7 +47,7 @@ invalid_deep_buffers = set()
 async def decref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
     while deep_buffer_coros[0] != deep_buffer_coro_id:
         await asyncio.sleep(0.01)
-    if (checksum, get_dict_hash(hash_pattern)) in invalid_deep_buffers:
+    if (checksum, calculate_dict_checksum(hash_pattern)) in invalid_deep_buffers:
         return
     try:
         deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
@@ -456,7 +456,7 @@ class CacheManager:
             self.cell_to_ref[refholder] = None
             cell = refholder
             if cell._hash_pattern is not None:
-                if (checksum, get_dict_hash(cell._hash_pattern)) not in invalid_deep_buffers:
+                if (checksum, calculate_dict_checksum(cell._hash_pattern)) not in invalid_deep_buffers:
                     deep_buffer = buffer_cache.get_buffer(checksum)
                     deep_buffer_coro_id = new_deep_buffer_coro_id()
                     deep_buffer_coros.append(deep_buffer_coro_id)
@@ -569,19 +569,19 @@ is result checksum: {}
                 ok = False
 
     def get_join_cache(self, join_dict):
-        checksum = get_dict_hash(join_dict)
+        checksum = calculate_dict_checksum(join_dict)
         return copy.deepcopy(self.join_cache.get(checksum))
 
     def set_join_cache(self, join_dict, result_checksum):
         if isinstance(result_checksum, str):
             result_checksum = bytes.fromhex(result_checksum)
-        checksum = get_dict_hash(join_dict)
+        checksum = calculate_dict_checksum(join_dict)
         self.join_cache[checksum] = result_checksum
         self.rev_join_cache[result_checksum] = join_dict
 
 def incref_deep_buffer_done(cachemanager:CacheManager, checksum, cell, authoritative, result, future):
     if future.exception() is not None:        
-        invalid_deep_buffers.add((checksum, get_dict_hash(cell._hash_pattern)))
+        invalid_deep_buffers.add((checksum, calculate_dict_checksum(cell._hash_pattern)))
         manager = cachemanager.manager()
         # crude, but hard to do otherwise. If this happens, we have encountered a Seamless bug anyway
         if cell._structured_cell is None or cell._structured_cell.schema is cell:

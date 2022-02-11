@@ -20,7 +20,7 @@ import time
 import traceback
 from copy import deepcopy
 
-from ...get_hash import get_dict_hash, get_hash
+from ...calculate_checksum import calculate_dict_checksum, calculate_checksum
 """
 TODO: offload exceptions (as text) to database (also allow them to be cleared in database?)
 TODO: do the same with stdout, stderr
@@ -234,13 +234,13 @@ class TransformationCache:
             inp_meta = json.loads(inp_metabuf)
             meta.update(inp_meta)
         metabuf = await serialize(meta, "plain")
-        meta_checksum = get_hash(metabuf)
+        meta_checksum = calculate_checksum(metabuf)
         buffer_cache.cache_buffer(meta_checksum, metabuf)
         buffer_cache.guarantee_buffer_info(meta_checksum, "plain")
         transformation["__meta__"] = meta_checksum
         if transformer.env is not None:
             envbuf = await serialize(transformer.env, "plain")
-            env_checksum = get_hash(envbuf)
+            env_checksum = calculate_checksum(envbuf)
             buffer_cache.cache_buffer(env_checksum, envbuf)
             buffer_cache.guarantee_buffer_info(env_checksum, "plain")
             transformation["__env__"] = env_checksum

@@ -2,7 +2,7 @@ import asyncio
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 from ...pylru import lrucache
-from ...get_hash import get_hash
+from ...calculate_checksum import calculate_checksum as calculate_checksum_func
 
 class lrucache2(lrucache):
     """Version of lrucache that can be disabled"""
@@ -39,11 +39,11 @@ async def calculate_checksum(buffer):
         with ProcessPoolExecutor() as executor:
             checksum = await loop.run_in_executor(
                 executor,
-                get_hash,
+                calculate_checksum_func,
                 buffer
             )
     else:
-        checksum = get_hash(buffer)
+        checksum = calculate_checksum_func(buffer)
     calculate_checksum_cache[buf_id] = checksum, buffer
     checksum_cache[checksum] = buffer
     return checksum
@@ -58,7 +58,7 @@ def calculate_checksum_sync(buffer):
     if cached_checksum is not None:
         checksum_cache[cached_checksum] = buffer
         return cached_checksum
-    checksum = get_hash(buffer)
+    checksum = calculate_checksum_func(buffer)
     calculate_checksum_cache[buf_id] = checksum, buffer
     checksum_cache[checksum] = buffer
     return checksum

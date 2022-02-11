@@ -2,7 +2,7 @@ import cProfile, pstats, io
 cProfile.profiler = cProfile.Profile()
 cProfile.profiler.enable()
 
-from seamless import get_hash
+from seamless import calculate_checksum
 from seamless.core.protocol.serialize import _serialize
 
 repeat = int(10e6)
@@ -12,8 +12,8 @@ repeat = int(10e6)
 for n in range(100):
     a = "A:%d:" % n + str(n%10) * repeat
     b = "B:%d:" % n + str(n%10) * repeat
-    get_hash(_serialize(a, "str"))
-    get_hash(_serialize(b, "str"))
+    calculate_checksum(_serialize(a, "str"))
+    calculate_checksum(_serialize(b, "str"))
     print(n+1)
 
 
