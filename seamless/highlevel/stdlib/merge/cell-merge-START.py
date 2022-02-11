@@ -1,6 +1,5 @@
-from seamless import subprocess
 import tempfile, os
-from seamless.subprocess import CalledProcessError, PIPE
+from seamless.subprocess_ import CalledProcessError, PIPE
 tokens = "<|>"
 labels0 = "UPSTREAM", "BASE", "MODIFIED"
 

@@ -26,13 +26,13 @@ import json
 import functools
 import shutil
 
-from ..calculate_checksum import calculate_checksum
+from ..calculate_checksum import calculate_checksum as calculate_checksum_func
 
 import sys
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
 
-empty_checksums = {calculate_checksum(json.dumps(v)+"\n",hex=True) for v in ("", {}, [])}
+empty_checksums = {calculate_checksum_func(json.dumps(v)+"\n",hex=True) for v in ("", {}, [])}
 
 def adjust_buffer(file_buffer, celltype):
     if celltype not in text_types:

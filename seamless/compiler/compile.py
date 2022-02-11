@@ -1,10 +1,9 @@
 
-from .. import subprocess
+from .. import subprocess_ as subprocess
 
 import numpy as np
 import os
 from copy import deepcopy
-from ..calculate_checksum import calculate_checksum
 import shutil
 
 from threading import RLock
