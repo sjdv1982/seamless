@@ -204,60 +204,7 @@
             # Under the same key, store a link to the directory path, which is 
             # $SDB/files/pdb_mmcif_unzip/
         }
-
-        {
-            # See above for an explanation of transform_collection.
-            # The goal here is to convert to "mixed", so that we can build a deepcell.
-            # In effect, since .cif is text, the conversion to mixed means that we
-            #  wrap the contents in double quotes (so that json.load works)
-
-            "action": "transform_collection"          
-            "source_collection": "pdb_mmcif_unzip"
-
-            # Since a conversion is made, 
-            #  bufferinfo entries are added to
-            #  $SDB/buffer_info/pdb_mmcif_unzip.json
-            #  and $SDB/buffer_info/pdb_mmcif_unzip_mixed.json
-            # Note that all content of buffer_info files is always served, regardless of filename
-
-            "celltype": "mixed"
-
-            "collection": "pdb_mmcif_unzip_mixed"
-        }
-
-        {
-            # Builds a <source file name>-to-<checksum> dict,
-            #  that is a Deepcell deep structure (dict-of-mixed-checksums)
-            # Serialize this deep structure and write the buffer to 
-            #  $SDB/deepcells/pdb_mmcif_unzip_mixed.json 
-            #  (with Seamless conventions to write JSON)
-            # Calculate the deep structure checksum, and create a hardlink to the buffer in:
-            #   $SDB/buffers/<deep checksum>
-            
-            "action": "deepcell"
-
-            # Requires a source collection that is a transformed collection with celltype="mixed"
-            #  Source file entries are obtained from the untransformed collection
-            #  ($SDB/collections/pdb_mmcif_unzip.csv)
-            # This also gives us the untransformed checksum
-            #  these are then mapped using the checksum-to-checksum2 table in 
-            #  $SDB/transforms/pdb_mmcif_unzip_mixed.csv
         
-            "source_collection": "pdb_mmcif_unzip_mixed"
-            
-            # regular expression (Python re module)
-            #   for the source files obtained above from "pdb_mmcif_unzip"
-            # Creates capturing groups to be used in target keys
-            "source_file": "(.{2})/(.{4})\.cif"
-            
-            # Target key to be used in the deep cell. 
-            # This will be just a four-character PDB code (e.g. 1avx)
-            "target_key": "{1}"
-
-            # Add the deep checksum under the key "pdb_mmcif_unzip_mixed" to $SDB/deepcells.json
-            # Unlike datasets, deep cells have no directory path
-        }
-
         # 3. The unzipped files, with a flattened directory structure
 
         {
@@ -324,7 +271,97 @@
                     "compression": "gz"
                     "celltype": "text"
                 }
+
+                
             ]
         }
+        {
+            # See above for an explanation of transform_collection.
+            # The goal here is to convert to "mixed", so that we can build a deepcell.
+            # In effect, since .cif is text, the conversion to mixed means that we
+            #  wrap the contents in double quotes (so that json.load works)
+
+            "action": "transform_collection"          
+            "source_collection": "pdb_mmcif_unzip_flat"
+
+            "celltype": "mixed"
+
+            "collection": "pdb_mmcif_unzip_mixed"
+        }
+
+        {
+            # Builds a <source file name>-to-<checksum> dict,
+            #  that is a Deepcell deep structure (dict-of-mixed-checksums)
+            # Serialize this deep structure and write the buffer to 
+            #  $SDB/deepcells/pdb_mmcif_unzip_mixed.json 
+            #  (with Seamless conventions to write JSON)
+            # Calculate the deep structure checksum, and create a hardlink to the buffer in:
+            #   $SDB/buffers/<deep checksum>
+            
+            "action": "deepcell"
+            "collection": "pdb_mmcif_unzip_deepcell"
+
+            # Requires a source collection that is a transformed collection with celltype="mixed"
+            #  Source file entries are obtained from the untransformed collection
+            #  ($SDB/collections/pdb_mmcif_unzip.csv)
+            # This also gives us the untransformed checksum
+            #  these are then mapped using the checksum-to-checksum2 table in 
+            #  $SDB/transforms/pdb_mmcif_unzip_mixed.csv
+        
+            "source_collection": "pdb_mmcif_unzip_mixed"
+            
+            # regular expression (Python re module)
+            #   for the source files obtained above from "pdb_mmcif_unzip"
+            # Creates capturing groups to be used in target keys
+            "source_file": "(.{4})\.cif"
+            
+            # Target key to be used in the deep cell. 
+            # This will be just a four-character PDB code (e.g. 1avx)
+            "target_key": "{0}"
+
+            # Add the deep checksum under the key "pdb_mmcif_unzip_deepcell" to $SDB/deepcells.json
+            # Unlike datasets, deep cells have no directory path
+        }
+        
+        {
+            # See above for an explanation of the "build_download_index" action.
+
+            "action": "build_download_index"
+            "source_collection": "pdb_mmcif_unzip_deepcell"
+
+            # source_key instead of source_file, since the source collection is a deepcell
+            "source_key": "(.{2})(.{2})"
+                                
+            "urls": [
+                {
+                    "url": "https://files.rcsb.org/download/{0}{1}.cif",
+                    "celltype": "text"
+                }
+                {
+                    "url": "https://www.ebi.ac.uk/pdbe/entry-files/download/{0}{1}.cif",
+                    "celltype": "text"
+                }
+                {
+                    "url": "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{0}/{0}{1}.cif",
+                    "celltype": "text"
+                }
+                {
+                    "url": "https://files.rcsb.org/download/{0}{1}.cif.gz",
+                    "compression": "gz"
+                    "celltype": "text"
+                }
+                {
+                    "url": "https://www.ebi.ac.uk/pdbe/entry-files/download/{0}{1}.cif.gz",
+                    "compression": "gz"
+                    "celltype": "text"
+                }
+                {
+                    "url": "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/{0}/{0}{1}.cif.gz",
+                    "compression": "gz"
+                    "celltype": "text"
+                }
+            ]
+        }
+
     ]
 }

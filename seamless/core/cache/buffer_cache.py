@@ -89,13 +89,16 @@ class BufferCache:
             delay = max(lifetime-curr_lifetime, 1)
             temprefmanager.add_ref(func, delay, on_shutdown=False)
             return
+        self.uncache_buffer(checksum)
 
-        self.last_time.pop(checksum)
+    def uncache_buffer(self, checksum):
+        self.last_time.pop(checksum, None)
         if checksum in self.buffer_refcount:
             local = (not database_sink.active) or (not database_cache.active)
             if local and checksum not in self.non_persistent:
                 return
         self.buffer_cache.pop(checksum, None)
+
 
     def _update_time(self, checksum, buffer_length=None):
         t = time.time()
@@ -318,8 +321,10 @@ class BufferCache:
         if value:
             for f in co_flags.get(attr, []):
                 self.update_buffer_info(checksum, f, True, update_remote=False)
-        elif value == False:
             for f in anti_flags.get(attr, []):
+                self.update_buffer_info(checksum, f, False, update_remote=False)                
+        elif value == False:
+            for f in co_flags.get(attr, []):
                 self.update_buffer_info(checksum, f, False, update_remote=False)
         if update_remote:
             if old_buffer_info != buffer_info:

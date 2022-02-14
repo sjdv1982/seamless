@@ -68,7 +68,7 @@ def try_convert(
     """
     try_convert may return:
     True (trivial success)
-    A checksum (success)
+    A checksum (success) (as bytes)
     -1 (future success)
     None (future success or failure)
     False (unconditional failure)
@@ -186,6 +186,9 @@ def try_convert_single(
     if buffer is not None:
         result = _convert_from_buffer(checksum, buffer, source_celltype, target_celltype)
     
+    assert not isinstance(result, str)
+    if isinstance(result, bytes):
+        buffer_cache.guarantee_buffer_info(result, target_celltype)
     return result
 
 def _convert_reinterpret(checksum, buffer, target_celltype, *, source_celltype):
@@ -223,6 +226,7 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
     # conversions that are guaranteed to work (if the input is valid), but may change checksum
     target_buffer = None
     target_checksum = None
+    conv_attr = None
     if target_celltype in ("int", "float", "bool") or (
       source_celltype in ("int", "float", "bool") and target_celltype == "str"
     ):
@@ -233,14 +237,34 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
         conv = (source_celltype, target_celltype)
         if conv == ("bytes", "binary") or conv == ("bytes", "mixed"):
             if buffer.startswith(MAGIC_NUMPY):
-                buffer_cache.guarantee_buffer_info(checksum, target_celltype)
+                buffer_cache.guarantee_buffer_info(checksum, "binary")
                 return checksum
             elif target_celltype == "mixed" and buffer.startswith(MAGIC_SEAMLESS_MIXED):
-                buffer_cache.guarantee_buffer_info(checksum, target_celltype)
+                buffer_cache.guarantee_buffer_info(checksum, "mixed")
                 return checksum
             else:
-                # byte array
-                target_value = np.array(buffer)
+                target_value = None
+                if target_celltype == "mixed":
+                    try:
+                        textvalue = deserialize_sync(buffer, checksum, "text", copy=False)                        
+                        buffer_cache.guarantee_buffer_info(checksum, "text")
+                        try:
+                            deserialize_sync(buffer, checksum, "plain", copy=False)
+                            buffer_cache.guarantee_buffer_info(checksum, "plain")
+                            return checksum
+                        except Exception:
+                            target_buffer = serialize_sync(textvalue, "str")
+                            target_checksum = calculate_checksum_sync(target_buffer)
+                            buffer_cache.guarantee_buffer_info(target_checksum, "str")
+                            conv_attr = ("text2str", "str2text")
+                            buffer_cache.update_buffer_info(checksum, conv_attr[0], target_checksum)
+                            buffer_cache.update_buffer_info(target_checksum, conv_attr[1], checksum)
+                    except Exception:
+                        pass
+
+                if target_value is None:
+                    # byte array
+                    target_value = np.array(buffer)
 
         elif conv == ("binary", "bytes") or conv == ("mixed", "bytes"):
             if source_celltype == "binary" or buffer.startswith(MAGIC_NUMPY):
@@ -248,12 +272,14 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
                 if source_value.dtype.char == "S":
                     target_buffer = source_value.tobytes()
                     assert target_buffer is not None
+                conv_attr = ("binary2bytes", "bytes2binary")                    
             if target_buffer is None:
                 return checksum
         elif conv == ("plain", "text"):
             source_value = deserialize_sync(buffer, checksum, source_celltype, copy=False)
             if isinstance(source_value, str):
                 target_value = source_value
+                conv_attr = ("str2text", "text2str")
             else:
                 buffer_cache.guarantee_buffer_info(checksum, target_celltype)
                 return checksum
@@ -266,8 +292,10 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
                 text = deserialize_sync(buffer, checksum, "text", copy=False)
                 target_buffer = serialize_sync(text, "str")
                 assert target_buffer is not None
+                conv_attr = ("text2str", "str2text")
         elif conv == ("text", "str") or conv == ("str", "text"):
             target_value = deserialize_sync(buffer, checksum, source_celltype, copy=False)
+            conv_attr = conv[0] + "2" + conv[1], conv[1] + "2" + conv[0]
         elif conv == ("cson", "plain") or conv == ("yaml", "plain") or conv == ("ipython", "python"):
             text = deserialize_sync(buffer, checksum, "text", copy=False)
             if source_celltype == "cson":
@@ -284,6 +312,9 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
         target_checksum = calculate_checksum_sync(target_buffer)
     buffer_cache.cache_buffer(target_checksum, target_buffer)
     buffer_cache.guarantee_buffer_info(target_checksum, target_celltype)
+    if conv_attr is not None:
+        buffer_cache.update_buffer_info(checksum, conv_attr[0], target_checksum)
+        buffer_cache.update_buffer_info(target_checksum, conv_attr[1], checksum)
     return target_checksum
 
 def _convert_possible(checksum, buffer, source_celltype, target_celltype):
@@ -350,6 +381,6 @@ from .conversion import (
 )
 from .buffer_info import convert_from_buffer_info
 from .cache.buffer_cache import buffer_cache
-from .protocol.calculate_checksum import calculate_checksum_sync
+from .protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
 from .protocol.deserialize import deserialize_sync
 from .protocol.serialize import serialize_sync

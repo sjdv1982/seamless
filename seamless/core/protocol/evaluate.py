@@ -171,9 +171,15 @@ async def value_conversion(checksum, source_celltype, target_celltype):
     target_buffer = await serialize(target_value, target_celltype)
     target_checksum = await calculate_checksum(target_buffer)
     buffer_cache.cache_buffer(target_checksum, target_buffer)
+    
     if conv == ("plain", "binary"):
         buffer_cache.update_buffer_info(target_checksum, "shape", target_value.shape, update_remote=False)
         buffer_cache.update_buffer_info(target_checksum, "dtype", str(target_value.dtype))
+        buffer_cache.update_buffer_info(checksum, "json2binary", target_checksum)
+        buffer_cache.update_buffer_info(target_checksum, "binary2json", checksum)
+    elif conv == ("binary", "plain"): 
+        buffer_cache.update_buffer_info(checksum, "binary2json", target_checksum)
+        buffer_cache.update_buffer_info(target_checksum, "json2binary", checksum)
 
     buffer_cache.guarantee_buffer_info(target_checksum, target_celltype)
     return target_checksum

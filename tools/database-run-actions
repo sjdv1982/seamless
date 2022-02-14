@@ -4,6 +4,7 @@ import os
 import json
 import cson
 import csv
+from matplotlib.font_manager import json_load
 from ruamel.yaml import YAML
 yaml = YAML(typ='safe')
 import time
@@ -12,10 +13,23 @@ import shutil
 import subprocess
 import multiprocessing
 import concurrent.futures
+import copy
+import gc
 
-from seamless import get_hash
+from seamless import calculate_checksum
+from silk.mixed import MAGIC_SEAMLESS_MIXED, MAGIC_NUMPY
+from seamless.core.cache.buffer_cache import buffer_cache
+from seamless.core.convert import try_convert
+from seamless.core.buffer_info import BufferInfo, convert_from_buffer_info
 from seamless.core.protocol.serialize import serialize_sync as serialize
 from seamless.core.protocol.deserialize import deserialize_sync as deserialize
+from seamless.core.protocol.calculate_checksum import calculate_checksum_cache, checksum_cache
+calculate_checksum_cache.disable()
+checksum_cache.disable()
+from seamless.core.protocol.serialize import serialize_cache
+serialize_cache.disable()
+from seamless.core.protocol.deserialize import deserialize_cache
+deserialize_cache.disable()
 
 def err(*args, **kwargs):
     print("ERROR: " + args[0], *args[1:], **kwargs)
@@ -79,13 +93,104 @@ def intern_buffer(checksum, filename, hardlink):
     else:
         shutil.copyfile(filename, buffer_file)
 
+def get_buffer_info(checksum):
+    buffer_info_dir = get_subdir("buffer_info")
+    filename = os.path.join(buffer_info_dir, checksum)
+    if os.path.exists(filename):
+        with open(filename) as f:
+            try:
+                d = json.load(f)
+            except Exception:
+                return None
+            buffer_info = BufferInfo(checksum, d)
+            return buffer_info
+
+def set_buffer_info(buffer_info: BufferInfo):
+    checksum = buffer_info.checksum.hex()
+    buffer_info_dir = get_subdir("buffer_info")
+    filename = os.path.join(buffer_info_dir, checksum)
+    d = buffer_info.as_dict()
+    write_json(d, filename)
+
+def write_buffer_length(checksum, length):
+    buffer_info = get_buffer_info(checksum)
+    if buffer_info is None:
+        buffer_info = BufferInfo(checksum)
+    if buffer_info.length != length:
+        buffer_info.length = length
+        set_buffer_info(buffer_info)
+    
+
+def update_buffer_info(buffer_info:BufferInfo, attr, value):
+    # Adapted from buffer_cache.update_buffer_info
+    co_flags = {
+        "is_json": ("is_utf8",),
+        "json_type": ("is_json",),
+        "is_json_numeric_array": ("is_json",),
+        "is_json_numeric_scalar": ("is_json",),
+        "dtype": ("is_numpy",),
+        "shape": ("is_numpy",),
+    }
+    anti_flags = {
+        "is_json": ("is_numpy", "is_seamless_mixed"),
+        "is_numpy": ("is_json", "is_seamless_mixed"),
+        "is_seamless_mixed": ("is_json", "is_numpy"),
+    }
+
+    #if attr == "is_numpy":
+    #    assert value == False
+    #if attr == "json_type":
+    #    print("B!", buffer_info.as_dict())
+    buffer_info[attr] = value
+    if value:
+        for f in co_flags.get(attr, []):
+            update_buffer_info(buffer_info, f, True)
+        for f in anti_flags.get(attr, []):
+            update_buffer_info(buffer_info, f, False)
+    elif value == False:
+        for f in co_flags.get(attr, []):
+            update_buffer_info(buffer_info, f, False)
+    #if attr == "json_type":
+    #    print("BB!", buffer_info.as_dict())
+    #    exit(0)
+
+def guarantee_buffer_info(buffer_info:BufferInfo, buffer, celltype:str):
+    """Modify buffer_info to reflect that checksum is surely deserializable into celltype
+    Adapted from buffer_cache.guarantee_buffer_info
+    """
+    if celltype == "bytes":
+        return
+    if celltype == "checksum":
+        # out-of-scope for buffer info
+        return
+    if celltype in ("ipython", "python", "cson", "yaml"):
+        # parsability as IPython/python/cson/yaml is out-of-scope for buffer info
+        celltype = "text"
+    if celltype == "mixed":
+        if buffer is not None:
+            if buffer.startswith(MAGIC_NUMPY):
+                update_buffer_info(buffer_info, "is_numpy", True)
+            elif buffer.startswith(MAGIC_SEAMLESS_MIXED):
+                update_buffer_info(buffer_info, "is_seamless_mixed", True)
+            else:
+                update_buffer_info(buffer_info, "is_json", True)
+    elif celltype == "binary":
+        update_buffer_info(buffer_info, "is_numpy", True)
+    elif celltype == "plain":
+        update_buffer_info(buffer_info, "is_json", True)
+    elif celltype == "text":
+        update_buffer_info(buffer_info, "is_utf8", True)
+    elif celltype in ("str", "int", "float", "bool"):
+        update_buffer_info(buffer_info, "json_type", celltype)
+
 def do_transform(cmd, source_celltype, target_celltype, tfs):
     # TODO: 
-    # For conversion, try to use buffer_info entries in $SDB, and write them also!
-    #
     # For cmd, try to synthesize a TransformationJob:
     #  e.g. bash transformer "ln -s inp inp.gz && gunzip -c inp.gz"
     # re-use existing TransformationJob results from jobs/, and write them also!
+    # TODO: for some reason, this causes massive memory leaks, 
+    # even if all Seamless caches are cleaned and emptied.
+    # For now, just clean up the executor every 1000 jobs
     result = []
     for checksum, filename in tfs:
         if cmd is not None:
@@ -98,47 +203,127 @@ def do_transform(cmd, source_celltype, target_celltype, tfs):
         else:
             with open(filename, "rb") as f:
                 buf = f.read()
-        result_checksum = get_hash(buf, hex=True)
+        buf_checksum = calculate_checksum(buf, hex=True)
         if source_celltype != target_celltype:
-            """
-            # too memory-intensive...
-            cs = bytes.fromhex(result_checksum)
-            conversion_result = try_convert(cs, source_celltype, target_celltype, buffer=buf)
+            source_buf = buf
+            source_checksum = buf_checksum
+
+            old_source_buffer_info = get_buffer_info(source_checksum)
+            source_buffer_info = copy.deepcopy(old_source_buffer_info)
+            if source_buffer_info is None:
+                source_buffer_info = BufferInfo(source_checksum)
+                source_buffer_info.length = len(source_buf)
+            buffer_cache.buffer_info[bytes.fromhex(source_checksum)] = source_buffer_info
+
+            try:
+                source_buf.decode()
+                source_text = True
+            except Exception:
+                source_text = False
+            update_buffer_info(source_buffer_info, "is_utf8", source_text)
+
+            cs = bytes.fromhex(source_checksum)
+            result_buf = None
+            conversion_result = try_convert(
+                cs, source_celltype, target_celltype,
+                buffer_info=source_buffer_info,
+                buffer=source_buf
+            )
             if conversion_result == True:
-                result_checksum2 = result_checksum
+                result_checksum = source_checksum
             elif isinstance(conversion_result, bytes):
-                result_checksum2 = conversion_result.hex()
-            elif isinstance(conversion_result, str):
-                result_checksum2 = bytes.fromhex(conversion_result).hex()
+                result_checksum = conversion_result.hex()
             else:
-                raise Exception
-            if result_checksum2 != result_checksum:
-                result_checksum = result_checksum2
-                buf = buffer_cache.get_buffer(result_checksum2)
-            """
-            value = deserialize(buf, bytes.fromhex(result_checksum), source_celltype, copy=False)
-            if source_celltype == "bytes":
-                try:
-                    value = value.decode()
-                except Exception:
-                    pass
-            newbuf = serialize(value, target_celltype)
-            result_checksum2 = get_hash(newbuf, hex=True)
-            buf = newbuf
-            result_checksum = result_checksum2
+                value = deserialize(source_buf, bytes.fromhex(source_checksum), source_celltype, copy=False)                
+                result_buf = serialize(value, target_celltype)
+                result_checksum = calculate_checksum(result_buf, hex=True)
+                
+            if result_checksum != source_checksum:
+                if result_buf is None:
+                    result_buf = buffer_cache.get_buffer(result_checksum)
+                assert result_buf is not None                
+
+            old_result_buffer_info = get_buffer_info(result_checksum)
+            result_buffer_info = copy.deepcopy(old_result_buffer_info)
+            if result_buffer_info is None:
+                result_buffer_info = BufferInfo(result_checksum)
+                result_buffer_info.length = len(result_buf)
+            result_buffer_info2 = buffer_cache.buffer_info.get(bytes.fromhex(result_checksum))
+            if result_buffer_info2 is not None:
+                result_buffer_info.update(result_buffer_info2)
+                
+            if source_buffer_info != old_source_buffer_info:
+                set_buffer_info(source_buffer_info)
+
+            if result_buffer_info != old_result_buffer_info:
+                set_buffer_info(result_buffer_info)                    
+        else:
+            old_buffer_info = get_buffer_info(buf_checksum)
+            buffer_info = copy.deepcopy(old_buffer_info)
+            if buffer_info is None:
+                buffer_info = BufferInfo(buf_checksum)
+                buffer_info.length = len(buf)
+            try:
+                buf.decode()
+                buf_text = True
+            except Exception:
+                buf_text = False
+            update_buffer_info(buffer_info, "is_utf8", buf_text)
+            result_buf = buf
+            result_checksum = buf_checksum
+            if buffer_info != old_buffer_info:
+                set_buffer_info(buffer_info)
+        
         buffer_file = os.path.join(buffer_dir, result_checksum)
         if os.path.exists(buffer_file):
             # We trust that the buffer is correct...
             pass
         else:
+            assert result_buf is not None
             try:
                 with open(buffer_file, "wb") as f:
-                    f.write(buf)
+                    f.write(result_buf)
             except Exception:
                 os.remove(buffer_file)
+        buffer_cache.uncache_buffer(result_checksum)
         result.append((checksum, result_checksum))
+    gc.collect()
     return result
-    
+
+def write_deepcontent(deepdict_checksum, deepdict):    
+    buffersizefile = os.path.join(SDB, "buffersizes.csv")
+    if os.path.exists(buffersizefile):
+        buffersizes = load_csv(buffersizefile)
+    else:
+        buffersizes = {}
+    deepcontent_size = 0
+    new_checksums = []
+    for checksum in deepdict.values():
+        if checksum in buffersizes:
+            deepcontent_size += int(buffersizes[checksum])
+        else:
+            new_checksums.append(checksum)
+    for n, checksum in enumerate(new_checksums):
+        if n > 1 and n % 5000 == 0:
+            report("Calculating deep content size: {}/{}".format(
+                n, len(new_checksums)
+            ))
+        buffer_info = get_buffer_info(checksum)
+        if buffer_info is None:
+            raise Exception(checksum)
+        buffersize = buffer_info.length
+        deepcontent_size += buffersize
+        buffersizes[checksum] = buffersize
+    if len(new_checksums):
+        write_csv(buffersizes, buffersizefile)        
+    report("Write deep content size for {}: {}".format(deepdict_checksum, deepcontent_size))
+    deepcontentfile = os.path.join(SDB, "deepcontent.csv")
+    if os.path.exists(deepcontentfile):
+        deepcontent = load_csv(deepcontentfile)
+    else:
+        deepcontent = {}
+    deepcontent[deepdict_checksum] = deepcontent_size
+    write_csv(deepcontent, deepcontentfile)
 
 SDB = os.environ.get("SEAMLESS_DATABASE_DIR")
 if SDB is None:
@@ -255,11 +440,13 @@ for root, dirnames, filenames in sorted(os.walk(dirpath, followlinks=False)):
 
         if not from_cache:            
             try:
-                content = open(filepath, "rb").read()
+                with open(filepath, "rb") as f:
+                    content = f.read()
             except OSError:
                 report("Error in {}".format(filepath))
                 continue
-            checksum = get_hash(content, hex=True)
+            checksum = calculate_checksum(content, hex=True)
+            write_buffer_length(checksum, len(content))
             if inode in old_inode_table:
                 # If there is a buffer hardlink with the old checksum 
                 #  that points to the inode, clean it up
@@ -277,7 +464,7 @@ for root, dirnames, filenames in sorted(os.walk(dirpath, followlinks=False)):
             report("Save intermediate inode table to {}".format(inode_table_file)) 
             curr_inode_table = old_inode_table.copy()
             curr_inode_table.update(inode_table)
-            write_csv(inode_table, inode_table_file)
+            write_csv(curr_inode_table, inode_table_file)
             last_inode_write = elapsed_time
 
 if not inodes_changed:
@@ -292,6 +479,15 @@ else:
     report("Write inode table to {}".format(inode_table_file))
     write_csv(inode_table, inode_table_file)
 
+'''
+###
+high_inodes = sorted(list(inode_table.keys()))[1000:]
+for inode in high_inodes:
+    inode_table.pop(inode)
+    inode_to_entry.pop(inode)
+###
+'''
+
 report("Running actions")
 collections = {
     default_collection_name: {
@@ -301,8 +497,8 @@ collections = {
 }
 actions = actiondict.get("actions", [])
 
-
-with concurrent.futures.ProcessPoolExecutor() as executor:
+executor = concurrent.futures.ProcessPoolExecutor()
+try:
     for action in actions:
         name = action["action"]
         
@@ -338,6 +534,7 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
         elif name == "transform_collection":
             nproc = max(int(multiprocessing.cpu_count()/2), 1)
             target_collection_name = action["collection"]
+            assert target_collection_name not in collections, target_collection_name
             command = action.get("command")
             assert command in ("gunzip", "unzip", "bunzip2", None)
             if command == "gunzip":
@@ -415,7 +612,7 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
                 raise AssertionError(source_collection)
 
             futures = []
-            chunksize = 100
+            chunksize = 30
             last_transform_write = time.time()
             curr_tfs = []
             assert source_celltype is not None
@@ -425,6 +622,10 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
                 tf = tfs[n]
                 curr_tfs.append(tf)
                 last = (n == len(tfs) - 1)
+                cleanup = False
+                if (n+1) % 1000 == 0:
+                    if source_celltype != target_celltype:
+                        cleanup = True
                 if len(curr_tfs) == chunksize or last: 
                     future = executor.submit(
                         do_transform, cmd, 
@@ -433,7 +634,7 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
                     )
                     futures.append(future)
                     curr_tfs = []
-                while len(futures) and (len(futures) == nproc or last):
+                while len(futures) and (len(futures) == nproc or last or cleanup):
                     for future in futures:
                         if not future.done():
                             continue
@@ -455,6 +656,9 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
                         break
                     else:
                         time.sleep(1)
+                if cleanup:
+                    executor.shutdown()
+                    executor = concurrent.futures.ProcessPoolExecutor()
             assert not len(futures)
             write_csv(transform, transform_file)
             collections[target_collection_name] = {
@@ -468,6 +672,7 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
             source_collection_name = action.get("source_collection", default_collection_name)
             source_collection = collections[source_collection_name]                    
             target_collection_name = action["collection"]
+            assert target_collection_name not in collections, target_collection_name
             collection_dir = get_subdir("collections")
             target_collection_dir = os.path.join(collection_dir, target_collection_name)
             buffer_dir = get_subdir("buffers")
@@ -489,6 +694,8 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
                 if celltype == "bytes":
                     celltype = None
             elif source_collection.get("copied"):
+                origin_collection_name = source_collection_name
+                origin_collection = source_collection
                 can_hardlink = True
                 interned = True
                 celltype = source_collection.get("celltype")
@@ -603,6 +810,7 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
                 collections[target_collection_name]["celltype"] = celltype
         
         elif name == "build_download_index":
+            source_file_or_key = "source_file"
             source_collection_name = action.get("source_collection", default_collection_name)
             source_collection = collections[source_collection_name]
             if source_collection.get("default"):
@@ -612,13 +820,19 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
                 result_file = os.path.join(collection_dir, source_collection_name) + ".csv"
                 result = load_csv(result_file)
                 entries = result.keys()
+            elif source_collection.get("deepcell"):
+                source_file_or_key = "source_key"
+                deepcell_dir = get_subdir("deepcells")
+                deepcell_file = os.path.join(deepcell_dir, target_collection_name) + ".json"
+                deepcell = json.load(open(deepcell_file))
+                entries = deepcell.keys()
             else:
-                msg = 'Action "build_download_index": source collection "{}" must be default or copied'
+                msg = 'Action "build_download_index": source collection "{}" must be default, copied or deepcell'
                 err(msg.format(source_collection_name))
             
             download_index = {}
             urls = action["urls"]
-            regex = re.compile(action["source_file"])
+            regex = re.compile(action[source_file_or_key])
             for entry in entries:
                 unnamed_capturing_groups = regex.match(entry).groups()
                 named_capturing_groups = regex.match(entry).groupdict()
@@ -648,7 +862,7 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
             dataset_file = os.path.join(dataset_dir, source_collection_name) + ".json"
             if os.path.exists(dataset_file):
                 old_dataset = json.load(open(dataset_file))
-                old_dataset_checksum = get_hash(get_plain_buffer(old_dataset), hex=True)
+                old_dataset_checksum = calculate_checksum(get_plain_buffer(old_dataset), hex=True)
                 old_dataset_inode = str(os.stat(dataset_file).st_ino)
             else:
                 old_dataset_checksum = None
@@ -667,22 +881,25 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
                 msg = 'Action "dataset": source collection "{}" must be default or copied'
                 err(msg.format(source_collection_name))
 
-            dataset_checksum = get_hash(get_plain_buffer(dataset), hex=True)
+            dataset_checksum = calculate_checksum(get_plain_buffer(dataset), hex=True)
             print("Computed dataset for {}: deep buffer checksum {}".format(source_collection_name, dataset_checksum))
             if old_dataset_checksum is not None and dataset_checksum != old_dataset_checksum:
                 remove_stale_buffer_hardlink(old_dataset_checksum, old_dataset_inode)
             report("Write dataset deep buffer to {}".format(dataset_file))
             write_json(dataset, dataset_file)
             intern_buffer(dataset_checksum, dataset_file, hardlink=True)
+            write_deepcontent(dataset_checksum, dataset)
         
         elif name == "deepcell":
             source_collection_name = action.get("source_collection", default_collection_name)
+            target_collection_name = action["collection"]
+            assert target_collection_name not in collections
             source_collection = collections[source_collection_name]
             deepcell_dir = get_subdir("deepcells")
-            deepcell_file = os.path.join(deepcell_dir, source_collection_name) + ".json"
+            deepcell_file = os.path.join(deepcell_dir, target_collection_name) + ".json"
             if os.path.exists(deepcell_file):
                 old_deepcell = json.load(open(deepcell_file))
-                old_deepcell_checksum = get_hash(get_plain_buffer(old_deepcell), hex=True)
+                old_deepcell_checksum = calculate_checksum(get_plain_buffer(old_deepcell), hex=True)
                 old_deepcell_inode = str(os.stat(deepcell_file).st_ino)
             else:
                 old_deepcell_checksum = None
@@ -706,7 +923,7 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
             if source_collection.get("copied"):
                 raise NotImplementedError # TODO: a test for this
                 collection_dir = get_subdir("collections")
-                result_file = os.path.join(collection_dir, source_collection_name) + ".csv"
+                result_file = os.path.join(collection_dir, target_collection_name) + ".csv"
                 result = load_csv(result_file)
                 deepcell0 = result
             elif source_collection.get("transformed"):
@@ -738,18 +955,29 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
 
             deepcell = {}
             for entry, checksum in deepcell0.items():
-                unnamed_capturing_groups = regex.match(entry).groups()
-                named_capturing_groups = regex.match(entry).groupdict()                
+                try:
+                    unnamed_capturing_groups = regex.match(entry).groups()
+                    named_capturing_groups = regex.match(entry).groupdict()
+                except AttributeError:
+                    raise ValueError(entry) from None
                 target_entry = target_key_template.format(
                     *unnamed_capturing_groups,
                     **named_capturing_groups
                 )
                 deepcell[target_entry] = checksum
 
-            deepcell_checksum = get_hash(get_plain_buffer(deepcell), hex=True)
-            print("Computed deepcell for {}: deep buffer checksum {}".format(source_collection_name, deepcell_checksum))
+            deepcell_checksum = calculate_checksum(get_plain_buffer(deepcell), hex=True)
+            print("Computed deepcell for {} -> {}: deep buffer checksum {}".format(source_collection_name, target_collection_name, deepcell_checksum))
             if old_deepcell_checksum is not None and deepcell_checksum != old_deepcell_checksum:
                 remove_stale_buffer_hardlink(old_deepcell_checksum, old_deepcell_inode)
             report("Write deepcell deep buffer to {}".format(deepcell_file))
             write_json(deepcell, deepcell_file)
             intern_buffer(deepcell_checksum, deepcell_file, hardlink=True)
+            write_deepcontent(deepcell_checksum, deepcell)
+            collections[target_collection_name] = {
+                "name": target_collection_name,
+                "origin": source_collection_name,
+                "deepcell": True,
+            }
+finally:
+    executor.shutdown()

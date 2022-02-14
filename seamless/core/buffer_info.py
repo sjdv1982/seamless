@@ -48,9 +48,11 @@ class BufferInfo:
         "str2text", "text2str", "binary2bytes", "bytes2binary",
         "binary2json", "json2binary"
     )
-    def __init__(self, checksum, params:dict):
+    def __init__(self, checksum, params:dict={}):
         for slot in self.__slots__:            
             setattr(self, slot, params.get(slot))
+        if isinstance(checksum, str):
+            checksum = bytes.fromhex(checksum)
         self.checksum = checksum
     
     def __setattr__(self, attr, value):
@@ -63,6 +65,9 @@ class BufferInfo:
             if attr.startswith("is_"):
                 if not isinstance(value, bool):
                     raise TypeError(type(value))
+        if attr.find("2") > -1 and value is not None:
+            if isinstance(value, bytes):
+                value = value.hex()
         super().__setattr__(attr, value)
 
     def __setitem__(self, item, value):

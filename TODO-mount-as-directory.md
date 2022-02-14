@@ -104,46 +104,78 @@ In any case, RPBS elision server is very needed!
 
 Fairserver plan
 ===============
-- Add bufferinfo r/w support to database-run-actions
-- database-run-actions: For all deepcells and datasets together, store a single file content.json with the total content (summed buffer lengths of all entries) for each deepcell/dataset.
+DONE - Add bufferinfo r/w support to database-run-actions
+DONE - database-run-actions: For all deepcells and datasets together, store a single file deepcontent.json with the total content (summed buffer lengths of all entries) for each deepcell/dataset.
+TODO - look at /tmp/xxx and remove all NUMPY buffers and buffer_infos
+TODO: proceed from ~/FAIRSERVER and test-pdb.sh in there.
 
 Fair server requests:
 Human and machine. For now, just machine.
 If unknown, just return 404.
+The server keeps nothing in memory, content is just served by
+opening files again and again.
 1. /machine/page/<name of fairpage>
 - Description
 - Link to web page
 - List of entries. Each entry:
-  - deep checksum
-  - version number (only required if no date)
-  - date (only required if no date)
+  - checksum: deep checksum
   - type: deep cell or dataset
-  - index size: size of the deep buffer itself
-  - content size: see above.
-  - latest: yes or no. Only one entry can be latest.
+  - version number (only required if no date)
+  - date (only required if no version number)
+  - format (optional. for example, mmcif for pdb)
+  - compression (optional. Can be gzip, zip, bzip2)
+  - latest: yes or no. For a given format+compression, only one entry can be latest.
+  - index_size: size of the deep buffer itself
+  - nkeys: number of keys
+  - content_size: see above.
+  - keyorder: checksum 
+  - download_index: checksum (if available)
+Response is built dynamically by parsing:
+$FD/page_entry/<page_name> and $FD/page_header/<page_name>
 2. /machine/find/<checksum>
    Response:
    - name of fairpage
    - fairpage entry (see above)
-3. /machine/download/<checksum>
-   Download page for the deep buffer
+3. /machine/download-index/<download index checksum>
+   Download index for the deep buffer
 4. /machine/deepbuffer/<checksum>
    Deep buffer (= entry index) content 
-5. /machine/get_entry?page=...&version=...&date=...
+5. /machine/keyorder/<keyorder checksum>
+   Key order buffer (list of key orders) content.
+6. /machine/get_entry?page=...&version=...&date=...
    /machine/get_checksum?page=...&version=...&date=...
    /machine/latest/page
 
 fair-add-entry:
-Requires FAIRSERVER_DIR to be defined.
-Requires SEAMLESS_DATABASE_DIR to be defined.
+Requires FAIRSERVER_DIR  ($FD) to be defined.
+Requires SEAMLESS_DATABASE_DIR ($SDB) to be defined.
 Copies data from the latter to the former.
 Arguments:
- page_name: name of page. Requires that FAIRSERVER_DIR/page_templates/page_name.cson is defined in FAIRSERVER_DIR/ . Parses first any existing entries from 
- FAIRSERVER_DIR/pages/page_name.json
+ page_name: name of page. 
+ 
+ collection_name: collection name in SEAMLESS_DATABASE_DIR. Must be a deepcell or dataset. As collection names are unique, it is auto-figured-out which of the two it is.
 
- collection_name: collection name in SEAMLESS_DATABASE_DIR. Must be a deepcell or dataset. As collection names are unique, it is auto-figured-out which of the two it is
- .
 --version:(only required if no date)
 --date:(only required if no date)
---increment-download-index. If set, the download index will be merged with the download index in FAIRSERVER_DIR for the latest existing entry. If not, the download index is copied into a new file.
+--format, --compression
+--merge-download-index. If set, the download index (if it exists) will be merged with the download index in FAIRSERVER_DIR for the latest existing entry+format+compression, and hardlinked to a new file. If not, the download index is copied into a new file.
 --no-latest: Do not set "latest" on the added entry
+
+Procedure:
+- Get deep buffer from $SDB/<deepcell-or-dataset>/<collection_name>.json. 
+Calculate checksum.
+- Copy deep buffer into $FD/deepbuffer/<checksum>. 
+- Get deep buffer content length from deepcontent.csv
+- If exists, load existing entries from $FD/page_entry/<page_name>
+- If exists, load $SDB/download_index/<collection_name>.json and copy into $FD/raw_download_index/<page-name>-<increment_number>.json . Raw download indices are by key, rather than by checksum.
+- If --merge-download-index, take the list of raw download indices of the previous entry. Else, take an empty list. Add the raw download index filename to the list. 
+- If there are any raw download indices, build a single (checksum-keyed) download index file from joining all the indices (latest entry has priority). Load all the deepbuffers from any previous entry that points
+to any of the raw indices. Then, get the checksum for each key in 
+the index (again, latest entry has priority; skip if key unknown).
+If compression has been specified, filter the URL values. Remove "compression" values  from the URL values and keep only those that have the correct compression.
+Once the (checksum-keyed) download index has been built, calculate its checksum and store it under $FD/download_index/<download-index-checksum>
+- Build the keyorder. Take the keyorder from the previous entry as basis.
+If the previous entry has no keyorder, take all of its keys (sorted alphabetically). Finally add/delete new keys from the current entry (sorted alphabetically). Convert the keyorder list to Seamless JSON.
+Calculate the checksum of the keyorder buffer and store the buffer in $FD/keyorder/<key order checksum>
+- Build the entry and add it to the previously loaded entries in
+$FD/page_entry/<page_name> . An entry contains essentially what is served, but in addition it contains the list of raw download index files.

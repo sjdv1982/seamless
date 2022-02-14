@@ -117,7 +117,9 @@ conversion_reformat = set([
     # conversions that are guaranteed to work (if the input is valid), but may change checksum
     # special cases:
     ("bytes", "binary"), # for numpy buffer format (magic numpy string), trivial. Else, create np.dtype(S) array from bytes buffer.
-    ("bytes", "mixed"), # as above, but Seamless-mixed buffer format (MAGIC_SEAMLESS_MIXED string) is also trivial.
+    ("bytes", "mixed"), # as above, but:
+                        #  - Seamless-mixed buffer format (MAGIC_SEAMLESS_MIXED string) is also trivial.
+                        #  - If buffer is text, value stays the same (text-to-str)
     ("binary", "bytes"), # for np.dtype(S..), get value.tobytes(); else trivial 
     ("mixed", "bytes"), # ("binary", "bytes") if binary (magic numpy string); else trivial
 
