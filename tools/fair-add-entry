@@ -1,0 +1,306 @@
+#!/usr/bin/env python3
+
+import os
+import csv
+import cson
+import json
+from seamless import calculate_checksum
+from seamless.core.protocol.serialize import serialize_sync as serialize
+
+def err(*args, **kwargs):
+    print("ERROR: " + args[0], *args[1:], **kwargs)
+    exit(1)
+
+def load_csv(filename):
+    result = {}
+    with open(filename, newline='') as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+        for row in spamreader:
+            if len(row) == 2:
+                result[row[0]] = row[1]
+            else:
+                result[row[0]] = row[1:]
+    return result
+
+SDB = os.environ.get("SEAMLESS_DATABASE_DIR")
+if SDB is None:
+    err("SEAMLESS_DATABASE_DIR undefined")
+FD = os.environ.get("FAIRSERVER_DIR")
+if FD is None:
+    err("FAIRSERVER_DIR undefined")
+
+import argparse
+parser = argparse.ArgumentParser(description="""Adds an entry to a FAIR page.
+The entry refers to deepcell/dataset collection as it currently is in the database,
+tagging it with a version or date.
+""")
+
+parser.add_argument(
+    "page_name",
+    help="Name of the FAIR page"
+)
+
+parser.add_argument(
+    "collection_name",
+    help="Collection name in SEAMLESS_DATABASE_DIR. Must be a deepcell or dataset"
+)
+
+parser.add_argument(
+    "--version",
+    help="Version tag of the added entry. Only requires if there is no date."
+)
+
+parser.add_argument(
+    "--date",
+    help="Date tag of the added entry. Only requires if there is no version."
+)
+
+parser.add_argument(
+    "--format",
+    help="""Format tag of the added entry. 
+This is just descriptive, allowing the same dataset to be in the same FAIR page
+with entries for multiple different file formats.
+"""
+)
+
+parser.add_argument(
+    "--compression",
+    help="""Compression that describes the dataset. Can be gzip, zip or bzip.
+Seamless does not automatically decompress such datasets, but command line tools
+may expect a directory containing compressed files.
+"""
+)
+
+parser.add_argument(
+    "--merge-download-index",
+    dest="merge_download_index",
+    action="store_true",
+    help="""Merge download indices with the current latest entry.
+If set, download index (if it exists) will be merged with existing download indices in FAIRSERVER_DIR 
+for the entry that is latest (given the specified format and compression).
+If not, only the existing download index is copied into a new file."""
+)
+
+parser.add_argument(
+    "--no-latest",
+    dest="no_latest",
+    action="store_true",
+    help="""Do not mark the added entry as "latest". 
+The latest entry is what is returned to a FAIRserver request that
+does not explicitly describe version or date."""
+)
+
+args = parser.parse_args()
+if args.date is None and args.version is None:
+    err("You must define --date and/or --version")
+
+if args.compression not in (None, "gzip", "zip", "bzip"):
+    err("If defined, compression must be gzip, zip or bzip")
+
+deep_buffer_file1 = os.path.join(SDB, "deepcells", args.collection_name + ".json")
+deep_buffer_file2 = os.path.join(SDB, "datasets", args.collection_name + ".json")
+if not os.path.exists(deep_buffer_file1) and not os.path.exists(deep_buffer_file2):
+    err("""Collection name does not exist or is not a deepcell or dataset.
+Neither file exists:
+  {}
+  {}""".format(deep_buffer_file1, deep_buffer_file2))
+
+if os.path.exists(deep_buffer_file1) and os.path.exists(deep_buffer_file2):
+    err("""Malformed database directory structure.
+Both files exist:
+  {}
+  {}""".format(deep_buffer_file1, deep_buffer_file2))
+
+# Get deep buffer from $SDB/<deepcell-or-dataset>/<collection_name>.json. 
+# Calculate checksum.
+
+if os.path.exists(deep_buffer_file1):
+    deep_buffer_file = deep_buffer_file1
+    entry_type = "deepcell" 
+else:
+    deep_buffer_file = deep_buffer_file2
+    entry_type = "dataset" 
+with open(deep_buffer_file, "rb") as f:
+    deep_buffer = f.read()
+deep_buffer_size = len(deep_buffer)
+deep_buffer_checksum = calculate_checksum(deep_buffer, hex=True)
+deep_buffer_dict = json.loads(deep_buffer.decode())
+entry_nkeys = len(deep_buffer_dict)
+
+# Copy deep buffer into $FD/deepbuffer/<checksum>
+with open(os.path.join(FD, "deepbuffer", deep_buffer_checksum), "wb") as f:
+    f.write(deep_buffer)
+
+# Get deep buffer content length from deepcontent.csv
+deepcontent = load_csv(os.path.join(SDB, "deepcontent.csv"))
+content_size = int(deepcontent[deep_buffer_checksum])
+
+
+# If exists, load existing entries from $FD/page_entries/<page_name>
+entries_file = os.path.join(FD, "page_entries", args.page_name + ".json")
+if os.path.exists(entries_file):
+    with open(entries_file) as f:
+        # Load with CSON to be more robust towards manual editing
+        entries = cson.load(f)
+        assert isinstance(entries, list)
+else:
+    entries = []
+
+"""
+If exists, load $SDB/download_index/<collection_name>.json 
+and copy into $FD/raw_download_index/<raw download index checksum>.json . 
+"""
+sdb_download_index = os.path.join(SDB, "download_indices", args.collection_name + ".json")
+raw_index = None
+if os.path.exists(sdb_download_index):
+    with open(sdb_download_index, "rb") as f:
+        buf = f.read()
+    checksum = calculate_checksum(buf, hex=True)
+    raw_index = os.path.join(FD, "raw_download_index", checksum)
+    with open(raw_index, "wb") as f:
+        f.write(buf)
+
+# Check that there is no entry with the exact same version and date
+for n, entry in enumerate(entries.copy()):
+    if entry["type"] != entry_type:
+        continue
+    if entry.get("format") != args.format:
+        continue
+    if entry.get("compression") != args.compression:
+        continue
+    if entry.get("version") != args.version:
+        continue
+    if entry.get("date") != args.date:
+        continue
+    err("Entry {} has the exact same version/date".format(n+1))
+
+# Get the latest entry given format and compression
+for entry in entries:
+    if entry["type"] != entry_type:
+        continue
+    if not entry.get("latest"):
+        continue
+    if entry.get("format") != args.format:
+        continue
+    if entry.get("compression") != args.compression:
+        continue
+    latest_entry = entry
+    break
+else:
+    latest_entry = None
+
+# If --merge-download-index, take the list of raw download indices of the latest entry. 
+# Else, take an empty list. Add the raw download index filename to the list. 
+
+if args.merge_download_index and latest_entry is not None:
+    raw_indices = latest_entry.get("raw_download_indices", []).copy()
+else:
+    raw_indices = []
+if raw_index is not None:
+    new_raw_index = os.path.split(raw_index)[1]
+    if new_raw_index not in raw_indices:
+        raw_indices.append(new_raw_index)
+
+"""
+If there are any raw download indices, 
+build a single (checksum-keyed) download index file 
+from joining all the indices (latest entry has priority). 
+Load all the keys from any previous entry that points to any of the raw indices,
+ and convert them to checksums
+Then, get the checksum for each key in  the index (again, latest entry has priority; skip if key unknown).
+Once the (checksum-keyed) download index has been built, calculate its checksum and store it under 
+ $FD/download_index/<download-index-checksum>
+"""
+download_index_checksum = None
+if len(raw_indices):
+    print("Building download index...")
+    merged_raw_indices = {}
+    for raw_index in raw_indices:
+        raw_index_file = os.path.join(FD, "raw_download_index", raw_index)
+        with open(raw_index_file) as f:
+            curr_raw_index = json.load(f)
+        merged_raw_indices.update(curr_raw_index)
+    key_to_checksum = {}
+    for entry in entries:
+        entry_raw_download_indices = entry.get("raw_download_indices", [])
+        keep_entry = any([ind in raw_indices for ind in entry_raw_download_indices])
+        if keep_entry:
+            entry_checksum = entry["checksum"]
+            with open(os.path.join(FD, "deepbuffer", entry_checksum)) as f:
+                entry_deep_buffer = json.load(f)
+                key_to_checksum.update(entry_deep_buffer)
+    key_to_checksum.update(deep_buffer_dict)
+    download_index = {}
+    for key, value in merged_raw_indices.items():
+        if key not in key_to_checksum:
+            continue
+        checksum = key_to_checksum[key]
+        download_index[checksum] = value
+    download_index_buffer = serialize(download_index, "plain")
+    download_index_checksum = calculate_checksum(download_index_buffer, hex=True)
+    print("Download index checksum: {}".format(download_index_checksum))
+    with open(os.path.join(FD, "download_index", download_index_checksum), "wb") as f:
+        f.write(download_index_buffer)
+
+"""
+Build the keyorder. Take the keyorder from the latest entry as basis.
+If the latest entry has no keyorder, take all of its keys (sorted alphabetically). 
+Finally add/delete new keys from the current entry (sorted alphabetically). 
+Convert the keyorder list to Seamless JSON.
+Calculate the checksum of the keyorder buffer and store the buffer in 
+$FD/keyorder/<key order checksum>
+"""
+print("Determine key order...")
+latest_keyorder = []
+if latest_entry is not None:
+    latest_keyorder_checksum = latest_entry.get("keyorder")
+    if latest_keyorder_checksum is not None:
+        with open(os.path.join(FD, "keyorder", latest_keyorder_checksum)) as f:
+            latest_keyorder = json.load(f)
+    else:
+        latest_entry_checksum = latest_entry["checksum"]
+        with open(os.path.join(FD, "deepbuffer", latest_entry_checksum)) as f:
+            latest_entry_deep_buffer = json.load(f)
+            latest_keyorder = sorted(list(latest_entry_deep_buffer))
+latest_keyorder_set = set(latest_keyorder)
+
+keyorder = latest_keyorder
+for key in sorted(deep_buffer_dict.keys()):
+    if key in latest_keyorder_set:
+        continue
+    keyorder.append(key)
+keyorder_buffer = serialize(keyorder, "plain")
+keyorder_checksum = calculate_checksum(keyorder_buffer, hex=True)
+print("Key order checksum: {}".format(keyorder_checksum))
+with open(os.path.join(FD, "keyorder", keyorder_checksum), "wb") as f:
+    f.write(keyorder_buffer)
+"""
+Build the entry and add it to the previously loaded entries in
+$FD/page_entries/<page_name> . An entry contains essentially what is served, but in addition it contains the list of raw download index files.
+"""
+if latest_entry is not None:
+    latest_entry.pop("latest")
+new_entry = {
+    "checksum": deep_buffer_checksum,
+    "type": entry_type,
+    "version": args.version,
+    "date": args.date,
+    "format": args.format,
+    "compression": args.compression,
+    "latest": None if args.no_latest else True,
+    "nkeys": entry_nkeys,
+    "index_size": deep_buffer_size,
+    "content_size": content_size,
+    "keyorder": keyorder_checksum,
+    "download_index": download_index_checksum,
+    "raw_download_indices": raw_indices,
+}
+
+for key in list(new_entry.keys()):
+    if not new_entry[key]:
+        new_entry.pop(key)
+
+print(json.dumps(new_entry, indent=2))
+entries.append(new_entry)
+with open(entries_file, "w") as f:
+    json.dump(entries, f, indent=2)

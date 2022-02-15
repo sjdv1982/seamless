@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
-from genericpath import exists
 import os
 import json
 
 from seamless import calculate_checksum
-from seamless.core.protocol.calculate_checksum import calculate_checksum_sync
 
 def err(*args, **kwargs):
     print("ERROR: " + args[0], *args[1:], **kwargs)
@@ -14,15 +12,6 @@ def err(*args, **kwargs):
 SDB = os.environ.get("SEAMLESS_DATABASE_DIR")
 if SDB is None:
     err("SEAMLESS_DATABASE_DIR undefined")
-
-def get_subdir(subdirname):
-    subdir = os.path.join(SDB, subdirname)
-    if not os.path.exists(subdir):
-        os.mkdir(subdir)
-        report("Created {}".format(subdir))
-    if not os.path.isdir(subdir):
-        err("{} is not a directory".format(subdir))
-    return subdir
 
 import argparse
 parser = argparse.ArgumentParser(description="""Shares a Seamless dataset directory.
