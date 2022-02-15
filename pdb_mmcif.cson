@@ -4,6 +4,14 @@
         # "collection" is an internal name for the directory
         "collection": "pdb_mmcif_zip"        
         "path": "/mnt/backup/mmCIF" 
+        
+        # !!!! NOTE: NEVER modify a file inside "path" in-place !!!
+        # e.g. with "rsync --in-place" or by appending to the file.
+        # If you want to modify a file, create a temporary file,
+        #  then hard-link the original file name to the temporary file name,
+        #  then remove the temporary file. 
+        # rsync and text editors do this correctly.
+
         "cross_device": false    # must be false in order to create hardlinks
     }
 
@@ -15,7 +23,7 @@
         # Does not require directory "cross_device" to be False 
         #  but file inodes will change if the directory is moved to another device            
         # If this action does not update the table, the rest of the actions
-        #  is aborted, unless --force is used
+        #  is aborted, unless --force is used        
 
         # Possible actions: 
         #   intern_collection, transform_collection, copy_collection
@@ -27,7 +35,7 @@
         # - transform_collection does not clean up old transform results
         # - copy_collection does clean up
 
-        # 1. The original files
+        # 1. Actions on the original (zipped) PDB-mmcif files
         {
             # Create $SDB/download_indexes/pdb_mmcif_zip.json
             # containing checksum-to-list-of-URLS index
@@ -66,8 +74,8 @@
             #   then files are created as hardlinks, so no extra disk space is used
             #   requires directory cross_device to be False 
             #
-            # NOTE: this requires discipline!!! 
-            # If the external file changes, but database-run-actions is not re-run, 
+            # NOTE: this requires discipline!!! See above about not modifying in-place. 
+            # If the external file is modified in-place, but database-run-actions is not re-run, 
             #  then buffers/<checksum> points to a file with the wrong checksum!!!
             "hardlink": true
 
@@ -86,15 +94,10 @@
 
             # Write the deep checksum under the key "pdb_mmcif_zip" (the directory collection)
             #  into $SDB/datasets.json
-            # Under the same key, write a link to the directory path, 
-            #  for Seamless transformers that operate on the directory directly.
             #
             # The target collection can be the directory (requires cross_device=False) 
             #  or a collection created with copy_collection.
             # A fully internal collection (such a generated with transform_collection) is not suitable.
-            # NOTE: Since the directory path is directly shared with Seamless, make sure
-            #  that Seamless has no write permissions to it!
-            # NOTE: if the directory path is external, don't modify anything in it!
         }
 
         # 2. The unzipped files
@@ -106,7 +109,7 @@
 
             # Create $SDB/transforms/pdb_mmcif_unzip.csv, with a checksum-to-checksum2 table
             "action": "transform_collection"
-            # Command to execute. Can be unzip, gunzip, bunzip2, or undefined
+            # Command to execute. Can be unzip, gunzip, bunzip2, or undefined (not present)
             "command": "gunzip"
             
             # Seamless can convert the buffers to a specified celltype
@@ -150,7 +153,7 @@
             # If we would use the original source_collection (default)
             #   its cross_device would have to be False 
             # But since we use a transformed collection as input, 
-            #  this is not actually necessary, since it is fully internal,
+            #  cross_device=False is not actually necessary, since it is fully internal,
             #  and hardlinking will always work.
             "hardlink": true
         }        
@@ -301,8 +304,9 @@
             "action": "deepcell"
             "collection": "pdb_mmcif_unzip_deepcell"
 
-            # Requires a source collection that is a transformed collection with celltype="mixed"
-            #  Source file entries are obtained from the untransformed collection
+            # Requires a source collection that is a transformed collection 
+            #  with celltype="mixed"
+            # Source file entries are obtained from the untransformed collection
             #  ($SDB/collections/pdb_mmcif_unzip.csv)
             # This also gives us the untransformed checksum
             #  these are then mapped using the checksum-to-checksum2 table in 

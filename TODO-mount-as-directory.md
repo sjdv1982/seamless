@@ -106,7 +106,6 @@ Fairserver plan
 ===============
 DONE - Add bufferinfo r/w support to database-run-actions
 DONE - database-run-actions: For all deepcells and datasets together, store a single file deepcontent.json with the total content (summed buffer lengths of all entries) for each deepcell/dataset.
-TODO - look at /tmp/xxx and remove all NUMPY buffers and buffer_infos
 TODO: proceed from ~/FAIRSERVER and test-pdb.sh in there.
 
 Fair server requests:
