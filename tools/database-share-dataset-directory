@@ -125,8 +125,11 @@ for filename, checksum in deepdict.items():
 
 os.mkdir(target_dir)
 print("Creating hard links in {}".format(target_dir))
-for source_file, target_file in hardlinks:
-    print(source_file, target_file)
+for n, (source_file, target_file) in enumerate(hardlinks):
+    if n > 0 and n % 20000 == 0:
+        print("Hardlink {}/{} files".format(
+            n, len(hardlinks)
+        ))                    
     target_file_dir = os.path.dirname(target_file)
     if target_file_dir != target_dir:
         os.makedirs(target_file_dir, exist_ok=True)
