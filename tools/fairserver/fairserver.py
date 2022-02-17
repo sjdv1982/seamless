@@ -6,6 +6,8 @@ import os
 import cson
 import traceback
 from ruamel.yaml import YAML
+import glob
+from functools import partial
 yaml = YAML(typ='safe')
 
 
@@ -27,7 +29,9 @@ async def handle_machine_fairpage(request):
         #$FD/page_entries/<page_name>.json and $FD/page_header/<page_name>.cson/.json/.yaml
         async with aiofiles.open(filename, mode='r') as f:
             entries = await f.read()
-            entries = cson.loads(entries)
+        entries = cson.loads(entries)
+        for entry in entries:
+            entry.pop("raw_download_indices", None)
         loaders = {
             "json": cson.loads,
             "cson": cson.loads,
@@ -59,12 +63,70 @@ async def handle_machine_fairpage(request):
         content_type='application/json'
     )
 
+# NOTE: in production, you will want to cache the fairpages, 
+# or even cache a checksum-to-entry dict
+async def handle_machine_find(request):
+    checksum = request.match_info.get('checksum')
+    
+    try:
+        fairpages = glob.glob(os.path.join(FD, "page_entries", "*.json"))
+        for filename in fairpages:
+            fairpage = os.path.split(filename)[1].split(".")[0]
+            async with aiofiles.open(filename, mode='r') as f:
+                entries = await f.read()
+            entries = cson.loads(entries)
+            for entry in entries:
+                if entry["checksum"] == checksum:
+                    break
+            else:
+                continue
+            break
+        else:
+            raise KeyError(checksum)
+    except Exception:
+        traceback.print_exc()    
+        return web.Response(
+            status=404,
+            body=json.dumps({'not found': 404}),
+            content_type='application/json'
+        )
+    
+    result = {
+        "fairpage": fairpage,
+        "entry": entry
+    }
+    return web.Response(
+        status=200,
+        body=json.dumps(result, indent=2),
+        content_type='application/json'
+    )
+
+# NOTE: in production, send this to NGINX/Apache instead
+async def handle_static(head, request):
+    tail = request.match_info.get('tail')
+    filename = os.path.join(FD, head, tail)
+    if not os.path.exists(filename):
+        return web.Response(
+            status=404,
+            body=json.dumps({'not found': 404}),
+            content_type='application/json'
+        )
+    with open(filename, "rb") as f:
+        buf = f.read()
+    response = web.Response(status=200, body=buf)
+    response.enable_compression()
+    return response
+
 def main():
     app = web.Application(
         client_max_size=1024**3,
     )
     app.add_routes([
         web.get('/machine/page/{fairpage:.*}', handle_machine_fairpage),
+        web.get('/machine/find/{checksum:.*}', handle_machine_find),
+        web.get('/machine/download_index/{tail:.*}', partial(handle_static, "download_index")),
+        web.get('/machine/deepbuffer/{tail:.*}', partial(handle_static, "deepbuffer")),
+        web.get('/machine/keyorder/{tail:.*}', partial(handle_static, "keyorder")),
         # ....
     ])
 
