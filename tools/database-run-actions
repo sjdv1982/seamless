@@ -360,7 +360,8 @@ if afname.endswith(".json"):
 elif afname.endswith(".cson"):
     loader = cson.load
 elif afname.endswith(".yaml"):
-    loader = yaml.load
+    def loader(file):
+        return yaml.load(file.read())
 else:
     err("actionfile must be .json, .cson or .yaml")
 
