@@ -181,6 +181,64 @@ for entry in compatible_entries:
 else:
     latest_entry = None
 
+"""
+Build the keyorder. Take the keyorder from the latest entry as basis.
+Then add/delete new keys from the current entry (sorted alphabetically). 
+To maximize chunk coherence, fill up deleted keys:
+  - preferably, with a new key from the current entry
+  - else, with an existing key from the latest entry
+Add all remaining new keys from the current entry to the end.
+Convert the keyorder list to Seamless JSON.
+Calculate the checksum of the keyorder buffer and store the buffer in 
+$FD/keyorder/<key order checksum>
+"""
+print("Determine key order...")
+latest_keyorder = []
+if latest_entry is not None:
+    latest_keyorder_checksum = latest_entry.get("keyorder")
+    if latest_keyorder_checksum is not None:
+        with open(os.path.join(FD, "keyorder", latest_keyorder_checksum)) as f:
+            latest_keyorder = json.load(f)
+    else:
+        latest_entry_checksum = latest_entry["checksum"]
+        with open(os.path.join(FD, "deepbuffer", latest_entry_checksum)) as f:
+            latest_entry_deep_buffer = json.load(f)
+            latest_keyorder = sorted(list(latest_entry_deep_buffer))
+latest_keyorder_set = set(latest_keyorder)
+
+added_keys = [key for key in sorted(deep_buffer_dict.keys()) if key not in latest_keyorder_set]
+
+keyorder = []
+added_key_pos = 0
+latest_keyorder_size = len(latest_keyorder)
+pos = 0
+while pos < latest_keyorder_size:
+    key = latest_keyorder[pos]
+    pos += 1
+    if key in deep_buffer_dict:
+        keyorder.append(key)
+    else:
+        if added_key_pos < len(added_keys):
+            added_key = added_keys[added_key_pos]
+            keyorder.append(added_key)
+            added_key_pos += 1
+        else:
+            final_key = None
+            while pos < latest_keyorder_size - 1:
+                final_key = latest_keyorder[latest_keyorder_size-1]
+                latest_keyorder_size -= 1
+                if final_key in deep_buffer_dict:
+                    break
+            if final_key is not None:
+                keyorder.append(final_key)
+keyorder += added_keys[added_key_pos:]        
+
+keyorder_buffer = serialize(keyorder, "plain")
+keyorder_checksum = calculate_checksum(keyorder_buffer, hex=True)
+print("Key order checksum: {}".format(keyorder_checksum))
+with open(os.path.join(FD, "keyorder", keyorder_checksum), "wb") as f:
+    f.write(keyorder_buffer)
+
 # If exists, load $SDB/download_index/<collection_name>.json as the raw download index
 
 raw_download_index = None
@@ -233,38 +291,6 @@ if raw_download_index is not None:
                 entry["download_index"] = download_index_checksum
         os.remove(latest_download_index_file)
 
-"""
-Build the keyorder. Take the keyorder from the latest entry as basis.
-If the latest entry has no keyorder, take all of its keys (sorted alphabetically). 
-Finally add/delete new keys from the current entry (sorted alphabetically). 
-Convert the keyorder list to Seamless JSON.
-Calculate the checksum of the keyorder buffer and store the buffer in 
-$FD/keyorder/<key order checksum>
-"""
-print("Determine key order...")
-latest_keyorder = []
-if latest_entry is not None:
-    latest_keyorder_checksum = latest_entry.get("keyorder")
-    if latest_keyorder_checksum is not None:
-        with open(os.path.join(FD, "keyorder", latest_keyorder_checksum)) as f:
-            latest_keyorder = json.load(f)
-    else:
-        latest_entry_checksum = latest_entry["checksum"]
-        with open(os.path.join(FD, "deepbuffer", latest_entry_checksum)) as f:
-            latest_entry_deep_buffer = json.load(f)
-            latest_keyorder = sorted(list(latest_entry_deep_buffer))
-latest_keyorder_set = set(latest_keyorder)
-
-keyorder = latest_keyorder
-for key in sorted(deep_buffer_dict.keys()):
-    if key in latest_keyorder_set:
-        continue
-    keyorder.append(key)
-keyorder_buffer = serialize(keyorder, "plain")
-keyorder_checksum = calculate_checksum(keyorder_buffer, hex=True)
-print("Key order checksum: {}".format(keyorder_checksum))
-with open(os.path.join(FD, "keyorder", keyorder_checksum), "wb") as f:
-    f.write(keyorder_buffer)
 """
 Build the entry and add it to the previously loaded entries in
 $FD/page_entries/<page_name> . An entry contains essentially what is served, but in addition it contains the list of raw download index files.
