@@ -104,16 +104,12 @@ In any case, RPBS elision server is very needed!
 
 Fairserver plan
 ===============
-DONE - Add bufferinfo r/w support to database-run-actions
-DONE - database-run-actions: For all deepcells and datasets together, store a single file deepcontent.json with the total content (summed buffer lengths of all entries) for each deepcell/dataset.
-DONE: add a tool to store snapshots in $SDB/shared-directories
-
 Fair server requests:
 Human and machine. For now, just machine.
 If unknown, just return 404.
 The server keeps nothing in memory, content is just served by
 opening files again and again.
-DONE: 1-5. TODO: 6
+
 1. /machine/page/<name of fairpage>
 - Description
 - Link to web page
@@ -136,13 +132,14 @@ $FD/page_entries/<page_name>.json and $FD/page_header/<page_name>.cson/.json/.ya
    Response:
    - name of fairpage
    - fairpage entry (see above)
-3. /machine/download_index/<download index checksum>
-   Download index for the deep buffer
-4. /machine/deepbuffer/<checksum>
-   Deep buffer (= entry index) content 
+3. /machine/deepbuffer/<checksum>
+   Deep buffer (= element index) content. 
+   Dict of element-to-elementchecksum
+4. /machine/download/<element-checksum>
+   List of URLS for that element.
 5. /machine/keyorder/<keyorder checksum>
    Key order buffer (list of key orders) content.
 6. /machine/get_entry?page=...&version=...&date=...
    /machine/get_checksum?page=...&version=...&date=...
-   /machine/latest/page
+
 

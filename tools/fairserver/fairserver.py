@@ -21,15 +21,18 @@ FD = os.environ.get("FAIRSERVER_DIR")
 if FD is None:
     err("FAIRSERVER_DIR undefined")
 
+async def get_entries(fairpage):
+    filename = os.path.join(FD, "page_entries", fairpage + ".json")
+    async with aiofiles.open(filename, mode='r') as f:
+        entries = await f.read()
+    entries = cson.loads(entries)
+    return entries
+
 async def handle_machine_fairpage(request):
     fairpage = request.match_info.get('fairpage')
     
     try:
-        filename = os.path.join(FD, "page_entries", fairpage + ".json")
-        #$FD/page_entries/<page_name>.json and $FD/page_header/<page_name>.cson/.json/.yaml
-        async with aiofiles.open(filename, mode='r') as f:
-            entries = await f.read()
-        entries = cson.loads(entries)
+        entries = await get_entries(fairpage)
         for entry in entries:
             entry.pop("raw_download_indices", None)
         loaders = {
@@ -59,7 +62,7 @@ async def handle_machine_fairpage(request):
     fairpage_content["entries"] = entries
     return web.Response(
         status=200,
-        body=json.dumps(fairpage_content, indent=2),
+        body=json.dumps(fairpage_content, indent=2)+"\n",
         content_type='application/json'
     )
 
@@ -97,9 +100,130 @@ async def handle_machine_find(request):
     }
     return web.Response(
         status=200,
-        body=json.dumps(result, indent=2),
+        body=json.dumps(result, indent=2)+"\n",
         content_type='application/json'
     )
+
+_download_index_cache = {}
+# NOTE: in production, maybe empty a cache item after some idle time,
+#  and/or limit to a maximum amount of cache memory...
+async def handle_machine_download(request):
+    checksum = request.match_info.get('checksum')
+    try:
+        download_index_files = glob.glob(os.path.join(FD, "download_index", "*"))
+        for filename in download_index_files:
+            if filename in _download_index_cache:
+                download_index = _download_index_cache[filename]
+            else:
+                async with aiofiles.open(filename) as f:
+                    data = await f.read()
+                download_index = json.loads(data)
+                _download_index_cache[filename] = download_index
+            try:
+                urls = download_index[checksum]
+                break
+            except KeyError:
+                pass
+        else:
+            raise KeyError(checksum)
+    except Exception:
+        traceback.print_exc()    
+        return web.Response(
+            status=404,
+            body=json.dumps({'not found': 404}),
+            content_type='application/json'
+        )
+    return web.Response(
+        status=200,
+        body=json.dumps(urls, indent=2)+"\n",
+        content_type='application/json'
+    )
+
+def get_page_params(request):    
+    page = request.query.get("page")
+    if page is None:
+        return web.Response(
+            status=400,
+            text="parameter 'page' undefined\n",
+        )
+    params = {}
+    for param in ("type", "version", "date", "compression", "format"):
+        p = request.query.get(param)
+        if p is not None:
+            if p == "none":
+                params[param] = None            
+            else:
+                params[param] = p    
+    return page, params
+
+
+async def get_entry(page, params):
+    entries = await get_entries(page)
+    version, date = params.get("version"), params.get("date")
+    if version is None and date is None:
+        entries = [e for e in entries if e.get("latest")]
+        to_filter = ("type", "format", "compression")
+    else:
+        to_filter = ("type", "version", "date", "format", "compression")
+    for param in to_filter:
+        if param not in params:
+            continue
+        p = params[param]  # can be None
+        if param in ("compression", "format"):
+            default = None
+        else:
+            default = p      
+        entries = [e for e in entries if e.get(param, default) == p]
+    if len(entries) == 0:
+        return web.Response(
+            status=400,
+            text="No entry with the given parameters\n",
+        )
+    elif len(entries) > 1:
+        text = "Multiple entries with given parameters:\n\n"
+        text += json.dumps(entries, indent=2)
+        text += "\n\n({} entries)\n".format(len(entries))
+        return web.Response(
+            status=300,
+            text=text
+        )
+    entry = entries[0]
+    return entry
+
+async def handle_get_entry(request):
+    page_params = get_page_params(request)
+    if isinstance(page_params, web.Response):
+       err = page_params
+       return err
+    page, params = page_params
+    entry = await get_entry(page, params)
+    if isinstance(entry, web.Response):
+       err = entry
+       return err
+    return web.Response(
+        status=200,
+        body=json.dumps(entry, indent=2)+"\n",
+        content_type='application/json'
+    )
+
+async def handle_get_checksum(request):
+    page_params = get_page_params(request)
+    if isinstance(page_params, web.Response):
+       err = page_params
+       return err
+    page, params = page_params
+    entry = await get_entry(page, params)
+    if isinstance(entry, web.Response):
+       err = entry
+       return err
+    return web.Response(
+        status=200,
+        text=entry["checksum"] + "\n"
+    )
+
+        
+
+
 
 # NOTE: in production, send this to NGINX/Apache instead
 async def handle_static(head, request):
@@ -124,10 +248,11 @@ def main():
     app.add_routes([
         web.get('/machine/page/{fairpage:.*}', handle_machine_fairpage),
         web.get('/machine/find/{checksum:.*}', handle_machine_find),
-        web.get('/machine/download_index/{tail:.*}', partial(handle_static, "download_index")),
+        web.get('/machine/download/{checksum:.*}', handle_machine_download),
         web.get('/machine/deepbuffer/{tail:.*}', partial(handle_static, "deepbuffer")),
         web.get('/machine/keyorder/{tail:.*}', partial(handle_static, "keyorder")),
-        # ....
+        web.get('/machine/get_entry', handle_get_entry),
+        web.get('/machine/get_checksum', handle_get_checksum),
     ])
 
     # Configure default CORS settings.
