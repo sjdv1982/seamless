@@ -76,9 +76,10 @@ parser.add_argument(
     dest="merge_download_index",
     action="store_true",
     help="""Merge download indices with the current latest entry.
-If set, download index (if it exists) will be merged with existing download indices in FAIRSERVER_DIR 
-for the entry that is latest (given the specified format and compression).
-If not, only the existing download index is copied into a new file."""
+If set, download index (if it exists) will be merged with existing download index 
+in FAIRSERVER_DIR for the entry that is latest  (given the specified format 
+and compression).
+If not, a new download index is built."""
 )
 
 parser.add_argument(
@@ -146,20 +147,6 @@ if os.path.exists(entries_file):
 else:
     entries = []
 
-"""
-If exists, load $SDB/download_index/<collection_name>.json 
-and copy into $FD/raw_download_index/<raw download index checksum>.json . 
-"""
-sdb_download_index = os.path.join(SDB, "download_indices", args.collection_name + ".json")
-raw_index = None
-if os.path.exists(sdb_download_index):
-    with open(sdb_download_index, "rb") as f:
-        buf = f.read()
-    checksum = calculate_checksum(buf, hex=True)
-    raw_index = os.path.join(FD, "raw_download_index", checksum)
-    with open(raw_index, "wb") as f:
-        f.write(buf)
-
 # Check that there is no entry with the exact same version and date
 for n, entry in enumerate(entries.copy()):
     if entry["type"] != entry_type:
@@ -174,73 +161,77 @@ for n, entry in enumerate(entries.copy()):
         continue
     err("Entry {} has the exact same version/date".format(n+1))
 
-# Get the latest entry given format and compression
+# Get all compatible entries (same type, format and compression)
+compatible_entries = []
 for entry in entries:
     if entry["type"] != entry_type:
-        continue
-    if not entry.get("latest"):
         continue
     if entry.get("format") != args.format:
         continue
     if entry.get("compression") != args.compression:
+        continue
+    compatible_entries.append(entry)
+
+# Get the latest entry from the compatible entries
+for entry in compatible_entries:
+    if not entry.get("latest"):
         continue
     latest_entry = entry
     break
 else:
     latest_entry = None
 
-# If --merge-download-index, take the list of raw download indices of the latest entry. 
-# Else, take an empty list. Add the raw download index filename to the list. 
+# If exists, load $SDB/download_index/<collection_name>.json as the raw download index
 
-if args.merge_download_index and latest_entry is not None:
-    raw_indices = latest_entry.get("raw_download_indices", []).copy()
-else:
-    raw_indices = []
-if raw_index is not None:
-    new_raw_index = os.path.split(raw_index)[1]
-    if new_raw_index not in raw_indices:
-        raw_indices.append(new_raw_index)
+raw_download_index = None
+raw_download_index_file = os.path.join(SDB, "download_indices", args.collection_name + ".json")
+if os.path.exists(raw_download_index_file):
+    with open(raw_download_index_file, "r") as f:
+        raw_download_index = json.load(f)
 
 """
-If there are any raw download indices, 
-build a single (checksum-keyed) download index file 
-from joining all the indices (latest entry has priority). 
-Load all the keys from any previous entry that points to any of the raw indices,
- and convert them to checksums
-Then, get the checksum for each key in  the index (again, latest entry has priority; skip if key unknown).
-Once the (checksum-keyed) download index has been built, calculate its checksum and store it under 
+If --merge-download-index, update the last download index.
+Else, make a brand new download index.
+
+The download index is built from the raw download index above
+ by converting each of its key to a checksum using the deep buffer
+Once the download index has been built, calculate its checksum and store it under 
  $FD/download_index/<download-index-checksum>
 """
-download_index_checksum = None
-if len(raw_indices):
-    print("Building download index...")
-    merged_raw_indices = {}
-    for raw_index in raw_indices:
-        raw_index_file = os.path.join(FD, "raw_download_index", raw_index)
-        with open(raw_index_file) as f:
-            curr_raw_index = json.load(f)
-        merged_raw_indices.update(curr_raw_index)
-    key_to_checksum = {}
-    for entry in entries:
-        entry_raw_download_indices = entry.get("raw_download_indices", [])
-        keep_entry = any([ind in raw_indices for ind in entry_raw_download_indices])
-        if keep_entry:
-            entry_checksum = entry["checksum"]
-            with open(os.path.join(FD, "deepbuffer", entry_checksum)) as f:
-                entry_deep_buffer = json.load(f)
-                key_to_checksum.update(entry_deep_buffer)
-    key_to_checksum.update(deep_buffer_dict)
+
+if raw_download_index is not None:
     download_index = {}
-    for key, value in merged_raw_indices.items():
-        if key not in key_to_checksum:
+    
+    latest_download_index_checksum = None
+    if args.merge_download_index and latest_entry is not None:
+        latest_download_index_checksum = latest_entry.get("download_index") 
+        if latest_download_index_checksum is not None:
+            latest_download_index_file = os.path.join(FD, "download_index", latest_download_index_checksum)
+            with open(latest_download_index_file) as f:
+                latest_download_index = json.load(f)
+            download_index = latest_download_index
+
+    print("Building download index...")
+    for key, value in raw_download_index.items():
+        if key not in deep_buffer_dict:
+            print("WARNING: unknown key {}".format(key))
             continue
-        checksum = key_to_checksum[key]
+        checksum = deep_buffer_dict[key]
         download_index[checksum] = value
     download_index_buffer = serialize(download_index, "plain")
     download_index_checksum = calculate_checksum(download_index_buffer, hex=True)
     print("Download index checksum: {}".format(download_index_checksum))
     with open(os.path.join(FD, "download_index", download_index_checksum), "wb") as f:
         f.write(download_index_buffer)
+
+    """If --merge-download-index, delete the old download index.
+    Any entries that point to it, will use the new index instead
+    """
+    if latest_download_index_checksum is not None:
+        for entry in compatible_entries:
+            if entry.get("download_index") == latest_download_index_checksum:
+                entry["download_index"] = download_index_checksum
+        os.remove(latest_download_index_file)
 
 """
 Build the keyorder. Take the keyorder from the latest entry as basis.
@@ -293,7 +284,6 @@ new_entry = {
     "content_size": content_size,
     "keyorder": keyorder_checksum,
     "download_index": download_index_checksum,
-    "raw_download_indices": raw_indices,
 }
 
 for key in list(new_entry.keys()):
