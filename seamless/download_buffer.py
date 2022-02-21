@@ -64,7 +64,7 @@ def get_host(url):
 def test_bandwidth(mirror, url, max_time=5):
     t = time.time()
     try:
-        response = session.get(url, stream=True)
+        response = session.get(url, stream=True, timeout=3)
         latency = time.time() - t
         mirror.add_connection_latency(latency)
         downloaded = 0
@@ -125,7 +125,7 @@ def get_buffer_length(checksum, mirrorlist):
     for mirror, url in sort_mirrors_by_latency(mirrorlist):
         t = time.time()
         try:
-            response = session.get(url, stream=True)
+            response = session.get(url, stream=True, timeout=3)
             latency = time.time() - t
             mirror.add_connection_latency(latency)
             #print("LAT", url, latency)
@@ -162,7 +162,7 @@ def download_buffer_sync(checksum, urls):
                 continue
             t = time.time()
             try:
-                session.get(url, stream=True)
+                session.get(url, stream=True, timeout=3)
                 latency = time.time() - t
                 #print("LAT2", url, latency)
                 mirror.add_connection_latency(latency)
@@ -185,9 +185,11 @@ def download_buffer_sync(checksum, urls):
         if mirror.dead:
             continue
         t = time.time()
-        try:
+        try:            
+            response = session.get(url, stream=True, timeout=3)
+            if int(response.status_code/100) in (4,5):
+                raise requests.exceptions.ConnectionError()
             print("Download", url)
-            response = session.get(url, stream=True, )
             latency = time.time() - t
             mirror.add_connection_latency(latency)
             result = []

@@ -82,7 +82,7 @@ async def conversion(
 
     buffer_info = None
     if not fingertip_mode:
-        buffer_info = buffer_cache.get_buffer_info(checksum)
+        buffer_info = buffer_cache.get_buffer_info(checksum, force_length=False)
     conv_chain = make_conversion_chain(celltype, target_celltype)
 
     curr_celltype = celltype  

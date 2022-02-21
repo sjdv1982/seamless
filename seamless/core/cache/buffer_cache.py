@@ -240,12 +240,13 @@ class BufferCache:
             self.missing.discard(checksum)
             local = (not database_sink.active) or (not database_cache.active)
             #print("DESTROY", checksum.hex(), local, checksum in self.buffer_cache)
-            if local:
+            if local and checksum in self.buffer_cache:
                 buffer = self.get_buffer(checksum)
                 if buffer is not None:  # should be ok normally
                     self.cache_buffer(checksum, buffer)
 
     def get_buffer(self, checksum, *, remote=True):
+        from seamless import fair
         if checksum is None:
             return None
         if isinstance(checksum, str):
@@ -264,9 +265,15 @@ class BufferCache:
             buffer = database_cache.get_buffer(checksum)
             if buffer is not None:
                 assert isinstance(buffer, bytes)
+            else:
+                buffer = fair.deepbuffer(checksum)
+                if buffer is not None:
+                    assert isinstance(buffer, bytes)
+                    self.cache_buffer(checksum, buffer)
+
         return buffer
 
-    def get_buffer_info(self, checksum, *, remote=True):
+    def get_buffer_info(self, checksum, *, remote=True, force_length=True):
         if checksum is None:
             return None
         assert isinstance(checksum, bytes)
@@ -282,11 +289,16 @@ class BufferCache:
             buffer_info = database_cache.get_buffer_info(checksum)
             if buffer_info is not None:
                 return buffer_info
-            buf = self.get_buffer(checksum, remote=do_remote)
-            if buf is not None:
-                length = len(buf)
-                self.update_buffer_info(checksum, "length", length, fetch_remote=False)
-                return self.buffer_info[checksum]
+            if force_length:
+                buf = self.get_buffer(checksum, remote=do_remote)
+                if buf is not None:
+                    length = len(buf)
+                    self.update_buffer_info(checksum, "length", length, fetch_remote=False)
+                    buffer_info = self.buffer_info[checksum]
+            if buffer_info is None:                
+                buffer_info = BufferInfo(checksum, {})
+                self.buffer_info[checksum] = buffer_info
+            return buffer_info
 
     def update_buffer_info(self, checksum, attr, value, *, fetch_remote=True, update_remote=True):
         co_flags = {
@@ -304,8 +316,8 @@ class BufferCache:
         }
 
         buffer_info = self.buffer_info.get(checksum)
-        if fetch_remote:            
-            buffer_info_remote = self.get_buffer_info(checksum)
+        if fetch_remote:
+            buffer_info_remote = self.get_buffer_info(checksum, force_length=False)            
             if buffer_info_remote is not None:
                 if buffer_info is None:
                     buffer_info = buffer_info_remote                    
@@ -369,7 +381,7 @@ class BufferCache:
 
         if old_buffer_info != buffer_info:
             database_sink.set_buffer_info(checksum, buffer_info)
-             
+
 
     def buffer_check(self, checksum):
         """For the communion_server..."""
