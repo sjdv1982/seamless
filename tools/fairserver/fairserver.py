@@ -1,3 +1,43 @@
+"""
+Fair server requests:
+Human and machine. For now, just machine.
+If unknown, just return 404.
+The server keeps nothing in memory, content is just served by
+opening files again and again.
+
+1. /machine/page/<name of fairpage>
+- Description
+- Link to web page
+- List of entries. Each entry:
+  - checksum: deep checksum
+  - type: deep cell or dataset
+  - version number (only required if no date)
+  - date (only required if no version number)
+  - format (optional. for example, mmcif for pdb)
+  - compression (optional. Can be gzip, zip, bzip2)
+  - latest: yes or no. For a given format+compression, only one entry can be latest.
+  - index_size: size of the deep buffer itself
+  - nkeys: number of keys
+  - content_size: see above.
+  - keyorder: checksum 
+  - download_index: checksum (if available)
+Response is built dynamically by parsing:
+$FD/page_entries/<page_name>.json and $FD/page_header/<page_name>.cson/.json/.yaml
+2. /machine/find/<checksum>
+   Response:
+   - name of fairpage
+   - fairpage entry (see above)
+3. /machine/deepbuffer/<checksum>
+   Deep buffer (= element index) content. 
+   Dict of element-to-elementchecksum
+4. /machine/download/<element-checksum>
+   List of URLS for that element.
+5. /machine/keyorder/<keyorder checksum>
+   Key order buffer (list of key orders) content.
+6. /machine/get_entry?page=...&version=...&date=...
+   /machine/get_checksum?page=...&version=...&date=...
+"""
+
 from aiohttp import web
 import aiohttp_cors
 import json
