@@ -258,7 +258,10 @@ def translate_connection(node, namespace, ctx):
         if isinstance(source, Outchannel):
             if hash_pattern is not None:
                 hash_pattern = access_hash_pattern(hash_pattern, source.subpath)
-        intermediate = core_cell("mixed", hash_pattern=hash_pattern)
+        if hash_pattern == "##":
+            intermediate = core_cell("bytes")
+        else:
+            intermediate = core_cell("mixed", hash_pattern=hash_pattern)
         setattr(ctx, con_name, intermediate)
         source.connect(intermediate)
         intermediate.connect(target)
