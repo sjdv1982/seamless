@@ -33,6 +33,7 @@ class Expression:
         target_celltype, target_subcelltype,
         *, hash_pattern, target_hash_pattern
     ):
+        assert checksum is None or isinstance(checksum, bytes)
         if hash_pattern is not None:
             assert celltype == "mixed"
         self._hash_pattern = hash_pattern

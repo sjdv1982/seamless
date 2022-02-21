@@ -195,6 +195,11 @@ def convert_from_buffer_info(buffer_info:BufferInfo, celltype:str, target_cellty
 
     self = buffer_info
 
+    if conv == ("checksum", "plain"):
+        if verify_buffer_info(self, "plain"):
+            if self.json_type in ("list", "dict"):
+                return True
+
     if conv in conversion_trivial:
         return True
     elif conv in conversion_forbidden:

@@ -2,11 +2,16 @@ from asyncio import futures
 import urllib.parse
 import requests
 import time
+import gzip
+import bz2
 from concurrent.futures import ThreadPoolExecutor
+
 try:
     from seamless.core.cache.buffer_cache import buffer_cache
+    from seamless.core.convert import try_convert, SeamlessConversionError
 except ImportError:
     buffer_cache = None
+    try_convert = None
 session = requests.Session()
     
 MAX_DOWNLOADS = 10    
@@ -140,9 +145,17 @@ def get_buffer_length(checksum, mirrorlist):
 
     return None
         
-def download_buffer_sync(checksum, urls):
+def download_buffer_sync(checksum, url_infos, celltype="bytes"):
+    def get_url(url_info):
+        if isinstance(url_info, str):
+            url = url_info
+        else:
+            url = url_info["url"]
+        return url
+
     mirrorlist = []
-    for url in urls:
+    for url_info in url_infos:
+        url = get_url(url_info)
         host = get_host(url)        
         if host not in mirrors:
             mirror = Mirror(host)
@@ -151,13 +164,14 @@ def download_buffer_sync(checksum, urls):
             mirror = mirrors[host]
         if mirror.dead:
             continue
-        mirrorlist.append((mirror, url))
+        mirrorlist.append((mirror, url_info))
 
     while len(mirrorlist) > 1:
         buffer_length = get_buffer_length(checksum, mirrorlist)
         #print("BUFFER LENGTH", buffer_length)
         
-        for mirror, url in mirrorlist:
+        for mirror, url_info in mirrorlist:
+            url = get_url(url_info)
             if mirror.connection_latency is not None:
                 continue
             t = time.time()
@@ -169,11 +183,12 @@ def download_buffer_sync(checksum, urls):
             except requests.exceptions.ConnectionError as exc:
                 mirror.add_failure()
 
-        mirrorlist = [(mirror, url) for mirror, url in mirrorlist]
+        mirrorlist = [(mirror, url_info) for mirror, url_info in mirrorlist]
         if len(mirrorlist) <= 1:
             break
         
-        for mirror, url in mirrorlist:
+        for mirror, url_info in mirrorlist:
+            url = get_url(url_info)
             if mirror.bandwidth is None:
                 test_bandwidth(mirror, url)
         
@@ -181,11 +196,26 @@ def download_buffer_sync(checksum, urls):
         
         break  # even if more than one mirror left
 
-    for mirror, url in mirrorlist:
+    for mirror, url_info in mirrorlist:
         if mirror.dead:
             continue
-        t = time.time()
+        url = get_url(url_info)
+        t = time.time()    
         try:            
+            source_celltype = "bytes"
+            decompress = lambda buf: buf
+            if isinstance(url_info, dict):
+                source_celltype = url_info.get("celltype", "bytes")
+                compression = url_info.get("compression")
+                if compression is None:
+                    decompress = lambda buf: buf
+                elif compression == "gzip":
+                    decompress = gzip.decompress
+                elif compression == "bz2":
+                    decompress = bz2.decompress
+                else:
+                    raise ValueError(compression)
+
             response = session.get(url, stream=True, timeout=3)
             if int(response.status_code/100) in (4,5):
                 raise requests.exceptions.ConnectionError()
@@ -200,12 +230,27 @@ def download_buffer_sync(checksum, urls):
             if download_time >= 0:
                 mirror.record_download(len(buf), download_time)
                 #print("BANDWIDTH2", mirror.bandwidth, len(buf), buffer_length)
-            if checksum is not None:
+            buf = decompress(buf)
+            if checksum is not None or source_celltype != celltype:
                 from seamless import calculate_checksum
                 buf_checksum = calculate_checksum(buf, hex=True)
-                if buf_checksum != checksum:
-                    print("WARNING: '{}' has the wrong checksum".format(url))
-                    continue
+            if source_celltype != celltype:
+                assert try_convert is not None
+                conv = try_convert(
+                    bytes.fromhex(buf_checksum), source_celltype, celltype, 
+                    buffer=buf
+                )
+                if conv == True:
+                    pass
+                elif isinstance(conv, bytes):
+                    buf = buffer_cache.get_buffer(conv, remote=False)
+                    assert buf is not None
+                    buf_checksum = conv.hex()
+                else:
+                    raise SeamlessConversionError
+            if checksum is not None and buf_checksum != checksum:
+                print("WARNING: '{}' has the wrong checksum".format(url))
+                continue
             return buf
         except requests.exceptions.ConnectionError as exc:
             mirror.add_failure()    
@@ -215,7 +260,7 @@ def download_buffer_sync(checksum, urls):
 threadpool = None
 _curr_max_downloads = None
 
-async def download_buffer(checksum, urls):
+async def download_buffer(checksum, url_infos, celltype="bytes"):
     global threadpool, _curr_max_downloads
     if threadpool is None:
         new_threadpool = True
@@ -231,7 +276,7 @@ async def download_buffer(checksum, urls):
         threadpool = ThreadPoolExecutor(max_workers=MAX_DOWNLOADS)
         _curr_max_downloads = MAX_DOWNLOADS
     
-    future = threadpool.submit(download_buffer_sync, checksum, urls)
+    future = threadpool.submit(download_buffer_sync, checksum, url_infos, celltype)
     loop = asyncio.get_event_loop()
     future2 = asyncio.wrap_future(future,loop=loop)
     return await future2
@@ -258,27 +303,27 @@ if __name__ == "__main__":
 
     t = time.time()
     print("Start")
-    download_buffer_sync(checksum=checksum1, urls=urls1[:1])
+    download_buffer_sync(checksum=checksum1, url_infos=urls1[:1])
     print(time.time()-t)
     print()
     
     print("Multiple mirrors")
-    download_buffer_sync(checksum=checksum1, urls=urls1)
+    download_buffer_sync(checksum=checksum1, url_infos=urls1)
     print(time.time()-t)
     print()
 
     print("Repeat (all performance tests have been done now)")
-    download_buffer_sync(checksum=checksum1, urls=urls1)
+    download_buffer_sync(checksum=checksum1, url_infos=urls1)
     print(time.time()-t)
     print()
     
     print("Download test with wrong checksum....")
-    download_buffer_sync(checksum="aaaa1515e0a746aa3b8531f1545753e6b2d4cf272632121f1827f21c64a29722", urls=urls1)
+    download_buffer_sync(checksum="aaaa1515e0a746aa3b8531f1545753e6b2d4cf272632121f1827f21c64a29722", url_infos=urls1)
     print(time.time()-t)
     print()
 
     print("Download a bigger file")
-    download_buffer_sync(checksum=checksum2, urls=urls2)
+    download_buffer_sync(checksum=checksum2, url_infos=urls2)
     print(time.time()-t)
     print()
 

@@ -24,34 +24,43 @@ async def inter_deepcell_conversion(manager, value, source_hash_pattern, target_
         result = {}
         for k in value:
             source_checksum = value[k]
+            if source_checksum is not None:
+                assert isinstance(source_checksum, bytes)
             target_checksum = try_convert(source_checksum, "mixed", "bytes")
             if target_checksum is None:
                 raise CacheMissError(target_checksum)
+            assert isinstance(target_checksum, bytes)
             result[k] = target_checksum
     elif source_hash_pattern == {"!": "#"} and target_hash_pattern == {"*": "#"}:
         result = {k:v for k,v in enumerate(value)}
     elif source_hash_pattern == {"!": "#"} and target_hash_pattern == {"*": "##"}:
         result = {}
         for k, source_checksum in enumerate(value):
+            assert isinstance(source_checksum, bytes)
             target_checksum = try_convert(source_checksum, "mixed", "bytes")
             if target_checksum is None:
                 raise CacheMissError(target_checksum)
+            assert isinstance(target_checksum, bytes)
             result[k] = target_checksum
     elif source_hash_pattern == {"*": "##"} and target_hash_pattern == {"*": "#"}:
         result = {}
         for k in value:
             source_checksum = value[k]
+            assert isinstance(source_checksum, bytes)
             target_checksum = try_convert(source_checksum, "bytes", "mixed")
             if target_checksum is None:
                 raise CacheMissError(target_checksum)
+            assert isinstance(target_checksum, bytes)
             result[k] = target_checksum
     elif source_hash_pattern == {"*": "##"} and target_hash_pattern == {"!": "#"}:
         result = []
         for k in sorted(value.keys()):
             source_checksum = value[k]
+            assert isinstance(source_checksum, bytes)
             target_checksum = try_convert(source_checksum, "bytes", "mixed")
             if target_checksum is None:
                 raise CacheMissError(target_checksum)
+            assert isinstance(target_checksum, bytes)
             result.append(target_checksum)
     else:
         result = None
@@ -133,6 +142,9 @@ async def value_conversion(
         manager, target_value, target_celltype
     ).run()
     target_checksum = await CalculateChecksumTask(manager, buffer).run()
+    if target_checksum is None:
+        raise Exception
+    assert isinstance(target_checksum, bytes)    
     buffer_cache.cache_buffer(target_checksum, target_buffer)
     if conv == ("plain", "binary"):
         buffer_cache.update_buffer_info(target_checksum, "shape", target_value.shape, update_remote=False)
@@ -153,6 +165,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
         result_checksum = \
             cachemanager.expression_to_result_checksum.get(expression)
         if result_checksum is not None:
+            assert isinstance(result_checksum, bytes)
             return result_checksum
 
     locknr = await acquire_evaluation_lock(self)
@@ -161,6 +174,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
         result_buffer = None
         result_value = None
         source_checksum = expression.checksum
+        assert isinstance(source_checksum, bytes)
         source_hash_pattern = expression.hash_pattern
         source_celltype = expression.celltype
         source_celltype = celltype_mapping.get(source_celltype, source_celltype)
@@ -212,6 +226,8 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 if subpath_result is not None:
                     assert mode == "checksum"
                 source_checksum = subpath_result
+                if source_checksum is not None:
+                    assert isinstance(source_checksum, bytes)
                 result_hash_pattern = None
                 trivial_path = True
 
@@ -249,6 +265,8 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                         target_celltype, fingertip_mode=fingertip_mode,
                         value_conversion_callback=value_conversion_callback
                     )
+                    if result_checksum is not None:
+                        assert isinstance(result_checksum, bytes), result_checksum
                 done = False  # still need to account for target hash pattern
                 needs_value_conversion = False
             elif trivial_path and hash_pattern_equivalent: #deepcell-to-deepcell
@@ -308,10 +326,15 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                         result_checksum = await CalculateChecksumTask(
                             manager, result_buffer
                         ).run()
+                        if result_checksum is None:
+                            raise Exception
+                        assert isinstance(result_checksum, bytes)
                     done = True
 
             if not done and target_hash_pattern not in (None, "#", "##"):
                 result_checksum = await apply_hash_pattern(result_checksum, target_hash_pattern)
+                if result_checksum is not None:
+                    assert isinstance(result_checksum, bytes)
 
         except asyncio.CancelledError as exc:
             if self._canceled:
@@ -333,6 +356,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
             result_checksum = None
             
         if result_checksum is not None:
+            assert isinstance(result_checksum, bytes)
             if expression.target_subcelltype is not None:
                 # validate subcelltype only if we can get a result buffer without heroics
                 if result_buffer is None:

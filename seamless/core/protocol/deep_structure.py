@@ -6,9 +6,12 @@ from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 
 class DeepStructureError(ValueError):
     def __str__(self):
+        val = str(self.args[1])
+        if len(val) > 300:
+            val = val[:220] + "..." + val[-50:]
         return """
   Invalid deep structure: %s
-  Hash pattern: %s""" % (self.args[1], self.args[0])
+  Hash pattern: %s""" % (val, self.args[0])
 
 def validate_hash_pattern(hash_pattern):
     assert hash_pattern is not None
@@ -216,9 +219,19 @@ def _deep_structure_to_checksums(deep_structure, hash_pattern, checksums, with_r
 
 def deep_structure_to_checksums(deep_structure, hash_pattern, with_raw=False):
     """Collects all checksums that are being referenced in a deep structure"""
+    from seamless import fair
     validate_deep_structure(deep_structure, hash_pattern)
     checksums = set()
     _deep_structure_to_checksums(deep_structure, hash_pattern, checksums, with_raw)
+    if hash_pattern in ({"*": "#"}, {"*": "#"}):
+        classification = "mixed_item"
+    elif hash_pattern in ({"*": "##"}, {"*": "##"}):
+        classification = "bytes_item"
+    else:
+        classification = None
+    if classification is not None:
+        for checksum in checksums:
+            fair.classify(checksum, classification)
     return checksums
 
 def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):

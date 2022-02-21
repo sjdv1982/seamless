@@ -66,6 +66,15 @@ class Cell(SeamlessBase):
         self._paths = WeakSet()
         self._traitlets = []
 
+    @property
+    def _in_structured_cell(self):
+        if self._structured_cell is None:
+            return False
+        if self._structured_cell.schema is self:
+            return False
+        return True
+
+
     def _set_context(self, ctx, name):
         assert self._checksum is None
         has_ctx = self._context is not None

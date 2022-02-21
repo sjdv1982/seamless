@@ -67,7 +67,7 @@ class AccessorUpdateTask(Task):
                 accessor.exception = None
             else:
                 reason = StatusReasonEnum.INVALID
-                accessor.exception = expression.exception
+                accessor.exception = expression.exception                
             manager.cancel_accessor(accessor, void=True, origin_task=self, reason=reason)
 
             target = accessor.write_accessor.target()
@@ -75,6 +75,9 @@ class AccessorUpdateTask(Task):
                 target = target._cell
             if isinstance(target, Cell):
                 livegraph.cell_parsing_exceptions[target] = expression.exception
+                if target._in_structured_cell:
+                    target = target._structured_cell
+                    target._exception = expression.exception
             return
         else:
             accessor.exception = None
@@ -83,6 +86,9 @@ class AccessorUpdateTask(Task):
                 target = target._cell
             if isinstance(target, Cell):
                 livegraph.cell_parsing_exceptions[target] = None
+                if target._in_structured_cell:
+                    target = target._structured_cell
+                    target._exception = None
         accessor._checksum = expression_result_checksum
 
         # Select the write accessor's target.

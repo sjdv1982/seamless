@@ -266,7 +266,7 @@ class BufferCache:
             if buffer is not None:
                 assert isinstance(buffer, bytes)
             else:
-                buffer = fair.deepbuffer(checksum)
+                buffer = fair.get_buffer(checksum)
                 if buffer is not None:
                     assert isinstance(buffer, bytes)
                     self.cache_buffer(checksum, buffer)

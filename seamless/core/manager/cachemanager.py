@@ -207,14 +207,17 @@ class CacheManager:
             self.checksum_refs[checksum].add(item)
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if incref_hash_pattern:
-            deep_buffer = buffer_cache.get_buffer(checksum)
-            deep_buffer_coro_id = new_deep_buffer_coro_id()
-            deep_buffer_coros.append(deep_buffer_coro_id)
-            coro = incref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
-            future = asyncio.ensure_future(coro)
-            done_callback = functools.partial(incref_deep_buffer_done, self, checksum, refholder, authoritative, result)
-            future.add_done_callback(done_callback)
-
+            try:
+                deep_buffer = buffer_cache.get_buffer(checksum)
+                deep_buffer_coro_id = new_deep_buffer_coro_id()
+                deep_buffer_coros.append(deep_buffer_coro_id)
+                coro = incref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
+                future = asyncio.ensure_future(coro)
+                done_callback = functools.partial(incref_deep_buffer_done, self, checksum, refholder, authoritative, result)
+                future.add_done_callback(done_callback)
+            except Exception as exc:
+                print("ERROR in incref'ing deep buffer '{}'".format(checksum.hex()))
+                incref_deep_buffer_done(self, checksum, refholder, authoritative, result, exc)
     async def fingertip(self, checksum, *, must_have_cell=False):
         """Tries to put the checksum's corresponding buffer 'at your fingertips'
         Normally, first reverse provenance (recompute) is tried,
@@ -579,8 +582,13 @@ is result checksum: {}
         self.join_cache[checksum] = result_checksum
         self.rev_join_cache[result_checksum] = join_dict
 
-def incref_deep_buffer_done(cachemanager:CacheManager, checksum, cell, authoritative, result, future):
-    if future.exception() is not None:        
+def incref_deep_buffer_done(cachemanager:CacheManager, checksum, cell, authoritative, result, future_or_exc):
+    if isinstance(future_or_exc, Exception):
+        exc = future_or_exc
+    else:
+        exc = future_or_exc.exception()
+    if exc is not None:        
+        #import traceback; print("".join(traceback.TracebackException.from_exception(exc).format()))
         invalid_deep_buffers.add((checksum, calculate_dict_checksum(cell._hash_pattern)))
         manager = cachemanager.manager()
         # crude, but hard to do otherwise. If this happens, we have encountered a Seamless bug anyway
@@ -588,7 +596,7 @@ def incref_deep_buffer_done(cachemanager:CacheManager, checksum, cell, authorita
             manager.cancel_cell(cell, void=True)
         else:
             sc = cell._structured_cell
-            sc._exception = future.exception()
+            sc._exception = exc
             manager._set_cell_checksum(sc._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
             manager.structured_cell_trigger(sc, void=True)
 
