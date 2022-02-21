@@ -107,7 +107,13 @@ async def conversion(
 
         curr_celltype = next_celltype
 
-    return result
+    if result == True:
+        return checksum
+    elif isinstance(result, bytes):
+        return result
+    else:
+        raise SeamlessConversionError("Checksum cannot be converted")
+
 
 async def value_conversion(checksum, source_celltype, target_celltype):
     """Reference implementation of value conversion
