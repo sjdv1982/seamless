@@ -231,7 +231,7 @@ def deep_structure_to_checksums(deep_structure, hash_pattern, with_raw=False):
         classification = None
     if classification is not None:
         for checksum in checksums:
-            fair.classify(checksum, classification)
+            fair._classify(checksum, classification)
     return checksums
 
 def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):
