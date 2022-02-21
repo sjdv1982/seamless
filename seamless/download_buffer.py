@@ -7,6 +7,7 @@ try:
     from seamless.core.cache.buffer_cache import buffer_cache
 except ImportError:
     buffer_cache = None
+session = requests.Session()
     
 MAX_DOWNLOADS = 10    
 mirrors = {}
@@ -63,7 +64,7 @@ def get_host(url):
 def test_bandwidth(mirror, url, max_time=5):
     t = time.time()
     try:
-        response = requests.get(url, stream=True)
+        response = session.get(url, stream=True)
         latency = time.time() - t
         mirror.add_connection_latency(latency)
         downloaded = 0
@@ -124,7 +125,7 @@ def get_buffer_length(checksum, mirrorlist):
     for mirror, url in sort_mirrors_by_latency(mirrorlist):
         t = time.time()
         try:
-            response = requests.get(url, stream=True)
+            response = session.get(url, stream=True)
             latency = time.time() - t
             mirror.add_connection_latency(latency)
             #print("LAT", url, latency)
@@ -161,7 +162,7 @@ def download_buffer_sync(checksum, urls):
                 continue
             t = time.time()
             try:
-                requests.get(url, stream=True)
+                session.get(url, stream=True)
                 latency = time.time() - t
                 #print("LAT2", url, latency)
                 mirror.add_connection_latency(latency)
@@ -186,7 +187,7 @@ def download_buffer_sync(checksum, urls):
         t = time.time()
         try:
             print("Download", url)
-            response = requests.get(url, stream=True, )
+            response = session.get(url, stream=True, )
             latency = time.time() - t
             mirror.add_connection_latency(latency)
             result = []
@@ -258,7 +259,7 @@ if __name__ == "__main__":
     download_buffer_sync(checksum=checksum1, urls=urls1[:1])
     print(time.time()-t)
     print()
-
+    
     print("Multiple mirrors")
     download_buffer_sync(checksum=checksum1, urls=urls1)
     print(time.time()-t)
