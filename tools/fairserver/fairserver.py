@@ -220,6 +220,11 @@ async def get_entry(page, params):
             text="No entry with the given parameters\n",
         )
     elif len(entries) > 1:
+        # If compression was not specified, and one of the entries has no compression, return it
+        if "compression" not in params:
+            entries2 = [e for e in entries if e.get("compression", None) is None]
+            if len(entries2) == 1:
+                return entries2[0]
         text = "Multiple entries with given parameters:\n\n"
         text += json.dumps(entries, indent=2)
         text += "\n\n({} entries)\n".format(len(entries))
