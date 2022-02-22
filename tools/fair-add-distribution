@@ -72,14 +72,14 @@ may expect a directory containing compressed files.
 )
 
 parser.add_argument(
-    "--merge-download-index",
-    dest="merge_download_index",
+    "--merge-access-index",
+    dest="merge_access_index",
     action="store_true",
-    help="""Merge download indices with the current latest distribution.
-If set, download index (if it exists) will be merged with existing download index 
+    help="""Merge access indices with the current latest distribution.
+If set, access index (if it exists) will be merged with existing access index 
 in FAIRSERVER_DIR for the distribution that is latest  (given the specified format 
 and compression).
-If not, a new download index is built."""
+If not, a new access index is built."""
 )
 
 parser.add_argument(
@@ -239,61 +239,61 @@ print("Key order checksum: {}".format(keyorder_checksum))
 with open(os.path.join(FD, "keyorder", keyorder_checksum), "wb") as f:
     f.write(keyorder_buffer)
 
-# If exists, load $SDB/download_index/<collection_name>.json as the raw download index
+# If exists, load $SDB/download_index/<collection_name>.json as the raw access index
 
-raw_download_index = None
-raw_download_index_file = os.path.join(SDB, "download_indices", args.collection_name + ".json")
-if os.path.exists(raw_download_index_file):
-    with open(raw_download_index_file, "r") as f:
-        raw_download_index = json.load(f)
+raw_access_index = None
+raw_access_index_file = os.path.join(SDB, "download_indices", args.collection_name + ".json")
+if os.path.exists(raw_access_index_file):
+    with open(raw_access_index_file, "r") as f:
+        raw_access_index = json.load(f)
 
 """
-If --merge-download-index, update the last download index.
-Else, make a brand new download index.
+If --merge-access-index, update the last access index.
+Else, make a brand new access index.
 
-The download index is built from the raw download index above
+The access index is built from the raw access index above
  by converting each of its key to a checksum using the deep buffer
-Once the download index has been built, calculate its checksum and store it under 
- $FD/download_index/<download-index-checksum>
+Once the access index has been built, calculate its checksum and store it under 
+ $FD/access_index/<access-index-checksum>
 """
 
-if raw_download_index is not None:
-    download_index = {}
+if raw_access_index is not None:
+    access_index = {}
     
-    latest_download_index_checksum = None
-    if args.merge_download_index and latest_distribution is not None:
-        latest_download_index_checksum = latest_distribution.get("download_index") 
-        if latest_download_index_checksum is not None:
-            latest_download_index_file = os.path.join(FD, "download_index", latest_download_index_checksum)
-            with open(latest_download_index_file) as f:
-                latest_download_index = json.load(f)
-            download_index = latest_download_index
+    latest_access_index_checksum = None
+    if args.merge_access_index and latest_distribution is not None:
+        latest_access_index_checksum = latest_distribution.get("access_index") 
+        if latest_access_index_checksum is not None:
+            latest_access_index_file = os.path.join(FD, "access_index", latest_access_index_checksum)
+            with open(latest_access_index_file) as f:
+                latest_access_index = json.load(f)
+            access_index = latest_access_index
 
-    print("Building download index...")
-    for key, value in raw_download_index.items():
+    print("Building access index...")
+    for key, value in raw_access_index.items():
         if key not in deep_buffer_dict:
             print("WARNING: unknown key {}".format(key))
             continue
         checksum = deep_buffer_dict[key]
-        download_index[checksum] = value
-    download_index_buffer = serialize(download_index, "plain")
-    download_index_checksum = calculate_checksum(download_index_buffer, hex=True)
-    print("Download index checksum: {}".format(download_index_checksum))
-    with open(os.path.join(FD, "download_index", download_index_checksum), "wb") as f:
-        f.write(download_index_buffer)
+        access_index[checksum] = value
+    access_index_buffer = serialize(access_index, "plain")
+    access_index_checksum = calculate_checksum(access_index_buffer, hex=True)
+    print("Access index checksum: {}".format(access_index_checksum))
+    with open(os.path.join(FD, "access_index", access_index_checksum), "wb") as f:
+        f.write(access_index_buffer)
 
-    """If --merge-download-index, delete the old download index.
+    """If --merge-access-index, delete the old access index.
     Any distributions that point to it, will use the new index instead
     """
-    if latest_download_index_checksum is not None:
+    if latest_access_index_checksum is not None:
         for distribution in compatible_distributions:
-            if distribution.get("download_index") == latest_download_index_checksum:
-                distribution["download_index"] = download_index_checksum
-        os.remove(latest_download_index_file)
+            if distribution.get("access_index") == latest_access_index_checksum:
+                distribution["access_index"] = access_index_checksum
+        os.remove(latest_access_index_file)
 
 """
 Build the distribution and add it to the previously loaded distributions in
-$FD/dataset_distributions/<dataset_name> . An distribution contains essentially what is served, but in addition it contains the list of raw download index files.
+$FD/dataset_distributions/<dataset_name> . An distribution contains essentially what is served, but in addition it contains the list of raw access index files.
 """
 if latest_distribution is not None:
     latest_distribution.pop("latest")
@@ -311,7 +311,7 @@ new_distribution = {
     "index_size": deep_buffer_size,
     "content_size": content_size,
     "keyorder": keyorder_checksum,
-    "download_index": download_index_checksum,
+    "access_index": access_index_checksum,
 }
 
 for key in list(new_distribution.keys()):
