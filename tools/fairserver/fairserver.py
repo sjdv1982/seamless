@@ -21,6 +21,8 @@ opening files again and again.
   - content_size: see above.
   - keyorder: checksum 
   - access_index: checksum (if available)
+    The access_index file is not normally shared by the FAIRserver,
+    but if it can be obtained elsewhere, it can be useful for mass-downloading.
 Response is built dynamically by parsing:
 $FD/dataset_distributions/<dataset_name>.json and $FD/dataset_header/<dataset_name>.cson/.json/.yaml
 2. /machine/find/<checksum>
