@@ -5,37 +5,37 @@ If unknown, just return 404.
 The server keeps nothing in memory, content is just served by
 opening files again and again.
 
-1. /machine/page/<name of fairpage>
+1. /machine/dataset/<name of dataset>
 - Description
 - Link to web page
-- List of entries. Each entry:
+- List of distributions. Each distribution:
   - checksum: deep checksum
-  - type: deep cell or dataset
+  - type: deepcell or deepfolder
   - version number (only required if no date)
   - date (only required if no version number)
   - format (optional. for example, mmcif for pdb)
   - compression (optional. Can be gzip, zip, bzip2)
-  - latest: yes or no. For a given format+compression, only one entry can be latest.
+  - latest: yes or no. For a given format+compression, only one distribution can be latest.
   - index_size: size of the deep buffer itself
   - nkeys: number of keys
   - content_size: see above.
   - keyorder: checksum 
-  - download_index: checksum (if available)
+  - access_index: checksum (if available)
 Response is built dynamically by parsing:
-$FD/page_entries/<page_name>.json and $FD/page_header/<page_name>.cson/.json/.yaml
+$FD/dataset_distributions/<dataset_name>.json and $FD/dataset_header/<dataset_name>.cson/.json/.yaml
 2. /machine/find/<checksum>
    Response:
-   - name of fairpage
-   - fairpage entry (see above)
+   - name of dataset
+   - dataset distribution (see above)
 3. /machine/deepbuffer/<checksum>
    Deep buffer (= element index) content. 
    Dict of element-to-elementchecksum
-4. /machine/download/<element-checksum>
+4. /machine/access/<element-checksum>
    List of URLS for that element.
 5. /machine/keyorder/<keyorder checksum>
    Key order buffer (list of key orders) content.
-6. /machine/get_entry?page=...&version=...&date=...
-   /machine/get_checksum?page=...&version=...&date=...
+6. /machine/get_distribution?dataset=...&version=...&date=...
+   /machine/get_checksum?dataset=...&version=...&date=...
 """
 
 from aiohttp import web
@@ -61,27 +61,25 @@ FD = os.environ.get("FAIRSERVER_DIR")
 if FD is None:
     err("FAIRSERVER_DIR undefined")
 
-async def get_entries(fairpage):
-    filename = os.path.join(FD, "page_entries", fairpage + ".json")
+async def get_distributions(dataset):
+    filename = os.path.join(FD, "dataset_distributions", dataset + ".json")
     async with aiofiles.open(filename, mode='r') as f:
-        entries = await f.read()
-    entries = cson.loads(entries)
-    return entries
+        distributions = await f.read()
+    distributions = cson.loads(distributions)
+    return distributions
 
-async def handle_machine_fairpage(request):
-    fairpage = request.match_info.get('fairpage')
+async def handle_machine_dataset(request):
+    dataset = request.match_info.get('dataset')
     
     try:
-        entries = await get_entries(fairpage)
-        for entry in entries:
-            entry.pop("raw_download_indices", None)
+        distributions = await get_distributions(dataset)
         loaders = {
             "json": cson.loads,
             "cson": cson.loads,
             "yaml": yaml.load
         }
         for ext in loaders.keys():
-            filename = os.path.join(FD, "page_header", fairpage + "." + ext)
+            filename = os.path.join(FD, "dataset_header", dataset + "." + ext)
             if os.path.exists(filename):
                 loader = loaders[ext]
                 async with aiofiles.open(filename, mode='r') as f:
@@ -98,28 +96,28 @@ async def handle_machine_fairpage(request):
             content_type='application/json'
         )
     
-    fairpage_content = header
-    fairpage_content["entries"] = entries
+    dataset_content = header
+    dataset_content["distributions"] = distributions
     return web.Response(
         status=200,
-        body=json.dumps(fairpage_content, indent=2)+"\n",
+        body=json.dumps(dataset_content, indent=2)+"\n",
         content_type='application/json'
     )
 
-# NOTE: in production, you will want to cache the fairpages, 
-# or even cache a checksum-to-entry dict
+# NOTE: in production, you will want to cache the datasets, 
+# or even cache a checksum-to-distribution dict
 async def handle_machine_find(request):
     checksum = request.match_info.get('checksum')
     
     try:
-        fairpages = glob.glob(os.path.join(FD, "page_entries", "*.json"))
-        for filename in fairpages:
-            fairpage = os.path.split(filename)[1].split(".")[0]
+        datasets = glob.glob(os.path.join(FD, "dataset_distributions", "*.json"))
+        for filename in datasets:
+            dataset = os.path.split(filename)[1].split(".")[0]
             async with aiofiles.open(filename, mode='r') as f:
-                entries = await f.read()
-            entries = cson.loads(entries)
-            for entry in entries:
-                if entry["checksum"] == checksum:
+                distributions = await f.read()
+            distributions = cson.loads(distributions)
+            for distribution in distributions:
+                if distribution["checksum"] == checksum:
                     break
             else:
                 continue
@@ -135,8 +133,8 @@ async def handle_machine_find(request):
         )
     
     result = {
-        "fairpage": fairpage,
-        "entry": entry
+        "dataset": dataset,
+        "distribution": distribution
     }
     return web.Response(
         status=200,
@@ -144,23 +142,23 @@ async def handle_machine_find(request):
         content_type='application/json'
     )
 
-_download_index_cache = {}
+_access_index_cache = {}
 # NOTE: in production, maybe empty a cache item after some idle time,
 #  and/or limit to a maximum amount of cache memory...
-async def handle_machine_download(request):
+async def handle_machine_access(request):
     checksum = request.match_info.get('checksum')
     try:
-        download_index_files = glob.glob(os.path.join(FD, "download_index", "*"))
-        for filename in download_index_files:
-            if filename in _download_index_cache:
-                download_index = _download_index_cache[filename]
+        access_index_files = glob.glob(os.path.join(FD, "access_index", "*"))
+        for filename in access_index_files:
+            if filename in _access_index_cache:
+                access_index = _access_index_cache[filename]
             else:
                 async with aiofiles.open(filename) as f:
                     data = await f.read()
-                download_index = json.loads(data)
-                _download_index_cache[filename] = download_index
+                access_index = json.loads(data)
+                _access_index_cache[filename] = access_index
             try:
-                urls = download_index[checksum]
+                urls = access_index[checksum]
                 break
             except KeyError:
                 pass
@@ -179,12 +177,12 @@ async def handle_machine_download(request):
         content_type='application/json'
     )
 
-def get_page_params(request):    
-    page = request.query.get("page")
-    if page is None:
+def get_dataset_params(request):    
+    dataset = request.query.get("dataset")
+    if dataset is None:
         return web.Response(
             status=400,
-            text="parameter 'page' undefined\n",
+            text="parameter 'dataset' undefined\n",
         )
     params = {}
     for param in ("type", "version", "date", "compression", "format"):
@@ -194,14 +192,14 @@ def get_page_params(request):
                 params[param] = None            
             else:
                 params[param] = p    
-    return page, params
+    return dataset, params
 
 
-async def get_entry(page, params):
-    entries = await get_entries(page)
+async def get_distribution(dataset, params):
+    distributions = await get_distributions(dataset)
     version, date = params.get("version"), params.get("date")
     if version is None and date is None:
-        entries = [e for e in entries if e.get("latest")]
+        distributions = [e for e in distributions if e.get("latest")]
         to_filter = ("type", "format", "compression")
     else:
         to_filter = ("type", "version", "date", "format", "compression")
@@ -213,57 +211,57 @@ async def get_entry(page, params):
             default = None
         else:
             default = p      
-        entries = [e for e in entries if e.get(param, default) == p]
-    if len(entries) == 0:
+        distributions = [e for e in distributions if e.get(param, default) == p]
+    if len(distributions) == 0:
         return web.Response(
             status=400,
-            text="No entry with the given parameters\n",
+            text="No distribution with the given parameters\n",
         )
-    elif len(entries) > 1:
-        # If compression was not specified, and one of the entries has no compression, return it
+    elif len(distributions) > 1:
+        # If compression was not specified, and one of the distributions has no compression, return it
         if "compression" not in params:
-            entries2 = [e for e in entries if e.get("compression", None) is None]
-            if len(entries2) == 1:
-                return entries2[0]
-        text = "Multiple entries with given parameters:\n\n"
-        text += json.dumps(entries, indent=2)
-        text += "\n\n({} entries)\n".format(len(entries))
+            distributions2 = [e for e in distributions if e.get("compression", None) is None]
+            if len(distributions2) == 1:
+                return distributions2[0]
+        text = "Multiple distributions with given parameters:\n\n"
+        text += json.dumps(distributions, indent=2)
+        text += "\n\n({} distributions)\n".format(len(distributions))
         return web.Response(
             status=300,
             text=text
         )
-    entry = entries[0]
-    return entry
+    distribution = distributions[0]
+    return distribution
 
-async def handle_get_entry(request):
-    page_params = get_page_params(request)
-    if isinstance(page_params, web.Response):
-       err = page_params
+async def handle_get_distribution(request):
+    dataset_params = get_dataset_params(request)
+    if isinstance(dataset_params, web.Response):
+       err = dataset_params
        return err
-    page, params = page_params
-    entry = await get_entry(page, params)
-    if isinstance(entry, web.Response):
-       err = entry
+    dataset, params = dataset_params
+    distribution = await get_distribution(dataset, params)
+    if isinstance(distribution, web.Response):
+       err = distribution
        return err
     return web.Response(
         status=200,
-        body=json.dumps(entry, indent=2)+"\n",
+        body=json.dumps(distribution, indent=2)+"\n",
         content_type='application/json'
     )
 
 async def handle_get_checksum(request):
-    page_params = get_page_params(request)
-    if isinstance(page_params, web.Response):
-       err = page_params
+    dataset_params = get_dataset_params(request)
+    if isinstance(dataset_params, web.Response):
+       err = dataset_params
        return err
-    page, params = page_params
-    entry = await get_entry(page, params)
-    if isinstance(entry, web.Response):
-       err = entry
+    dataset, params = dataset_params
+    distribution = await get_distribution(dataset, params)
+    if isinstance(distribution, web.Response):
+       err = distribution
        return err
     return web.Response(
         status=200,
-        text=entry["checksum"] + "\n"
+        text=distribution["checksum"] + "\n"
     )
 
         
@@ -291,12 +289,12 @@ def main():
         client_max_size=1024**3,
     )
     app.add_routes([
-        web.get('/machine/page/{fairpage:.*}', handle_machine_fairpage),
+        web.get('/machine/dataset/{dataset:.*}', handle_machine_dataset),
         web.get('/machine/find/{checksum:.*}', handle_machine_find),
-        web.get('/machine/download/{checksum:.*}', handle_machine_download),
+        web.get('/machine/access/{checksum:.*}', handle_machine_access),
         web.get('/machine/deepbuffer/{tail:.*}', partial(handle_static, "deepbuffer")),
         web.get('/machine/keyorder/{tail:.*}', partial(handle_static, "keyorder")),
-        web.get('/machine/get_entry', handle_get_entry),
+        web.get('/machine/get_distribution', handle_get_distribution),
         web.get('/machine/get_checksum', handle_get_checksum),
     ])
 

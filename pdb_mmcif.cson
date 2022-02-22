@@ -27,7 +27,7 @@
 
         # Possible actions: 
         #   intern_collection, transform_collection, copy_collection
-        #   build_download_index, dataset, deepcell
+        #   build_download_index, deepfolder, deepcell
 
         # NOTE: re-running an action after a change does NOT always clean up
         # old files.
@@ -66,7 +66,7 @@
 
             # NOTE: this action is only necessary if the goal is to serve directly 
             #  the contents of the directory, as buffers to Seamless
-            #  If we only aim to define datasets, deepcells and download indices,
+            #  If we only aim to define deepfolders, deepcells and download indices,
             #   and consumers have to then obtain the underlying content buffers 
             #   by themselves, this action can be skipped.
 
@@ -82,18 +82,18 @@
         }
         {
             # Builds a <source file name>-to-<checksum> dict,
-            #  that is a Dataset deep structure (dict-of-bytes-checksums)
+            #  that is a Deepfolder deep structure (dict-of-bytes-checksums)
 
             # Serialize this deep structure and write the buffer to 
-            #  $SDB/datasets/pdb_mmcif_zip.json  (the directory collection)
+            #  $SDB/deepfolders/pdb_mmcif_zip.json  (the directory collection)
             #  (with Seamless conventions to write JSON)
             # Calculate the deep structure checksum, and create a hardlink to the buffer in:
             #   $SDB/buffers/<deep checksum>
         
-            "action": "dataset"
+            "action": "deepfolder"
 
             # Write the deep checksum under the key "pdb_mmcif_zip" (the directory collection)
-            #  into $SDB/datasets.json
+            #  into $SDB/deepfolders.json
             #
             # The target collection can be the directory (requires cross_device=False) 
             #  or a collection created with copy_collection.
@@ -191,19 +191,19 @@
             ]
         }
         {
-            # See above for an explanation of the "dataset" action.
-            # Here, we will build a dataset for the unzipped files            
+            # See above for an explanation of the "deepfolder" action.
+            # Here, we will build a deepfolder for the unzipped files            
 
             # Here, we operate on a copied collection
             #  (transform_collection without copy_collection won't do; we need source_file entries)
             #  Checksums are then obtained for each source file from $SDB/collections/pdb_mmcif_unzip.csv 
 
-            "action": "dataset"
+            "action": "deepfolder"
 
             "source_collection": "pdb_mmcif_unzip"
 
                 
-            # Add the deep checksum under the key "pdb_mmcif_unzip" to $SDB/datasets.json
+            # Add the deep checksum under the key "pdb_mmcif_unzip" to $SDB/deepfolders.json
             # Under the same key, store a link to the directory path, which is 
             # $SDB/files/pdb_mmcif_unzip/
         }
@@ -229,9 +229,9 @@
         }        
 
         {
-            # See above for an explanation of the "dataset" action.
+            # See above for an explanation of the "deepfolder" action.
 
-            "action": "dataset"
+            "action": "deepfolder"
 
             "source_collection": "pdb_mmcif_unzip_flat"
         }
@@ -324,7 +324,7 @@
             "target_key": "{0}"
 
             # Add the deep checksum under the key "pdb_mmcif_unzip_deepcell" to $SDB/deepcells.json
-            # Unlike datasets, deep cells have no directory path
+            # Unlike deepfolders, deep cells have no directory path
         }
         
         {

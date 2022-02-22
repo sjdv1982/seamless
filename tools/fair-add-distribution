@@ -30,43 +30,43 @@ if FD is None:
     err("FAIRSERVER_DIR undefined")
 
 import argparse
-parser = argparse.ArgumentParser(description="""Adds an entry to a FAIR page.
-The entry refers to deepcell/dataset collection as it currently is in the database,
+parser = argparse.ArgumentParser(description="""Adds an distribution to a FAIR dataset.
+The distribution refers to deepcell/deepfolder collection as it currently is in the database,
 tagging it with a version or date.
 """)
 
 parser.add_argument(
-    "page_name",
-    help="Name of the FAIR page"
+    "dataset_name",
+    help="Name of the FAIR dataset"
 )
 
 parser.add_argument(
     "collection_name",
-    help="Collection name in SEAMLESS_DATABASE_DIR. Must be a deepcell or dataset"
+    help="Collection name in SEAMLESS_DATABASE_DIR. Must be a deepcell or deepfolder"
 )
 
 parser.add_argument(
     "--version",
-    help="Version tag of the added entry. Only requires if there is no date."
+    help="Version tag of the added distribution. Only requires if there is no date."
 )
 
 parser.add_argument(
     "--date",
-    help="Date tag of the added entry. Only requires if there is no version."
+    help="Date tag of the added distribution. Only requires if there is no version."
 )
 
 parser.add_argument(
     "--format",
-    help="""Format tag of the added entry. 
-This is just descriptive, allowing the same dataset to be in the same FAIR page
-with entries for multiple different file formats.
+    help="""Format tag of the added distribution. 
+This is just descriptive, allowing the same deepfolder to be in the same FAIR dataset
+with distributions for multiple different file formats.
 """
 )
 
 parser.add_argument(
     "--compression",
-    help="""Compression that describes the dataset. Can be gzip, zip or bzip.
-Seamless does not automatically decompress such datasets, but command line tools
+    help="""Compression that describes the deepfolder. Can be gzip, zip or bzip.
+Seamless does not automatically decompress such deepfolders, but command line tools
 may expect a directory containing compressed files.
 """
 )
@@ -75,9 +75,9 @@ parser.add_argument(
     "--merge-download-index",
     dest="merge_download_index",
     action="store_true",
-    help="""Merge download indices with the current latest entry.
+    help="""Merge download indices with the current latest distribution.
 If set, download index (if it exists) will be merged with existing download index 
-in FAIRSERVER_DIR for the entry that is latest  (given the specified format 
+in FAIRSERVER_DIR for the distribution that is latest  (given the specified format 
 and compression).
 If not, a new download index is built."""
 )
@@ -86,8 +86,8 @@ parser.add_argument(
     "--no-latest",
     dest="no_latest",
     action="store_true",
-    help="""Do not mark the added entry as "latest". 
-The latest entry is what is returned to a FAIRserver request that
+    help="""Do not mark the added distribution as "latest". 
+The latest distribution is what is returned to a FAIRserver request that
 does not explicitly describe version or date."""
 )
 
@@ -99,9 +99,9 @@ if args.compression not in (None, "gzip", "zip", "bzip"):
     err("If defined, compression must be gzip, zip or bzip")
 
 deep_buffer_file1 = os.path.join(SDB, "deepcells", args.collection_name + ".json")
-deep_buffer_file2 = os.path.join(SDB, "datasets", args.collection_name + ".json")
+deep_buffer_file2 = os.path.join(SDB, "deepfolders", args.collection_name + ".json")
 if not os.path.exists(deep_buffer_file1) and not os.path.exists(deep_buffer_file2):
-    err("""Collection name does not exist or is not a deepcell or dataset.
+    err("""Collection name does not exist or is not a deepcell or deepfolder.
 Neither file exists:
   {}
   {}""".format(deep_buffer_file1, deep_buffer_file2))
@@ -112,21 +112,21 @@ Both files exist:
   {}
   {}""".format(deep_buffer_file1, deep_buffer_file2))
 
-# Get deep buffer from $SDB/<deepcell-or-dataset>/<collection_name>.json. 
+# Get deep buffer from $SDB/<deepcell-or-deepfolder>/<collection_name>.json. 
 # Calculate checksum.
 
 if os.path.exists(deep_buffer_file1):
     deep_buffer_file = deep_buffer_file1
-    entry_type = "deepcell" 
+    distribution_type = "deepcell" 
 else:
     deep_buffer_file = deep_buffer_file2
-    entry_type = "dataset" 
+    distribution_type = "deepfolder" 
 with open(deep_buffer_file, "rb") as f:
     deep_buffer = f.read()
 deep_buffer_size = len(deep_buffer)
 deep_buffer_checksum = calculate_checksum(deep_buffer, hex=True)
 deep_buffer_dict = json.loads(deep_buffer.decode())
-entry_nkeys = len(deep_buffer_dict)
+distribution_nkeys = len(deep_buffer_dict)
 
 # Copy deep buffer into $FD/deepbuffer/<checksum>
 with open(os.path.join(FD, "deepbuffer", deep_buffer_checksum), "wb") as f:
@@ -137,73 +137,73 @@ deepcontent = load_csv(os.path.join(SDB, "deepcontent.csv"))
 content_size = int(deepcontent[deep_buffer_checksum])
 
 
-# If exists, load existing entries from $FD/page_entries/<page_name>
-entries_file = os.path.join(FD, "page_entries", args.page_name + ".json")
-if os.path.exists(entries_file):
-    with open(entries_file) as f:
+# If exists, load existing distributions from $FD/dataset_distributions/<dataset_name>
+distributions_file = os.path.join(FD, "dataset_distributions", args.dataset_name + ".json")
+if os.path.exists(distributions_file):
+    with open(distributions_file) as f:
         # Load with CSON to be more robust towards manual editing
-        entries = cson.load(f)
-        assert isinstance(entries, list)
+        distributions = cson.load(f)
+        assert isinstance(distributions, list)
 else:
-    entries = []
+    distributions = []
 
-# Check that there is no entry with the exact same version and date
-for n, entry in enumerate(entries.copy()):
-    if entry["type"] != entry_type:
+# Check that there is no distribution with the exact same version and date
+for n, distribution in enumerate(distributions.copy()):
+    if distribution["type"] != distribution_type:
         continue
-    if entry.get("format") != args.format:
+    if distribution.get("format") != args.format:
         continue
-    if entry.get("compression") != args.compression:
+    if distribution.get("compression") != args.compression:
         continue
-    if entry.get("version") != args.version:
+    if distribution.get("version") != args.version:
         continue
-    if entry.get("date") != args.date:
+    if distribution.get("date") != args.date:
         continue
-    err("Entry {} has the exact same version/date".format(n+1))
+    err("Distribution {} has the exact same version/date".format(n+1))
 
-# Get all compatible entries (same type, format and compression)
-compatible_entries = []
-for entry in entries:
-    if entry["type"] != entry_type:
+# Get all compatible distributions (same type, format and compression)
+compatible_distributions = []
+for distribution in distributions:
+    if distribution["type"] != distribution_type:
         continue
-    if entry.get("format") != args.format:
+    if distribution.get("format") != args.format:
         continue
-    if entry.get("compression") != args.compression:
+    if distribution.get("compression") != args.compression:
         continue
-    compatible_entries.append(entry)
+    compatible_distributions.append(distribution)
 
-# Get the latest entry from the compatible entries
-for entry in compatible_entries:
-    if not entry.get("latest"):
+# Get the latest distribution from the compatible distributions
+for distribution in compatible_distributions:
+    if not distribution.get("latest"):
         continue
-    latest_entry = entry
+    latest_distribution = distribution
     break
 else:
-    latest_entry = None
+    latest_distribution = None
 
 """
-Build the keyorder. Take the keyorder from the latest entry as basis.
-Then add/delete new keys from the current entry (sorted alphabetically). 
+Build the keyorder. Take the keyorder from the latest distribution as basis.
+Then add/delete new keys from the current distribution (sorted alphabetically). 
 To maximize chunk coherence, fill up deleted keys:
-  - preferably, with a new key from the current entry
-  - else, with an existing key from the latest entry
-Add all remaining new keys from the current entry to the end.
+  - preferably, with a new key from the current distribution
+  - else, with an existing key from the latest distribution
+Add all remaining new keys from the current distribution to the end.
 Convert the keyorder list to Seamless JSON.
 Calculate the checksum of the keyorder buffer and store the buffer in 
 $FD/keyorder/<key order checksum>
 """
 print("Determine key order...")
 latest_keyorder = []
-if latest_entry is not None:
-    latest_keyorder_checksum = latest_entry.get("keyorder")
+if latest_distribution is not None:
+    latest_keyorder_checksum = latest_distribution.get("keyorder")
     if latest_keyorder_checksum is not None:
         with open(os.path.join(FD, "keyorder", latest_keyorder_checksum)) as f:
             latest_keyorder = json.load(f)
     else:
-        latest_entry_checksum = latest_entry["checksum"]
-        with open(os.path.join(FD, "deepbuffer", latest_entry_checksum)) as f:
-            latest_entry_deep_buffer = json.load(f)
-            latest_keyorder = sorted(list(latest_entry_deep_buffer))
+        latest_distribution_checksum = latest_distribution["checksum"]
+        with open(os.path.join(FD, "deepbuffer", latest_distribution_checksum)) as f:
+            latest_distribution_deep_buffer = json.load(f)
+            latest_keyorder = sorted(list(latest_distribution_deep_buffer))
 latest_keyorder_set = set(latest_keyorder)
 
 added_keys = [key for key in sorted(deep_buffer_dict.keys()) if key not in latest_keyorder_set]
@@ -261,8 +261,8 @@ if raw_download_index is not None:
     download_index = {}
     
     latest_download_index_checksum = None
-    if args.merge_download_index and latest_entry is not None:
-        latest_download_index_checksum = latest_entry.get("download_index") 
+    if args.merge_download_index and latest_distribution is not None:
+        latest_download_index_checksum = latest_distribution.get("download_index") 
         if latest_download_index_checksum is not None:
             latest_download_index_file = os.path.join(FD, "download_index", latest_download_index_checksum)
             with open(latest_download_index_file) as f:
@@ -283,40 +283,42 @@ if raw_download_index is not None:
         f.write(download_index_buffer)
 
     """If --merge-download-index, delete the old download index.
-    Any entries that point to it, will use the new index instead
+    Any distributions that point to it, will use the new index instead
     """
     if latest_download_index_checksum is not None:
-        for entry in compatible_entries:
-            if entry.get("download_index") == latest_download_index_checksum:
-                entry["download_index"] = download_index_checksum
+        for distribution in compatible_distributions:
+            if distribution.get("download_index") == latest_download_index_checksum:
+                distribution["download_index"] = download_index_checksum
         os.remove(latest_download_index_file)
 
 """
-Build the entry and add it to the previously loaded entries in
-$FD/page_entries/<page_name> . An entry contains essentially what is served, but in addition it contains the list of raw download index files.
+Build the distribution and add it to the previously loaded distributions in
+$FD/dataset_distributions/<dataset_name> . An distribution contains essentially what is served, but in addition it contains the list of raw download index files.
 """
-if latest_entry is not None:
-    latest_entry.pop("latest")
-new_entry = {
+if latest_distribution is not None:
+    latest_distribution.pop("latest")
+
+# TODO: JSON-LD support (schemas.org)
+new_distribution = {
     "checksum": deep_buffer_checksum,
-    "type": entry_type,
+    "type": distribution_type,
     "version": args.version,
     "date": args.date,
     "format": args.format,
     "compression": args.compression,
     "latest": None if args.no_latest else True,
-    "nkeys": entry_nkeys,
+    "nkeys": distribution_nkeys,
     "index_size": deep_buffer_size,
     "content_size": content_size,
     "keyorder": keyorder_checksum,
     "download_index": download_index_checksum,
 }
 
-for key in list(new_entry.keys()):
-    if not new_entry[key]:
-        new_entry.pop(key)
+for key in list(new_distribution.keys()):
+    if not new_distribution[key]:
+        new_distribution.pop(key)
 
-print(json.dumps(new_entry, indent=2))
-entries.append(new_entry)
-with open(entries_file, "w") as f:
-    json.dump(entries, f, indent=2)
+print(json.dumps(new_distribution, indent=2))
+distributions.append(new_distribution)
+with open(distributions_file, "w") as f:
+    json.dump(distributions, f, indent=2)

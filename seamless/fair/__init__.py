@@ -24,6 +24,8 @@ def _classify(checksum:str, classification: str):
         raise ValueError(classification)
     if isinstance(checksum, bytes):
         checksum = checksum.hex()
+    if len(checksum) != 64:
+        raise ValueError(checksum)
     try:
         bytes.fromhex(checksum)
     except Exception:
@@ -35,6 +37,8 @@ def _download(checksum:str, template, *, checksum_content:bool):
         return None
     if isinstance(checksum, bytes):
         checksum = checksum.hex()
+    if len(checksum) != 64:
+        raise ValueError(checksum)
     try:
         bytes.fromhex(checksum)
     except Exception:
@@ -44,18 +48,20 @@ def _download(checksum:str, template, *, checksum_content:bool):
     checksum2 = checksum if checksum_content else None
     return download_buffer_sync(checksum2, urls)
 
-def page(fairpage:str):
-    request = "/machine/page/{}".format(fairpage)
+def get_dataset(dataset:str):
+    request = "/machine/dataset/{}".format(dataset)
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
-    pagebuffer = download_buffer_sync(None, urls)
-    if pagebuffer is not None:
-        return json.loads(pagebuffer.decode())
+    datasetbuffer = download_buffer_sync(None, urls)
+    if datasetbuffer is not None:
+        return json.loads(datasetbuffer.decode())
 
 def find(checksum:str):
     if checksum is None:
         return None
     if isinstance(checksum, bytes):
         checksum = checksum.hex()
+    if len(checksum) != 64:
+        raise ValueError(checksum)
     try:
         bytes.fromhex(checksum)
     except Exception:
@@ -75,8 +81,8 @@ def deepbuffer(checksum:str):
 def keyorder(checksum:str):
     return _download(checksum, "machine/keyorder/", checksum_content=False)
 
-def download(checksum:str, celltype):
-    url_infos_buf = _download(checksum, "machine/download/", checksum_content=False)
+def access(checksum:str, celltype):
+    url_infos_buf = _download(checksum, "machine/access/", checksum_content=False)
     if url_infos_buf is None:
         return None
     url_infos = json.loads(url_infos_buf.decode())
@@ -87,6 +93,8 @@ def get_buffer(checksum:str):
         return None
     if isinstance(checksum, bytes):
         checksum = checksum.hex()    
+    if len(checksum) != 64:
+        raise ValueError(checksum)
     try:
         bytes.fromhex(checksum)
     except Exception:
@@ -96,14 +104,14 @@ def get_buffer(checksum:str):
             if c == "deepbuffer":
                 return deepbuffer(checksum)
             elif c == "bytes_item":
-                return download(checksum, "bytes")
+                return access(checksum, "bytes")
             elif c == "mixed_item":
-                return download(checksum, "mixed")
+                return access(checksum, "mixed")
             elif c == "keyorder":
                 return keyorder(checksum)
 
 def _validate_params(type:str, version:str, date:str, format:str, compression:str):
-    if type not in (None, "deepcell", "dataset"):
+    if type not in (None, "deepcell", "deepfolder"):
         raise ValueError(type)
     if version is not None and not isinstance(version, (str, int)):
         raise TypeError
@@ -127,26 +135,26 @@ def _validate_params(type:str, version:str, date:str, format:str, compression:st
         params["compression"] = compression
     return params
 
-def get_entry(page:str, *, type:str=None, version:str=None, date:str=None, format:str=None, compression:str=None):
+def get_distribution(dataset:str, *, type:str=None, version:str=None, date:str=None, format:str=None, compression:str=None):
     params = _validate_params(type, version, date, format, compression)
-    params["page"] = page
-    request = "/machine/get_entry"
+    params["dataset"] = dataset
+    request = "/machine/get_distribution"
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
     for url in urls:
         response = session.get(url, timeout=3, params=params)
         if int(response.status_code/100) in (3,4,5):
             raise Exception(response.text)        
         else:
-            entry = response.json()
-            _classify(entry["checksum"], "deepbuffer")
-            keyorder = entry.get("keyorder")
+            distribution = response.json()
+            _classify(distribution["checksum"], "deepbuffer")
+            keyorder = distribution.get("keyorder")
             if keyorder is not None:
                 _classify(keyorder, "keyorder")
-            return entry
+            return distribution
         
-def get_checksum(page:str, *, type:str=None, version:str=None, date:str=None, format:str=None, compression:str=None):
+def get_checksum(dataset:str, *, type:str=None, version:str=None, date:str=None, format:str=None, compression:str=None):
     params = _validate_params(type, version, date, format, compression)
-    params["page"] = page
+    params["dataset"] = dataset
     request = "/machine/get_checksum"
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
     for url in urls:
@@ -154,9 +162,10 @@ def get_checksum(page:str, *, type:str=None, version:str=None, date:str=None, fo
         if int(response.status_code/100) in (3,4,5):
             raise Exception(response.text)        
         else:
-            cs = response.text.strip()
-            assert len(cs) == 64
-            bytes.fromhex(cs)
-            return cs
+            checksum = response.text.strip()
+            if len(checksum) != 64:
+                raise ValueError(checksum)
+            bytes.fromhex(checksum)
+            return checksum
 
-__all__ = ["page", "find", "get_buffer", "deepbuffer", "download", "keyorder", "get_entry", "get_checksum"]
+__all__ = ["get_dataset", "find", "get_buffer", "deepbuffer", "access", "keyorder", "get_distribution", "get_checksum"]

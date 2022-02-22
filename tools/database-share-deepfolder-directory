@@ -14,34 +14,34 @@ if SDB is None:
     err("SEAMLESS_DATABASE_DIR undefined")
 
 import argparse
-parser = argparse.ArgumentParser(description="""Shares a Seamless dataset directory.
+parser = argparse.ArgumentParser(description="""Shares a Seamless deepfolder directory.
 
-Creates $SEAMLESS_DATABASE_DIR/shared-directories/<dataset-checksum> containing 
-a snapshot of the dataset as it is now.
+Creates $SEAMLESS_DATABASE_DIR/shared-directories/<deepfolder-checksum> containing 
+a snapshot of the deepfolder as it is now.
 
 The snapshot is created via hard-links, so it will not take additional disk space.
 
 However, the snapshot is by checksum (i.e. reproducible), therefore subsequent 
-updates to the dataset do not update the shared directory.
+updates to the deepfolder do not update the shared directory.
 
 
 After this operation, the Seamless database server will accept get_directory requests 
-for the given dataset checksum, and return the directory path:
-$SEAMLESS_DATABASE_DIR/shared-directories/<dataset-checksum>  
+for the given deepfolder checksum, and return the directory path:
+$SEAMLESS_DATABASE_DIR/shared-directories/<deepfolder-checksum>  
 
 It is your responsibility to make sure that this directory path is readable 
 (and preferably, not writable) by the Seamless user.
 
-The dataset can be provided as: 
+The deepfolder can be provided as: 
 
 - Collection name (with --collection). 
-  The dataset deep buffer must be present in $SEAMLESS_DATABASE_DIR/datasets/<collection name>.json.
-  The dataset checksum is computed from this buffer. 
+  The deepfolder deep buffer must be present in $SEAMLESS_DATABASE_DIR/deepfolders/<collection name>.json.
+  The deepfolder checksum is computed from this buffer. 
 
-- Dataset checksum (with --checksum). 
-  The dataset deep buffer must be present in $SEAMLESS_DATABASE_DIR/buffers/<dataset checksum>.
-  The dataset deep buffer is parsed and each file name is hardlinked in 
-  $SEAMLESS_DATABASE_DIR/shared-directories/<dataset-checksum> .
+- Deepfolder checksum (with --checksum). 
+  The deepfolder deep buffer must be present in $SEAMLESS_DATABASE_DIR/buffers/<deepfolder checksum>.
+  The deepfolder deep buffer is parsed and each file name is hardlinked in 
+  $SEAMLESS_DATABASE_DIR/shared-directories/<deepfolder-checksum> .
 
 The source of the hardlink is either $SEAMLESS_DATABASE_DIR/buffers/<file checksum>
 or $SEAMLESS_DATABASE_DIR/collections/<collection name>/<file name> . One of them must be present.
@@ -62,8 +62,8 @@ if args.collection is not None and args.checksum is not None:
 
 if args.checksum:
     collection_name = None
-    dataset_checksum = args.checksum
-    filename = os.path.join(SDB, "buffers", dataset_checksum)
+    deepfolder_checksum = args.checksum
+    filename = os.path.join(SDB, "buffers", deepfolder_checksum)
     if not os.path.exists(filename):
         err("'{}' does not exist".format(filename))
     with open(filename) as f:
@@ -76,19 +76,19 @@ if args.checksum:
             err("'{}' is not a valid deep buffer".format(filename))
 else:
     collection_name = args.collection
-    filename = os.path.join(SDB, "datasets", collection_name)  + ".json"
+    filename = os.path.join(SDB, "deepfolders", collection_name)  + ".json"
     if not os.path.exists(filename):
         err("'{}' does not exist".format(filename))
     with open(filename, "rb") as f:
         buf = f.read()
-        dataset_checksum = calculate_checksum(buf, hex=True)
+        deepfolder_checksum = calculate_checksum(buf, hex=True)
         deepdict = json.loads(buf.decode())
-    print("Dataset checksum: {}".format(dataset_checksum))
+    print("Deepfolder checksum: {}".format(deepfolder_checksum))
 
 shared_dir = os.path.join(SDB, "shared-directories")
 if not os.path.exists(shared_dir):
     os.mkdir(shared_dir)
-target_dir = os.path.join(shared_dir, dataset_checksum)
+target_dir = os.path.join(shared_dir, deepfolder_checksum)
 if os.path.exists(target_dir):
     err("'{}' already exists".format(target_dir))
 

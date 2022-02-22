@@ -855,40 +855,40 @@ try:
             report("Write download index to {}".format(download_index_file))
             write_json(download_index, download_index_file)
         
-        elif name == "dataset":
+        elif name == "deepfolder":
             source_collection_name = action.get("source_collection", default_collection_name)
             source_collection = collections[source_collection_name]
-            dataset_dir = get_subdir("datasets")
-            dataset_file = os.path.join(dataset_dir, source_collection_name) + ".json"
-            if os.path.exists(dataset_file):
-                old_dataset = json.load(open(dataset_file))
-                old_dataset_checksum = calculate_checksum(get_plain_buffer(old_dataset), hex=True)
-                old_dataset_inode = str(os.stat(dataset_file).st_ino)
+            deepfolder_dir = get_subdir("deepfolders")
+            deepfolder_file = os.path.join(deepfolder_dir, source_collection_name) + ".json"
+            if os.path.exists(deepfolder_file):
+                old_deepfolder = json.load(open(deepfolder_file))
+                old_deepfolder_checksum = calculate_checksum(get_plain_buffer(old_deepfolder), hex=True)
+                old_deepfolder_inode = str(os.stat(deepfolder_file).st_ino)
             else:
-                old_dataset_checksum = None
-            dataset = {}
+                old_deepfolder_checksum = None
+            deepfolder = {}
             if source_collection.get("default"):
                 for inode in inode_table:
                     checksum, _ = inode_table[inode]
                     entry = inode_to_entry[inode]
-                    dataset[entry] = checksum        
+                    deepfolder[entry] = checksum        
             elif source_collection.get("copied"):
                 collection_dir = get_subdir("collections")
                 result_file = os.path.join(collection_dir, target_collection_name) + ".csv"
                 result = load_csv(result_file)
-                dataset = result
+                deepfolder = result
             else:
-                msg = 'Action "dataset": source collection "{}" must be default or copied'
+                msg = 'Action "deepfolder": source collection "{}" must be default or copied'
                 err(msg.format(source_collection_name))
 
-            dataset_checksum = calculate_checksum(get_plain_buffer(dataset), hex=True)
-            print("Computed dataset for {}: deep buffer checksum {}".format(source_collection_name, dataset_checksum))
-            if old_dataset_checksum is not None and dataset_checksum != old_dataset_checksum:
-                remove_stale_buffer_hardlink(old_dataset_checksum, old_dataset_inode)
-            report("Write dataset deep buffer to {}".format(dataset_file))
-            write_json(dataset, dataset_file)
-            intern_buffer(dataset_checksum, dataset_file, hardlink=True)
-            write_deepcontent(dataset_checksum, dataset)
+            deepfolder_checksum = calculate_checksum(get_plain_buffer(deepfolder), hex=True)
+            print("Computed deepfolder for {}: deep buffer checksum {}".format(source_collection_name, deepfolder_checksum))
+            if old_deepfolder_checksum is not None and deepfolder_checksum != old_deepfolder_checksum:
+                remove_stale_buffer_hardlink(old_deepfolder_checksum, old_deepfolder_inode)
+            report("Write deepfolder deep buffer to {}".format(deepfolder_file))
+            write_json(deepfolder, deepfolder_file)
+            intern_buffer(deepfolder_checksum, deepfolder_file, hardlink=True)
+            write_deepcontent(deepfolder_checksum, deepfolder)
         
         elif name == "deepcell":
             source_collection_name = action.get("source_collection", default_collection_name)
