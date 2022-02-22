@@ -1,7 +1,7 @@
 """
 Fair server requests:
 Human and machine. For now, just machine.
-If unknown, just return 404.
+If unknown, just return 400.
 The server keeps nothing in memory, content is just served by
 opening files again and again.
 
@@ -15,7 +15,7 @@ opening files again and again.
   - date (only required if no version number)
   - format (optional. for example, mmcif for pdb)
   - compression (optional. Can be gzip, zip, bzip2)
-  - latest: yes or no. For a given format+compression, only one distribution can be latest.
+  - latest: True, or absent. For a given format+compression, only one distribution can be latest.
   - index_size: size of the deep buffer itself
   - nkeys: number of keys
   - content_size: see above.
@@ -50,8 +50,8 @@ import traceback
 from ruamel.yaml import YAML
 import glob
 from functools import partial
+import copy
 yaml = YAML(typ='safe')
-
 
 PORT=61918 # F-A-I-R
 
@@ -209,14 +209,15 @@ async def get_distribution(dataset, params):
         if param not in params:
             continue
         p = params[param]  # can be None
-        if param in ("compression", "format"):
-            default = None
-        else:
-            default = p      
+        default = None
+        if param == "version" and p == "latest":
+            param = "latest"
+            p = True     
+            default = False
         distributions = [e for e in distributions if e.get(param, default) == p]
     if len(distributions) == 0:
         return web.Response(
-            status=400,
+            status=300,
             text="No distribution with the given parameters\n",
         )
     elif len(distributions) > 1:
@@ -226,7 +227,13 @@ async def get_distribution(dataset, params):
             if len(distributions2) == 1:
                 return distributions2[0]
         text = "Multiple distributions with given parameters:\n\n"
-        text += json.dumps(distributions, indent=2)
+        dist = copy.deepcopy(distributions)
+        attrs = ("type", "date", "format", "compression", "latest")
+        for d in dist:
+            for k in list(d.keys()):
+                if k not in attrs:
+                    d.pop(k)
+        text += json.dumps(dist, indent=2)
         text += "\n\n({} distributions)\n".format(len(distributions))
         return web.Response(
             status=300,
@@ -276,8 +283,8 @@ async def handle_static(head, request):
     filename = os.path.join(FD, head, tail)
     if not os.path.exists(filename):
         return web.Response(
-            status=404,
-            body=json.dumps({'not found': 404}),
+            status=400,
+            body=json.dumps({'not found': 400}),
             content_type='application/json'
         )
     with open(filename, "rb") as f:

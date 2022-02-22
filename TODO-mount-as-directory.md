@@ -2,39 +2,35 @@
 -1. Run a test to determine a reasonable cell budget (step 11)
 UPDATE: see step 11
 0: Fix the fact that you cannot set a deep list from a Numpy array (DeepStructureError).
-====> here
 UPDATE: first do Fairserver plan
-1. Make DeepFolder, Repository, DeepCell, DeepListCell classes.
+====> here
+1. Make DeepFolder, Folder, DeepCell classes.
 They correspond to the following low-level deep cells:
- DeepFolder: hash pattern {"*": "!!"} (dict-of-byte-cells)
- Repository: hash pattern {"*": "!!"} (dict-of-byte-cells)
- DeepCell: hash pattern {"*": "!"} (dict-of-mixed-cells)
- DeepListCell: hash pattern {"*": "!"} (list-of-mixed-cells)
-Make them connectable and translatable like structured cells.
-DeepFolder/Repository only supports outchannels. 
-DeepCell/DeepListCell support also inchannels.
-They are inter-convertible (i.e. connectable) among themselves
+ DeepFolder: hash pattern {"*": "!!"} (deep-dict-of-filenames-as-byte-cells)
+ Folder: normal mixed cell, but mountable to a folder (dict-of-filenames-as-mixed-cells).
+ DeepCell: hash pattern {"*": "!"} (deep-dict-of-mixed-cells)
+ ake them connectable and translatable like structured cells.
+DeepFolder/Folder only supports outchannels, but there is a .set method.
+DeepCell supports also inchannels.
+They are inter-convertible (i.e. connectable) among themselves (Folder/DeepFolder is read-only)
 and also to ordinary structured/simple cells. This is already supported
 by the conversion engine, since the classes get translated as deep cells.
-There will also be transformer pin celltype "deepfolder", "deepcell", "deeplistcell". No celltype repository, as it is converted to a normal mixed cell. Assigning a transformer pin to a DeepFolder, DeepCell, DeepListCell creates a
-pin of that celltype. Assigning it to a Repository creates a "deepfolder" pin in case of a bash transformer, a "mixed" pin otherwise. Pins of "deepfolder", "deepcell", "deeplistcell" are not part of the normal .inp structured cell and 
-are hence not amenable to transformer input schemas.
 NOTE: execution order checksum is a part of DeepFolder/DeepCell as well!
-2. Finish core/mount_directory. Support continuous mount only for Repository and Modules! For those, .mount is *always* to a diretory
-Support load_directory/write_directory only for DeepFolders, Repositories and Modules!
+2. Finish core/mount_directory. Support continuous mount only for Folder and Modules! For those, .mount is *always* to a directory
+Support load_directory/write_directory only for DeepFolders, Folders and Modules!
 Write tests, adapt tests/highlevel/multi-module.py and graphs/multi_module/ accordingly.
 3. Bump __seamless__ version of .seamless files to 0.8.
 Rip mount.as_directory from high-level Cell. Add a loader so that __seamless__ < 0.8 (or None) will interpret
-a Cell("plain") with mount:as_directory as a Repository with .mount.
+a Cell("plain") with mount:as_directory as a Folder with .mount.
 NOTE: especially important for webgen! 
-4. Rip hash patterns from Cell, and adapt examples to use DeepCell, DeepListCell.
+4. Rip hash patterns from Cell, and adapt examples to use DeepCell.
 Write tests.
 NOTE: rip Resource?
 5. 
 - Re-design database.py so that the default YAML normally works well,
 and that there is a subfolder for download pages/buffer info pages
 of named deepfolders.
-- For DeepFolder/DeepCell (not Repository), support loading-by-name.
+- For DeepFolder/DeepCell (not Folder), support loading-by-name.
 This will obtain and then set: checksum, and execution order checksum.
 Name may include version, format (e.g. gzip)
 The RPBS will have a name server that does:
@@ -59,10 +55,27 @@ b. Allow a list-of-allowed-checksums to be stored, by name.
    (list of allowed checksums becomes dropdown menu, restriction is security feature)
    Allow blacklist or whitelist checksum to be stored in DeepCell/DeepFolder
    (Destroys name-of-directory database hit for DeepFolder)
+   Blacklist and whitelists are strictly local to the graph, no FAIR/database involved.
+   Whitelist AND blacklist may be active, which means
+   effective_whitelist = whitelist - blacklist.
 UPDATE2: Seamless database and FAIR server are now distinct, but make
 tools to export contents of the database dir (notably, /downloads,
 /deepfolders, /deepcells, and deep buffers in /buffers) to a FAIR server dir.
-6. Add filename support to transformers, as outlined in https://github.com/sjdv1982/seamless/issues/108. Make bash/docker transformers accept DeepFolder inputs, leading to directory checksum requests.
+UPDATE3: make a PDB test, but rename stdlib.join to stdlib.select
+6. Add filename support to transformers, as outlined in https://github.com/sjdv1982/seamless/issues/108. There will be high-level transformer pin celltype "deepfolder", "deepcell".
+Assigning a transformer pin to a DeepFolder, DeepCell
+creates a pin of that celltype.
+Assigning a transformer input to a Folder creates a "deepfolder" pin in case of a bash transformer
+, a "mixed" pin otherwise. 
+The high-level celltypes "deepfolder", "deepcell" do not exist at the low level.
+Instead, "mixed" pins are created with the correct hash patterns, i.e. receiving the raw deep structure.
+(test this!)
+However, bash transformers will create these pins with "filesystem": {"mode": "directory", "optional": False}. "optional" will be True if connected to a Folder (re-connecting it to a DeepFolder will set it to
+False). This makes sure that Seamless does not try to load/download gigantic datasets in memory and write them to disk by itself.
+Also: use "as_" to select the filename/folder to write to, overruling pin name.
+Pins of "deepfolder", "deepcell" are not part of the normal .inp structured cell and 
+are hence not amenable to transformer input schemas.
+
 Write tests, e.g. a hhblits search where the database path is a DeepFolder
 checksum.
 Adapt Cloudless with Shell deployment + file name rewrite and test if 
@@ -71,7 +84,7 @@ the deepfolder folder name is transferred.
 8. Allow cells in a subcontext to be marked as "input" or "output".
 A subcontext will not translate unless all "inputs" have been connected.
 .status of the subcontext and all its members will reflect this.
-9. Allow "input"/"output" cells and all Transformer pins to have a "scatter" flag. Such cells or pins must be connected from DeepCell/DeepListCell if "mixed", or DeepFolder if "bytes".
+9. Allow "input"/"output" cells and all Transformer pins to have a "scatter" flag. Such cells or pins must be connected from DeepCell if "mixed", or DeepFolder if "bytes".
 Any Subcontext with "scatter" flags get translated via a stdlib.map
 construction. Transformer with "scatter" flags get upgraded to Subcontext. This makes stdlib.map an implicit part of the Seamless high-level language, essentially.
 Alternatively, "input"/"output" cells and transformer pins that are 
