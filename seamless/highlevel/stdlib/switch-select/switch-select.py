@@ -22,13 +22,38 @@ def switch_func(ctx, celltype, selected, options):
     setattr(ctx, selected, selected_output)
     ctx.input.connect(selected_output)
 
-def select_func(ctx, celltype, selected, options):
+def select_func1(ctx, celltype, selected, options):
     assert selected in options, (selected, options)
     ctx.output = cell(celltype)
     selected_input = cell(celltype)
     setattr(ctx, selected, selected_input)
     selected_input.connect(ctx.output)
 
+def select_func2(ctx, celltype, input_hash_pattern, input_value, selected):
+    ctx.output = cell(celltype)
+    if not isinstance(input_value, dict):
+        raise TypeError("input cell must contain a dict")
+
+    if input_hash_pattern == "":
+        input_hash_pattern = None
+
+    if input_hash_pattern is None or input_hash_pattern == "#":
+        ctx.selected_input = cell("mixed")
+    elif input_hash_pattern == "##":
+        ctx.selected_input = cell("bytes")
+    else:
+        raise ValueError(input_hash_pattern)
+    ctx.selected_input.connect(ctx.output)
+
+    selected_input = input_value.get(selected)
+    if selected_input is None:
+        return
+    
+    if input_hash_pattern is None:
+        ctx.selected_input.set(selected_input)
+    else:
+        ctx.selected_input.set_checksum(selected_input)
+    
 def constructor_switch(ctx, libctx, celltype, input, selected, outputs):
     ctx.input = Cell(celltype)
     input.connect(ctx.input)
@@ -85,60 +110,114 @@ def constructor_switch(ctx, libctx, celltype, input, selected, outputs):
         setattr(ctx, output_name, macro_pin)
         outputs[output_name].connect_from(output_cell)
 
-def constructor_select(ctx, libctx, celltype, inputs, selected, output):
+def constructor_select(ctx, libctx, celltype, input, inputs, selected, output):
+    if input is None and inputs is None:
+        raise TypeError("You must define 'input' or 'inputs'")
+    if input is not None and inputs is not None:
+        raise TypeError("You must define 'input' or 'inputs', not both")
     ctx.output = Cell(celltype)
     output.connect_from(ctx.output)
     ctx.selected = Cell("str")
     selected.connect(ctx.selected)
 
-    macro_pins = {
-        "celltype": {
-            "io": "parameter", 
-            "celltype": "str",
-        },
-        "output": {
-            "io": "output", 
-            "celltype": celltype,
-        },
-        "selected": {
-            "io": "parameter", 
-            "celltype": "str",
-        },
-        "options": {
-            "io": "parameter", 
-            "celltype": "plain",
+    # Version 1: a celldict of input cells
+    if inputs is not None: 
+        """
+        Create one macro input pin per cell in the inputs dict
+        This will populate the ctx passed to select_func with input cells
+        that can be connected to
+        """
+        macro1_pins = {
+            "celltype": {
+                "io": "parameter", 
+                "celltype": "str",
+            },
+            "output": {
+                "io": "output", 
+                "celltype": celltype,
+            },
+            "selected": {
+                "io": "parameter", 
+                "celltype": "str",
+            },
+            "options": {
+                "io": "parameter", 
+                "celltype": "plain",
+            }
         }
-    }
 
-    """
-    Create one macro input pin per cell in the inputs dict
-    This will populate the ctx passed to select_func with input cells
-     that can be connected to
-    """
-    options = []
-    for input_name in inputs:
-        assert isinstance(input_name, str), input_name
-        if input_name in macro_pins or input_name == "select_macro":
-            msg = "You cannot select from a cell under the selector '{}'"
-            raise Exception(msg.format(input_name))
-        options.append(input_name)
-        pin = {
-            "io": "input",
-            "celltype": celltype
+        options = []
+        for input_name in inputs:
+            assert isinstance(input_name, str), input_name
+            if input_name in macro1_pins or input_name == "select_macro1":
+                msg = "You cannot select from a cell under the selector '{}'"
+                raise Exception(msg.format(input_name))
+            options.append(input_name)
+            pin = {
+                "io": "input",
+                "celltype": celltype
+            }
+            macro1_pins[input_name] = pin
+        ctx.select_macro1 = Macro(pins=macro1_pins)
+        ctx.select_macro1.code = libctx.select_code1.value
+        ctx.select_macro1.celltype = celltype
+        ctx.select_macro1.selected = ctx.selected
+        ctx.select_macro1.options = options
+
+        for input_name in inputs:
+            input_cell = Cell(celltype)
+            setattr(ctx, input_name, input_cell)
+            setattr(ctx.select_macro1, input_name, input_cell)
+            inputs[input_name].connect(input_cell)
+        
+        ctx.output = ctx.select_macro1.output
+    else:
+        # Version 2: a structured input cell
+        macro2_pins = {
+            "celltype": {
+                "io": "parameter", 
+                "celltype": "str",
+            },
+            "output": {
+                "io": "output", 
+                "celltype": celltype,
+            },
+            "input_hash_pattern": {
+                "io": "parameter", 
+                "celltype": "plain",
+            },
+            "input_value": {
+                "io": "parameter", 
+                "celltype": "plain",
+            },
+            "selected": {
+                "io": "parameter", 
+                "celltype": "str",
+            }
         }
-        macro_pins[input_name] = pin
-    ctx.select_macro = Macro(pins=macro_pins)
-    ctx.select_macro.code = libctx.select_code.value
-    ctx.select_macro.celltype = celltype
-    ctx.select_macro.selected = ctx.selected
-    ctx.select_macro.options = options
 
-    for input_name in inputs:
-        input_cell = Cell(celltype)
-        setattr(ctx, input_name, input_cell)
-        setattr(ctx.select_macro, input_name, input_cell)
-        inputs[input_name].connect(input_cell)
-    ctx.output = ctx.select_macro.output
+        if input.celltype != "structured":
+            raise TypeError("'input' must be a structured cell")
+
+        ctx.select_macro2 = Macro(pins=macro2_pins)
+        ctx.select_macro2.code = libctx.select_code2.value
+        ctx.select_macro2.celltype = celltype
+        ctx.input = Cell()        
+        input.connect(ctx.input)
+        if input.hash_pattern is None:
+            ctx.select_macro2.input_value = ctx.input
+            ctx.select_macro2.input_hash_pattern = ""  # macro params must be defined!
+        else:
+            ctx.input.hash_pattern = input.hash_pattern
+            ctx.input_checksum = Cell("checksum")
+            ctx.input_checksum = ctx.input
+            ctx.input_deep = Cell("plain")
+            ctx.input_deep = ctx.input_checksum
+            ctx.select_macro2.input_value = ctx.input_deep
+            ctx.select_macro2.input_hash_pattern = input.hash_pattern["*"]
+        ctx.select_macro2.selected = ctx.selected
+
+        ctx.output = ctx.select_macro2.output
 
 ctx_switch.switch_code = Cell("code")
 ctx_switch.switch_code = switch_func
@@ -161,8 +240,10 @@ ctx_switch.constructor_params = {
 }
 ctx_switch.compute()
 
-ctx_select.select_code = Cell("code")
-ctx_select.select_code = select_func
+ctx_select.select_code1 = Cell("code")
+ctx_select.select_code1 = select_func1
+ctx_select.select_code2 = Cell("code")
+ctx_select.select_code2 = select_func2
 ctx_select.constructor_code = Cell("code")
 ctx_select.constructor_code = constructor_select
 ctx_select.constructor_params = {
@@ -177,7 +258,13 @@ ctx_select.constructor_params = {
     },
     "inputs": {
         "type": "celldict",
-        "io": "input"
+        "io": "input",
+        "must_be_defined": False,
+    },
+    "input": {
+        "type": "cell",
+        "io": "input",
+        "must_be_defined": False,
     },
 }
 ctx_select.compute()
@@ -295,8 +382,52 @@ print()
 if ctx2.output.value is None:
     sys.exit()
 
+del ctx2.select
+ctx2.translate()
+ctx2.output = None
+
+ctx2.r = Cell()
+ctx2.r["path1!"] = ctx2.r1
+ctx2.r["path2!"] = ctx2.r2
+ctx2.r["path3!"] = ctx2.r3
+ctx2.compute()
+
+ctx2.selected2 = Cell("str")
+ctx2.select = ctx2.lib.select(
+    celltype="float",
+    input=ctx2.r,
+    selected=ctx2.selected2,
+    output=ctx2.output,
+)
+ctx2.compute()
+ctx2.selected2 = "path3!"
+print(ctx2._needs_translation)
+ctx2.compute()
+print(ctx2.output.value)
+
+ctx2.selected = "path1"
+ctx2.selected2 = "path1!"
+print(ctx2._needs_translation)
+ctx2.compute()
+print(ctx2.output.value)
+print()
+
+ctx2.r.hash_pattern = {"*": "#"}
+ctx2.compute()
+print(ctx2.output.value)
+ctx2.selected = "path2"
+ctx2.selected2 = "path2!"
+print(ctx2._needs_translation)
+ctx2.compute()
+print(ctx2.output.value)
+print()
+
+if ctx2.output.value is None:
+    sys.exit()
+
 # 5: Save graph and zip
 
+print("Save graph and zip")
 import os, json
 currdir=os.path.dirname(os.path.abspath(__file__))
 graph_switch_filename=os.path.join(currdir,"../switch.seamless")

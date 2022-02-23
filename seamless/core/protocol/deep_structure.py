@@ -230,7 +230,11 @@ def deep_structure_to_checksums(deep_structure, hash_pattern, with_raw=False):
     else:
         classification = None
     if classification is not None:
-        for checksum in checksums:
+        for checksum0 in checksums:
+            if with_raw:
+                checksum, _  = checksum0
+            else:
+                checksum = checksum0
             fair._classify(checksum, classification)
     return checksums
 
@@ -374,6 +378,8 @@ def deep_structure_to_value_sync(deep_structure, hash_pattern, buffer_dict, copy
     return _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy)
 
 def _build_deep_structure(hash_pattern, d, c):
+    if d is None:
+        return None
     if hash_pattern in ("#", "##"):
         obj_id = d
         checksum = c[obj_id]

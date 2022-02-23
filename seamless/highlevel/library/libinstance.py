@@ -3,8 +3,6 @@ import weakref, json
 import functools
 from copy import deepcopy
 
-from traitlets.traitlets import Instance
-
 highlevel_names = ("Context", "Cell", "Transformer", "Macro", "Module")
 
 def interpret_arguments(arguments, params, parent, extra_nodes):
@@ -47,37 +45,47 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
                     raise ValueError("%s must be defined" % argname)
             
         elif par["type"] == "context":
-            path = argvalue
-            if isinstance(path, list):
-                path = tuple(path)
-            value = parent._children.get(path)
-            if value is not None:
-                msg = "'%s' must be Context, not '%s'"
-                raise TypeError(msg % (argname, type(value)))
-            value = SubContext(parent, path).get_graph()
+            if argvalue is None:
+                if not (par.get("must_be_defined") == False):
+                    raise ValueError("%s must be defined" % argname)
+                value = None
+            else:
+                path = argvalue
+                if isinstance(path, list):
+                    path = tuple(path)
+                value = parent._children.get(path)
+                if value is not None:
+                    msg = "'%s' must be Context, not '%s'"
+                    raise TypeError(msg % (argname, type(value)))
+                value = SubContext(parent, path).get_graph()
 
         elif par["type"] == "celldict":
-            value = {}
-            for k,v in argvalue.items():
-                if isinstance(v, list):
-                    v = tuple(v)
-                vv = None
-                if v is not None:
-                    vv = parent._children.get(v)
-                    if vv is not None:
-                        if isinstance(vv, SubCell) or not isinstance(vv, Cell):
-                            msg = "%s['%s'] must be Cell, not '%s'"
-                            raise TypeError(msg % (argname, k, type(vv)))
-                        vv = vv._get_hcell(), v
-                    if vv is None and extra_nodes is not None:
-                        vv_node = extra_nodes.get(v) 
-                        if vv_node is not None:
-                            vv = vv_node, v
-                if vv is None:
+            if argvalue is None:
+                if not (par.get("must_be_defined") == False):
+                    raise ValueError("%s must be defined" % argname)
+                value = None
+            else:
+                value = {}
+                for k,v in argvalue.items():
+                    if isinstance(v, list):
+                        v = tuple(v)
+                    vv = None
                     if v is not None:
-                        raise Exception("Non-existing cell '%s'", v)
+                        vv = parent._children.get(v)
+                        if vv is not None:
+                            if isinstance(vv, SubCell) or not isinstance(vv, Cell):
+                                msg = "%s['%s'] must be Cell, not '%s'"
+                                raise TypeError(msg % (argname, k, type(vv)))
+                            vv = vv._get_hcell(), v
+                        if vv is None and extra_nodes is not None:
+                            vv_node = extra_nodes.get(v) 
+                            if vv_node is not None:
+                                vv = vv_node, v
+                    if vv is None:
+                        if v is not None:
+                            raise Exception("Non-existing cell '%s'", v)
 
-                value[k] = vv
+                    value[k] = vv
 
         elif par["type"] == "kwargs":
             if argvalue is None:
