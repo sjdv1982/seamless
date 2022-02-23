@@ -1,0 +1,31 @@
+Download https://fair.rpbs.univ-paris-diderot.fr/machine/deepbuffer/eb377cf319b5dfa7651f41a09644c0d68934f8a8369998fdd82f003cfd5448f2
+Download http://localhost:61918/machine/deepbuffer/eb377cf319b5dfa7651f41a09644c0d68934f8a8369998fdd82f003cfd5448f2
+Status: OK
+None
+eb377cf319b5dfa7651f41a09644c0d68934f8a8369998fdd82f003cfd5448f2
+
+STAGE 2
+2b0eeeac3bd3ba8d6e67aa262d9d2279dc672607af7a80414df10da1cb4f9cc2
+Download https://fair.rpbs.univ-paris-diderot.fr/machine/access/2b0eeeac3bd3ba8d6e67aa262d9d2279dc672607af7a80414df10da1cb4f9cc2
+Download http://localhost:61918/machine/access/2b0eeeac3bd3ba8d6e67aa262d9d2279dc672607af7a80414df10da1cb4f9cc2
+Download https://www.ebi.ac.uk/pdbe/entry-files/download/1avx.cif
+data_1AVX
+# 
+_entry.id   1AVX 
+# 
+_audit_conform.dict_name       mmcif_pdbx.dic 
+_audit_conform.dict_version    5.281 
+_audit_conform.dict_location   http://mmcif.pdb.org/dictionaries/ascii/mmcif_pdbx
+
+STAGE 3
+e236e5d3967b18b6a23cf16db34164fbf09574f82cf3a905d79fae2da0d84ecc
+Download https://fair.rpbs.univ-paris-diderot.fr/machine/access/e236e5d3967b18b6a23cf16db34164fbf09574f82cf3a905d79fae2da0d84ecc
+Download http://localhost:61918/machine/access/e236e5d3967b18b6a23cf16db34164fbf09574f82cf3a905d79fae2da0d84ecc
+Download https://www.ebi.ac.uk/pdbe/entry-files/download/1eer.cif
+data_1EER
+# 
+_entry.id   1EER 
+# 
+_audit_conform.dict_name       mmcif_pdbx.dic 
+_audit_conform.dict_version    5.351 
+_audit_conform.dict_location   http://mmcif.pdb.org/dictionaries/ascii/mmcif_pdbx

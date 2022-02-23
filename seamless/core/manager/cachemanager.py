@@ -54,21 +54,36 @@ async def decref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative,
         sub_checksums = deep_structure_to_checksums(
             deep_structure, hash_pattern
         )
+        """
+        # too slow...
         for sub_checksum in sub_checksums:
             buffer_cache.decref(bytes.fromhex(sub_checksum))
+        """
+        # instead
+        sub_checksums2 = [bytes.fromhex(cs) for cs in sub_checksums]
+        buffer_cache._decref(sub_checksums2)
     finally:
         deep_buffer_coros.pop(0)
 
 async def incref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
     while deep_buffer_coros[0] != deep_buffer_coro_id:
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(0.01)    
     try:
         deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
         sub_checksums = deep_structure_to_checksums(
             deep_structure, hash_pattern
         )
+        """
+        # too slow...
         for sub_checksum in sub_checksums:
             buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)
+        """
+        # instead:
+        sub_checksums2 = [bytes.fromhex(cs) for cs in sub_checksums]
+        persistent = buffer_cache._is_persistent(authoritative)
+        buffer_cache._incref(sub_checksums2, persistent, None)
+        
+        #invalid_deep_buffers.add((checksum, hash_pattern))
     finally:
         deep_buffer_coros.pop(0)
 
@@ -590,15 +605,16 @@ def incref_deep_buffer_done(cachemanager:CacheManager, checksum, cell, authorita
     if exc is not None:        
         #import traceback; print("".join(traceback.TracebackException.from_exception(exc).format()))
         invalid_deep_buffers.add((checksum, calculate_dict_checksum(cell._hash_pattern)))
-        manager = cachemanager.manager()
-        # crude, but hard to do otherwise. If this happens, we have encountered a Seamless bug anyway
-        if cell._structured_cell is None or cell._structured_cell.schema is cell:
-            manager.cancel_cell(cell, void=True)
-        else:
-            sc = cell._structured_cell
-            sc._exception = exc
-            manager._set_cell_checksum(sc._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
-            manager.structured_cell_trigger(sc, void=True)
+        if not isinstance(exc, KeyboardInterrupt):
+            # crude, but hard to do otherwise. If this happens, we have encountered a Seamless bug anyway
+            manager = cachemanager.manager()
+            if cell._structured_cell is None or cell._structured_cell.schema is cell:
+                manager.cancel_cell(cell, void=True)
+            else:
+                sc = cell._structured_cell
+                sc._exception = exc
+                manager._set_cell_checksum(sc._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
+                manager.structured_cell_trigger(sc, void=True)
 
 from ..cell import Cell
 from ..transformer import Transformer

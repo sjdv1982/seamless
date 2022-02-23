@@ -13,19 +13,19 @@ class DeepStructureError(ValueError):
   Invalid deep structure: %s
   Hash pattern: %s""" % (val, self.args[0])
 
+_supported_hash_patterns = "#", {"*": "#"}, {"!": "#"}, "##", {"*": "##"}
 def validate_hash_pattern(hash_pattern):
     assert hash_pattern is not None
     ###  To support complicated hash patterns, code must be changed in other places as well
-    ###  In particular: the Expression class and Accessor update tasks
-    supported_hash_patterns = "#", {"*": "#"}, {"!": "#"}, "##", {"*": "##"}
-    if hash_pattern not in supported_hash_patterns:
+    ###  In particular: the Expression class and Accessor update tasks    
+    if hash_pattern not in _supported_hash_patterns:
         err = """For now, Seamless supports only the following hash patterns:
 
   {}
 
 Hash pattern {} is not supported.
 """
-        sup = "\n  ".join([str(p) for p in supported_hash_patterns])
+        sup = "\n  ".join([str(p) for p in _supported_hash_patterns])
         raise NotImplementedError(err.format(sup, hash_pattern))
     ###
 
@@ -218,7 +218,7 @@ def _deep_structure_to_checksums(deep_structure, hash_pattern, checksums, with_r
                 )
 
 def deep_structure_to_checksums(deep_structure, hash_pattern, with_raw=False):
-    """Collects all checksums that are being referenced in a deep structure"""
+    """Collects all checksums that are being referenced in a deep structure"""    
     from seamless import fair
     validate_deep_structure(deep_structure, hash_pattern)
     checksums = set()
