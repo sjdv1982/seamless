@@ -62,7 +62,7 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
                 if isinstance(v, list):
                     v = tuple(v)
                 vv = None
-                if path is not None:
+                if v is not None:
                     vv = parent._children.get(v)
                     if vv is not None:
                         if isinstance(vv, SubCell) or not isinstance(vv, Cell):

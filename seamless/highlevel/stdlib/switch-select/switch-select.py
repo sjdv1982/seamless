@@ -1,6 +1,6 @@
 """
 Switch: connect an input cell to one output cell, dynamically chosen from a dict
-Join: dynamically connect one input cell, dynamically chosen from a dict, to one output cell
+Select: dynamically connect one input cell, dynamically chosen from a dict, to one output cell
 """
 
 from seamless.highlevel import Context, Cell
@@ -9,7 +9,7 @@ import sys
 # 1: Setup contexts
 
 ctx_switch = Context()
-ctx_join = Context()
+ctx_select = Context()
 """
  Only "parameter" pins end up in the macro code
  However, ctx.input will be connected to
@@ -22,7 +22,7 @@ def switch_func(ctx, celltype, selected, options):
     setattr(ctx, selected, selected_output)
     ctx.input.connect(selected_output)
 
-def join_func(ctx, celltype, selected, options):
+def select_func(ctx, celltype, selected, options):
     assert selected in options, (selected, options)
     ctx.output = cell(celltype)
     selected_input = cell(celltype)
@@ -85,7 +85,7 @@ def constructor_switch(ctx, libctx, celltype, input, selected, outputs):
         setattr(ctx, output_name, macro_pin)
         outputs[output_name].connect_from(output_cell)
 
-def constructor_join(ctx, libctx, celltype, inputs, selected, output):
+def constructor_select(ctx, libctx, celltype, inputs, selected, output):
     ctx.output = Cell(celltype)
     output.connect_from(ctx.output)
     ctx.selected = Cell("str")
@@ -112,14 +112,14 @@ def constructor_join(ctx, libctx, celltype, inputs, selected, output):
 
     """
     Create one macro input pin per cell in the inputs dict
-    This will populate the ctx passed to join_func with input cells
+    This will populate the ctx passed to select_func with input cells
      that can be connected to
     """
     options = []
     for input_name in inputs:
         assert isinstance(input_name, str), input_name
-        if input_name in macro_pins or input_name == "join_macro":
-            msg = "You cannot join from a cell under the selector '{}'"
+        if input_name in macro_pins or input_name == "select_macro":
+            msg = "You cannot select from a cell under the selector '{}'"
             raise Exception(msg.format(input_name))
         options.append(input_name)
         pin = {
@@ -127,18 +127,18 @@ def constructor_join(ctx, libctx, celltype, inputs, selected, output):
             "celltype": celltype
         }
         macro_pins[input_name] = pin
-    ctx.join_macro = Macro(pins=macro_pins)
-    ctx.join_macro.code = libctx.join_code.value
-    ctx.join_macro.celltype = celltype
-    ctx.join_macro.selected = ctx.selected
-    ctx.join_macro.options = options
+    ctx.select_macro = Macro(pins=macro_pins)
+    ctx.select_macro.code = libctx.select_code.value
+    ctx.select_macro.celltype = celltype
+    ctx.select_macro.selected = ctx.selected
+    ctx.select_macro.options = options
 
     for input_name in inputs:
         input_cell = Cell(celltype)
         setattr(ctx, input_name, input_cell)
-        setattr(ctx.join_macro, input_name, input_cell)
+        setattr(ctx.select_macro, input_name, input_cell)
         inputs[input_name].connect(input_cell)
-    ctx.output = ctx.join_macro.output
+    ctx.output = ctx.select_macro.output
 
 ctx_switch.switch_code = Cell("code")
 ctx_switch.switch_code = switch_func
@@ -161,11 +161,11 @@ ctx_switch.constructor_params = {
 }
 ctx_switch.compute()
 
-ctx_join.join_code = Cell("code")
-ctx_join.join_code = join_func
-ctx_join.constructor_code = Cell("code")
-ctx_join.constructor_code = constructor_join
-ctx_join.constructor_params = {
+ctx_select.select_code = Cell("code")
+ctx_select.select_code = select_func
+ctx_select.constructor_code = Cell("code")
+ctx_select.constructor_code = constructor_select
+ctx_select.constructor_params = {
     "celltype": "value",
     "output": {
         "type": "cell",
@@ -180,14 +180,14 @@ ctx_join.constructor_params = {
         "io": "input"
     },
 }
-ctx_join.compute()
+ctx_select.compute()
 
 # 2: obtain graph and zip
 
 graph_switch = ctx_switch.get_graph()
 zip_switch = ctx_switch.get_zip()
-graph_join = ctx_join.get_graph()
-zip_join = ctx_join.get_zip()
+graph_select = ctx_select.get_graph()
+zip_select = ctx_select.get_zip()
 
 # 3: Package the contexts in a library
 
@@ -196,15 +196,15 @@ mylib = LibraryContainer("mylib")
 mylib.switch = ctx_switch
 mylib.switch.constructor = ctx_switch.constructor_code.value
 mylib.switch.params = ctx_switch.constructor_params.value
-mylib.join = ctx_join
-mylib.join.constructor = ctx_join.constructor_code.value
-mylib.join.params = ctx_join.constructor_params.value
+mylib.select = ctx_select
+mylib.select.constructor = ctx_select.constructor_code.value
+mylib.select.params = ctx_select.constructor_params.value
 
 # 4: Run test example
 
 ctx2 = Context()
 ctx2.include(mylib.switch)
-ctx2.include(mylib.join)
+ctx2.include(mylib.select)
 ctx2.a = 10.0
 ctx2.a1 = Cell("float")
 ctx2.a2 = Cell("float")
@@ -255,7 +255,7 @@ ctx2.switch = ctx2.lib.switch(
 )
 ctx2.compute()
 ctx2.output = Cell("float")
-ctx2.join = ctx2.lib.join(
+ctx2.select = ctx2.lib.select(
     celltype="float",
     inputs=rdict,
     selected=ctx2.selected,
@@ -301,12 +301,12 @@ import os, json
 currdir=os.path.dirname(os.path.abspath(__file__))
 graph_switch_filename=os.path.join(currdir,"../switch.seamless")
 json.dump(graph_switch, open(graph_switch_filename, "w"), sort_keys=True, indent=2)
-graph_join_filename=os.path.join(currdir,"../join.seamless")
-json.dump(graph_join, open(graph_join_filename, "w"), sort_keys=True, indent=2)
+graph_select_filename=os.path.join(currdir,"../select.seamless")
+json.dump(graph_select, open(graph_select_filename, "w"), sort_keys=True, indent=2)
 
 zip_switch_filename=os.path.join(currdir,"../switch.zip")
 with open(zip_switch_filename, "bw") as f:
     f.write(zip_switch)
-zip_join_filename=os.path.join(currdir,"../join.zip")
-with open(zip_join_filename, "bw") as f:
-    f.write(zip_join)
+zip_select_filename=os.path.join(currdir,"../select.zip")
+with open(zip_select_filename, "bw") as f:
+    f.write(zip_select)

@@ -1,11 +1,12 @@
 {
+  "__seamless__": "0.7",
   "connections": [],
   "lib": [],
   "nodes": [
     {
       "celltype": "code",
       "checksum": {
-        "value": "6d60ff18a465a9ad8c899d3cd6259f0b63c67c1415111e2db0395d74aeada246"
+        "value": "73ae06d4fe463c7da4d2fcda5f252c7df86233cb8ddbde5d61fa6607cb9cdc8b"
       },
       "datatype": "mixed",
       "language": "python",
@@ -32,12 +33,12 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "52fddca8d60d15107e0147a11168670bda3f21bb7502a740fbd0137ee06885bc"
+        "value": "d998d08cc930a844991450cc7308e2d5cb8b2b1462e9fc8dd6b8622cf2f4da94"
       },
       "datatype": "mixed",
       "language": "python",
       "path": [
-        "join_code"
+        "select_code"
       ],
       "type": "cell"
     }
