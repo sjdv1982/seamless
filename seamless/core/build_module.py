@@ -7,6 +7,7 @@ import tempfile
 import pprint
 import traceback
 from types import ModuleType
+from weakref import WeakKeyDictionary
 from ..calculate_checksum import calculate_dict_checksum
 from ..compiler.locks import locks, locklock
 from ..compiler import compile, complete
@@ -27,10 +28,13 @@ CFFI_VERBOSE = False
 
 from ..pylru import lrucache
 module_cache = lrucache(size=100)
+module_definition_cache = WeakKeyDictionary()
 
 class Package:
     def __init__(self, mapping):
         self.mapping = mapping
+
+bootstrap_package_definition = None
 
 def build_interpreted_module(
     full_module_name, module_definition, module_workspace,
@@ -38,6 +42,7 @@ def build_interpreted_module(
     *, module_debug_mounts
 ):
     from ..ipython import ipython2python, execute as execute_ipython
+    global bootstrap_package_definition
     language = module_definition["language"]
     code = module_definition["code"]
     assert language in ("python", "ipython"), language
@@ -65,11 +70,14 @@ def build_interpreted_module(
         package_name = parent_module_name
         if package_name.endswith(".__init__"):
             package_name = package_name[:-len(".__init__")]
+            module_definition_cache[mod] = bootstrap_package_definition
         else:
             pos = package_name.rfind(".")
             if pos > -1:
                 package_name = package_name[:pos]        
         mod.__package__ = package_name
+    else:
+        bootstrap_package_definition = module_definition
     mod.__path__ = []
     namespace = mod.__dict__
     sysmodules = {}
@@ -107,11 +115,14 @@ def build_interpreted_package(
     *, parent_module_name, module_error_name,
     module_debug_mounts
 ):
+    global bootstrap_package_definition
     assert language == "python", language
     assert "__init__" in package_definition
     if parent_module_name is None:
         parent_module_name = full_module_name
-        module_workspace[full_module_name] = ModuleType(full_module_name)
+        mod = ModuleType(full_module_name)
+        module_workspace[full_module_name] = mod
+        bootstrap_package_definition = package_definition        
     
     p = {}
     mapping = {}
@@ -268,6 +279,8 @@ def build_module(module_definition, module_workspace={}, *,
     ):
     if mtype is None:
         mtype = module_definition["type"]
+    else:
+        assert module_definition.get("type", mtype) == mtype
     assert mtype in ("interpreted", "compiled"), mtype
     json.dumps(module_definition)
     checksum = calculate_dict_checksum(module_definition)
@@ -307,6 +320,8 @@ def build_module(module_definition, module_workspace={}, *,
             )
         if not dependencies:
             module_cache[full_module_name] = mod
+        if parent_module_name is None:
+            module_definition_cache[mod] = module_definition
     return full_module_name, mod
 
 def build_all_modules(
@@ -317,51 +332,53 @@ def build_all_modules(
     module_error_name=None,
     internal_package_name=None    
 ):
-    full_module_names = {}
-    all_modules = list(modules_to_build.keys())
-    while len(modules_to_build):
-        modules_to_build_new = {}
-        for modname, module_def in modules_to_build.items():
-            deps = module_def.get("dependencies", [])
-            for dep in deps:
-                if dep not in module_workspace:
-                    modules_to_build_new[modname] = module_def
-                    break
-            else:
-                modname2 = None
-                if parent_module_name is not None:
-                    modname2 = parent_module_name + "." + modname
-                modname3 = modname
-                if module_error_name is not None:
-                    modname3 = module_error_name + "." + modname
-                modname4 = modname
-                if parent_module_name is not None:
-                    modname4 = modname2
-                mod = build_module(
-                    module_def, module_workspace, 
-                    compilers=compilers, languages=languages,
-                    mtype=mtype, parent_module_name=modname2,
-                    module_error_name=modname3,
-                    module_debug_mounts=module_debug_mounts
-                )
-                assert mod is not None, modname
-                full_module_names[modname] = mod[0]
-                module_workspace[modname4] = mod[1]
-                if internal_package_name is not None:
-                    pos = modname4.find(".")
-                    modname5 = internal_package_name
-                    if pos > -1:
-                        modname5 += modname4[pos:]
-                    module_workspace[modname5] = mod[1]
-        
-        if len(modules_to_build_new) == len(modules_to_build):
-            deps = {}
+    global bootstrap_package_definition
+    try:
+        full_module_names = {}
+        all_modules = list(modules_to_build.keys())
+        while len(modules_to_build):
+            modules_to_build_new = {}
             for modname, module_def in modules_to_build.items():
-                cdeps = module_def.get("dependencies")
-                if cdeps:
-                    deps[modname] = cdeps
-            depstr = pprint.pformat(deps)
-            raise Exception("""Circular or unfulfilled dependencies:
+                deps = module_def.get("dependencies", [])
+                for dep in deps:
+                    if dep not in module_workspace:
+                        modules_to_build_new[modname] = module_def
+                        break
+                else:
+                    modname2 = None
+                    if parent_module_name is not None:
+                        modname2 = parent_module_name + "." + modname
+                    modname3 = modname
+                    if module_error_name is not None:
+                        modname3 = module_error_name + "." + modname
+                    modname4 = modname
+                    if parent_module_name is not None:
+                        modname4 = modname2
+                    mod = build_module(
+                        module_def, module_workspace, 
+                        compilers=compilers, languages=languages,
+                        mtype=mtype, parent_module_name=modname2,
+                        module_error_name=modname3,
+                        module_debug_mounts=module_debug_mounts
+                    )
+                    assert mod is not None, modname
+                    full_module_names[modname] = mod[0]
+                    module_workspace[modname4] = mod[1]
+                    if internal_package_name is not None:
+                        pos = modname4.find(".")
+                        modname5 = internal_package_name
+                        if pos > -1:
+                            modname5 += modname4[pos:]
+                        module_workspace[modname5] = mod[1]
+            
+            if len(modules_to_build_new) == len(modules_to_build):
+                deps = {}
+                for modname, module_def in modules_to_build.items():
+                    cdeps = module_def.get("dependencies")
+                    if cdeps:
+                        deps[modname] = cdeps
+                depstr = pprint.pformat(deps)
+                raise Exception("""Circular or unfulfilled dependencies:
 
 {}
 
@@ -369,6 +386,46 @@ All modules: {}
 """.format(depstr, all_modules))     
             
         
-        modules_to_build = modules_to_build_new
-                
-    return full_module_names
+            modules_to_build = modules_to_build_new
+                    
+        return full_module_names
+    finally:
+        if parent_module_name is None:
+            bootstrap_package_definition = None
+
+def bootstrap():
+    """Returns a module definition for the Python module/package that calls bootstrap()
+    
+If it is a normal file (module) or directory (package), 
+the files are loaded and converted to a Seamless module definition.
+If the Python module/package has been built (or is being built) by Seamless (with build_module),
+the module definition is simply returned.
+"""
+    import inspect, sys, os
+    if bootstrap_package_definition is not None:
+        return bootstrap_package_definition
+    package_namespace = inspect.currentframe().f_back.f_globals
+    package = package_namespace.get("__package__")
+    if package not in (None, "", "transformer", "reactor", "macro"):        
+        mod = sys.modules[package]
+        try:
+            mod.__file__
+        except AttributeError as exc:            
+            if mod in module_definition_cache:
+                return module_definition_cache[mod]
+            else:
+                raise exc from None
+        package_dir = os.path.dirname(os.path.abspath(mod.__file__))
+        return "TODO: LOAD PACKAGE DIR'{}'".format(package_dir)
+    else:
+        try:
+            module_file = package_namespace["__file__"]
+            return "TODO: LOAD MODULE FILE '{}'".format(module_file)
+        except KeyError as exc:
+            name = package_namespace["__name__"]
+            if name in sys.modules:
+                mod = sys.modules[name]
+                if mod in module_definition_cache:
+                    return module_definition_cache[mod]
+            raise exc from None
+    
