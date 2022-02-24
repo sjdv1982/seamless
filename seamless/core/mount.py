@@ -386,9 +386,10 @@ class MountItem:
         self.cell_checksum = checksum
         self.cell_buffer = buffer
         if checksum is None or self.last_checksum != checksum:
-            with self.lock:
-                self._write(buffer, with_none=with_none)
-                self._after_write(checksum)
+            if not (buffer is None and checksum is not None): # local cache miss
+                with self.lock:
+                    self._write(buffer, with_none=with_none)
+                    self._after_write(checksum)
 
     def _after_read(self, checksum, *, mtime=None):
         self.last_checksum = checksum
@@ -614,6 +615,11 @@ class MountManager:
             # KLUDGE
             return
         #assert cell in self.mounts, (cell, hex(id(cell)))
+        if buffer is None and checksum is not None:
+            buffer = cell._get_manager().resolve(checksum)
+            if buffer is None:
+                print("mount.py CACHE MISS", checksum.hex())
+                return
         self.cell_updates.append((cell, checksum, buffer))
 
     def run_once(self):

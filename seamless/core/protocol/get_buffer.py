@@ -87,7 +87,7 @@ async def get_buffer_remote(checksum, remote_peer_id):
         return buffer
 
 
-def get_buffer(checksum):
+def get_buffer(checksum, _done=None):
     """  Gets the buffer from its checksum
 - Check for a local checksum-to-buffer cache hit (synchronous)
 - Else, check database cache
@@ -95,7 +95,10 @@ def get_buffer(checksum):
 - If successful, add the buffer to local and/or database cache (with a tempref or a permanent ref).
 - If all fails, raise CacheMissError
 """
+    from ..convert import try_convert_single
     if checksum is None:
+        return None
+    if _done is not None and checksum in _done:
         return None
     buffer = buffer_cache.get_buffer(checksum)
     if buffer is not None:
@@ -104,6 +107,31 @@ def get_buffer(checksum):
     if transformation is not None:
         buffer = tf_get_buffer(transformation)
         return buffer
+    
+    buffer_info = buffer_cache.get_buffer_info(checksum)
+    if buffer_info is not None:
+        d = buffer_info.as_dict()
+        for k in d:
+            if k.find("2") == -1:
+                continue
+            src, target = k.split("2")
+            if _done is None:
+                _done = set()
+                _done.add(checksum)
+            target_buf = get_buffer(bytes.fromhex(d[k]), _done)
+            if target_buf is not None:
+                try:
+                    try_convert_single(
+                        bytes.fromhex(d[k]),
+                        target, src,
+                        buffer=target_buf,
+                    )
+                except Exception:
+                    pass
+                buffer = buffer_cache.get_buffer(checksum, remote=False)
+                if buffer is not None:
+                    return buffer
+
     raise CacheMissError(checksum.hex())
 
 
