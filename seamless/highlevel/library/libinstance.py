@@ -6,6 +6,7 @@ from copy import deepcopy
 highlevel_names = ("Context", "Cell", "Transformer", "Macro", "Module")
 
 def interpret_arguments(arguments, params, parent, extra_nodes):
+    from .argument import Cell_like
     arguments = arguments.copy()
     result = {}
     for argname in params:
@@ -30,7 +31,7 @@ def interpret_arguments(arguments, params, parent, extra_nodes):
             if path is not None:
                 value = parent._children.get(path)
                 if value is not None:
-                    if isinstance(value, SubCell) or not isinstance(value, Cell):
+                    if isinstance(value, SubCell) or not isinstance(value, Cell_like):
                         msg = "%s must be Cell, not '%s'"
                         raise TypeError(msg % (argname, type(value)))
                     value = value._get_hcell(), path

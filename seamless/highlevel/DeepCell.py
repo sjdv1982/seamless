@@ -13,6 +13,7 @@ from .HelpMixin import HelpMixin
 class DeepCellBase(Base, HelpMixin):
     _node = None
     _virtual_path = None
+    celltype = "structured"
 
     def __init__(self, *, parent=None, path=None):
         assert (parent is None) == (path is None)
@@ -97,10 +98,7 @@ the value may not be.
         if hcell.get("UNTRANSLATED"):
             raise AttributeError
         cell = self._get_cell()
-        if self.hash_pattern is not None:
-            return cell.handle_hash
-        else:
-            return cell.handle_no_inference
+        return cell.handle_hash
 
     @handle.setter
     def handle(self, value):
@@ -338,6 +336,7 @@ Use DeepCell.data instead."""
 
 class DeepCell(DeepCellBase):
     _new_func = get_new_deepcell
+    hash_pattern = {"*": "#"}
 
     def define(self, dataset:str, *, version:str=None, date:str=None, format:str=None, compression:str=None):
         import seamless

@@ -53,6 +53,8 @@ class CellWrapper:
     @property
     def celltype(self):
         hcell = self._node
+        if hcell["type"] == "deepcell":
+            return "structured"
         return hcell["celltype"]
 
     @property
@@ -61,7 +63,7 @@ class CellWrapper:
         mimetype = hcell.get("mimetype")
         if mimetype is not None:
             return mimetype
-        celltype = hcell["celltype"]
+        celltype = self.celltype
         if celltype == "code":
             language = hcell["language"]
             mimetype = language_to_mime(language)
@@ -79,21 +81,23 @@ class CellWrapper:
     @property
     def datatype(self):
         hcell = self._node
-        celltype = hcell["celltype"]
+        celltype = self.celltype
         assert celltype == "structured"
         return hcell["datatype"]
 
     @property
     def language(self):
         hcell = self._node
-        celltype = hcell["celltype"]
+        celltype = self.celltype
         if celltype != "code":
             raise AttributeError
 
     @property
     def hash_pattern(self):
         hcell = self._node
-        celltype = hcell["celltype"]
+        if hcell["type"] == "deepcell":
+            return {"*": "#"}
+        celltype = self.celltype
         assert celltype in ("structured", "mixed")
         return hcell["hash_pattern"]
 

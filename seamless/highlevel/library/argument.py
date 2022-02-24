@@ -2,6 +2,8 @@ import json
 import inspect
 import textwrap
 
+from seamless.highlevel.DeepCell import DeepCell
+
 def _get_value(name, value):
     if callable(value):
         value = inspect.getsource(value)
@@ -11,7 +13,7 @@ def _get_value(name, value):
     return RichValue(value).value
 
 def get_argument_value(name, value):
-    if isinstance(value, Cell):
+    if isinstance(value, Cell_like):
         raise TypeError("'%s' is a value argument, you cannot pass a cell" % name)
     elif isinstance(value, Base):
         raise TypeError("'%s' must be value, not '%s'" % (name, type(value)))
@@ -19,7 +21,7 @@ def get_argument_value(name, value):
 
 def parse_argument(argname, argvalue, parameter, *, parent=None):
     if parent is not None:
-        if isinstance(argvalue, (Cell, Context, SubContext)):
+        if isinstance(argvalue, Cell_like + (Context, SubContext)):
             if argvalue._parent() is not parent:
                 msg = "%s '%s' must belong to the same toplevel Context as the parent"
                 raise TypeError(msg % (type(argvalue).__name__, argname))
@@ -34,8 +36,8 @@ def parse_argument(argname, argvalue, parameter, *, parent=None):
             raise TypeError(msg % (argname, type(argvalue)))
         value = argvalue._path
     elif par["type"] == "cell":
-        if not isinstance(argvalue, Cell):
-            msg = "%s must be Cell, not '%s'"
+        if not isinstance(argvalue, Cell_like):
+            msg = "%s must be Cell-like, not '%s'"
             raise TypeError(msg % (argname, type(argvalue)))
         celltype = par.get("celltype")
         if celltype is not None:
@@ -44,7 +46,7 @@ def parse_argument(argname, argvalue, parameter, *, parent=None):
                 raise TypeError(msg % (argname, celltype, argvalue.celltype))
         value = argvalue._path
     elif par["type"] == "kwargs":
-        if isinstance(argvalue, Cell):
+        if isinstance(argvalue, Cell_like):
             value = ("cell", argvalue._path)
         elif isinstance(argvalue, Base):
             raise TypeError("'%s' must be value or cell, not '%s'" % (argname, type(argvalue)))
@@ -61,8 +63,8 @@ def parse_argument(argname, argvalue, parameter, *, parent=None):
             if not isinstance(k, str):
                 msg = "%s must contain string keys, not '%s'"
                 raise TypeError(msg % (argname, type(k)))
-            if not isinstance(v, Cell):
-                msg = "%s['%s'] must be Cell, not '%s'"
+            if not isinstance(v, Cell_like):
+                msg = "%s['%s'] must be Cell-like, not '%s'"
                 raise TypeError(msg % (argname, k, type(v)))
             if celltype is not None:
                 if v.celltype != celltype:
@@ -80,4 +82,6 @@ def parse_argument(argname, argvalue, parameter, *, parent=None):
 from silk.Silk import RichValue
 from ..Base import Base
 from ..Cell import Cell
+from ..DeepCell import DeepCell
 from ..Context import Context, SubContext
+Cell_like = (Cell, DeepCell)
