@@ -142,7 +142,11 @@ async def load():
             shutil.move(f, dest)
     ctx = Context()
     empty_graph = await ctx._get_graph_async(copy=True)
-    await define_graph(ctx)
+    try:
+        seamless._defining_graph = True
+        await define_graph(ctx)
+    finally:
+        del seamless._defining_graph
     new_graph = await ctx._get_graph_async(copy=True)
     graph_file = "graph/" + PROJNAME + ".seamless"
     ctx.load_vault("vault")

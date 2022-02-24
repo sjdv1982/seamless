@@ -21,7 +21,7 @@ from . import ConstantTypes
 from silk.mixed import MixedBase
 from silk import Silk
 from .Cell import Cell, get_new_cell
-from .DeepCell import DeepCellBase, DeepCell, DeepListCell
+from .DeepCell import DeepCellBase, DeepCell#, DeepListCell
 from .Module import Module, get_new_module
 from .Resource import Resource
 from .pin import PinWrapper
@@ -477,6 +477,8 @@ def assign_to_deep_subcell(cell, attr, value):
                     raise TypeError(type(attr))
                 temp_value = hcell.get("TEMP", {})
             else:
+                raise NotImplementedError
+                """
                 assert isinstance(cell, DeepListCell)
                 if not isinstance(attr, int):
                     raise TypeError(type(attr))
@@ -484,6 +486,7 @@ def assign_to_deep_subcell(cell, attr, value):
                 if isinstance(temp_value, list) and len(temp_value) <= attr:
                     for d in range(len(temp_value), attr+1):
                         temp_value.append(None)
+                """
             temp_value[attr] = value
             hcell["TEMP"] = temp_value
             return

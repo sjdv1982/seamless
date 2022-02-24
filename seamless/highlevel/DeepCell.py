@@ -39,41 +39,60 @@ class DeepCellBase(Base, HelpMixin):
     def checksum(self):
         """Contains the checksum of the cell, as SHA3-256 hash.
 
-        The checksum defines the value of the cell.
-        If the cell is defined, the checksum is available, even if
-        the value may not be.
-        """
+The checksum defines the value of the cell.
+If the cell is defined, the checksum is available, even if
+the value may not be.
+"""
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
-            if "TEMP" in hcell:
-                try:
-                    cell = self._get_cell()
-                    return cell.checksum
-                except Exception:
-                    raise AttributeError("TEMP value with unknown checksum")
-            return hcell.get("checksum")
+            return hcell.get("checksum", {}).get("auth")
         else:
-            try:
-                cell = self._get_cell()
-            except Exception:
-                import traceback; traceback.print_exc()
-                raise
+            cell = self._get_cell()
             return cell.checksum
 
     @checksum.setter
     def checksum(self, checksum):
         """Sets the checksum of the cell, as SHA3-256 hash"""
+        self.set_checksum(checksum)
+    
+    def set_checksum(self, checksum):
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             hcell.pop("TEMP", None)
-            hcell["checksum"] = checksum
+            if hcell.get("checksum") is None:
+                hcell["checksum"] = {}
+            hcell["checksum"]["auth"] = checksum
             return
         cell = self._get_cell()
+        cell.set_auth_checksum(checksum)
+
+    @property
+    def keyorder_checksum(self):
+        """The checksum defining the key order of the deep cell"""
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            return hcell.get("checksum", {}).get("keyorder")
+        else:
+            cell = self._get_keyorder_cell()
+            return cell.checksum
+
+    @keyorder_checksum.setter
+    def keyorder_checksum(self, checksum):
+        """Sets the keyorder checksum, as SHA3-256 hash"""
+        self.set_keyorder_checksum(checksum)
+
+    def set_keyorder_checksum(self, checksum):
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            if hcell.get("checksum") is None:
+                hcell["checksum"] = {}
+            hcell["checksum"]["keyorder"] = checksum
+            return
+        cell = self._get_keyorder_cell()
         cell.set_checksum(checksum)
 
     @property
     def handle(self):
-        assert self.celltype == "structured"
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             raise AttributeError
@@ -121,7 +140,11 @@ class DeepCellBase(Base, HelpMixin):
         from ..core.structured_cell import StructuredCell
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
-            raise NotImplementedError
+            hcell.pop("TEMP", None)
+            if hcell.get("checksum") is None:
+                hcell["checksum"] = {}
+            hcell["checksum"]["auth"] = checksum
+            return
         cell = self._get_cell()
         if isinstance(cell, StructuredCell):
             cell.set_auth_checksum(checksum)
@@ -178,13 +201,28 @@ Use DeepCell.data instead."""
         p = parent._gen_context
         if p is None:
             raise ValueError
-        if len(self._path):
+        pp = self._path[0]
+        p2 = getattr(p, pp)
+        if isinstance(p2, SynthContext) and p2._context is not None:
+            p2 = p2._context()
+        p = p2
+        return self._get_cell_subpath(p, self._path[1:])
+
+    def _get_keyorder_cell(self):
+        parent = self._parent()
+        p = parent._gen_context
+        if p is None:
+            raise ValueError
+        path = self._path
+        if len(self._path) > 1:
             pp = self._path[0]
             p2 = getattr(p, pp)
             if isinstance(p2, SynthContext) and p2._context is not None:
                 p2 = p2._context()
             p = p2
-        return self._get_cell_subpath(p, self._path[1:])
+            path = self._path[1:]
+        path = path[:-1] + [path[-1] + "_KEYORDER"]
+        return self._get_cell_subpath(p, path)
 
     def _get_hcell(self):
         parent = self._parent()
@@ -208,9 +246,6 @@ Use DeepCell.data instead."""
             hcell = self._get_hcell()
         except Exception:
             return
-        if hcell.get("UNTRANSLATED"):
-            print("WARNING: ignored value update for %s, because celltype changed" % self)
-            return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop("value", None)
@@ -225,9 +260,6 @@ Use DeepCell.data instead."""
         try:
             hcell = self._get_hcell()
         except Exception:
-            return
-        if hcell.get("UNTRANSLATED"):
-            print("WARNING: ignored value update for %s, because celltype changed" % self)
             return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
@@ -244,16 +276,13 @@ Use DeepCell.data instead."""
             hcell = self._get_hcell()
         except Exception:
             return
-        if hcell.get("UNTRANSLATED"):
-            print("WARNING: ignored value update for %s, because celltype changed" % self)
-            return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
         hcell["checksum"].pop("buffer", None)
         if checksum is not None:
             hcell["checksum"]["buffer"] = checksum
 
-    def _observe_schema(self, checksum):
+    def _observe_keyorder(self, checksum):
         if self._parent() is None:
             return
         if self._parent()._translating:
@@ -264,9 +293,9 @@ Use DeepCell.data instead."""
             return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
-        hcell["checksum"].pop("schema", None)
+        hcell["checksum"].pop("keyorder", None)
         if checksum is not None:
-            hcell["checksum"]["schema"] = checksum
+            hcell["checksum"]["keyorder"] = checksum
 
     def _set_observers(self):
         from ..core.structured_cell import StructuredCell
@@ -277,8 +306,8 @@ Use DeepCell.data instead."""
             cell.auth._set_observer(self._observe_auth)
         cell._data._set_observer(self._observe_cell)
         cell.buffer._set_observer(self._observe_buffer)
-        if cell.schema is not None:
-            cell.schema._set_observer(self._observe_schema)
+        keyorder_cell = self._get_keyorder_cell()
+        keyorder_cell._set_observer(self._observe_keyorder)
 
     def _get_subcell(self, attr):
         hcell = self._get_hcell()
@@ -310,12 +339,50 @@ Use DeepCell.data instead."""
 class DeepCell(DeepCellBase):
     _new_func = get_new_deepcell
 
+    def define(self, dataset:str, *, version:str=None, date:str=None, format:str=None, compression:str=None):
+        import seamless
+        from seamless.fair import get_distribution
+        if version is None and date is None:
+            version = "latest"
+        if hasattr(seamless, "_defining_graph"):
+            if version == "latest":
+                print("""WARNING: defining a DeepCell from a FAIR data distribution 
+with version "latest".
+You should run this command in Jupyter/IPython and then use ctx.save().
+Putting this code in define_graph is NOT REPRODUCIBLE.""")
+        distribution = get_distribution(
+            dataset, type="deepcell",
+            version=version, date=date, format=format, compression=compression
+        )
+        
+        self.set_checksum(distribution["checksum"])
+        self.set_keyorder_checksum(distribution["keyorder"])
+        hcell = self._get_hcell2()
+        metadata = distribution.copy()
+        metadata.pop("checksum")
+        metadata.pop("keyorder")
+        metadata.pop("latest", None)
+        hcell["metadata"] = metadata
+        
+    @property
+    def blacklist(self):
+        # Similar to transformer.code
+        raise NotImplementedError
+
+    @property
+    def whitelist(self):
+        # Similar to transformer.code
+        raise NotImplementedError
+
     def __getitem__(self, item):
         if isinstance(item, str):
             return self._get_subcell(item)
         else:
             raise TypeError(item)
 
+"""
+# YAGNI for now. 
+# Unsupported by seamless.fair, and have to think of keyorder
 
 def get_new_deeplistcell(path):
     return {
@@ -323,6 +390,7 @@ def get_new_deeplistcell(path):
         "type": "deeplistcell",
         "UNTRANSLATED": True,
     }
+
 
 class DeepListCell(DeepCellBase):
     _new_func = get_new_deeplistcell
@@ -334,6 +402,7 @@ class DeepListCell(DeepCellBase):
             raise NotImplementedError  # TODO: x[min:max] outchannels
         else:
             raise TypeError(item)
+"""
 
 from .synth_context import SynthContext
 from .SubCell import DeepSubCell

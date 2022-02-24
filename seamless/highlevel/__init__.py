@@ -57,7 +57,7 @@ from .Context import Context
 from .Transformer import Transformer
 from .Macro import Macro
 from .Cell import Cell
-from .DeepCell import DeepCell, DeepListCell
+from .DeepCell import DeepCell #, DeepListCell
 from .Module import Module
 from .Link import Link
 from .Resource import Resource
@@ -109,11 +109,11 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
             zip=zip
         )
 
-from . import stdlib
+#from . import stdlib
 
 __all__ = [
     "Context", "Transformer", "Macro",
-    "Cell", "DeepCell", "DeepListCell",
+    "Cell", "DeepCell", #"DeepListCell",
     "Link", "Graph", "StaticContext", "Module",
-    "Resource", "load_graph", "copy", "stdlib"
+    "Resource", "load_graph", "copy", #"stdlib"
 ]

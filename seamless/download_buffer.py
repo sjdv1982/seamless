@@ -5,6 +5,7 @@ import time
 import gzip
 import bz2
 from concurrent.futures import ThreadPoolExecutor
+from requests.exceptions import ConnectionError, ReadTimeout
 
 try:
     from seamless.core.cache.buffer_cache import buffer_cache
@@ -81,12 +82,14 @@ def test_bandwidth(mirror, url, max_time=5):
         if download_time >= 0:
             #print("REC", mirror.host, downloaded, download_time)
             mirror.record_download(downloaded, download_time)
-    except requests.exceptions.ConnectionError as exc:
+    except (ConnectionError, ReadTimeout):
+        #import traceback; traceback.print_exc()
         mirror.add_failure()    
 
 def sort_mirrors_by_latency(mirrorlist):
     result = []
-    for mirror, url in mirrorlist:
+    for mirror, url_info in mirrorlist:
+        url = _get_url(url_info)
         if mirror.dead:
             continue
         latency = mirror.connection_latency
@@ -98,7 +101,8 @@ def sort_mirrors_by_latency(mirrorlist):
 
 def sort_mirrors_by_download_time(mirrorlist, buffer_length):
     result = []
-    for mirror, url in mirrorlist:
+    for mirror, url_info in mirrorlist:
+        url = _get_url(url_info)
         if mirror.dead:
             continue
         latency = mirror.connection_latency
@@ -117,7 +121,9 @@ def sort_mirrors_by_download_time(mirrorlist, buffer_length):
                 download_time = mirror.connection_latency + buffer_length / bandwidth
             #print("DOWNLOAD TIME", url, download_time)
         except Exception:
-            continue        
+            continue
+        if download_time is None:
+            download_time = 99999999
         result.append((mirror, url, download_time))
     result.sort(key=lambda r:r[2])
     return [(r[0], r[1]) for r in result]
@@ -140,22 +146,23 @@ def get_buffer_length(checksum, mirrorlist):
                 continue
             except Exception:
                 raise DownloadError from None
-        except requests.exceptions.ConnectionError as exc:
+        except (ConnectionError, ReadTimeout):
+            #import traceback; traceback.print_exc()
             mirror.add_failure()
 
     return None
-        
-def download_buffer_sync(checksum, url_infos, celltype="bytes"):
-    def get_url(url_info):
-        if isinstance(url_info, str):
-            url = url_info
-        else:
-            url = url_info["url"]
-        return url
 
+def _get_url(url_info):
+    if isinstance(url_info, str):
+        url = url_info
+    else:
+        url = url_info["url"]
+    return url
+
+def download_buffer_sync(checksum, url_infos, celltype="bytes"):
     mirrorlist = []
     for url_info in url_infos:
-        url = get_url(url_info)
+        url = _get_url(url_info)
         host = get_host(url)        
         if host not in mirrors:
             mirror = Mirror(host)
@@ -166,12 +173,22 @@ def download_buffer_sync(checksum, url_infos, celltype="bytes"):
             continue
         mirrorlist.append((mirror, url_info))
 
+    """
+    # DEBUG
+    if url.find("1avx") > -1:
+        for mirror, url_info in mirrorlist:
+            print("DEBUG, test 1AVX", _get_url(url_info))
+            while mirror.connection_latency is None or mirror.bandwidth is None:
+                mirror.add_connection_latency(0.1)
+                mirror.record_download(1000000, 1)
+    """
+
     while len(mirrorlist) > 1:
         buffer_length = get_buffer_length(checksum, mirrorlist)
         #print("BUFFER LENGTH", buffer_length)
         
         for mirror, url_info in mirrorlist:
-            url = get_url(url_info)
+            url = _get_url(url_info)
             if mirror.connection_latency is not None:
                 continue
             t = time.time()
@@ -180,7 +197,8 @@ def download_buffer_sync(checksum, url_infos, celltype="bytes"):
                 latency = time.time() - t
                 #print("LAT2", url, latency)
                 mirror.add_connection_latency(latency)
-            except requests.exceptions.ConnectionError as exc:
+            except (ConnectionError, ReadTimeout):
+                #import traceback; traceback.print_exc()
                 mirror.add_failure()
 
         mirrorlist = [(mirror, url_info) for mirror, url_info in mirrorlist]
@@ -188,7 +206,7 @@ def download_buffer_sync(checksum, url_infos, celltype="bytes"):
             break
         
         for mirror, url_info in mirrorlist:
-            url = get_url(url_info)
+            url = _get_url(url_info)
             if mirror.bandwidth is None:
                 test_bandwidth(mirror, url)
         
@@ -197,9 +215,10 @@ def download_buffer_sync(checksum, url_infos, celltype="bytes"):
         break  # even if more than one mirror left
 
     for mirror, url_info in mirrorlist:
+        url = _get_url(url_info)
         if mirror.dead:
             continue
-        url = get_url(url_info)
+
         t = time.time()    
         try:            
             source_celltype = "bytes"
@@ -209,27 +228,36 @@ def download_buffer_sync(checksum, url_infos, celltype="bytes"):
                 compression = url_info.get("compression")
                 if compression is None:
                     decompress = lambda buf: buf
-                elif compression == "gzip":
+                elif compression in ("gzip", "gz"):
                     decompress = gzip.decompress
                 elif compression == "bz2":
                     decompress = bz2.decompress
                 else:
                     raise ValueError(compression)
 
-            response = session.get(url, stream=True, timeout=3)
-            if int(response.status_code/100) in (4,5):
-                raise requests.exceptions.ConnectionError()
+            url = _get_url(url_info)
             print("Download", url)
-            latency = time.time() - t
-            mirror.add_connection_latency(latency)
-            result = []
-            for chunk in response.iter_content(100000):
-                result.append(chunk)
-            buf = b"".join(result)
-            download_time = time.time() - t - latency            
-            if download_time >= 0:
-                mirror.record_download(len(buf), download_time)
-                #print("BANDWIDTH2", mirror.bandwidth, len(buf), buffer_length)
+            buf = None
+            """
+            #DEBUG
+            if url.find("1avx") > -1: ###
+                print("DEBUG, load 1AVX")
+                buf = open("/tmp/1avx.cif", "rb").read()
+            """
+            if buf is None:
+                response = session.get(url, stream=True, timeout=3)
+                if int(response.status_code/100) in (4,5):
+                    raise ConnectionError()
+                latency = time.time() - t
+                mirror.add_connection_latency(latency)
+                result = []
+                for chunk in response.iter_content(100000):
+                    result.append(chunk)
+                buf = b"".join(result)
+                download_time = time.time() - t - latency            
+                if download_time >= 0:
+                    mirror.record_download(len(buf), download_time)
+                    #print("BANDWIDTH2", mirror.bandwidth, len(buf), buffer_length)
             buf = decompress(buf)
             if checksum is not None or source_celltype != celltype:
                 from seamless import calculate_checksum
@@ -252,9 +280,11 @@ def download_buffer_sync(checksum, url_infos, celltype="bytes"):
                 print("WARNING: '{}' has the wrong checksum".format(url))
                 continue
             return buf
-        except requests.exceptions.ConnectionError as exc:
+        except (ConnectionError, ReadTimeout):
+            #import traceback; traceback.print_exc()
             mirror.add_failure()    
         except Exception:
+            import traceback; traceback.print_exc()
             continue
 
 threadpool = None

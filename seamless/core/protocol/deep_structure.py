@@ -13,19 +13,19 @@ class DeepStructureError(ValueError):
   Invalid deep structure: %s
   Hash pattern: %s""" % (val, self.args[0])
 
+_supported_hash_patterns = "#", {"*": "#"}, {"!": "#"}, "##", {"*": "##"}
 def validate_hash_pattern(hash_pattern):
     assert hash_pattern is not None
     ###  To support complicated hash patterns, code must be changed in other places as well
-    ###  In particular: the Expression class and Accessor update tasks
-    supported_hash_patterns = "#", {"*": "#"}, {"!": "#"}, "##", {"*": "##"}
-    if hash_pattern not in supported_hash_patterns:
+    ###  In particular: the Expression class and Accessor update tasks    
+    if hash_pattern not in _supported_hash_patterns:
         err = """For now, Seamless supports only the following hash patterns:
 
   {}
 
 Hash pattern {} is not supported.
 """
-        sup = "\n  ".join([str(p) for p in supported_hash_patterns])
+        sup = "\n  ".join([str(p) for p in _supported_hash_patterns])
         raise NotImplementedError(err.format(sup, hash_pattern))
     ###
 
@@ -218,7 +218,7 @@ def _deep_structure_to_checksums(deep_structure, hash_pattern, checksums, with_r
                 )
 
 def deep_structure_to_checksums(deep_structure, hash_pattern, with_raw=False):
-    """Collects all checksums that are being referenced in a deep structure"""
+    """Collects all checksums that are being referenced in a deep structure"""    
     from seamless import fair
     validate_deep_structure(deep_structure, hash_pattern)
     checksums = set()
@@ -230,7 +230,11 @@ def deep_structure_to_checksums(deep_structure, hash_pattern, with_raw=False):
     else:
         classification = None
     if classification is not None:
-        for checksum in checksums:
+        for checksum0 in checksums:
+            if with_raw:
+                checksum, _  = checksum0
+            else:
+                checksum = checksum0
             fair._classify(checksum, classification)
     return checksums
 
@@ -374,6 +378,8 @@ def deep_structure_to_value_sync(deep_structure, hash_pattern, buffer_dict, copy
     return _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy)
 
 def _build_deep_structure(hash_pattern, d, c):
+    if d is None:
+        return None
     if hash_pattern in ("#", "##"):
         obj_id = d
         checksum = c[obj_id]

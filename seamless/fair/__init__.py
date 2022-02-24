@@ -1,6 +1,7 @@
 import json
 import urllib.parse
 from seamless.download_buffer import download_buffer_sync, session
+from requests.exceptions import ConnectionError, ReadTimeout
 
 _servers = [
     "http://localhost:61918",
@@ -69,11 +70,16 @@ def find(checksum:str):
     request = "/machine/find/" + checksum
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
     for url in urls:
-        response = session.get(url, timeout=3)
-        if int(response.status_code/100) in (4,5):
-            raise Exception(response.text + ": " + checksum)        
-        else:
-            return response.json()
+        try:
+            response = session.get(url, timeout=3)
+            if int(response.status_code/100) in (4,5):
+                #raise Exception(response.text + ": " + checksum)        
+                continue
+            else:
+                return response.json()
+        except (ConnectionError, ReadTimeout):
+            continue
+    raise ConnectionError("Cannot contact any FAIR server")
 
 def deepbuffer(checksum:str):
     return _download(checksum, "machine/deepbuffer/", checksum_content=True)
@@ -141,31 +147,46 @@ def get_distribution(dataset:str, *, type:str=None, version:str=None, date:str=N
     request = "/machine/get_distribution"
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
     for url in urls:
-        response = session.get(url, timeout=3, params=params)
-        if int(response.status_code/100) in (3,4,5):
-            raise Exception(response.text)        
-        else:
-            distribution = response.json()
-            _classify(distribution["checksum"], "deepbuffer")
-            keyorder = distribution.get("keyorder")
-            if keyorder is not None:
-                _classify(keyorder, "keyorder")
-            return distribution
-        
+        try:
+            response = session.get(url, timeout=3, params=params)            
+            resp = response.status_code
+            if int(resp/100) == 3:
+                raise Exception(response.text) 
+            elif int(resp/100) in (4,5):
+                continue       
+            else:
+                distribution = response.json()
+                _classify(distribution["checksum"], "deepbuffer")
+                keyorder = distribution.get("keyorder")
+                if keyorder is not None:
+                    _classify(keyorder, "keyorder")
+                return distribution
+        except (ConnectionError, ReadTimeout):
+            continue
+    raise ConnectionError("Cannot contact any FAIR server")        
+
 def get_checksum(dataset:str, *, type:str=None, version:str=None, date:str=None, format:str=None, compression:str=None):
     params = _validate_params(type, version, date, format, compression)
     params["dataset"] = dataset
     request = "/machine/get_checksum"
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
     for url in urls:
-        response = session.get(url, timeout=3, params=params)
-        if int(response.status_code/100) in (3,4,5):
-            raise Exception(response.text)        
-        else:
-            checksum = response.text.strip()
-            if len(checksum) != 64:
-                raise ValueError(checksum)
-            bytes.fromhex(checksum)
-            return checksum
+        try:
+            response = session.get(url, timeout=3, params=params)
+            resp = response.status_code
+            if int(resp/100) == 3:
+                raise Exception(response.text) 
+            elif int(resp/100) in (4,5):
+                continue       
+            else:
+                checksum = response.text.strip()
+                if len(checksum) != 64:
+                    raise ValueError(checksum)
+                bytes.fromhex(checksum)
+                _classify(checksum, "deepbuffer")
+                return checksum
+        except (ConnectionError, ReadTimeout):
+            continue
+    raise ConnectionError("Cannot contact any FAIR server")        
 
 __all__ = ["get_dataset", "find", "get_buffer", "deepbuffer", "access", "keyorder", "get_distribution", "get_checksum"]
