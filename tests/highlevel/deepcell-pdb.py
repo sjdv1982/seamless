@@ -1,16 +1,20 @@
+from importlib_metadata import distribution
 from seamless.highlevel import Context, Cell, DeepCell
 ctx = Context()
 
 ctx.pdb = DeepCell()
-"""
-# Trigger reproducibility warning
-import seamless
-seamless._defining_graph = True
-import seamless; seamless._defining_graph = True
-ctx.pdb.define("pdb")
-del seamless._defining_graph
-"""
-ctx.pdb.define("pdb", date="2022-02-18", format="mmcif")
+
+# Weakly reproducible way
+distribution = DeepCell.find_distribution("pdb", date="2022-02-18", format="mmcif")
+ctx.pdb.define(distribution)
+
+# Strongly reproducible way
+distribution = {
+    "checksum": "eb377cf319b5dfa7651f41a09644c0d68934f8a8369998fdd82f003cfd5448f2",
+    "keyorder": "3da0581cafcfb4b044419262474d6415317ff5863f7541ea0020ef7664cbfb85",
+}
+ctx.pdb.define(distribution)
+
 ctx.compute()
 print(ctx.pdb.status)
 print(ctx.pdb.exception)

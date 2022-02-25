@@ -94,6 +94,8 @@ help.py: Can also be run non-interactively with IPython. See the source code for
 webinterface.sh: open with bash inside the Seamless Docker container.
                  Can also be run interactively, see line 6 of the code
 deepcell-pdb.py: requires a FAIR server that knows the PDB dataset
+                 Can also be run interactively, change ctx.pdb_code 
+                  and observe /tmp/pdb_structure.mmcif
 high-in-low.py
 high-in-low2.py
 high-in-low3.py

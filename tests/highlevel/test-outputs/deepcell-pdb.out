@@ -1,3 +1,18 @@
+WARNING: finding a FAIR data distribution for a DeepCell
+is only weakly reproducible.
+To guarantee strong reproducibility:
+- Use "DeepCell().define(DeepCell.find_distribution(...))" only in IPython 
+  and then use ctx.save().
+OR: 
+- If you prefer to use load_project.py:define_graph, enter the following code:
+
+    distribution = {
+        "checksum": "eb377cf319b5dfa7651f41a09644c0d68934f8a8369998fdd82f003cfd5448f2",
+        "keyorder": "3da0581cafcfb4b044419262474d6415317ff5863f7541ea0020ef7664cbfb85",
+    }
+    DeepCell().define(distribution)
+    
+
 Download https://fair.rpbs.univ-paris-diderot.fr/machine/deepbuffer/eb377cf319b5dfa7651f41a09644c0d68934f8a8369998fdd82f003cfd5448f2
 Download http://localhost:61918/machine/deepbuffer/eb377cf319b5dfa7651f41a09644c0d68934f8a8369998fdd82f003cfd5448f2
 Status: OK
@@ -29,3 +44,6 @@ _entry.id   1EER
 _audit_conform.dict_name       mmcif_pdbx.dic 
 _audit_conform.dict_version    5.351 
 _audit_conform.dict_location   http://mmcif.pdb.org/dictionaries/ascii/mmcif_pdbx
+STAGE 4
+Waiting for: Seamless structured cell: .select_pdb.ctx.input
+Waiting for: Seamless plain cell: .select_pdb.ctx.input_deep

@@ -36,8 +36,8 @@ $FD/dataset_distributions/<dataset_name>.json and $FD/dataset_header/<dataset_na
    List of URLS for that element.
 5. /machine/keyorder/<keyorder checksum>
    Key order buffer (list of key orders) content.
-6. /machine/get_distribution?dataset=...&version=...&date=...
-   /machine/get_checksum?dataset=...&version=...&date=...
+6. /machine/find_distribution?dataset=...&version=...&date=...
+   /machine/find_checksum?dataset=...&version=...&date=...
 """
 
 from aiohttp import web
@@ -197,7 +197,7 @@ def get_dataset_params(request):
     return dataset, params
 
 
-async def get_distribution(dataset, params):
+async def find_distribution(dataset, params):
     distributions = await get_distributions(dataset)
     version, date = params.get("version"), params.get("date")
     if version is None and date is None:
@@ -248,7 +248,7 @@ async def handle_get_distribution(request):
        err = dataset_params
        return err
     dataset, params = dataset_params
-    distribution = await get_distribution(dataset, params)
+    distribution = await find_distribution(dataset, params)
     if isinstance(distribution, web.Response):
        err = distribution
        return err
@@ -264,7 +264,7 @@ async def handle_get_checksum(request):
        err = dataset_params
        return err
     dataset, params = dataset_params
-    distribution = await get_distribution(dataset, params)
+    distribution = await find_distribution(dataset, params)
     if isinstance(distribution, web.Response):
        err = distribution
        return err
@@ -303,8 +303,8 @@ def main():
         web.get('/machine/access/{checksum:.*}', handle_machine_access),
         web.get('/machine/deepbuffer/{tail:.*}', partial(handle_static, "deepbuffer")),
         web.get('/machine/keyorder/{tail:.*}', partial(handle_static, "keyorder")),
-        web.get('/machine/get_distribution', handle_get_distribution),
-        web.get('/machine/get_checksum', handle_get_checksum),
+        web.get('/machine/find_distribution', handle_get_distribution),
+        web.get('/machine/find_checksum', handle_get_checksum),
     ])
 
     # Configure default CORS settings.

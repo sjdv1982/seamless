@@ -141,10 +141,10 @@ def _validate_params(type:str, version:str, date:str, format:str, compression:st
         params["compression"] = compression
     return params
 
-def get_distribution(dataset:str, *, type:str=None, version:str=None, date:str=None, format:str=None, compression:str=None):
+def find_distribution(dataset:str, *, type:str=None, version:str=None, date:str=None, format:str=None, compression:str=None):
     params = _validate_params(type, version, date, format, compression)
     params["dataset"] = dataset
-    request = "/machine/get_distribution"
+    request = "/machine/find_distribution"
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
     for url in urls:
         try:
@@ -165,10 +165,10 @@ def get_distribution(dataset:str, *, type:str=None, version:str=None, date:str=N
             continue
     raise ConnectionError("Cannot contact any FAIR server")        
 
-def get_checksum(dataset:str, *, type:str=None, version:str=None, date:str=None, format:str=None, compression:str=None):
+def find_checksum(dataset:str, *, type:str=None, version:str=None, date:str=None, format:str=None, compression:str=None):
     params = _validate_params(type, version, date, format, compression)
     params["dataset"] = dataset
-    request = "/machine/get_checksum"
+    request = "/machine/find_checksum"
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
     for url in urls:
         try:
@@ -189,4 +189,4 @@ def get_checksum(dataset:str, *, type:str=None, version:str=None, date:str=None,
             continue
     raise ConnectionError("Cannot contact any FAIR server")        
 
-__all__ = ["get_dataset", "find", "get_buffer", "deepbuffer", "access", "keyorder", "get_distribution", "get_checksum"]
+__all__ = ["get_dataset", "find", "get_buffer", "deepbuffer", "access", "keyorder", "find_distribution", "find_checksum"]

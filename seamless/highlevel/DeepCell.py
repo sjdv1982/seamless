@@ -338,30 +338,35 @@ class DeepCell(DeepCellBase):
     _new_func = get_new_deepcell
     hash_pattern = {"*": "#"}
 
-    def define(self, dataset:str, *, version:str=None, date:str=None, format:str=None, compression:str=None):
-        import seamless
-        from seamless.fair import get_distribution
-        if version is None and date is None:
-            version = "latest"
-        if hasattr(seamless, "_defining_graph"):
-            if version == "latest":
-                print("""WARNING: defining a DeepCell from a FAIR data distribution 
-with version "latest".
-You should run this command in Jupyter/IPython and then use ctx.save().
-Putting this code in define_graph is NOT REPRODUCIBLE.""")
-        distribution = get_distribution(
+    @staticmethod
+    def find_distribution(dataset:str, *, version:str=None, date:str=None, format:str=None, compression:str=None):
+        import pprint
+        from seamless.fair import find_distribution
+        distribution = find_distribution(
             dataset, type="deepcell",
             version=version, date=date, format=format, compression=compression
         )
-        
+        print("""WARNING: finding a FAIR data distribution for a DeepCell
+is only weakly reproducible.
+To guarantee strong reproducibility:
+- Use "DeepCell().define(DeepCell.find_distribution(...))" only in IPython 
+  and then use ctx.save().
+OR: 
+- If you prefer to use load_project.py:define_graph, enter the following code:
+
+    distribution = {{
+        "checksum": "{}",
+        "keyorder": "{}",
+    }}
+    DeepCell().define(distribution)
+    
+""".format(distribution["checksum"], distribution["keyorder"]))
+
+        return distribution
+
+    def define(self, distribution):        
         self.set_checksum(distribution["checksum"])
         self.set_keyorder_checksum(distribution["keyorder"])
-        hcell = self._get_hcell2()
-        metadata = distribution.copy()
-        metadata.pop("checksum")
-        metadata.pop("keyorder")
-        metadata.pop("latest", None)
-        hcell["metadata"] = metadata
         
     @property
     def blacklist(self):
