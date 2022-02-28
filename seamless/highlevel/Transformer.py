@@ -26,7 +26,7 @@ default_pin = {
   
 }
 
-def new_transformer(ctx, path, code, pins, hash_pattern):
+def new_transformer(ctx, path, code, pins, hash_pattern={"*": "#"}):
     if pins is None:
         pins = []
     if isinstance(pins, (list, tuple)):
@@ -71,7 +71,7 @@ class Transformer(Base, HelpMixin):
             self._temp_pins = pins
         self._debug = DebugMode(self)
 
-    def _init(self, parent, path, code=None, pins=None, hash_pattern={"*": "#"}):
+    def _init(self, parent, path, code=None, pins=None):
         super().__init__(parent, path)
         if self._temp_code is not None:
             assert code is None
@@ -89,7 +89,7 @@ class Transformer(Base, HelpMixin):
             node = None
         self._environment = Environment(self)
         if node is None:
-            htf = new_transformer(parent, path, code, pins, hash_pattern)
+            new_transformer(parent, path, code, pins)
         elif "environment" in node:
             self._environment._load(node["environment"])
         self._temp_code = None
@@ -223,21 +223,6 @@ You can set this dictionary directly, or you may assign .meta to a cell
             tf.tf.executor.clear_exception()
         else:
             tf.tf.clear_exception()
-
-    @property
-    def hash_pattern(self):
-        htf = self._get_htf()
-        return htf.get("hash_pattern")
-
-    @hash_pattern.setter
-    def hash_pattern(self, value):
-        from ..core.protocol.deep_structure import validate_hash_pattern
-        validate_hash_pattern(value)
-        htf = self._get_htf()
-        htf["hash_pattern"] = value
-        htf.pop("checksum", None)
-        self._get_htf()["UNTRANSLATED"] = True
-        self._parent()._translate()
 
     @property
     def language(self):

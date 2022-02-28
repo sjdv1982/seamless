@@ -20,7 +20,6 @@ def double_it(a):
     return 2 * a
 
 ctx.transform = double_it
-ctx.transform.hash_pattern = {"*": "#"}
 ctx.transform.a = ctx.a
 ctx.myresult = ctx.transform
 ctx.myresult.celltype = "int"
@@ -62,4 +61,5 @@ json.dump(graph, open("simple-graph.json", "w"), sort_keys=True, indent=2)
 
 inp = ctx.transform.inp
 print(inp.value.unsilk)
-print(inp.data)
+print(inp.checksum)
+print(ctx.resolve(inp.checksum, "plain"))

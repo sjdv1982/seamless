@@ -778,7 +778,8 @@ As of Seamless 0.8, mostly an alternative for "mimetype"
 
     @property
     def hash_pattern(self):
-        # TODO: document when released in 0.7
+        # TODO: document when released in 0.8. 
+        # Not something to be used in day-to-day programming!
         hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         assert celltype in ("structured", "mixed")

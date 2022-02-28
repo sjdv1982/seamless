@@ -17,7 +17,6 @@ def triple_it_b(a, b):
 
 ctx.transform = triple_it
 ctx.transform.debug.direct_print = True
-ctx.transform.hash_pattern = {"*": "#"}
 ctx.transform.debug.direct_print = True
 ctx.transform.a = 1
 print("START")
