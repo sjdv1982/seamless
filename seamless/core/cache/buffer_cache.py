@@ -32,6 +32,8 @@ def print_error(*args):
     logger.error(msg)
 
 empty_dict_checksum = 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c'
+empty_list_checksum = '7b41ad4a50b29158e075c6463133761266adb475130b8e886f2f5649070031cf'
+
 class BufferCache:
     """Checksum-to-buffer cache.
     Every buffer is referred to by a CacheManager (or more than one).
@@ -65,6 +67,7 @@ class BufferCache:
         self.downloaded = set()  # keep track of downloaded buffers, don't cache them for long
 
         self.incref_buffer(bytes.fromhex(empty_dict_checksum), b'{}\n', True)
+        self.incref_buffer(bytes.fromhex(empty_list_checksum), b'[]\n', True)
 
     def _is_persistent(self, authoritative):
         if authoritative:
@@ -198,7 +201,10 @@ class BufferCache:
                     if database_cache.active and database_cache.has_buffer(checksum):
                         pass
                     else:
-                        print_debug("Incref checksum of missing buffer: {}".format(checksum.hex()))
+                        if n < 10:
+                            print_debug("Incref checksum of missing buffer: {}".format(checksum.hex()))
+                        elif n == 10:
+                            print_debug("... ({} more buffers)".format(len(checksums) - 10))
                         self.missing.add(checksum)
                 if not local and checksum in self.last_time:
                     self.last_time.pop(checksum)
@@ -406,6 +412,7 @@ class BufferCache:
         if self.buffer_cache is None:
             return
         self.buffer_refcount.pop(bytes.fromhex(empty_dict_checksum), None)
+        self.buffer_refcount.pop(bytes.fromhex(empty_list_checksum), None)        
         if len(self.buffer_refcount):
             print_warning("buffer cache, %s buffers undestroyed" % len(self.buffer_refcount))
         self.buffer_cache = None

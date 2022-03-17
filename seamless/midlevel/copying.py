@@ -303,7 +303,10 @@ def fill_checksums(mgr, nodes, *, path=None):
                     temp_path = "value"
                 fill_checksum(mgr, node, temp_path, composite=False)
             elif node["type"] == "deepcell":
-                fill_checksum(mgr, node, "auth", composite=False)
+                fill_checksum(mgr, node, "origin", composite=False)
+                fill_checksum(mgr, node, "keyorder", composite=False)
+                fill_checksum(mgr, node, "blacklist", composite=False)
+                fill_checksum(mgr, node, "whitelist", composite=False)
             elif node["type"] == "module":
                 fill_checksum(mgr, node, None, composite=False)
             else:

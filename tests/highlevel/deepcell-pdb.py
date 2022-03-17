@@ -14,12 +14,14 @@ distribution = {
     "keyorder": "3da0581cafcfb4b044419262474d6415317ff5863f7541ea0020ef7664cbfb85",
 }
 ctx.pdb.define(distribution)
-
 ctx.compute()
+
 print(ctx.pdb.status)
 print(ctx.pdb.exception)
 print(ctx.pdb.checksum)
+print(ctx.pdb.keyorder_checksum)
 print()
+graph = ctx.save_graph("deepcell-pdb.seamless")
 
 print("STAGE 2")
 ctx.trypsin = Cell("mixed")

@@ -42,7 +42,7 @@ direct_celltypes = (
 
 empty_dict_checksum = 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c'
 
-def set_structured_cell_from_checksum(cell, checksum):
+def set_structured_cell_from_checksum(cell, checksum, is_deepcell=False):
     trigger = False
     """
     if "temp" in checksum:
@@ -80,13 +80,14 @@ def set_structured_cell_from_checksum(cell, checksum):
         trigger = True
         """
 
-    if "auth" in checksum:
+    k = "origin" if is_deepcell else "auth"
+    if k in checksum:
         if cell.auth is None:
             msg = "Warning: %s has no independence, but an auth checksum is present"
             print(msg % cell)
         else:
             cell.auth._set_checksum(
-                checksum["auth"],
+                checksum[k],
                 from_structured_cell=True,
                 initial=True
             )
@@ -180,38 +181,6 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         if "mount" in node:
             child.mount(**node["mount"])
 
-    return child
-
-def translate_deepcell(node, root, namespace, inchannels, outchannels):
-    path = node["path"]
-    parent = get_path(root, path[:-1], None, None)
-    name = path[-1]
-    hash_pattern = {"*": "#"}
-    child = build_structured_cell(
-        parent, name,
-        inchannels, outchannels,
-        fingertip_no_remote=node.get("fingertip_no_remote", False),
-        fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-        hash_pattern=hash_pattern,
-        mount=None
-    )
-    for inchannel in inchannels:
-        cname = child.inchannels[inchannel].subpath
-        if cname == "self":
-            cpath = path
-        else:
-            if isinstance(cname, str):
-                cname = (cname,)
-            cpath = path + cname
-        namespace[cpath, "target"] = child.inchannels[inchannel], node
-    for outchannel in outchannels:
-        cpath = path + outchannel
-        namespace[cpath, "source"] = child.outchannels[outchannel], node
-    
-    setattr(parent, name, child)
-    checksum = node.get("checksum")
-    if checksum is not None:
-        set_structured_cell_from_checksum(child, checksum)
     return child
 
 
@@ -416,6 +385,7 @@ def translate(graph, ctx, environment):
 from .translate_py_transformer import translate_py_transformer
 from .translate_macro import translate_macro
 from .translate_module import translate_module
+from .translate_deep import translate_deepcell
 '''
 # imported only at need...
 from .translate_bash_transformer import translate_bash_transformer

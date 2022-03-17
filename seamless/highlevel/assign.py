@@ -280,6 +280,20 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
             if hcell.get("constant"):
                 raise TypeError("Cannot assign to constant cell")
         elif isinstance(s, (Module, DeepCellBase)):
+            if isinstance(s, DeepCellBase) and isinstance(t, Cell):
+                if t.hash_pattern is None:
+                    msg = """ERROR: assigning a Cell to a DeepCell
+
+When accessed, Cells have their complete content loaded into memory.
+This is not the case for DeepCells, whose content can be very large in size.
+
+Therefore, the direct assignment of a Cell to a DeepCell is by default not allowed.
+
+If you really want to do this, create an intermediate Cell with hash pattern {"*": "#"},
+and assign the Cell to this intermediate Cell.
+"""
+                    raise Exception(msg)
+
             pass
         else:
             raise TypeError(type(s))
@@ -601,6 +615,10 @@ def assign(ctx, path, value, *, help_context=False):
                 target = None
             if isinstance(target, Cell):
                 _remove_independent_mountshares(target._get_hcell())
+            if target is None and isinstance(value, DeepCellBase):
+                cellnode = type(value)._new_func(path)
+                type(value)(parent=ctx, path=path)
+                ctx._graph.nodes[path] = cellnode
             assign_connection(ctx, value._path, path, True)
         ctx._translate()
     elif isinstance(value, (Resource, ConstantTypes)):

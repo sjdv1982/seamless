@@ -1,10 +1,16 @@
 from copy import deepcopy
 
+
 def get_new_deepcell(path):
+    from ..core.cache.buffer_cache import empty_list_checksum, empty_dict_checksum
     return {
         "path": path,
         "type": "deepcell",
         "UNTRANSLATED": True,
+        "checksum": {
+            "origin": empty_dict_checksum,
+            "keyorder": empty_list_checksum,
+        }
     }
 
 from .Base import Base
@@ -33,8 +39,9 @@ class DeepCellBase(Base, HelpMixin):
 
         if self._get_hcell().get("UNTRANSLATED"):
             return "This cell is untranslated; run 'ctx.translate()' or 'await ctx.translation()'"
-        cell = self._get_cell()
-        return cell.exception
+        ctx = self._get_context()
+        origin_cell = ctx.origin
+        return origin_cell.exception
 
     @property
     def checksum(self):
@@ -46,10 +53,10 @@ the value may not be.
 """
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
-            return hcell.get("checksum", {}).get("auth")
+            return hcell.get("checksum", {}).get("origin")
         else:
-            cell = self._get_cell()
-            return cell.checksum
+            ctx = self._get_context()
+            return ctx.origin.checksum
 
     @checksum.setter
     def checksum(self, checksum):
@@ -62,11 +69,31 @@ the value may not be.
             hcell.pop("TEMP", None)
             if hcell.get("checksum") is None:
                 hcell["checksum"] = {}
-            hcell["checksum"]["auth"] = checksum
+            hcell["checksum"]["origin"] = checksum
             return
-        cell = self._get_cell()
-        cell.set_auth_checksum(checksum)
+        ctx = self._get_context()
+        origin_cell = ctx.origin
+        origin_cell.set_auth_checksum(checksum)
 
+    @property
+    def keyorder(self):
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            raise AttributeError
+        else:
+            ctx = self._get_context()
+            cell = ctx.keyorder
+            return cell.value
+
+    @keyorder.setter
+    def keyorder(self, keyorder):
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            raise AttributeError
+        ctx = self._get_context()
+        cell = ctx.keyorder
+        cell.set(keyorder)
+        
     @property
     def keyorder_checksum(self):
         """The checksum defining the key order of the deep cell"""
@@ -74,7 +101,8 @@ the value may not be.
         if hcell.get("UNTRANSLATED"):
             return hcell.get("checksum", {}).get("keyorder")
         else:
-            cell = self._get_keyorder_cell()
+            ctx = self._get_context()
+            cell = ctx.keyorder
             return cell.checksum
 
     @keyorder_checksum.setter
@@ -89,20 +117,9 @@ the value may not be.
                 hcell["checksum"] = {}
             hcell["checksum"]["keyorder"] = checksum
             return
-        cell = self._get_keyorder_cell()
+        ctx = self._get_context()
+        cell = ctx.keyorder
         cell.set_checksum(checksum)
-
-    @property
-    def handle(self):
-        hcell = self._get_hcell2()
-        if hcell.get("UNTRANSLATED"):
-            raise AttributeError
-        cell = self._get_cell()
-        return cell.handle_hash
-
-    @handle.setter
-    def handle(self, value):
-        self.handle.set(value)
 
     @property
     def data(self):
@@ -110,7 +127,8 @@ the value may not be.
 
         The underlying checksums are NOT expanded to values
         """
-        cell = self._get_cell()
+        ctx = self._get_context()
+        cell = ctx.origin
         return deepcopy(cell.data)
 
     @property
@@ -118,53 +136,25 @@ the value may not be.
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             raise AttributeError
-        cell = self._get_cell()
+        ctx = self._get_context()
+        cell = ctx.origin
         return cell.handle_hash
 
-    def _set(self, value):
-        from ..core.structured_cell import StructuredCell
-        hcell = self._get_hcell2()
-        if hcell.get("UNTRANSLATED"):
-            hcell["TEMP"] = value
-            return
-        cell = self._get_cell()
-        if isinstance(cell, StructuredCell):
-            cell.set_no_inference(value)
-        else:
-            cell.set(value)
-
-    def set_checksum(self, checksum):
-        """Sets the cell's checksum from a SHA256 checksum"""
-        from ..core.structured_cell import StructuredCell
-        hcell = self._get_hcell2()
-        if hcell.get("UNTRANSLATED"):
-            hcell.pop("TEMP", None)
-            if hcell.get("checksum") is None:
-                hcell["checksum"] = {}
-            hcell["checksum"]["auth"] = checksum
-            return
-        cell = self._get_cell()
-        if isinstance(cell, StructuredCell):
-            cell.set_auth_checksum(checksum)
-        else:
-            cell.set_checksum(checksum)
+    def set(self, value):
+        self.handle.set(value)
 
     @property
     def status(self):
-        """Returns the status of the cell.
+        """Returns the status of the DeepCell.
 
-        The status may be undefined, error, upstream or OK
-        If it is error, Cell.exception will be non-empty.
+        The status may be undefined, pending, error or OK
+        If it is error, DeepCell.exception will be non-empty.
         """
         if self._get_hcell().get("UNTRANSLATED"):
             return "Status: error (ctx needs translation)"
-        cell = self._get_cell()
-        return cell.status
-
-    def set(self, value):
-        """Sets the value of the cell"""
-        self._set(value)
-        return self
+        ctx = self._get_context()
+        origin_status = ctx.origin.status
+        return origin_status
 
     @property
     def value(self):
@@ -194,7 +184,7 @@ Use DeepCell.data instead."""
         from .assign import assign_to_deep_subcell
         assign_to_deep_subcell(self, attr, value)
 
-    def _get_cell(self):
+    def _get_context(self):
         parent = self._parent()
         p = parent._gen_context
         if p is None:
@@ -205,22 +195,6 @@ Use DeepCell.data instead."""
             p2 = p2._context()
         p = p2
         return self._get_cell_subpath(p, self._path[1:])
-
-    def _get_keyorder_cell(self):
-        parent = self._parent()
-        p = parent._gen_context
-        if p is None:
-            raise ValueError
-        path = self._path
-        if len(self._path) > 1:
-            pp = self._path[0]
-            p2 = getattr(p, pp)
-            if isinstance(p2, SynthContext) and p2._context is not None:
-                p2 = p2._context()
-            p = p2
-            path = self._path[1:]
-        path = path[:-1] + [path[-1] + "_KEYORDER"]
-        return self._get_cell_subpath(p, path)
 
     def _get_hcell(self):
         parent = self._parent()
@@ -235,7 +209,7 @@ Use DeepCell.data instead."""
             self._node = self._new_func(None)
         return self._node
 
-    def _observe_cell(self, checksum):
+    def _observe_filtered(self, checksum):
         if self._parent() is None:
             return
         if self._parent()._translating:
@@ -246,11 +220,11 @@ Use DeepCell.data instead."""
             return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
-        hcell["checksum"].pop("value", None)
+        hcell["checksum"].pop("filtered", None)
         if checksum is not None:
-            hcell["checksum"]["value"] = checksum
+            hcell["checksum"]["filtered"] = checksum
 
-    def _observe_auth(self, checksum):
+    def _observe_origin(self, checksum):
         if self._parent() is None:
             return
         if self._parent()._translating:
@@ -261,24 +235,9 @@ Use DeepCell.data instead."""
             return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
-        hcell["checksum"].pop("auth", None)
+        hcell["checksum"].pop("origin", None)
         if checksum is not None:
-            hcell["checksum"]["auth"] = checksum
-
-    def _observe_buffer(self, checksum):
-        if self._parent() is None:
-            return
-        if self._parent()._translating:
-            return
-        try:
-            hcell = self._get_hcell()
-        except Exception:
-            return
-        if hcell.get("checksum") is None:
-            hcell["checksum"] = {}
-        hcell["checksum"].pop("buffer", None)
-        if checksum is not None:
-            hcell["checksum"]["buffer"] = checksum
+            hcell["checksum"]["origin"] = checksum
 
     def _observe_keyorder(self, checksum):
         if self._parent() is None:
@@ -297,18 +256,13 @@ Use DeepCell.data instead."""
 
     def _set_observers(self):
         from ..core.structured_cell import StructuredCell
-        cell = self._get_cell()
-        if not isinstance(cell, StructuredCell):
-            raise Exception(cell)
-        if cell.auth is not None:
-            cell.auth._set_observer(self._observe_auth)
-        cell._data._set_observer(self._observe_cell)
-        cell.buffer._set_observer(self._observe_buffer)
-        keyorder_cell = self._get_keyorder_cell()
-        keyorder_cell._set_observer(self._observe_keyorder)
+        ctx = self._get_context()
+        ctx.origin.auth._set_observer(self._observe_origin)
+        ctx.keyorder._set_observer(self._observe_keyorder)
+        ctx.filtered._set_observer(self._observe_filtered)
 
     def _get_subcell(self, attr):
-        hcell = self._get_hcell()
+        self._get_hcell()
         parent = self._parent()
         readonly = False ### TODO
         return DeepSubCell(
@@ -340,7 +294,6 @@ class DeepCell(DeepCellBase):
 
     @staticmethod
     def find_distribution(dataset:str, *, version:str=None, date:str=None, format:str=None, compression:str=None):
-        import pprint
         from seamless.fair import find_distribution
         distribution = find_distribution(
             dataset, type="deepcell",
@@ -364,18 +317,36 @@ OR:
 
         return distribution
 
-    def define(self, distribution):        
+    def define(self, distribution):
+        from seamless.fair import find
         self.set_checksum(distribution["checksum"])
         self.set_keyorder_checksum(distribution["keyorder"])
+        meta_keys = ["content_size", "index_size", "nkeys", "access_index"]
+        if not all([key in distribution for key in meta_keys]):
+            try:
+                distribution2 = None
+                result = find(distribution["checksum"])
+                if result is not None:
+                    dataset, distribution2 = result["dataset"], result["distribution"]
+                if distribution2 is not None:
+                    metadata = {"dataset": dataset}
+                    for key in meta_keys:
+                        if key in distribution2:
+                            metadata[key] = distribution2[key]
+                    self._get_hcell()["metadata"] = metadata
+            except Exception:
+                pass
         
     @property
     def blacklist(self):
         # Similar to transformer.code
+        # Allow setting this to None, because .define doesn't do it!
         raise NotImplementedError
 
     @property
     def whitelist(self):
         # Similar to transformer.code
+        # Allow setting this to None, because .define doesn't do it!
         raise NotImplementedError
 
     def __getitem__(self, item):
