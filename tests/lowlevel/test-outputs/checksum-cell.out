@@ -16,3 +16,9 @@ b'{\n  "a": "2a5f9161bef6f183d0938f090fbd6ea6377e386829c032c19a318461247e813b",\
 {'a': 100, 'b': 200, 'c': 300}
 
 200
+Status: OK
+13d6b7fc7f6a8a90d5d173ec8de7c54d3eb476db62748643cd4bf2b0c18fbe96 b'{\n  "blah": "aaaa9161bef6f183d0938f090fbd6ea6377e386829c032c19a318461247e813b"\n}\n'
+b'{\n  "blah": "aaaa9161bef6f183d0938f090fbd6ea6377e386829c032c19a318461247e813b"\n}\n'
+Download https://fair.rpbs.univ-paris-diderot.fr/machine/access/aaaa9161bef6f183d0938f090fbd6ea6377e386829c032c19a318461247e813b
+Download http://localhost:61918/machine/access/aaaa9161bef6f183d0938f090fbd6ea6377e386829c032c19a318461247e813b
+seamless.core.cache.CacheMissError: aaaa9161bef6f183d0938f090fbd6ea6377e386829c032c19a318461247e813b

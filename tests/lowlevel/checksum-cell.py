@@ -45,3 +45,20 @@ print(ctx.t2.data)
 print(ctx.tt2.value)
 print()
 print(ctx._get_manager().resolve(ctx.t2.value["b"], celltype="mixed"))
+print(ctx.tt2.status)
+
+ctx.t3 = cell("checksum").set({
+    "blah": "aaaa9161bef6f183d0938f090fbd6ea6377e386829c032c19a318461247e813b"
+})
+ctx.tt3 = cell("mixed", hash_pattern={"*": "#"})
+ctx.t3.connect(ctx.tt3)
+ctx.compute()
+print(ctx.t3.checksum, ctx.t3.buffer)
+print(ctx.tt3.buffer)
+
+from seamless.core.cache import CacheMissError
+try:
+    print(ctx.tt3.value)
+except CacheMissError:
+    import traceback
+    traceback.print_exc(limit=0)
