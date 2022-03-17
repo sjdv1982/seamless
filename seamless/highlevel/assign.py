@@ -241,7 +241,12 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
                 hcell.pop("TEMP")
             elif "checksum" in hcell:
                 hcell["checksum"].pop("value", None)
-                hcell["checksum"].pop("auth", None)
+                if isinstance(t, DeepCell):
+                    hcell["checksum"].pop("origin", None)
+                    if isinstance(ctx._children.get(source), DeepCellBase):
+                        hcell["checksum"].pop("keyorder", None)                    
+                else:
+                    hcell["checksum"].pop("auth", None)
         else:
             hnode = t._get_hnode()
             if "TEMP" in hnode:

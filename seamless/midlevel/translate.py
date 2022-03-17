@@ -9,6 +9,8 @@ from warnings import warn
 from collections import OrderedDict
 from functools import partial
 
+from attr import has
+
 from seamless.core import (cell as core_cell,
  transformer, reactor, context, macro, StructuredCell)
 
@@ -83,8 +85,8 @@ def set_structured_cell_from_checksum(cell, checksum, is_deepcell=False):
     k = "origin" if is_deepcell else "auth"
     if k in checksum:
         if cell.auth is None:
-            msg = "Warning: %s has no independence, but an auth checksum is present"
-            print(msg % cell)
+            msg = "Warning: {} has no independence, but an {} checksum is present"
+            print(msg.format(cell, k))
         else:
             cell.auth._set_checksum(
                 checksum[k],
@@ -188,20 +190,17 @@ def translate_connection(node, namespace, ctx):
     from ..core.cell import Cell
     from ..core.structured_cell import Inchannel, Outchannel
     from ..core.worker import Worker, PinBase
+    from .translate_deep import DeepCellConnector
     source_path, target_path = node["source"], node["target"]
 
     source, source_node, source_is_edit = get_path(
       ctx, source_path, namespace, False,
       return_node = True
     )
-    if isinstance(source, StructuredCell):
-        source = source.outchannels[()]
     target, target_node, target_is_edit = get_path(
       ctx, target_path, namespace, True,
       return_node=True
     )
-    if isinstance(target, StructuredCell):
-        target = target.inchannels[()]
 
     def do_connect(source, target):
         if source_is_edit or target_is_edit:
@@ -227,6 +226,8 @@ def translate_connection(node, namespace, ctx):
         if isinstance(source, Outchannel):
             if hash_pattern is not None:
                 hash_pattern = access_hash_pattern(hash_pattern, source.subpath)
+                if hash_pattern == "#":
+                    hash_pattern = None
         if hash_pattern == "##":
             intermediate = core_cell("bytes")
         else:
@@ -235,12 +236,30 @@ def translate_connection(node, namespace, ctx):
         source.connect(intermediate)
         intermediate.connect(target)
 
+    if isinstance(source, DeepCellConnector) and isinstance(target, DeepCellConnector):
+        do_connect(
+            source.deep_structure.outchannels[()],
+            target.deep_structure.inchannels[()],
+        )
+        do_connect(
+            source.keyorder,
+            target.keyorder
+        )
+    else:
+        if isinstance(source, DeepCellConnector):
+            source = source.deep_structure
+        if isinstance(target, DeepCellConnector):
+            target = target.deep_structure
+        if isinstance(source, StructuredCell):
+            source = source.outchannels[()]
+        if isinstance(target, StructuredCell):
+            target = target.inchannels[()]
 
-    if not isinstance(source, (Worker, PinBase, Outchannel, Cell)):
-        raise TypeError(source)
-    if not isinstance(target, (Worker, PinBase, Inchannel, Cell)):
-        raise TypeError(target)
-    do_connect(source, target)
+        if not isinstance(source, (Worker, PinBase, Outchannel, Cell)):
+            raise TypeError(source)
+        if not isinstance(target, (Worker, PinBase, Inchannel, Cell)):
+            raise TypeError(target)
+        do_connect(source, target)
 
 def translate_link(node, namespace, ctx):
     first = get_path_link(

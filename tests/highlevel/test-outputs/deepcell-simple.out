@@ -1,13 +1,50 @@
-{"TEMP": {"test": 1, "test2": 2}, "UNTRANSLATED": true, "celltype": "structured", "datatype": "mixed", "hash_pattern": {"*": "#"}, "path": ["a"], "type": "cell"}
+Seamless DeepCell: .a
 {'test': 'bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d', 'test2': '191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba'}
 <Silk: {'test': 1, 'test2': 2} >
-{'*': '#'}
-{'test': 'bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d', 'test2': '191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba'}
-<Silk: {'test': 1, 'test2': 2} >
-{'test': 1, 'test2': 2}
-<Silk: 1 >
+Seamless DeepCell: .a
+{'test': 'bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d', 'test2': '191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba', 'test3': '8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad', 'test4': 'cdfebe4279c013b4572ccb2e37d59f3856747a768f725afd22ca8e7b0a42cb33'}
+<Silk: {'test': 1, 'test2': 2, 'test3': 20, 'test4': 55} >
+191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba 2
+76a0a1b41ec3c27e4d17038e73331bc4e6c330d2ec0e409a443d1fde3c8b357f
+[]
+7b41ad4a50b29158e075c6463133761266adb475130b8e886f2f5649070031cf
+<Silk: {'test': 1, 'test2': 2, 'test3': 20, 'test4': 55} >
 
-{'test3': '6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd', 'test4': '3147dbedb6618cf418dc2a4e6e46b7f598ce62d3e346f8043e507b6626b9c9c6'}
+['test3', 'test2', 'test1']
+9da6c7af954c2554cbf80473f449e7bb8448f89160962aaad39413408a2bc85b
+
+Seamless DeepCell: .a2
+AttributeError: It is too costly to construct the full value of a DeepCell
+Use DeepCell.data instead.
+{'test': 'bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d', 'test2': '191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba', 'test3': '8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad', 'test4': 'cdfebe4279c013b4572ccb2e37d59f3856747a768f725afd22ca8e7b0a42cb33'}
+76a0a1b41ec3c27e4d17038e73331bc4e6c330d2ec0e409a443d1fde3c8b357f
+9da6c7af954c2554cbf80473f449e7bb8448f89160962aaad39413408a2bc85b
+{'test': 'bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d', 'test2': '191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba', 'test3': '8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad', 'test4': 'cdfebe4279c013b4572ccb2e37d59f3856747a768f725afd22ca8e7b0a42cb33'}
+['test3', 'test2', 'test1']
+['test1', 'test2', 'test3']
+55
+Exception: ERROR: assigning a Cell to a DeepCell
+
+When accessed, Cells have their complete content loaded into memory.
+This is not the case for DeepCells, whose content can be very large in size.
+
+Therefore, the direct assignment of a Cell to a DeepCell is by default not allowed.
+
+If you really want to do this, create an intermediate Cell with hash pattern {"*": "#"},
+and assign the Cell to this intermediate Cell.
+
+
+f5b2dd71bca6eff59c341ab4271b42a86c5dcf55984987959035f34d28e86680
+['test1', 'test2', 'test3']
+7c00da18c6703c0f634716296df19875b54a19d19a37e307aed0f5732a744a99
+<Silk: {'test': 1, 'test2': 2} >
+test <Silk: 1 >
+test4 <Silk: None >
+
+6029a94bf18edba94b275d0452290719d94aae26972fc3f81757349b47ce85e3
+['test1', 'test2', 'test3']
+7c00da18c6703c0f634716296df19875b54a19d19a37e307aed0f5732a744a99
 <Silk: {'test3': 10, 'test4': 11} >
-{'test3': 10, 'test4': 11}
-<Silk: 11 >
+test <Silk: None >
+test4 <Silk: 11 >
+

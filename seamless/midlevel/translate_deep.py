@@ -1,5 +1,10 @@
 from .util import get_path, build_structured_cell
 
+class DeepCellConnector:
+    def __init__(self, deep_structure, keyorder):
+        self.deep_structure = deep_structure
+        self.keyorder = keyorder
+
 def apply_blackwhitelist(origin, keyorder, blackwhitelist):
     deep_structure = origin
     whitelist = blackwhitelist.get("whitelist")
@@ -58,15 +63,14 @@ def translate_deepcell(node, root, namespace, inchannels, outchannels):
     ctx.filtered_keyorder = core_cell("plain")
 
     if inchannels:
-        namespace[path, "target"] = ctx.origin.inchannels[()], node
-        namespace[path + ("_KEYORDER",), "target"] = ctx.keyorder, node    
+        namespace[path, "target"] = DeepCellConnector(ctx.origin, ctx.keyorder), node
     for outchannel in outchannels:
-        cpath = path + outchannel
-        namespace[cpath, "source"] = ctx.filtered.outchannels[outchannel], node
-        if outchannel == [()]:
-            namespace[path + ("_KEYORDER",), "source"] = ctx.filtered_keyorder, node
-    
-    
+        if outchannel == ():
+            namespace[path, "source"] = DeepCellConnector(ctx.filtered, ctx.filtered_keyorder), node
+        else:
+            cpath = path + outchannel
+            namespace[cpath, "source"] = ctx.filtered.outchannels[outchannel], node
+        
     ctx.blacklist = core_cell("plain").set(checksum.get("blacklist"))
     ctx.whitelist = core_cell("plain").set(checksum.get("whitelist"))
     
