@@ -168,7 +168,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
             assert isinstance(result_checksum, bytes)
             return result_checksum
 
-    locknr = await acquire_evaluation_lock(self)
+    locknr = await acquire_evaluation_lock(self)    
     try:
         result_checksum = None
         result_buffer = None
@@ -236,6 +236,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 done = True
                 needs_value_conversion = False
             elif source_celltype == "checksum" and target_hash_pattern is not None:
+                assert trivial_path
                 if fingertip_mode:
                     buffer = await GetBufferTask(manager, source_checksum).run()
                 else:
@@ -248,9 +249,12 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 if isinstance(deep_structure, str):
                     raise Exception("Checksum cell does not refer to a deep cell structure")
                 validate_checksum(deep_structure)
+                validate_deep_structure(deep_structure, target_hash_pattern)
+
                 result_checksum = source_checksum
                 done = True
                 needs_value_conversion = False
+                print("done")
             elif trivial_path and result_hash_pattern is None:
                 if source_celltype == target_celltype:
                     result_checksum = source_checksum
@@ -436,6 +440,6 @@ from ...protocol.expression import get_subpath
 from .checksum import CalculateChecksumTask
 from ...cache.buffer_cache import buffer_cache, CacheMissError
 from . import acquire_evaluation_lock, release_evaluation_lock
-from ...protocol.deep_structure import access_hash_pattern, apply_hash_pattern, value_to_deep_structure
+from ...protocol.deep_structure import apply_hash_pattern, validate_deep_structure
 from ...protocol.expression import get_subpath
 from ..manager import Manager
