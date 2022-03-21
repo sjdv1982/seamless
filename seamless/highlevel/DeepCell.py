@@ -1,5 +1,5 @@
 from copy import deepcopy
-
+from functools import partial
 
 def get_new_deepcell(path):
     from ..core.cache.buffer_cache import empty_list_checksum, empty_dict_checksum
@@ -32,17 +32,20 @@ class DeepCellBase(Base, HelpMixin):
 
     @property
     def exception(self):
-        """Returns the exception associated with the cell.
-
-        For non-structured cells, this exception was raised during parsing.
-        For structured cells, it may also have been raised during validation"""
+        """Returns the exception associated with the deep cell."""
 
         if self._get_hcell().get("UNTRANSLATED"):
             return "This cell is untranslated; run 'ctx.translate()' or 'await ctx.translation()'"
         ctx = self._get_context()
-        origin_cell = ctx.origin
-        return origin_cell.exception
-
+        attrs = ("origin", "keyorder", "blacklist", "whitelist", "apply_blackwhite", "filtered", "filtered_keyorder")
+        for k in attrs:
+            exception = getattr(ctx, k).exception
+            if exception is not None:
+                    if k == "origin":
+                        return exception
+                    else:
+                        return "*" + k + "*: " + exception
+    
     @property
     def checksum(self):
         """Contains the checksum of the cell, as SHA3-256 hash.
@@ -64,7 +67,9 @@ the value may not be.
         self.set_checksum(checksum)
     
     def set_checksum(self, checksum):
+        from ..core.cache.buffer_cache import empty_dict_checksum
         hcell = self._get_hcell2()
+        hcell.pop("metadata", None)
         if hcell.get("UNTRANSLATED"):
             hcell.pop("TEMP", None)
             if hcell.get("checksum") is None:
@@ -73,6 +78,8 @@ the value may not be.
             return
         ctx = self._get_context()
         origin_cell = ctx.origin
+        if checksum is None:
+            checksum = empty_dict_checksum
         origin_cell.set_auth_checksum(checksum)
 
     @property
@@ -87,6 +94,8 @@ the value may not be.
 
     @keyorder.setter
     def keyorder(self, keyorder):
+        if keyorder is None:
+            return self.set_keyorder_checksum(None)
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             raise AttributeError
@@ -111,7 +120,9 @@ the value may not be.
         self.set_keyorder_checksum(checksum)
 
     def set_keyorder_checksum(self, checksum):
+        from ..core.cache.buffer_cache import empty_list_checksum
         hcell = self._get_hcell2()
+        hcell.pop("metadata", None)
         if hcell.get("UNTRANSLATED"):
             if hcell.get("checksum") is None:
                 hcell["checksum"] = {}
@@ -119,6 +130,8 @@ the value may not be.
             return
         ctx = self._get_context()
         cell = ctx.keyorder
+        if checksum is None:
+            checksum = empty_list_checksum
         cell.set_checksum(checksum)
 
     @property
@@ -153,8 +166,28 @@ the value may not be.
         if self._get_hcell().get("UNTRANSLATED"):
             return "Status: error (ctx needs translation)"
         ctx = self._get_context()
-        origin_status = ctx.origin.status
-        return origin_status
+        attrs = ("origin", "keyorder", "blacklist", "whitelist", "apply_blackwhite", "filtered", "filtered_keyorder")
+        for k in attrs:
+            pending = False
+            upstream = False
+            status = getattr(ctx, k).status
+            if k != "origin" and status.endswith("undefined"):
+                continue
+            if not status.endswith("OK"):
+                if status.endswith(" pending"):
+                    pending = True
+                elif status.endswith(" upstream"):
+                    upstream = True
+                else:
+                    if k == "origin":
+                        return status
+                    else:
+                        return "*" + k + "*: " + status
+        if upstream:
+            return "Status: upstream"
+        elif pending:
+            return "Status: pending"
+        return "Status: OK"
 
     @property
     def value(self):
@@ -209,7 +242,7 @@ Use DeepCell.data instead."""
             self._node = self._new_func(None)
         return self._node
 
-    def _observe_filtered(self, checksum):
+    def _observe(self, key, checksum):
         if self._parent() is None:
             return
         if self._parent()._translating:
@@ -220,46 +253,19 @@ Use DeepCell.data instead."""
             return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
-        hcell["checksum"].pop("filtered", None)
+        hcell["checksum"].pop(key, None)
         if checksum is not None:
-            hcell["checksum"]["filtered"] = checksum
+            hcell["checksum"][key] = checksum
 
-    def _observe_origin(self, checksum):
-        if self._parent() is None:
-            return
-        if self._parent()._translating:
-            return
-        try:
-            hcell = self._get_hcell()
-        except Exception:
-            return
-        if hcell.get("checksum") is None:
-            hcell["checksum"] = {}
-        hcell["checksum"].pop("origin", None)
-        if checksum is not None:
-            hcell["checksum"]["origin"] = checksum
-
-    def _observe_keyorder(self, checksum):
-        if self._parent() is None:
-            return
-        if self._parent()._translating:
-            return
-        try:
-            hcell = self._get_hcell()
-        except Exception:
-            return
-        if hcell.get("checksum") is None:
-            hcell["checksum"] = {}
-        hcell["checksum"].pop("keyorder", None)
-        if checksum is not None:
-            hcell["checksum"]["keyorder"] = checksum
 
     def _set_observers(self):
         from ..core.structured_cell import StructuredCell
         ctx = self._get_context()
-        ctx.origin.auth._set_observer(self._observe_origin)
-        ctx.keyorder._set_observer(self._observe_keyorder)
-        ctx.filtered._set_observer(self._observe_filtered)
+        ctx.origin.auth._set_observer(partial(self._observe, "origin"))
+        ctx.keyorder._set_observer(partial(self._observe, "keyorder"))
+        ctx.filtered0._set_observer(partial(self._observe, "filtered"))
+        ctx.blacklist._set_observer(partial(self._observe, "blacklist"))
+        ctx.whitelist._set_observer(partial(self._observe, "whitelist"))
 
     def _get_subcell(self, attr):
         self._get_hcell()
@@ -337,17 +343,58 @@ OR:
             except Exception:
                 pass
         
+
+    def _get_bwlist(self, bw):
+        ctx = self._get_context()
+        cell = getattr(ctx, bw)
+        return cell.value
+
+    def _set_bwlist(self, bw, value):
+        from .assign import assign_connection
+        from .Cell import Cell
+        if value is None or isinstance(value, (list, tuple)):
+            ctx = self._get_context()
+            cell = getattr(ctx, bw)
+            cell.set(value)
+        elif isinstance(value, Cell):
+            ctx = self._parent()
+            assert value._parent() is ctx #no connections between different (toplevel) contexts
+            assign_connection(ctx, value._path, self._path + (bw,), False)
+            hcell = self._get_hcell2()
+            hcell.pop("TEMP", None)
+            if hcell.get("checksum") is not None:
+                hcell["checksum"].pop(bw, None)
+            self._parent()._translate()
+        else:
+            raise TypeError(type(value))
+
     @property
     def blacklist(self):
-        # Similar to transformer.code
-        # Allow setting this to None, because .define doesn't do it!
-        raise NotImplementedError
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            raise AttributeError
+        return self._get_bwlist("blacklist")
+
+    @blacklist.setter
+    def blacklist(self, value):
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            raise AttributeError
+        return self._set_bwlist("blacklist", value)
 
     @property
     def whitelist(self):
-        # Similar to transformer.code
-        # Allow setting this to None, because .define doesn't do it!
-        raise NotImplementedError
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            raise AttributeError
+        return self._get_bwlist("whitelist")
+
+    @whitelist.setter
+    def whitelist(self, value):
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            raise AttributeError
+        return self._set_bwlist("whitelist", value)
 
     def __getitem__(self, item):
         if isinstance(item, str):

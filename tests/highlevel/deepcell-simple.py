@@ -86,9 +86,3 @@ print(ctx.a._get_context().filtered.value)
 print("test", ctx.atest.value)
 print("test4", ctx.atest4.value)
 print()
-
-'''
-print(ctx.a._get_context().blackwhitelist.status)
-print(ctx.a._get_context().apply_blackwhite.status)
-print(ctx.a._get_context().apply_blackwhite.exception)
-'''

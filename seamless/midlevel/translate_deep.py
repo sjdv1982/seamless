@@ -6,24 +6,28 @@ class DeepCellConnector:
         self.keyorder = keyorder
 
 def apply_blackwhitelist(origin, keyorder, blackwhitelist):
+    assert keyorder is None or isinstance(keyorder, list), keyorder  # TODO: schema instead
     deep_structure = origin
     whitelist = blackwhitelist.get("whitelist")
     if whitelist is not None:
+        assert isinstance(whitelist, list)  # TODO: schema instead
         deep_structure = {k:deep_structure[k] for k in whitelist}
         keyorder = [k for k in keyorder if k in whitelist]
     blacklist = blackwhitelist.get("blacklist")
     if blacklist is not None:
+        assert isinstance(blacklist, list)  # TODO: schema instead
         deep_structure = {k:deep_structure[k] for k in deep_structure if k not in blacklist}
         keyorder = [k for k in keyorder if k not in blacklist]    
     return deep_structure, keyorder
 
 def translate_deepcell(node, root, namespace, inchannels, outchannels):
     #print("TODO: DeepFolder, probably using this function def")
+    # TODO: set schemas for keyorder, blacklist, whitelist
     from .translate import set_structured_cell_from_checksum
 
     for inchannel in inchannels:
-        if inchannel not in ( (), None ):
-            raise AssertionError  # inchannels not allowed, unless complete assignment
+        if inchannel not in ( (), ("blacklist",), ("whitelist",), None ):
+            raise AssertionError  # inchannels not allowed, unless black/whitelist or complete assignment
 
     path = node["path"]
 
@@ -62,8 +66,7 @@ def translate_deepcell(node, root, namespace, inchannels, outchannels):
 
     ctx.filtered_keyorder = core_cell("plain")
 
-    if inchannels:
-        namespace[path, "target"] = DeepCellConnector(ctx.origin, ctx.keyorder), node
+    namespace[path, "target"] = DeepCellConnector(ctx.origin, ctx.keyorder), node
     for outchannel in outchannels:
         if outchannel == ():
             namespace[path, "source"] = DeepCellConnector(ctx.filtered, ctx.filtered_keyorder), node
@@ -71,9 +74,16 @@ def translate_deepcell(node, root, namespace, inchannels, outchannels):
             cpath = path + outchannel
             namespace[cpath, "source"] = ctx.filtered.outchannels[outchannel], node
         
-    ctx.blacklist = core_cell("plain").set(checksum.get("blacklist"))
-    ctx.whitelist = core_cell("plain").set(checksum.get("whitelist"))
-    
+    ctx.blacklist = core_cell("plain")
+    ctx.whitelist = core_cell("plain")
+    namespace[path + ("blacklist",), "target"] = ctx.blacklist, "target"
+    namespace[path + ("whitelist",), "target"] = ctx.whitelist, "target"
+
+    if "blacklist" in checksum:
+        ctx.blacklist._set_checksum(checksum["blacklist"], initial=True)
+    if "whitelist" in checksum:
+        ctx.whitelist._set_checksum(checksum["whitelist"], initial=True)
+
     ctx.blackwhitelist = build_structured_cell(
         parent, name + "_BLACKWHITELIST",
         [("blacklist",),("whitelist",)],

@@ -3,19 +3,21 @@
 UPDATE: see step 11
 0: Fix the fact that you cannot set a deep list from a Numpy array (DeepStructureError).
 UPDATE: first do Fairserver plan
-====> here
 1. Make DeepFolder, Folder, DeepCell classes.
 They correspond to the following low-level deep cells:
  DeepFolder: hash pattern {"*": "!!"} (deep-dict-of-filenames-as-byte-cells)
  Folder: normal mixed cell, but mountable to a folder (dict-of-filenames-as-mixed-cells).
  DeepCell: hash pattern {"*": "!"} (deep-dict-of-mixed-cells)
- ake them connectable and translatable like structured cells.
-DeepFolder/Folder only supports outchannels, but there is a .set method.
-DeepCell supports also inchannels.
-They are inter-convertible (i.e. connectable) among themselves (Folder/DeepFolder is read-only)
-and also to ordinary structured/simple cells. This is already supported
-by the conversion engine, since the classes get translated as deep cells.
-NOTE: execution order checksum is a part of DeepFolder/DeepCell as well!
+Their API is similar to normal (structured) Cells.
+They can be assigned to normal Cells (any kind of), but they do
+not have arbitrary incoming subcell connections. DeepCell/DeepFolder do have an incoming connection for whitelist/blacklist.
+For DeepCell/DeepFolder, the .define method can set their checksum(s) and metadata via the FAIR server. 
+There is a .set method as well. Folder can be mounted to the filesystem.
+Internally, they are translated to structured cells, making them convertible to normal Cells in the conversion engine. However, for DeepCell/DeepFolder, this is intentionally blocked, as it may blow up memory. It is still possible if the hash pattern of the normal Cell has been set (advanced feature). 
+NOTE: keyorder (execution order checksum) is a part of DeepFolder/DeepCell as well! If you assign a DeepCell/DeepFolder to another, the keyorder gets copied as well.
+NOTE2: You can ask a DeepCell/DeepFolder for .data, but this always returns the deep structure before whitelist/blacklist filtering.
+To get it after filtering, create a new DeepCell/DeepFolder and assign it to the first.
+====> here. DeepFolder and Folder still TODO
 2. Finish core/mount_directory. Support continuous mount only for Folder and Modules! For those, .mount is *always* to a directory
 Support load_directory/write_directory only for DeepFolders, Folders and Modules!
 Write tests, adapt tests/highlevel/multi-module.py and graphs/multi_module/ accordingly.

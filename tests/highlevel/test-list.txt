@@ -14,6 +14,7 @@ subsubcell.py
 inchannel-conflict.py
 logs.py
 deepcell-simple.py
+deepcell-filter.py: can also be run in non-interactive mode (mount /tmp/blacklist.json, /tmp/filt_cell.json)
 filesystemlike.py
 context.py
 context2.py
