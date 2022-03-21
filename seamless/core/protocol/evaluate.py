@@ -68,6 +68,8 @@ async def conversion(
     checksum, celltype, target_celltype, 
     *, fingertip_mode, value_conversion_callback=None,buffer=None
 ):
+    if checksum is None:
+        return None
     if value_conversion_callback is None:
         value_conversion_callback = value_conversion
     if buffer is not None:

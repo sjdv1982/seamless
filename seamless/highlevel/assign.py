@@ -21,7 +21,7 @@ from . import ConstantTypes
 from silk.mixed import MixedBase
 from silk import Silk
 from .Cell import Cell, get_new_cell
-from .DeepCell import DeepCellBase, DeepCell#, DeepListCell
+from .DeepCell import DeepCellBase, DeepCell, DeepFolderCell
 from .Module import Module, get_new_module
 from .Resource import Resource
 from .pin import PinWrapper
@@ -241,7 +241,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
                 hcell.pop("TEMP")
             elif "checksum" in hcell:
                 hcell["checksum"].pop("value", None)
-                if isinstance(t, DeepCell):
+                if isinstance(t, (DeepCell, DeepFolderCell)):
                     hcell["checksum"].pop("origin", None)
                     if isinstance(ctx._children.get(source), DeepCellBase):
                         hcell["checksum"].pop("keyorder", None)                    
@@ -287,16 +287,22 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         elif isinstance(s, (Module, DeepCellBase)):
             if isinstance(s, DeepCellBase) and isinstance(t, Cell):
                 if t.hash_pattern is None:
-                    msg = """ERROR: assigning a Cell to a DeepCell
+                    if isinstance(s, DeepFolderCell):
+                        c = "DeepFolderCell"   
+                        hp = {"*": "##"}
+                    else:
+                        c = "DeepCell"   
+                        hp = {"*": "#"}
+                    msg = """ERROR: assigning a Cell to a {c}
 
 When accessed, Cells have their complete content loaded into memory.
-This is not the case for DeepCells, whose content can be very large in size.
+This is not the case for {c}s, whose content can be very large in size.
 
-Therefore, the direct assignment of a Cell to a DeepCell is by default not allowed.
+Therefore, the direct assignment of a Cell to a {c} is by default not allowed.
 
-If you really want to do this, create an intermediate Cell with hash pattern {"*": "#"},
+If you really want to do this, create an intermediate Cell with hash pattern {hp},
 and assign the Cell to this intermediate Cell.
-"""
+""".format(c=c,hp=hp)
                     raise Exception(msg)
 
             pass
@@ -509,7 +515,7 @@ def assign_to_deep_subcell(cell, attr, value):
             temp_value[attr] = value
             hcell["TEMP"] = temp_value
             return
-        handle = cell.handle
+        handle = cell._handle
         if isinstance(attr, int):
             handle[attr] = value
         else:

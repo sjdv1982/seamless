@@ -376,6 +376,9 @@ def translate(graph, ctx, environment):
         elif t == "deepcell":
             inchannels, outchannels = find_channels(path, connection_paths)
             translate_deepcell(node, ctx, namespace, inchannels, outchannels)
+        elif t == "deepfoldercell":
+            inchannels, outchannels = find_channels(path, connection_paths)
+            translate_deepfoldercell(node, ctx, namespace, inchannels, outchannels)
         elif t == "module":
             inchannels, outchannels = find_channels(path, connection_paths)
             translate_module(node, ctx, namespace, inchannels, outchannels)
@@ -404,7 +407,7 @@ def translate(graph, ctx, environment):
 from .translate_py_transformer import translate_py_transformer
 from .translate_macro import translate_macro
 from .translate_module import translate_module
-from .translate_deep import translate_deepcell
+from .translate_deep import translate_deepcell, translate_deepfoldercell
 '''
 # imported only at need...
 from .translate_bash_transformer import translate_bash_transformer

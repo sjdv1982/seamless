@@ -1,0 +1,34 @@
+Seamless DeepFolderCell: .a
+{'test': 'a0ebafa5614ee4d22f71af99122ebebd7432bc981dfb6c6f70f1803bcbf932f2', 'test2': 'aba7aeb8a7948dd0cdb8eeb9239e5d1dab2bd840f13930f86f6e67ba40ea5350'}
+<Silk: {'test': '"value"\n', 'test2': '123\n'} >
+Seamless DeepFolderCell: .a
+{'test': 'a0ebafa5614ee4d22f71af99122ebebd7432bc981dfb6c6f70f1803bcbf932f2', 'test2': 'aba7aeb8a7948dd0cdb8eeb9239e5d1dab2bd840f13930f86f6e67ba40ea5350', 'test3': '7925872478efa2f0affb07f3f4229386c5b4f6f3c26606ee039ba14d943d1ab8', 'test4': 'f6ce2700aac5f5d5f3bfb4e7e590881056b73a0b14b4f55b747d1d14e6293a32'}
+<Silk: {'test': '"value"\n', 'test2': '123\n', 'test3': '"20"\n', 'test4': 'somebuffer'} >
+aba7aeb8a7948dd0cdb8eeb9239e5d1dab2bd840f13930f86f6e67ba40ea5350 123
+6e117ce616bf685e11b4f4adab303af863f58024321b3a54c6df3cf0ffe13d85
+[]
+7b41ad4a50b29158e075c6463133761266adb475130b8e886f2f5649070031cf
+<Silk: {'test': '"value"\n', 'test2': '123\n', 'test3': '"20"\n', 'test4': 'somebuffer'} >
+
+['test3', 'test2', 'test1']
+9da6c7af954c2554cbf80473f449e7bb8448f89160962aaad39413408a2bc85b
+
+Seamless DeepFolderCell: .a2
+{'test': 'a0ebafa5614ee4d22f71af99122ebebd7432bc981dfb6c6f70f1803bcbf932f2', 'test2': 'aba7aeb8a7948dd0cdb8eeb9239e5d1dab2bd840f13930f86f6e67ba40ea5350', 'test3': '7925872478efa2f0affb07f3f4229386c5b4f6f3c26606ee039ba14d943d1ab8', 'test4': 'f6ce2700aac5f5d5f3bfb4e7e590881056b73a0b14b4f55b747d1d14e6293a32'}
+{'test': 'a0ebafa5614ee4d22f71af99122ebebd7432bc981dfb6c6f70f1803bcbf932f2', 'test2': 'aba7aeb8a7948dd0cdb8eeb9239e5d1dab2bd840f13930f86f6e67ba40ea5350', 'test3': '7925872478efa2f0affb07f3f4229386c5b4f6f3c26606ee039ba14d943d1ab8', 'test4': 'f6ce2700aac5f5d5f3bfb4e7e590881056b73a0b14b4f55b747d1d14e6293a32'}
+['test3', 'test2', 'test1']
+['test1', 'test2', 'test3']
+b'somebuffer'
+Exception: ERROR: assigning a Cell to a DeepFolderCell
+
+When accessed, Cells have their complete content loaded into memory.
+This is not the case for DeepFolderCells, whose content can be very large in size.
+
+Therefore, the direct assignment of a Cell to a DeepFolderCell is by default not allowed.
+
+If you really want to do this, create an intermediate Cell with hash pattern {'*': '##'},
+and assign the Cell to this intermediate Cell.
+
+
+b'somebuffer'
+None

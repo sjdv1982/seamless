@@ -87,7 +87,7 @@ class SubCell(Cell):
 class DeepSubCell(SubCell):
 
     def __init__(self, parent, cell, attr, readonly):
-        assert isinstance(cell, DeepCell)
+        assert isinstance(cell, (DeepCell, DeepFolderCell))
         assert not isinstance(cell, SubCell)
         fullpath = cell._path + (attr,)
         Cell.__init__(self, parent=parent, path=fullpath)
@@ -126,4 +126,4 @@ class DeepSubCell(SubCell):
     def __str__(self):
         return "Seamless DeepSubCell: %s" % ".".join(self._path)
 
-from .DeepCell import DeepCell
+from .DeepCell import DeepCell, DeepFolderCell

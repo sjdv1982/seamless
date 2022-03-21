@@ -17,7 +17,7 @@ Internally, they are translated to structured cells, making them convertible to 
 NOTE: keyorder (execution order checksum) is a part of DeepFolder/DeepCell as well! If you assign a DeepCell/DeepFolder to another, the keyorder gets copied as well.
 NOTE2: You can ask a DeepCell/DeepFolder for .data, but this always returns the deep structure before whitelist/blacklist filtering.
 To get it after filtering, create a new DeepCell/DeepFolder and assign it to the first.
-====> here. DeepFolder and Folder still TODO
+====> here. Folder still TODO
 2. Finish core/mount_directory. Support continuous mount only for Folder and Modules! For those, .mount is *always* to a directory
 Support load_directory/write_directory only for DeepFolders, Folders and Modules!
 Write tests, adapt tests/highlevel/multi-module.py and graphs/multi_module/ accordingly.

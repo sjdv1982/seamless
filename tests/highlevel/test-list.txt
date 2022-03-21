@@ -15,6 +15,7 @@ inchannel-conflict.py
 logs.py
 deepcell-simple.py
 deepcell-filter.py: can also be run in non-interactive mode (mount /tmp/blacklist.json, /tmp/filt_cell.json)
+deepfolder.py
 filesystemlike.py
 context.py
 context2.py
@@ -97,6 +98,7 @@ webinterface.sh: open with bash inside the Seamless Docker container.
 deepcell-pdb.py: requires a FAIR server that knows the PDB dataset
                  Can also be run interactively, change ctx.pdb_code 
                   and observe /tmp/pdb_structure.mmcif
+deepfolder-pdb.py: See above
 high-in-low.py
 high-in-low2.py
 high-in-low3.py

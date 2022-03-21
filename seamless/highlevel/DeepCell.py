@@ -13,6 +13,18 @@ def get_new_deepcell(path):
         }
     }
 
+def get_new_deepfoldercell(path):
+    from ..core.cache.buffer_cache import empty_list_checksum, empty_dict_checksum
+    return {
+        "path": path,
+        "type": "deepfoldercell",
+        "UNTRANSLATED": True,
+        "checksum": {
+            "origin": empty_dict_checksum,
+            "keyorder": empty_list_checksum,
+        }
+    }
+
 from .Base import Base
 from .HelpMixin import HelpMixin
 
@@ -68,6 +80,7 @@ the value may not be.
     
     def set_checksum(self, checksum):
         from ..core.cache.buffer_cache import empty_dict_checksum
+        checksum = parse_checksum(checksum)
         hcell = self._get_hcell2()
         hcell.pop("metadata", None)
         if hcell.get("UNTRANSLATED"):
@@ -123,6 +136,7 @@ the value may not be.
         from ..core.cache.buffer_cache import empty_list_checksum
         hcell = self._get_hcell2()
         hcell.pop("metadata", None)
+        checksum = parse_checksum(checksum)
         if hcell.get("UNTRANSLATED"):
             if hcell.get("checksum") is None:
                 hcell["checksum"] = {}
@@ -134,35 +148,63 @@ the value may not be.
             checksum = empty_list_checksum
         cell.set_checksum(checksum)
 
+    def define(self, distribution:dict):
+        """Defines a DeepCell from a distribution
+A distribution is a dict containing at least "checksum" and "keyorder", 
+which are Seamless checksums.
+Distribution metadata ("content_size", "index_size", "nkeys", "access_index")
+is stored as well, if available.
+"""
+        from seamless.fair import find
+        self.set_checksum(distribution["checksum"])
+        self.set_keyorder_checksum(distribution["keyorder"])
+        meta_keys = ["content_size", "index_size", "nkeys", "access_index"]
+        if not all([key in distribution for key in meta_keys]):
+            try:
+                distribution2 = None
+                result = find(distribution["checksum"])
+                if result is not None:
+                    dataset, distribution2 = result["dataset"], result["distribution"]
+                else:
+                    distribution2 = distribution
+                if distribution2 is not None:
+                    metadata = {"dataset": dataset}
+                    for key in meta_keys:
+                        if key in distribution2:
+                            metadata[key] = distribution2[key]
+                    self._get_hcell()["metadata"] = metadata
+            except Exception:
+                pass
+
     @property
     def data(self):
-        """Returns the data of the cell
-
-        The underlying checksums are NOT expanded to values
-        """
+        """Returns the data (checksum dict) of the deep cell"""
         ctx = self._get_context()
         cell = ctx.origin
         return deepcopy(cell.data)
 
     @property
-    def handle(self):
+    def _handle(self):
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             raise AttributeError
         ctx = self._get_context()
         cell = ctx.origin
-        return cell.handle_hash
+        handle = cell.handle_hash
+        return handle
 
     def set(self, value):
-        self.handle.set(value)
+        """Sets the deep cell to a particular in-memory value"""
+        handle = self._handle
+        handle.set(value)
 
     @property
     def status(self):
-        """Returns the status of the DeepCell.
+        """Returns the status of the deep cell.
 
-        The status may be undefined, pending, error or OK
-        If it is error, DeepCell.exception will be non-empty.
-        """
+The status may be undefined, pending, error or OK
+If it is error, cell.exception will be non-empty.
+"""
         if self._get_hcell().get("UNTRANSLATED"):
             return "Status: error (ctx needs translation)"
         ctx = self._get_context()
@@ -191,13 +233,13 @@ the value may not be.
 
     @property
     def value(self):
-        msg = """It is too costly to construct the full value of a DeepCell
-Use DeepCell.data instead."""
+        msg = """It is too costly to construct the full value of a deep cell
+Use cell.data instead."""
         raise AttributeError(msg)
 
     @property
     def schema(self):
-        raise AttributeError("DeepCell schemas are currently disabled.")
+        raise AttributeError("Deep cell schemas are currently disabled.")
 
     def _get_cell_subpath(self, cell, subpath):
         p = cell
@@ -257,7 +299,6 @@ Use DeepCell.data instead."""
         if checksum is not None:
             hcell["checksum"][key] = checksum
 
-
     def _set_observers(self):
         from ..core.structured_cell import StructuredCell
         ctx = self._get_context()
@@ -270,10 +311,9 @@ Use DeepCell.data instead."""
     def _get_subcell(self, attr):
         self._get_hcell()
         parent = self._parent()
-        readonly = False ### TODO
         return DeepSubCell(
             parent, self,
-            attr, readonly=readonly
+            attr, readonly=False
         )
 
     def __getattribute__(self, attr):
@@ -287,62 +327,6 @@ Use DeepCell.data instead."""
     def __dir__(self):
         result = [p for p in type(self).__dict__ if not p.startswith("_")]
         return result
-
-    def __str__(self):
-        return "Seamless DeepCell: " + self.path
-
-    def __repr__(self):
-        return str(self)
-
-class DeepCell(DeepCellBase):
-    _new_func = get_new_deepcell
-    hash_pattern = {"*": "#"}
-
-    @staticmethod
-    def find_distribution(dataset:str, *, version:str=None, date:str=None, format:str=None, compression:str=None):
-        from seamless.fair import find_distribution
-        distribution = find_distribution(
-            dataset, type="deepcell",
-            version=version, date=date, format=format, compression=compression
-        )
-        print("""WARNING: finding a FAIR data distribution for a DeepCell
-is only weakly reproducible.
-To guarantee strong reproducibility:
-- Use "DeepCell().define(DeepCell.find_distribution(...))" only in IPython 
-  and then use ctx.save().
-OR: 
-- If you prefer to use load_project.py:define_graph, enter the following code:
-
-    distribution = {{
-        "checksum": "{}",
-        "keyorder": "{}",
-    }}
-    DeepCell().define(distribution)
-    
-""".format(distribution["checksum"], distribution["keyorder"]))
-
-        return distribution
-
-    def define(self, distribution):
-        from seamless.fair import find
-        self.set_checksum(distribution["checksum"])
-        self.set_keyorder_checksum(distribution["keyorder"])
-        meta_keys = ["content_size", "index_size", "nkeys", "access_index"]
-        if not all([key in distribution for key in meta_keys]):
-            try:
-                distribution2 = None
-                result = find(distribution["checksum"])
-                if result is not None:
-                    dataset, distribution2 = result["dataset"], result["distribution"]
-                if distribution2 is not None:
-                    metadata = {"dataset": dataset}
-                    for key in meta_keys:
-                        if key in distribution2:
-                            metadata[key] = distribution2[key]
-                    self._get_hcell()["metadata"] = metadata
-            except Exception:
-                pass
-        
 
     def _get_bwlist(self, bw):
         ctx = self._get_context()
@@ -402,6 +386,74 @@ OR:
         else:
             raise TypeError(item)
 
+    def __repr__(self):
+        return str(self)
+
+class DeepCell(DeepCellBase):
+    _new_func = get_new_deepcell
+    hash_pattern = {"*": "#"}
+
+    def __str__(self):
+        return "Seamless DeepCell: " + self.path
+
+    @staticmethod
+    def find_distribution(dataset:str, *, version:str=None, date:str=None, format:str=None, compression:str=None):
+        from seamless.fair import find_distribution
+        distribution = find_distribution(
+            dataset, type="deepcell",
+            version=version, date=date, format=format, compression=compression
+        )
+        print("""WARNING: finding a FAIR data distribution for a DeepCell
+is only weakly reproducible.
+To guarantee strong reproducibility:
+- Use "DeepCell().define(DeepCell.find_distribution(...))" only in IPython 
+  and then use ctx.save().
+OR: 
+- If you prefer to use load_project.py:define_graph, enter the following code:
+
+    distribution = {{
+        "checksum": "{}",
+        "keyorder": "{}",
+    }}
+    DeepCell().define(distribution)
+    
+""".format(distribution["checksum"], distribution["keyorder"]))
+
+        return distribution
+    
+class DeepFolderCell(DeepCellBase):
+    _new_func = get_new_deepfoldercell
+    hash_pattern = {"*": "##"}
+
+    def __str__(self):
+        return "Seamless DeepFolderCell: " + self.path
+
+    @staticmethod
+    def find_distribution(dataset:str, *, version:str=None, date:str=None, format:str=None, compression:str=None):
+        from seamless.fair import find_distribution
+        distribution = find_distribution(
+            dataset, type="deepfolder",
+            version=version, date=date, format=format, compression=compression
+        )
+        print("""WARNING: finding a FAIR data distribution for a DeepFolderCell
+is only weakly reproducible.
+To guarantee strong reproducibility:
+- Use "DeepFolderCell().define(DeepFolderCell.find_distribution(...))" only in IPython 
+  and then use ctx.save().
+OR: 
+- If you prefer to use load_project.py:define_graph, enter the following code:
+
+    distribution = {{
+        "checksum": "{}",
+        "keyorder": "{}",
+    }}
+    DeepFolderCell().define(distribution)
+    
+""".format(distribution["checksum"], distribution["keyorder"]))
+
+        return distribution
+
+
 """
 # YAGNI for now. 
 # Unsupported by seamless.fair, and have to think of keyorder
@@ -426,5 +478,39 @@ class DeepListCell(DeepCellBase):
             raise TypeError(item)
 """
 
+class DeepCell(DeepCellBase):
+    _new_func = get_new_deepcell
+    hash_pattern = {"*": "#"}
+
+    def __str__(self):
+        return "Seamless DeepCell: " + self.path
+
+    @staticmethod
+    def find_distribution(dataset:str, *, version:str=None, date:str=None, format:str=None, compression:str=None):
+        from seamless.fair import find_distribution
+        distribution = find_distribution(
+            dataset, type="deepcell",
+            version=version, date=date, format=format, compression=compression
+        )
+        print("""WARNING: finding a FAIR data distribution for a DeepCell
+is only weakly reproducible.
+To guarantee strong reproducibility:
+- Use "DeepCell().define(DeepCell.find_distribution(...))" only in IPython 
+  and then use ctx.save().
+OR: 
+- If you prefer to use load_project.py:define_graph, enter the following code:
+
+    distribution = {{
+        "checksum": "{}",
+        "keyorder": "{}",
+    }}
+    DeepCell().define(distribution)
+    
+""".format(distribution["checksum"], distribution["keyorder"]))
+
+        return distribution
+
+
 from .synth_context import SynthContext
 from .SubCell import DeepSubCell
+from ..midlevel.util import parse_checksum

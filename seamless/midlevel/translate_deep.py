@@ -20,8 +20,7 @@ def apply_blackwhitelist(origin, keyorder, blackwhitelist):
         keyorder = [k for k in keyorder if k not in blacklist]    
     return deep_structure, keyorder
 
-def translate_deepcell(node, root, namespace, inchannels, outchannels):
-    #print("TODO: DeepFolder, probably using this function def")
+def _translate_deep(node, root, namespace, inchannels, outchannels, *, hash_pattern):
     # TODO: set schemas for keyorder, blacklist, whitelist
     from .translate import set_structured_cell_from_checksum
 
@@ -35,11 +34,11 @@ def translate_deepcell(node, root, namespace, inchannels, outchannels):
     name = path[-1]
     ctx = context(toplevel=False)
     setattr(parent, name, ctx)
-
-    hash_pattern = {"*": "#"}
+    
+    real_inchannels = [ic for ic in inchannels if ic not in (("blacklist",), ("whitelist",))]
     ctx.origin = build_structured_cell(
         parent, name + "_ORIGIN",
-        inchannels, [()],
+        real_inchannels, [()],
         fingertip_no_remote=node.get("fingertip_no_remote", False),
         fingertip_no_recompute=node.get("fingertip_no_recompute", False),
         hash_pattern=hash_pattern,
@@ -134,5 +133,11 @@ def translate_deepcell(node, root, namespace, inchannels, outchannels):
 
 
     return ctx
+
+def translate_deepcell(node, root, namespace, inchannels, outchannels):
+    return _translate_deep(node, root, namespace, inchannels, outchannels, hash_pattern = {"*": "#"})
+
+def translate_deepfoldercell(node, root, namespace, inchannels, outchannels):
+    return _translate_deep(node, root, namespace, inchannels, outchannels, hash_pattern = {"*": "##"})
 
 from seamless.core import cell as core_cell, transformer, context

@@ -1,0 +1,57 @@
+WARNING: finding a FAIR data distribution for a DeepFolderCell
+is only weakly reproducible.
+To guarantee strong reproducibility:
+- Use "DeepFolderCell().define(DeepFolderCell.find_distribution(...))" only in IPython 
+  and then use ctx.save().
+OR: 
+- If you prefer to use load_project.py:define_graph, enter the following code:
+
+    distribution = {
+        "checksum": "2399c9b9ac30b6a96684485bba15e104f9cc52cbffc5f816a7e14bddedc718b4",
+        "keyorder": "d01f82ba7353c5d1debd55b8f7d216a885790a3be52854c03f471158325ead2f",
+    }
+    DeepFolderCell().define(distribution)
+    
+
+Download https://fair.rpbs.univ-paris-diderot.fr/machine/deepbuffer/2399c9b9ac30b6a96684485bba15e104f9cc52cbffc5f816a7e14bddedc718b4
+Download http://localhost:61918/machine/deepbuffer/2399c9b9ac30b6a96684485bba15e104f9cc52cbffc5f816a7e14bddedc718b4
+Waiting for: Seamless transformer: .pdb.apply_blackwhite Seamless structured cell: .pdb.blackwhitelist
+Download http://localhost:61918/machine/keyorder/d01f82ba7353c5d1debd55b8f7d216a885790a3be52854c03f471158325ead2f
+Waiting for background tasks
+Status: OK
+None
+2399c9b9ac30b6a96684485bba15e104f9cc52cbffc5f816a7e14bddedc718b4
+d01f82ba7353c5d1debd55b8f7d216a885790a3be52854c03f471158325ead2f
+
+STAGE 2
+Waiting for background tasks
+Download https://fair.rpbs.univ-paris-diderot.fr/machine/access/d4ee1515e0a746aa3b8531f1545753e6b2d4cf272632121f1827f21c64a29722
+Download http://localhost:61918/machine/access/d4ee1515e0a746aa3b8531f1545753e6b2d4cf272632121f1827f21c64a29722
+Download https://www.ebi.ac.uk/pdbe/entry-files/download/1avx.cif
+Waiting for background tasks
+d4ee1515e0a746aa3b8531f1545753e6b2d4cf272632121f1827f21c64a29722
+None
+data_1AVX
+# 
+_entry.id   1AVX 
+# 
+_audit_conform.dict_name       mmcif_pdbx.dic 
+_audit_conform.dict_version    5.281 
+_audit_conform.dict_location   http://mmcif.pdb.org/dictionaries/ascii/mmcif_pdbx
+
+STAGE 3
+Waiting for background tasks
+Download https://fair.rpbs.univ-paris-diderot.fr/machine/access/c1e7b47837a149eb54b43edd76c19f154674dccc5eb607ec47668d4395c33299
+Download http://localhost:61918/machine/access/c1e7b47837a149eb54b43edd76c19f154674dccc5eb607ec47668d4395c33299
+Download https://www.ebi.ac.uk/pdbe/entry-files/download/1eer.cif
+c1e7b47837a149eb54b43edd76c19f154674dccc5eb607ec47668d4395c33299
+data_1EER
+# 
+_entry.id   1EER 
+# 
+_audit_conform.dict_name       mmcif_pdbx.dic 
+_audit_conform.dict_version    5.351 
+_audit_conform.dict_location   http://mmcif.pdb.org/dictionaries/ascii/mmcif_pdbx
+STAGE 4
+Waiting for background tasks
+Waiting for background tasks

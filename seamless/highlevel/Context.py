@@ -834,7 +834,7 @@ class Context(Base, HelpMixin):
             livegraph._hold_observations = True
             self._translating = True
             for path, child in self._children.items():
-                if isinstance(child, (Cell, Transformer, Macro, Module, DeepCell)):
+                if isinstance(child, (Cell, Transformer, Macro, Module, DeepCell, DeepFolderCell)):
                     try:
                         child._set_observers()
                     except Exception:
@@ -1350,7 +1350,7 @@ class SubContext(Base, HelpMixin):
 
 from .Transformer import Transformer
 from .Cell import Cell
-from .DeepCell import DeepCell
+from .DeepCell import DeepCell, DeepFolderCell
 from .Link import Link
 from .Macro import Macro
 from .Module import Module

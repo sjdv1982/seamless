@@ -82,6 +82,6 @@ def parse_argument(argname, argvalue, parameter, *, parent=None):
 from silk.Silk import RichValue
 from ..Base import Base
 from ..Cell import Cell
-from ..DeepCell import DeepCell
+from ..DeepCell import DeepCell, DeepFolderCell
 from ..Context import Context, SubContext
-Cell_like = (Cell, DeepCell)
+Cell_like = (Cell, DeepCell, DeepFolderCell)
