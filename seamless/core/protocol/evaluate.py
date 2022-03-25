@@ -5,10 +5,12 @@ text_validation_celltype_cache = set()
 
 def validate_text_celltype(text, checksum, celltype):
     assert celltype in text_types2
-    if (checksum, celltype) in text_validation_celltype_cache:
-        return
+    if checksum is not None:
+        if (checksum, celltype) in text_validation_celltype_cache:
+            return
     validate_text(text, celltype, "evaluate")
-    text_validation_celltype_cache.add((checksum, celltype))
+    if checksum is not None:
+        text_validation_celltype_cache.add((checksum, celltype))
 
 def has_validated_evaluation(checksum, celltype):
     if checksum is None:

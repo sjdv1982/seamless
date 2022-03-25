@@ -320,6 +320,10 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                         result_value = result                             
 
                 if (not done) and use_value:
+                    if result_hash_pattern == {"*": "##"} and value is not None:
+                        for k,v in list(result_value.items()):
+                            if isinstance(v, bytes):
+                                result_value[k] = np.array(v, "S")
                     result_checksum = None
                     result_buffer = await SerializeToBufferTask(
                         manager, result_value,

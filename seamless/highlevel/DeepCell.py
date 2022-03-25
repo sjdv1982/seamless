@@ -513,4 +513,4 @@ OR:
 
 from .synth_context import SynthContext
 from .SubCell import DeepSubCell
-from ..midlevel.util import parse_checksum
+from ..util import parse_checksum

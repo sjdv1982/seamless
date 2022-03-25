@@ -3,27 +3,6 @@ from seamless.core import cell as core_cell, \
 import traceback
 STRUC_ID = "_STRUC"
 
-def parse_checksum(checksum):
-    """Parses checksum and returns it as string"""
-    if isinstance(checksum, bytes):
-        checksum = checksum.hex()
-    if isinstance(checksum, str):
-        checksum = bytes.fromhex(checksum)
-
-    if isinstance(checksum, bytes):
-        assert len(checksum) == 32, len(checksum)
-        return checksum.hex()
-    elif checksum is None:
-        pass
-    else:
-        raise TypeError(type(checksum))
-
-def as_tuple(v):
-    if isinstance(v, str):
-        return (v,)
-    else:
-        return tuple(v)
-
 def get_path_link(root, path, namespace):
     if path[-1] in ("SCHEMA", "RESULTSCHEMA"):
         sc = get_path(root, path[:-1], namespace, True)
@@ -118,15 +97,13 @@ def build_structured_cell(
   ctx, name,
   inchannels, outchannels,
   *, fingertip_no_remote, fingertip_no_recompute,
-  mount=None, return_context=False,
+  return_context=False,
   hash_pattern=None
 ):
     #print("build_structured_cell", name)
     name2 = name + STRUC_ID
     c = context(toplevel=False)
     setattr(ctx, name2, c)
-    if mount is not None:
-        raise TypeError('Structured cell "{}" is not mountable'.format(name))
     c.data = core_cell("mixed")
     c.data._hash_pattern = hash_pattern
     c.auth = core_cell("mixed")

@@ -233,8 +233,7 @@ See http://sjdv1982.github.io/seamless/sphinx/html/cell.html for documentation
 
     def mount(
         self, path, mode="rw", authority="file", *,
-        persistent=True,
-        as_directory=False
+        persistent=True
     ):
         """Mounts the cell to the file system.
 Mounting is only supported for non-structured cells.
@@ -257,21 +256,9 @@ Arguments
 - persistent
     If False, the file is deleted from disk when the Cell is destroyed
     Default: True.
-- as_directory
-    If True, the cell must contain a dictionary,
-    which is mounted to a directory instead of a file.
-    items that are themselves dictionaries are mounted to sub-directories.
-    Other items are cast to str upon mounting.
-    
-    Mounting as directory is only supported for plain cells.
-
-    Default: False
 """
-        if self.celltype == "structured":
+        if self.celltype == "structured" and not isinstance(self, FolderCell):
             raise Exception("Mounting is only supported for non-structured cells")
-        if as_directory:
-            if self.celltype != "plain":
-                raise Exception("Mounting as directory is only supported for plain cells")
 
         if "r" in mode and not self.independent:
             msg = "Cannot mount {} in read mode: this cell is not fully independent, i.e. it has incoming connections"
@@ -284,7 +271,6 @@ Arguments
             "mode": mode,
             "authority": authority,
             "persistent": persistent,
-            "as_directory": as_directory
         }
         hcell["mount"] = mount
         hcell["UNTRANSLATED"] = True
@@ -918,6 +904,73 @@ def cell_binary_method(self, other, name):
         return NotImplemented
     return method(other)
 
+def get_new_foldercell(path):
+    return {
+        "path": path,
+        "type": "foldercell",
+        "datatype": "mixed",
+        "UNTRANSLATED": True,
+    }
+
+class FolderCell(Cell):
+    def _get_hcell2(self):
+        try:
+            return self._get_hcell()
+        except AttributeError:
+            pass
+        if self._node is None:
+            self._node = get_new_foldercell(None)
+        return self._node
+    
+    @property
+    def celltype(self):
+        return "structured"
+    @celltype.setter
+    def celltype(self, value):
+        raise AttributeError("celltype")
+
+    @property
+    def hash_pattern(self):
+        return {"*": "##"}
+
+    @property
+    def data(self):
+        """Returns the data (deep checksum dict) of the folder"""
+        cell = self._get_cell()
+        return deepcopy(cell.data)
+
+    def _setattr(self, attr, value):
+        hcell = self._get_hcell()
+        if "mount" in hcell:
+            if "r" in hcell["mount"]["mode"]:
+                msg = "Cannot assign to '{}': Folder is mounted to the file system in read mode"
+                raise AttributeError(msg.format(attr))
+        return super()._setattr(attr, value)
+
+    def mount(
+        self, path, mode,
+        *, persistent=True
+    ):
+        """Mounts the FolderCell to the file system.
+"path" is the path to the file system directory.
+
+"mode" must be specified and must be "r" or "w".
+
+- persistent
+    If False, the directory is deleted from disk when the FolderCell is destroyed
+    Default: True.
+
+To delete an existing mount, do `del foldercell.mount`        
+"""
+        if mode not in ("r", "w"):
+            raise ValueError('Mode must be "r" or "w"')
+        if mode == "r":
+            hcell = self._get_hcell()
+            hcell.pop("checksum", None)
+        return super().mount(path, mode, "cell", persistent=persistent)
+
+    def __str__(self):
+        return "Seamless FolderCell: " + self.path
 
 def Constant(*args, **kwargs):
     cell = Cell(*args, **kwargs)

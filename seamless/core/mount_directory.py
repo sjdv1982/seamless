@@ -1,25 +1,10 @@
-"""Mounts raw deep-dict cells to/from directories
+"""Reads and writes raw deep-dict cells to/from directories
 The contents are stored as <full file path>: <file content checksum> items.
 """
 
-
-"""
-Todo: function that takes mixed deep-dict cell, and fills it up
-with directory contents, without mounting.
-Likewise, function to write mixed deep-dict cell to directory.
-
-For mounting, do something smarter.
-Write:
-Keep track of old deep-dict (is small, because checksums)
-For a new deep-dict: create a differential, to write as little to disk as needed.
-For old deep-dict, create reverse dict, i.e. buffer-to-filename
-If buffer already exists under another filename, do hardlink.
-Finally, remove no longer existing files and also have-become-empty subdirs (be like Git, no storage of empty dirs)
-Read: in old deep-dict, store modification times as well. Don't reread if mtime isn't newer
-"""
-
+import logging
 import os
-from typing import Type
+import shutil
 
 def _validate_cell(cell):
     from .cell import Cell
@@ -31,9 +16,47 @@ def _validate_cell(cell):
         raise TypeError(f"{cell} must be a deep dict with raw checksums")
 
 def read_from_directory(directory, cell, reference_dir=None):
+    """Takes mixed cell, and fills it up with directory contents, without mounting.
+
+Each key is a file path.
+If reference_dir is defined, all file paths are stored relative to this reference.
+This function is not in any way optimized, e.g for parallel read/buffer calculation
+
+The dict + its checksum are simply returned as a tuple.
+
+Cell can be None.
+"""
+    from .protocol.calculate_checksum import calculate_checksum_sync
+    from .protocol.serialize import serialize_sync
+    from .cache.buffer_cache import buffer_cache
+    if not os.path.exists(directory) or not os.path.isdir(directory):
+        raise OSError(directory)
+    if cell is not None:
+        _validate_cell(cell)
+    result = {}
+    if reference_dir is None:
+        reference_dir = directory
+    for dirpath, _, filenames in os.walk(directory):
+        for filename in filenames:
+            full_filename = os.path.join(dirpath, filename)
+            key = os.path.relpath(full_filename, reference_dir)
+            with open(full_filename, "rb") as f:
+                buf = f.read()
+            result[key] = buf
+    result_buf = serialize_sync(result, "plain")
+    result_checksum = calculate_checksum_sync(result_buf)
+    assert result_checksum is not None
+    buffer_cache.cache_buffer(result_checksum, result_buf)
+    buffer_cache.guarantee_buffer_info(result_checksum, "plain")
+    result_checksum = result_checksum.hex()
+    if cell is not None:
+        cell.set_checksum(result_checksum)
+    return result, result_checksum
+
+def deep_read_from_directory(directory, cell, reference_dir=None, *, cache_buffers=False):
     """Takes mixed deep-dict cell, and fills it up with directory contents, without mounting.
 
-Each keys is a file path.
+Each key is a file path.
 If reference_dir is defined, all file paths are stored relative to this reference.
 This function is not in any way optimized, e.g for parallel read/buffer calculation
 
@@ -41,7 +64,7 @@ The deep dict + its checksum are simply returned as a tuple.
 
 Cell can be None.
 
-If cell is not None, all file buffers are cached by Seamless.
+If cell is not None or cache_buffers, all file buffers are cached by Seamless.
 Caching through a connected Seamless database will create a copy of all files 
  that are new to the database.
 If there is no connected Seamless database, Seamless will hold all file buffers in-memory."""
@@ -53,19 +76,18 @@ If there is no connected Seamless database, Seamless will hold all file buffers 
     if cell is not None:
         _validate_cell(cell)
     result = {}
+    if reference_dir is None:
+        reference_dir = directory
     for dirpath, _, filenames in os.walk(directory):
         for filename in filenames:
             full_filename = os.path.join(dirpath, filename)
-            key = full_filename
-            if reference_dir is not None:
-                key = os.path.relpath(full_filename, reference_dir)
-            print(key)
+            key = os.path.relpath(full_filename, reference_dir)
             with open(full_filename, "rb") as f:
                 buf = f.read()
             checksum = calculate_checksum_sync(buf)
             if checksum is None:   # shouldn't happen...
                 continue
-            if cell is not None:
+            if cell is not None or cache_buffers:
                 #buffer_cache.cache_buffer(checksum, buf)  
                 # # No. If the user really wants to read a huge directory, it should be offloaded
                 # #  to a Seamless database, if one is configured. cache_buffer doesn't do that.
@@ -77,40 +99,80 @@ If there is no connected Seamless database, Seamless will hold all file buffers 
     result_buf = serialize_sync(result, "plain")
     result_checksum = calculate_checksum_sync(result_buf)
     assert result_checksum is not None
-    buffer_cache.cache_buffer(result_checksum, result_buf)
-    buffer_cache.guarantee_buffer_info(result_checksum, "plain")
+    if cell is not None or cache_buffers:
+        buffer_cache.cache_buffer(result_checksum, result_buf)
+        buffer_cache.guarantee_buffer_info(result_checksum, "plain")
     result_checksum = result_checksum.hex()
     if cell is not None:
         cell.set_checksum(result_checksum)
     return result, result_checksum
 
-'''
-def func():
-    """
-    From mount.py, return mtime.
+def write_to_directory(directory, data, *, cleanup, deep):
+    """Writes data to directory
+    
+    Data must be a deep folder"""
+    from .protocol.serialize import serialize_sync
+    from .cache.buffer_cache import buffer_cache
+    os.makedirs(directory, exist_ok=True)
+    all_files = set()
+    all_dirs = set()
+    if isinstance(data, dict):
+        for k,v in data.items():
+            kdir, _ = os.path.split(k)
+            if kdir:
+                kdir = os.path.abspath(kdir)
+                if kdir not in all_dirs:
+                    all_dirs.add(kdir)
+                    os.makedirs(kdir, exist_ok=True)
+            filename = os.path.abspath(os.path.join(directory, k))
+            all_files.add(filename)
+            if deep:
+                cs = parse_checksum(v)
+                buf = buffer_cache.get_buffer(cs)
+                if buf is None:
+                    logging.warn("CacheMissError: {}".format(v))
+                    continue                
+            else:
+                buf = serialize_sync(v, "mixed")
+            with open(filename, "wb") as f:
+                f.write(buf)
+    if cleanup:
+        with os.scandir(directory) as it:
+            for entry in it:
+                path = os.path.abspath(entry.path)
+                if entry.is_file():
+                    if path not in all_files:
+                        os.unlink(path)
+                elif entry.is_dir():
+                    remove = False
+                    if path not in all_dirs:
+                        shutil.rmtree(path, ignore_errors=True)
+
+def get_directory_mtime(path):
+    """return mtime.
     Note that directory mtime only updates when a file is created or deleted,
-     not when content changes! Mounting big dirs is expensive!!
+        not when content changes! Mounting big dirs is expensive!!
     """
-            raise Exception  # invoke mount directory instead.
-            if not os.path.exists(self.path) or not os.path.isdir(self.path):
-                return None
-            stat = os.stat(self.path)
-            mtime = stat.st_mtime
-            try:
-                def scan_(path):
-                    nonlocal mtime
-                    with os.scandir(path) as it:
-                        for entry in it:
-                            if entry.is_file() or entry.is_dir():
-                                f_mtime = entry.stat().st_mtime
-                                #print(entry.path, f_mtime)
-                                if mtime is None or f_mtime > mtime:
-                                    mtime = f_mtime
-                            if entry.is_dir():
-                                scan_(entry.path)
-                scan_(self.path)
-            except RuntimeError:
-                pass
-            return mtime
-'''
+    if not os.path.exists(path) or not os.path.isdir(path):
+        return None
+    stat = os.stat(path)
+    mtime = stat.st_mtime
+    try:
+        def scan_(path):
+            nonlocal mtime
+            with os.scandir(path) as it:
+                for entry in it:
+                    if entry.is_file() or entry.is_dir():
+                        f_mtime = entry.stat().st_mtime
+                        #print(entry.path, f_mtime)
+                        if mtime is None or f_mtime > mtime:
+                            mtime = f_mtime
+                    if entry.is_dir():
+                        scan_(entry.path)
+        scan_(path)
+    except RuntimeError:
+        pass
+    return mtime
+
 from .protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
+from ..util import parse_checksum

@@ -1,5 +1,7 @@
 from importlib_metadata import distribution
-from seamless.highlevel import Context, Cell, DeepFolderCell
+from seamless.highlevel import Context, Cell, DeepFolderCell, FolderCell
+import shutil
+shutil.rmtree("/tmp/pdb_folder", ignore_errors=True)
 ctx = Context()
 
 ctx.pdb = DeepFolderCell()
@@ -38,8 +40,17 @@ ctx.epo = ctx.pdb["1eer.cif"]
 ctx.compute()
 print(ctx.epo.checksum)
 print(ctx.epo.value[:200])
+print()
 
 print("STAGE 4")
+ctx.pdb.whitelist = ["1wej.cif", "1brs.cif", "7cei.cif"]
+ctx.pdb_folder = FolderCell()
+ctx.pdb_folder = ctx.pdb
+ctx.pdb_folder.mount("/tmp/pdb_folder", "w")
+ctx.compute()
+print()
+
+print("STAGE 5")
 from seamless.highlevel import stdlib
 ctx.include(stdlib.select)
 ctx.pdb_code = Cell("str").set("1avx.cif")

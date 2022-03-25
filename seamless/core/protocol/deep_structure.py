@@ -311,12 +311,20 @@ async def _deserialize_raw_async(buffer):
 def serialize_raw(value, use_cache=True):
     if isinstance(value, np.ndarray) and value.dtype.char == "S":
         return value.tobytes()
+    elif isinstance(value, bytes):
+        return value
+    elif isinstance(value, str):
+        return serialize_sync(value, "text", use_cache=use_cache)
     else:
         return serialize_sync(value, "mixed", use_cache=use_cache)
 
 async def serialize_raw_async(value, use_cache=True):
     if isinstance(value, np.ndarray) and value.dtype.char == "S":
         return value.tobytes()
+    elif isinstance(value, bytes):
+        return value
+    elif isinstance(value, str):
+        return await serialize(value, "text", use_cache=use_cache)
     else:
         return await serialize(value, "mixed", use_cache=use_cache)
 

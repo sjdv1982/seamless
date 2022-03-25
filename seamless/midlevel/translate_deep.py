@@ -10,12 +10,12 @@ def apply_blackwhitelist(origin, keyorder, blackwhitelist):
     deep_structure = origin
     whitelist = blackwhitelist.get("whitelist")
     if whitelist is not None:
-        assert isinstance(whitelist, list)  # TODO: schema instead
+        assert isinstance(whitelist, list), type(whitelist)  # TODO: schema instead
         deep_structure = {k:deep_structure[k] for k in whitelist}
         keyorder = [k for k in keyorder if k in whitelist]
     blacklist = blackwhitelist.get("blacklist")
     if blacklist is not None:
-        assert isinstance(blacklist, list)  # TODO: schema instead
+        assert isinstance(blacklist, list), type(blacklist)  # TODO: schema instead
         deep_structure = {k:deep_structure[k] for k in deep_structure if k not in blacklist}
         keyorder = [k for k in keyorder if k not in blacklist]    
     return deep_structure, keyorder
@@ -41,16 +41,14 @@ def _translate_deep(node, root, namespace, inchannels, outchannels, *, hash_patt
         real_inchannels, [()],
         fingertip_no_remote=node.get("fingertip_no_remote", False),
         fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-        hash_pattern=hash_pattern,
-        mount=None
+        hash_pattern=hash_pattern
     )
     ctx.filtered = build_structured_cell(
         parent, name+"_FILTERED",
         [()], outchannels,
         fingertip_no_remote=node.get("fingertip_no_remote", False),
         fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-        hash_pattern=hash_pattern,
-        mount=None
+        hash_pattern=hash_pattern
     )
 
     checksum = node.get("checksum")
@@ -89,8 +87,7 @@ def _translate_deep(node, root, namespace, inchannels, outchannels, *, hash_patt
         [()],
         fingertip_no_remote=False,
         fingertip_no_recompute=False,
-        hash_pattern=None,
-        mount=None
+        hash_pattern=None
     )
     empty_dict_cs = 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c' # {}
     set_structured_cell_from_checksum(ctx.blackwhitelist, {"auth": empty_dict_cs})    
@@ -104,7 +101,7 @@ def _translate_deep(node, root, namespace, inchannels, outchannels, *, hash_patt
         "result": {"io": "output", "celltype": "plain"},
     }
     ctx.apply_blackwhite = tf = transformer(tf_params)
-    ctx.blackwhitelist0 = core_cell("mixed", hash_pattern=hash_pattern)
+    ctx.blackwhitelist0 = core_cell("mixed", hash_pattern={"*": "#"})
     ctx.blackwhitelist.outchannels[()].connect(ctx.blackwhitelist0)
     ctx.blackwhitelist0.connect(tf.blackwhitelist)
     ctx.keyorder.connect(tf.keyorder)
@@ -120,8 +117,7 @@ def _translate_deep(node, root, namespace, inchannels, outchannels, *, hash_patt
         [(0,),(1,)],
         fingertip_no_remote=False,
         fingertip_no_recompute=False,
-        hash_pattern=None,
-        mount=None
+        hash_pattern=None
     )
     ctx.filtered_all0.connect(ctx.filtered_all.inchannels[()])
     

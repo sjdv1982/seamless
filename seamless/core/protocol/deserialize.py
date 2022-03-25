@@ -15,8 +15,12 @@ deserialize_cache = lrucache2(10)
 def _deserialize(buffer, checksum, celltype):
     if celltype == "silk":
         celltype = "mixed"
-    assert isinstance(checksum, bytes), type(checksum)
-    logger.debug("DESERIALIZE: buffer of length {}, checksum {}".format(len(buffer), checksum.hex()))
+    if checksum is not None:
+        assert isinstance(checksum, bytes), type(checksum)
+        cs = checksum.hex()
+    else:
+        cs = None
+    logger.debug("DESERIALIZE: buffer of length {}, checksum {}".format(len(buffer), cs))
     if celltype in text_types2:
         s = buffer.decode()
         value = s.rstrip("\n")
@@ -114,7 +118,9 @@ def deserialize_sync(buffer, checksum, celltype, copy):
     ###
     copy = True # Apparently, sometimes the promise of not modifying the value is violated... for now, enforce a copy
     ###
-    value = deserialize_cache.get((checksum, celltype))
+    value = None
+    if checksum is not None:
+        value = deserialize_cache.get((checksum, celltype))
     if value is not None:
         if copy:
             newvalue = deepcopy(value)

@@ -15,7 +15,7 @@ from seamless.core import (cell as core_cell,
  transformer, reactor, context, macro, StructuredCell)
 
 from . import copying
-from .util import as_tuple, get_path, get_path_link, find_channels, build_structured_cell
+from .util import get_path, get_path_link, find_channels, build_structured_cell
 
 import logging
 logger = logging.getLogger("seamless")
@@ -118,15 +118,27 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
     if ct == "structured":
         datatype = node["datatype"]
         ### TODO: harmonize datatype with schema type
-        hash_pattern = node["hash_pattern"]
+        if node["type"] == "foldercell":
+            hash_pattern = {"*": "##"}
+        else:
+            hash_pattern = node["hash_pattern"]
+
+        inchannels2 = inchannels
         mount = node.get("mount")
-        child = build_structured_cell(
+        if node["type"] == "foldercell" and mount is not None:
+            mount_mode = mount["mode"]
+            assert mount_mode in ("r", "w"), mount_mode # should have been caught at highlevel
+            if mount_mode == "r":
+                assert not len(inchannels) # should have been caught at highlevel
+                inchannels2 = [()]
+
+        child, child_ctx = build_structured_cell(
           parent, name,
-          inchannels, outchannels,
+          inchannels2, outchannels,
           fingertip_no_remote=node.get("fingertip_no_remote", False),
           fingertip_no_recompute=node.get("fingertip_no_recompute", False),
           hash_pattern=hash_pattern,
-          mount=mount
+          return_context=True
         )
         for inchannel in inchannels:
             cname = child.inchannels[inchannel].subpath
@@ -140,6 +152,18 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         for outchannel in outchannels:
             cpath = path + outchannel
             namespace[cpath, "source"] = child.outchannels[outchannel], node
+        
+        if node["type"] == "foldercell" and mount is not None:
+            mount_mode = mount["mode"]
+            if mount_mode == "r":
+                child_ctx.mountcell = core_cell("mixed", hash_pattern={"*": "##"})
+                child_ctx.mountcell.mount(**mount, as_directory=True)
+                child_ctx.mountcell.connect(child.inchannels[()])
+            else:
+                child._data.mount(**mount, as_directory=True)
+        else:
+            assert mount is None # should have been caught at highlevel
+
     else: #not structured
         for c in inchannels + outchannels:
             assert not len(c) #should have been checked by highlevel
@@ -370,7 +394,7 @@ def translate(graph, ctx, environment):
                 raise NotImplementedError(node["language"])
             inchannels, outchannels = find_channels(node["path"], connection_paths)
             translate_macro(node, ctx, namespace, inchannels, outchannels)
-        elif t == "cell":
+        elif t in ("cell", "foldercell"):
             inchannels, outchannels = find_channels(path, connection_paths)
             translate_cell(node, ctx, namespace, inchannels, outchannels)
         elif t == "deepcell":
@@ -414,3 +438,4 @@ from .translate_bash_transformer import translate_bash_transformer
 from .translate_compiled_transformer import translate_compiled_transformer
 '''
 from ..core.protocol.deep_structure import apply_hash_pattern_sync, access_hash_pattern
+from ..util import as_tuple

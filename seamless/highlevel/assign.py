@@ -18,17 +18,13 @@ def check_libinstance_subcontext_binding(ctx, path):
                             return
 
 from . import ConstantTypes
-from silk.mixed import MixedBase
-from silk import Silk
-from .Cell import Cell, get_new_cell
+from .Cell import Cell, FolderCell, get_new_cell, get_new_foldercell
 from .DeepCell import DeepCellBase, DeepCell, DeepFolderCell
 from .Module import Module, get_new_module
 from .Resource import Resource
-from .pin import PinWrapper
 from .Transformer import Transformer
 from .Macro import Macro
 from .proxy import Proxy, CodeProxy, HeaderProxy
-from ..midlevel import copying
 from . import parse_function_code
 from .Link import Link
 from .compiled import CompiledObjectDict, CompiledObjectWrapper
@@ -289,20 +285,31 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
                 if t.hash_pattern is None:
                     if isinstance(s, DeepFolderCell):
                         c = "DeepFolderCell"   
-                        hp = {"*": "##"}
-                    else:
-                        c = "DeepCell"   
-                        hp = {"*": "#"}
-                    msg = """ERROR: assigning a Cell to a {c}
+                        msg = """ERROR: assigning a Cell to a DeepFolderCell
 
 When accessed, Cells have their complete content loaded into memory.
-This is not the case for {c}s, whose content can be very large in size.
+This is not the case for DeepFolderCells, whose content can be very large in size.
 
-Therefore, the direct assignment of a Cell to a {c} is by default not allowed.
+Therefore, the direct assignment of a Cell to a DeepFolderCell is not allowed.
 
-If you really want to do this, create an intermediate Cell with hash pattern {hp},
+You can instead assign a FolderCell to a DeepFolderCell.
+FolderCells have the same internal memory-efficient representation as DeepFolderCells,
+but they are assumed to be small enough to be mounted to disk.
+
+If you really want to do so, assigning a Cell to a FolderCell is allowed.
+"""
+
+                    else:
+                        msg = """ERROR: assigning a Cell to a DeepCell
+
+When accessed, Cells have their complete content loaded into memory.
+This is not the case for DeepCells, whose content can be very large in size.
+
+Therefore, the direct assignment of a Cell to a DeepCell is by default not allowed.
+
+If you really want to do this, create an intermediate Cell with hash pattern {"*": "#"},
 and assign the Cell to this intermediate Cell.
-""".format(c=c,hp=hp)
+"""
                     raise Exception(msg)
 
             pass
@@ -604,7 +611,10 @@ def assign(ctx, path, value, *, help_context=False):
             cellnode = deepcopy(value._node)
             if isinstance(value, Cell):
                 if cellnode is None:
-                    cellnode = get_new_cell(path)
+                    if isinstance(value, FolderCell):
+                        cellnode = get_new_foldercell(path)
+                    else:
+                        cellnode = get_new_cell(path)
                 else:
                     cellnode["path"] = path
                 if "celltype" not in cellnode:
@@ -630,6 +640,10 @@ def assign(ctx, path, value, *, help_context=False):
                 cellnode = type(value)._new_func(path)
                 type(value)(parent=ctx, path=path)
                 ctx._graph.nodes[path] = cellnode
+            elif target is None and isinstance(value, FolderCell):
+                cellnode = get_new_foldercell(path)
+                ctx._graph.nodes[path] = cellnode
+
             assign_connection(ctx, value._path, path, True)
         ctx._translate()
     elif isinstance(value, (Resource, ConstantTypes)):

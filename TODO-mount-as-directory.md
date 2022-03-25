@@ -5,9 +5,9 @@ UPDATE: see step 11
 UPDATE: first do Fairserver plan
 1. Make DeepFolder, Folder, DeepCell classes.
 They correspond to the following low-level deep cells:
- DeepFolder: hash pattern {"*": "!!"} (deep-dict-of-filenames-as-byte-cells)
- Folder: normal mixed cell, but mountable to a folder (dict-of-filenames-as-mixed-cells).
- DeepCell: hash pattern {"*": "!"} (deep-dict-of-mixed-cells)
+ DeepFolder: hash pattern {"*": "##"} (deep-dict-of-filenames-as-byte-cells)
+ Folder: same, but mountable to a folder, and .value and .schema work.
+ DeepCell: hash pattern {"*": "#"} (deep-dict-of-mixed-cells)
 Their API is similar to normal (structured) Cells.
 They can be assigned to normal Cells (any kind of), but they do
 not have arbitrary incoming subcell connections. DeepCell/DeepFolder do have an incoming connection for whitelist/blacklist.
@@ -17,7 +17,9 @@ Internally, they are translated to structured cells, making them convertible to 
 NOTE: keyorder (execution order checksum) is a part of DeepFolder/DeepCell as well! If you assign a DeepCell/DeepFolder to another, the keyorder gets copied as well.
 NOTE2: You can ask a DeepCell/DeepFolder for .data, but this always returns the deep structure before whitelist/blacklist filtering.
 To get it after filtering, create a new DeepCell/DeepFolder and assign it to the first.
-====> here. Folder still TODO
+====> here. Folder still TODO. 
+TODO: allow DeepFolder => Folder assignment!
+
 2. Finish core/mount_directory. Support continuous mount only for Folder and Modules! For those, .mount is *always* to a directory
 Support load_directory/write_directory only for DeepFolders, Folders and Modules!
 Write tests, adapt tests/highlevel/multi-module.py and graphs/multi_module/ accordingly.
@@ -33,7 +35,7 @@ UPDATE: don't rip, but document it as an advanced property.
 - Re-design database.py so that the default YAML normally works well,
 and that there is a subfolder for download pages/buffer info pages
 of named deepfolders.
-- MOSTLY DONE: For DeepFolder/DeepCell (not Folder), support loading-by-name.
+- DONE: For DeepFolder/DeepCell (not Folder), support loading-by-name.
 This will obtain and then set: checksum, and execution order checksum.
 Name may include version, format (e.g. gzip)
 The RPBS will have a name server that does:
@@ -44,6 +46,7 @@ a RPBS "download page", where for each once-or-current PDB checksum (also mmcif)
 (example: https://files.rcsb.org/download/1AVX.pdb)
 A direct download link can be annotated with "gzip" etc. The database will normally fetch the "download page" and store it locally.
 In the future, support BitTorrent as well.
+TODO: buffer server
 d. Map name+version+format to an execution order checksum.
 e. Provide a link to a bufferinfo page for all relevant checksums.
 MAKE A BIG WARNING IF LOADING-BY-NAME IS DONE WITHIN LOAD-PROJECT!
@@ -51,20 +54,20 @@ This will make load-project not reproducible!!!
 - DONE; Add a database command to load all entries in a download page in local file cache. File cache can be inside the database dir, but also an outside directory. Do the same for bufferinfo entries.
 UPDATE: 
 a. load-by-name in a different API (seamless.fair)
-b. Allow a list-of-allowed-checksums to be stored, by name. 
+b. TODO: Allow a list-of-allowed-checksums to be stored, by name. 
    DeepFolder.load(name) will invoke this.
    Possible to restrict allowed checksums only to this.
    Is also necessary to allow DeepFolder.share()  
    (list of allowed checksums becomes dropdown menu, restriction is security feature)
-   Allow blacklist or whitelist checksum to be stored in DeepCell/DeepFolder
-   (Destroys name-of-directory database hit for DeepFolder)
+   DONE: Allow blacklist or whitelist checksum to be stored in DeepCell/DeepFolder
+   (TODO: Destroys name-of-directory database hit for DeepFolder)
    Blacklist and whitelists are strictly local to the graph, no FAIR/database involved.
    Whitelist AND blacklist may be active, which means
    effective_whitelist = whitelist - blacklist.
 UPDATE2: Seamless database and FAIR server are now distinct, but make
 tools to export contents of the database dir (notably, /downloads,
 /deepfolders, /deepcells, and deep buffers in /buffers) to a FAIR server dir. DONE.
-UPDATE3: make a PDB test, but rename stdlib.join to stdlib.select. DONE
+DONE UPDATE3: make a PDB test, but rename stdlib.join to stdlib.select.
 6. Add filename support to transformers, as outlined in https://github.com/sjdv1982/seamless/issues/108. There will be high-level transformer pin celltype "deepfolder", "deepcell".
 Assigning a transformer pin to a DeepFolder, DeepCell
 creates a pin of that celltype.
