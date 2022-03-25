@@ -21,6 +21,12 @@ def get_checksums(nodes, connections, *, with_annotations):
         hash_pattern = None
         if node["type"] == "cell" and subpath != "schema":
             hash_pattern = node.get("hash_pattern")
+        elif node["type"] == "folder" and subpath != "schema":
+            hash_pattern = {"*": "#"}
+        elif node["type"] == "deepcell" and subpath == "origin":
+            hash_pattern = {"*": "#"}
+        elif node["type"] == "deepfoldercell" and subpath == "origin":
+            hash_pattern = {"*": "##"}
         elif node["type"] == "transformer":
             if subpath is not None and subpath.startswith("input") and not subpath.endswith("schema"):
                 hash_pattern = node.get("hash_pattern")
@@ -142,10 +148,10 @@ def fill_checksum(manager, node, temp_path, composite=True):
         celltype = "structured"
         hash_pattern = {"*": "##"}
     elif node["type"] == "deepcell":
-        celltype = "mixed"
+        celltype = "structured"
         hash_pattern = {"*": "#"}
     elif node["type"] == "deepfoldercell":
-        celltype = "mixed"
+        celltype = "structured"
         hash_pattern = {"*": "##"}
     elif node["type"] == "module":
         celltype = "plain"
