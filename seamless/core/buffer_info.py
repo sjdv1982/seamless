@@ -60,7 +60,7 @@ class BufferInfo:
             if attr == "length":
                 if not isinstance(value, int):
                     raise TypeError(type(value))
-                if not value > 0:
+                if not value >= 0:
                     raise ValueError
             if attr.startswith("is_"):
                 if not isinstance(value, bool):
