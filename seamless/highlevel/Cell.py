@@ -971,13 +971,14 @@ To delete an existing mount, do `del foldercell.mount`
         if mode not in ("r", "w"):
             raise ValueError('Mode must be "r" or "w"')
         if mode == "r":
-            hcell = self._get_hcell()
+            hcell = self._get_hcell2()
             hcell.pop("checksum", None)
         super().mount(path, mode, "cell", persistent=persistent)
         if text_only:
-            hcell = self._get_hcell()
+            hcell = self._get_hcell2()
             hcell["mount"]["text_only"] = True
-
+        return self
+        
     def __str__(self):
         return "Seamless FolderCell: " + self.path
 

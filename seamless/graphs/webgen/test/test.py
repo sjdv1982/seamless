@@ -1,6 +1,6 @@
-from seamless.highlevel import Context, Cell, Transformer, Link, load_graph
+from seamless.highlevel import Context, Cell, Transformer, FolderCell, load_graph
 from seamless.highlevel import stdlib
-import os, json
+import os
 
 ctx = Context()
 ctx.include(stdlib.merge)
@@ -33,7 +33,7 @@ ctx.merge_webform = ctx.lib.merge(
     state=ctx.webform_STATE
 )
 
-ctx.webcomponents = Cell("plain").mount("components", as_directory=True)
+ctx.webcomponents = FolderCell().mount("components", "r")
 
 ctx.generate_webpage = Transformer()
 ctx.generate_webpage.code.mount("../generate-webpage.py", "r")

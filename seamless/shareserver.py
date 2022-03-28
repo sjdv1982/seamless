@@ -124,7 +124,7 @@ class Share:
     def binary(self):
         if self.celltype == "mixed":
             binary = "maybe"
-            if self.mimetype is not None and self.mimetype.startswith("text"):
+            if self.mimetype is not None and (self.mimetype.startswith("text") or self.mimetype == "application/json"):
                 binary = False
         elif self.celltype in ("bytes", "binary"):
             binary = True

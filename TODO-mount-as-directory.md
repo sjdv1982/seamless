@@ -17,20 +17,22 @@ Internally, they are translated to structured cells, making them convertible to 
 NOTE: keyorder (execution order checksum) is a part of DeepFolder/DeepCell as well! If you assign a DeepCell/DeepFolder to another, the keyorder gets copied as well.
 NOTE2: You can ask a DeepCell/DeepFolder for .data, but this always returns the deep structure before whitelist/blacklist filtering.
 To get it after filtering, create a new DeepCell/DeepFolder and assign it to the first.
-====> here. Folder still TODO. 
-TODO: allow DeepFolder => Folder assignment!
 
 2. Finish core/mount_directory. Support continuous mount only for Folder and Modules! For those, .mount is *always* to a directory
 Support load_directory/write_directory only for DeepFolders, Folders and Modules!
 Write tests, adapt tests/highlevel/multi-module.py and graphs/multi_module/ accordingly.
+
 3. Bump __seamless__ version of .seamless files to 0.8.
 Rip mount.as_directory from high-level Cell. Add a loader so that __seamless__ < 0.8 (or None) will interpret
 a Cell("plain") with mount:as_directory as a Folder with .mount.
 NOTE: especially important for webgen! 
+
 4. Rip hash patterns from Cell, and adapt examples to use DeepCell.
 Write tests.
 NOTE: rip Resource?
 UPDATE: don't rip, but document it as an advanced property.
+
+==> here <==
 5. 
 - Re-design database.py so that the default YAML normally works well,
 and that there is a subfolder for download pages/buffer info pages

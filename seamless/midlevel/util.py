@@ -1,5 +1,5 @@
 from seamless.core import cell as core_cell, \
- transformer, reactor, context, macro, StructuredCell, Outchannel
+ transformer, reactor, context, macro, StructuredCell, Inchannel
 import traceback
 STRUC_ID = "_STRUC"
 
@@ -7,7 +7,7 @@ def get_path_link(root, path, namespace):
     if path[-1] in ("SCHEMA", "RESULTSCHEMA"):
         sc = get_path(root, path[:-1], namespace, True)
         if path[-1] == "SCHEMA":
-            if isinstance(sc, Outchannel):
+            if isinstance(sc, Inchannel):
                 sc = sc.structured_cell()
             return sc.schema
         else:
