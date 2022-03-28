@@ -183,6 +183,7 @@ def execute(name, code,
     assert identifier is not None
 
     _exiting = False
+    direct_print_filehandle = None
     try:
         old_stdio = sys.stdout, sys.stderr
 
