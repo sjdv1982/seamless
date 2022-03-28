@@ -949,7 +949,7 @@ class FolderCell(Cell):
 
     def mount(
         self, path, mode,
-        *, persistent=True
+        *, persistent=True, text_only = False
     ):
         """Mounts the FolderCell to the file system.
 "path" is the path to the file system directory.
@@ -960,6 +960,13 @@ class FolderCell(Cell):
     If False, the directory is deleted from disk when the FolderCell is destroyed
     Default: True.
 
+- text_only
+    If True, only text buffers are read from disk or written to disk.
+    Non-text buffers (i.e. file content or buffers that cannot be encoded to UTF-8)
+    are skipped. 
+    Default: False.
+
+
 To delete an existing mount, do `del foldercell.mount`        
 """
         if mode not in ("r", "w"):
@@ -967,7 +974,10 @@ To delete an existing mount, do `del foldercell.mount`
         if mode == "r":
             hcell = self._get_hcell()
             hcell.pop("checksum", None)
-        return super().mount(path, mode, "cell", persistent=persistent)
+        super().mount(path, mode, "cell", persistent=persistent)
+        if text_only:
+            hcell = self._get_hcell()
+            hcell["mount"]["text_only"] = True
 
     def __str__(self):
         return "Seamless FolderCell: " + self.path

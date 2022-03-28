@@ -125,6 +125,8 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
 
         inchannels2 = inchannels
         mount = node.get("mount")
+        if mount is not None:
+            mount = mount.copy()
         if node["type"] == "foldercell" and mount is not None:
             mount_mode = mount["mode"]
             assert mount_mode in ("r", "w"), mount_mode # should have been caught at highlevel
@@ -155,14 +157,19 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         
         if node["type"] == "foldercell" and mount is not None:
             mount_mode = mount["mode"]
+            directory_text_only = mount.pop("text_only", False)
             if mount_mode == "r":
                 child_ctx.mountcell = core_cell("mixed", hash_pattern={"*": "##"})
-                child_ctx.mountcell.mount(**mount, as_directory=True)
+                child_ctx.mountcell.mount(
+                    **mount, 
+                    as_directory=True,
+                    directory_text_only=directory_text_only
+                )
                 child_ctx.mountcell.connect(child.inchannels[()])
             else:
                 child._data.mount(**mount, as_directory=True)
         else:
-            assert mount is None # should have been caught at highlevel
+            assert mount is None, path # should have been caught at highlevel
 
     else: #not structured
         for c in inchannels + outchannels:

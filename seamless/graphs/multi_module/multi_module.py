@@ -1,5 +1,5 @@
 from seamless.graphs.multi_module import mytestpackage
-from seamless.highlevel import Context, Cell, Module, Transformer, Resource
+from seamless.highlevel import Context, Cell, Module, Transformer, Resource, FolderCell
 
 get_pypackage_dependencies_file = "get_pypackage_dependencies.py"
 pypackage_to_moduledict_file = "pypackage_to_moduledict.py"
@@ -28,8 +28,8 @@ mod = ctx.get_pypackage_dependencies = Module()
 mod.code = ctx.get_pypackage_dependencies_code
 tf = ctx.pypackage_to_moduledict = Transformer()
 tf.code = ctx.pypackage_to_moduledict_code
-ctx.pypackage_dirdict = Cell("plain")
-ctx.pypackage_dirdict.mount("mytestpackage", as_directory=True, mode="r")
+ctx.pypackage_dirdict = FolderCell()
+ctx.pypackage_dirdict.mount("mytestpackage", mode="r", text_only=True)
 ctx.pypackage_dirdict_value = ctx.pypackage_dirdict
 ctx.pypackage_dirdict_value.celltype = "plain"
 ctx.pypackage_dirdict_value.mount("pypackage_dirdict.json", mode="w")

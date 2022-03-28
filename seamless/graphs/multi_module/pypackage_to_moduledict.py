@@ -62,7 +62,19 @@ def analyze(d, prefix):
             "dependencies": deps,
         }
         code[f] = item
-analyze(pypackage_dirdict, "")
+dirdict = {}
+for k,v in pypackage_dirdict.items():
+    if not isinstance(v, str):
+        dirdict[k] = v
+        continue
+    kk = k.split("/")
+    d = dirdict
+    for p in kk[:-1]:
+        if p not in d:
+            d[p] = {}
+        d = d[p]
+    d[kk[-1]] = v
+analyze(dirdict, "")
 result = {
     "language": "python",
     "type": "interpreted",

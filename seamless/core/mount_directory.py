@@ -6,6 +6,8 @@ import logging
 import os
 import shutil
 
+from seamless.core.protocol.deserialize import deserialize_sync
+
 def _validate_cell(cell):
     from .cell import Cell
     if not isinstance(cell, Cell):
@@ -15,7 +17,7 @@ def _validate_cell(cell):
     if cell._hash_pattern != {"*": "##"}:
         raise TypeError(f"{cell} must be a deep dict with raw checksums")
 
-def read_from_directory(directory, cell, reference_dir=None):
+def read_from_directory(directory, cell, reference_dir=None, *, text_only):
     """Takes mixed cell, and fills it up with directory contents, without mounting.
 
 Each key is a file path.
@@ -42,7 +44,13 @@ Cell can be None.
             key = os.path.relpath(full_filename, reference_dir)
             with open(full_filename, "rb") as f:
                 buf = f.read()
-            result[key] = buf
+            if text_only:
+                try:
+                    result[key] = deserialize_sync(buf, None, "text", copy=False)
+                except (ValueError, UnicodeDecodeError):
+                    continue
+            else:
+                result[key] = deserialize_raw(buf)
     result_buf = serialize_sync(result, "plain")
     result_checksum = calculate_checksum_sync(result_buf)
     assert result_checksum is not None
@@ -53,7 +61,9 @@ Cell can be None.
         cell.set_checksum(result_checksum)
     return result, result_checksum
 
-def deep_read_from_directory(directory, cell, reference_dir=None, *, cache_buffers=False):
+def deep_read_from_directory(directory, cell, reference_dir=None, 
+    *, text_only, cache_buffers=False
+):
     """Takes mixed deep-dict cell, and fills it up with directory contents, without mounting.
 
 Each key is a file path.
@@ -84,6 +94,12 @@ If there is no connected Seamless database, Seamless will hold all file buffers 
             key = os.path.relpath(full_filename, reference_dir)
             with open(full_filename, "rb") as f:
                 buf = f.read()
+            if text_only:
+                try:
+                    txt = deserialize_sync(buf, None, "text", copy=False)
+                    buf = serialize_sync(txt, "text")
+                except (ValueError, UnicodeDecodeError):
+                    continue
             checksum = calculate_checksum_sync(buf)
             if checksum is None:   # shouldn't happen...
                 continue
@@ -107,7 +123,7 @@ If there is no connected Seamless database, Seamless will hold all file buffers 
         cell.set_checksum(result_checksum)
     return result, result_checksum
 
-def write_to_directory(directory, data, *, cleanup, deep):
+def write_to_directory(directory, data, *, cleanup, deep, text_only):
     """Writes data to directory
     
     Data must be a deep folder"""
@@ -133,9 +149,17 @@ def write_to_directory(directory, data, *, cleanup, deep):
                     logging.warn("CacheMissError: {}".format(v))
                     continue                
             else:
-                buf = serialize_sync(v, "mixed")
-            with open(filename, "wb") as f:
-                f.write(buf)
+                buf = serialize_raw(v)
+            if text_only:
+                try:
+                    txt = deserialize_sync(buf, None, "text", copy=False)
+                except (ValueError, UnicodeDecodeError):
+                    continue
+                with open(filename, "w") as f:
+                    f.write(txt)
+            else:
+                with open(filename, "wb") as f:
+                    f.write(buf)
     if cleanup:
         with os.scandir(directory) as it:
             for entry in it:
@@ -176,3 +200,4 @@ def get_directory_mtime(path):
 
 from .protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
 from ..util import parse_checksum
+from .protocol.deep_structure import deserialize_raw, serialize_raw

@@ -66,7 +66,7 @@ class MountItem:
     _destroyed = False
     _initialized = False
     def __init__(self, parent, cell, path, mode, authority, persistent, *,
-      dummy=False, as_directory=False, **kwargs
+      dummy=False, as_directory=False, directory_text_only=False, **kwargs
     ):
         if parent is not None:
             self.parent = ref(parent)
@@ -88,6 +88,7 @@ class MountItem:
             assert cell.celltype == "mixed", cell.celltype
             assert cell._hash_pattern in (None, {"*": "##"}), cell._hash_pattern
         self.as_directory = as_directory
+        self.directory_text_only = directory_text_only
         self.kwargs = kwargs
         self.last_checksum = None
         self.last_mtime = None
@@ -250,9 +251,9 @@ class MountItem:
         #print("read", self.cell())
         if self.as_directory:
             if self.cell()._hash_pattern is None:
-                result, cs = read_from_directory(self.path, None)
+                result, cs = read_from_directory(self.path, None, text_only=self.directory_text_only)
             else:
-                result, cs = deep_read_from_directory(self.path, None, cache_buffers=True)
+                result, cs = deep_read_from_directory(self.path, None, cache_buffers=True, text_only=self.directory_text_only)
             if result is None:
                 return None
             checksum = bytes.fromhex(cs)            
@@ -280,7 +281,9 @@ class MountItem:
             return
         cleanup = (self.mode == "w" or self.authority == "cell")
         deep = self.cell()._hash_pattern is not None
-        write_to_directory(self.path, data, deep=deep, cleanup=cleanup)
+        write_to_directory(
+            self.path, data, 
+            deep=deep, cleanup=cleanup,text_only=self.directory_text_only)
 
 
     def _write(self, file_buffer, with_none=False):

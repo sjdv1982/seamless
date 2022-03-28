@@ -365,12 +365,16 @@ class Cell(SeamlessBase):
         self._mount.update({"extension": extension})
         return self
 
-    def mount(self, path=None, mode="rw", authority="file", *, persistent=True, as_directory=False):
+    def mount(self, path=None, mode="rw", authority="file", 
+        *, persistent=True, as_directory=False, directory_text_only=False,
+    ):
         """Performs a "lazy mount"; cell is mounted to the file when macro mode ends
         path: file path (can be None if an ancestor context has been mounted)
         mode: "r", "w" or "rw"
         authority: "cell", "file" or "file-strict"
         persistent: whether or not the file persists after the context has been destroyed
+        as_directory: mount as directory
+        directory_text_only: directory mount is text-only
         """
         from .context import Context
         assert is_dummy_mount(self._mount) #Only the mountmanager may modify this further!
@@ -386,7 +390,8 @@ class Cell(SeamlessBase):
             "mode": mode,
             "authority": authority,
             "persistent": persistent,
-            "as_directory": as_directory
+            "as_directory": as_directory,
+            "directory_text_only": directory_text_only
         })
         self._mount.update(self._mount_kwargs)
         MountItem(None, self, dummy=True, **self._mount) #to validate parameters
