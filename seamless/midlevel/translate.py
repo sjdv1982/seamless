@@ -114,10 +114,14 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
     path = node["path"]
     parent = get_path(root, path[:-1], None, None)
     name = path[-1]
-    ct = node["celltype"]
+    if node["type"] == "foldercell":
+        ct = "structured"
+    else:
+        ct = node["celltype"]
     if ct == "structured":
-        datatype = node["datatype"]
-        ### TODO: harmonize datatype with schema type
+        if node["type"] != "foldercell":
+            datatype = node["datatype"]
+            ### TODO: harmonize datatype with schema type
         if node["type"] == "foldercell":
             hash_pattern = {"*": "##"}
         else:
@@ -157,13 +161,11 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         
         if node["type"] == "foldercell" and mount is not None:
             mount_mode = mount["mode"]
-            directory_text_only = mount.pop("text_only", False)
             if mount_mode == "r":
                 child_ctx.mountcell = core_cell("mixed", hash_pattern={"*": "##"})
                 child_ctx.mountcell.mount(
                     **mount, 
-                    as_directory=True,
-                    directory_text_only=directory_text_only
+                    as_directory=True
                 )
                 child_ctx.mountcell.connect(child.inchannels[()])
             else:

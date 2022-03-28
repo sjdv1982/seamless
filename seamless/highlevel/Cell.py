@@ -189,7 +189,7 @@ See http://sjdv1982.github.io/seamless/sphinx/html/cell.html for documentation
 
     def _get_subcell(self, attr):
         hcell = self._get_hcell()
-        if not hcell["celltype"] == "structured":
+        if hcell["type"] != "foldercell" and hcell["celltype"] != "structured":
             raise AttributeError(attr)
         parent = self._parent()
         readonly = False ### TODO
@@ -908,7 +908,6 @@ def get_new_foldercell(path):
     return {
         "path": path,
         "type": "foldercell",
-        "datatype": "mixed",
         "UNTRANSLATED": True,
     }
 

@@ -462,7 +462,7 @@ class Context(Base, HelpMixin):
             params = deepcopy(params)
             lib = deepcopy(lib)
         graph = {
-            "__seamless__": "0.7",
+            "__seamless__": "0.8",
             "nodes": nodes,
             "connections": connections,
             "params": params,
@@ -490,7 +490,7 @@ class Context(Base, HelpMixin):
             params = deepcopy(params)
             lib = deepcopy(lib)
         graph = {
-            "__seamless__": "0.7",
+            "__seamless__": "0.8",
             "nodes": nodes,
             "connections": connections,
             "params": params,
@@ -1349,7 +1349,7 @@ class SubContext(Base, HelpMixin):
         return sorted(d + self.get_children())
 
 from .Transformer import Transformer
-from .Cell import Cell
+from .Cell import Cell, FolderCell
 from .DeepCell import DeepCell, DeepFolderCell
 from .Link import Link
 from .Macro import Macro
@@ -1365,7 +1365,10 @@ nodeclasses = {
     "transformer": Transformer,
     "context": SubContext,
     "macro": Macro,
-    "module": Module
+    "module": Module,
+    "foldercell": FolderCell,
+    "deepcell": DeepCell,
+    "deepfoldercell": DeepFolderCell,
 }
 
 from ..core.manager.tasks.structured_cell import StructuredCellAuthTask

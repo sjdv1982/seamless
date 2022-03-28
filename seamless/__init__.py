@@ -6,6 +6,9 @@ import sys
 import traceback
 import asyncio
 import logging
+import subprocess
+import sys
+sys.modules["seamless.subprocess"] = subprocess  # pre-0.7 compat
 logger = logging.getLogger("seamless")
 
 from abc import abstractmethod
