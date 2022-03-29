@@ -319,6 +319,8 @@ def download_buffer_from_servers(checksum):
     buffer_servers = os.environ.get("SEAMLESS_BUFFER_SERVERS")
     if buffer_servers is not None:
         buffer_servers = buffer_servers.split(",")
+    else:
+        buffer_servers = []
     for buffer_server in buffer_servers:
         url = buffer_server + "/" + checksum
         response = session.get(url, stream=True, timeout=3)
@@ -332,7 +334,7 @@ def download_buffer_from_servers(checksum):
             print("WARNING: '{}' has the wrong checksum".format(url))
             continue
         return buf
-        
+
 if __name__ == "__main__":
     checksum1 = "d4ee1515e0a746aa3b8531f1545753e6b2d4cf272632121f1827f21c64a29722"
     urls1 = [
