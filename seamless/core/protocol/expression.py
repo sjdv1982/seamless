@@ -64,7 +64,7 @@ def get_subpath_sync(value, hash_pattern, path):
             return None
         elif isinstance(result, str):
             checksum = bytes.fromhex(result)
-            buffer = get_buffer(checksum)
+            buffer = get_buffer(checksum, remote=True)
             if hash_pattern == {"*": "##"} and len(path) == 1:
                 value = deserialize_raw(buffer)
             else:
@@ -80,7 +80,7 @@ def get_subpath_sync(value, hash_pattern, path):
                 cs = checksum
                 if checksum is not None:
                     cs = bytes.fromhex(checksum)
-                buffer = get_buffer(cs)
+                buffer = get_buffer(cs, remote=True)
                 buffer_dict[checksum] = buffer
             value = deep_structure_to_value_sync(
                 sub_structure, sub_hash_pattern,
@@ -89,7 +89,7 @@ def get_subpath_sync(value, hash_pattern, path):
             return value
     else:
         checksum = bytes.fromhex(result)
-        buffer = get_buffer(checksum)
+        buffer = get_buffer(checksum, remote=True)
         value = deserialize_sync(buffer, checksum, "mixed", copy=True)
         return _get_subpath(value, post_path)
 
@@ -116,7 +116,7 @@ async def get_subpath(value, hash_pattern, path):
                 cs = checksum
                 if checksum is not None:
                     cs = bytes.fromhex(checksum)
-                buffer = get_buffer(cs)
+                buffer = get_buffer(cs, remote=True)
                 buffer_dict[checksum] = buffer
             value = await deep_structure_to_value(
                 sub_structure, sub_hash_pattern,
@@ -125,7 +125,7 @@ async def get_subpath(value, hash_pattern, path):
             return ("value", value)
     else:
         checksum = bytes.fromhex(result)
-        buffer = get_buffer(checksum)
+        buffer = get_buffer(checksum, remote=True)
         value = await deserialize(buffer, checksum, "mixed", copy=True)
         value = _get_subpath(value, post_path)
         return ("value", value)
@@ -175,7 +175,7 @@ def set_subpath_sync(value, hash_pattern, path, subvalue):
         if len(post_path):
             if curr_sub_checksum is not None:
                 curr_sub_checksum = bytes.fromhex(curr_sub_checksum)
-                curr_sub_buffer = get_buffer(curr_sub_checksum)
+                curr_sub_buffer = get_buffer(curr_sub_checksum, remote=True)
                 if is_raw:
                     curr_sub_value = deserialize_raw(curr_sub_buffer)
                 else:
@@ -302,7 +302,7 @@ async def set_subpath(value, hash_pattern, path, subvalue):
         assert len(post_path)
         if curr_sub_checksum is not None:
             curr_sub_checksum = bytes.fromhex(curr_sub_checksum)
-            curr_sub_buffer = get_buffer(curr_sub_checksum)
+            curr_sub_buffer = get_buffer(curr_sub_checksum, remote=True)
             if is_raw:
                 curr_sub_value = deserialize_raw(curr_sub_buffer)    
             else:

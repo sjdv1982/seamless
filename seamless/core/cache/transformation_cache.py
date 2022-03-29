@@ -131,9 +131,8 @@ async def syntactic_to_semantic(
     if syntactic_is_semantic(celltype, subcelltype):
         return checksum
 
-    try:
-        buffer = get_buffer(checksum)
-    except CacheMissError:
+    buffer = get_buffer(checksum, remote=True)
+    if buffer is None:
         buffer = await get_buffer_remote(
             checksum,
             None
@@ -228,7 +227,7 @@ class TransformationCache:
         if "META" in inputpin_checksums:
             checksum = inputpin_checksums["META"]
             await cachemanager.fingertip(checksum)
-            inp_metabuf = buffer_cache.get_buffer(checksum)
+            inp_metabuf = get_buffer(checksum, remote=True)
             if inp_metabuf is None:
                 raise CacheMissError("META")
             inp_meta = json.loads(inp_metabuf)
@@ -788,7 +787,7 @@ class TransformationCache:
         if transformation is None:
             try:
                 transformation_buffer = get_buffer(
-                    tf_checksum
+                    tf_checksum, remote=True
                 )
             except CacheMissError:
                 transformation_buffer = await get_buffer_remote(

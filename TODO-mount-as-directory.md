@@ -48,9 +48,9 @@ a RPBS "download page", where for each once-or-current PDB checksum (also mmcif)
 (example: https://files.rcsb.org/download/1AVX.pdb)
 A direct download link can be annotated with "gzip" etc. The database will normally fetch the "download page" and store it locally.
 In the future, support BitTorrent as well.
-TODO: buffer server
-d. Map name+version+format to an execution order checksum.
-e. Provide a link to a bufferinfo page for all relevant checksums.
+DONE: buffer server
+d. DONE: Map name+version+format to an execution order checksum.
+e. DONE: Provide a link to a bufferinfo page for all relevant checksums.
 MAKE A BIG WARNING IF LOADING-BY-NAME IS DONE WITHIN LOAD-PROJECT!
 This will make load-project not reproducible!!!
 - DONE; Add a database command to load all entries in a download page in local file cache. File cache can be inside the database dir, but also an outside directory. Do the same for bufferinfo entries.
@@ -71,9 +71,9 @@ tools to export contents of the database dir (notably, /downloads,
 /deepfolders, /deepcells, and deep buffers in /buffers) to a FAIR server dir. DONE.
 DONE UPDATE3: make a PDB test, but rename stdlib.join to stdlib.select.
 6. Add filename support to transformers, as outlined in https://github.com/sjdv1982/seamless/issues/108. There will be high-level transformer pin celltype "deepfolder", "deepcell".
-Assigning a transformer pin to a DeepFolder, DeepCell
+Assigning a transformer pin to a DeepFolderCell, DeepCell
 creates a pin of that celltype.
-Assigning a transformer input to a Folder creates a "deepfolder" pin in case of a bash transformer
+Assigning a transformer input to a FolderCell creates a "deepfolder" pin in case of a bash transformer
 , a "mixed" pin otherwise. 
 The high-level celltypes "deepfolder", "deepcell" do not exist at the low level.
 Instead, "mixed" pins are created with the correct hash patterns, i.e. receiving the raw deep structure.

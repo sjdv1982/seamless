@@ -153,7 +153,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
         if checksum is None:
             continue
         # fingertipping must have happened before
-        buffer = get_buffer(checksum)
+        buffer = get_buffer(checksum, remote=False)
         assert buffer is not None
         try:
             value = await deserialize(buffer, checksum, celltype, False)
@@ -488,13 +488,13 @@ class TransformationJob:
 
         meta = self.transformation.get("__meta__")
         if meta is not None:
-            meta = get_buffer(meta)
+            meta = get_buffer(meta, remote=False)
             meta = json.loads(meta.decode())
         # meta not used for now...
 
         env = self.transformation.get("__env__")
         if env is not None:
-            env = get_buffer(env)
+            env = get_buffer(env, remote=False)
             env = json.loads(env.decode())
             assert env is not None
             validate_environment(env)

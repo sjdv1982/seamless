@@ -1,4 +1,4 @@
-from asyncio import futures
+import os
 import urllib.parse
 import requests
 import time
@@ -6,6 +6,8 @@ import gzip
 import bz2
 from concurrent.futures import ThreadPoolExecutor
 from requests.exceptions import ConnectionError, ReadTimeout
+
+from seamless.util import parse_checksum
 
 try:
     from seamless.core.cache.buffer_cache import buffer_cache
@@ -271,7 +273,7 @@ def download_buffer_sync(checksum, url_infos, celltype="bytes"):
                 if conv == True:
                     pass
                 elif isinstance(conv, bytes):
-                    buf = buffer_cache.get_buffer(conv, remote=False)
+                    buf = get_buffer(conv, remote=False)
                     assert buf is not None
                     buf_checksum = conv.hex()
                 else:
@@ -311,6 +313,26 @@ async def download_buffer(checksum, url_infos, celltype="bytes"):
     future2 = asyncio.wrap_future(future,loop=loop)
     return await future2
 
+def download_buffer_from_servers(checksum):
+    checksum = parse_checksum(checksum)
+    assert checksum is not None
+    buffer_servers = os.environ.get("SEAMLESS_BUFFER_SERVERS")
+    if buffer_servers is not None:
+        buffer_servers = buffer_servers.split(",")
+    for buffer_server in buffer_servers:
+        url = buffer_server + "/" + checksum
+        response = session.get(url, stream=True, timeout=3)
+        result = []
+        for chunk in response.iter_content(100000):
+            result.append(chunk)
+        buf = b"".join(result)
+        from seamless import calculate_checksum
+        buf_checksum = calculate_checksum(buf, hex=True)
+        if buf_checksum != checksum:
+            print("WARNING: '{}' has the wrong checksum".format(url))
+            continue
+        return buf
+        
 if __name__ == "__main__":
     checksum1 = "d4ee1515e0a746aa3b8531f1545753e6b2d4cf272632121f1827f21c64a29722"
     urls1 = [
@@ -382,3 +404,5 @@ if __name__ == "__main__":
     print(time.time()-t)
     print(fut.result())
     print()
+
+from .core.protocol.get_buffer import get_buffer

@@ -6,6 +6,8 @@ import traceback
 import sys
 from copy import deepcopy
 
+from seamless.core.cache import CacheMissError
+
 from ..status import StatusReasonEnum
 
 import logging
@@ -188,7 +190,7 @@ class Manager:
                     traceback.print_exc()
         if not is_dummy_mount(cell._mount):
             try:
-                buffer = buffer_cache.get_buffer(checksum)  # not async, so OK
+                buffer = get_buffer(checksum, remote=True)  # not async, so OK
                 self.mountmanager.add_cell_update(cell, checksum, buffer)
             except Exception:
                 traceback.print_exc()            
@@ -508,7 +510,9 @@ class Manager:
 
     def _get_buffer(self, checksum):
         if asyncio.get_event_loop().is_running():
-            return get_buffer(checksum)
+            buffer = get_buffer(checksum, remote=True)
+            if buffer is None:
+                raise CacheMissError(checksum)
         if checksum is None:
             return None
         empty_dict_checksum = 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c'

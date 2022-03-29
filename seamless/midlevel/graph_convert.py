@@ -17,7 +17,7 @@ def graph_convert_pre07(graph, ctx):
             except CacheMissError:
                 buf = None
         else:
-            buf = buffer_cache.get_buffer(bytes.fromhex(checksum))
+            buf = get_buffer(bytes.fromhex(checksum),remote=True)
         return buf
 
     converted_nodes = set()
@@ -135,3 +135,5 @@ def graph_convert(graph, ctx):
     elif seamless_version == "0.7": 
         graph = graph_convert_07(graph, ctx)
     return graph
+
+from ..core.protocol.get_buffer import get_buffer    

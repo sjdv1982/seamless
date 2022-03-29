@@ -213,11 +213,10 @@ class Transformer(Worker):
         from .protocol.get_buffer import get_buffer
         if self._checksum is None:
             return None
-        buffer = get_buffer(self._checksum)
+        buffer = get_buffer(self._checksum, remote=True)
         return buffer
 
     async def _get_buffer(self):
-        from .protocol.get_buffer import get_buffer
         if self._checksum is None:
             return None
         cachemanager = self._get_manager().cachemanager

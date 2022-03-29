@@ -185,7 +185,7 @@ class SimpleCellWrapper(WrapperBase):
         if checksum is None:
             return None
         checksum = bytes.fromhex(checksum)
-        return get_buffer(checksum)
+        return get_buffer(checksum, remote=True)
 
     @property
     def value(self):

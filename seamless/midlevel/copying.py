@@ -7,6 +7,7 @@ import inspect, asyncio
 from ..core.cache.buffer_cache import buffer_cache
 from ..core.protocol.deserialize import deserialize_sync as deserialize
 from ..core.protocol.serialize import serialize_sync as serialize
+from ..core.protocol.get_buffer import get_buffer
 from ..core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from ..core.protocol.deep_structure import apply_hash_pattern_sync, deep_structure_to_checksums
 
@@ -36,7 +37,7 @@ def get_checksums(nodes, connections, *, with_annotations):
         else:
             pass
         if hash_pattern is not None:
-            buffer = buffer_cache.get_buffer(bytes.fromhex(checksum))
+            buffer = get_buffer(bytes.fromhex(checksum), remote=True)
             if buffer is None:
                 print("WARNING: could not get checksums for deep structures in {}".format(node["path"]))
                 return

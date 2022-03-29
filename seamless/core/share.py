@@ -249,9 +249,8 @@ class ShareManager:
                 continue
             from_buffer = False
             if checksum is not None and cell._celltype in ("plain", "mixed"):
-                try:
-                    buffer = get_buffer(checksum)
-                except CacheMissError:
+                buffer = get_buffer(checksum, remote=True)
+                if buffer is None:
                     buffer = await get_buffer_remote(
                         checksum,
                         None

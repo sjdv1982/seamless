@@ -1,9 +1,9 @@
-from re import S
 import weakref
 import copy
 import functools
-
-from seamless.core.status import StatusReasonEnum
+from ..cache import CacheMissError
+from ...download_buffer import download_buffer_from_servers
+from ..status import StatusReasonEnum
 from ..cache.buffer_cache import buffer_cache
 from ... import calculate_dict_checksum
 
@@ -223,7 +223,9 @@ class CacheManager:
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if incref_hash_pattern:
             try:
-                deep_buffer = buffer_cache.get_buffer(checksum)
+                deep_buffer = get_buffer(checksum, remote=True)
+                if deep_buffer is None:
+                    raise CacheMissError(checksum)
                 deep_buffer_coro_id = new_deep_buffer_coro_id()
                 deep_buffer_coros.append(deep_buffer_coro_id)
                 coro = incref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
@@ -248,6 +250,7 @@ class CacheManager:
         return await self._fingertip(checksum, must_have_cell=must_have_cell, done=set())
 
     async def _fingertip(self, checksum, *, must_have_cell, done):
+        from ... import fair
         from ..cache import CacheMissError
         from .tasks.evaluate_expression import EvaluateExpressionTask
         from .tasks.deserialize_buffer import DeserializeBufferTask
@@ -258,11 +261,18 @@ class CacheManager:
         if isinstance(checksum, str):
             checksum = bytes.fromhex(checksum)
         assert isinstance(checksum, bytes), checksum
-        buffer = buffer_cache.get_buffer(checksum)
+        buffer = get_buffer(checksum, remote=True)
         if buffer is not None:
             return buffer
         if checksum in done:
             return
+
+        buffer = fair.get_buffer(checksum)
+        if buffer is not None:
+            assert isinstance(buffer, bytes)
+            buffer_cache.cache_buffer(checksum, buffer)
+            buffer_cache.downloaded.add(checksum)
+            return buffer
 
         done.add(checksum)
         coros = []
@@ -353,11 +363,6 @@ class CacheManager:
 
         if recompute - remote in (0, 1) and remote > 0:
             buffer_info = buffer_cache.get_buffer_info(checksum)
-            if buffer_info is None:
-                buffer_info = await get_buffer_info_remote(
-                    checksum,
-                    remote_peer_id=None
-                )
             if buffer_info is not None:
                 if buffer_info.get("length", 0) <= RECOMPUTE_OVER_REMOTE:
                     remote = recompute + 1
@@ -385,7 +390,7 @@ class CacheManager:
 
         async def buffer_from_syn2sem(checksum, syn_checksum, celltype, subcelltype):
             await syntactic_to_semantic(syn_checksum, celltype, subcelltype, "fingertip")
-            return buffer_cache.get_buffer(checksum)
+            return get_buffer(checksum, remote=False)
 
         sem2syn = self.transformation_cache.semantic_to_syntactic_checksums
         for (semkey, celltype, subcelltype), syn_checksums in sem2syn.items():
@@ -401,6 +406,7 @@ class CacheManager:
 
         if not len(coros):
             # Heroic attempt to get a reverse conversion from any buffer_info
+            # This extends a much simpler buffer_info effort in get_buffer.py
             attr_list = (
                 "str2text", "text2str", "binary2bytes", "bytes2binary",
                 "binary2json", "json2binary"
@@ -422,7 +428,7 @@ class CacheManager:
             tasks = all_tasks
             while len(tasks):
                 _, tasks  = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-                buffer = buffer_cache.get_buffer(checksum)
+                buffer = get_buffer(checksum, remote=False)
                 if buffer is not None:
                     return buffer
         finally:
@@ -436,7 +442,7 @@ class CacheManager:
                 else:
                     task.cancel()
 
-        buffer = buffer_cache.get_buffer(checksum)
+        buffer = get_buffer(checksum,remote=False)
         if buffer is not None:
             return buffer
 
@@ -451,6 +457,9 @@ class CacheManager:
             except CacheMissError:
                 pass
 
+        buffer = download_buffer_from_servers(checksum)
+        if buffer is not None:
+            return buffer
         raise CacheMissError(checksum.hex())
 
 
@@ -475,7 +484,7 @@ class CacheManager:
             cell = refholder
             if cell._hash_pattern is not None:
                 if (checksum, calculate_dict_checksum(cell._hash_pattern)) not in invalid_deep_buffers:
-                    deep_buffer = buffer_cache.get_buffer(checksum)
+                    deep_buffer = get_buffer(checksum,remote=True)
                     deep_buffer_coro_id = new_deep_buffer_coro_id()
                     deep_buffer_coros.append(deep_buffer_coro_id)
                     coro = decref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
@@ -622,8 +631,6 @@ from ..structured_cell import Inchannel
 from .expression import Expression
 from ..protocol.deep_structure import deep_structure_to_checksums
 from ..protocol.deserialize import deserialize
-from ..protocol.get_buffer import (
-    get_buffer_remote, get_buffer_length_remote, CacheMissError
-)
+from ..protocol.get_buffer import get_buffer, get_buffer_remote
 from ..cache.transformation_cache import syntactic_to_semantic
 from ..protocol.expression import set_subpath_checksum, access_hash_pattern

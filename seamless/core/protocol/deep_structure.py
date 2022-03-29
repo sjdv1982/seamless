@@ -690,7 +690,7 @@ async def apply_hash_pattern(checksum, hash_pattern):
     if hash_pattern == "#":
         return checksum
     else:
-        buffer = get_buffer(checksum)
+        buffer = get_buffer(checksum, remote=True)
         if hash_pattern == "##":
             if not buffer.startswith(MAGIC_SEAMLESS_MIXED):                                    
                 if not buffer.startswith(MAGIC_NUMPY):
@@ -726,7 +726,7 @@ def apply_hash_pattern_sync(checksum, hash_pattern):
         asyncio.get_event_loop().run_until_complete(fut)
         return fut.result()
 
-    buffer = get_buffer(checksum)
+    buffer = get_buffer(checksum, remote=True)
     value = deserialize_sync(
         buffer, checksum, "mixed", False
     )

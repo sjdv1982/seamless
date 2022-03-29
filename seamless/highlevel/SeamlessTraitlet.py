@@ -141,8 +141,7 @@ class SeamlessTraitlet(traitlets.HasTraits):
         cell = self.outcell()
         if cell._destroyed:
             return
-        manager = self.parent()._manager
-        buffer = buffer_cache.get_buffer(checksum)
+        buffer = get_buffer(checksum, remote=True)
         celltype = cell._celltype
         value = deserialize_sync(
             buffer, checksum, celltype,
@@ -265,4 +264,5 @@ from ..core.structured_cell import StructuredCell
 from ..core.cell import Cell as core_cell
 from ..core.protocol.deserialize import deserialize_sync
 from ..core.protocol.expression import get_subpath
+from ..core.protocol.get_buffer import get_buffer
 from ..core.cache.buffer_cache import buffer_cache

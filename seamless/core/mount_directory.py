@@ -144,7 +144,7 @@ def write_to_directory(directory, data, *, cleanup, deep, text_only):
             all_files.add(filename)
             if deep:
                 cs = parse_checksum(v)
-                buf = buffer_cache.get_buffer(cs)
+                buf = get_buffer(cs, remote=True)
                 if buf is None:
                     logging.warn("CacheMissError: {}".format(v))
                     continue                
@@ -201,3 +201,4 @@ def get_directory_mtime(path):
 from .protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
 from ..util import parse_checksum
 from .protocol.deep_structure import deserialize_raw, serialize_raw
+from .protocol.get_buffer import get_buffer

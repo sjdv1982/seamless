@@ -29,7 +29,7 @@ class SetCellBufferTask(Task):
             if checksum is None and buffer is not None:
                 checksum = await CalculateChecksumTask(manager, buffer).run()
             elif buffer is None and checksum is not None:
-                buffer = buffer_cache.get_buffer(checksum)
+                buffer = get_buffer(checksum, remote=True)
             if checksum is None or buffer is None:
                 manager.cancel_cell(cell, True, StatusReasonEnum.UNDEFINED, origin_task=self)
             else:
@@ -63,3 +63,4 @@ from ...protocol.calculate_checksum import checksum_cache
 from ...protocol.evaluate import has_validated_evaluation
 from ...status import StatusReasonEnum
 from ...cache.buffer_cache import buffer_cache
+from ...protocol.get_buffer import get_buffer

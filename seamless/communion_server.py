@@ -330,7 +330,7 @@ class CommunionServer:
                 )
                 checksum2 = checksum2[0]
                 assert isinstance(checksum2, bytes)
-                buffer = buffer_cache.get_buffer(checksum2)
+                buffer = get_buffer(checksum2, remote=True)
                 if buffer is not None:
                     continue
                 coro = get_buffer_remote(
@@ -411,7 +411,7 @@ class CommunionServer:
                 assert self.config_servant[type]
                 checksum = bytes.fromhex(content)
                 result = get_buffer(
-                    checksum
+                    checksum, remote=False
                 )
                 if result is None:
                     peer_id = self.peers[peer]["id"]

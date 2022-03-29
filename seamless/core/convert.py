@@ -182,7 +182,7 @@ def try_convert_single(
     # "result" is now None or -1, and not a value conversion
     
     if buffer is None and (get_buffer_local or get_buffer_remote):
-        buffer = buffer_cache.get_buffer(checksum, remote=get_buffer_remote)
+        buffer = get_buffer(checksum, remote=get_buffer_remote)
     if buffer is not None:
         result = _convert_from_buffer(checksum, buffer, source_celltype, target_celltype)
     
@@ -384,3 +384,4 @@ from .cache.buffer_cache import buffer_cache
 from .protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
 from .protocol.deserialize import deserialize_sync
 from .protocol.serialize import serialize_sync
+from .protocol.get_buffer import get_buffer

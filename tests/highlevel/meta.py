@@ -2,13 +2,13 @@ from seamless.highlevel import Context
 import json
 
 def get_meta(tf):
-    from seamless.core.cache.buffer_cache import buffer_cache
+    from seamless.core.protocol.get_buffer import get_buffer
     ctx = tf._root()
     tf_cache = ctx._get_manager().cachemanager.transformation_cache
     tf_checksum = tf_cache.transformer_to_transformations[tf]
     transformation = tf_cache.transformations[tf_checksum]
     meta_checksum = transformation["__meta__"]
-    meta = json.loads(buffer_cache.get_buffer(meta_checksum))
+    meta = json.loads(get_buffer(meta_checksum,remote=True))
     return meta
 
 ctx = Context()

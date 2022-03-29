@@ -144,7 +144,7 @@ class MountItem:
             if from_cache:
                 cell_buffer = cache_cell_buffer
             else:
-                cell_buffer = buffer_cache.get_buffer(cell_checksum)
+                cell_buffer = get_buffer(cell_checksum, remote=True)
                 if cell_buffer is None:
                     cell_checksum = None
                     cell_empty = True
@@ -240,7 +240,7 @@ class MountItem:
     def _from_cache(self):
         cache = mountmanager.cached_checksums.pop(self.path, (None, None) )
         cached_time, cached_checksum = cache
-        buffer = buffer_cache.get_buffer(cached_checksum)
+        buffer = get_buffer(cached_checksum,remote=True)
         if buffer is not None:
             self.last_mtime = cached_time
         return cached_checksum, buffer
@@ -257,7 +257,7 @@ class MountItem:
             if result is None:
                 return None
             checksum = bytes.fromhex(cs)            
-            result_buf = buffer_cache.get_buffer(checksum)
+            result_buf = get_buffer(checksum, remote=False)
             return result_buf
         binary = self.kwargs["binary"]
         encoding = self.kwargs.get("encoding")
@@ -800,3 +800,4 @@ from .cache.buffer_cache import buffer_cache
 from .mount_directory import get_directory_mtime, deep_read_from_directory, read_from_directory, write_to_directory
 from .protocol.deserialize import deserialize_sync
 from .protocol.serialize import serialize_sync
+from .protocol.get_buffer import get_buffer
