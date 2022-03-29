@@ -250,7 +250,6 @@ class CacheManager:
         return await self._fingertip(checksum, must_have_cell=must_have_cell, done=set())
 
     async def _fingertip(self, checksum, *, must_have_cell, done):
-        from ... import fair
         from ..cache import CacheMissError
         from .tasks.evaluate_expression import EvaluateExpressionTask
         from .tasks.deserialize_buffer import DeserializeBufferTask
@@ -266,13 +265,6 @@ class CacheManager:
             return buffer
         if checksum in done:
             return
-
-        buffer = fair.get_buffer(checksum)
-        if buffer is not None:
-            assert isinstance(buffer, bytes)
-            buffer_cache.cache_buffer(checksum, buffer)
-            buffer_cache.downloaded.add(checksum)
-            return buffer
 
         done.add(checksum)
         coros = []

@@ -260,7 +260,8 @@ class BufferCache:
         assert len(checksum) == 32
         return self._decref([checksum])
 
-    def get_buffer(self, checksum, *, remote=True):        
+    def get_buffer(self, checksum, *, remote=True, deep=False):
+        from ... import fair      
         if checksum is None:
             return None
         if isinstance(checksum, str):
@@ -279,6 +280,14 @@ class BufferCache:
             buffer = database_cache.get_buffer(checksum)
             if buffer is not None:
                 assert isinstance(buffer, bytes)
+            else:
+                if deep:
+                    buffer = fair.get_buffer(checksum)
+                if buffer is not None:
+                    assert isinstance(buffer, bytes)
+                    buffer_cache.cache_buffer(checksum, buffer)
+                    buffer_cache.downloaded.add(checksum)
+                    return buffer
 
         return buffer
 

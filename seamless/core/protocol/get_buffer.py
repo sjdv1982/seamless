@@ -88,10 +88,10 @@ async def get_buffer_remote(checksum, remote_peer_id):
         return buffer
 
 
-def get_buffer(checksum, remote, _done=None):
+def get_buffer(checksum, remote, _done=None, deep=False):
     """  Gets the buffer from its checksum.
 What is tried:
-- buffer cache ("remote" is passed to it)
+- buffer cache ("remote" and "deep" are passed to it)
 - transformation cache
 - Conversion using buffer_info
 
@@ -112,7 +112,7 @@ Else, return None
         return None
     if _done is not None and checksum in _done:
         return None
-    buffer = buffer_cache.get_buffer(checksum, remote=remote)
+    buffer = buffer_cache.get_buffer(checksum, remote=remote, deep=deep)
     if buffer is not None:
         return buffer
     transformation = transformation_cache.transformations.get(checksum)

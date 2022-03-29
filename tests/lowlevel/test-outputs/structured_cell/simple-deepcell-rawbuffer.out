@@ -2,17 +2,17 @@
 <Silk: {} >
 <Silk: {} >
 START
-{'x': '"test"\n', 'y': '"test2"\n', 'z': '"test3"\n'}
-<Silk: {'x': '"test"\n', 'y': '"test2"\n', 'z': '"test3"\n'} >
-<Silk: {'x': '"test"\n', 'y': '"test2"\n', 'z': '"test3"\n'} >
-{'x': 'c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783', 'y': '3aace618e0d578104c110b4930ab376755695261858720cc631cbe62390cd61a', 'z': '153477a48af62df19f94c15f623fba4835f15f64502d98d4c95a6816387f4d62'}
-<Silk: "test"
- > <Silk: "test2"
- > <Silk: "test3"
+{'x': 'test\n', 'y': 'test2\n', 'z': 'test3\n'}
+<Silk: {'x': 'test\n', 'y': 'test2\n', 'z': 'test3\n'} >
+<Silk: {'x': 'test\n', 'y': 'test2\n', 'z': 'test3\n'} >
+{'x': '34a0b893b66e312a8b0f7dc4bc4c7930b67f8823513aff5444fb5c64aa060c5a', 'y': 'a89b36deb838f6e3f818d50dccc10db0c47537a71acb22626ddbac12d6ecf527', 'z': 'd52f1dedb17b82e2496a2cb44056dc4998488c0f24be8411745ce7e1c932aae9'}
+<Silk: test
+ > <Silk: test2
+ > <Silk: test3
  >
-"test"
- "test2"
- "test3"
+test
+ test2
+ test3
 
 {'p': '10\n', 'q': '20\n', 'r': '30\n'}
 <Silk: {'p': '10\n', 'q': '20\n', 'r': '30\n'} >

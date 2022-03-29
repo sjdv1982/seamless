@@ -37,7 +37,7 @@ def get_checksums(nodes, connections, *, with_annotations):
         else:
             pass
         if hash_pattern is not None:
-            buffer = get_buffer(bytes.fromhex(checksum), remote=True)
+            buffer = get_buffer(bytes.fromhex(checksum), remote=True, deep=True)
             if buffer is None:
                 print("WARNING: could not get checksums for deep structures in {}".format(node["path"]))
                 return

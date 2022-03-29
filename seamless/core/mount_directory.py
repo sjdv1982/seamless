@@ -144,7 +144,7 @@ def write_to_directory(directory, data, *, cleanup, deep, text_only):
             all_files.add(filename)
             if deep:
                 cs = parse_checksum(v)
-                buf = get_buffer(cs, remote=True)
+                buf = get_buffer(cs, remote=True, deep=False)
                 if buf is None:
                     logging.warn("CacheMissError: {}".format(v))
                     continue                

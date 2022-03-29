@@ -1,5 +1,6 @@
 from numpy.lib.arraysetops import isin
 from silk.mixed import _array_types
+
 def _set_subpath(value, path, subvalue):
     head = path[0]
     if len(path) == 1:
@@ -64,7 +65,8 @@ def get_subpath_sync(value, hash_pattern, path):
             return None
         elif isinstance(result, str):
             checksum = bytes.fromhex(result)
-            buffer = get_buffer(checksum, remote=True)
+            deep = (hash_pattern is not None)
+            buffer = get_buffer(checksum, remote=True,deep=deep)
             if hash_pattern == {"*": "##"} and len(path) == 1:
                 value = deserialize_raw(buffer)
             else:
@@ -77,10 +79,12 @@ def get_subpath_sync(value, hash_pattern, path):
             )
             buffer_dict = {}
             for checksum in checksums:
-                cs = checksum
-                if checksum is not None:
-                    cs = bytes.fromhex(checksum)
-                buffer = get_buffer(cs, remote=True)
+                if checksum is None:
+                    continue
+                cs = bytes.fromhex(checksum)
+                buffer = get_buffer(cs, remote=True, deep=False)
+                if buffer is None:
+                    raise CacheMissError(checksum)
                 buffer_dict[checksum] = buffer
             value = deep_structure_to_value_sync(
                 sub_structure, sub_hash_pattern,
@@ -89,7 +93,7 @@ def get_subpath_sync(value, hash_pattern, path):
             return value
     else:
         checksum = bytes.fromhex(result)
-        buffer = get_buffer(checksum, remote=True)
+        buffer = get_buffer(checksum, remote=True,deep=False)
         value = deserialize_sync(buffer, checksum, "mixed", copy=True)
         return _get_subpath(value, post_path)
 
@@ -113,10 +117,12 @@ async def get_subpath(value, hash_pattern, path):
             )
             buffer_dict = {}
             for checksum in checksums: # TODO: optimize by running in parallel
-                cs = checksum
-                if checksum is not None:
-                    cs = bytes.fromhex(checksum)
-                buffer = get_buffer(cs, remote=True)
+                if checksum is None:
+                    continue
+                cs = bytes.fromhex(checksum)
+                buffer = get_buffer(cs, remote=True, deep=False)
+                if buffer is None:
+                    raise CacheMissError(checksum)
                 buffer_dict[checksum] = buffer
             value = await deep_structure_to_value(
                 sub_structure, sub_hash_pattern,
@@ -125,7 +131,7 @@ async def get_subpath(value, hash_pattern, path):
             return ("value", value)
     else:
         checksum = bytes.fromhex(result)
-        buffer = get_buffer(checksum, remote=True)
+        buffer = get_buffer(checksum, remote=True,deep=False)
         value = await deserialize(buffer, checksum, "mixed", copy=True)
         value = _get_subpath(value, post_path)
         return ("value", value)
@@ -348,3 +354,4 @@ from .deserialize import deserialize, deserialize_sync
 from .serialize import serialize, serialize_sync
 from .get_buffer import get_buffer
 from ..cache.buffer_cache import buffer_cache
+from ..cache import CacheMissError

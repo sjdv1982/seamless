@@ -339,7 +339,7 @@ class Manager:
             independent = True
             value = None
             if checksum is not None:
-                buf = self._get_buffer(checksum)
+                buf = self._get_buffer(checksum,deep=False)
                 value = deserialize_sync(buf, checksum, "plain", copy=False)
             for sc in livegraph.schemacells[cell]:
                 sc._schema_value = deepcopy(value)
@@ -508,9 +508,9 @@ class Manager:
         _, void = self._get_cell_checksum_and_void(cell)
         return void
 
-    def _get_buffer(self, checksum):
+    def _get_buffer(self, checksum, deep):
         if asyncio.get_event_loop().is_running():
-            buffer = get_buffer(checksum, remote=True)
+            buffer = get_buffer(checksum, remote=True, deep=deep)
             if buffer is None:
                 raise CacheMissError(checksum)
         if checksum is None:
@@ -530,7 +530,8 @@ class Manager:
     @mainthread
     def get_cell_buffer_and_checksum(self, cell):
         checksum = self.get_cell_checksum(cell)
-        buffer = self._get_buffer(checksum)
+        deep = cell._hash_pattern is not None
+        buffer = self._get_buffer(checksum,deep)
         return buffer, checksum
 
     @mainthread
@@ -556,7 +557,8 @@ class Manager:
             return None
         if isinstance(checksum, str):
             checksum = bytes.fromhex(checksum)
-        buffer = self._get_buffer(checksum)
+        # set deep to True, since we do want to check the fairserver
+        buffer = self._get_buffer(checksum,deep=True)
         if celltype is None:
             return buffer
         if asyncio.get_event_loop().is_running():
