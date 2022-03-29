@@ -128,7 +128,7 @@ def get_transformation_inputs_output(transformation):
     outputname, output_celltype, output_subcelltype = outputpin
     return inputs, outputname, output_celltype, output_subcelltype
 
-async def build_transformation_namespace(transformation, semantic_cache, codename):
+async def build_transformation_namespace(transformation, semantic_cache, codename):    
     namespace = {
         "__name__": "transformer",
         "__package__": "transformer",
@@ -152,9 +152,10 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
             checksum = semantic_cache[semkey][0]
         if checksum is None:
             continue
-        # fingertipping must have happened before
-        buffer = get_buffer(checksum, remote=False)
-        assert buffer is not None
+        # fingertipping must have happened before, but database could be there
+        buffer = get_buffer(checksum, remote=True)
+        if buffer is None:
+            raise CacheMissError(checksum.hex())
         try:
             value = await deserialize(buffer, checksum, celltype, False)
         except Exception as exc:
