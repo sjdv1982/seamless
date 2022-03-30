@@ -395,6 +395,14 @@ class Cell(SeamlessBase):
         })
         self._mount.update(self._mount_kwargs)
         MountItem(None, self, dummy=True, **self._mount) #to validate parameters
+        context = self._context
+        if context is not None and context() is not None:
+            if isinstance(context(), Context):
+                manager = context()._manager
+                if manager is not None:
+                    if not get_macro_mode():
+                        mountmanager = manager.mountmanager
+                        mountmanager.scan(context()._root())
         return self
 
     def _add_traitlet(self, traitlet, trigger=True):
