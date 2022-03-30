@@ -5,8 +5,8 @@ import os
 DEBUG = True
 REMOTE_TIMEOUT = 5.0
 
-async def get_buffer_length_remote(checksum, remote_peer_id):
-    clients = communion_client_manager.clients["buffer_length"]
+async def get_buffer_info_remote(checksum, remote_peer_id):
+    clients = communion_client_manager.clients["buffer_info"]
     coros = []
     for client in clients:
         client_peer_id = client.get_peer_id()
@@ -31,10 +31,10 @@ async def get_buffer_length_remote(checksum, remote_peer_id):
                         except:
                             traceback.print_exc()
                     continue
-                length = fut.result()
-                if length is None:
+                buffer_info = fut.result()
+                if buffer_info is None:
                     continue
-                return length
+                return buffer_info
         if not len(pending):
             break
     return None

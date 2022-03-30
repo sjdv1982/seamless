@@ -84,7 +84,7 @@ class BufferInfo:
             if v is not None:
                 setattr(self, attr, v)
     
-    def get(self, attr, default):
+    def get(self, attr, default=None):
         value = getattr(self, attr)
         if value is None:
             return default

@@ -120,7 +120,7 @@ if _outgoing:
 default_master_config = {
     "buffer": True,
     "buffer_status": True,
-    "buffer_length": True,
+    "buffer_info": True,
     "transformation_job": False,
     "transformation_status": False,
     "semantic_to_syntactic": True,
@@ -130,7 +130,7 @@ default_master_config = {
 default_servant_config = {
     "buffer": "small", # only return small buffers (< 10 000 bytes)
     "buffer_status": "small",
-    "buffer_length": True,
+    "buffer_info": True,
     "transformation_job": False,
     "transformation_status": False,
     "semantic_to_syntactic": True,
@@ -143,7 +143,7 @@ import numpy as np
 
 class CommunionServer:
     future = None
-    PROTOCOL = ("seamless", "communion", "0.2.1")
+    PROTOCOL = ("seamless", "communion", "0.3")
     _started = False
     _started_outgoing = False
     _to_start_incoming = None
@@ -386,22 +386,27 @@ class CommunionServer:
                 checksum = bytes.fromhex(content)
                 async def func():
                     has_buffer = buffer_cache.buffer_check(checksum)
-                    buffer_length = None
-                    if has_buffer:
-                        buffer_length = buffer_cache.get_buffer_length(checksum)
-                    print_debug("STATUS SERVE BUFFER", buffer_length, checksum.hex())
-                    if buffer_length is not None:
-                        if buffer_length < 10000:
-                            return 1
-                        status = self.config_servant["buffer_status"]
-                        if status == "small":
-                            return -1
+                    status = self.config_servant["buffer_status"]
+                    buffer_info = buffer_cache.get_buffer_info(checksum, force_length=True)
+                    length = None
+                    if buffer_info is not None:
+                        length = buffer_info.length                        
+                        print_debug("STATUS SERVE BUFFER", length, checksum.hex())
+                        if length <= 10000 or status != "small":
+                            if has_buffer:
+                                return 1
+                            else:
+                                return 0
+                        return -1                    
                     peer_id = self.peers[peer]["id"]
                     result = await communion_client_manager.remote_buffer_status(
                         checksum, peer_id
                     )
                     if result == True:
-                        return 0
+                        if length is None or length <= 10000 or status != "small":
+                            return 0
+                        else:
+                            return -1
                     else:
                         return -2
                 result = await func()
@@ -421,17 +426,17 @@ class CommunionServer:
                     )
                 print_debug("BUFFER", checksum.hex(), result)
 
-            elif type == "buffer_length":
+            elif type == "buffer_info":
                 assert self.config_servant[type]
                 checksum = bytes.fromhex(content)
-                result = buffer_cache.get_buffer_length(checksum)
+                result = buffer_cache.get_buffer_info(checksum)
                 if result is None:
                     peer_id = self.peers[peer]["id"]
-                    result = await get_buffer_length_remote(
+                    result = await get_buffer_info_remote(
                         checksum,
                         remote_peer_id=peer_id
                     )
-                print_info("BUFFERLENGTH", checksum.hex(), result)
+                print_info("BUFFERINFO", checksum.hex(), result)
 
 
             elif type == "semantic_to_syntactic":
@@ -562,4 +567,4 @@ class CommunionServer:
 communion_server = CommunionServer()
 from .core.cache.transformation_cache import transformation_cache, RemoteTransformer
 from .core.cache.buffer_cache import buffer_cache
-from .core.protocol.get_buffer import get_buffer, get_buffer_remote, get_buffer_length_remote
+from .core.protocol.get_buffer import get_buffer, get_buffer_remote, get_buffer_info_remote

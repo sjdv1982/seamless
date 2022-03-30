@@ -785,11 +785,10 @@ class TransformationCache:
         assert isinstance(tf_checksum, bytes)
         transformation = self.transformations.get(tf_checksum)
         if transformation is None:
-            try:
-                transformation_buffer = get_buffer(
-                    tf_checksum, remote=True
-                )
-            except CacheMissError:
+            transformation_buffer = get_buffer(
+                tf_checksum, remote=True
+            )
+            if transformation_buffer is None:
                 transformation_buffer = await get_buffer_remote(
                     tf_checksum,
                     None # NOT remote_peer_id! The submitting peer may hold a buffer we need!
