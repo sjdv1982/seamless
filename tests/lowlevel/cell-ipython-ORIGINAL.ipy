@@ -1,6 +1,6 @@
 %load_ext Cython
 
-#%%cython -a
+%%cython -a
 from math import log
 def func(i):
     s = 0
@@ -13,5 +13,4 @@ def func(i):
 # IPython.core.display.HTML object of the
 # We can access the HTML data with _.data
 
-#func_html = _.data
-func_html = ""
+func_html = _.data

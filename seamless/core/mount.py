@@ -378,11 +378,12 @@ class MountItem:
                     file_checksum = calculate_checksum(file_buffer)
                 self._after_read(file_checksum, mtime=mtime)
         cell_checksum = self.cell_checksum
-        if file_checksum is None and self.cell()._checksum is None and cell_checksum is not None:
-            file_buffer = buffer_cache.get_buffer(cell_checksum)
-            if file_buffer is not None:
-                file_checksum = cell_checksum
-                cell_checksum = None
+        if "r" in self.mode:
+            if file_checksum is None and self.cell()._checksum is None and cell_checksum is not None:
+                file_buffer = buffer_cache.get_buffer(cell_checksum)
+                if file_buffer is not None:
+                    file_checksum = cell_checksum
+                    cell_checksum = None
         if file_checksum is not None and file_checksum != cell_checksum:
             if "r" in self.mode:
                 self.set(file_buffer, checksum=file_checksum)
