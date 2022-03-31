@@ -4,10 +4,10 @@ Seamless int cell: .c2 191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a
 Seamless Python transformer code cell: .c3 1cbba7cc10e067273fdec7cc350d2b87508c1959d26bbab4f628f6f59ec49607
 OUTGOING simple-communion-slave simple-communion-master
 ADD SERVANT buffer
-ADD SERVANT buffer_length
+ADD SERVANT buffer_info
 ADD SERVANT semantic_to_syntactic
 REMOVE SERVANT buffer
-REMOVE SERVANT buffer_length
+REMOVE SERVANT buffer_info
 REMOVE SERVANT semantic_to_syntactic
 Traceback (most recent call last):
   File "simple-communion-slave.py", line 32, in <module>

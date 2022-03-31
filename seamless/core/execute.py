@@ -220,8 +220,17 @@ def execute(name, code,
             except DebuggerAttached:
                 pass
 
-                sys.stdout = direct_print_filehandle
-                sys.stderr = direct_print_filehandle
+            direct_print_filehandle = None
+            if direct_print:
+                if direct_print_file is not None:
+                    direct_print_filehandle = open(direct_print_file, "w", buffering=1)
+            if direct_print_filehandle is not None:
+                stdout = FakeStdStream(direct_print_filehandle, direct_print)
+                stderr = FakeStdStream(direct_print_filehandle, direct_print)
+            else:
+                stdout = FakeStdStream(sys.stdout, direct_print)
+                stderr = FakeStdStream(sys.stderr, direct_print)
+            sys.stdout, sys.stderr = stdout, stderr
             result = _execute(name, code,
                 with_ipython_kernel,
                 injector, module_workspace,
