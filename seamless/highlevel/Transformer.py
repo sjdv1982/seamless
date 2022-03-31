@@ -63,15 +63,16 @@ class Transformer(Base, HelpMixin):
     _temp_pins = None
     def __init__(self, *, parent=None, path=None, code=None, pins=None, hash_pattern={"*": "#"}):
         from ..metalevel.debugmode import DebugMode
+        pins = deepcopy(pins)
         assert (parent is None) == (path is None)
         if parent is not None:
-            self._init(parent, path, code, pins)
+            self._init(parent, path, code, pins, hash_pattern)
         else:
             self._temp_code = code
             self._temp_pins = pins
         self._debug = DebugMode(self)
 
-    def _init(self, parent, path, code=None, pins=None):
+    def _init(self, parent, path, code=None, pins=None, hash_pattern={"*": "#"}):
         super().__init__(parent, path)
         if self._temp_code is not None:
             assert code is None
@@ -85,7 +86,7 @@ class Transformer(Base, HelpMixin):
             assert pins is None
             assert hash_pattern == {"*": "#"}
             node = self._get_htf()
-        except:
+        except Exception:
             node = None
         self._environment = Environment(self)
         if node is None:
@@ -1076,7 +1077,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         if attr == "value":
             return resultcell.value
         elif attr == "_data":
-            return resultcell._data
+            return resultcell.data
         elif attr == "buffered":
             return resultcell.buffer.value
         elif attr == "checksum":

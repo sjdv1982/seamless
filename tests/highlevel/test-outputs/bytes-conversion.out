@@ -1,5 +1,5 @@
 b'this is a bytes value'
 b'this is a bytes value'
 b'this is a bytes value'
-b'this is a bytes value' <class 'numpy.ndarray'>
-b'this is a bytes value' <class 'bytes'>
+this is a bytes value <class 'str'>
+b'"this is a bytes value"\n' <class 'bytes'>

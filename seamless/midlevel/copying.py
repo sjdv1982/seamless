@@ -185,7 +185,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
     else:
         raise TypeError(node["type"])
     if celltype == "structured":
-        if node["type"] in ("transformer", "macro", "foldercell"):
+        if node["type"] in ("transformer", "macro", "deepcell", "deepfoldercell", "foldercell"):
             datatype = "mixed"
         else:
             datatype = node["datatype"]

@@ -37,7 +37,7 @@ class SynthContext:
         for npath in parent._runtime_graph.nodes:
             if len(npath) > lp and npath[:lp] == path:
                 dirs.add(npath[lp])
-        return list(dirs)
+        return sorted(list(dirs))
 
     @property
     def children(self):

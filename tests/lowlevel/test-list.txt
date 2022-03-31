@@ -6,6 +6,7 @@
 bytecell.py
 bytecell2.py
 bytecell3.py
+bufferserver.py
 cachehit-semantic.py
 conversions.py: the output is approximate, depends on exact timings
 simple.py

@@ -8,7 +8,6 @@ mime.py
 test-html.py
 auth-checksum.py
 independence-error-message.py
-bufferserver.py
 schema.py
 subcell.py
 subsubcell.py
@@ -118,7 +117,7 @@ high-in-low4-memory.py    # Quite long test.
                           # Exact output will depend on timings
                           # After the test, "rm -rf /tmp/dummy-db && docker stop seamless-database-container"
 high-in-low6-memory.py    # See above. Time is ~115 seconds, or ~55 seconds when re-executed
-switch-join-stdlib.py
+switch-select-stdlib.py
 
 Non-automatic tests
 =========================

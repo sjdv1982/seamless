@@ -14,8 +14,8 @@ Seamless DeepCell: .a
 9da6c7af954c2554cbf80473f449e7bb8448f89160962aaad39413408a2bc85b
 
 Seamless DeepCell: .a2
-AttributeError: It is too costly to construct the full value of a DeepCell
-Use DeepCell.data instead.
+AttributeError: It is too costly to construct the full value of a deep cell
+Use cell.data instead.
 {'test': 'bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d', 'test2': '191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba', 'test3': '8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad', 'test4': 'cdfebe4279c013b4572ccb2e37d59f3856747a768f725afd22ca8e7b0a42cb33'}
 76a0a1b41ec3c27e4d17038e73331bc4e6c330d2ec0e409a443d1fde3c8b357f
 9da6c7af954c2554cbf80473f449e7bb8448f89160962aaad39413408a2bc85b

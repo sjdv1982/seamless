@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.7",
+  "__seamless__": "0.8",
   "connections": [
     {
       "source": [
@@ -81,6 +81,6 @@
 
 <Silk: 3.141592653589793 >
 <Silk: 6.283185307179586 >
-227e12888875dc351af91a112e35eeca  twopi.seamless
-b9278d14cf393a7831e4fc1c6c796957  twopi-result.seamless
+7916576ad7f9a29fe458dfc70e50bf09  twopi.seamless
+5b70f64824937946d97ab3603beb8c53  twopi-result.seamless
 f52ebcf56bc009698617d96c2bdd7189  twopi-result.zip
