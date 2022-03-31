@@ -126,21 +126,22 @@ If there is no connected Seamless database, Seamless will hold all file buffers 
 def write_to_directory(directory, data, *, cleanup, deep, text_only):
     """Writes data to directory
     
-    Data must be a deep folder"""
+    Data must be a (deep) folder"""
     from .protocol.serialize import serialize_sync
     from .cache.buffer_cache import buffer_cache
-    os.makedirs(directory, exist_ok=True)
+    abs_dir = os.path.abspath(directory)
+    os.makedirs(abs_dir, exist_ok=True)
     all_files = set()
     all_dirs = set()
     if isinstance(data, dict):
         for k,v in data.items():
             kdir, _ = os.path.split(k)
-            if kdir:
-                kdir = os.path.abspath(kdir)
-                if kdir not in all_dirs:
-                    all_dirs.add(kdir)
-                    os.makedirs(kdir, exist_ok=True)
-            filename = os.path.abspath(os.path.join(directory, k))
+            if kdir:            
+                kdir2 = os.path.join(abs_dir, kdir)
+                if kdir2 not in all_dirs:
+                    all_dirs.add(kdir2)
+                    os.makedirs(kdir2, exist_ok=True)
+            filename = os.path.join(abs_dir, k)
             all_files.add(filename)
             if deep:
                 cs = parse_checksum(v)
@@ -168,7 +169,6 @@ def write_to_directory(directory, data, *, cleanup, deep, text_only):
                     if path not in all_files:
                         os.unlink(path)
                 elif entry.is_dir():
-                    remove = False
                     if path not in all_dirs:
                         shutil.rmtree(path, ignore_errors=True)
 

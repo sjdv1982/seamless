@@ -297,13 +297,15 @@ languages: dict or None
     def internal_children(self):
         return _InternalChildrenWrapper(self)
 
-    def destroy(self, from_del=False):
+    def destroy(self, *, from_del=False, manager=None):
         if self._destroyed:
             return
-        super().destroy(from_del=from_del)
+        if self._toplevel and manager is None:
+            manager = self._get_manager()
         for childname, child in self._children.items():
             if isinstance(child, (Cell, Context, Worker)):
-                child.destroy(from_del=from_del)
+                child.destroy(from_del=from_del, manager=manager)
+        super().destroy(from_del=from_del)
         if self._toplevel:
             from .macro import _global_paths
             manager = self._get_manager()
@@ -328,16 +330,13 @@ languages: dict or None
     def __del__(self):
         if self._destroyed:
             return
-        if self._toplevel:
-            try:
-                from .macro import _global_paths
-                manager = self._get_manager()
-                if manager is not None:
-                    manager.destroy(from_del=True)
-            except Exception:
-                pass
-            if self._destroyed:
-                return
+        try:
+            self.destroy()
+        except Exception:
+            import traceback; traceback.print_exc()
+            pass
+        if self._destroyed:
+            return
         self.__dict__["_destroyed"] = True
         print("Undestroyed %s (%s), mount points may remain" % (self, hex(id(self))))
 

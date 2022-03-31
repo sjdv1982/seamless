@@ -200,14 +200,15 @@ class Macro(Worker):
         if not has_ctx:
             self._get_manager().register_macro(self)
 
-    def destroy(self, *, from_del):
+    def destroy(self, *, from_del, manager):
         if self._destroyed:
             return
         super().destroy(from_del=from_del)
         self._get_manager()._destroy_macro(self)
         if self._gen_context is not None:
-            return self._gen_context.destroy(from_del=from_del)
+            result = self._gen_context.destroy(from_del=from_del, manager=manager)
             self._gen_context = None
+            return result
 
     @property
     def ctx(self):
@@ -269,8 +270,9 @@ class Path:
             return True
         return False
 
-    def destroy(self, from_del=False):
-        manager = self._get_manager()
+    def destroy(self, from_del=False, manager=None):
+        if manager is None:
+            manager = self._get_manager()
         if manager is not None:
             manager._destroy_macropath(self)
 

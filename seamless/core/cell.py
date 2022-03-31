@@ -348,8 +348,9 @@ class Cell(SeamlessBase):
         manager = self._get_manager()
         manager.bilink(self, target)
 
-    def has_independence(self, path=None):
-        manager = self._get_manager()
+    def has_independence(self, path=None, *, manager=None):
+        if manager is None:
+            manager = self._get_manager()
         return manager.livegraph.has_independence(self, path)
 
     def upstream(self):
@@ -444,22 +445,23 @@ class Cell(SeamlessBase):
         if self._share is not None:
             sharemanager.unshare(self)
 
-    def destroy(self, *, from_del=False):
+    def destroy(self, *, from_del=False, manager=None):
         if self._destroyed:
             return
         self.unshare()
         super().destroy(from_del=from_del)
-        self._unmount()
-        self._get_manager()._destroy_cell(self)
+        if manager is None:
+            manager = self._get_manager()
+        self._unmount(from_del=from_del, manager=manager)
+        manager._destroy_cell(self)
         for path in list(self._paths):
             path._bind(None, trigger=True)
 
-    def _unmount(self, from_del=False):
+    def _unmount(self, *, from_del, manager):
         from .macro import Macro
         if self._unmounted:
             return
         self._unmounted = True
-        manager = self._root()._get_manager()
         mountmanager = manager.mountmanager
         if not is_dummy_mount(self._mount):
             mountmanager.unmount(self, from_del=from_del)

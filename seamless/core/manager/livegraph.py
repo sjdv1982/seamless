@@ -861,7 +861,7 @@ class LiveGraph:
                 elision = self.cell_from_macro_elision[cell]
                 elision.destroy()
 
-            self.temp_independence[cell] = cell.has_independence()
+            self.temp_independence[cell] = cell.has_independence(manager=manager)
             up_accessor = self.cell_to_upstream[cell]
             if up_accessor is not None:
                 self.destroy_accessor(manager, up_accessor)

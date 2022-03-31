@@ -281,7 +281,7 @@ class Transformer(Worker):
         loop.run_until_complete(future)
         return future.result()
 
-    def destroy(self, *, from_del=False):
+    def destroy(self, *, from_del=False, manager=None):
         self._get_manager()._destroy_transformer(self)
         super().destroy(from_del=from_del)
 

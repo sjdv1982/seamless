@@ -479,9 +479,12 @@ async def value_to_deep_structure(value, hash_pattern):
         raise DeepStructureError(hash_pattern, value) from None
     obj_id_to_checksum = {}
     new_checksums = set()
-    async def conv_obj_id_to_checksum(obj_id):
+    async def conv_obj_id_to_checksum(obj_id, raw):
         obj = objects[obj_id]
-        obj_buffer = await serialize(obj, "mixed")
+        if raw:
+            obj_buffer = await serialize_raw_async(obj)
+        else:
+            obj_buffer = await serialize(obj, "mixed")
         obj_checksum = await calculate_checksum(obj_buffer)
         new_checksums.add(obj_checksum.hex())
         buffer_cache.cache_buffer(obj_checksum, obj_buffer)
@@ -489,8 +492,9 @@ async def value_to_deep_structure(value, hash_pattern):
         buffer_cache.guarantee_buffer_info(obj_checksum, "mixed")
 
     coros = []
+    raw = (hash_pattern == {"*": "##"})
     for obj_id in objects:
-        coro = conv_obj_id_to_checksum(obj_id)
+        coro = conv_obj_id_to_checksum(obj_id, raw=raw)
         coros.append(coro)
     await asyncio.gather(*coros)
     deep_structure = _build_deep_structure(

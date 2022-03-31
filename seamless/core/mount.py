@@ -370,6 +370,7 @@ class MountItem:
                 return
             mtime = self._get_mtime()
             file_checksum = None
+            file_buffer = None
             if self.last_mtime is None or mtime > self.last_mtime:
                 file_buffer0 = self._read()
                 if file_buffer0 is not None:
@@ -377,6 +378,11 @@ class MountItem:
                     file_checksum = calculate_checksum(file_buffer)
                 self._after_read(file_checksum, mtime=mtime)
         cell_checksum = self.cell_checksum
+        if file_checksum is None and self.cell()._checksum is None and cell_checksum is not None:
+            file_buffer = buffer_cache.get_buffer(cell_checksum)
+            if file_buffer is not None:
+                file_checksum = cell_checksum
+                cell_checksum = None
         if file_checksum is not None and file_checksum != cell_checksum:
             if "r" in self.mode:
                 self.set(file_buffer, checksum=file_checksum)
@@ -394,7 +400,7 @@ class MountItem:
         if self.dummy:
             return
         now = time.time()
-        if self.cell_checksum is not None:
+        if self.cell_checksum is not None and not self.as_directory:
             mountmanager.cached_checksums[self.path] = (now, self.cell_checksum)
         if self.persistent == False:
             mountmanager.garbage[self.path] = (now, False)

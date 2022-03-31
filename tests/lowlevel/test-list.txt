@@ -22,6 +22,7 @@ plain.py
 mixedcell.py
 preliminary.py: the output is approximate, depends on exact timings
 cached.py
+mount-as-directory.py
 structured_cell/simple-auth.py
 structured_cell/simple-macro-mode.py
 structured_cell/simple-channels.py
@@ -86,7 +87,6 @@ mount-cson.py:
      - run with ipython3 -i
      - then open /tmp/test.cson and /tmp/test.json, manipulate resp. monitor them
 mount-plain.py: see above, minus the .cson
-mount-as-directory.py: see mount.py
 
 simple-communion: run "python3 -u simple-communion-slave.py > test-outputs/simple-communion-slave.out 2>&1"
      then "python3 -u simple-communion-master.py > test-outputs/simple-communion-master.out 2>&1" in a different terminal,
