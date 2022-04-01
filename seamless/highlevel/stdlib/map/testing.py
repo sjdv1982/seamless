@@ -56,8 +56,10 @@ def test_map_list_N(mylib):
     )
     ctx.compute()
     print(ctx.result.value)
-    ctx.a += [80, 12, 1, 1, 10,20,30,40]
-    ctx.b += [100, 16, 3, 3, 2,4,8,12]
+    #ctx.a += [80, 12, 1, 1, 10,20,30,40] # Heisenbug
+    ctx.a = ctx.a.value + [80, 12, 1, 1, 10,20,30,40]
+    #ctx.b += [100, 16, 3, 3, 2,4,8,12] # Heisenbug
+    ctx.b = ctx.b.value + [100, 16, 3, 3, 2,4,8,12]
     ctx.compute()
     print(ctx.result.value)
 
@@ -146,7 +148,8 @@ def test_map_list(mylib):
     ctx.compute()
     print(ctx.mapping.ctx.m.exception)
     print(ctx.result.value)
-    ctx.inp += [80, 12, 1, 1, 10,20,30,40]
+    #ctx.inp += [80, 12, 1, 1, 10,20,30,40]
+    ctx.inp = ctx.inp.value + [80, 12, 1, 1, 10,20,30,40]
     ctx.compute()
     print(ctx.result.value)
 

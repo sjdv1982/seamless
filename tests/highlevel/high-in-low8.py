@@ -218,6 +218,7 @@ def constructor(ctx, libctx, context_graph, inp, result, elision, elision_chunks
         ctx.cs_inp[key] = Cell("checksum")
         ctx.cs_inp[key] = ctx.inp[key]
         setattr(m, inp_prefix + key , ctx.cs_inp[key])
+        getattr(m.pins, inp_prefix + key).celltype = "checksum"
 
     macro_code_lib_code = libctx.map_list_N.value + "\n\n" + libctx.map_list_N_nested.value
     macro_code_lib = {
@@ -356,7 +357,7 @@ ctx.translate(force=True)
 ctx.compute()
 print(ctx.result.value)
 print("START2")
-ctx.data.handle += [{"a": 10, "b": 0}, {"a": 12, "b": -1}, {"a": 14, "b": -2}, {"a": 16, "b": -3}]
+ctx.data.handle.extend([{"a": 10, "b": 0}, {"a": 12, "b": -1}, {"a": 14, "b": -2}, {"a": 16, "b": -3}])
 ctx.compute(2)
 
 print(ctx.result.value)

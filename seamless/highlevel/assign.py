@@ -282,7 +282,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
                 raise TypeError("Cannot assign to constant cell")
         elif isinstance(s, (Module, DeepCellBase)):
             if isinstance(s, DeepCellBase) and isinstance(t, Cell):
-                if t.hash_pattern is None:
+                if t.hash_pattern is None and t.celltype != "checksum":
                     if isinstance(s, DeepFolderCell):
                         c = "DeepFolderCell"   
                         msg = """ERROR: assigning a Cell to a DeepFolderCell

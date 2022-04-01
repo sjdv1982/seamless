@@ -22,7 +22,7 @@ def constructor(
     ctx.inp2 = Cell("checksum")
     ctx.inp2 = ctx.inp1
     m.inp = ctx.inp2
-    m.pins.inp.celltype = "plain"
+    m.pins.inp.celltype = "checksum"
 
     if uniform is not None:
         c = ctx.uniform = Cell("mixed")

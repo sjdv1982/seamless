@@ -764,7 +764,8 @@ As of Seamless 0.8, mostly an alternative for "mimetype"
         # Not something to be used in day-to-day programming!
         hcell = self._get_hcell2()
         celltype = hcell["celltype"]
-        assert celltype in ("structured", "mixed")
+        if celltype not in ("structured", "mixed"):
+            return None
         return hcell["hash_pattern"]
 
     @hash_pattern.setter

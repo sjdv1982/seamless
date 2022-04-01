@@ -31,7 +31,7 @@ def constructor(
         ctx.inp3[var] = ctx.inp2[var]
         ctx.inp4[var] = ctx.inp3[var]
     m.inp = ctx.inp4
-    m.pins.inp.celltype = "plain"
+    m.pins.inp.celltype = "checksum"
 
     if uniform is not None:
         c = ctx.uniform = Cell("mixed")

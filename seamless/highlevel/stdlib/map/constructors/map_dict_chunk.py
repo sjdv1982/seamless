@@ -25,7 +25,7 @@ def constructor(
     ctx.inp2 = Cell("checksum")
     ctx.inp2 = ctx.inp1
     m.inp = ctx.inp2
-    m.pins.inp.celltype = "plain"
+    m.pins.inp.celltype = "checksum"
 
     if uniform is not None:
         c = ctx.uniform = Cell("mixed")
@@ -45,7 +45,7 @@ def constructor(
     ctx.calc_keyorder = Transformer()
     ctx.calc_keyorder.code = lib_module_dict["helper"]["calc_keyorder"]
     ctx.calc_keyorder.inp_ = ctx.inp2
-    ctx.calc_keyorder.pins.inp_.celltype = "plain"
+    ctx.calc_keyorder.pins.inp_.celltype = "checksum"
     ctx.calc_keyorder.keyorder0 = ctx.keyorder0
     ctx.calc_keyorder.pins.keyorder0.celltype = "plain"
     ctx.keyorder = ctx.calc_keyorder

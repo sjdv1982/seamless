@@ -254,7 +254,6 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 result_checksum = source_checksum
                 done = True
                 needs_value_conversion = False
-                print("done")
             elif trivial_path and result_hash_pattern is None:
                 if source_celltype == target_celltype:
                     result_checksum = source_checksum

@@ -54,6 +54,7 @@ ctx.compute()
 
 m = ctx.m = Macro()
 m.cs_data = ctx.cs_data
+m.pins.cs_data.celltype = "checksum"
 m.graph = ctx.graph
 m.pins.result = {"io": "output", "celltype": "mixed", "hash_pattern": {"!": "#"}}
 def map_list(ctx, cs_data, graph):

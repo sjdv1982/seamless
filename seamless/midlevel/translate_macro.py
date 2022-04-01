@@ -1,6 +1,5 @@
 from seamless.core import cell, path as core_path, \
- macro, context, StructuredCell
-from seamless.core.macro import Path
+ macro, context
 
 def translate_macro(node, root, namespace, inchannels, outchannels):
     from .translate import set_structured_cell_from_checksum
@@ -34,6 +33,8 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
         celltype = pin.get("celltype", "mixed")
         if celltype == "mixed":
             pin_cell = cell(celltype, hash_pattern=pin_hash_pattern)
+        elif (celltype == "checksum" and pin["io"] == "parameter"):
+            pin_cell = cell("plain")
         else:
             pin_cell = cell(celltype)
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
@@ -63,6 +64,8 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
             continue
         p = {"io": "input"}
         p.update(pin)
+        if p.get("celltype") == "checksum":
+            p["celltype"] = "plain"
         param_pins[pinname] = p
     ctx.macro = macro(param_pins)
     if node.get("elision"):
@@ -108,7 +111,16 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
         if pin["io"] == "parameter":
             pinname2 = as_tuple(pinname)
             if pinname2 in inchannels:
-                namespace[path, "target"] = param.inchannels[pinname], node
+                if pin.get("celltype") == "checksum":
+                    pin_cell2 = cell("checksum")
+                    cell_setattr(node, ctx, pinname + "_CHECKSUM", pin_cell2)
+                    pin_cell3 = cell("plain")
+                    cell_setattr(node, ctx, pinname + "_CHECKSUM2", pin_cell3)
+                    pin_cell2.connect(pin_cell3)
+                    pin_cell3.connect(param.inchannels[pinname2])
+                    namespace[path, "target"] = pin_cell2, node
+                else:
+                    namespace[path, "target"] = param.inchannels[pinname2], node
             target = getattr(ctx.macro, pinname)
             assert target is not None, pinname
             pin_cell = pin_cells[pinname]

@@ -1,17 +1,6 @@
 """
 Library version of high-in-low4
 
-NOTE:
-
-This is in fact not the best way to do it, as the evaluation of inp2.a and inp2.b is rather costly...
-(see high-in-low4-m)
-
-In fact, it is easy to shoot yourself in the foot with a hash pattern cell:
-- Invoke .value instead of .data or .handle
-- Define a schema
-- Make an error with the hash pattern
-Therefore, some Cell("hashdict") and Cell("hashlist") constructors would be useful,
-  that add a key to the graph node that blocks the bad APIs (.schema, .value), and perhaps some wrapper around .handle / .hash_handle
 """
 
 from seamless.highlevel import Context, Cell, Macro
@@ -28,6 +17,7 @@ def constructor(ctx, libctx, context_graph, data, result):
     ctx.cs_data = Cell("checksum")
     ctx.cs_data = ctx.data
     m.cs_data = ctx.cs_data
+    m.pins.cs_data.celltype = "checksum"
     m.graph = context_graph
     m.pins.result = {"io": "output", "celltype": "mixed", "hash_pattern": {"!": "#"}}
     def map_list(ctx, cs_data, graph):

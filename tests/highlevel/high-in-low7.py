@@ -169,6 +169,7 @@ def constructor(ctx, libctx, context_graph, inp, result):
         ctx.cs_inp[key] = Cell("checksum")
         ctx.cs_inp[key] = ctx.inp[key]
         setattr(m, inp_prefix + key , ctx.cs_inp[key])
+        getattr(m.pins, inp_prefix + key).celltype = "checksum"
 
     macro_code_lib_code = libctx.map_list_N.value
     macro_code_lib = {

@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.7",
+  "__seamless__": "0.8",
   "connections": [],
   "lib": [],
   "nodes": [
@@ -12,7 +12,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "3224e08cf7c3fd9cb5e8df4627c20c096e95a04e80e41c99ec45541b692bd600"
+        "value": "c224b0b8b0c1a5b4d14d1bd3fe02eec74ae59607e83e94586cc51a76726d83d3"
       },
       "datatype": "mixed",
       "language": "python",
@@ -80,7 +80,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "1e3e77f08d14744e01702fc3ceca8bd55779b34ab1affc05b318c8e7ef53b5d1"
+        "value": "de2e518ad127dc059839f0994d4e9c897dff9f1ef0405e1fb2d4ab379fda8b55"
       },
       "datatype": "mixed",
       "language": "python",
@@ -148,7 +148,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "87822b6a7e5758c93fb6b52884913613465943b7c39af9f5cb2fdb6f9bce1f82"
+        "value": "0659278c9e0f05374eb4a156e19444dc3d2ebcf1e223b2c8226ae7738bd167c0"
       },
       "datatype": "mixed",
       "language": "python",
@@ -216,7 +216,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "571c2a2c67b0c7d07796ddcd72a2d145abee786488ab8061429721ababc5bdc8"
+        "value": "6d2e319c02b1f5ccbdb0845d935f9a6034d675d8fae3830eea4ffa7d78b0dfd1"
       },
       "datatype": "mixed",
       "language": "python",
