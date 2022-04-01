@@ -94,7 +94,7 @@ def access(checksum:str, celltype):
     url_infos = json.loads(url_infos_buf.decode())
     return download_buffer_sync(checksum, url_infos, celltype)
 
-def get_buffer(checksum:str):
+def get_buffer(checksum:str, deep=False):
     if checksum is None:
         return None
     if isinstance(checksum, bytes):
@@ -115,6 +115,16 @@ def get_buffer(checksum:str):
                 return access(checksum, "mixed")
             elif c == "keyorder":
                 return keyorder(checksum)
+    if deep:
+        result = deepbuffer(checksum)
+        if result is not None:
+            _classify(checksum, "deepbuffer")
+            return result
+        result = keyorder(checksum)
+        if result is not None:
+            _classify(checksum, "keyorder")
+            return result
+    return None
 
 def _validate_params(type:str, version:str, date:str, format:str, compression:str):
     if type not in (None, "deepcell", "deepfolder"):

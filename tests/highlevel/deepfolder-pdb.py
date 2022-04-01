@@ -53,7 +53,7 @@ print()
 print("STAGE 5")
 from seamless.highlevel import stdlib
 ctx.include(stdlib.select)
-ctx.pdb_code = Cell("str").set("1avx.cif")
+ctx.pdb_code = Cell("str").set("2sni.cif")
 ctx.pdb_structure = Cell("text").mount("/tmp/pdb_structure.mmcif", "w")
 ctx.select_pdb = ctx.lib.select(
     celltype="text",

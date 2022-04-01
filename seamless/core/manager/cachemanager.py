@@ -1,6 +1,7 @@
 import weakref
 import copy
 import functools
+
 from ..cache import CacheMissError
 from ...download_buffer import download_buffer_from_servers
 from ..status import StatusReasonEnum
@@ -223,7 +224,7 @@ class CacheManager:
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if incref_hash_pattern:
             try:
-                deep_buffer = get_buffer(checksum, remote=True)
+                deep_buffer = get_buffer(checksum, remote=True, deep=True)
                 if deep_buffer is None:
                     raise CacheMissError(checksum)
                 deep_buffer_coro_id = new_deep_buffer_coro_id()
@@ -369,6 +370,9 @@ class CacheManager:
                     return buffer
             except CacheMissError:
                 pass
+            buffer = get_buffer(checksum, remote=True, deep=True)
+            if buffer is not None:
+                return buffer
 
         for refholder, result in self.checksum_refs.get(checksum, set()):
             if not result:
