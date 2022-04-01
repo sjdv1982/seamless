@@ -4,12 +4,22 @@ import numpy as np
 import os, sys, asyncio, functools, json, traceback, socket
 import database_backends
 from silk.mixed.io.serialization import deserialize
+from seamless.core.buffer_info import BufferInfo
 import gc
+
+# TODO: author ID, to be specified upon connection
+#  (authentication must happen upstream of Seamless!)
+#  to be stored with transformation result and buffer info
+# Add a new request "transformation rich result",
+#   which returns a dict with the checksum but also other info,
+#   specifically the author. Same for buffer info
+# UPDATE: re-think this a bit, since buffer info may have info from different authors
+#   => __author__ field in buffer info file: dict of key=<author ID>, value=<list of buffer info fields>.
 
 buffercodes = (
     "buf", # persistent buffer
     "nbf", # non-persistent buffer (may be evicted; should be stored in Redis with an expiry)
-    "bfl", # buffer length
+    "bfi", # buffer info
     "s2s", # semantic-to-syntactic
     "cpl", # compile result (for compiled modules and objects)
     "tfr", # transformation result
@@ -21,7 +31,7 @@ types = (
     "has key",
     "delete key",
     "buffer",
-    "buffer length",
+    "buffer info",
     "semantic-to-syntactic",
     "compile result",
     "transformation result",
@@ -229,8 +239,8 @@ class DatabaseServer:
                 await sink.set(key, result, persistent, importance)
 
             return result
-        elif type == "buffer length":
-            key = "bfl-" + checksum
+        elif type == "buffer info":
+            key = "bfi-" + checksum
             result = None
             for source, source_config in self.db_sources:
                 result = await source.get(key)
@@ -245,7 +255,7 @@ class DatabaseServer:
                 if not sink_config.get("cache"):
                     continue
                 await sink.set(key, result)
-            result = int(result)
+            return result
         elif type == "semantic-to-syntactic":
             try:
                 celltype, subcelltype = request["celltype"], request["subcelltype"]
@@ -349,13 +359,17 @@ class DatabaseServer:
                 has_key = await sink.has_key(key)
                 if has_key:
                     await sink.delete_key(key)
-        elif type == "buffer length":
-            if not isinstance(value, int):
-                raise DatabaseError("Malformed SET buffer length request")
-            length = str(value).encode()
-            key = "bfl-" + checksum
+        elif type == "buffer info":
+            try:
+                if not isinstance(value, dict):
+                    raise TypeError
+                BufferInfo(checksum, value)
+            except Exception:
+                raise DatabaseError("Malformed SET buffer info request") from None
+            buffer_info = json.dumps(value).encode()
+            key = "bfi-" + checksum
             for sink, sink_config in self.db_sinks:
-                await sink.set(key, length)
+                await sink.set(key, buffer_info)
         elif type == "semantic-to-syntactic":
             if not isinstance(value, list):
                 raise DatabaseError("Malformed SET semantic-to-syntactic request")

@@ -219,7 +219,7 @@ def bridge_r(*, bridge_parameters, **kwargs):
         if not device_off:
             if device in ['png', 'svg']:
                 ro.r('dev.off()')        
-        shutil.rmtree(graph_dir)
+        shutil.rmtree(graph_dir, ignore_errors=True)
 
 default_bridge_parameters = {
     "device": "svg",

@@ -1,6 +1,6 @@
 INCOMING simple-remote jobslave
 ADD SERVANT buffer
-ADD SERVANT buffer_length
+ADD SERVANT buffer_info
 ADD SERVANT semantic_to_syntactic
 ADD SERVANT transformation
 1

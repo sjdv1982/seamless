@@ -1,7 +1,7 @@
 Set up a communion outgoing port 8601
 OUTGOING Peer1 Peer2
 ADD SERVANT buffer
-ADD SERVANT buffer_length
+ADD SERVANT buffer_info
 ADD SERVANT semantic_to_syntactic
 Secret source code  f71eba57962891040561f1379572d97d6eb29ee7be4f95aac01e3ba697d74010
 hash verification   f71eba57962891040561f1379572d97d6eb29ee7be4f95aac01e3ba697d74010
@@ -9,7 +9,7 @@ hash verification   f71eba57962891040561f1379572d97d6eb29ee7be4f95aac01e3ba697d7
 ba6ba8dcc8a2d9789f1221df37b27ca157b1b40817cde05eadb5c6075e5dd1c3
 Communion peer 1 ready.
 REMOVE SERVANT buffer
-REMOVE SERVANT buffer_length
+REMOVE SERVANT buffer_info
 REMOVE SERVANT semantic_to_syntactic
 Traceback (most recent call last):
   File "communion-peer1.py", line 39, in <module>

@@ -67,8 +67,8 @@ class CommunionBufferClient(CommunionClient):
         return result
 
 
-class CommunionBufferLengthClient(CommunionClient):
-    config_type = "buffer_length"
+class CommunionBufferInfoClient(CommunionClient):
+    config_type = "buffer_info"
 
     def __init__(self, servant, config):
         self.servant = servant
@@ -76,7 +76,7 @@ class CommunionBufferLengthClient(CommunionClient):
     async def submit(self, checksum):
         assert checksum is not None
         message = {
-            "type": "buffer_length",
+            "type": "buffer_info",
             "content": checksum.hex()
         }
         result = await communion_server.client_submit(message, self.servant)
@@ -199,7 +199,7 @@ class CommunionClientManager:
         self.servant_to_peer_id[servid] = peer_id
         communion_types = {
             "buffer": ["buffer", "buffer_status"],
-            "buffer_length": ["buffer_length"],
+            "buffer_info": ["buffer_info"],
             "semantic_to_syntactic": ["semantic_to_syntactic"],
             "transformation": [
                 "transformation_job", "transformation_status",

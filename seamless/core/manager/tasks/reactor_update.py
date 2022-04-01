@@ -215,8 +215,9 @@ class ReactorResultTask(Task):
                 raise exc from None
 
         if checksum is not None:
-            await validate_subcelltype(
-                checksum, celltype, subcelltype,
+            buffer_cache.guarantee_buffer_info(checksum, celltype)
+            validate_evaluation_subcelltype(
+                checksum, buffer, celltype, subcelltype,
                 str(reactor) + ":" + pinname
             )
         if reactor._last_outputs is None:
@@ -253,6 +254,7 @@ from .deserialize_buffer import DeserializeBufferTask
 from .serialize_buffer import SerializeToBufferTask
 from .checksum import CalculateChecksumTask
 from .get_buffer import GetBufferTask
-from ...protocol.validate_subcelltype import validate_subcelltype
+from ...cache.buffer_cache import buffer_cache
+from ...protocol.evaluate import validate_evaluation_subcelltype
 from ...build_module import build_all_modules
 from ....compiler import compilers as default_compilers, languages as default_languages

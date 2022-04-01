@@ -257,5 +257,5 @@ def translate_compiled_transformer(
     namespace[node["path"], "target"] = inp, node
     namespace[node["path"], "source"] = result, node
 
-from .util import get_path, as_tuple, build_structured_cell, cell_setattr, STRUC_ID
+from .util import get_path, build_structured_cell, cell_setattr, STRUC_ID
 from .convert_checksum_dict import convert_checksum_dict

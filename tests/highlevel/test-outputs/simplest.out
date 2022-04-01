@@ -22,7 +22,7 @@ On instance:
 {}
 <Silk: test >
 {}
-{'__seamless__': '0.7',
+{'__seamless__': '0.8',
  'connections': [],
  'lib': [],
  'nodes': [{'celltype': 'structured',
@@ -64,7 +64,7 @@ On instance:
 
 /simplest.py EXCEPTION
 
-{'__seamless__': '0.7',
+{'__seamless__': '0.8',
  'connections': [],
  'lib': [],
  'nodes': [{'celltype': 'structured',

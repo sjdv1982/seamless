@@ -150,9 +150,6 @@ class Transformer(Worker):
         tcache = manager.cachemanager.transformation_cache
         tcache.hard_cancel(self)
 
-    def shell(self):
-        raise NotImplementedError
-
     def _get_status(self):
         from .status import status_transformer
         status = status_transformer(self)
@@ -216,11 +213,10 @@ class Transformer(Worker):
         from .protocol.get_buffer import get_buffer
         if self._checksum is None:
             return None
-        buffer = get_buffer(self._checksum)
+        buffer = get_buffer(self._checksum, remote=True)
         return buffer
 
     async def _get_buffer(self):
-        from .protocol.get_buffer import get_buffer
         if self._checksum is None:
             return None
         cachemanager = self._get_manager().cachemanager
@@ -285,7 +281,7 @@ class Transformer(Worker):
         loop.run_until_complete(future)
         return future.result()
 
-    def destroy(self, *, from_del=False):
+    def destroy(self, *, from_del=False, manager=None):
         self._get_manager()._destroy_transformer(self)
         super().destroy(from_del=from_del)
 

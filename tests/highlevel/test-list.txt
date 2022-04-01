@@ -14,6 +14,10 @@ subsubcell.py
 inchannel-conflict.py
 logs.py
 deepcell-simple.py
+deepcell-filter.py: can also be run in non-interactive mode (mount /tmp/blacklist.json, /tmp/filt_cell.json)
+deepfolder.py
+folder.py : writes data in ./testfolder
+folder2.py : assumes that folder.py has been run
 filesystemlike.py
 context.py
 context2.py
@@ -93,6 +97,10 @@ eager.py: FAILS as of 0.7 (https://github.com/sjdv1982/seamless/issues/90)
 help.py: Can also be run non-interactively with IPython. See the source code for mounts and shares
 webinterface.sh: open with bash inside the Seamless Docker container.
                  Can also be run interactively, see line 6 of the code
+deepcell-pdb.py: requires a FAIR server that knows the PDB dataset
+                 Can also be run interactively, change ctx.pdb_code 
+                  and observe /tmp/pdb_structure.mmcif
+deepfolder-pdb.py: See above . Also, /tmp/pdb_folder will contain 1brs.cif, 1wej.cif and 7cei.cif.
 high-in-low.py
 high-in-low2.py
 high-in-low3.py
@@ -104,12 +112,12 @@ high-in-low8.py
 high-in-low4-memory.py    # Quite long test.
                           # Creates 5.6 GB of buffer cache in /tmp/dummy-db
                           # Run with rm -rf /tmp/dummy-db  && mkdir -p /tmp/dummy-db && seamless-devel-database dummydb-config.yaml
-                          # Time is ~120 seconds, or ~60 seconds when re-executed (TODO: re-time)
+                          # Time is ~170 seconds, or ~85 seconds when re-executed
                           # Re-executing the test is faster, because the transformation results and input buffers are cached
                           # Exact output will depend on timings
                           # After the test, "rm -rf /tmp/dummy-db && docker stop seamless-database-container"
-high-in-low6-memory.py    # See above. Time is ~90 seconds, or ~40 seconds when re-executed (TODO: re-time)
-switch-join-stdlib.py
+high-in-low6-memory.py    # See above. Time is ~115 seconds, or ~55 seconds when re-executed
+switch-select-stdlib.py
 
 Non-automatic tests
 =========================

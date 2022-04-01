@@ -17,18 +17,6 @@ def merge_subresults_chunk(subresults):
         result.update(sub)
     return result
 
-def get_result_list(ctx, result_checksum):
-    ctx.result = cell("mixed", hash_pattern={"!": "#"})
-    ctx.result.set_checksum(result_checksum)
-
-def get_result_dict(ctx, result_checksum):
-    ctx.result = cell("mixed", hash_pattern={"*": "#"})
-    ctx.result.set_checksum(result_checksum)
-
-def get_inputchunk_dict(ctx, inputchunk_checksum):
-    ctx.inputchunk = cell("mixed", hash_pattern={"*": "#"})
-    ctx.inputchunk.set_checksum(inputchunk_checksum)
-
 def calc_keyorder(inp_, keyorder0):
     result = []
     done = set()

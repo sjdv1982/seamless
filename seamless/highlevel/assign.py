@@ -3,7 +3,6 @@ from copy import deepcopy
 import json
 import weakref
 
-
 def check_libinstance_subcontext_binding(ctx, path):
     for node in ctx._graph.nodes.values():
         if node["type"] == "libinstance":
@@ -19,16 +18,13 @@ def check_libinstance_subcontext_binding(ctx, path):
                             return
 
 from . import ConstantTypes
-from silk.mixed import MixedBase
-from silk import Silk
-from .Cell import Cell, get_new_cell
+from .Cell import Cell, FolderCell, get_new_cell, get_new_foldercell
+from .DeepCell import DeepCellBase, DeepCell, DeepFolderCell
 from .Module import Module, get_new_module
 from .Resource import Resource
-from .pin import PinWrapper
 from .Transformer import Transformer
 from .Macro import Macro
 from .proxy import Proxy, CodeProxy, HeaderProxy
-from ..midlevel import copying
 from . import parse_function_code
 from .Link import Link
 from .compiled import CompiledObjectDict, CompiledObjectWrapper
@@ -234,14 +230,19 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         if target not in ctx._children:
             assign_constant(ctx, target, None)
         t = ctx._children[target]
-        assert isinstance(t, (Cell, Module))
-        if isinstance(t, Cell):
+        assert isinstance(t, (Cell, Module, DeepCellBase))
+        if isinstance(t, (Cell, DeepCellBase)):
             hcell = t._get_hcell()
             if "TEMP" in hcell:
                 hcell.pop("TEMP")
             elif "checksum" in hcell:
                 hcell["checksum"].pop("value", None)
-                hcell["checksum"].pop("auth", None)
+                if isinstance(t, (DeepCell, DeepFolderCell)):
+                    hcell["checksum"].pop("origin", None)
+                    if isinstance(ctx._children.get(source), DeepCellBase):
+                        hcell["checksum"].pop("keyorder", None)                    
+                else:
+                    hcell["checksum"].pop("auth", None)
         else:
             hnode = t._get_hnode()
             if "TEMP" in hnode:
@@ -270,7 +271,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
     ctx._graph[1][:] = filter(keep_con, ctx._graph[1])
     if standalone_target:
         t = ctx._children[target]
-        assert isinstance(t, Module) or not t.get_links()
+        assert isinstance(t, (Module, DeepCellBase)) or not t.get_links()
     assert source in ctx._children or source[:-1] in ctx._children, source
     s = None
     if source in ctx._children:
@@ -279,7 +280,38 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
             hcell = s._get_hcell()
             if hcell.get("constant"):
                 raise TypeError("Cannot assign to constant cell")
-        elif isinstance(s, Module):
+        elif isinstance(s, (Module, DeepCellBase)):
+            if isinstance(s, DeepCellBase) and isinstance(t, Cell):
+                if t.hash_pattern is None and t.celltype != "checksum":
+                    if isinstance(s, DeepFolderCell):
+                        c = "DeepFolderCell"   
+                        msg = """ERROR: assigning a Cell to a DeepFolderCell
+
+When accessed, Cells have their complete content loaded into memory.
+This is not the case for DeepFolderCells, whose content can be very large in size.
+
+Therefore, the direct assignment of a Cell to a DeepFolderCell is not allowed.
+
+You can instead assign a FolderCell to a DeepFolderCell.
+FolderCells have the same internal memory-efficient representation as DeepFolderCells,
+but they are assumed to be small enough to be mounted to disk.
+
+If you really want to do so, assigning a Cell to a FolderCell is allowed.
+"""
+
+                    else:
+                        msg = """ERROR: assigning a Cell to a DeepCell
+
+When accessed, Cells have their complete content loaded into memory.
+This is not the case for DeepCells, whose content can be very large in size.
+
+Therefore, the direct assignment of a Cell to a DeepCell is by default not allowed.
+
+If you really want to do this, create an intermediate Cell with hash pattern {"*": "#"},
+and assign the Cell to this intermediate Cell.
+"""
+                    raise Exception(msg)
+
             pass
         else:
             raise TypeError(type(s))
@@ -314,7 +346,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
         source = s._virtual_path
     if standalone_target:
         t = ctx._children[target]
-        assert isinstance(t, (Cell, Module))
+        assert isinstance(t, (Cell, Module, DeepCellBase))
         if t._virtual_path is not None:
             target = t._virtual_path
     connection = {
@@ -446,6 +478,58 @@ def assign_context(ctx, path, value):
     new_nodes, new_connections = graph["nodes"], graph["connections"]
     _assign_context(ctx, new_nodes, new_connections, path, runtime=False)
 
+def assign_to_deep_subcell(cell, attr, value):
+    hcell = cell._get_hcell()
+    ctx = cell._parent()
+    if isinstance(value, Cell):
+        assert value._parent() is ctx #no connections between different (toplevel) contexts
+        _remove_independent_mountshares(hcell)
+        assign_connection(ctx, value._path, cell._path + (attr,), False)
+        ctx._translate()
+    elif isinstance(value, ConstantTypes):
+        check_libinstance_subcontext_binding(ctx, (attr,))
+        removed1 = ctx.remove_connections(
+            cell._path + (attr,),
+            endpoint="link",
+            match="all"
+        )
+        removed2 = ctx.remove_connections(
+            cell._path + (attr,),
+            endpoint="target",
+            match="all"
+        )
+        removed = (removed1 or removed2)
+        hcell = cell._get_hcell()
+        untranslated = hcell.get("UNTRANSLATED")
+        if removed:
+            ctx._translate()
+        if untranslated:
+            if isinstance(cell, DeepCell):
+                if not isinstance(attr, str):
+                    raise TypeError(type(attr))
+                temp_value = hcell.get("TEMP", {})
+            else:
+                raise NotImplementedError
+                """
+                assert isinstance(cell, DeepListCell)
+                if not isinstance(attr, int):
+                    raise TypeError(type(attr))
+                temp_value = hcell.get("TEMP", [])
+                if isinstance(temp_value, list) and len(temp_value) <= attr:
+                    for d in range(len(temp_value), attr+1):
+                        temp_value.append(None)
+                """
+            temp_value[attr] = value
+            hcell["TEMP"] = temp_value
+            return
+        handle = cell._handle
+        if isinstance(attr, int):
+            handle[attr] = value
+        else:
+            setattr(handle, attr, value)
+    else:
+        raise TypeError(value)
+
 def assign_to_subcell(cell, path, value):
     from ..core.structured_cell import StructuredCell
     hcell = cell._get_hcell()
@@ -521,19 +605,28 @@ def assign(ctx, path, value, *, help_context=False):
         if help_context:
             raise TypeError(type(value))
         value._init(ctx, path)
-    elif isinstance(value, Cell):
+    elif isinstance(value, (Cell, DeepCellBase)):
         if value._parent() is None:
             value._init(ctx, path)
             cellnode = deepcopy(value._node)
-            if cellnode is None:
-                cellnode = get_new_cell(path)
-            else:
-                cellnode["path"] = path
-            if "celltype" not in cellnode:
-                if help_context:
-                    cellnode["celltype"] = "text"
+            if isinstance(value, Cell):
+                if cellnode is None:
+                    if isinstance(value, FolderCell):
+                        cellnode = get_new_foldercell(path)
+                    else:
+                        cellnode = get_new_cell(path)
                 else:
-                    cellnode["celltype"] = "structured"
+                    cellnode["path"] = path
+                if "celltype" not in cellnode:
+                    if help_context:
+                        cellnode["celltype"] = "text"
+                    else:
+                        cellnode["celltype"] = "structured"
+            else: #isinstance(value, DeepCellBase):
+                if cellnode is None:
+                    cellnode = type(value)._new_func(path)
+                else:
+                    cellnode["path"] = path
             ctx._graph.nodes[path] = cellnode
         else:
             assert value._get_top_parent() is ctx, value
@@ -543,6 +636,14 @@ def assign(ctx, path, value, *, help_context=False):
                 target = None
             if isinstance(target, Cell):
                 _remove_independent_mountshares(target._get_hcell())
+            if target is None and isinstance(value, DeepCellBase):
+                cellnode = type(value)._new_func(path)
+                type(value)(parent=ctx, path=path)
+                ctx._graph.nodes[path] = cellnode
+            elif target is None and isinstance(value, FolderCell):
+                cellnode = get_new_foldercell(path)
+                ctx._graph.nodes[path] = cellnode
+
             assign_connection(ctx, value._path, path, True)
         ctx._translate()
     elif isinstance(value, (Resource, ConstantTypes)):

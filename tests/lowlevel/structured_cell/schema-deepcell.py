@@ -1,5 +1,8 @@
 # Identical to schema.py, except for the hash pattern
 # (and should give the same output, except that there will be no AttributeError upon accessing a non-existent member)
+# NOTE: adding any schema to deep cells is currently very expensive
+#  as it will eagerly construct a concrete (non-deep) value of the entire deep structure!
+
 import sys
 from pprint import pprint
 from silk import Silk, ValidationError

@@ -51,12 +51,15 @@ class ReadAccessor(Accessor):
                 return
             target_celltype = macropath._cell._celltype
             target_subcelltype = macropath._cell._subcelltype
-        target = self.write_accessor.target
+        target = self.write_accessor.target()
+        path = self.write_accessor.path
+        target_hash_pattern = access_hash_pattern(self.write_accessor.hash_pattern, path)
         expression = Expression(
             checksum, self.path, celltype,
             target_celltype,
             target_subcelltype,
             hash_pattern=hash_pattern,
+            target_hash_pattern=target_hash_pattern
         )
         if self.expression is not None:
             if expression == self.expression:
@@ -107,3 +110,4 @@ from ...core.worker import pin_celltypes
 from ...core.macro import Path as MacroPath
 from ...core.status import StatusReasonEnum
 from .expression import Expression
+from ..protocol.deep_structure import access_hash_pattern

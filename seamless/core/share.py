@@ -11,8 +11,6 @@ import itertools
 import functools
 import asyncio
 
-from ..get_hash import get_hash
-
 import logging
 logger = logging.getLogger("seamless")
 
@@ -251,16 +249,18 @@ class ShareManager:
                 continue
             from_buffer = False
             if checksum is not None and cell._celltype in ("plain", "mixed"):
-                try:
-                    buffer = get_buffer(checksum)
-                except CacheMissError:
+                buffer = get_buffer(checksum, remote=True)
+                if buffer is None:
                     buffer = await get_buffer_remote(
                         checksum,
                         None
                     )
                 if buffer is not None:
                     try:
-                        checksum = await convert(checksum, buffer, "cson", "plain")
+                        checksum = await conversion(
+                            checksum, "cson", "plain", 
+                            buffer=buffer, fingertip_mode=False
+                        )
                     except ValueError:
                         from_buffer = True
             if from_buffer:
@@ -344,5 +344,4 @@ sharemanager = ShareManager(0.2)
 
 from ..shareserver import shareserver
 from .protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
-from .protocol.conversion import convert
-from .protocol.calculate_checksum import calculate_checksum
+from ..core.protocol.evaluate import conversion

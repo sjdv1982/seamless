@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.7",
+  "__seamless__": "0.8",
   "connections": [
     {
       "source": [
@@ -141,14 +141,14 @@
       "api": "pyseamless",
       "constructor": "def constructor(\n    ctx, libctx,\n    fallback_mode,\n    upstream,\n    modified, conflict,\n    merged, state, base\n):\n    assert fallback_mode in (\"upstream\", \"modified\", \"no\"), fallback_mode\n    m = ctx.m = Macro()\n    m.code = libctx.macro_code.value\n    m.fallback_mode = fallback_mode\n    m.code_start = libctx.code_start.value\n    m.code_update = libctx.code_update.value\n\n    ctx.upstream = Cell(\"text\")\n    upstream.connect(ctx.upstream)\n    m.pins.upstream = {\"io\": \"input\", \"celltype\": \"text\"}\n    m.upstream = ctx.upstream\n\n    ctx.modified = Cell(\"text\")\n    modified.link(ctx.modified)\n    m.pins.modified = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.modified = ctx.modified\n\n    if base is not None:\n        ctx.base = Cell(\"text\")\n        base.link(ctx.base)\n        m.pins.base = {\"io\": \"edit\", \"celltype\": \"text\"}\n        m.base = ctx.base\n\n    ctx.conflict = Cell(\"text\")\n    conflict.link(ctx.conflict)\n    m.pins.conflict = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.conflict = ctx.conflict\n\n    ctx.merged = Cell(\"text\")\n    merged.connect_from(ctx.merged)\n    m.pins.merged = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.merged = m.merged\n\n    ctx.state = Cell(\"text\")\n    state.connect_from(ctx.state)\n    m.pins.state = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.state = m.state",
       "graph": {
-        "__seamless__": "0.7",
+        "__seamless__": "0.8",
         "connections": [],
         "lib": [],
         "nodes": [
           {
             "celltype": "code",
             "checksum": {
-              "value": "011f1cc0903541db5a9e92ddae48a396028ffa5db9052ce663676336175d12e9"
+              "value": "a8cb5da0b60f54a084f55a7ee96df6af5228c48c9b672cfdc81b0c34b8ad6dc0"
             },
             "datatype": "mixed",
             "language": "python",
@@ -280,7 +280,6 @@
       "celltype": "plain",
       "datatype": "mixed",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "w",
         "path": "web/webform-AUTOGEN.json",
@@ -380,9 +379,9 @@
       "SCHEMA": null,
       "checksum": {
         "code": "2800a0b75ec2298d4e1f8158e8f6d9d49ea89f4046245dfa7763aa6969fc1426",
-        "input": "cfb3f43a7b756f07130ee6f8d3654a093d4b54107160018aa237cc41a4959827",
+        "input": "48e215e2124d3e3f4f3720d189162b57d78c360cec4216ea6a8a29e962f4f646",
         "input_auth": "81ca3960f4a23c56f7b259a4287b97a8490b035d7ced72175210faac51f51618",
-        "input_buffer": "cfb3f43a7b756f07130ee6f8d3654a093d4b54107160018aa237cc41a4959827",
+        "input_buffer": "48e215e2124d3e3f4f3720d189162b57d78c360cec4216ea6a8a29e962f4f646",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -463,7 +462,6 @@
       "datatype": "mixed",
       "mimetype": "text/html",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "web/index.html",
@@ -483,7 +481,6 @@
       "celltype": "text",
       "datatype": "mixed",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "w",
         "path": "web/index-AUTOGEN.html",
@@ -498,7 +495,6 @@
       "celltype": "text",
       "datatype": "mixed",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "web/index-BASE.html",
@@ -516,7 +512,6 @@
       },
       "datatype": "mixed",
       "mount": {
-        "as_directory": false,
         "authority": "cell",
         "mode": "rw",
         "path": "web/index-CONFLICT.html",
@@ -551,7 +546,6 @@
       "datatype": "mixed",
       "mimetype": "text/javascript",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "web/index.js",
@@ -571,7 +565,6 @@
       "celltype": "text",
       "datatype": "mixed",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "w",
         "path": "web/index-AUTOGEN.js",
@@ -586,7 +579,6 @@
       "celltype": "text",
       "datatype": "mixed",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "web/index-BASE.js",
@@ -601,7 +593,6 @@
       "celltype": "text",
       "datatype": "mixed",
       "mount": {
-        "as_directory": false,
         "authority": "cell",
         "mode": "rw",
         "path": "web/index-CONFLICT.js",
@@ -726,7 +717,6 @@
       "datatype": "mixed",
       "language": "python",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "web/seamless2webform.py",
@@ -809,28 +799,26 @@
       "type": "cell"
     },
     {
-      "celltype": "plain",
+      "celltype": "structured",
       "checksum": {
-        "value": "6cff43ebdce67cb0ef4083314fc27b17fbde718f346820eaededec55c4b6a59a"
+        "buffer": "e515f12d2dda37e95436f7c0d64fdda0c0368117720987999c7f8352f7fe7c90",
+        "value": "e515f12d2dda37e95436f7c0d64fdda0c0368117720987999c7f8352f7fe7c90"
       },
-      "datatype": "mixed",
       "mount": {
-        "as_directory": true,
-        "authority": "file",
-        "mode": "rw",
+        "authority": "cell",
+        "mode": "r",
         "path": "web/components",
         "persistent": true
       },
       "path": [
         "webcomponents"
       ],
-      "type": "cell"
+      "type": "foldercell"
     },
     {
       "celltype": "plain",
       "datatype": "mixed",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "web/webform.json",
@@ -853,7 +841,6 @@
       "celltype": "text",
       "datatype": "mixed",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "web/webform-BASE.txt",
@@ -868,7 +855,6 @@
       "celltype": "text",
       "datatype": "mixed",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "web/webform-CONFLICT.txt",

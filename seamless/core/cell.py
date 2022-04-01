@@ -66,6 +66,15 @@ class Cell(SeamlessBase):
         self._paths = WeakSet()
         self._traitlets = []
 
+    @property
+    def _in_structured_cell(self):
+        if self._structured_cell is None:
+            return False
+        if self._structured_cell.schema is self:
+            return False
+        return True
+
+
     def _set_context(self, ctx, name):
         assert self._checksum is None
         has_ctx = self._context is not None
@@ -178,12 +187,14 @@ class Cell(SeamlessBase):
     @property
     def value(self):
         """Returns a copy of the cell's value
+        In case of deep cells, the underlying checksums are expanded to values
         cell.set(cell.value) is guaranteed to have no effect"""
         return self._get_value(copy=True)
 
     @property
     def data(self):
         """Returns the cell's value, without making a copy
+        In case of deep cells, the underlying checksums are NOT expanded to values
         cell.set(cell.data) is NOT guaranteed to have no effect"""
         return self._get_value(copy=False)
 
@@ -238,12 +249,14 @@ class Cell(SeamlessBase):
         if self._context is None:
             self._initial_val = None
             if checksum is not None:
-                checksum = bytes.fromhex(checksum)
+                if isinstance(checksum, str):
+                    checksum = bytes.fromhex(checksum)
                 self._initial_checksum = checksum, initial, from_structured_cell
         else:
             manager = self._get_manager()
             if checksum is not None:
-                checksum = bytes.fromhex(checksum)
+                if isinstance(checksum, str):
+                    checksum = bytes.fromhex(checksum)
             manager.set_cell_checksum(
               self, checksum,
               initial=initial,
@@ -335,8 +348,9 @@ class Cell(SeamlessBase):
         manager = self._get_manager()
         manager.bilink(self, target)
 
-    def has_independence(self, path=None):
-        manager = self._get_manager()
+    def has_independence(self, path=None, *, manager=None):
+        if manager is None:
+            manager = self._get_manager()
         return manager.livegraph.has_independence(self, path)
 
     def upstream(self):
@@ -352,12 +366,16 @@ class Cell(SeamlessBase):
         self._mount.update({"extension": extension})
         return self
 
-    def mount(self, path=None, mode="rw", authority="file", *, persistent=True, as_directory=False):
+    def mount(self, path=None, mode="rw", authority="file", 
+        *, persistent=True, as_directory=False, directory_text_only=False,
+    ):
         """Performs a "lazy mount"; cell is mounted to the file when macro mode ends
         path: file path (can be None if an ancestor context has been mounted)
         mode: "r", "w" or "rw"
         authority: "cell", "file" or "file-strict"
         persistent: whether or not the file persists after the context has been destroyed
+        as_directory: mount as directory
+        directory_text_only: directory mount is text-only
         """
         from .context import Context
         assert is_dummy_mount(self._mount) #Only the mountmanager may modify this further!
@@ -373,10 +391,19 @@ class Cell(SeamlessBase):
             "mode": mode,
             "authority": authority,
             "persistent": persistent,
-            "as_directory": as_directory
+            "as_directory": as_directory,
+            "directory_text_only": directory_text_only
         })
         self._mount.update(self._mount_kwargs)
         MountItem(None, self, dummy=True, **self._mount) #to validate parameters
+        context = self._context
+        if context is not None and context() is not None:
+            if isinstance(context(), Context):
+                manager = context()._manager
+                if manager is not None:
+                    if not get_macro_mode():
+                        mountmanager = manager.mountmanager
+                        mountmanager.scan(context()._root())
         return self
 
     def _add_traitlet(self, traitlet, trigger=True):
@@ -418,22 +445,23 @@ class Cell(SeamlessBase):
         if self._share is not None:
             sharemanager.unshare(self)
 
-    def destroy(self, *, from_del=False):
+    def destroy(self, *, from_del=False, manager=None):
         if self._destroyed:
             return
         self.unshare()
         super().destroy(from_del=from_del)
-        self._unmount()
-        self._get_manager()._destroy_cell(self)
+        if manager is None:
+            manager = self._get_manager()
+        self._unmount(from_del=from_del, manager=manager)
+        manager._destroy_cell(self)
         for path in list(self._paths):
             path._bind(None, trigger=True)
 
-    def _unmount(self, from_del=False):
+    def _unmount(self, *, from_del, manager):
         from .macro import Macro
         if self._unmounted:
             return
         self._unmounted = True
-        manager = self._root()._get_manager()
         mountmanager = manager.mountmanager
         if not is_dummy_mount(self._mount):
             mountmanager.unmount(self, from_del=from_del)

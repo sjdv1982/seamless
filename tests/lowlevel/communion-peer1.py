@@ -1,6 +1,6 @@
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, unilink
-from seamless import get_hash
+from seamless import calculate_checksum
 
 from seamless import communion_server
 communion_server.configure_servant(
@@ -28,7 +28,7 @@ with macro_mode_on():
 
 ctx.compute()
 print("Secret source code ", ctx.code.checksum)
-print("hash verification  ", get_hash("c = a + b\n").hex())
+print("hash verification  ", calculate_checksum("c = a + b\n").hex())
 print(ctx.result.value)
 print(ctx.result.checksum)
 print("Communion peer 1 ready.")

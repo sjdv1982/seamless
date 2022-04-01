@@ -62,8 +62,11 @@ def _update_structured_cell(
                 AccessorUpdateTask(manager, accessor).launch()
 
     if not from_fallback:
+        cs = checksum
+        if isinstance(checksum, str):
+            cs = bytes.fromhex(checksum)
         if sc._data is not sc.auth:
-            sc._data._set_checksum(checksum, from_structured_cell=True)
+            sc._data._set_checksum(cs, from_structured_cell=True)
         manager.trigger_all_fallbacks(sc._data)
     sc._exception = None
 
@@ -125,24 +128,24 @@ class StructuredCellAuthTask(StructuredCellTask):
         sc = self.structured_cell
         await self.await_sc_tasks(auth=True)
 
-        value = sc._auth_value
+        data_value = sc._auth_value  # obeys hash pattern (if there is one), i.e. is a deep structure not a raw value
         locknr = await acquire_evaluation_lock(self)
         try:
-            if value is None:
+            if data_value is None:
                 auth_ch = sc._auth_checksum
                 if auth_ch is not None:
                     buffer = await GetBufferTask(manager, auth_ch).run()
                     if buffer is None:
                         raise CacheMissError(auth_ch.hex())
-                    value = await DeserializeBufferTask(
+                    data_value = await DeserializeBufferTask(
                         manager, buffer, auth_ch, "mixed", copy=True
                     ).run()
-            if value is None:
+            if data_value is None:
                 sc._auth_invalid = True
                 auth_checksum = None
             else:
                 auth_buf = await SerializeToBufferTask(
-                    manager, value, "mixed",
+                    manager, data_value, "mixed",
                     use_cache=False  # the auth_value object can be modified by Silk at any time
                 ).run()
                 auth_checksum = await CalculateChecksumTask(manager, auth_buf).run()
@@ -195,7 +198,6 @@ class StructuredCellJoinTask(StructuredCellTask):
             print("{} should not be void!".format(sc), file=sys.stderr)
             return
 
-
         if sc._mode != SCModeEnum.FORCE_JOINING:
             for inchannel in sc.inchannels.values():
                 if inchannel._checksum is None and not inchannel._void:
@@ -213,7 +215,10 @@ class StructuredCellJoinTask(StructuredCellTask):
         if not sc.no_auth:
             if sc.auth._checksum is not None:
                 join_dict["auth"] = sc.auth._checksum.hex()
-        if not is_empty(sc.schema):
+        schema = sc.get_schema()
+        if schema == {}:
+            schema = None
+        if schema is not None:
             join_dict["schema"] = sc.schema._checksum.hex()
         if len(sc.inchannels):
             jd_inchannels = {}
@@ -237,8 +242,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                 from_cache = True
                 ok = True
         try:
-            value = None
-            schema = None
+            data_value = None  # obeys hash pattern (if there is one), i.e. is a deep structure not a raw value
             if not from_cache:
                 prelim = {}
                 for out_path in sc.outchannels:
@@ -248,11 +252,8 @@ class StructuredCellJoinTask(StructuredCellTask):
                             curr_prelim = sc.inchannels[in_path]._prelim
                             break
                     prelim[out_path] = curr_prelim
-                value, checksum = None, None
+                data_value, checksum = None, None
                 ok = True
-                schema = None
-                if not is_empty(sc.schema):
-                    schema = sc.get_schema()
                 has_auth = False
                 has_inchannel = False
                 if len(sc.inchannels):
@@ -273,10 +274,10 @@ class StructuredCellJoinTask(StructuredCellTask):
                                         buffer = await GetBufferTask(manager, auth_checksum).run()
                                         if buffer is None:
                                             raise CacheMissError(auth_checksum.hex())
-                                        value = await DeserializeBufferTask(
+                                        data_value = await DeserializeBufferTask(
                                             manager, buffer, auth_checksum, "mixed", copy=True
                                         ).run()
-                                        if value is not None:
+                                        if data_value is not None:
                                             has_auth = True
                                     checksum = None  # needs to be re-computed after updating with inchannels
                         except CacheMissError: # shouldn't happen; we keep refs-to-auth!
@@ -295,21 +296,21 @@ class StructuredCellJoinTask(StructuredCellTask):
                             sc._exception = traceback.format_exc()
                             ok = False
                         if ok:
-                            if value is None:
+                            if data_value is None:
                                 if isinstance(paths[0], int):
-                                    value = []
+                                    data_value = []
                                 elif isinstance(paths[0], (list, tuple)) and len(paths[0]) and isinstance(paths[0][0], int):
-                                    value = []
+                                    data_value = []
                                 else:
                                     if sc.hash_pattern is not None:
                                         if isinstance(sc.hash_pattern, dict):
                                             for k in sc.hash_pattern:
                                                 if k.startswith("!"):
-                                                    value = []
+                                                    data_value = []
                                                     break
-                                    if value is None:
-                                        value = {}
-                            assert value is not None
+                                    if data_value is None:
+                                        data_value = {}
+                            assert data_value is not None
                             for path in paths:
                                 subchecksum = sc.inchannels[path]._checksum
                                 if subchecksum is not None:
@@ -319,9 +320,9 @@ class StructuredCellJoinTask(StructuredCellTask):
                                         # - the subchecksum has already the correct hash pattern (accessors make sure of this)
 
                                         sub_buffer = None
-                                        if sc.hash_pattern is None or access_hash_pattern(sc.hash_pattern, path) != "#":
+                                        if sc.hash_pattern is None or access_hash_pattern(sc.hash_pattern, path) not in ("#", "##"):
                                             sub_buffer = await GetBufferTask(manager, subchecksum).run()
-                                        await set_subpath_checksum(value, sc.hash_pattern, path, subchecksum, sub_buffer)
+                                        await set_subpath_checksum(data_value, sc.hash_pattern, path, subchecksum, sub_buffer)
                                     except CancelledError as exc:
                                         if self._canceled:
                                             raise exc from None
@@ -352,22 +353,22 @@ class StructuredCellJoinTask(StructuredCellTask):
                             sc._exception = traceback.format_exc(limit=0)
                             ok = False
                         else:
-                            value = await DeserializeBufferTask(
+                            data_value = await DeserializeBufferTask(
                                 manager, buffer, checksum, "mixed", copy=True
                             ).run()
-                            if value is not None:
+                            if data_value is not None:
                                 has_auth = True
                     else:
                         ok = False
                 if not ok:
-                    value = None
+                    data_value = None
                     checksum = None
 
-                if checksum is None and value is not None:
+                if checksum is None and data_value is not None:
                     try:
                         buf = await SerializeToBufferTask(
-                            manager, value, "mixed",
-                            use_cache=False  # the value object changes all the time...
+                            manager, data_value, "mixed",
+                            use_cache=False  # the data_value object changes all the time...
                         ).run()
                         checksum = await CalculateChecksumTask(manager, buf).run()
                         assert checksum is not None
@@ -387,10 +388,8 @@ class StructuredCellJoinTask(StructuredCellTask):
                 if isinstance(checksum, bytes):
                     checksum = checksum.hex()
                 if sc.buffer is not sc.auth:
-                    #if checksum is not None and (str(sc).find("inp.b") > -1 or str(sc).find("inp.a") > -1):
-                    #    print("STRUC SET CELL CHECKSUM", sc, checksum[:10], "TASK:", self.taskid)
                     sc.buffer._set_checksum(checksum, from_structured_cell=True)
-                if (not from_cache) and schema is not None and value is None:
+                if (not from_cache) and schema is not None and data_value is None:
                     cs = bytes.fromhex(checksum)
                     try:
                         buf = await GetBufferTask(manager, cs).run()
@@ -398,28 +397,29 @@ class StructuredCellJoinTask(StructuredCellTask):
                         sc._exception = traceback.format_exc(limit=0)
                         ok = False
                     else:
-                        value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
+                        data_value = await DeserializeBufferTask(manager, buf, cs, "mixed", copy=False).run()
             
-            if ok and (not from_cache) and value is not None:
+
+            if ok and (not from_cache) and data_value is not None:
                 schema = sc.get_schema()
                 if schema == {}:
                     schema = None
-            if ok and (not from_cache) and value is not None and schema is not None:
-                if schema is not None:
-                    if sc.hash_pattern is None:
-                        value2 = copy.deepcopy(value)
-                    else:
-                        mode, value2 = await get_subpath(value, sc.hash_pattern, ())
-                        assert mode == "value"
-                    s = Silk(data=value2, schema=schema)
-                    try:
-                        s.validate()
-                    except ValidationError:
-                        sc._exception = traceback.format_exc(limit=0)
-                        ok = False
-                    except Exception:
-                        sc._exception = traceback.format_exc()
-                        ok = False
+            if ok and (not from_cache) and data_value is not None and schema is not None:
+                if sc.hash_pattern is None:
+                    true_value = copy.deepcopy(data_value)
+                else:
+                    # This is very expensive!!
+                    mode, true_value = await get_subpath(data_value, sc.hash_pattern, ())
+                    assert mode == "value"                    
+                s = Silk(data=true_value, schema=schema)
+                try:
+                    s.validate()
+                except ValidationError:
+                    sc._exception = traceback.format_exc(limit=0)
+                    ok = False
+                except Exception:
+                    sc._exception = traceback.format_exc()
+                    ok = False
 
             if not from_cache:
                 if sc._mode != SCModeEnum.FORCE_JOINING:
@@ -433,12 +433,14 @@ class StructuredCellJoinTask(StructuredCellTask):
             if ok:
                 if (not from_cache) and (has_auth or has_inchannel):
                     assert checksum is not None
-                _update_structured_cell(sc, checksum, manager,
+                cs = bytes.fromhex(checksum)
+                buffer_cache.guarantee_buffer_info(cs, "mixed")
+                _update_structured_cell(sc, cs, manager,
                     check_canceled=lambda: self._canceled, 
                     prelim=prelim, from_fallback=False
                 )
                 if not from_cache and not any_prelim:
-                    manager.cachemanager.set_join_cache(join_dict, checksum)
+                    manager.cachemanager.set_join_cache(join_dict, cs)
                 for inchannel in sc.inchannels.values():
                     inchannel._save_state()
         finally:
@@ -464,5 +466,5 @@ from ...cache import CacheMissError
 from ...cache.buffer_cache import buffer_cache
 from silk.Silk import Silk, ValidationError
 from ..cancel import get_scell_state, SCModeEnum
-from ...protocol.expression import get_subpath, set_subpath, set_subpath_checksum, access_hash_pattern
+from ...protocol.expression import get_subpath, set_subpath_checksum, access_hash_pattern, value_to_deep_structure
 from . import acquire_evaluation_lock, release_evaluation_lock

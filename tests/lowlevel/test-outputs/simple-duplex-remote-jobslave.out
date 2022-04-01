@@ -1,7 +1,7 @@
 Set up a communion outgoing port 8602
 OUTGOING jobslave simple-duplex-remote
 ADD SERVANT buffer
-ADD SERVANT buffer_length
+ADD SERVANT buffer_info
 ADD SERVANT semantic_to_syntactic
 PROGRESS 1
 PROGRESS 2
@@ -17,5 +17,5 @@ PROGRESS 8
 PROGRESS 9
 PROGRESS 10
 REMOVE SERVANT buffer
-REMOVE SERVANT buffer_length
+REMOVE SERVANT buffer_info
 REMOVE SERVANT semantic_to_syntactic

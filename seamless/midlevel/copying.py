@@ -7,6 +7,7 @@ import inspect, asyncio
 from ..core.cache.buffer_cache import buffer_cache
 from ..core.protocol.deserialize import deserialize_sync as deserialize
 from ..core.protocol.serialize import serialize_sync as serialize
+from ..core.protocol.get_buffer import get_buffer
 from ..core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from ..core.protocol.deep_structure import apply_hash_pattern_sync, deep_structure_to_checksums
 
@@ -21,6 +22,12 @@ def get_checksums(nodes, connections, *, with_annotations):
         hash_pattern = None
         if node["type"] == "cell" and subpath != "schema":
             hash_pattern = node.get("hash_pattern")
+        elif node["type"] == "folder" and subpath != "schema":
+            hash_pattern = {"*": "#"}
+        elif node["type"] == "deepcell" and subpath == "origin":
+            hash_pattern = {"*": "#"}
+        elif node["type"] == "deepfoldercell" and subpath == "origin":
+            hash_pattern = {"*": "##"}
         elif node["type"] == "transformer":
             if subpath is not None and subpath.startswith("input") and not subpath.endswith("schema"):
                 hash_pattern = node.get("hash_pattern")
@@ -30,7 +37,7 @@ def get_checksums(nodes, connections, *, with_annotations):
         else:
             pass
         if hash_pattern is not None:
-            buffer = buffer_cache.get_buffer(bytes.fromhex(checksum))
+            buffer = get_buffer(bytes.fromhex(checksum), remote=True, deep=True)
             if buffer is None:
                 print("WARNING: could not get checksums for deep structures in {}".format(node["path"]))
                 return
@@ -138,6 +145,15 @@ def fill_checksum(manager, node, temp_path, composite=True):
     if node["type"] == "cell":
         celltype = node["celltype"]
         hash_pattern = node.get("hash_pattern")
+    elif node["type"] == "foldercell":
+        celltype = "structured"
+        hash_pattern = {"*": "##"}
+    elif node["type"] == "deepcell":
+        celltype = "structured"
+        hash_pattern = {"*": "#"}
+    elif node["type"] == "deepfoldercell":
+        celltype = "structured"
+        hash_pattern = {"*": "##"}
     elif node["type"] == "module":
         celltype = "plain"
     elif node["type"] == "transformer":
@@ -169,7 +185,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
     else:
         raise TypeError(node["type"])
     if celltype == "structured":
-        if node["type"] in ("transformer", "macro"):
+        if node["type"] in ("transformer", "macro", "deepcell", "deepfoldercell", "foldercell"):
             datatype = "mixed"
         else:
             datatype = node["datatype"]
@@ -198,12 +214,24 @@ def fill_checksum(manager, node, temp_path, composite=True):
             code = inspect.getsource(temp_value)
             code = textwrap.dedent(code)
             temp_value = code
-    buf = serialize(temp_value, datatype, use_cache=False)
+    try:
+        buf = serialize(temp_value, datatype, use_cache=False)
+    except Exception:
+        try:
+            str_temp_value = str(temp_value)
+            if len(str_temp_value) > 100:
+                str_temp_value = str_temp_value[:75] + "..." + str_temp_value[-20:]
+            str_temp_value = "'" + str_temp_value + "'"
+        except Exception:
+            str_temp_value = ""
+        print(".{}: cannot serialize temporary value {} to {}".format("".join(node["path"]), str_temp_value, datatype))
+        return
     checksum = calculate_checksum(buf)
 
     if checksum is None:
         return
     buffer_cache.cache_buffer(checksum, buf)
+    buffer_cache.guarantee_buffer_info(checksum, datatype)
     if hash_pattern is not None:
         try:
             checksum = apply_hash_pattern_sync(
@@ -281,12 +309,17 @@ def fill_checksums(mgr, nodes, *, path=None):
             elif node["type"] == "macro":
                 fill_checksum(mgr, node, "param_auth")
                 fill_checksum(mgr, node, "code")
-            elif node["type"] == "cell":
-                if node["celltype"] == "structured":
+            elif node["type"] in ("cell", "foldercell"):
+                if node["type"] == "foldercell" or node["celltype"] == "structured":
                     temp_path = "auth"
                 else:
                     temp_path = "value"
                 fill_checksum(mgr, node, temp_path, composite=False)
+            elif node["type"] in ("deepcell", "deepfoldercell"):
+                fill_checksum(mgr, node, "origin", composite=False)
+                fill_checksum(mgr, node, "keyorder", composite=False)
+                fill_checksum(mgr, node, "blacklist", composite=False)
+                fill_checksum(mgr, node, "whitelist", composite=False)
             elif node["type"] == "module":
                 fill_checksum(mgr, node, None, composite=False)
             else:
@@ -311,4 +344,4 @@ def fill_checksums(mgr, nodes, *, path=None):
             if node is not None and old_checksum is not None:
                 node["checksum"] = old_checksum
     if first_exc is not None:
-        raise first_exc
+        raise first_exc from None

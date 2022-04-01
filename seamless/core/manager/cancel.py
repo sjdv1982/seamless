@@ -201,9 +201,9 @@ class StructuredCellCancellation:
         tasks = taskmanager.structured_cell_to_task[scell]
         for task in tasks:
             if isinstance(task, StructuredCellAuthTask):
-                if not task._started:
+                if not existing and not task._started:
                     existing = True
-                    break
+                    continue
             task.cancel()
         if not existing:
             StructuredCellAuthTask(taskmanager.manager, scell).launch()
@@ -311,28 +311,19 @@ class StructuredCellCancellation:
                     # The forced join task might have gone wrong;
                     # or it succeeded, but later on, all valid inchannels were voided
                     pass
-                if scell._exception is not None:
-                    reason = StatusReasonEnum.INVALID
-                else:
-                    reason = StatusReasonEnum.UNDEFINED
+                reason = _get_scell_status_reason(scell)                
                 print_debug("***CANCEL***: marked for void %s (from joining)" % scell)
                 self.cycle().to_void.append((scell, reason))
             elif self.mode == SCModeEnum.PENDING:
                 # The last pending inchannel got void-canceled
                 assert scell._data._checksum is None, (scell, old_state, new_state, self.mode)
-                if scell._exception is not None:
-                    reason = StatusReasonEnum.INVALID
-                else:
-                    reason = StatusReasonEnum.UNDEFINED
+                reason = _get_scell_status_reason(scell)
                 print_debug("***CANCEL***: marked for void (from pending) %s" % scell)
                 self.cycle().to_void.append((scell, reason))
             elif self.mode == SCModeEnum.EQUILIBRIUM:
                 # The last valued inchannel got void-canceled
                 assert scell._data._checksum is not None, (scell, old_state, new_state, self.mode)
-                if scell._exception is not None:
-                    reason = StatusReasonEnum.INVALID
-                else:
-                    reason = StatusReasonEnum.UNDEFINED
+                reason = _get_scell_status_reason(scell)
                 print_debug("***CANCEL***: marked for void (from equilibrium) %s" % scell)
                 self.cycle().to_void.append((scell, reason))
             else:
@@ -1046,7 +1037,7 @@ class CancellationCycle:
             for scell in cyclic_scells:
                 """
                 from seamless.core.cache.buffer_cache import buffer_cache
-                print("CYCLIC", scell, buffer_cache.get_buffer(scell.checksum), scell.exception)
+                print("CYCLIC", scell, buffer_cache.get_buffer(scell.checksum,remote=False), scell.exception)
                 get_scell_state(scell, True)
                 """
                 if scell._cyclic:
@@ -1059,8 +1050,16 @@ class CancellationCycle:
                 scell._mode = SCModeEnum.FORCE_JOINING
             return True  # change
 
-
-
+def _get_scell_status_reason(scell):
+    if scell._exception is not None:
+        reason = StatusReasonEnum.INVALID
+    else:
+        if not len(scell.inchannels):
+            reason = StatusReasonEnum.UNDEFINED
+        else:
+            reason = StatusReasonEnum.UPSTREAM
+    return reason
+    
 from ..utils import overlap_path
 from ..manager.accessor import Accessor
 from ..cell import Cell

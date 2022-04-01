@@ -29,19 +29,15 @@ class SetCellBufferTask(Task):
             if checksum is None and buffer is not None:
                 checksum = await CalculateChecksumTask(manager, buffer).run()
             elif buffer is None and checksum is not None:
-                buffer = buffer_cache.get_buffer(checksum)
+                buffer = get_buffer(checksum, remote=True)
             if checksum is None or buffer is None:
                 manager.cancel_cell(cell, True, StatusReasonEnum.UNDEFINED, origin_task=self)
             else:
-                if (checksum, cell._celltype) not in evaluation_cache_1:
+                if not has_validated_evaluation(checksum, cell._celltype):
                     await DeserializeBufferTask(
                         manager, buffer,
                         checksum, cell._celltype, copy=False
                     ).run()
-                await validate_subcelltype(
-                    checksum, cell._celltype, cell._subcelltype,
-                    str(cell)
-                )
                 manager.cancel_cell(cell, void=False, origin_task=self)
                 checksum_cache[checksum] = buffer
                 buffer_cache.cache_buffer(checksum, buffer)
@@ -63,8 +59,8 @@ class SetCellBufferTask(Task):
             livegraph.cell_parsing_exceptions[cell] = exc
         return None
 
-from ...protocol.validate_subcelltype import validate_subcelltype
-from ...protocol.evaluate import evaluation_cache_1
 from ...protocol.calculate_checksum import checksum_cache
+from ...protocol.evaluate import has_validated_evaluation
 from ...status import StatusReasonEnum
 from ...cache.buffer_cache import buffer_cache
+from ...protocol.get_buffer import get_buffer

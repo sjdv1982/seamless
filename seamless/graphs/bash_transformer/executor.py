@@ -3,12 +3,11 @@ import tempfile
 import numpy as np
 import tarfile
 import json
-import sys
 from io import BytesIO
 from silk import Silk
 from seamless.core.transformation import SeamlessStreamTransformationError
 from silk.mixed.get_form import get_form
-from seamless import subprocess
+from seamless import subprocess_ as subprocess
 from subprocess import PIPE
 import psutil
 import signal

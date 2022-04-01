@@ -1,20 +1,23 @@
-from IPython.core.inputsplitter import IPythonInputSplitter
-from ipykernel.inprocess.ipkernel import InProcessKernel
-from ipykernel.inprocess.manager import InProcessKernelManager
-from ipykernel.zmqshell import ZMQInteractiveShell
-import sys
+IPythonInputSplitter = None
+MyInProcessKernelManager = None
+def _imp():
+    global IPythonInputSplitter, MyInProcessKernelManager
+    from IPython.core.inputsplitter import IPythonInputSplitter
+    from ipykernel.inprocess.ipkernel import InProcessKernel
+    from ipykernel.inprocess.manager import InProcessKernelManager
+    from ipykernel.zmqshell import ZMQInteractiveShell
 
-class MyInProcessKernel(InProcessKernel):
-    #get rid of singleton shell instance!
-    class dummy:
-        def instance(self, *args, **kwargs):
-            shell = ZMQInteractiveShell(*args, **kwargs)
-            return shell
-    shell_class = dummy()
+    class MyInProcessKernel(InProcessKernel):
+        #get rid of singleton shell instance!
+        class dummy:
+            def instance(self, *args, **kwargs):
+                shell = ZMQInteractiveShell(*args, **kwargs)
+                return shell
+        shell_class = dummy()
 
-class MyInProcessKernelManager(InProcessKernelManager):
-    def start_kernel(self, namespace):
-        self.kernel = MyInProcessKernel(parent=self, session=self.session, user_ns = namespace)
+    class MyInProcessKernelManager(InProcessKernelManager):
+        def start_kernel(self, namespace):
+            self.kernel = MyInProcessKernel(parent=self, session=self.session, user_ns = namespace)
 
 def execute(code, namespace):
     """Executes Python code in an IPython kernel
@@ -22,6 +25,8 @@ def execute(code, namespace):
     If the code is in IPython format (i.e. with % and %% magics),
      run it through ipython2python first
     """
+    if MyInProcessKernelManager is None:
+        _imp()
     kernel_manager = MyInProcessKernelManager()
     kernel_manager.start_kernel(namespace)
     kernel = kernel_manager.kernel
@@ -38,6 +43,8 @@ def execute(code, namespace):
     return namespace
 
 def ipython2python(code):
+    if IPythonInputSplitter is None:
+        _imp()
     isp = IPythonInputSplitter()
     newcode = ""
     for line in code.splitlines():

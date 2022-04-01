@@ -1,10 +1,10 @@
-# Adapted from /seamless/highlevel/stdlib/switch-join/switch-join.py
+# Adapted from /seamless/highlevel/stdlib/switch-select/switch-select.py
 from seamless.highlevel import Context, Cell
 from seamless.highlevel import stdlib
 
 ctx = Context()
 ctx.include(stdlib.switch)
-ctx.include(stdlib.join)
+ctx.include(stdlib.select)
 ctx.a = 10.0
 ctx.a1 = Cell("float")
 ctx.a2 = Cell("float")
@@ -56,7 +56,7 @@ ctx.switch = ctx.lib.switch(
 ctx.compute()
 ctx.output = Cell("float")
 """
-ctx.join = ctx.lib.join(
+ctx.select = ctx.lib.select(
     celltype="float",
     inputs=rdict,
     selected=ctx.selected,
@@ -64,11 +64,11 @@ ctx.join = ctx.lib.join(
 )
 """
 # Alternative syntax
-ctx.join = ctx.lib.join()
-ctx.join.celltype = "float"
-ctx.join.inputs = rdict
-ctx.join.selected = ctx.selected
-ctx.output = ctx.join.output
+ctx.select = ctx.lib.select()
+ctx.select.celltype = "float"
+ctx.select.inputs = rdict
+ctx.select.selected = ctx.selected
+ctx.output = ctx.select.output
 # /
 ctx.compute()
 
@@ -97,5 +97,5 @@ print(ctx.r1.value, ctx.r2.value, ctx.r3.value)
 print()
 
 graph = ctx.get_graph()
-ctx.save_graph("switch-join-stdlib.seamless")
-ctx.save_zip("switch-join-stdlib.zip")
+ctx.save_graph("switch-select-stdlib.seamless")
+ctx.save_zip("switch-select-stdlib.zip")

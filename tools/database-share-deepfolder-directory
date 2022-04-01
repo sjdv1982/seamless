@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+
+import os
+import json
+
+from seamless import calculate_checksum
+
+def err(*args, **kwargs):
+    print("ERROR: " + args[0], *args[1:], **kwargs)
+    exit(1)
+
+SDB = os.environ.get("SEAMLESS_DATABASE_DIR")
+if SDB is None:
+    err("SEAMLESS_DATABASE_DIR undefined")
+
+import argparse
+parser = argparse.ArgumentParser(description="""Shares a Seamless deepfolder directory.
+
+Creates $SEAMLESS_DATABASE_DIR/shared-directories/<deepfolder-checksum> containing 
+a snapshot of the deepfolder as it is now.
+
+The snapshot is created via hard-links, so it will not take additional disk space.
+
+However, the snapshot is by checksum (i.e. reproducible), therefore subsequent 
+updates to the deepfolder do not update the shared directory.
+
+
+After this operation, the Seamless database server will accept get_directory requests 
+for the given deepfolder checksum, and return the directory path:
+$SEAMLESS_DATABASE_DIR/shared-directories/<deepfolder-checksum>  
+
+It is your responsibility to make sure that this directory path is readable 
+(and preferably, not writable) by the Seamless user.
+
+The deepfolder can be provided as: 
+
+- Collection name (with --collection). 
+  The deepfolder deep buffer must be present in $SEAMLESS_DATABASE_DIR/deepfolders/<collection name>.json.
+  The deepfolder checksum is computed from this buffer. 
+
+- Deepfolder checksum (with --checksum). 
+  The deepfolder deep buffer must be present in $SEAMLESS_DATABASE_DIR/buffers/<deepfolder checksum>.
+  The deepfolder deep buffer is parsed and each file name is hardlinked in 
+  $SEAMLESS_DATABASE_DIR/shared-directories/<deepfolder-checksum> .
+
+The source of the hardlink is either $SEAMLESS_DATABASE_DIR/buffers/<file checksum>
+or $SEAMLESS_DATABASE_DIR/collections/<collection name>/<file name> . One of them must be present.
+""", formatter_class=argparse.RawDescriptionHelpFormatter)
+parser.add_argument(
+    "--collection",
+)
+
+parser.add_argument(
+    "--checksum",
+
+)
+args = parser.parse_args()
+if args.collection is None and args.checksum is None:
+    err("You must define --checksum or --collection")
+if args.collection is not None and args.checksum is not None:
+    err("You must define --checksum OR --collection, not both")
+
+if args.checksum:
+    collection_name = None
+    deepfolder_checksum = args.checksum
+    filename = os.path.join(SDB, "buffers", deepfolder_checksum)
+    if not os.path.exists(filename):
+        err("'{}' does not exist".format(filename))
+    with open(filename) as f:
+        try:
+            deepdict = json.load(f)
+            assert isinstance(deepdict, dict)
+            for key, value in deepdict.items():
+                bytes.fromhex(value)
+        except Exception:
+            err("'{}' is not a valid deep buffer".format(filename))
+else:
+    collection_name = args.collection
+    filename = os.path.join(SDB, "deepfolders", collection_name)  + ".json"
+    if not os.path.exists(filename):
+        err("'{}' does not exist".format(filename))
+    with open(filename, "rb") as f:
+        buf = f.read()
+        deepfolder_checksum = calculate_checksum(buf, hex=True)
+        deepdict = json.loads(buf.decode())
+    print("Deepfolder checksum: {}".format(deepfolder_checksum))
+
+shared_dir = os.path.join(SDB, "shared-directories")
+if not os.path.exists(shared_dir):
+    os.mkdir(shared_dir)
+target_dir = os.path.join(shared_dir, deepfolder_checksum)
+if os.path.exists(target_dir):
+    err("'{}' already exists".format(target_dir))
+
+hardlinks = []
+collection_dir = None
+if collection_name is not None:
+    collection_dir = os.path.join(SDB, "collections", collection_name)
+    if not os.path.exists(collection_dir):
+        collection_dir = None
+
+for filename, checksum in deepdict.items():
+    source_file = None
+    if collection_dir is not None:
+        source_file = os.path.join(collection_dir, filename)
+        if not os.path.exists(source_file):
+            source_file = None
+    if source_file is None:
+        source_file = os.path.join(SDB, "buffers", checksum)
+        if not os.path.exists(source_file):
+            err("'{}' does not exist".format(source_file))
+    target_file = os.path.join(target_dir, filename)
+    hardlinks.append((source_file, target_file))
+
+os.mkdir(target_dir)
+print("Creating hard links in {}".format(target_dir))
+for n, (source_file, target_file) in enumerate(hardlinks):
+    if n > 0 and n % 20000 == 0:
+        print("Hardlink {}/{} files".format(
+            n, len(hardlinks)
+        ))                    
+    target_file_dir = os.path.dirname(target_file)
+    if target_file_dir != target_dir:
+        os.makedirs(target_file_dir, exist_ok=True)
+    os.link(source_file, target_file)

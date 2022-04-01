@@ -1,7 +1,7 @@
 from hashlib import sha3_256
 import json
 
-def get_hash(content, hex=False):
+def calculate_checksum(content, hex=False):
     if isinstance(content, str):
         content = content.encode()
     if not isinstance(content, bytes):
@@ -12,7 +12,7 @@ def get_hash(content, hex=False):
         result = result.hex()
     return result
 
-def get_dict_hash(d, hex=False):
+def calculate_dict_checksum(d, hex=False):
     """This function is compatible with the checksum of a "plain" cell"""
     content = json.dumps(d, sort_keys=True, indent=2) + "\n"
-    return get_hash(content,hex=hex)
+    return calculate_checksum(content,hex=hex)

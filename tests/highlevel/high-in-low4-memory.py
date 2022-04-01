@@ -63,7 +63,7 @@ for n in range(100): # 2x1 GB
     print(n+1)
 
 ctx.compute()
-print(ctx.data.data)
+print(ctx.data._data)
 print(ctx.data.handle[0].value["a"][:10])
 import time; time.sleep(1); print(); print()
 

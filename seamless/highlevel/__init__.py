@@ -56,7 +56,8 @@ def parse_function_code(code_or_func, identifier="<None>"):
 from .Context import Context
 from .Transformer import Transformer
 from .Macro import Macro
-from .Cell import Cell
+from .Cell import Cell, FolderCell
+from .DeepCell import DeepCell, DeepFolderCell
 from .Module import Module
 from .Link import Link
 from .Resource import Resource
@@ -108,10 +109,9 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
             zip=zip
         )
 
-from . import stdlib
-
 __all__ = [
     "Context", "Transformer", "Macro",
-    "Cell", "Link", "Graph", "StaticContext", "Module",
-    "Resource", "load_graph", "copy", "stdlib"
+    "Cell", "FolderCell", "DeepCell", "DeepFolderCell",
+    "Link", "Graph", "StaticContext", "Module",
+    "Resource", "load_graph", "copy",
 ]

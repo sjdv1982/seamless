@@ -1,0 +1,24 @@
+{'test.dat': '7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea', 'test.json': '6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22', 'test.npy': 'cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3', 'test.txt': 'c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c', 'test2.dat': 'c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c'}
+147a0f12797806fe2ecc31a9ad164f0096e6160c44120d53bf790bbfb8bea890
+b'This is a\ntest\n'
+This is a
+test
+
+b'{\n  "a": 10,\n  "b": 20,\n  "c": 30\n}\n'
+{'a': 10, 'b': 20, 'c': 30}
+
+Test buffer <class 'str'>
+This is a
+test
+ <class 'str'>
+{
+  "a": 10,
+  "b": 20,
+  "c": 30
+}
+ <class 'str'>
+[0 1 2 3 4 5 6 7 8 9] <class 'numpy.ndarray'>
+b'\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00' <class 'bytes'>
+AttributeError: Cannot assign to 'gives-error.txt': Folder is mounted to the file system in read mode
+STAGE 2
+Seamless Cell: .folder2

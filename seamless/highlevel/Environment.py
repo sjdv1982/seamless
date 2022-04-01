@@ -110,7 +110,7 @@ for transformers individually (Transformer.environment)"""
         self._sync()
         if format != "yaml":
             raise NotImplementedError(format)  # must be yaml for now
-        return self._conda
+        return deepcopy(self._conda)
 
     def set_which(self, which, format):
         """List of binaries that must be available in the command line path, using "which" """
@@ -188,7 +188,7 @@ client.containers.run of the Docker SDK for Python"""
         """Name of the Docker (or Singularity) config 
         that defines the environment"""
         self._sync()
-        return self._docker
+        return deepcopy(self._docker)
 
     def _to_lowlevel(self):
         result = {}
@@ -243,7 +243,7 @@ Setting it to None resets it to the default language definition"""
         if self._languages is None:
             result = languages_default
         if format == "cson":
-            return result
+            return deepcopy(result)
         return cson2json(result)
 
 

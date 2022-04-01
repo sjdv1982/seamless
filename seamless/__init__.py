@@ -6,6 +6,9 @@ import sys
 import traceback
 import asyncio
 import logging
+import subprocess
+import sys
+sys.modules["seamless.subprocess"] = subprocess  # pre-0.7 compat
 logger = logging.getLogger("seamless")
 
 from abc import abstractmethod
@@ -96,5 +99,5 @@ from .shareserver import shareserver
 from .communion_server import communion_server
 from .core.transformation import set_ncores
 from .core.manager.tasks import set_parallel_evaluations
-from .get_hash import get_hash, get_dict_hash
+from .calculate_checksum import calculate_checksum, calculate_dict_checksum
 from .core.cache.database_client import database_sink, database_cache

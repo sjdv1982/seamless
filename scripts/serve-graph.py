@@ -103,7 +103,7 @@ from seamless import communion_server
 communion_server.configure_master({
     "buffer": True,
     "buffer_status": True,
-    "buffer_length": True,
+    "buffer_info": True,
     "transformation_job": True,
     "transformation_status": True,
     "semantic_to_syntactic": True,
@@ -115,7 +115,7 @@ if args.database:
     communion_server.configure_servant({
         "buffer": False,
         "buffer_status": False,
-        "buffer_length": False,
+        "buffer_info": False,
         "transformation_job": False,
         "transformation_status": False,
         "semantic_to_syntactic": False,

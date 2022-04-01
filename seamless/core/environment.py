@@ -1,8 +1,3 @@
-from re import I
-import re
-import conda
-from conda.models.match_spec import MatchSpec
-from conda.cli.python_api import Commands, run_command as conda_run
 import os, stat
 import subprocess
 
@@ -58,6 +53,8 @@ def validate_capabilities(environment):
 
 
 def validate_conda_environment(environment):
+    from conda.models.match_spec import MatchSpec
+    from conda.cli.python_api import Commands, run_command as conda_run
     condenv = environment.get("conda")
     if condenv is None:
         return None, None

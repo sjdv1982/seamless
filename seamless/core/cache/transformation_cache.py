@@ -8,7 +8,6 @@ class HardCancelError(Exception):
     def __str__(self):
         return self.__class__.__name__
 
-from seamless.core.protocol.serialize import serialize
 import sys
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
@@ -21,7 +20,7 @@ import time
 import traceback
 from copy import deepcopy
 
-from ...get_hash import get_dict_hash, get_hash
+from ...calculate_checksum import calculate_dict_checksum, calculate_checksum as calculate_checksum_func
 """
 TODO: offload exceptions (as text) to database (also allow them to be cleared in database?)
 TODO: do the same with stdout, stderr
@@ -132,9 +131,8 @@ async def syntactic_to_semantic(
     if syntactic_is_semantic(celltype, subcelltype):
         return checksum
 
-    try:
-        buffer = get_buffer(checksum)
-    except CacheMissError:
+    buffer = get_buffer(checksum, remote=True)
+    if buffer is None:
         buffer = await get_buffer_remote(
             checksum,
             None
@@ -143,8 +141,8 @@ async def syntactic_to_semantic(
             raise CacheMissError(checksum.hex()) from None
         buffer_cache.cache_buffer(checksum, buffer)
     if celltype in ("cson", "yaml"):
-        semantic_checksum = await convert(
-            checksum, buffer, celltype, "plain"
+        semantic_checksum = try_convert(
+            checksum,  celltype, "plain", buffer=buffer,
         )
     elif celltype == "python":
         value = await deserialize(buffer, checksum, "python", False)
@@ -229,19 +227,21 @@ class TransformationCache:
         if "META" in inputpin_checksums:
             checksum = inputpin_checksums["META"]
             await cachemanager.fingertip(checksum)
-            inp_metabuf = buffer_cache.get_buffer(checksum)
+            inp_metabuf = get_buffer(checksum, remote=True)
             if inp_metabuf is None:
                 raise CacheMissError("META")
             inp_meta = json.loads(inp_metabuf)
             meta.update(inp_meta)
         metabuf = await serialize(meta, "plain")
-        meta_checksum = get_hash(metabuf)
+        meta_checksum = calculate_checksum_func(metabuf)
         buffer_cache.cache_buffer(meta_checksum, metabuf)
+        buffer_cache.guarantee_buffer_info(meta_checksum, "plain")
         transformation["__meta__"] = meta_checksum
         if transformer.env is not None:
             envbuf = await serialize(transformer.env, "plain")
-            env_checksum = get_hash(envbuf)
+            env_checksum = calculate_checksum_func(envbuf)
             buffer_cache.cache_buffer(env_checksum, envbuf)
+            buffer_cache.guarantee_buffer_info(env_checksum, "plain")
             transformation["__env__"] = env_checksum
         transformation_build_exception = None
         for pinname, checksum in inputpin_checksums.items():
@@ -785,11 +785,10 @@ class TransformationCache:
         assert isinstance(tf_checksum, bytes)
         transformation = self.transformations.get(tf_checksum)
         if transformation is None:
-            try:
-                transformation_buffer = get_buffer(
-                    tf_checksum
-                )
-            except CacheMissError:
+            transformation_buffer = get_buffer(
+                tf_checksum, remote=True
+            )
+            if transformation_buffer is None:
                 transformation_buffer = await get_buffer_remote(
                     tf_checksum,
                     None # NOT remote_peer_id! The submitting peer may hold a buffer we need!
@@ -1009,7 +1008,6 @@ transformation_cache = TransformationCache()
 from .tempref import temprefmanager
 from .buffer_cache import buffer_cache
 from ..protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
-from ..protocol.conversion import convert
 from ..protocol.deserialize import deserialize
 from ..protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
 from .database_client import database_cache, database_sink
@@ -1019,3 +1017,5 @@ from ..transformation import (
 )
 from ..status import SeamlessInvalidValueError, SeamlessUndefinedError, StatusReasonEnum
 from ..transformer import Transformer
+from ..convert import try_convert
+from ..protocol.serialize import serialize

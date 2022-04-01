@@ -1,6 +1,5 @@
-from copy import deepcopy
-from seamless.core import context, transformation, transformer, cell
-from seamless.core.cache.buffer_cache import buffer_cache
+from seamless.core import context, transformer, cell
+from seamless.core.protocol.get_buffer import get_buffer
 import json
 
 
@@ -10,7 +9,7 @@ def get_meta(tf):
     tf_checksum = tf_cache.transformer_to_transformations[tf]
     transformation = tf_cache.transformations[tf_checksum]
     meta_checksum = transformation["__meta__"]
-    meta = json.loads(buffer_cache.get_buffer(meta_checksum))
+    meta = json.loads(get_buffer(meta_checksum,remote=True))
     return meta
 
 ctx = context(toplevel=True)

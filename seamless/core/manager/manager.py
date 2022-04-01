@@ -6,6 +6,8 @@ import traceback
 import sys
 from copy import deepcopy
 
+from seamless.core.cache import CacheMissError
+
 from ..status import StatusReasonEnum
 
 import logging
@@ -188,7 +190,7 @@ class Manager:
                     traceback.print_exc()
         if not is_dummy_mount(cell._mount):
             try:
-                buffer = buffer_cache.get_buffer(checksum)  # not async, so OK
+                buffer = get_buffer(checksum, remote=True)  # not async, so OK
                 self.mountmanager.add_cell_update(cell, checksum, buffer)
             except Exception:
                 traceback.print_exc()            
@@ -223,7 +225,7 @@ class Manager:
 
   If "initial" is True, it is assumed that the context is being initialized (e.g. when created from a graph)
   If "from_structured_cell" is True, the function is triggered by StructuredCell state maintenance routines
-  In both cases, the caller is responsible for bookkeeping, such as incref/decref of checksums inside a deep structure
+  This function takes care of the incref/decref of checksums inside a deep structure
 
   If "initial" is true, but "from_structured_cell" is not, the cell must be a simple cell
 
@@ -312,6 +314,14 @@ class Manager:
         Therefore, the direct or indirect call of _sync versions of coroutines
         (e.g. deserialize_sync, which launches coroutines and waits for them)
         IS NOT ALLOWED
+
+        On the other hand, since cachemanager.incref_checksum is called,
+         deep structures have their contained checksums automatically incref'ed, 
+         and decref'ed for the old value
+        NOTE: this function blindly assumes that the checksum is parseable
+         for the cell's celltype, and in fact triggers a guarantee.
+        If you are paranoid about this, do not call this function unless you
+         have verified the parsability yourself.
         """
         if cell._destroyed:
             return
@@ -329,7 +339,7 @@ class Manager:
             independent = True
             value = None
             if checksum is not None:
-                buf = self._get_buffer(checksum)
+                buf = self._get_buffer(checksum,deep=False)
                 value = deserialize_sync(buf, checksum, "plain", copy=False)
             for sc in livegraph.schemacells[cell]:
                 sc._schema_value = deepcopy(value)
@@ -343,6 +353,8 @@ class Manager:
             cachemanager.decref_checksum(old_checksum, cell, independent, False)
         
         print_debug("SET CHECKSUM", cell, "None:", checksum is None, checksum == old_checksum)
+        if checksum is not None:
+            buffer_cache.guarantee_buffer_info(checksum, cell.celltype)
         cell._checksum = checksum
         cell._void = void
         cell._status_reason = status_reason
@@ -496,9 +508,12 @@ class Manager:
         _, void = self._get_cell_checksum_and_void(cell)
         return void
 
-    def _get_buffer(self, checksum):
+    def _get_buffer(self, checksum, deep):
         if asyncio.get_event_loop().is_running():
-            return get_buffer(checksum)
+            buffer = get_buffer(checksum, remote=True, deep=deep)
+            if buffer is None:
+                raise CacheMissError(checksum)
+            return buffer
         if checksum is None:
             return None
         empty_dict_checksum = 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c'
@@ -516,7 +531,8 @@ class Manager:
     @mainthread
     def get_cell_buffer_and_checksum(self, cell):
         checksum = self.get_cell_checksum(cell)
-        buffer = self._get_buffer(checksum)
+        deep = cell._hash_pattern is not None
+        buffer = self._get_buffer(checksum,deep)
         return buffer, checksum
 
     @mainthread
@@ -542,7 +558,8 @@ class Manager:
             return None
         if isinstance(checksum, str):
             checksum = bytes.fromhex(checksum)
-        buffer = self._get_buffer(checksum)
+        # set deep to True, since we do want to check the fairserver
+        buffer = self._get_buffer(checksum,deep=True)
         if celltype is None:
             return buffer
         if asyncio.get_event_loop().is_running():

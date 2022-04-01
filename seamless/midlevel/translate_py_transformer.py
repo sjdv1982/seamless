@@ -43,6 +43,8 @@ def translate_py_transformer(
                 celltype = "mixed"
         if celltype == "silk":
             celltype = "mixed"
+        if celltype == "checksum":
+            celltype = "plain"
         assert pin_cell_name not in all_inchannels
         assert pin_cell_name not in node["pins"]
         pin_cell = cell(celltype)
@@ -65,13 +67,30 @@ def translate_py_transformer(
         inp_ctx.schema.mount(**mount["input_schema"])
     for inchannel in inchannels:
         path = node["path"] + inchannel
-        namespace[path, "target"] = inp.inchannels[inchannel], node
+        is_checksum = False
+        if len(inchannel) == 1:            
+            pinname = inchannel[0]
+            pin = node["pins"][pinname]
+            if pin.get("celltype") == "checksum":
+                is_checksum = True
+        if is_checksum:
+            pin_cell2 = cell("checksum")
+            cell_setattr(node, ctx, pinname + "_CHECKSUM", pin_cell2)
+            pin_cell3 = cell("plain")
+            cell_setattr(node, ctx, pinname + "_CHECKSUM2", pin_cell3)
+            pin_cell2.connect(pin_cell3)
+            pin_cell3.connect(inp.inchannels[inchannel])
+            namespace[path, "target"] = pin_cell2, node
+        else:
+            namespace[path, "target"] = inp.inchannels[inchannel], node
 
     assert result_name not in node["pins"] #should have been checked by highlevel
     all_pins = {}
     for pinname, pin in node["pins"].items():
         p = {"io": "input"}
         p.update(pin)
+        if p.get("celltype") == "checksum":
+            p["celltype"] = "plain"
         all_pins[pinname] = p
     all_pins[result_name] = {"io": "output", "celltype": "mixed"}
     if node["SCHEMA"]:
@@ -261,5 +280,6 @@ def translate_py_transformer(
     namespace[node["path"], "target"] = inp, node
     namespace[node["path"], "source"] = result, node
 
-from .util import get_path, as_tuple, build_structured_cell, cell_setattr
+from .util import get_path, build_structured_cell, cell_setattr
+from ..util import as_tuple
 from .convert_checksum_dict import convert_checksum_dict

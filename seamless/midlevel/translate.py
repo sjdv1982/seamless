@@ -9,11 +9,13 @@ from warnings import warn
 from collections import OrderedDict
 from functools import partial
 
+from attr import has
+
 from seamless.core import (cell as core_cell,
  transformer, reactor, context, macro, StructuredCell)
 
 from . import copying
-from .util import as_tuple, get_path, get_path_link, find_channels, build_structured_cell
+from .util import get_path, get_path_link, find_channels, build_structured_cell
 
 import logging
 logger = logging.getLogger("seamless")
@@ -42,7 +44,7 @@ direct_celltypes = (
 
 empty_dict_checksum = 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c'
 
-def set_structured_cell_from_checksum(cell, checksum):
+def set_structured_cell_from_checksum(cell, checksum, is_deepcell=False):
     trigger = False
     """
     if "temp" in checksum:
@@ -80,13 +82,14 @@ def set_structured_cell_from_checksum(cell, checksum):
         trigger = True
         """
 
-    if "auth" in checksum:
+    k = "origin" if is_deepcell else "auth"
+    if k in checksum:
         if cell.auth is None:
-            msg = "Warning: %s has no independence, but an auth checksum is present"
-            print(msg % cell)
+            msg = "Warning: {} has no independence, but an {} checksum is present"
+            print(msg.format(cell, k))
         else:
             cell.auth._set_checksum(
-                checksum["auth"],
+                checksum[k],
                 from_structured_cell=True,
                 initial=True
             )
@@ -111,19 +114,37 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
     path = node["path"]
     parent = get_path(root, path[:-1], None, None)
     name = path[-1]
-    ct = node["celltype"]
+    if node["type"] == "foldercell":
+        ct = "structured"
+    else:
+        ct = node["celltype"]
     if ct == "structured":
-        datatype = node["datatype"]
-        ### TODO: harmonize datatype with schema type
-        hash_pattern = node["hash_pattern"]
+        if node["type"] != "foldercell":
+            datatype = node["datatype"]
+            ### TODO: harmonize datatype with schema type
+        if node["type"] == "foldercell":
+            hash_pattern = {"*": "##"}
+        else:
+            hash_pattern = node["hash_pattern"]
+
+        inchannels2 = inchannels
         mount = node.get("mount")
-        child = build_structured_cell(
+        if mount is not None:
+            mount = mount.copy()
+        if node["type"] == "foldercell" and mount is not None:
+            mount_mode = mount["mode"]
+            assert mount_mode in ("r", "w"), mount_mode # should have been caught at highlevel
+            if mount_mode == "r":
+                assert not len(inchannels) # should have been caught at highlevel
+                inchannels2 = [()]
+
+        child, child_ctx = build_structured_cell(
           parent, name,
-          inchannels, outchannels,
+          inchannels2, outchannels,
           fingertip_no_remote=node.get("fingertip_no_remote", False),
           fingertip_no_recompute=node.get("fingertip_no_recompute", False),
           hash_pattern=hash_pattern,
-          mount=mount
+          return_context=True
         )
         for inchannel in inchannels:
             cname = child.inchannels[inchannel].subpath
@@ -137,6 +158,21 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         for outchannel in outchannels:
             cpath = path + outchannel
             namespace[cpath, "source"] = child.outchannels[outchannel], node
+        
+        if node["type"] == "foldercell" and mount is not None:
+            mount_mode = mount["mode"]
+            if mount_mode == "r":
+                child_ctx.mountcell = core_cell("mixed", hash_pattern={"*": "##"})
+                child_ctx.mountcell.mount(
+                    **mount, 
+                    as_directory=True
+                )
+                child_ctx.mountcell.connect(child.inchannels[()])
+            else:
+                child._data.mount(**mount, as_directory=True)
+        else:
+            assert mount is None, path # should have been caught at highlevel
+
     else: #not structured
         for c in inchannels + outchannels:
             assert not len(c) #should have been checked by highlevel
@@ -182,24 +218,22 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
 
     return child
 
+
 def translate_connection(node, namespace, ctx):
     from ..core.cell import Cell
     from ..core.structured_cell import Inchannel, Outchannel
     from ..core.worker import Worker, PinBase
+    from .translate_deep import DeepCellConnector
     source_path, target_path = node["source"], node["target"]
 
     source, source_node, source_is_edit = get_path(
       ctx, source_path, namespace, False,
       return_node = True
     )
-    if isinstance(source, StructuredCell):
-        source = source.outchannels[()]
     target, target_node, target_is_edit = get_path(
       ctx, target_path, namespace, True,
       return_node=True
     )
-    if isinstance(target, StructuredCell):
-        target = target.inchannels[()]
 
     def do_connect(source, target):
         if source_is_edit or target_is_edit:
@@ -225,17 +259,40 @@ def translate_connection(node, namespace, ctx):
         if isinstance(source, Outchannel):
             if hash_pattern is not None:
                 hash_pattern = access_hash_pattern(hash_pattern, source.subpath)
-        intermediate = core_cell("mixed", hash_pattern=hash_pattern)
+                if hash_pattern == "#":
+                    hash_pattern = None
+        if hash_pattern == "##":
+            intermediate = core_cell("bytes")
+        else:
+            intermediate = core_cell("mixed", hash_pattern=hash_pattern)
         setattr(ctx, con_name, intermediate)
         source.connect(intermediate)
         intermediate.connect(target)
 
+    if isinstance(source, DeepCellConnector) and isinstance(target, DeepCellConnector):
+        do_connect(
+            source.deep_structure.outchannels[()],
+            target.deep_structure.inchannels[()],
+        )
+        do_connect(
+            source.keyorder,
+            target.keyorder
+        )
+    else:
+        if isinstance(source, DeepCellConnector):
+            source = source.deep_structure
+        if isinstance(target, DeepCellConnector):
+            target = target.deep_structure
+        if isinstance(source, StructuredCell):
+            source = source.outchannels[()]
+        if isinstance(target, StructuredCell):
+            target = target.inchannels[()]
 
-    if not isinstance(source, (Worker, PinBase, Outchannel, Cell)):
-        raise TypeError(source)
-    if not isinstance(target, (Worker, PinBase, Inchannel, Cell)):
-        raise TypeError(target)
-    do_connect(source, target)
+        if not isinstance(source, (Worker, PinBase, Outchannel, Cell)):
+            raise TypeError(source)
+        if not isinstance(target, (Worker, PinBase, Inchannel, Cell)):
+            raise TypeError(target)
+        do_connect(source, target)
 
 def translate_link(node, namespace, ctx):
     first = get_path_link(
@@ -346,9 +403,15 @@ def translate(graph, ctx, environment):
                 raise NotImplementedError(node["language"])
             inchannels, outchannels = find_channels(node["path"], connection_paths)
             translate_macro(node, ctx, namespace, inchannels, outchannels)
-        elif t == "cell":
+        elif t in ("cell", "foldercell"):
             inchannels, outchannels = find_channels(path, connection_paths)
             translate_cell(node, ctx, namespace, inchannels, outchannels)
+        elif t == "deepcell":
+            inchannels, outchannels = find_channels(path, connection_paths)
+            translate_deepcell(node, ctx, namespace, inchannels, outchannels)
+        elif t == "deepfoldercell":
+            inchannels, outchannels = find_channels(path, connection_paths)
+            translate_deepfoldercell(node, ctx, namespace, inchannels, outchannels)
         elif t == "module":
             inchannels, outchannels = find_channels(path, connection_paths)
             translate_module(node, ctx, namespace, inchannels, outchannels)
@@ -377,9 +440,11 @@ def translate(graph, ctx, environment):
 from .translate_py_transformer import translate_py_transformer
 from .translate_macro import translate_macro
 from .translate_module import translate_module
+from .translate_deep import translate_deepcell, translate_deepfoldercell
 '''
 # imported only at need...
 from .translate_bash_transformer import translate_bash_transformer
 from .translate_compiled_transformer import translate_compiled_transformer
 '''
 from ..core.protocol.deep_structure import apply_hash_pattern_sync, access_hash_pattern
+from ..util import as_tuple

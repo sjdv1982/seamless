@@ -26,7 +26,7 @@ default_pin = {
   
 }
 
-def new_transformer(ctx, path, code, pins, hash_pattern):
+def new_transformer(ctx, path, code, pins, hash_pattern={"*": "#"}):
     if pins is None:
         pins = []
     if isinstance(pins, (list, tuple)):
@@ -63,9 +63,10 @@ class Transformer(Base, HelpMixin):
     _temp_pins = None
     def __init__(self, *, parent=None, path=None, code=None, pins=None, hash_pattern={"*": "#"}):
         from ..metalevel.debugmode import DebugMode
+        pins = deepcopy(pins)
         assert (parent is None) == (path is None)
         if parent is not None:
-            self._init(parent, path, code, pins)
+            self._init(parent, path, code, pins, hash_pattern)
         else:
             self._temp_code = code
             self._temp_pins = pins
@@ -85,11 +86,11 @@ class Transformer(Base, HelpMixin):
             assert pins is None
             assert hash_pattern == {"*": "#"}
             node = self._get_htf()
-        except:
+        except Exception:
             node = None
         self._environment = Environment(self)
         if node is None:
-            htf = new_transformer(parent, path, code, pins, hash_pattern)
+            new_transformer(parent, path, code, pins)
         elif "environment" in node:
             self._environment._load(node["environment"])
         self._temp_code = None
@@ -223,21 +224,6 @@ You can set this dictionary directly, or you may assign .meta to a cell
             tf.tf.executor.clear_exception()
         else:
             tf.tf.clear_exception()
-
-    @property
-    def hash_pattern(self):
-        htf = self._get_htf()
-        return htf.get("hash_pattern")
-
-    @hash_pattern.setter
-    def hash_pattern(self, value):
-        from ..core.protocol.deep_structure import validate_hash_pattern
-        validate_hash_pattern(value)
-        htf = self._get_htf()
-        htf["hash_pattern"] = value
-        htf.pop("checksum", None)
-        self._get_htf()["UNTRANSLATED"] = True
-        self._parent()._translate()
 
     @property
     def language(self):
@@ -664,6 +650,8 @@ You can set this dictionary directly, or you may assign .meta to a cell
         for k in attrs:
             if k == "code":
                 curr_exc = tf0.exception
+                if curr_exc is None:
+                    curr_exc = tf0.code.exception
             elif k is PlaceHolder:
                 k = "input pins"
                 exc2 = {}
@@ -709,6 +697,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
                 exc += "*** " + k + " ***\n"
                 exc += str(curr_exc).strip("\n") + "\n" 
                 exc += "*** /" + k + " ***\n"
+            curr_exc = None
         if not len(exc):
             return None
         return exc
@@ -865,7 +854,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         elif attr == htf["INPUT"]:
             getter = self._inputgetter
             dirs = [
-              "value", "buffered", "data", "checksum",
+              "value", "buffered", "_data", "checksum",
               "schema", "example", "status", "exception",
               "add_validator", "handle"
             ] + list(htf["pins"].keys())
@@ -879,7 +868,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         elif attr == htf["RESULT"]:
             getter = self._resultgetter
             dirs = [
-              "value", "buffered", "data", "checksum",
+              "value", "buffered", "_data", "checksum",
               "schema", "example", "exception",
               "add_validator"
             ]
@@ -1010,7 +999,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
             tf = self._get_tf(force=True)
             inputcell = getattr(tf, htf["INPUT"])
             return inputcell.value
-        elif attr == "data":
+        elif attr == "_data":
             return inputcell.data
         elif attr == "buffered":
             return inputcell.buffer.value
@@ -1042,7 +1031,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
 
     def _inputsetter(self, attr, value):
         if attr in (
-          "value", "data", "buffered",
+          "value", "_data", "buffered",
           "checksum", "handle", "schema",
           "example", "status", "exception",
           "add_validator"
@@ -1087,7 +1076,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
             raise Exception("Result cells cannot be mounted")
         if attr == "value":
             return resultcell.value
-        elif attr == "data":
+        elif attr == "_data":
             return resultcell.data
         elif attr == "buffered":
             return resultcell.buffer.value

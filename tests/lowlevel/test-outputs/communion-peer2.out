@@ -1,6 +1,6 @@
 INCOMING Peer2 Peer1
 ADD SERVANT buffer
-ADD SERVANT buffer_length
+ADD SERVANT buffer_info
 ADD SERVANT semantic_to_syntactic
 ADD SERVANT transformation
 Secret source code f71eba57962891040561f1379572d97d6eb29ee7be4f95aac01e3ba697d74010

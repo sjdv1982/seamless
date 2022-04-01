@@ -2,7 +2,15 @@ import requests
 import numpy as np
 import json
 
+from ..buffer_info import BufferInfo
+
 session = requests.Session()
+
+# TODO: make all set_X requests non-blocking, 
+# by adding them into a queue and processing them 
+#  in a different thread.
+# (and have a set_X(key, value1) in the queue 
+# superseded by a subsequent set_X(key, value2) request)
 
 class DatabaseBase:
     active = False
@@ -104,11 +112,11 @@ class DatabaseSink(DatabaseBase):
         }
         self.send_request(request)
 
-    def set_buffer_length(self, checksum, length):
+    def set_buffer_info(self, checksum, buffer_info:BufferInfo):
         request = {
-            "type": "buffer length",
+            "type": "buffer info",
             "checksum": checksum.hex(),
-            "value": length,
+            "value": buffer_info.as_dict(),
         }
         self.send_request(request)
 
@@ -168,18 +176,18 @@ class DatabaseCache(DatabaseBase):
         response = self.send_request(request)
         if response is not None:
             result = response.content
-            verify_checksum = get_hash(result)
+            verify_checksum = calculate_checksum(result)
             assert checksum == verify_checksum, "Database corruption!!! Checksum {}".format(checksum.hex())
             return result
 
-    def get_buffer_length(self, checksum):
+    def get_buffer_info(self, checksum) -> BufferInfo:
         request = {
-            "type": "buffer length",
+            "type": "buffer info",
             "checksum": checksum.hex(),
         }
         response = self.send_request(request)
         if response is not None:
-            return int(response.json())
+            return BufferInfo(checksum, response.json())
 
     def get_compile_result(self, checksum):
         request = {
@@ -195,4 +203,4 @@ database_sink = DatabaseSink()
 database_cache = DatabaseCache()
 
 from silk.mixed.io.serialization import serialize
-from ...get_hash import get_hash
+from ...calculate_checksum import calculate_checksum

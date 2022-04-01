@@ -174,10 +174,10 @@ ctx.result.hash_pattern = {"!": "#"}
 ctx.compute()
 #ctx.result.schema.storage = "pure-plain" # bad idea... validation forces full value construction
 
-print(ctx.data_a.data)
+print(ctx.data_a._data)
 print(ctx.data_a.handle[0].value[:10])
 print(ctx.data_b.handle[0].value[:10])
-print(ctx.data_b.data)
+print(ctx.data_b._data)
 import time; time.sleep(1); print(); print()
 
 ctx.include(mylib.map_list_N)
@@ -190,4 +190,4 @@ ctx.inst = ctx.lib.map_list_N(
 ctx.compute()
 
 print("Exception:", ctx.inst.ctx.m.exception)
-print(ctx.result.data)
+print(ctx.result._data)

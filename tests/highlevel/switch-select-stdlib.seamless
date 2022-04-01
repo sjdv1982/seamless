@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.7",
+  "__seamless__": "0.8",
   "connections": [
     {
       "source": [
@@ -92,15 +92,16 @@
   "lib": [
     {
       "api": "pyseamless",
-      "constructor": "def constructor_join(ctx, libctx, celltype, inputs, selected, output):\n    ctx.output = Cell(celltype)\n    output.connect_from(ctx.output)\n    ctx.selected = Cell(\"str\")\n    selected.connect(ctx.selected)\n\n    macro_pins = {\n        \"celltype\": {\n            \"io\": \"parameter\", \n            \"celltype\": \"str\",\n        },\n        \"output\": {\n            \"io\": \"output\", \n            \"celltype\": celltype,\n        },\n        \"selected\": {\n            \"io\": \"parameter\", \n            \"celltype\": \"str\",\n        },\n        \"options\": {\n            \"io\": \"parameter\", \n            \"celltype\": \"plain\",\n        }\n    }\n\n    \"\"\"\n    Create one macro input pin per cell in the inputs dict\n    This will populate the ctx passed to join_func with input cells\n     that can be connected to\n    \"\"\"\n    options = []\n    for input_name in inputs:\n        assert isinstance(input_name, str), input_name\n        if input_name in macro_pins or input_name == \"join_macro\":\n            msg = \"You cannot join from a cell under the selector '{}'\"\n            raise Exception(msg.format(input_name))\n        options.append(input_name)\n        pin = {\n            \"io\": \"input\",\n            \"celltype\": celltype\n        }\n        macro_pins[input_name] = pin\n    ctx.join_macro = Macro(pins=macro_pins)\n    ctx.join_macro.code = libctx.join_code.value\n    ctx.join_macro.celltype = celltype\n    ctx.join_macro.selected = ctx.selected\n    ctx.join_macro.options = options\n\n    for input_name in inputs:\n        input_cell = Cell(celltype)\n        setattr(ctx, input_name, input_cell)\n        setattr(ctx.join_macro, input_name, input_cell)\n        inputs[input_name].connect(input_cell)\n    ctx.output = ctx.join_macro.output",
+      "constructor": "def constructor_select(ctx, libctx, celltype, input, inputs, selected, output):\n    if input is None and inputs is None:\n        raise TypeError(\"You must define 'input' or 'inputs'\")\n    if input is not None and inputs is not None:\n        raise TypeError(\"You must define 'input' or 'inputs', not both\")\n    ctx.output = Cell(celltype)\n    output.connect_from(ctx.output)\n    ctx.selected = Cell(\"str\")\n    selected.connect(ctx.selected)\n\n    # Version 1: a celldict of input cells\n    if inputs is not None: \n        \"\"\"\n        Create one macro input pin per cell in the inputs dict\n        This will populate the ctx passed to select_func with input cells\n        that can be connected to\n        \"\"\"\n        macro1_pins = {\n            \"celltype\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"str\",\n            },\n            \"output\": {\n                \"io\": \"output\", \n                \"celltype\": celltype,\n            },\n            \"selected\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"str\",\n            },\n            \"options\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"plain\",\n            }\n        }\n\n        options = []\n        for input_name in inputs:\n            assert isinstance(input_name, str), input_name\n            if input_name in macro1_pins or input_name == \"select_macro1\":\n                msg = \"You cannot select from a cell under the selector '{}'\"\n                raise Exception(msg.format(input_name))\n            options.append(input_name)\n            pin = {\n                \"io\": \"input\",\n                \"celltype\": celltype\n            }\n            macro1_pins[input_name] = pin\n        ctx.select_macro1 = Macro(pins=macro1_pins)\n        ctx.select_macro1.code = libctx.select_code1.value\n        ctx.select_macro1.celltype = celltype\n        ctx.select_macro1.selected = ctx.selected\n        ctx.select_macro1.options = options\n\n        for input_name in inputs:\n            input_cell = Cell(celltype)\n            setattr(ctx, input_name, input_cell)\n            setattr(ctx.select_macro1, input_name, input_cell)\n            inputs[input_name].connect(input_cell)\n\n        ctx.output = ctx.select_macro1.output\n    else:\n        # Version 2: a structured input cell\n        macro2_pins = {\n            \"celltype\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"str\",\n            },\n            \"output\": {\n                \"io\": \"output\", \n                \"celltype\": celltype,\n            },\n            \"input_hash_pattern\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"plain\",\n            },\n            \"input_value\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"plain\",\n            },\n            \"selected\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"str\",\n            }\n        }\n\n        if input.celltype != \"structured\":\n            raise TypeError(\"'input' must be a structured cell\")\n\n        ctx.select_macro2 = Macro(pins=macro2_pins)\n        ctx.select_macro2.code = libctx.select_code2.value\n        ctx.select_macro2.celltype = celltype\n        ctx.input = Cell()        \n        input.connect(ctx.input)\n        if input.hash_pattern is None:\n            ctx.select_macro2.input_value = ctx.input\n            ctx.select_macro2.input_hash_pattern = \"\"  # macro params must be defined!\n        else:\n            ctx.input.hash_pattern = input.hash_pattern\n            ctx.input_checksum = Cell(\"checksum\")\n            ctx.input_checksum = ctx.input\n            ctx.input_deep = Cell(\"plain\")\n            ctx.input_deep = ctx.input_checksum\n            ctx.select_macro2.input_value = ctx.input_deep\n            ctx.select_macro2.input_hash_pattern = input.hash_pattern[\"*\"]\n        ctx.select_macro2.selected = ctx.selected\n\n        ctx.output = ctx.select_macro2.output",
       "graph": {
+        "__seamless__": "0.7",
         "connections": [],
         "lib": [],
         "nodes": [
           {
             "celltype": "code",
             "checksum": {
-              "value": "6d60ff18a465a9ad8c899d3cd6259f0b63c67c1415111e2db0395d74aeada246"
+              "value": "218a46eb557c7b7a1568a4a0b4bd0413134fa93b5a08f2d3185dbccef2b35c0b"
             },
             "datatype": "mixed",
             "language": "python",
@@ -112,10 +113,10 @@
           {
             "celltype": "structured",
             "checksum": {
-              "auth": "4fa6b5218d20565a020a7697f93a9b61acb0a030a4c2dcfac24a62d3213fedec",
-              "buffer": "4fa6b5218d20565a020a7697f93a9b61acb0a030a4c2dcfac24a62d3213fedec",
+              "auth": "d21c1e13d479e4510e33420fbb7fdf872afafb49f2890ef931f330898c33d4e2",
+              "buffer": "d21c1e13d479e4510e33420fbb7fdf872afafb49f2890ef931f330898c33d4e2",
               "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-              "value": "4fa6b5218d20565a020a7697f93a9b61acb0a030a4c2dcfac24a62d3213fedec"
+              "value": "d21c1e13d479e4510e33420fbb7fdf872afafb49f2890ef931f330898c33d4e2"
             },
             "datatype": "mixed",
             "hash_pattern": null,
@@ -127,12 +128,24 @@
           {
             "celltype": "code",
             "checksum": {
-              "value": "52fddca8d60d15107e0147a11168670bda3f21bb7502a740fbd0137ee06885bc"
+              "value": "006a307ffa96fd14b48139d22eaaf19c4233b0f1667f82586c062024cbe0e730"
             },
             "datatype": "mixed",
             "language": "python",
             "path": [
-              "join_code"
+              "select_code1"
+            ],
+            "type": "cell"
+          },
+          {
+            "celltype": "code",
+            "checksum": {
+              "value": "b5d5368e7a41f086fcd85197ccfbc04b67ee53f0cd84304df8980720f542d724"
+            },
+            "datatype": "mixed",
+            "language": "python",
+            "path": [
+              "select_code2"
             ],
             "type": "cell"
           }
@@ -148,9 +161,16 @@
           "io": "input",
           "type": "value"
         },
+        "input": {
+          "default": null,
+          "io": "input",
+          "must_be_defined": false,
+          "type": "cell"
+        },
         "inputs": {
           "default": null,
           "io": "input",
+          "must_be_defined": false,
           "type": "celldict"
         },
         "output": {
@@ -165,13 +185,14 @@
         }
       },
       "path": [
-        "join"
+        "select"
       ]
     },
     {
       "api": "pyseamless",
       "constructor": "def constructor_switch(ctx, libctx, celltype, input, selected, outputs):\n    ctx.input = Cell(celltype)\n    input.connect(ctx.input)\n    ctx.selected = Cell(\"str\")\n    selected.connect(ctx.selected)\n\n    macro_pins = {\n        \"celltype\": {\n            \"io\": \"parameter\", \n            \"celltype\": \"str\",\n        },\n        \"input\": {\n            \"io\": \"input\", \n            \"celltype\": celltype,\n        },\n        \"selected\": {\n            \"io\": \"parameter\", \n            \"celltype\": \"str\",\n        },\n        \"options\": {\n            \"io\": \"parameter\", \n            \"celltype\": \"plain\",\n        }\n    }\n\n    \"\"\"\n    Create one macro output pin per cell in the outputs dict\n    This will populate the ctx passed to switch_func with output cells\n     that can be connected to\n    \"\"\"\n    options = []\n    for output_name in outputs:\n        assert isinstance(output_name, str), output_name\n        if output_name in macro_pins or output_name == \"switch_macro\":\n            msg = \"You cannot switch to a cell under the selector '{}'\"\n            raise Exception(msg.format(output_name))\n        options.append(output_name)\n        pin = {\n            \"io\": \"output\",\n            \"celltype\": celltype\n        }\n        macro_pins[output_name] = pin\n    ctx.switch_macro = Macro(pins=macro_pins)\n    ctx.switch_macro.code = libctx.switch_code.value\n    ctx.switch_macro.celltype = celltype\n    ctx.switch_macro.input = ctx.input\n    ctx.switch_macro.selected = ctx.selected\n    ctx.switch_macro.options = options\n\n    for output_name in outputs:\n        macro_pin = getattr(ctx.switch_macro, output_name)\n        output_cell = Cell(celltype)\n        setattr(ctx, output_name, output_cell)\n        setattr(ctx, output_name, macro_pin)\n        outputs[output_name].connect_from(output_cell)",
       "graph": {
+        "__seamless__": "0.7",
         "connections": [],
         "lib": [],
         "nodes": [
@@ -338,35 +359,6 @@
       "type": "cell"
     },
     {
-      "arguments": {
-        "celltype": "float",
-        "inputs": {
-          "path1": [
-            "r1"
-          ],
-          "path2": [
-            "r2"
-          ],
-          "path3": [
-            "r3"
-          ]
-        },
-        "output": [
-          "output"
-        ],
-        "selected": [
-          "selected"
-        ]
-      },
-      "libpath": [
-        "join"
-      ],
-      "path": [
-        "join"
-      ],
-      "type": "libinstance"
-    },
-    {
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
@@ -494,6 +486,35 @@
         "r3"
       ],
       "type": "cell"
+    },
+    {
+      "arguments": {
+        "celltype": "float",
+        "inputs": {
+          "path1": [
+            "r1"
+          ],
+          "path2": [
+            "r2"
+          ],
+          "path3": [
+            "r3"
+          ]
+        },
+        "output": [
+          "output"
+        ],
+        "selected": [
+          "selected"
+        ]
+      },
+      "libpath": [
+        "select"
+      ],
+      "path": [
+        "select"
+      ],
+      "type": "libinstance"
     },
     {
       "celltype": "structured",

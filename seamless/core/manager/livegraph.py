@@ -44,11 +44,12 @@ def destroyer(func):
     return wrapper
 
 async def do_bilink(buffer, checksum, celltype, target_celltype, manager, target_cell):
-    from ..protocol.evaluate import evaluate_from_buffer
-    expression_result_checksum = await evaluate_from_buffer(
-        checksum, buffer,
+    from ..protocol.evaluate import conversion
+    expression_result_checksum = await conversion(
+        checksum,
         celltype, target_celltype,
-        fingertip_mode=False
+        fingertip_mode=False,
+        buffer=buffer
     )
     manager.set_cell_checksum(
         target_cell, expression_result_checksum,
@@ -860,7 +861,7 @@ class LiveGraph:
                 elision = self.cell_from_macro_elision[cell]
                 elision.destroy()
 
-            self.temp_independence[cell] = cell.has_independence()
+            self.temp_independence[cell] = cell.has_independence(manager=manager)
             up_accessor = self.cell_to_upstream[cell]
             if up_accessor is not None:
                 self.destroy_accessor(manager, up_accessor)
@@ -990,5 +991,4 @@ from ..worker import EditPin
 from ..runtime_reactor import RuntimeReactor
 from .tasks.upon_connection import UponBiLinkTask
 from .cancel import get_scell_state, scell_any_pending
-from ..protocol.calculate_checksum import calculate_checksum_sync
-from ..protocol.serialize import serialize_sync
+

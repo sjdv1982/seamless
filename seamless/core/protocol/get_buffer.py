@@ -1,11 +1,12 @@
 import asyncio
 import traceback
+import os
 
 DEBUG = True
 REMOTE_TIMEOUT = 5.0
 
-async def get_buffer_length_remote(checksum, remote_peer_id):
-    clients = communion_client_manager.clients["buffer_length"]
+async def get_buffer_info_remote(checksum, remote_peer_id):
+    clients = communion_client_manager.clients["buffer_info"]
     coros = []
     for client in clients:
         client_peer_id = client.get_peer_id()
@@ -30,10 +31,10 @@ async def get_buffer_length_remote(checksum, remote_peer_id):
                         except:
                             traceback.print_exc()
                     continue
-                length = fut.result()
-                if length is None:
+                buffer_info = fut.result()
+                if buffer_info is None:
                     continue
-                return length
+                return buffer_info
         if not len(pending):
             break
     return None
@@ -82,31 +83,68 @@ async def get_buffer_remote(checksum, remote_peer_id):
     if best_client is not None:
         buffer = await clients[best_client].submit(checksum)
         if buffer is None:
-            raise CacheMissError(checksum.hex())
+            return None
         assert isinstance(buffer, bytes), buffer
         return buffer
 
 
-def get_buffer(checksum):
-    """  Gets the buffer from its checksum
-- Check for a local checksum-to-buffer cache hit (synchronous)
-- Else, check database cache
-- Else, check transformation cache (if it hits, make buffer of it)
-- Else, await remote checksum-to-buffer cache
-- Else, the checksum will be fingertipped (if enabled)
-- If successful, add the buffer to local and/or database cache (with a tempref or a permanent ref).
-- If all fails, raise CacheMissError
+def get_buffer(checksum, remote, _done=None, deep=False):
+    """  Gets the buffer from its checksum.
+What is tried:
+- buffer cache ("remote" and "deep" are passed to it)
+- transformation cache
+- Conversion using buffer_info
+
+Since it is synchronous, it doesn't try everything possible to obtain it.
+- Only the remote facilities from buffer cache are used 
+  (i.e. database, fairserver and buffer server), 
+- Communion server is not used, as it is asynchronous.
+- No recomputation from transformation/expression is attempted 
+  (use fingertip for that).
+
+If successful, add the buffer to local and/or database cache (with a tempref or a permanent ref).
+Else, return None
 """
+    from ...util import parse_checksum    
+    from ..convert import try_convert_single
+    checksum = parse_checksum(checksum, True)
     if checksum is None:
         return None
-    buffer = buffer_cache.get_buffer(checksum)
+    if _done is not None and checksum in _done:
+        return None
+    buffer = buffer_cache.get_buffer(checksum, remote=remote, deep=deep)
     if buffer is not None:
         return buffer
     transformation = transformation_cache.transformations.get(checksum)
     if transformation is not None:
         buffer = tf_get_buffer(transformation)
         return buffer
-    raise CacheMissError(checksum.hex())
+    
+    buffer_info = buffer_cache.get_buffer_info(checksum)
+    if buffer_info is not None:
+        d = buffer_info.as_dict()
+        for k in d:
+            if k.find("2") == -1:
+                continue
+            src, target = k.split("2")
+            if _done is None:
+                _done = set()
+                _done.add(checksum)
+            target_buf = get_buffer(bytes.fromhex(d[k]), remote=remote, _done=_done)
+            if target_buf is not None:
+                try:
+                    try_convert_single(
+                        bytes.fromhex(d[k]),
+                        target, src,
+                        buffer=target_buf,
+                    )
+                except Exception:
+                    pass
+                buffer = buffer_cache.get_buffer(checksum, remote=remote)
+                if buffer is not None:
+                    return buffer
+
+    return None
 
 
 

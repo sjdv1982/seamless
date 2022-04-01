@@ -106,7 +106,7 @@ class StaticContext:
                 child = path[0]
             if child not in result:
                 result.append(child)
-        return result
+        return sorted(result)
 
     @property
     def children(self):
@@ -185,7 +185,7 @@ class SimpleCellWrapper(WrapperBase):
         if checksum is None:
             return None
         checksum = bytes.fromhex(checksum)
-        return get_buffer(checksum)
+        return get_buffer(checksum, remote=True,deep=True)
 
     @property
     def value(self):

@@ -142,25 +142,8 @@ def main(ctx, inp_prefix, graph, map_list_N_code, **inp):
         for subr,c in subresults.items():
             c.connect(getattr(tf, subr))
 
-        ctx.all_subresults = cell("plain")
-        tf.result.connect(ctx.all_subresults)
-
-        # ctx.all_subresults has the correct checksum, but there is no valid conversion
-        #  (because it is unsafe).
-        # Use a macro to do it
-
-        ctx.get_result = macro({
-            "result_checksum": {"io": "input", "celltype": "checksum"}
-        })
-        def get_result(ctx, result_checksum):
-            ctx.result = cell("mixed", hash_pattern={"!": "#"})
-            ctx.result.set_checksum(result_checksum)
-
-        ctx.get_result.code.cell().set(get_result)
-        ctx.all_subresults.connect(ctx.get_result.result_checksum)
-        p = path(ctx.get_result.ctx).result
         ctx.result = cell("mixed", hash_pattern={"!": "#"})
-        p.connect(ctx.result)
+        tf.result.connect(ctx.result)
 
     else:
         macro_code_lib.map_list_N(ctx, inp_prefix, graph, inp)
@@ -186,6 +169,7 @@ def constructor(ctx, libctx, context_graph, inp, result):
         ctx.cs_inp[key] = Cell("checksum")
         ctx.cs_inp[key] = ctx.inp[key]
         setattr(m, inp_prefix + key , ctx.cs_inp[key])
+        getattr(m.pins, inp_prefix + key).celltype = "checksum"
 
     macro_code_lib_code = libctx.map_list_N.value
     macro_code_lib = {
@@ -293,6 +277,7 @@ print(ctx.inst.ctx.m.ctx.m1.ctx.result.value)
 print(ctx.inst.ctx.m.ctx.subresult1.value)
 print(ctx.inst.ctx.m.ctx.m2.ctx.result.value)
 print(ctx.inst.ctx.m.ctx.subresult2.value)
+print(ctx.inst.ctx.m.ctx.merge_subresults.result.cell().buffer)
 print(ctx.inst.ctx.m.ctx.merge_subresults.result.cell().value)
 print(ctx.inst.ctx.m.ctx.result.value)
 
@@ -306,5 +291,6 @@ print(ctx.inst.ctx.m.ctx.m1.ctx.result.value)
 print(ctx.inst.ctx.m.ctx.subresult1.value)
 print(ctx.inst.ctx.m.ctx.m2.ctx.result.value)
 print(ctx.inst.ctx.m.ctx.subresult2.value)
+print(ctx.inst.ctx.m.ctx.merge_subresults.result.cell().buffer)
 print(ctx.inst.ctx.m.ctx.merge_subresults.result.cell().value)
 print(ctx.inst.ctx.m.ctx.result.value)

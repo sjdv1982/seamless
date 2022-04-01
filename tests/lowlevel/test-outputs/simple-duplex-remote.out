@@ -1,6 +1,6 @@
 INCOMING simple-duplex-remote jobslave
 ADD SERVANT buffer
-ADD SERVANT buffer_length
+ADD SERVANT buffer_info
 ADD SERVANT semantic_to_syntactic
 ADD SERVANT transformation
 TF        Status: executing, 10.0 %
@@ -56,9 +56,9 @@ TF DUPLEX Status: executing, 20.0 %
 RESULT        0.300 Status: preliminary
 RESULT DUPLEX 0.300 Status: preliminary
 
-TF        Status: executing, 20.0 %
-TF DUPLEX Status: executing, 20.0 %
-RESULT        0.300 Status: preliminary
+TF        Status: executing, 30.0 %
+TF DUPLEX Status: executing, 30.0 %
+RESULT        0.900 Status: preliminary
 RESULT DUPLEX 0.900 Status: preliminary
 
 TF        Status: executing, 30.0 %

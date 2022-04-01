@@ -53,6 +53,8 @@ class CellWrapper:
     @property
     def celltype(self):
         hcell = self._node
+        if hcell["type"] in ("deepcell", "deepfoldercell"):
+            return "structured"
         return hcell["celltype"]
 
     @property
@@ -61,7 +63,7 @@ class CellWrapper:
         mimetype = hcell.get("mimetype")
         if mimetype is not None:
             return mimetype
-        celltype = hcell["celltype"]
+        celltype = self.celltype
         if celltype == "code":
             language = hcell["language"]
             mimetype = language_to_mime(language)
@@ -79,21 +81,25 @@ class CellWrapper:
     @property
     def datatype(self):
         hcell = self._node
-        celltype = hcell["celltype"]
+        celltype = self.celltype
         assert celltype == "structured"
         return hcell["datatype"]
 
     @property
     def language(self):
         hcell = self._node
-        celltype = hcell["celltype"]
+        celltype = self.celltype
         if celltype != "code":
             raise AttributeError
 
     @property
     def hash_pattern(self):
         hcell = self._node
-        celltype = hcell["celltype"]
+        if hcell["type"] == "deepcell":
+            return {"*": "#"}
+        elif hcell["type"] == "deepfoldercell":
+            return {"*": "##"}
+        celltype = self.celltype
         assert celltype in ("structured", "mixed")
         return hcell["hash_pattern"]
 
@@ -153,6 +159,8 @@ class OutputCellWrapper(CellWrapper):
         assert value in celltypes, value
         hcell = self._node
         self.clear()
+        if hcell["type"] in ("deepcell", "deepfoldercell"):
+            raise AttributeError
         hcell["celltype"] = value
         if value in ("structured", "mixed"):
             if "hash_pattern" not in hcell:
@@ -178,7 +186,7 @@ class OutputCellWrapper(CellWrapper):
     @CellWrapper.datatype.setter
     def datatype(self, value):
         hcell = self._node
-        celltype = hcell["celltype"]
+        celltype = self.celltype
         assert celltype == "structured"
         hcell["datatype"] = value
 
@@ -187,8 +195,10 @@ class OutputCellWrapper(CellWrapper):
         from ...core.protocol.deep_structure import validate_hash_pattern
         validate_hash_pattern(value)
         hcell = self._node
-        celltype = hcell["celltype"]
+        celltype = self.celltype
         assert celltype in ("structured", "mixed")
+        if hcell["type"] in ("deepcell", "deepfoldercell"):        
+            raise AttributeError
         hcell["hash_pattern"] = value
         hcell.pop("checksum", None)
 

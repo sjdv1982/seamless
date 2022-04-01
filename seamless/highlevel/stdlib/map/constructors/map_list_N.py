@@ -12,7 +12,8 @@ def constructor(
 
     ctx.inp1 = Context()
     ctx.inp2 = Context()
-    ctx.inp3 = Cell()
+    ctx.inp3 = Context()
+    ctx.inp4 = Cell()
 
     m.elision_ = elision
     m.pins.elision_.celltype = "bool"
@@ -26,9 +27,11 @@ def constructor(
         inp[var].connect(c)
         ctx.inp2[var] = Cell("checksum")
         ctx.inp2[var] = ctx.inp1[var]
+        ctx.inp3[var] = Cell("plain")
         ctx.inp3[var] = ctx.inp2[var]
-    m.inp = ctx.inp3
-    m.pins.inp.celltype = "plain"
+        ctx.inp4[var] = ctx.inp3[var]
+    m.inp = ctx.inp4
+    m.pins.inp.celltype = "checksum"
 
     if uniform is not None:
         c = ctx.uniform = Cell("mixed")

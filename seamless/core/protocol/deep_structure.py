@@ -1,32 +1,36 @@
 import asyncio
 from copy import deepcopy
+import numpy as np
+from io import BytesIO
+from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 
 class DeepStructureError(ValueError):
     def __str__(self):
+        val = str(self.args[1])
+        if len(val) > 300:
+            val = val[:220] + "..." + val[-50:]
         return """
   Invalid deep structure: %s
-  Hash pattern: %s""" % (self.args[1], self.args[0])
+  Hash pattern: %s""" % (val, self.args[0])
 
+_supported_hash_patterns = "#", {"*": "#"}, {"!": "#"}, "##", {"*": "##"}
 def validate_hash_pattern(hash_pattern):
     assert hash_pattern is not None
-    if hash_pattern == "#":
-        return
-    if not isinstance(hash_pattern, dict):
-        raise TypeError
     ###  To support complicated hash patterns, code must be changed in other places as well
-    ###  In particular: the Expression class and Accessor update tasks
-    supported_hash_patterns = "#", {"*": "#"}, {"!": "#"}
-    if hash_pattern not in supported_hash_patterns:
+    ###  In particular: the Expression class and Accessor update tasks    
+    if hash_pattern not in _supported_hash_patterns:
         err = """For now, Seamless supports only the following hash patterns:
 
   {}
 
 Hash pattern {} is not supported.
 """
-        sup = "\n  ".join([str(p) for p in supported_hash_patterns])
+        sup = "\n  ".join([str(p) for p in _supported_hash_patterns])
         raise NotImplementedError(err.format(sup, hash_pattern))
     ###
 
+    if isinstance(hash_pattern, str):
+        return
     for key, value in hash_pattern.items():
         if not isinstance(key, str):
             raise TypeError((key, type(key)))
@@ -38,7 +42,7 @@ def validate_deep_structure(deep_structure, hash_pattern):
         validate_hash_pattern(hash_pattern)
         if deep_structure is None:
             return
-        if hash_pattern == "#":
+        if hash_pattern in ("#", "##"):
             try:
                 bytes.fromhex(deep_structure)
             except:
@@ -83,22 +87,26 @@ def validate_deep_structure(deep_structure, hash_pattern):
 
 def access_hash_pattern(hash_pattern, path):
     """Access a hash pattern using path, returning the sub-hash pattern"""
-
-    validate_hash_pattern(hash_pattern)
+    
     ###  To support complicated hash patterns, code must be changed in other places as well
     ###  In particular: the Expression class and Accessor update tasks
     ###
     if hash_pattern is None:
-        if not len(path):
-            return "#"
+        if path is None or not len(path):
+            return hash_pattern
         return None
-    if path is None or len(path) == 0:
+
+    validate_hash_pattern(hash_pattern)
+    if path is None or not len(path):
         return hash_pattern
     if len(path) == 1:
-        if hash_pattern == "#":
+        if hash_pattern in ("#", "##"):
             return None
         else:
-            return "#"
+            if "!" in hash_pattern:
+                return access_hash_pattern(hash_pattern["!"], ())
+            else:
+                return access_hash_pattern(hash_pattern["*"], ())
     else:
         return None
     ###
@@ -122,7 +130,7 @@ def access_deep_structure(deep_structure, hash_pattern, path):
 
     if path is not None and not len(path):
         path = None
-    if hash_pattern == "#":
+    if hash_pattern in ("#", "##"):
         result = deep_structure
     elif path is None:
         result = deep_structure, hash_pattern
@@ -170,12 +178,16 @@ def access_deep_structure(deep_structure, hash_pattern, path):
     return result, path
 
 
-def _deep_structure_to_checksums(deep_structure, hash_pattern, checksums):
+def _deep_structure_to_checksums(deep_structure, hash_pattern, checksums, with_raw):
     if deep_structure is None:
         return
-    if hash_pattern == "#":
+    if hash_pattern in ("#", "##"):
         checksum = deep_structure
-        checksums.add(checksum)
+        if with_raw:
+            raw = (hash_pattern == "##")
+            checksums.add((checksum, raw))
+        else:
+            checksums.add(checksum)
         return
     single_key = len(hash_pattern)
     has_star = "*" in hash_pattern
@@ -186,7 +198,8 @@ def _deep_structure_to_checksums(deep_structure, hash_pattern, checksums):
             else:
                 sub_hash_pattern = hash_pattern["*"]
             _deep_structure_to_checksums(
-                deep_structure[key], sub_hash_pattern, checksums
+                deep_structure[key], sub_hash_pattern, checksums,
+                with_raw
             )
     else:
         for key in hash_pattern:
@@ -194,19 +207,35 @@ def _deep_structure_to_checksums(deep_structure, hash_pattern, checksums):
                 sub_hash_pattern = hash_pattern[key]
                 for sub_deep_structure in deep_structure:
                     _deep_structure_to_checksums(
-                        sub_deep_structure, sub_hash_pattern, checksums
+                        sub_deep_structure, sub_hash_pattern, checksums,
+                        with_raw
                     )
             else:
                 assert list(deep_structure.keys()) == [key]
                 _deep_structure_to_checksums(
-                    deep_structure[key], hash_pattern[key], checksums
+                    deep_structure[key], hash_pattern[key], checksums,
+                    with_raw
                 )
 
-def deep_structure_to_checksums(deep_structure, hash_pattern):
-    """Collects all checksums that are being referenced in a deep structure"""
+def deep_structure_to_checksums(deep_structure, hash_pattern, with_raw=False):
+    """Collects all checksums that are being referenced in a deep structure"""    
+    from seamless import fair
     validate_deep_structure(deep_structure, hash_pattern)
     checksums = set()
-    _deep_structure_to_checksums(deep_structure, hash_pattern, checksums)
+    _deep_structure_to_checksums(deep_structure, hash_pattern, checksums, with_raw)
+    if hash_pattern in ({"*": "#"}, {"*": "#"}):
+        classification = "mixed_item"
+    elif hash_pattern in ({"*": "##"}, {"*": "##"}):
+        classification = "bytes_item"
+    else:
+        classification = None
+    if classification is not None:
+        for checksum0 in checksums:
+            if with_raw:
+                checksum, _  = checksum0
+            else:
+                checksum = checksum0
+            fair._classify(checksum, classification)
     return checksums
 
 def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):
@@ -219,7 +248,7 @@ def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):
     if deep_structure is None:
         return None
 
-    if hash_pattern == "#":
+    if hash_pattern in ("#", "##"):
         checksum = deep_structure
         value = value_dict[checksum]
         if copy:
@@ -259,16 +288,70 @@ def _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy):
                 result = {key: sub_result}
     return result
 
+def deserialize_raw(buffer):
+    if buffer.startswith(MAGIC_SEAMLESS_MIXED):                                    
+        return np.array(buffer)
+    if buffer.startswith(MAGIC_NUMPY):
+        # From silk.mixed.io.from_stream
+        b = BytesIO(buffer)
+        arr0 = np.load(b, allow_pickle=False)
+        if arr0.ndim == 0 and arr0.dtype.char != "S":
+            arr = np.frombuffer(arr0,arr0.dtype)
+            return arr[0]
+        else:
+            return arr0
+    try:
+        return buffer.decode()
+    except UnicodeDecodeError:
+        return buffer
+
+async def _deserialize_raw_async(buffer):
+    return deserialize_raw(buffer)
+
+def serialize_raw(value, use_cache=True):
+    if isinstance(value, np.ndarray) and value.dtype.char == "S":
+        return value.tobytes()
+    elif isinstance(value, bytes):
+        return value
+    elif isinstance(value, str):
+        return serialize_sync(value, "text", use_cache=use_cache)
+    else:
+        return serialize_sync(value, "mixed", use_cache=use_cache)
+
+async def serialize_raw_async(value, use_cache=True):
+    if isinstance(value, np.ndarray) and value.dtype.char == "S":
+        return value.tobytes()
+    elif isinstance(value, bytes):
+        return value
+    elif isinstance(value, str):
+        return await serialize(value, "text", use_cache=use_cache)
+    else:
+        return await serialize(value, "mixed", use_cache=use_cache)
+
 async def deep_structure_to_value(deep_structure, hash_pattern, buffer_dict, copy):
     """Converts deep structure to a mixed value
     Requires buffer_dict, a checksum-to-buffer cache for all checksums in the deep structure
     Use copy=True for a value that will be modified
+
+    If the deep structure is raw (i.e. uses ##), the buffer
+    will be interpreted differently:
+    - as text value if UTF-8 decoding is possible.
+      The raw buffer can be retrieved with the .encode() method.
+    - as binary (Numpy) value otherwise. 
+      The raw buffer can be retrieved with the .tobytes() method.
     """
-    checksums = deep_structure_to_checksums(deep_structure, hash_pattern)
+    checksums0 = deep_structure_to_checksums(deep_structure, hash_pattern, with_raw=True)
     futures = {}
-    for checksum in checksums:
+    checksums = set()
+    for checksum0 in checksums0:
+        checksum, is_raw  = checksum0
+        checksums.add(checksum)
         assert checksum in buffer_dict
-        coro = deserialize(buffer_dict[checksum], bytes.fromhex(checksum), "mixed", copy=copy)
+        buf = buffer_dict[checksum]
+        if is_raw: 
+            coro = _deserialize_raw_async(buf) 
+        else:
+            coro = deserialize(buf, bytes.fromhex(checksum), "mixed", copy=copy)
         futures[checksum] = asyncio.ensure_future(coro)
     await asyncio.gather(*futures.values())
     value_dict = {checksum:futures[checksum].result() for checksum in checksums}
@@ -289,16 +372,23 @@ def deep_structure_to_value_sync(deep_structure, hash_pattern, buffer_dict, copy
         asyncio.get_event_loop().run_until_complete(fut)
         return fut.result()
 
-    checksums = deep_structure_to_checksums(deep_structure, hash_pattern)
+    checksums0 = deep_structure_to_checksums(deep_structure, hash_pattern)
     value_dict = {}
-    for checksum in checksums:
+    for checksum0 in checksums0:
+        checksum, is_raw  = checksum0
         assert checksum in buffer_dict
-        value = deserialize_sync(buffer_dict[checksum], bytes.fromhex(checksum), "mixed", copy=copy)
+        buf = buffer_dict[checksum]
+        if not is_raw: 
+            value = deserialize_sync(buf, bytes.fromhex(checksum), "mixed", copy=copy)
+        else:
+            value = deserialize_raw(buf) 
         value_dict[checksum] = value
     return _deep_structure_to_value(deep_structure, hash_pattern, value_dict, copy)
 
 def _build_deep_structure(hash_pattern, d, c):
-    if hash_pattern == "#":
+    if d is None:
+        return None
+    if hash_pattern in ("#", "##"):
         obj_id = d
         checksum = c[obj_id]
         return checksum
@@ -339,7 +429,7 @@ def _build_deep_structure(hash_pattern, d, c):
 def _value_to_objects(value, hash_pattern, objects):
     if value is None:
         return
-    if hash_pattern == "#":
+    if hash_pattern in ("#", "##"):
         obj_id = id(value)
         objects[obj_id] = value
         return obj_id
@@ -363,7 +453,7 @@ def _value_to_objects(value, hash_pattern, objects):
             if key.startswith("!"):
                 result = []
                 sub_hash_pattern = hash_pattern[key]
-                assert isinstance(value, list), value
+                assert isinstance(value, (list, np.ndarray)), value
                 for sub_value in value:
                     sub_result = _value_to_objects(
                         sub_value, sub_hash_pattern, objects
@@ -389,17 +479,22 @@ async def value_to_deep_structure(value, hash_pattern):
         raise DeepStructureError(hash_pattern, value) from None
     obj_id_to_checksum = {}
     new_checksums = set()
-    async def conv_obj_id_to_checksum(obj_id):
+    async def conv_obj_id_to_checksum(obj_id, raw):
         obj = objects[obj_id]
-        obj_buffer = await serialize(obj, "mixed")
+        if raw:
+            obj_buffer = await serialize_raw_async(obj)
+        else:
+            obj_buffer = await serialize(obj, "mixed")
         obj_checksum = await calculate_checksum(obj_buffer)
         new_checksums.add(obj_checksum.hex())
         buffer_cache.cache_buffer(obj_checksum, obj_buffer)
         obj_id_to_checksum[obj_id] = obj_checksum.hex()
+        buffer_cache.guarantee_buffer_info(obj_checksum, "mixed")
 
     coros = []
+    raw = (hash_pattern == {"*": "##"})
     for obj_id in objects:
-        coro = conv_obj_id_to_checksum(obj_id)
+        coro = conv_obj_id_to_checksum(obj_id, raw=raw)
         coros.append(coro)
     await asyncio.gather(*coros)
     deep_structure = _build_deep_structure(
@@ -433,6 +528,7 @@ def value_to_deep_structure_sync(value, hash_pattern):
         obj_checksum = calculate_checksum_sync(obj_buffer)
         new_checksums.add(obj_checksum.hex())
         buffer_cache.cache_buffer(obj_checksum, obj_buffer)
+        buffer_cache.guarantee_buffer_info(obj_checksum, "mixed")
         obj_id_to_checksum[obj_id] = obj_checksum.hex()
 
     for obj_id in objects:
@@ -482,7 +578,7 @@ def set_deep_structure(substructure, deep_structure, hash_pattern, path):
             sub_hash_pattern = hash_pattern[attribute]
 
     if len(path) == 1:
-        assert sub_hash_pattern == "#"
+        assert sub_hash_pattern in ("#", "##")
         if not single_key and not has_star and key.startswith("!"):
             old_substructure = deep_structure[chunk]
             deep_structure[chunk] = substructure
@@ -509,11 +605,12 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path):
           => value_to_deep_structure(value, sub_hash_pattern)
         and then invoke set_deep_structure
     If the path is deeper than the structure:
-        (2, p1, x, p2) is returned.
+        (2, p1, x, p2, is_raw) is returned.
         p1 is the sub-path that was accessed until # was encountered
          in the deep structure
         x is the checksum at p1
         p2 is the sub-path that remains (p1 + p2 = path)
+        is_raw indicates if the hash was raw (##) or normal (#)
         The caller is supposed to convert x to a value v1, and checksum to a value v2
          then apply _set_subpath(v1, p2, v2) => compute checksum of modified v1 => c
          and then invoke write_deep_structure(c, deep_structure, hash_pattern, p1)
@@ -524,12 +621,12 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path):
         assert isinstance(checksum, str)
         bytes.fromhex(checksum)
 
-    if hash_pattern == "#":
+    if hash_pattern in ("#", "##"):
         assert len(path)
         old_checksum = deep_structure
         assert isinstance(old_checksum, str)
         bytes.fromhex(old_checksum)
-        return 2, (), old_checksum, path
+        return 2, (), old_checksum, path, (hash_pattern == "##")
 
     validate_deep_structure(deep_structure, hash_pattern)
     assert isinstance(deep_structure, (list, dict)), deep_structure
@@ -571,7 +668,7 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path):
             sub_deep_structure = deep_structure[attribute]
             sub_hash_pattern = hash_pattern[attribute]
 
-    if len(path) == 1 and sub_hash_pattern == "#":
+    if len(path) == 1 and sub_hash_pattern in ("#", "##"):
         attr = path[0]
         if isinstance(attr, int):
             old_checksum = deep_structure[attr]
@@ -586,9 +683,9 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path):
         path[1:]
     )
     if result[0] == 2:
-        _, pre_path, old_checksum, post_path = result
+        _, pre_path, old_checksum, post_path, is_raw = result
         pre_path = pre_path + (path[0],)
-        return 2, pre_path, old_checksum, post_path
+        return 2, pre_path, old_checksum, post_path, is_raw
     else:
         return result
 
@@ -597,14 +694,29 @@ async def apply_hash_pattern(checksum, hash_pattern):
     if hash_pattern == "#":
         return checksum
     else:
-        buffer = get_buffer(checksum)
+        buffer = get_buffer(checksum, remote=True)
+        if hash_pattern == "##":
+            if not buffer.startswith(MAGIC_SEAMLESS_MIXED):                                    
+                if not buffer.startswith(MAGIC_NUMPY):
+                    try:
+                        buffer.decode()
+                    except UnicodeDecodeError:
+                        pass
+                    return checksum
         value = await deserialize(
             buffer, checksum, "mixed", False
         )
-        deep_structure, _ = await value_to_deep_structure(value, hash_pattern)
-        deep_buffer = await serialize(deep_structure, "plain")
+        if hash_pattern == "##":
+            if isinstance(value, np.ndarray) and value.dtype.char == "S":
+                deep_buffer = value.tobytes()
+            else:  # probably a truly mixed Seamless object, or a true Numpy array. Just return the buffer
+                return checksum
+        else:
+            deep_structure, _ = await value_to_deep_structure(value, hash_pattern)
+            deep_buffer = await serialize(deep_structure, "plain")
     deep_checksum = await calculate_checksum(deep_buffer)
     buffer_cache.cache_buffer(deep_checksum, deep_buffer)
+    buffer_cache.guarantee_buffer_info(deep_checksum, "plain")
     return deep_checksum
 
 def apply_hash_pattern_sync(checksum, hash_pattern):
@@ -618,7 +730,7 @@ def apply_hash_pattern_sync(checksum, hash_pattern):
         asyncio.get_event_loop().run_until_complete(fut)
         return fut.result()
 
-    buffer = get_buffer(checksum)
+    buffer = get_buffer(checksum, remote=True)
     value = deserialize_sync(
         buffer, checksum, "mixed", False
     )

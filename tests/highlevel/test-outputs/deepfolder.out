@@ -1,0 +1,37 @@
+Seamless DeepFolderCell: .a
+{'test': '793ff36ccabad02053cc8a387d32939db69cb99f71bb20d294e3082ac46ac043', 'test2': 'aba7aeb8a7948dd0cdb8eeb9239e5d1dab2bd840f13930f86f6e67ba40ea5350'}
+<Silk: {'test': 'value\n', 'test2': '123\n'} >
+Seamless DeepFolderCell: .a
+{'test': '793ff36ccabad02053cc8a387d32939db69cb99f71bb20d294e3082ac46ac043', 'test2': 'aba7aeb8a7948dd0cdb8eeb9239e5d1dab2bd840f13930f86f6e67ba40ea5350', 'test3': '8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad', 'test4': 'f6ce2700aac5f5d5f3bfb4e7e590881056b73a0b14b4f55b747d1d14e6293a32'}
+<Silk: {'test': 'value\n', 'test2': '123\n', 'test3': '20\n', 'test4': 'somebuffer'} >
+aba7aeb8a7948dd0cdb8eeb9239e5d1dab2bd840f13930f86f6e67ba40ea5350 123
+c86f3521eb0acca3a877e264cef6d841e3cd8e774fb2606456d0273919c60eaf
+[]
+7b41ad4a50b29158e075c6463133761266adb475130b8e886f2f5649070031cf
+<Silk: {'test': 'value\n', 'test2': '123\n', 'test3': '20\n', 'test4': 'somebuffer'} >
+
+['test3', 'test2', 'test1']
+9da6c7af954c2554cbf80473f449e7bb8448f89160962aaad39413408a2bc85b
+
+Seamless DeepFolderCell: .a2
+{'test': '793ff36ccabad02053cc8a387d32939db69cb99f71bb20d294e3082ac46ac043', 'test2': 'aba7aeb8a7948dd0cdb8eeb9239e5d1dab2bd840f13930f86f6e67ba40ea5350', 'test3': '8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad', 'test4': 'f6ce2700aac5f5d5f3bfb4e7e590881056b73a0b14b4f55b747d1d14e6293a32'}
+{'test': '793ff36ccabad02053cc8a387d32939db69cb99f71bb20d294e3082ac46ac043', 'test2': 'aba7aeb8a7948dd0cdb8eeb9239e5d1dab2bd840f13930f86f6e67ba40ea5350', 'test3': '8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad', 'test4': 'f6ce2700aac5f5d5f3bfb4e7e590881056b73a0b14b4f55b747d1d14e6293a32'}
+['test3', 'test2', 'test1']
+['test1', 'test2', 'test3']
+b'somebuffer'
+Exception: ERROR: assigning a Cell to a DeepFolderCell
+
+When accessed, Cells have their complete content loaded into memory.
+This is not the case for DeepFolderCells, whose content can be very large in size.
+
+Therefore, the direct assignment of a Cell to a DeepFolderCell is not allowed.
+
+You can instead assign a FolderCell to a DeepFolderCell.
+FolderCells have the same internal memory-efficient representation as DeepFolderCells,
+but they are assumed to be small enough to be mounted to disk.
+
+If you really want to do so, assigning a Cell to a FolderCell is allowed.
+
+
+b'somebuffer'
+None

@@ -1,7 +1,7 @@
 import seamless
 from seamless.core import macro_mode_on
 from seamless.core import context, cell, transformer, unilink
-from seamless import get_hash
+from seamless import calculate_checksum
 
 seamless.set_ncores(0)
 from seamless import communion_server

@@ -35,7 +35,6 @@ OK
 12 25
 300
 VALIDATE 12 25
-VALIDATE 12 25
 {'methods': {'__add__': {'code': 'def adder(self, other):\n'
                                  '    return other + self.x\n',
                          'language': 'python'},
@@ -75,6 +74,7 @@ VALIDATE 12 25
 5
 True True
 True False
+VALIDATE 12 25
 lis
 x
 y
@@ -86,7 +86,6 @@ z
 10
 5
 
-VALIDATE 12 25
 6
 6
 6

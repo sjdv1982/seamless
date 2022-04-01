@@ -174,26 +174,8 @@ def map_list_N_nested(
         tf = ctx.merge_subresults
         for subr,c in subresults.items():
             c.connect(getattr(tf, subr))
-
-        ctx.all_subresults = cell("plain")
-        tf.result.connect(ctx.all_subresults)
-
-        # ctx.all_subresults has the correct checksum, but there is no valid conversion
-        #  (because it is unsafe).
-        # Use a macro to do it
-
-        ctx.get_result = macro({
-            "result_checksum": {"io": "input", "celltype": "checksum"}
-        })
-        get_result = """def get_result(ctx, result_checksum):
-            ctx.result = cell("mixed", hash_pattern={"!": "#"})
-            ctx.result.set_checksum(result_checksum)"""
-        ctx.get_result.code.cell().set(get_result)
-        ctx.all_subresults.connect(ctx.get_result.result_checksum)
-        p = path(ctx.get_result.ctx).result
         ctx.result = cell("mixed", hash_pattern={"!": "#"})
-        p.connect(ctx.result)
-
+        tf.result.connect(ctx.result)
     else:
         macro_code_lib.map_list_N(ctx, inp_prefix, graph, inp)
     return ctx
@@ -236,6 +218,7 @@ def constructor(ctx, libctx, context_graph, inp, result, elision, elision_chunks
         ctx.cs_inp[key] = Cell("checksum")
         ctx.cs_inp[key] = ctx.inp[key]
         setattr(m, inp_prefix + key , ctx.cs_inp[key])
+        getattr(m.pins, inp_prefix + key).celltype = "checksum"
 
     macro_code_lib_code = libctx.map_list_N.value + "\n\n" + libctx.map_list_N_nested.value
     macro_code_lib = {
@@ -374,7 +357,7 @@ ctx.translate(force=True)
 ctx.compute()
 print(ctx.result.value)
 print("START2")
-ctx.data.handle += [{"a": 10, "b": 0}, {"a": 12, "b": -1}, {"a": 14, "b": -2}, {"a": 16, "b": -3}]
+ctx.data.handle.extend([{"a": 10, "b": 0}, {"a": 12, "b": -1}, {"a": 14, "b": -2}, {"a": 16, "b": -3}])
 ctx.compute(2)
 
 print(ctx.result.value)

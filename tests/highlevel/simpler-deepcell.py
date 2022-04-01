@@ -17,7 +17,6 @@ def triple_it_b(a, b):
 
 ctx.transform = triple_it
 ctx.transform.debug.direct_print = True
-ctx.transform.hash_pattern = {"*": "#"}
 ctx.transform.debug.direct_print = True
 ctx.transform.a = 1
 print("START")
@@ -104,4 +103,4 @@ print("TRANSFORMER INPUT STATUS", ctx.transform.inp.status)
 print("TRANSFORMER STATUS", ctx.transform.status)
 
 print(ctx.transform.inp.schema)
-print(ctx.transform.inp.data)
+print(ctx.transform.inp.value)

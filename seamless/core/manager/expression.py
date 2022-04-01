@@ -1,6 +1,6 @@
 import weakref
 import json
-from ...get_hash import get_hash
+from ...calculate_checksum import calculate_checksum
 import numpy as np
 from weakref import WeakValueDictionary
 
@@ -13,6 +13,7 @@ _hash_slots = [
     "_hash_pattern",
     "_target_celltype",
     "_target_subcelltype",
+    "_target_hash_pattern"
 ]
 class Expression:
     __slots__ = [ "__weakref__", "exception"] + _hash_slots
@@ -30,12 +31,20 @@ class Expression:
     def __init__(
         self, checksum, path, celltype,
         target_celltype, target_subcelltype,
-        *, hash_pattern
+        *, hash_pattern, target_hash_pattern
     ):
+        assert checksum is None or isinstance(checksum, bytes)
         if hash_pattern is not None:
             assert celltype == "mixed"
         self._hash_pattern = hash_pattern
+        if target_hash_pattern is not None:
+            assert target_celltype == "mixed"
+        self._target_hash_pattern = target_hash_pattern
         self._checksum = checksum
+        if path is None:
+            path = ()
+        if len(path):
+            assert celltype in ("mixed", "plain", "binary")
         self._path = path
         self._celltype = celltype
         self._target_celltype = target_celltype
@@ -67,22 +76,12 @@ class Expression:
         return self._hash_pattern
 
     @property
+    def target_hash_pattern(self):
+        return self._target_hash_pattern
+
+    @property
     def result_hash_pattern(self):
-        if self.target_celltype != "mixed":
-            return None
-        if self.hash_pattern is not None:
-            validate_hash_pattern(self.hash_pattern)
-        if self.path is None or not len(self.path):
-            return self.hash_pattern
-        ###  Code below will only work for simple hash patterns (see validate_hash_pattern)
-        ###
-        if self.hash_pattern is None:
-            return None
-        if len(self.path) == 1:
-            return '#'
-        elif len(self.path) > 1:
-            return None
-        ###
+        return access_hash_pattern(self.hash_pattern, self.path)
 
     def _hash_dict(self):
         d = {}
@@ -104,6 +103,6 @@ class Expression:
         return str(self)
 
     def _get_hash(self):
-        return get_hash(str(self)+"\n").hex()
+        return calculate_checksum(str(self)+"\n").hex()
 
-from ..protocol.deep_structure import validate_hash_pattern
+from ..protocol.deep_structure import access_hash_pattern

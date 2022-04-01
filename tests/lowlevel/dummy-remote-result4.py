@@ -6,10 +6,10 @@ import asyncio
 import seamless
 import json
 from seamless.core import context, cell, transformer, macro_mode_on
-from seamless import get_hash
+from seamless import calculate_checksum
 
 def h(value):
-    return get_hash(json.dumps(value)+"\n")
+    return calculate_checksum(json.dumps(value)+"\n")
 
 seamless.set_ncores(0)
 

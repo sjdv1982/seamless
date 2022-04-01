@@ -13,26 +13,25 @@ Periodically, conditional_read() and conditional_write() are invoked,
  that check if a read/write is necessary, and if so, invoke _read()/_write()
 """
 import asyncio
-from weakref import WeakValueDictionary, WeakKeyDictionary, WeakSet, ref
+from weakref import WeakKeyDictionary,  ref
 import threading
 from threading import Thread, RLock, Event
-from collections import deque, OrderedDict
+from collections import deque
 from speg.peg import ParseError
 import sys, os
 import time
 import traceback
-from contextlib import contextmanager
 import json
 import functools
 import shutil
 
-from ..get_hash import get_hash
+from ..calculate_checksum import calculate_checksum as calculate_checksum_func
 
 import sys
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
 
-empty_checksums = {get_hash(json.dumps(v)+"\n",hex=True) for v in ("", {}, [])}
+empty_checksums = {calculate_checksum_func(json.dumps(v)+"\n",hex=True) for v in ("", {}, [])}
 
 def adjust_buffer(file_buffer, celltype):
     if celltype not in text_types:
@@ -67,7 +66,7 @@ class MountItem:
     _destroyed = False
     _initialized = False
     def __init__(self, parent, cell, path, mode, authority, persistent, *,
-      dummy=False, as_directory=False, **kwargs
+      dummy=False, as_directory=False, directory_text_only=False, **kwargs
     ):
         if parent is not None:
             self.parent = ref(parent)
@@ -86,8 +85,10 @@ class MountItem:
                 authority = "cell"
         self.authority = authority
         if as_directory:
-            assert cell.celltype == "plain", cell.celltype  # TODO: as_directory mounting of mixed cells
+            assert cell.celltype == "mixed", cell.celltype
+            assert cell._hash_pattern in (None, {"*": "##"}), cell._hash_pattern
         self.as_directory = as_directory
+        self.directory_text_only = directory_text_only
         self.kwargs = kwargs
         self.last_checksum = None
         self.last_mtime = None
@@ -143,7 +144,7 @@ class MountItem:
             if from_cache:
                 cell_buffer = cache_cell_buffer
             else:
-                cell_buffer = buffer_cache.get_buffer(cell_checksum)
+                cell_buffer = get_buffer(cell_checksum, remote=True)
                 if cell_buffer is None:
                     cell_checksum = None
                     cell_empty = True
@@ -215,7 +216,7 @@ class MountItem:
             if "w" in self.mode:
                 try:
                     c = cson2json(file_buffer.decode())
-                    j1 = (json.dumps(c, sort_keys=True, indent=2) + "\n").encode()
+                    j1 = serialize_sync(c, "plain")
                     old_checksum = checksum
                     checksum = calculate_checksum(j1)
                     file_buffer = j1
@@ -224,7 +225,12 @@ class MountItem:
                             self._write(file_buffer)
                 except (ValueError, ParseError):
                     pass
-        cell.set_buffer(file_buffer, checksum)
+        if cell._hash_pattern is not None:
+            if checksum is None:
+                checksum = calculate_checksum(file_buffer)
+            cell.set_checksum(checksum)
+        else:
+            cell.set_buffer(file_buffer, checksum)
 
     @property
     def lock(self):
@@ -234,48 +240,25 @@ class MountItem:
     def _from_cache(self):
         cache = mountmanager.cached_checksums.pop(self.path, (None, None) )
         cached_time, cached_checksum = cache
-        buffer = buffer_cache.get_buffer(cached_checksum)
+        buffer = get_buffer(cached_checksum,remote=True)
         if buffer is not None:
             self.last_mtime = cached_time
         return cached_checksum, buffer
-
-    def _read_as_directory(self):
-        result = {}
-        try:
-            def scan_(path, subresult):
-                with os.scandir(path) as it:
-                    for entry in it:
-                        name = entry.name
-                        if entry.is_file():
-                            filemode = "r" # TODO: binary file for mixed cells => try to decode
-                            with open(entry.path, filemode) as f:
-                                try:
-                                    data = f.read().strip("\n") + "\n"
-                                except UnicodeDecodeError:
-                                    continue
-                                except:
-                                    log("Reading error in '{}'".format(entry.path))
-                                else:
-                                    subresult[name] = data
-                        elif entry.is_dir():
-                            subsubresult = {}
-                            scan_(entry.path, subsubresult)
-                            if len(subsubresult):
-                                subresult[name] = subsubresult
-            scan_(self.path, result)
-            data = json.dumps(result, sort_keys=True, indent=2)
-            buffer = data.encode()
-            return buffer
-        except RuntimeError:
-            pass
-
 
     def _read(self):
         if self._destroyed:
             return
         #print("read", self.cell())
         if self.as_directory:
-            return self._read_as_directory()
+            if self.cell()._hash_pattern is None:
+                result, cs = read_from_directory(self.path, None, text_only=self.directory_text_only)
+            else:
+                result, cs = deep_read_from_directory(self.path, None, cache_buffers=True, text_only=self.directory_text_only)
+            if result is None:
+                return None
+            checksum = bytes.fromhex(cs)            
+            result_buf = get_buffer(checksum, remote=False)
+            return result_buf
         binary = self.kwargs["binary"]
         encoding = self.kwargs.get("encoding")
         filemode = "rb" if binary else "r"
@@ -293,47 +276,14 @@ class MountItem:
         os.makedirs(self.path, exist_ok=True)
         if with_none and file_buffer is None:
             return
-        data = json.loads(file_buffer)
+        data = deserialize_sync(file_buffer, None, "plain", copy=False)
         if not isinstance(data, dict):
             return
-        all_dirs = set()
-        all_files = set()
-        def write(subdata, subpath):
-            curr_dir = os.path.abspath(os.path.join(*subpath))
-            all_dirs.add(curr_dir)
-            os.makedirs(curr_dir, exist_ok=True)
-            for k,v in subdata.items():
-                subpath2 = subpath + (k,)
-                if isinstance(v, dict):
-                    write(v, subpath2)
-                else:
-                    vv = str(v)
-                    filename = os.path.abspath(os.path.join(*subpath2))
-                    all_files.add(filename)
-                    with open(filename, "w") as f:
-                        f.write(vv + "\n")
-        write( data, (self.path,) )
-        def _clean(path):
-            with os.scandir(path) as it:
-                for entry in it:
-                    path = os.path.abspath(entry.path)
-                    if entry.is_file():
-                        if path not in all_files:
-                            os.unlink(path)
-                    elif entry.is_dir():
-                        remove = False
-                        # leads to artifacts...
-                        # if path not in all_dirs:
-                        #    remove = True
-                        path2 = os.path.abspath(os.path.join(path, ".."))
-                        if path2 not in all_dirs:
-                            remove = True
-                        if remove:
-                            shutil.rmtree(path, ignore_errors=True)
-                        else:
-                            _clean(path)
-        if self.mode == "w" or self.authority == "cell":
-            _clean(self.path)
+        cleanup = (self.mode == "w" or self.authority == "cell")
+        deep = self.cell()._hash_pattern is not None
+        write_to_directory(
+            self.path, data, 
+            deep=deep, cleanup=cleanup,text_only=self.directory_text_only)
 
 
     def _write(self, file_buffer, with_none=False):
@@ -385,9 +335,10 @@ class MountItem:
         self.cell_checksum = checksum
         self.cell_buffer = buffer
         if checksum is None or self.last_checksum != checksum:
-            with self.lock:
-                self._write(buffer, with_none=with_none)
-                self._after_write(checksum)
+            if not (buffer is None and checksum is not None): # local cache miss
+                with self.lock:
+                    self._write(buffer, with_none=with_none)
+                    self._after_write(checksum)
 
     def _after_read(self, checksum, *, mtime=None):
         self.last_checksum = checksum
@@ -398,26 +349,7 @@ class MountItem:
 
     def _get_mtime(self):
         if self.as_directory:
-            if not os.path.exists(self.path) or not os.path.isdir(self.path):
-                return None
-            stat = os.stat(self.path)
-            mtime = stat.st_mtime
-            try:
-                def scan_(path):
-                    nonlocal mtime
-                    with os.scandir(path) as it:
-                        for entry in it:
-                            if entry.is_file() or entry.is_dir():
-                                f_mtime = entry.stat().st_mtime
-                                #print(entry.path, f_mtime)
-                                if mtime is None or f_mtime > mtime:
-                                    mtime = f_mtime
-                            if entry.is_dir():
-                                scan_(entry.path)
-                scan_(self.path)
-            except RuntimeError:
-                pass
-            return mtime
+            return get_directory_mtime(self.path)
         else:
             stat = os.stat(self.path)
             mtime = stat.st_mtime
@@ -438,6 +370,7 @@ class MountItem:
                 return
             mtime = self._get_mtime()
             file_checksum = None
+            file_buffer = None
             if self.last_mtime is None or mtime > self.last_mtime:
                 file_buffer0 = self._read()
                 if file_buffer0 is not None:
@@ -445,6 +378,12 @@ class MountItem:
                     file_checksum = calculate_checksum(file_buffer)
                 self._after_read(file_checksum, mtime=mtime)
         cell_checksum = self.cell_checksum
+        if "r" in self.mode:
+            if file_checksum is None and self.cell()._checksum is None and cell_checksum is not None:
+                file_buffer = buffer_cache.get_buffer(cell_checksum)
+                if file_buffer is not None:
+                    file_checksum = cell_checksum
+                    cell_checksum = None
         if file_checksum is not None and file_checksum != cell_checksum:
             if "r" in self.mode:
                 self.set(file_buffer, checksum=file_checksum)
@@ -462,7 +401,7 @@ class MountItem:
         if self.dummy:
             return
         now = time.time()
-        if self.cell_checksum is not None:
+        if self.cell_checksum is not None and not self.as_directory:
             mountmanager.cached_checksums[self.path] = (now, self.cell_checksum)
         if self.persistent == False:
             mountmanager.garbage[self.path] = (now, False)
@@ -632,6 +571,11 @@ class MountManager:
             # KLUDGE
             return
         #assert cell in self.mounts, (cell, hex(id(cell)))
+        if buffer is None and checksum is not None:
+            buffer = cell._get_manager().resolve(checksum)
+            if buffer is None:
+                print("mount.py CACHE MISS", checksum.hex())
+                return
         self.cell_updates.append((cell, checksum, buffer))
 
     def run_once(self):
@@ -860,3 +804,7 @@ from .protocol.cson import cson2json
 from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from .cell import text_types
 from .cache.buffer_cache import buffer_cache
+from .mount_directory import get_directory_mtime, deep_read_from_directory, read_from_directory, write_to_directory
+from .protocol.deserialize import deserialize_sync
+from .protocol.serialize import serialize_sync
+from .protocol.get_buffer import get_buffer

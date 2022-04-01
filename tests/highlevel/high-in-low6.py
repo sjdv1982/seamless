@@ -24,6 +24,7 @@ def constructor(ctx, libctx, context_graph, inp, result):
         ctx.cs_inp[key] = Cell("checksum")
         ctx.cs_inp[key] = ctx.inp[key]
         setattr(m, inp_prefix + key , ctx.cs_inp[key])
+        getattr(m.pins, inp_prefix + key).celltype = "checksum"
 
     def map_list_N(ctx, inp_prefix, graph, **inp):
         first_k = list(inp.keys())[0]

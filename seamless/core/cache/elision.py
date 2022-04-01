@@ -80,7 +80,7 @@ class Elision:
                 cs = cs.hex()
             pp = json.dumps(tuple(p))
             elision_dict["input_cells"][pp] = cs
-        elision_checksum = get_dict_hash(elision_dict)
+        elision_checksum = calculate_dict_checksum(elision_dict)
         #print("ELISION DICT", self.macro, elision_checksum.hex(), elision_dict)
         return elision_checksum
 
@@ -186,4 +186,4 @@ def elide(macro, inputpins):
 from ..macro import Path, path as make_path
 from ..cell import Cell, cell
 from ..context import context
-from ...get_hash import get_dict_hash
+from ...calculate_checksum import calculate_dict_checksum

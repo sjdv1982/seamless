@@ -6,6 +6,7 @@
 bytecell.py
 bytecell2.py
 bytecell3.py
+bufferserver.py
 cachehit-semantic.py
 conversions.py: the output is approximate, depends on exact timings
 simple.py
@@ -22,6 +23,7 @@ plain.py
 mixedcell.py
 preliminary.py: the output is approximate, depends on exact timings
 cached.py
+mount-as-directory.py
 structured_cell/simple-auth.py
 structured_cell/simple-macro-mode.py
 structured_cell/simple-channels.py
@@ -53,11 +55,11 @@ transformation-raw.py
 transformation-raw-ipython.py
 meta.py
 simple-duplex.py
-simple-duplex-remote.py: run together with:
-     python3 -u ../../scripts/jobslave-nodatabase.py --time 40 --direct-print > test-outputs/simple-duplex-remote-jobslave.out 2>&1
 simple-remote.py: run together with scripts/jobslave-nodatabase.py
 simple-remote2.py: run together with:
      python3 -u ../../scripts/jobslave-nodatabase.py --time 30 --direct-print > test-outputs/simple-remote2-jobslave.out 2>&1
+simple-duplex-remote.py: run together with:
+     python3 -u ../../scripts/jobslave-nodatabase.py --time 40 --direct-print > test-outputs/simple-duplex-remote-jobslave.out 2>&1
 compile-run-remote.py: run together with scripts/jobslave-nodatabase.py --direct-print .
      The jobslave output should include "ADD 8.141592979431152"
 macro.py
@@ -66,6 +68,7 @@ macro3.py
 pin-as.py
 checksum-cell.py
 structured_cell/simple-deepcell.py
+structured_cell/simple-deepcell-rawbuffer.py
 structured_cell/channels-deepcell.py
 structured_cell/schema.py
 structured_cell/schema-deepcell.py
@@ -85,7 +88,6 @@ mount-cson.py:
      - run with ipython3 -i
      - then open /tmp/test.cson and /tmp/test.json, manipulate resp. monitor them
 mount-plain.py: see above, minus the .cson
-mount-as-directory.py: see mount.py
 
 simple-communion: run "python3 -u simple-communion-slave.py > test-outputs/simple-communion-slave.out 2>&1"
      then "python3 -u simple-communion-master.py > test-outputs/simple-communion-master.out 2>&1" in a different terminal,

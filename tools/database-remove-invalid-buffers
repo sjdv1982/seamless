@@ -1,0 +1,13 @@
+#!/bin/bash
+set -u
+cd $SEAMLESS_DATABASE_DIR
+nbuf=$(find buffers -type f | wc -l)
+echo "Verify checksum for $nbuf buffers" > /dev/stderr
+
+# Requires seamless-cli
+
+# Version below works on a single core
+### find buffers -type f -print -exec seamless-checksum {} \; | paste - - | awk -v nbuf=$nbuf '{pos = index($1, "/");} substr($1,pos+1) != $2{print $1} NR%200==0{printf("%d/%d buffers verified...\n", NR, nbuf) > "/dev/stderr"}' | xargs rm -f
+
+# Version below works on multiple cores (requires GNU parallel)
+find buffers -type f -print0 | parallel -0 -j10 'echo {}; seamless-checksum {}' | paste - - | awk -v nbuf=$nbuf '{pos = index($1, "/");} substr($1,pos+1) != $2{print $1} NR%2000==0{printf("%d/%d buffers verified...\n", NR, nbuf) > "/dev/stderr"}' | xargs rm -f

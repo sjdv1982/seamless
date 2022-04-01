@@ -1,7 +1,12 @@
 import weakref
 import copy
+import functools
+
+from ..cache import CacheMissError
+from ...download_buffer import download_buffer_from_servers
+from ..status import StatusReasonEnum
 from ..cache.buffer_cache import buffer_cache
-from ... import get_dict_hash
+from ... import calculate_dict_checksum
 
 import json
 import asyncio
@@ -38,30 +43,48 @@ def new_deep_buffer_coro_id():
 
 deep_buffer_coros = []
 
+invalid_deep_buffers = set()
 
 async def decref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
     while deep_buffer_coros[0] != deep_buffer_coro_id:
         await asyncio.sleep(0.01)
+    if (checksum, calculate_dict_checksum(hash_pattern)) in invalid_deep_buffers:
+        return
     try:
         deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
         sub_checksums = deep_structure_to_checksums(
             deep_structure, hash_pattern
         )
+        """
+        # too slow...
         for sub_checksum in sub_checksums:
             buffer_cache.decref(bytes.fromhex(sub_checksum))
+        """
+        # instead
+        sub_checksums2 = [bytes.fromhex(cs) for cs in sub_checksums]
+        buffer_cache._decref(sub_checksums2)
     finally:
         deep_buffer_coros.pop(0)
 
 async def incref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
     while deep_buffer_coros[0] != deep_buffer_coro_id:
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(0.01)    
     try:
         deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
         sub_checksums = deep_structure_to_checksums(
             deep_structure, hash_pattern
         )
+        """
+        # too slow...
         for sub_checksum in sub_checksums:
             buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)
+        """
+        # instead:
+        sub_checksums2 = [bytes.fromhex(cs) for cs in sub_checksums]
+        persistent = buffer_cache._is_persistent(authoritative)
+        buffer_cache._incref(sub_checksums2, persistent, None)
+        
+        #invalid_deep_buffers.add((checksum, hash_pattern))
     finally:
         deep_buffer_coros.pop(0)
 
@@ -81,7 +104,7 @@ class CacheManager:
         self.reactor_exceptions = {}
         self.join_cache = {}
         self.rev_join_cache = {}
-
+        
         # for now, just a single global transformation cache
         from ..cache.transformation_cache import transformation_cache
         self.transformation_cache = transformation_cache
@@ -104,16 +127,16 @@ class CacheManager:
                 self.incref_checksum(
                     checksum,
                     expression,
-                    False,
-                    False
+                    authoritative=False,
+                    result=False
                 )
             checksum = self.expression_to_result_checksum.get(expression)
-            if checksum is not None:
+            if checksum is not None and checksum != expression.checksum:
                 self.incref_checksum(
                     checksum,
                     expression,
-                    False,
-                    True
+                    authoritative=False,
+                    result=True
                 )
             return True
         else:
@@ -160,7 +183,7 @@ class CacheManager:
             if cell._hash_pattern is not None:
                 incref_hash_pattern = True
         elif isinstance(refholder, Expression):
-            #print("INCREF EXPRESSION", refholder._get_hash(), result)
+            #print("INCREF EXPRESSION", refholder, result)
             assert not authoritative
             assert refholder not in self.inactive_expressions
             if not result:
@@ -182,8 +205,8 @@ class CacheManager:
             assert not result
             assert self.inchannel_to_ref[refholder] is None
             self.inchannel_to_ref[refholder] = checksum
-        elif isinstance(refholder, Library):
-            pass
+        #elif isinstance(refholder, Library): # yagni??
+        #    pass
         else:
             raise TypeError(type(refholder))
 
@@ -200,13 +223,19 @@ class CacheManager:
             self.checksum_refs[checksum].add(item)
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if incref_hash_pattern:
-            deep_buffer = buffer_cache.get_buffer(checksum)
-            deep_buffer_coro_id = new_deep_buffer_coro_id()
-            deep_buffer_coros.append(deep_buffer_coro_id)
-            coro = incref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
-            asyncio.ensure_future(coro)
-
-
+            try:
+                deep_buffer = get_buffer(checksum, remote=True, deep=True)
+                if deep_buffer is None:
+                    raise CacheMissError(checksum)
+                deep_buffer_coro_id = new_deep_buffer_coro_id()
+                deep_buffer_coros.append(deep_buffer_coro_id)
+                coro = incref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
+                future = asyncio.ensure_future(coro)
+                done_callback = functools.partial(incref_deep_buffer_done, self, checksum, refholder, authoritative, result)
+                future.add_done_callback(done_callback)
+            except Exception as exc:
+                print("ERROR in incref'ing deep buffer '{}'".format(checksum.hex()))
+                incref_deep_buffer_done(self, checksum, refholder, authoritative, result, exc)
     async def fingertip(self, checksum, *, must_have_cell=False):
         """Tries to put the checksum's corresponding buffer 'at your fingertips'
         Normally, first reverse provenance (recompute) is tried,
@@ -223,7 +252,6 @@ class CacheManager:
 
     async def _fingertip(self, checksum, *, must_have_cell, done):
         from ..cache import CacheMissError
-        from ..cache.transformation_cache import calculate_checksum
         from .tasks.evaluate_expression import EvaluateExpressionTask
         from .tasks.deserialize_buffer import DeserializeBufferTask
         from .tasks.serialize_buffer import SerializeToBufferTask
@@ -233,7 +261,7 @@ class CacheManager:
         if isinstance(checksum, str):
             checksum = bytes.fromhex(checksum)
         assert isinstance(checksum, bytes), checksum
-        buffer = buffer_cache.get_buffer(checksum)
+        buffer = get_buffer(checksum, remote=True)
         if buffer is not None:
             return buffer
         if checksum in done:
@@ -300,7 +328,7 @@ class CacheManager:
             for path in paths:
                 subchecksum = bytes.fromhex(inchannels[path])
                 sub_buffer = None
-                if hash_pattern is None or access_hash_pattern(hash_pattern, path) != "#":
+                if hash_pattern is None or access_hash_pattern(hash_pattern, path) not in ("#", '##'):
                     sub_buffer = await self._fingertip(subchecksum, must_have_cell=False, done=done)
                 await set_subpath_checksum(value, hash_pattern, path, subchecksum, sub_buffer)
             buf = await SerializeToBufferTask(
@@ -321,19 +349,15 @@ class CacheManager:
                 remote = min(remote, c_remote)
                 c_recompute = rmap[cell._fingertip_recompute]
                 recompute = min(recompute, c_recompute)
+                break
 
         if must_have_cell and not has_cell:
             raise CacheMissError(checksum.hex())
 
         if recompute - remote in (0, 1) and remote > 0:
-            buffer_length = buffer_cache.get_buffer_length(checksum)
-            if buffer_length is None:
-                buffer_length = await get_buffer_length_remote(
-                    checksum,
-                    remote_peer_id=None
-                )
-            if buffer_length is not None:
-                if buffer_length <= RECOMPUTE_OVER_REMOTE:
+            buffer_info = buffer_cache.get_buffer_info(checksum)
+            if buffer_info is not None:
+                if buffer_info.get("length", 0) <= RECOMPUTE_OVER_REMOTE:
                     remote = recompute + 1
 
         if remote > recompute:
@@ -346,6 +370,9 @@ class CacheManager:
                     return buffer
             except CacheMissError:
                 pass
+            buffer = get_buffer(checksum, remote=True, deep=True)
+            if buffer is not None:
+                return buffer
 
         for refholder, result in self.checksum_refs.get(checksum, set()):
             if not result:
@@ -359,7 +386,7 @@ class CacheManager:
 
         async def buffer_from_syn2sem(checksum, syn_checksum, celltype, subcelltype):
             await syntactic_to_semantic(syn_checksum, celltype, subcelltype, "fingertip")
-            return buffer_cache.get_buffer(checksum)
+            return get_buffer(checksum, remote=False)
 
         sem2syn = self.transformation_cache.semantic_to_syntactic_checksums
         for (semkey, celltype, subcelltype), syn_checksums in sem2syn.items():
@@ -373,12 +400,31 @@ class CacheManager:
             coro = fingertip_join(checksum, join_dict)
             coros.append(coro)
 
+        if not len(coros):
+            # Heroic attempt to get a reverse conversion from any buffer_info
+            # This extends a much simpler buffer_info effort in get_buffer.py
+            attr_list = (
+                "str2text", "text2str", "binary2bytes", "bytes2binary",
+                "binary2json", "json2binary"
+            )
+            checksum_hex = checksum.hex()
+            for source_checksum, buffer_info in buffer_cache.buffer_info.items():
+                for attr in attr_list:
+                    if getattr(buffer_info, attr) == checksum_hex:
+                        expr_celltype, expr_target_celltype = attr.replace("json", "plain").split("2")
+                        expr = Expression(
+                            source_checksum, None, expr_celltype, expr_target_celltype, None,
+                            hash_pattern=None, target_hash_pattern=None
+                        )
+                        coros.append(fingertip_expression(expr))
+
+
         all_tasks = [asyncio.ensure_future(c) for c in coros]
         try:
             tasks = all_tasks
             while len(tasks):
                 _, tasks  = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-                buffer = buffer_cache.get_buffer(checksum)
+                buffer = get_buffer(checksum, remote=False)
                 if buffer is not None:
                     return buffer
         finally:
@@ -392,7 +438,7 @@ class CacheManager:
                 else:
                     task.cancel()
 
-        buffer = buffer_cache.get_buffer(checksum)
+        buffer = get_buffer(checksum,remote=False)
         if buffer is not None:
             return buffer
 
@@ -407,6 +453,9 @@ class CacheManager:
             except CacheMissError:
                 pass
 
+        buffer = download_buffer_from_servers(checksum)
+        if buffer is not None:
+            return buffer
         raise CacheMissError(checksum.hex())
 
 
@@ -430,11 +479,12 @@ class CacheManager:
             self.cell_to_ref[refholder] = None
             cell = refholder
             if cell._hash_pattern is not None:
-                deep_buffer = buffer_cache.get_buffer(checksum)
-                deep_buffer_coro_id = new_deep_buffer_coro_id()
-                deep_buffer_coros.append(deep_buffer_coro_id)
-                coro = decref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
-                asyncio.ensure_future(coro)
+                if (checksum, calculate_dict_checksum(cell._hash_pattern)) not in invalid_deep_buffers:
+                    deep_buffer = get_buffer(checksum,remote=True)
+                    deep_buffer_coro_id = new_deep_buffer_coro_id()
+                    deep_buffer_coros.append(deep_buffer_coro_id)
+                    coro = decref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
+                    asyncio.ensure_future(coro)
 
         elif isinstance(refholder, Expression):
             # Special case, since we never actually clear expression caches,
@@ -450,8 +500,8 @@ class CacheManager:
         elif isinstance(refholder, Inchannel):
             assert self.inchannel_to_ref[refholder] is not None
             self.inchannel_to_ref[refholder] = None
-        elif isinstance(refholder, Library):
-            pass
+        #elif isinstance(refholder, Library):  ## yagni??
+        #    pass
         else:
             raise TypeError(type(refholder))
         try:
@@ -462,14 +512,14 @@ class CacheManager:
 checksum: {}
 refholder: {}
 is authoritative: {}
-is result: {}
+is result checksum: {}
 """.format(checksum.hex(), refholder, authoritative, result))
             return
         #print("cachemanager DECREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if len(self.checksum_refs[checksum]) == 0:
             buffer_cache.decref(checksum)
             self.checksum_refs.pop(checksum)
-
+        
     def destroy_cell(self, cell):
         ref = self.cell_to_ref[cell]
         if ref is not None:
@@ -515,7 +565,7 @@ is result: {}
             checksum = ref
             self.decref_checksum(checksum, expression, False, False)
         ref = self.expression_to_result_checksum[expression]
-        if ref is not None:
+        if ref is not None and ref != expression.checksum:
             checksum = ref
             self.decref_checksum(checksum, expression, False, True)
         self.inactive_expressions.add(expression)
@@ -542,25 +592,41 @@ is result: {}
                 ok = False
 
     def get_join_cache(self, join_dict):
-        checksum = get_dict_hash(join_dict)
+        checksum = calculate_dict_checksum(join_dict)
         return copy.deepcopy(self.join_cache.get(checksum))
 
     def set_join_cache(self, join_dict, result_checksum):
         if isinstance(result_checksum, str):
             result_checksum = bytes.fromhex(result_checksum)
-        checksum = get_dict_hash(join_dict)
+        checksum = calculate_dict_checksum(join_dict)
         self.join_cache[checksum] = result_checksum
         self.rev_join_cache[result_checksum] = join_dict
+
+def incref_deep_buffer_done(cachemanager:CacheManager, checksum, cell, authoritative, result, future_or_exc):
+    if isinstance(future_or_exc, Exception):
+        exc = future_or_exc
+    else:
+        exc = future_or_exc.exception()
+    if exc is not None:        
+        #import traceback; print("".join(traceback.TracebackException.from_exception(exc).format()))
+        invalid_deep_buffers.add((checksum, calculate_dict_checksum(cell._hash_pattern)))
+        if not isinstance(exc, KeyboardInterrupt):
+            # crude, but hard to do otherwise. If this happens, we have encountered a Seamless bug anyway
+            manager = cachemanager.manager()
+            if cell._structured_cell is None or cell._structured_cell.schema is cell:
+                manager.cancel_cell(cell, void=True)
+            else:
+                sc = cell._structured_cell
+                sc._exception = exc
+                manager._set_cell_checksum(sc._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
+                manager.structured_cell_trigger(sc, void=True)
 
 from ..cell import Cell
 from ..transformer import Transformer
 from ..structured_cell import Inchannel
-from ..reactor import Reactor
 from .expression import Expression
 from ..protocol.deep_structure import deep_structure_to_checksums
 from ..protocol.deserialize import deserialize
-from ..protocol.get_buffer import (
-    get_buffer_remote, get_buffer_length_remote, CacheMissError
-)
+from ..protocol.get_buffer import get_buffer, get_buffer_remote
 from ..cache.transformation_cache import syntactic_to_semantic
 from ..protocol.expression import set_subpath_checksum, access_hash_pattern

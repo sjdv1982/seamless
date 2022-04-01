@@ -19,6 +19,15 @@ class Inchannel:
         self._last_state = (self._void, self._checksum, self._status_reason)
 
     @property
+    def exception(self):
+        sc = self.structured_cell()
+        livegraph = sc._get_manager().livegraph
+        accessor = livegraph.paths_to_upstream[sc.buffer][self.subpath]
+        if accessor is None:
+            return None
+        return accessor.exception
+
+    @property
     def hash_pattern(self):
         return self.structured_cell().hash_pattern
 
@@ -111,8 +120,8 @@ class StructuredCell(SeamlessBase):
         self._auth_joining = False  #  an auth task is ongoing
         self._joining = False  #  a join task is ongoing
 
-        self._auth_value = None
-        self._auth_checksum = None
+        self._auth_value = None    # obeys hash pattern
+        self._auth_checksum = None  # obeys hash pattern
         self._auth_invalid = False
         self._schema_value = None
 
@@ -212,7 +221,7 @@ class StructuredCell(SeamlessBase):
         else:
             if self.hash_pattern is None:
                 if not len(path):
-                    self._auth_value = value
+                    self._auth_value = deepcopy(value)
                 elif self._auth_value is None:
                     if isinstance(path[0], str):
                         self._auth_value = {}
@@ -287,6 +296,7 @@ class StructuredCell(SeamlessBase):
         buf = serialize(self._schema_value, "plain")
         checksum = calculate_checksum(buf)
         buffer_cache.cache_buffer(checksum, buf)
+        buffer_cache.guarantee_buffer_info(checksum, "plain")
         if checksum is not None:
             checksum = checksum.hex()
         self.schema._set_checksum(checksum, from_structured_cell=True)
@@ -336,7 +346,7 @@ class StructuredCell(SeamlessBase):
             return self.handle
         backend = StructuredCellBackend(self)
         monitor = Monitor(backend)
-        if self.hash_pattern == {"*": "#"}:
+        if self.hash_pattern in ({"*": "#"}, {"*": "##"}):
             mixed_object = MixedDict(monitor, ())
         elif self.hash_pattern == {"!": "#"}:
             mixed_object = MixedList(monitor, ())

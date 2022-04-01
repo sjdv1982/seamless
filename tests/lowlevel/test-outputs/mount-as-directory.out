@@ -1,0 +1,44 @@
+Write, no deepfolder
+{'a': 'Value A', 'b': [3, 4, 5], 'c': 'Value C'}
+3166f40cf6df83c699e54c4197c2c1e2644e9e5a17defd78c78ebd2532cb2c4e
+
+Read, no deepfolder
+{'a': 'Value A\n', 'b': '[\n  3,\n  4,\n  5\n]\n', 'c': 'Value C\n'}
+62cb1725d2ad39ce98cdba04958e0d9c538f4d203e61e9897e2e4cab75b3e53d
+
+Write from raw strings, no deepfolder
+{'a': 'Value A\n', 'b': '[\n  3,\n  4,\n  5\n]\n', 'c': 'Value C\n'}
+62cb1725d2ad39ce98cdba04958e0d9c538f4d203e61e9897e2e4cab75b3e53d
+
+Re-read, no deepfolder
+{'a': 'Value A\n', 'b': '[\n  3,\n  4,\n  5\n]\n', 'c': 'Value C\n'}
+62cb1725d2ad39ce98cdba04958e0d9c538f4d203e61e9897e2e4cab75b3e53d
+
+Write, deepfolder
+{'a': 'Value A\n', 'b': '[\n  3,\n  4,\n  5\n]\n', 'c': 'Value C\n'}
+f1aaca4f3d628e73cc0aa723080a6169d7ded8bb973b79468e062d34940a5128
+
+Read, deepfolder
+{'a': 'Value A\n', 'b': '[\n  3,\n  4,\n  5\n]\n', 'c': 'Value C\n'}
+f1aaca4f3d628e73cc0aa723080a6169d7ded8bb973b79468e062d34940a5128
+
+Write from raw strings, deepfolder
+{'a': 'Value A\n', 'b': '[\n  3,\n  4,\n  5\n]\n', 'c': 'Value C\n'}
+f1aaca4f3d628e73cc0aa723080a6169d7ded8bb973b79468e062d34940a5128
+
+Re-read, deepfolder
+{'a': 'Value A\n', 'b': '[\n  3,\n  4,\n  5\n]\n', 'c': 'Value C\n'}
+f1aaca4f3d628e73cc0aa723080a6169d7ded8bb973b79468e062d34940a5128
+
+Write, raw bytes
+{'sub/p': 'UTF-8 encodable value', 'sub/q': array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+       17, 18, 19]), 'sub/r': b'xyz{|}~\x7f\x80\x81'}
+dbc3637fba1e72cf1daba057808306ab61328526452d40245441be7f9ecc25c4
+
+SHA3-256(/tmp/mount-test5/sub/q)= c57ffa0679a24945c6c0200cce2e4377e5d692381ef7c14704d21c08fc03a72d
+Re-read, raw bytes
+{'sub/p': 'UTF-8 encodable value', 'sub/q': array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+       17, 18, 19]), 'sub/r': b'xyz{|}~\x7f\x80\x81'}
+dbc3637fba1e72cf1daba057808306ab61328526452d40245441be7f9ecc25c4
+
+c57ffa0679a24945c6c0200cce2e4377e5d692381ef7c14704d21c08fc03a72d

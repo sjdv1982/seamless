@@ -26,7 +26,7 @@ def checksum_to_code(checksum):
     code = None
     if checksum is not None:
         checksum2 = bytes.fromhex(checksum)
-        code_buf = get_buffer(checksum2)
+        code_buf = get_buffer(checksum2, remote=False)
         if code_buf is not None:
             code = deserialize_sync(code_buf, checksum2, "text", True)
     return code
@@ -35,7 +35,7 @@ def parse_kwargs(checksum):
     from ..core.protocol.get_buffer import get_buffer
     if checksum is None:
         return {}
-    buf = get_buffer(checksum)
+    buf = get_buffer(checksum, remote=False)
     if buf is None:
         return buf
     kwargs = deserialize_sync(buf, checksum, "mixed", True)
@@ -62,6 +62,7 @@ def integrate_compiled_module(mod_lang, mod_rest, object_codes):
     new_value_buffer = serialize_sync(new_value, "plain")
     new_checksum = calculate_checksum_sync(new_value_buffer)
     buffer_cache.cache_buffer(new_checksum, new_value_buffer)
+    buffer_cache.guarantee_buffer_info(new_checksum, "plain")
     return new_checksum
 
 def integrate_kwargs(kwargs_checksums):
@@ -70,13 +71,14 @@ def integrate_kwargs(kwargs_checksums):
     for kwarg, kwarg_checksum in kwargs_checksums.items():
         if kwarg_checksum is None:
             continue
-        buf = get_buffer(kwarg_checksum)
+        buf = get_buffer(kwarg_checksum, remote=False)
         if buf is not None:
             kwarg_value = deserialize_sync(buf, kwarg_checksum, "mixed", True)
             result[kwarg] = kwarg_value        
     result_buffer = serialize_sync(result, "mixed")
     result_checksum = calculate_checksum_sync(result_buffer)
     buffer_cache.cache_buffer(result_checksum, result_buffer)
+    buffer_cache.guarantee_buffer_info(result_checksum, "mixed")
     return result_checksum
 
 def pull_module(pinname, upstreams, manager):

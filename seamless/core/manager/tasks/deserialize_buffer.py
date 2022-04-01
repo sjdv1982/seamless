@@ -1,3 +1,4 @@
+import numpy as np
 from collections import namedtuple
 
 from . import BackgroundTask
@@ -26,5 +27,11 @@ class DeserializeBufferTask(BackgroundTask):
         super().__init__(manager)
 
     async def _run(self):
-        result = await deserialize(self.buffer, self.checksum, self.celltype, self.copy)
+        result = await deserialize(self.buffer, self.checksum, self.celltype, self.copy)        
+        if isinstance(result, np.ndarray):
+            buffer_cache.update_buffer_info(self.checksum, "shape", result.shape, update_remote=False)
+            buffer_cache.update_buffer_info(self.checksum, "dtype", str(result.dtype))
+        buffer_cache.guarantee_buffer_info(self.checksum, self.celltype)
         return result
+
+from ...cache.buffer_cache import buffer_cache

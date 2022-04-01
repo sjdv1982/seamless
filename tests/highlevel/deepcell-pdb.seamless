@@ -1,0 +1,28 @@
+{
+  "__seamless__": "0.8",
+  "connections": [],
+  "lib": [],
+  "nodes": [
+    {
+      "checksum": {
+        "filtered": "eb377cf319b5dfa7651f41a09644c0d68934f8a8369998fdd82f003cfd5448f2",
+        "keyorder": "3da0581cafcfb4b044419262474d6415317ff5863f7541ea0020ef7664cbfb85",
+        "origin": "eb377cf319b5dfa7651f41a09644c0d68934f8a8369998fdd82f003cfd5448f2"
+      },
+      "metadata": {
+        "access_index": "5685938c2828862d3e342b6dcd1b61573ff8cd995ce8169bc466333841d18a69",
+        "content_size": 237028413338,
+        "dataset": "pdb",
+        "index_size": 14599263,
+        "nkeys": 187170
+      },
+      "path": [
+        "pdb"
+      ],
+      "type": "deepcell"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

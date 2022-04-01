@@ -29,7 +29,7 @@ print(ctx.calc_arr.status)
 
 """
 from matplotlib import pyplot as plt
-plt.plot(ctx.arr.data)
+plt.plot(ctx.arr.value)
 plt.show()
 """
 

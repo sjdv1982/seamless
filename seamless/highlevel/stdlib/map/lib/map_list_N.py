@@ -5,7 +5,7 @@ def map_list_N(ctx, graph, inp, has_uniform, elision):
     from seamless.core.structured_cell import StructuredCell
     from seamless.core.HighLevelContext import HighLevelContext
     from seamless.core.unbound_context import UnboundContext
-
+    
     first_k = list(inp.keys())[0]
     length = len(inp[first_k])
     for k in inp:
@@ -41,6 +41,8 @@ def map_list_N(ctx, graph, inp, has_uniform, elision):
             hci = hc.inp
             if not isinstance(hci, UnboundContext):
                 raise TypeError("map_list_N context must have an attribute 'inp' that is a context, not a {}".format(type(hci)))
+        else:
+            hci = hc.inp
 
         for k in inp:
             if n == 0:
@@ -126,7 +128,7 @@ def map_list_N_nested(
             "lib_module_dict": {'celltype': 'plain'},
             "lib_codeblock": {'celltype': 'plain'},
             "lib": {'celltype': 'plain', 'subcelltype': 'module'},
-            'inp': {'celltype': 'plain'},
+            'inp': {'celltype': 'checksum'},
             'has_uniform': {'celltype': 'bool'},
         }
 
@@ -183,21 +185,8 @@ def map_list_N_nested(
         for subr,c in subresults.items():
             c.connect(getattr(tf, subr))
 
-        ctx.all_subresults = cell("plain")
-        tf.result.connect(ctx.all_subresults)
-
-        # ctx.all_subresults has the correct checksum, but there is no valid conversion
-        #  (because it is unsafe).
-        # Use a macro to do it
-        ctx.get_result = macro({
-            "result_checksum": {"io": "input", "celltype": "checksum"}
-        })
-        get_result = lib_module_dict["helper"]["get_result_list"]
-        ctx.get_result.code.cell().set(get_result)
-        ctx.all_subresults.connect(ctx.get_result.result_checksum)
-        p = path(ctx.get_result.ctx).result
         ctx.result = cell("mixed", hash_pattern={"!": "#"})
-        p.connect(ctx.result)
+        tf.result.connect(ctx.result)
 
     else:
         lib.map_list_N(ctx, graph, inp, has_uniform, elision)
