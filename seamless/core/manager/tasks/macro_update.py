@@ -25,6 +25,7 @@ def print_error(*args):
     logger.error(msg)
 
 class MacroUpdateTask(Task):
+    MAX_RUNNING_TASKS = 100
     def __init__(self, manager, macro):
         self.macro = macro
         super().__init__(manager)
@@ -38,8 +39,19 @@ class MacroUpdateTask(Task):
         if manager is None or manager._destroyed:
             return
         livegraph = manager.livegraph
-        taskmanager = manager.taskmanager
+        taskmanager = manager.taskmanager        
+
         await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
+        macro_task_ids = taskmanager.macro_task_ids
+        tasks = taskmanager.tasks
+        task_id = self.taskid
+        MAX_RUNNING_TASKS = self.MAX_RUNNING_TASKS
+        while 1:
+            if task_id in macro_task_ids[:3]:
+                if len(tasks) - len(macro_task_ids) <= MAX_RUNNING_TASKS:
+                    break
+            
+            await asyncio.sleep(0.05)
 
         if macro._void:
             print("WARNING: macro %s is void, shouldn't happen during macro update" % macro)

@@ -89,6 +89,7 @@ library-context-argument.py
 library-in-library.py
 library-schema.py
 map-list.py
+map-speed-test.py
 channel.py
 environment3.py
 meta.py

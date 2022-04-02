@@ -1,4 +1,3 @@
-from seamless.core.transformer import Transformer
 import weakref
 import asyncio
 from asyncio import CancelledError
@@ -57,6 +56,7 @@ class TaskManager:
                                # Once all of them have been executed, the barrier is lifted
         self.launching_tasks = set()
         self.task_ids = []
+        self.macro_task_ids = []
         self.synctasks = []
         self.cell_to_task = {} # tasks that depend on cells
         self.accessor_to_task = {}  # ...
@@ -99,7 +99,7 @@ class TaskManager:
                     if barrier <= taskid:
                         self.barriers.discard(barrier)
                 break
-            await asyncio.sleep(0.001)
+            await asyncio.sleep(0.05)
 
     def add_barrier(self):
         if self._task_id_counter == self._last_task:
@@ -185,6 +185,8 @@ class TaskManager:
         self.launching_tasks.discard(task)
         self.tasks.append(task)
         self.task_ids.append(task.taskid)
+        if isinstance(task, MacroUpdateTask):
+            self.macro_task_ids.append(task.taskid)
         task.future.add_done_callback(
             partial(self._clean_task, task)
         )
@@ -568,6 +570,8 @@ class TaskManager:
         if not cleaned:
             self.tasks.remove(task)
             self.task_ids.remove(task.taskid)
+            if isinstance(task, MacroUpdateTask):
+                self.macro_task_ids.remove(task.taskid)
             task._cleaned = True
 
             print_debug("FINISHED", task.__class__.__name__, task.taskid, task.dependencies)
@@ -769,3 +773,5 @@ from .tasks.upon_connection import UponConnectionTask
 from .tasks.structured_cell import StructuredCellAuthTask, StructuredCellJoinTask
 from ...communion_server import communion_server
 from .tasks import BackgroundTask
+from ..manager.tasks.macro_update import MacroUpdateTask
+from ..transformer import Transformer

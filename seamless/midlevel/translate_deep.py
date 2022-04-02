@@ -57,7 +57,7 @@ def _translate_deep(node, root, namespace, inchannels, outchannels, *, hash_patt
     else:
         checksum = {}
 
-    keyorder = core_cell("plain").set_checksum(checksum.get("keyorder"))
+    keyorder = core_cell("plain").set_checksum(checksum.get("keyorder", empty_list_checksum))
     ctx.keyorder = keyorder
 
 
@@ -136,4 +136,5 @@ def translate_deepcell(node, root, namespace, inchannels, outchannels):
 def translate_deepfoldercell(node, root, namespace, inchannels, outchannels):
     return _translate_deep(node, root, namespace, inchannels, outchannels, hash_pattern = {"*": "##"})
 
-from seamless.core import cell as core_cell, transformer, context
+from ..core import cell as core_cell, transformer, context
+from ..core.cache.buffer_cache import empty_list_checksum
