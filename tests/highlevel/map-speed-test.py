@@ -1,4 +1,3 @@
-from seamless.core.cache import elision
 from seamless.highlevel import Context, Cell, DeepCell
 from seamless.highlevel.stdlib import map
 
