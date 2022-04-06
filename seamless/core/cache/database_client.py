@@ -140,7 +140,7 @@ class DatabaseSink(DatabaseBase):
         request = {
             "type": "compilation",
             "checksum": checksum.hex(),
-            "value": np.frombuffer(buffer, dtype=np.uint8),
+            "value": buffer,
         }
         self.send_request(request)
 
@@ -188,6 +188,7 @@ class DatabaseCache(DatabaseBase):
         response = self.send_request(request)
         if response is not None:
             result = response.content
+            print("RESULT", result)
             verify_checksum = calculate_checksum(result)
             assert checksum == verify_checksum, "Database corruption!!! Checksum {}".format(checksum.hex())
             return result

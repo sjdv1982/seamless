@@ -87,11 +87,15 @@ types = (
     "filename"
 )
 
-def format_response(response):
+def format_response(response, *, none_as_404=False):
     status = None
     if response is None:
-        status = 400
-        response = "ERROR: No response"
+        if not none_as_404:
+            status = 400
+            response = "ERROR: No response"
+        else:
+            status = 404
+            response = "ERROR: Unknown key"
     elif isinstance(response, (dict, list)):
         response = json.dumps(response)
     elif not isinstance(response, (str, bytes)):
@@ -172,7 +176,8 @@ class DatabaseServer:
                 if exc.args[0] == "Unknown key":
                     status = 404
                 response = "ERROR: " + exc.args[0]
-            status2, response = format_response(response)
+            none_as_404 = (type not in ("has_key", "has_buffer"))
+            status2, response = format_response(response, none_as_404=none_as_404)
             if status == 200 and status2 is not None:
                 status = status2
             ###if status != 200: print(response)

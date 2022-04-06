@@ -278,7 +278,11 @@ class BufferCache:
             assert isinstance(buffer, bytes)
             return buffer
         if remote:
-            buffer = database_cache.get_buffer(checksum)
+            try:
+                buffer = database_cache.get_buffer(checksum)
+            except Exception:
+                import traceback
+                traceback.print_exc()                
             if buffer is not None:
                 assert isinstance(buffer, bytes)
             else:
