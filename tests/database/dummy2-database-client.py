@@ -1,12 +1,10 @@
 import requests, json
-import numpy as np
-from silk.mixed.io.serialization import serialize
 
 url = "http://localhost:5522"
 
 
 config = {
-    "protocol": ("seamless", "database", "0.0.1"),
+    "protocol": ("seamless", "database", "0.1"),
 }
 
 def main():
@@ -16,7 +14,7 @@ def main():
         "type": "buffer",
         "checksum": checksum,
     }
-    response = s.get(url, data=serialize(request))
+    response = s.get(url, data=json.dumps(request))
     print(response.text)
 
 main()

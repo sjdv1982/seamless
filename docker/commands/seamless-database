@@ -1,20 +1,28 @@
 #!/bin/bash
 
-database_config=$1
-: ${database_config:=/home/jovyan/seamless-tools/default-config.yaml}
+set -e
+
+database_dir=$1
+: ${database_dir:=~/.seamless/database}
 
 set -u -e
 
-[ ! -d ~/.seamless/database ] && mkdir -p ~/.seamless/database
+[ ! -d $database_dir ] && mkdir -p $database_dir
+
+seamlessdir=$SEAMLESSDIR
 
 echo "Starting container seamless-database-container"
-echo 'Running Seamless database adapter with' $database_config
 docker run \
   -d \
   -p 5522:5522 \
   --name seamless-database-container \
-  -v ~/.seamless/database:/data \
+  -v $database_dir:/data \
+  -e "SEAMLESS_DATABASE_DIR=/data" \
+  -e "SEAMLESS_DATABASE_PORT=5522" \
+  -e "SEAMLESS_DATABASE_HOST=0.0.0.0" \
   -u `id -u` \
   --group-add users \
-  rpbs/seamless start.sh python3 -u /home/jovyan/seamless-tools/database.py \
-  $database_config
+  -v /tmp:/tmp \
+  -v `pwd`:/cwd \
+  --workdir /cwd \
+  rpbs/seamless start.sh python3 -u /home/jovyan/seamless-tools/database.py
