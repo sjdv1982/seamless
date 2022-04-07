@@ -3,9 +3,8 @@ import seamless
 cache = seamless.database_cache
 cache.connect()
 checksum = bytes.fromhex(sys.argv[1])
-key = "tfr-" + checksum.hex()
-if cache.has_key(key):
-    cache.delete_key(key)
+deleted = cache.delete_key("transformation", checksum)
+if deleted:
     print("Transformation result deleted")
 else:
     print("Transformation result not found")

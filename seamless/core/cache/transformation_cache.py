@@ -923,7 +923,7 @@ class TransformationCache:
             return result_checksum
         transformation = await self.serve_get_transformation(tf_checksum, None)
         if transformation is None:
-            raise CacheMissError
+            raise CacheMissError(tf_checksum.hex())
         for k,v in transformation.items():
             if k in ("__output__", "__as__"):
                 continue

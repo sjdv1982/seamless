@@ -35,9 +35,19 @@ UPDATE: don't rip, but document it as an advanced property.
 4a. DONE: merged into master branch.
 
 5. 
-- TODO: Re-design database.py so that the default YAML normally works well,
+- Re-design database.py so that the default YAML normally works well,
 and that there is a subfolder for download pages/buffer info pages
 of named deepfolders. Include elision!
+   TODO: additional read-only database directories (with their own buckets)
+   TODO: cloudless/jobless: rip redis, rewrite test 
+   TODO: jobless: adapt database client
+   TODO: rewrite database-run-actions "buffer_info/"  from folder to bucket
+   (write database-flatfolder-to-bucketfolder conversion tool)
+   TODO: rename database-run-actions concept "transforms" to "conversions"
+   TODO: implement serving shared-directories
+   TODO: implement elision
+
+5a.
 - DONE: For DeepFolder/DeepCell (not Folder), support loading-by-name.
 This will obtain and then set: checksum, and execution order checksum.
 Name may include version, format (e.g. gzip)
@@ -74,6 +84,7 @@ DONE UPDATE2: Seamless database and FAIR server are now distinct, but make
 tools to export contents of the database dir (notably, /downloads,
 /deepfolders, /deepcells, and deep buffers in /buffers) to a FAIR server dir.
 DONE UPDATE3: make a PDB test, but rename stdlib.join to stdlib.select.
+
 6. TODO: Add filename support to transformers, as outlined in https://github.com/sjdv1982/seamless/issues/108. There will be high-level transformer pin celltype "deepfolder", "deepcell".
 Assigning a transformer pin to a DeepFolderCell, DeepCell
 creates a pin of that celltype.

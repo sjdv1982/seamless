@@ -36,38 +36,33 @@ class DatabaseBase:
         url = "http://" + self.host + ":" + str(self.port)
         request = {
             "type": "has_buffer",
-            "checksum": checksum.hex(),
+            "checksum": parse_checksum(checksum),
         }
         response = session.get(url, data=json.dumps(request))
         if response.status_code != 200:
             raise Exception((response.status_code, response.text))
-        return response.text == "1"
+        return response.json() == True
 
-    def has_key(self, key):
-        if not self.active:
-            return
-        url = "http://" + self.host + ":" + str(self.port)
-        request = {
-            "type": "has_key",
-            "key": key,
-        }
-        response = session.get(url, data=json.dumps(request))
-        if response.status_code != 200:
-            raise Exception((response.status_code, response.text))
-        return response.text == "1"
-
-    def delete_key(self, key):
+    def delete_key(self, key_type, checksum):
+        assert key_type in [
+            "buffer_info", 
+            "transformation",
+            "compilation",
+            "buffer_independence", 
+            "semantic_to_syntactic"
+        ]
         if not self.active:
             return
         url = "http://" + self.host + ":" + str(self.port)
         request = {
             "type": "delete_key",
-            "key": key,
+            "key_type": key_type,
+            "checksum": parse_checksum(checksum)
         }
         response = session.put(url, data=json.dumps(request))
         if response.status_code != 200:
             raise Exception((response.status_code, response.text))
-        return response.text == "1"
+        return response.json() == True
 
 class DatabaseSink(DatabaseBase):
     def connect(self, *, host='localhost',port=5522,
@@ -89,11 +84,11 @@ class DatabaseSink(DatabaseBase):
             raise Exception((response.status_code, response.text))
         return response
 
-    def set_transformation_result(self, tf_checksum, checksum):
+    def set_transformation_result(self, tf_checksum, checksum):        
         request = {
             "type": "transformation",
-            "checksum": tf_checksum.hex(),
-            "value": checksum.hex(),
+            "checksum": parse_checksum(tf_checksum),
+            "value": parse_checksum(checksum),
         }
         self.send_request(request)
 
@@ -101,7 +96,7 @@ class DatabaseSink(DatabaseBase):
         sem_checksum, celltype, subcelltype = semkey
         request = {
             "type": "semantic_to_syntactic",
-            "checksum": sem_checksum.hex(),
+            "checksum": parse_checksum(sem_checksum),
             "celltype": celltype,
             "subcelltype": subcelltype,
             "value": list({cs.hex() for cs in syn_checksums}),
@@ -113,21 +108,21 @@ class DatabaseSink(DatabaseBase):
         # works, but only for string buffers...
         request = {
             "type": "buffer",
-            "checksum": checksum.hex(),
+            "checksum": parse_checksum(checksum),
             "value": buffer.decode(),
             "persistent": persistent,
         }
         rqbuf = json.dumps(request).encode()
         '''
         ps = chr(int(persistent)).encode()
-        rqbuf = b'SEAMLESS_BUFFER' + checksum.hex().encode() + ps + buffer
+        rqbuf = b'SEAMLESS_BUFFER' + parse_checksum(checksum).encode() + ps + buffer
 
         self.send_request(rqbuf)
 
     def set_buffer_info(self, checksum, buffer_info:BufferInfo):
         request = {
             "type": "buffer_info",
-            "checksum": checksum.hex(),
+            "checksum": parse_checksum(checksum),
             "value": buffer_info.as_dict(),
         }
         self.send_request(request)
@@ -139,7 +134,7 @@ class DatabaseSink(DatabaseBase):
             return
         request = {
             "type": "compilation",
-            "checksum": checksum.hex(),
+            "checksum": parse_checksum(checksum),
             "value": buffer,
         }
         self.send_request(request)
@@ -162,7 +157,7 @@ class DatabaseCache(DatabaseBase):
     def get_transformation_result(self, checksum):
         request = {
             "type": "transformation",
-            "checksum": checksum.hex(),
+            "checksum": parse_checksum(checksum),
         }
         response = self.send_request(request)
         if response is not None:
@@ -172,7 +167,7 @@ class DatabaseCache(DatabaseBase):
         sem_checksum, celltype, subcelltype = semkey
         request = {
             "type": "semantic_to_syntactic",
-            "checksum": sem_checksum.hex(),
+            "checksum": parse_checksum(sem_checksum),
             "celltype": celltype,
             "subcelltype": subcelltype,
         }
@@ -183,20 +178,19 @@ class DatabaseCache(DatabaseBase):
     def get_buffer(self, checksum):
         request = {
             "type": "buffer",
-            "checksum": checksum.hex(),
+            "checksum": parse_checksum(checksum),
         }
         response = self.send_request(request)
         if response is not None:
             result = response.content
-            print("RESULT", result)
             verify_checksum = calculate_checksum(result)
-            assert checksum == verify_checksum, "Database corruption!!! Checksum {}".format(checksum.hex())
+            assert checksum == verify_checksum, "Database corruption!!! Checksum {}".format(parse_checksum(checksum))
             return result
 
     def get_buffer_info(self, checksum) -> BufferInfo:
         request = {
             "type": "buffer_info",
-            "checksum": checksum.hex(),
+            "checksum": parse_checksum(checksum),
         }
         response = self.send_request(request)
         if response is not None:
@@ -205,7 +199,7 @@ class DatabaseCache(DatabaseBase):
     def get_compile_result(self, checksum):
         request = {
             "type": "compilation",
-            "checksum": checksum.hex(),
+            "checksum": parse_checksum(checksum),
         }
         response = self.send_request(request)
         if response is not None:
@@ -216,3 +210,4 @@ database_sink = DatabaseSink()
 database_cache = DatabaseCache()
 
 from ...calculate_checksum import calculate_checksum
+from ...util import parse_checksum

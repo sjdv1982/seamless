@@ -1,5 +1,3 @@
-from posixpath import split
-from tabnanny import check
 from seamless.pylru import lrucache
 from seamless.util import parse_checksum
 import os
@@ -7,6 +5,8 @@ import glob
 import collections
 import json
 import atexit
+import time
+import asyncio
 
 # A bucket will have up to 64 byte keys, and values of a few hundred bytes.
 # In total, maybe a kilobyte per entry
@@ -14,18 +14,42 @@ MAX_BUCKET_SIZE = 1000  # split a bucket if it contains more than BUCKET_MAX_SIZ
 CACHE_SIZE = 1000   # keep CACHE_SIZE buckets in memory
 # With this, total memory consumption should be 1-2 GB max.
 
+LAST_CACHE_WRITTEN = None  # last time a buffer cache was evicted and written to disk
+
 def write_bucket(filename, value):
+    global LAST_CACHE_WRITTEN
     with open(filename, "w") as f:
         json.dump(value, f, sort_keys=True, indent=2)
+        LAST_CACHE_WRITTEN = time.time()
 
 bucket_cache = lrucache(CACHE_SIZE, write_bucket)
     
 def write_all():
     for filename, value in bucket_cache.items():
         write_bucket(filename, value)
+    bucket_cache.clear()
 
 atexit.register(write_all)
 
+async def decay_cache(min_wait):
+    while 1:
+        while not len(bucket_cache):
+            await asyncio.sleep(1)
+        if LAST_CACHE_WRITTEN is None:
+            await asyncio.sleep(min_wait)
+        if not len(bucket_cache):
+            continue
+        if LAST_CACHE_WRITTEN is not None:
+            while time.time() - LAST_CACHE_WRITTEN < min_wait:
+                await asyncio.sleep(1)
+        if not len(bucket_cache):
+            continue
+        oldest = list(bucket_cache.keys())[-1]
+        value = bucket_cache[oldest]
+        write_bucket(oldest, value)
+        bucket_cache.pop(oldest)  # does not call write_bucket
+
+asyncio.ensure_future(decay_cache(10))
 
 def split_bucket(bucket:dict):
     """Finds the most common first letter of the key.
@@ -97,7 +121,9 @@ class TopBucket:
             filename = os.path.join(self.directory, self._file)
             data = get_data(filename)
             if value is None:
-                data.pop(checksum, None)
+                old = data.pop(checksum, None)
+                deleted = (old is not None)
+                return deleted
             else:
                 data[checksum] = value
                 while len(data) > self.max_size:
@@ -117,7 +143,6 @@ class TopBucket:
             if not os.path.exists(self.directory):
                 os.mkdir(self.directory)
             self._dir_exist_validated = True
-            return
         checksum = parse_checksum(checksum)
         first = checksum[0]
         try:

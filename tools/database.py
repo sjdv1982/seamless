@@ -1,17 +1,3 @@
-"""
-FIRST TODO: initial implementation.
-  Checksums are now hex strings, not bytes. Adapt database-client.
-TODO: cloudless/jobless: replace SEAMLESS_COMPACT with SEAMLESS_BUFFER, persistence with independent
-
-TODO: has_key/delete_key(key) => has/delete(type, checksum)
-  Only used in delete-transformation-result, minor adapt in database-client
-TODO: rewrite database-run-actions "buffer_info/"  from folder to bucket
-  (write database-flatfolder-to-bucketfolder conversion tool)
-TODO: rename database-run-actions concept "transforms" to "conversions"
-TODO: implement serving shared-directories
-TODO: implement elision
-"""
-
 from copy import deepcopy
 from aiohttp import web
 import aiofiles
@@ -21,6 +7,12 @@ from seamless.core.buffer_info import BufferInfo
 from collections import deque
 import gc
 from database_bucket import TopBucket
+import signal
+def raise_system_exit(*args, **kwargs): 
+    raise SystemExit
+signal.signal(signal.SIGTERM, raise_system_exit)
+signal.signal(signal.SIGHUP, raise_system_exit)
+signal.signal(signal.SIGINT, raise_system_exit)
 
 MAX_BUFFER_CACHE_SIZE = 5*1e8  # 500 million bytes
 buffer_cache = {}
@@ -45,7 +37,7 @@ async def read_buffer(checksum, filename):
     if hit is not None:
         _, buffer = hit
         return buffer
-    if not os.path.exists(checksum):
+    if not os.path.exists(filename):
         return None
     async with aiofiles.open(filename, "rb") as f:
         buffer = await f.read()
@@ -86,7 +78,13 @@ types = (
     "transformation",
     "filename"
 )
-
+bucketnames = [
+    "buffer_info", 
+    "transformations",
+    "compilations",
+    "buffer_independence", 
+    "semantic_to_syntactic"
+]
 def format_response(response, *, none_as_404=False):
     status = None
     if response is None:
@@ -96,7 +94,7 @@ def format_response(response, *, none_as_404=False):
         else:
             status = 404
             response = "ERROR: Unknown key"
-    elif isinstance(response, (dict, list)):
+    elif isinstance(response, (bool, dict, list)):
         response = json.dumps(response)
     elif not isinstance(response, (str, bytes)):
         status = 400
@@ -113,13 +111,7 @@ class DatabaseServer:
         self.host = host
         self.port = port
         self.buckets = {}
-        for bucketname in [
-            "buffer_info", 
-            "transformations",
-            "compilations",
-            "buffer_independence", 
-            "semantic_to_syntactic"
-        ]:
+        for bucketname in bucketnames:
             subdir = os.path.abspath(os.path.join(SDB, bucketname))
             bucket = TopBucket(subdir)
             self.buckets[bucketname] = bucket
@@ -161,10 +153,8 @@ class DatabaseServer:
                     type = rq["type"]
                     if type not in types:
                         raise KeyError
-                    if type not in ("protocol", "has_key"):
+                    if type != "protocol":
                         checksum = rq["checksum"]
-                    elif type == "has_key":
-                        raise NotImplementedError
                 except KeyError:
                     raise DatabaseError("Malformed request") from None
                 if type == "protocol":
@@ -176,7 +166,7 @@ class DatabaseServer:
                 if exc.args[0] == "Unknown key":
                     status = 404
                 response = "ERROR: " + exc.args[0]
-            none_as_404 = (type not in ("has_key", "has_buffer"))
+            none_as_404 = (type != "has_buffer")
             status2, response = format_response(response, none_as_404=none_as_404)
             if status == 200 and status2 is not None:
                 status = status2
@@ -215,14 +205,10 @@ class DatabaseServer:
                     type = rq["type"]
                     if type not in types:
                         raise KeyError
-                    if type == "delete_key":
-                        key = rq["key"]
-                        checksum = None
-                        value = None
-                    else:
-                        checksum = rq["checksum"]
+                    checksum = rq["checksum"]
+                    value = None
+                    if type != "delete_key":
                         value = rq["value"]
-                        key = None                    
                 except KeyError:
                     raise DatabaseError("Malformed request") from None
                  
@@ -231,7 +217,7 @@ class DatabaseServer:
                 except ValueError:
                     raise DatabaseError("Malformed request") from None
 
-                response = await self._set(type, checksum, key, value, rq)
+                response = await self._set(type, checksum, value, rq)
                 if type == "buffer":
                     gc.collect()
             except DatabaseError as exc:
@@ -265,16 +251,7 @@ class DatabaseServer:
                 filename = _get_filename(checksum)
                 if os.path.exists(filename):
                     found = True
-            if found:
-                return "1"
-            else:
-                return "0"
-
-        elif type == "has_key":
-            raise NotImplementedError
-            if has_key:
-                return "1"
-            return "0"
+            return found
 
         elif type == "filename":
             filename = _get_filename(checksum)
@@ -312,7 +289,7 @@ class DatabaseServer:
         else:
             raise DatabaseError("Unknown request type")
 
-    async def _set(self, type, checksum, key, value, request):
+    async def _set(self, type, checksum, value, request):
         if type == "buffer":
             if isinstance(value, str):
                 value = value.encode()
@@ -321,26 +298,19 @@ class DatabaseServer:
             bucket.set(checksum, independent)
             filename = _get_filename(checksum)
             await write_buffer(checksum, value, filename)
-            return "OK"
 
         elif type == "delete_key":
-            raise NotImplementedError
-            key = key.encode()
-            done = set()
-            for source, source_config in self.db_sources:
-                if source.id in done:
-                    continue
-                done.add(source.id)
-                has_key = await source.has_key(key)
-                if has_key:
-                    await source.delete_key(key)
-            for sink, sink_config in self.db_sinks:
-                if sink.id in done:
-                    continue
-                done.add(source.id)
-                has_key = await sink.has_key(key)
-                if has_key:
-                    await sink.delete_key(key)
+            try:
+                key_type = request["key_type"]
+                if key_type in ("transformation", "compilation"):
+                    key_type += "s"
+                bucket = self.buckets[key_type]
+            except KeyError:
+                raise DatabaseError("Malformed SET delete key request: invalid key_type")
+            deleted = bucket.set(checksum, None)
+            return deleted
+
+
         elif type == "buffer_info":
             try:
                 if not isinstance(value, dict):
@@ -384,7 +354,7 @@ class DatabaseServer:
                 checksum = parse_checksum(checksum)
             except ValueError:
                 raise DatabaseError("Malformed SET transformation result request: value must be a checksum")
-            bucket = self.buckets["compilations"]
+            bucket = self.buckets["transformations"]
             bucket.set(checksum, value)
         else:
             raise DatabaseError("Unknown request type")
@@ -418,3 +388,4 @@ if __name__ == "__main__":
         asyncio.get_event_loop().run_forever()
     except KeyboardInterrupt:
         pass
+        
