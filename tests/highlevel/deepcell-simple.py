@@ -9,6 +9,8 @@ ctx.a.set({"test": 0, "test2": 0})  # possible, but against the spirit of deep c
 ctx.a.test = 1
 ctx.a.test2 = 2
 ctx.compute()
+print(ctx.a.status)
+print(ctx.a.exception)
 print(ctx.a.data)
 print(ctx.a._get_context().origin.value)
 ctx.a.test3.set(20)

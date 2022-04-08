@@ -481,11 +481,8 @@ def assign_context(ctx, path, value):
 def assign_to_deep_subcell(cell, attr, value):
     hcell = cell._get_hcell()
     ctx = cell._parent()
-    if isinstance(value, Cell):
-        assert value._parent() is ctx #no connections between different (toplevel) contexts
-        _remove_independent_mountshares(hcell)
-        assign_connection(ctx, value._path, cell._path + (attr,), False)
-        ctx._translate()
+    if isinstance(value, Cell):        
+        raise AttributeError("Can only assign cells to DeepCell.blacklist and DeepCell.whitelist")
     elif isinstance(value, ConstantTypes):
         check_libinstance_subcontext_binding(ctx, (attr,))
         removed1 = ctx.remove_connections(

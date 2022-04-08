@@ -871,7 +871,7 @@ class Context(Base, HelpMixin):
     def _get_shares(self):
         shares = {}
         for path, node in self._graph.nodes.items():
-            if node["type"] != "cell":
+            if node["type"] not in ("cell", "deepcell", "deepfolder"):
                 continue
             share = node.get("share")
             if share is not None:
@@ -896,15 +896,35 @@ class Context(Base, HelpMixin):
                 share_evaluate=False
             )
         for path, shareparams in shares.items():
-            key = "/".join(path) #TODO: split in subpaths by inspecting and traversing ctx._children (recursively for subcontext children)
             hcell = self._children[path]
-            if not isinstance(hcell, Cell):
+            if isinstance(hcell, (DeepCell, DeepFolderCell)):
+                sharepath = shareparams["path"]
+                if sharepath is None:
+                    sharepath = "/".join(path)
+                toplevel = shareparams.get("toplevel", False)
+                cell1 = hcell._get_context().options
+                sharepath1 = sharepath + "/OPTIONS"
+                cell1.share(
+                    sharepath1, readonly=False,
+                    mimetype="application/json", toplevel=toplevel,
+                    cellname=cell1._format_path()
+                )
+                cell2 = hcell._get_context().selected_option
+                sharepath2 = sharepath + "/SELECTED_OPTION"
+                cell2.share(
+                    sharepath2, readonly=False,
+                    mimetype="text/plain", toplevel=toplevel,
+                    cellname=cell2._format_path()
+                )
+
+                continue
+            elif not isinstance(hcell, Cell):
                 raise NotImplementedError(type(hcell))
             cell = hcell._get_cell()
             if isinstance(cell, StructuredCell):
-                pass #TODO: see above
+                pass
             elif isinstance(cell, core_cell):
-                pass #TODO: see above
+                pass
             else:
                 raise TypeError(cell)
             sharepath = shareparams["path"]

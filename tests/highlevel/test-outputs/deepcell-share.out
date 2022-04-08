@@ -1,0 +1,63 @@
+{
+  "option_a": {
+    "checksum": "4426a76852c85e109260687616b712bcabe93f7d6a56e17799afacc0de5dbd92",
+    "keyorder": "a1836f0283d92a52fe78ba5ccf7e65ebbfb20af6b86912eaa7f12a08e8ecae38"
+  },
+  "option_b": {
+    "checksum": "c9d02029d479a4e05d42c71e639fb0225e344c19ed1e2b4e910b3a49152b71fa",
+    "keyorder": "b929970e7eb84aaac65eee4d5057d191b99702ff793edae40ff0328761e90ccd"
+  },
+  "option_x": {
+    "checksum": "9f92a59fb181a43f75f1ac69054e5a838b080126e9c7233c7493b63a58cc4188",
+    "keyorder": "0fe2c0a9449932f2dd22b50dc9a9b360fd20eebd96a3cc95865864290d215615"
+  }
+}
+Opened the seamless share update server at port 5138
+Opened the seamless REST server at port 5813
+Stage 1
+Status: OK
+None
+1 {'v1': 'string A', 'v2': 'string B', 'v3': 'string C'}
+2 {'v1': '657619cecac56be0e83843be1d09ea334000bedaad9a81b61df6887f7a33961e', 'v2': 'd65f6242d34bf649aa3c623b6df9f6c7fa1aea7b8337ded6e64c807c1aa519d7', 'v3': 'c8e7b401f0ca30120dc47e9baf160406c5b29e308df284d086b7d2634db4c4e9'}
+3 {'v1': '657619cecac56be0e83843be1d09ea334000bedaad9a81b61df6887f7a33961e', 'v2': 'd65f6242d34bf649aa3c623b6df9f6c7fa1aea7b8337ded6e64c807c1aa519d7', 'v3': 'c8e7b401f0ca30120dc47e9baf160406c5b29e308df284d086b7d2634db4c4e9'}
+4 9f92a59fb181a43f75f1ac69054e5a838b080126e9c7233c7493b63a58cc4188
+5 9f92a59fb181a43f75f1ac69054e5a838b080126e9c7233c7493b63a58cc4188
+6 {'v1': 'string A', 'v2': 'string B', 'v3': 'string C'}
+7 {'v1': 'string A', 'v2': 'string B', 'v3': 'string C'}
+option_x
+<Silk: {'v1': 'string A', 'v2': 'string B', 'v3': 'string C'} >
+
+Stage 2
+Status: OK
+None
+1 {'v1': 'string A', 'v2': 'string B', 'v3': 'string C'}
+2 {'v1': '657619cecac56be0e83843be1d09ea334000bedaad9a81b61df6887f7a33961e', 'v2': 'd65f6242d34bf649aa3c623b6df9f6c7fa1aea7b8337ded6e64c807c1aa519d7', 'v3': 'c8e7b401f0ca30120dc47e9baf160406c5b29e308df284d086b7d2634db4c4e9'}
+3 {'v1': '657619cecac56be0e83843be1d09ea334000bedaad9a81b61df6887f7a33961e', 'v2': 'd65f6242d34bf649aa3c623b6df9f6c7fa1aea7b8337ded6e64c807c1aa519d7', 'v3': 'c8e7b401f0ca30120dc47e9baf160406c5b29e308df284d086b7d2634db4c4e9'}
+4 9f92a59fb181a43f75f1ac69054e5a838b080126e9c7233c7493b63a58cc4188
+5 4426a76852c85e109260687616b712bcabe93f7d6a56e17799afacc0de5dbd92
+6 {'x': 10, 'y': [20, 30, 40], 'z': {'p': 50, 'q': 60}}
+7 {'x': 10, 'y': [20, 30, 40], 'z': {'p': 50, 'q': 60}}
+option_a
+<Silk: {'x': 10, 'y': [20, 30, 40], 'z': {'p': 50, 'q': 60}} >
+
+Stage 3
+{'option_a': {'checksum': '4426a76852c85e109260687616b712bcabe93f7d6a56e17799afacc0de5dbd92', 'keyorder': 'a1836f0283d92a52fe78ba5ccf7e65ebbfb20af6b86912eaa7f12a08e8ecae38'}, 'option_b': {'checksum': 'c9d02029d479a4e05d42c71e639fb0225e344c19ed1e2b4e910b3a49152b71fa', 'keyorder': 'b929970e7eb84aaac65eee4d5057d191b99702ff793edae40ff0328761e90ccd'}, 'option_x': {'checksum': '9f92a59fb181a43f75f1ac69054e5a838b080126e9c7233c7493b63a58cc4188', 'keyorder': '0fe2c0a9449932f2dd22b50dc9a9b360fd20eebd96a3cc95865864290d215615'}}
+
+option_a
+
+2
+
+Status: OK
+None
+1 {'v1': 'string A', 'v2': 'string B', 'v3': 'string C'}
+2 {'v1': '657619cecac56be0e83843be1d09ea334000bedaad9a81b61df6887f7a33961e', 'v2': 'd65f6242d34bf649aa3c623b6df9f6c7fa1aea7b8337ded6e64c807c1aa519d7', 'v3': 'c8e7b401f0ca30120dc47e9baf160406c5b29e308df284d086b7d2634db4c4e9'}
+3 {'v1': '657619cecac56be0e83843be1d09ea334000bedaad9a81b61df6887f7a33961e', 'v2': 'd65f6242d34bf649aa3c623b6df9f6c7fa1aea7b8337ded6e64c807c1aa519d7', 'v3': 'c8e7b401f0ca30120dc47e9baf160406c5b29e308df284d086b7d2634db4c4e9'}
+4 9f92a59fb181a43f75f1ac69054e5a838b080126e9c7233c7493b63a58cc4188
+5 c9d02029d479a4e05d42c71e639fb0225e344c19ed1e2b4e910b3a49152b71fa
+6 {'xx': 110, 'yy': [120, 130, -40], 'zz': {'p': -50, 'q': 160}}
+7 {'x': 10, 'y': [20, 30, 40], 'z': {'p': 50, 'q': 60}}
+option_b
+<Silk: {'xx': 110, 'yy': [120, 130, -40], 'zz': {'p': -50, 'q': 160}} >
+
+option_b
+

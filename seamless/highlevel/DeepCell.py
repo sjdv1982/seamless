@@ -32,6 +32,10 @@ class DeepCellBase(Base, HelpMixin):
     _node = None
     _virtual_path = None
     celltype = "structured"
+    _components = (
+        "origin", "keyorder", "blacklist", "whitelist", "apply_blackwhite", 
+        "integrate_options", "filtered", "filtered_keyorder"
+    )
 
     def __init__(self, *, parent=None, path=None):
         assert (parent is None) == (path is None)
@@ -49,8 +53,9 @@ class DeepCellBase(Base, HelpMixin):
         if self._get_hcell().get("UNTRANSLATED"):
             return "This cell is untranslated; run 'ctx.translate()' or 'await ctx.translation()'"
         ctx = self._get_context()
-        attrs = ("origin", "keyorder", "blacklist", "whitelist", "apply_blackwhite", "filtered", "filtered_keyorder")
-        for k in attrs:
+        for k in self._components:
+            if k == "integrate_options" and not hasattr(ctx, k):
+                continue
             exception = getattr(ctx, k).exception
             if exception is not None:
                     if k == "origin":
@@ -67,11 +72,14 @@ If the cell is defined, the checksum is available, even if
 the value may not be.
 """
         hcell = self._get_hcell2()
-        if hcell.get("UNTRANSLATED"):
+        if self._get_hcell().get("UNTRANSLATED"): 
             return hcell.get("checksum", {}).get("origin")
+        ctx = self._get_context()
+        if len(ctx.origin.inchannels):
+            origin = ctx.origin
         else:
-            ctx = self._get_context()
-            return ctx.origin.checksum
+            origin = ctx.origin_integrated
+        return origin.checksum
 
     @checksum.setter
     def checksum(self, checksum):
@@ -208,8 +216,9 @@ If it is error, cell.exception will be non-empty.
         if self._get_hcell().get("UNTRANSLATED"):
             return "Status: error (ctx needs translation)"
         ctx = self._get_context()
-        attrs = ("origin", "keyorder", "blacklist", "whitelist", "apply_blackwhite", "filtered", "filtered_keyorder")
-        for k in attrs:
+        for k in self._components:
+            if k == "integrate_options" and not hasattr(ctx, k):
+                continue
             pending = False
             upstream = False
             status = getattr(ctx, k).status
@@ -240,6 +249,31 @@ Use cell.data instead."""
     @property
     def schema(self):
         raise AttributeError("Deep cell schemas are currently disabled.")
+
+    def share(self, *, options:dict, path:str=None, toplevel=False):
+        """TODO: document"""
+        options2 = options
+        for key, value in options.items():
+            key = str(key)
+            if not isinstance(value, dict):
+                raise ValueError((key,value))
+            if sorted(value.keys()) != ["checksum", "keyorder"]:
+                raise ValueError("Wrong keys: {}".format((key, value)))
+            value2 = {}
+            for subkey, subvalue in value.items():
+                try:
+                    subvalue = parse_checksum(subvalue)
+                except ValueError:
+                    raise ValueError((subkey,subvalue)) from None
+                value2[subkey] = subvalue
+            options2[key] = value2
+        hcell = self._get_hcell()
+        hcell["share"] = {
+            "path": path,
+            "options": options2
+        }
+        if toplevel:
+            hcell["share"]["toplevel"] = True
 
     def _get_cell_subpath(self, cell, subpath):
         p = cell
@@ -302,7 +336,11 @@ Use cell.data instead."""
     def _set_observers(self):
         from ..core.structured_cell import StructuredCell
         ctx = self._get_context()
-        ctx.origin.auth._set_observer(partial(self._observe, "origin"))
+        if len(ctx.origin.inchannels):
+            origin = ctx.origin.auth
+        else:
+            origin = ctx.origin_integrated
+        origin._set_observer(partial(self._observe, "origin"))
         ctx.keyorder._set_observer(partial(self._observe, "keyorder"))
         ctx.filtered0._set_observer(partial(self._observe, "filtered"))
         ctx.blacklist._set_observer(partial(self._observe, "blacklist"))

@@ -71,11 +71,12 @@ UPDATE:
 
 - DONE load-by-name in a different API (seamless.fair)
 
-- TODO: Allow a list-of-allowed-checksums to be stored, by name. 
+- DONE: Allow a list-of-allowed-checksums to be stored, by name. 
    DeepFolder.load(name) will invoke this.
    Possible to restrict allowed checksums only to this.
    Is also necessary to allow DeepFolder.share()  
    (list of allowed checksums becomes dropdown menu, restriction is security feature)
+   UPDATE: now integrated into DeepCell.share, not used otherwise.
    DONE: Allow blacklist or whitelist checksum to be stored in DeepCell/DeepFolder
    Blacklist and whitelists are strictly local to the graph, no FAIR/database involved.
    Whitelist AND blacklist may be active, which means

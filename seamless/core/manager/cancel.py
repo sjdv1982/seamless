@@ -730,7 +730,8 @@ class CancellationCycle:
             fire = False
             if not worker._void:
                 fired_unvoid = True
-                fire = True
+                if not isinstance(worker, Reactor):
+                    fire = True
         if void:
             fired_unvoid = False
         self.workers[worker] = (void, reason, fired_unvoid)

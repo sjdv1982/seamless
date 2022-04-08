@@ -1,5 +1,54 @@
 from .util import get_path, build_structured_cell
 
+option_reactor_code = """
+def update_from_upstream():
+    global selected_option
+    if len(upstream) == 2 and options is not None:
+        selected_option = None
+        try:
+            for k,v in options.items():
+                if v == upstream:
+                    selected_option = k
+                    break
+        except Exception:
+            pass
+        PINS.selected_option.set(selected_option)
+
+def update_from_selected_option():
+    if options is not None and selected_option is not None:
+        try:
+            value = options[selected_option]
+        except Exception:
+            pass
+        else:
+            PINS.origin_integrated0.set(value["checksum"])
+            PINS.keyorder_integrated0.set(value["keyorder"])
+
+if PINS.options.updated:
+    options = PINS.options.value
+    if last_value == "upstream":
+        update_from_upstream()
+    elif last_value == "selected_option":
+        update_from_selected_option()
+if PINS.keyorder.updated:
+    keyorder = PINS.keyorder.value
+    PINS.keyorder_integrated0.set(keyorder)
+    upstream["keyorder"] = keyorder
+    last_value = "upstream"
+    if not PINS.origin.updated:
+        update_from_upstream()
+if PINS.origin.updated:
+    origin = PINS.origin.value
+    PINS.origin_integrated0.set(origin)
+    upstream["checksum"] = origin
+    last_value = "upstream"
+    update_from_upstream()
+elif PINS.selected_option.updated:
+    selected_option = PINS.selected_option.value
+    last_value = "selected_option"
+    update_from_selected_option()
+"""
+
 class DeepCellConnector:
     def __init__(self, deep_structure, keyorder):
         self.deep_structure = deep_structure
@@ -60,7 +109,6 @@ def _translate_deep(node, root, namespace, inchannels, outchannels, *, hash_patt
     keyorder = core_cell("plain").set_checksum(checksum.get("keyorder", empty_list_checksum))
     ctx.keyorder = keyorder
 
-
     ctx.filtered_keyorder = core_cell("plain")
 
     namespace[path, "target"] = DeepCellConnector(ctx.origin, ctx.keyorder), node
@@ -70,7 +118,58 @@ def _translate_deep(node, root, namespace, inchannels, outchannels, *, hash_patt
         else:
             cpath = path + outchannel
             namespace[cpath, "source"] = ctx.filtered.outchannels[outchannel], node
-        
+
+    ctx.origin_integrated = core_cell("mixed", hash_pattern=hash_pattern)
+    ctx.keyorder_integrated = core_cell("plain")
+    
+    share = node.get("share")
+    if share is not None:
+        ctx.origin0 = core_cell("mixed", hash_pattern=hash_pattern)
+        ctx.origin.outchannels[()].connect(ctx.origin0)
+        ctx.origin02 = core_cell("checksum")
+        ctx.origin0.connect(ctx.origin02)
+        ctx.origin03 = core_cell("plain")
+        ctx.origin02.connect(ctx.origin03)
+        ctx.origin04 = core_cell("checksum")
+        ctx.origin03.connect(ctx.origin04)
+
+        ctx.options = core_cell("plain")
+        ctx.options.set(share["options"])
+        ctx.selected_option = core_cell("text")
+        ctx.option_reactor_code = core_cell("python").set(option_reactor_code)
+        reactor_params = {
+            "origin": {"io":"input", "celltype": "checksum"},
+            "keyorder": {"io":"input", "celltype": "checksum"},
+            "options": {"io": "edit", "must_be_defined": False},  # actually an input pin
+            "selected_option": {"io": "edit", "must_be_defined": False},
+            "origin_integrated0": {"io":"output", "celltype": "checksum"},
+            "keyorder_integrated0": {"io":"output", "celltype": "checksum"},
+        }
+        ctx.integrate_options = rc = reactor(reactor_params)
+        rc.code_start.cell().set("""
+upstream = {}
+options = None
+selected_option = None
+last_value = None
+""")
+        ctx.option_reactor_code.connect(rc.code_update)
+        rc.code_stop.cell().set("")
+        ctx.origin04.connect(rc.origin)
+        ctx.keyorder0 = core_cell("checksum")
+        ctx.keyorder.connect(ctx.keyorder0)
+        ctx.keyorder0.connect(rc.keyorder)
+        ctx.options.connect(rc.options)
+        ctx.selected_option.connect(rc.selected_option)
+        ctx.origin_integrated0 = core_cell("checksum")
+        rc.origin_integrated0.connect(ctx.origin_integrated0)
+        ctx.origin_integrated0.connect(ctx.origin_integrated)
+        ctx.keyorder_integrated0 = core_cell("checksum")
+        rc.keyorder_integrated0.connect(ctx.keyorder_integrated0)
+        ctx.keyorder_integrated0.connect(ctx.keyorder_integrated)
+    else:
+        ctx.origin.outchannels[()].connect(ctx.origin_integrated)
+        ctx.keyorder.connect(ctx.keyorder_integrated)    
+
     ctx.blacklist = core_cell("plain")
     ctx.whitelist = core_cell("plain")
     namespace[path + ("blacklist",), "target"] = ctx.blacklist, "target"
@@ -104,10 +203,8 @@ def _translate_deep(node, root, namespace, inchannels, outchannels, *, hash_patt
     ctx.blackwhitelist0 = core_cell("mixed", hash_pattern={"*": "#"})
     ctx.blackwhitelist.outchannels[()].connect(ctx.blackwhitelist0)
     ctx.blackwhitelist0.connect(tf.blackwhitelist)
-    ctx.keyorder.connect(tf.keyorder)
-    ctx.origin0 = core_cell("mixed", hash_pattern=hash_pattern)
-    ctx.origin.outchannels[()].connect(ctx.origin0)
-    ctx.origin0.connect(tf.origin)
+    ctx.keyorder_integrated.connect(tf.keyorder)
+    ctx.origin_integrated.connect(tf.origin)
     tf.code.set(apply_blackwhitelist)
     ctx.filtered_all0 = core_cell("plain")
     tf.result.connect(ctx.filtered_all0)
@@ -136,5 +233,5 @@ def translate_deepcell(node, root, namespace, inchannels, outchannels):
 def translate_deepfoldercell(node, root, namespace, inchannels, outchannels):
     return _translate_deep(node, root, namespace, inchannels, outchannels, hash_pattern = {"*": "##"})
 
-from ..core import cell as core_cell, transformer, context
+from ..core import cell as core_cell, transformer, reactor, context
 from ..core.cache.buffer_cache import empty_list_checksum

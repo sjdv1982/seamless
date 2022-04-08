@@ -246,12 +246,25 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 deep_structure = await DeserializeBufferTask(
                     manager, buffer, source_checksum, "checksum", copy=False
                 ).run()
+                nested_checksum = None
                 if isinstance(deep_structure, str):
-                    raise Exception("Checksum cell does not refer to a deep cell structure")
+                    nested_checksum = bytes.fromhex(deep_structure)
+                    if fingertip_mode:
+                        buffer = await GetBufferTask(manager, nested_checksum).run()
+                    else:
+                        buffer = await cachemanager.fingertip(nested_checksum)
+                    if buffer is None:
+                        raise CacheMissError(nested_checksum)
+                    deep_structure = await DeserializeBufferTask(
+                        manager, buffer, nested_checksum, "checksum", copy=False
+                    ).run()
                 validate_checksum(deep_structure)
                 validate_deep_structure(deep_structure, target_hash_pattern)
 
-                result_checksum = source_checksum
+                if nested_checksum is not None:
+                    result_checksum = nested_checksum
+                else:
+                    result_checksum = source_checksum
                 done = True
                 needs_value_conversion = False
             elif trivial_path and result_hash_pattern is None:

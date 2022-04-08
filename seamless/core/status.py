@@ -166,6 +166,9 @@ def status_reactor(reactor):
         for pinname, accessor in upstreams.items():
             if accessor is None:
                 pins.append(pinname)
+        for pinname, accessor in livegraph.editpin_to_cell[reactor].items():
+            if accessor is None:
+                pins.append(pinname)
     elif reason == StatusReasonEnum.UPSTREAM:
         pins = {}
         for pinname, accessor in upstreams.items():

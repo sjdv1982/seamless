@@ -15,6 +15,7 @@ inchannel-conflict.py
 logs.py
 deepcell-simple.py
 deepcell-filter.py: can also be run in non-interactive mode (mount /tmp/blacklist.json, /tmp/filt_cell.json)
+deepcell-share.py
 deepfolder.py
 folder.py : writes data in ./testfolder
 folder2.py : assumes that folder.py has been run
