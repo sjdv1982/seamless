@@ -9,18 +9,24 @@ set -u -e
 
 [ ! -d $database_dir ] && mkdir -p $database_dir
 
+database_port=$2
+: ${database_port:=5522}
+
+database_host=$3
+: ${database_host:='localhost'}
+
 seamlessdir=$SEAMLESSDIR
 
 echo "Starting container seamless-database-container"
 docker run \
   -d \
-  -p 5522:5522 \
+  -p $database_port:$database_port \
   --name seamless-database-container \
   -v $database_dir:/data \
   -e "SEAMLESS_DATABASE_DIR=/data" \
-  -e "SEAMLESS_DATABASE_PORT=5522" \
-  -e "SEAMLESS_DATABASE_HOST=0.0.0.0" \
-  -u `id -u` \
+  -e "SEAMLESS_DATABASE_PORT=$database_port" \
+  -e "SEAMLESS_DATABASE_HOST=$database_host" \
+    -u `id -u` \
   --group-add users \
   -v /tmp:/tmp \
   -v `pwd`:/cwd \
