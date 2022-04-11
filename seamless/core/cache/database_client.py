@@ -92,6 +92,14 @@ class DatabaseSink(DatabaseBase):
         }
         self.send_request(request)
 
+    def set_elision_result(self, elision_checksum, elision_result):        
+        request = {
+            "type": "elision",
+            "checksum": parse_checksum(elision_checksum),
+            "value": elision_result,
+        }
+        self.send_request(request)
+
     def sem2syn(self, semkey, syn_checksums):
         sem_checksum, celltype, subcelltype = semkey
         request = {
@@ -205,6 +213,14 @@ class DatabaseCache(DatabaseBase):
         if response is not None:
             return bytes.fromhex(response.content.decode())
 
+    def get_elision_result(self, checksum):
+        request = {
+            "type": "elision",
+            "checksum": parse_checksum(checksum),
+        }
+        response = self.send_request(request)
+        if response is not None:
+            return response.json()
 
 database_sink = DatabaseSink()
 database_cache = DatabaseCache()

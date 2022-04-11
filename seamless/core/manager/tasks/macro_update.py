@@ -95,7 +95,7 @@ class MacroUpdateTask(Task):
 
         macro._last_inputs = inputpins.copy()
 
-        if elide(macro, inputpins):
+        if elide(macro):
             macro._in_elision = True
             if cachemanager.macro_exceptions.get(macro) is not None:
                 assert macro._gen_context is None

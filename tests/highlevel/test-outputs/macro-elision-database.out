@@ -1,0 +1,23 @@
+Run 1
+Database not found
+RUN MACRO 20
+RUN TRANSFORMER 10 20
+<Silk: 1200 >
+Status: OK None
+Start database
+
+Run 2
+Database found
+RUN MACRO 20
+RUN TRANSFORMER 10 20
+<Silk: 1200 >
+Status: OK None
+
+Run 3
+Database found
+<Silk: 1200 >
+Status: OK None
+
+Server log
+Press Ctrl+C to end
+

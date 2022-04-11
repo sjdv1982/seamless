@@ -38,6 +38,7 @@ simpler-ipython.py: Run with ipython --no-term-title (not -i) (see issue 25). Ou
 macro-simple.py
 macro.py
 macro-elision.py
+macro-elision-database.sh: run as i=macro-elision-database.; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
 reactor-edit-macro.py
 delay.py
 delay-logs-file.py

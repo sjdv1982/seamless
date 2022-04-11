@@ -76,6 +76,7 @@ types = (
     "semantic_to_syntactic",
     "compilation",
     "transformation",
+    "elision",
     "filename"
 )
 bucketnames = [
@@ -83,7 +84,8 @@ bucketnames = [
     "transformations",
     "compilations",
     "buffer_independence", 
-    "semantic_to_syntactic"
+    "semantic_to_syntactic",
+    "elisions"
 ]
 def format_response(response, *, none_as_404=False):
     status = None
@@ -142,6 +144,7 @@ class DatabaseServer:
         try:
             #print("NEW GET REQUEST", hex(id(request)))
             data = await request.read()
+            #print("NEW GET REQUEST", data)
             status = 200
             try:
                 try:
@@ -183,6 +186,7 @@ class DatabaseServer:
         try:
             #print("NEW PUT REQUEST", hex(id(request)))
             data = await request.read()
+            #print("NEW PUT REQUEST", data)
             status = 200
             try:
                 try:
@@ -195,9 +199,10 @@ class DatabaseServer:
                     else:
                         rq = json.loads(data)
                 except Exception:
-                    #import traceback; traceback.print_exc()
-                    raise DatabaseError("Malformed request") from None
+                    import traceback; traceback.print_exc()
+                    #raise DatabaseError("Malformed request") from None
                 if not isinstance(rq, dict):
+                    #import traceback; traceback.print_exc()
                     raise DatabaseError("Malformed request")
 
                 #print("NEW PUT REQUEST DATA", rq)
@@ -210,11 +215,13 @@ class DatabaseServer:
                     if type != "delete_key":
                         value = rq["value"]
                 except KeyError:
+                    #import traceback; traceback.print_exc()
                     raise DatabaseError("Malformed request") from None
                  
                 try:
                     checksum = parse_checksum(checksum)
                 except ValueError:
+                    #import traceback; traceback.print_exc()
                     raise DatabaseError("Malformed request") from None
 
                 response = await self._set(type, checksum, value, rq)
@@ -279,13 +286,23 @@ class DatabaseServer:
             if not len(results):
                 raise DatabaseError("Unknown key")
             return list(results)
+
         elif type == "compilation":
             bucket = self.buckets["compilations"]
-            return self._get_from_bucket(bucket, checksum)
+            result = self._get_from_bucket(bucket, checksum)
+            return parse_checksum(result) # None is also a valid response
 
         elif type == "transformation":
             bucket = self.buckets["transformations"]
-            return self._get_from_bucket(bucket, checksum)
+            result = self._get_from_bucket(bucket, checksum)
+            return parse_checksum(result) # None is also a valid response
+
+        elif type == "elision":
+            bucket = self.buckets["elisions"]
+            result = self._get_from_bucket(bucket, checksum)
+            json.dumps(result)
+            return result # None is also a valid response
+
         else:
             raise DatabaseError("Unknown request type")
 
@@ -343,6 +360,7 @@ class DatabaseServer:
         elif type == "compilation":
             try:
                 checksum = parse_checksum(checksum)
+                value = parse_checksum(value)
             except ValueError:
                 raise DatabaseError("Malformed SET compilation result request: value must be a checksum")
             bucket = self.buckets["compilations"]
@@ -352,10 +370,20 @@ class DatabaseServer:
         elif type == "transformation":
             try:
                 checksum = parse_checksum(checksum)
+                value = parse_checksum(value)
             except ValueError:
                 raise DatabaseError("Malformed SET transformation result request: value must be a checksum")
             bucket = self.buckets["transformations"]
             bucket.set(checksum, value)
+
+        elif type == "elision":
+            try:
+                checksum = parse_checksum(checksum)
+            except ValueError:
+                raise DatabaseError("Malformed SET elision result request: value must be a checksum")
+            bucket = self.buckets["elisions"]
+            bucket.set(checksum, value)
+
         else:
             raise DatabaseError("Unknown request type")
         return "OK"
@@ -383,6 +411,13 @@ if __name__ == "__main__":
 
     database_server = DatabaseServer(db_host, db_port)
     database_server.start()
+
+    """
+    import logging
+    logging.basicConfig()
+    logging.getLogger("seamless").setLevel(logging.DEBUG)
+    """
+    
     try:
         print("Press Ctrl+C to end")
         asyncio.get_event_loop().run_forever()

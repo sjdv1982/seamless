@@ -43,9 +43,9 @@ of named deepfolders. Include elision!
    TODO: jobless: adapt database client
    TODO: rewrite database-run-actions "buffer_info/"  from folder to bucket
    (write database-flatfolder-to-bucketfolder conversion tool)
-   TODO: rename database-run-actions concept "transforms" to "conversions"
+   TODO: rename database-run-actions concept "transforms" to "operations"
    TODO: implement serving shared-directories
-   TODO: implement elision
+   DONE: implement elision
 
 5a.
 - DONE: For DeepFolder/DeepCell (not Folder), support loading-by-name.

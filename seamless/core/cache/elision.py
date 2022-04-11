@@ -49,6 +49,7 @@ class Elision:
 
     def update(self):
         """Triggered if one of the output cells changes value"""
+        from .database_client import database_sink
         if self.macro._in_elision:
             return
         elision_checksum = self.get_elision_checksum()
@@ -58,6 +59,7 @@ class Elision:
         if elision_result is None:
             return
         #print("ELISION UPDATE", self.macro, elision_checksum.hex(), elision_result)
+        database_sink.set_elision_result(elision_checksum, elision_result)
         elision_cache[elision_checksum] = elision_result
 
 
@@ -128,7 +130,8 @@ class Elision:
                 livegraph.cell_from_macro_elision.pop(c)
 
 
-def elide(macro, inputpins):
+def elide(macro):
+    from .database_client import database_cache
     topmacro = macro._get_macro()
     if topmacro is None:
         topmacro = macro
@@ -149,7 +152,13 @@ def elide(macro, inputpins):
     cache_hit = elision_cache.get(elision_checksum)
     if cache_hit is None:
         #print("CACHE MISS", macro, elision_checksum.hex())
-        return False
+        db_cache_hit = database_cache.get_elision_result(elision_checksum)
+        if db_cache_hit is None:
+            #print("DB CACHE MISS", macro, elision_checksum.hex())
+            return False
+        else:
+            #print("DB CACHE HIT", macro, elision_checksum.hex())
+            cache_hit = db_cache_hit
     else:
         #print("CACHE HIT", macro, elision_checksum.hex())
         pass
