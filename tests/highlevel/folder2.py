@@ -18,6 +18,8 @@ print(value["test.txt"], type(value["test.txt"]))
 print(value["test.json"], type(value["test.json"]))
 print(value["test.npy"], type(value["test.npy"]))
 print(value["test2.dat"][:20], type(value["test2.dat"]))
+print(value["sub/test2.txt"], type(value["sub/test2.txt"]))
+print(value["sub/test3.npy"], type(value["sub/test3.npy"]))
 try:
     f["gives-error.txt"] = "Error"
 except AttributeError:
@@ -27,7 +29,6 @@ except AttributeError:
 print("STAGE 2")
 ctx.folder2 = ctx.folder
 print(ctx.folder2)
-exit(0)
 
 ctx.cell = Cell()
 ctx.cell = ctx.folder
@@ -40,3 +41,5 @@ print(value["test.txt"], type(value["test.txt"]))
 print(value["test.json"], type(value["test.json"]))
 print(value["test.npy"], type(value["test.npy"]))
 print(value["test2.dat"].tobytes()[:20], type(value["test2.dat"]))
+print(value["sub/test2.txt"], type(value["sub/test2.txt"]))
+print(value["sub/test3.npy"], type(value["sub/test3.npy"]))

@@ -11,6 +11,8 @@ f["test.dat"] = b"Test buffer"
 f["test.json"] = {"a":10, "b":20, "c":30}
 f["test.npy"] = np.arange(10)
 f["test2.dat"] = np.arange(130).tobytes()
+f["sub/test2.txt"] = "And another\ntest"
+f["sub/test3.npy"] = np.arange(10,20)
 ctx.compute()
 print(f.data)
 print(ctx.resolve(f.data["test.txt"]))
