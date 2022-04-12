@@ -102,7 +102,7 @@ def tf_get_buffer(transformation):
     assert isinstance(transformation, dict)
     d = {}
     for k in transformation:
-        if k in ("__compilers__", "__languages__", "__meta__"):
+        if k in ("__compilers__", "__languages__", "__meta__", "__format__"):
             continue
         v = transformation[k]
         if k in ("__output__", "__as__"):
@@ -214,6 +214,7 @@ class TransformationCache:
         outputname, celltype, subcelltype = outputpin
         transformation = {"__output__": outputpin}
         as_ = {}
+        FORMAT = {}
         root = transformer._root()
         if root._compilers is not None:
             transformation["__compilers__"] = root._compilers
@@ -244,9 +245,19 @@ class TransformationCache:
             buffer_cache.guarantee_buffer_info(env_checksum, "plain")
             transformation["__env__"] = env_checksum
         transformation_build_exception = None
+        
         for pinname, checksum in inputpin_checksums.items():
             if pinname == "META":
                 continue
+            pin = transformer._pins[pinname]
+            filesystem = pin._filesystem  
+            hash_pattern = pin._hash_pattern
+            if filesystem is not None or hash_pattern is not None:
+                FORMAT[pinname] = {}          
+            if filesystem is not None:
+                FORMAT[pinname]["filesystem"] = deepcopy(filesystem)
+            if hash_pattern is not None:
+                FORMAT[pinname]["hash_pattern"] = deepcopy(hash_pattern)
             await cachemanager.fingertip(checksum)
             pin = transformer._pins[pinname]
             celltype, subcelltype = celltypes[pinname]
@@ -282,6 +293,8 @@ class TransformationCache:
                     else:
                         sem_checksum = checksum
             transformation[pinname] = celltype, subcelltype, sem_checksum
+        if len(FORMAT):
+            transformation["__format__"] = FORMAT
         if len(as_):
             transformation["__as__"] = as_
         return transformation, transformation_build_exception
@@ -342,7 +355,7 @@ class TransformationCache:
                 result_checksum, prelim = self.transformation_results[tf_checksum]
                 buffer_cache.incref(result_checksum, False)
             for pinname in transformation:
-                if pinname in ("__compilers__", "__languages__", "__as__", "__meta__"):
+                if pinname in ("__compilers__", "__languages__", "__as__", "__meta__", "__format__"):
                     continue
                 if pinname == "__output__":
                     continue
@@ -459,7 +472,7 @@ class TransformationCache:
             self.transformation_logs.pop(tf_checksum, None)
             # TODO: clear transformation_exceptions also at some moment??
         for pinname in transformation:
-            if pinname in ("__output__", "__languages__", "__compilers__", "__as__", "__meta__"):
+            if pinname in ("__output__", "__languages__", "__compilers__", "__as__", "__meta__", "__format__"):
                 continue
             if pinname == "__env__":
                 env_checksum = transformation["__env__"]
@@ -485,7 +498,7 @@ class TransformationCache:
     def build_semantic_cache(self, transformation):
         semantic_cache = {}
         for k,v in transformation.items():
-            if k in ("__compilers__", "__languages__", "__meta__"):
+            if k in ("__compilers__", "__languages__", "__meta__", "__format__"):
                 continue
             if k in ("__output__", "__as__"):
                 continue
@@ -600,7 +613,7 @@ class TransformationCache:
     def _set_exc(self, transformers, tf_checksum, exc):
         # TODO: offload to provenance? unless hard-canceled
         if tf_checksum not in self.transformation_logs:
-            if isinstance(exc, (RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError)):
+            if isinstance(exc, (RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError, CacheMissError)):
                 logs = exc.args[0]
             else:
                 s = traceback.format_exception(

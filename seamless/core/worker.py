@@ -111,6 +111,7 @@ class InputPin(InputPinBase):
     """
     io = "input"
     _hash_pattern = None
+    _filesystem = None
 
     def cell(self, celltype=None):
         """Returns or creates a cell connected to the inputpin"""
@@ -120,6 +121,10 @@ class InputPin(InputPinBase):
         """Sets the value of the connected cell"""
         return self.cell().set(*args, **kwargs)
 
+    def filesystem(self, mode:str, *, optional:bool):
+        assert mode in ("file", "directory")
+        assert optional in (True, False), optional
+        self._filesystem = {"mode": mode, "optional": optional}
 
 class OutputPin(OutputPinBase):
     """Connects the output of workers (transformers and reactors) to cells

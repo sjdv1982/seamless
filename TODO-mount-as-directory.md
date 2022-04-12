@@ -39,12 +39,12 @@ UPDATE: don't rip, but document it as an advanced property.
 and that there is a subfolder for download pages/buffer info pages
 of named deepfolders. Include elision!
    TODO: additional read-only database directories (with their own buckets)
-   TODO: cloudless/jobless: rip redis, rewrite test 
    TODO: jobless: adapt database client
+   TODO: cloudless/jobless: rip redis, rewrite tests 
    TODO: rewrite database-run-actions "buffer_info/"  from folder to bucket
    (write database-flatfolder-to-bucketfolder conversion tool)
    TODO: rename database-run-actions concept "transforms" to "operations"
-   TODO: implement serving shared-directories
+   DONE: implement serving shared-directories (TODO: TEST)
    DONE: implement elision
 
 5a.
@@ -86,15 +86,16 @@ tools to export contents of the database dir (notably, /downloads,
 /deepfolders, /deepcells, and deep buffers in /buffers) to a FAIR server dir.
 DONE UPDATE3: make a PDB test, but rename stdlib.join to stdlib.select.
 
-6. TODO: Add filename support to transformers, as outlined in https://github.com/sjdv1982/seamless/issues/108. There will be high-level transformer pin celltype "deepfolder", "deepcell".
+6. DONE: Add filename support to transformers, as outlined in https://github.com/sjdv1982/seamless/issues/108. 
+TODO. There will be high-level transformer pin celltype "deepfolder", "deepcell".
 Assigning a transformer pin to a DeepFolderCell, DeepCell
 creates a pin of that celltype.
 Assigning a transformer input to a FolderCell creates a "deepfolder" pin in case of a bash transformer
 , a "mixed" pin otherwise. 
 The high-level celltypes "deepfolder", "deepcell" do not exist at the low level.
-Instead, "mixed" pins are created with the correct hash patterns, i.e. receiving the raw deep structure.
+DONE: Instead, "mixed" pins are created with the correct hash patterns, i.e. receiving the raw deep structure.
 (test this!)
-However, bash transformers will create these pins with "filesystem": {"mode": "directory", "optional": False}. "optional" will be True if connected to a Folder (re-connecting it to a DeepFolder will set it to
+TODO: However, bash transformers will create these pins with "filesystem": {"mode": "directory", "optional": False}. "optional" will be True if connected to a Folder (re-connecting it to a DeepFolder will set it to
 False). This makes sure that Seamless does not try to load/download gigantic datasets in memory and write them to disk by itself.
 Make a deepfolder pin subtype "small" that translates to "filesystem": {"mode": "directory", "optional": True} instead.
 Also: use "as_" to select the filename/folder to write to, overruling pin name.

@@ -112,7 +112,7 @@ def get_transformation_inputs_output(transformation):
     inputs = []
     as_ = transformation.get("__as__", {})
     for pinname in sorted(transformation.keys()):
-        if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__"):
+        if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__", "__format__"):
             continue
         if pinname == "__output__":
             continue
@@ -129,6 +129,8 @@ def get_transformation_inputs_output(transformation):
     return inputs, outputname, output_celltype, output_subcelltype
 
 async def build_transformation_namespace(transformation, semantic_cache, codename):    
+    from .cache.database_client import database_cache
+    from .protocol.expression import get_subpath
     namespace = {
         "__name__": "transformer",
         "__package__": "transformer",
@@ -138,8 +140,9 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
     namespace["PINS"] = {}
     modules_to_build = {}
     as_ = transformation.get("__as__", {})
+    FILESYSTEM = {}    
     for pinname in sorted(transformation.keys()):
-        if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__"):
+        if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__", "__format__"):
             continue
         if pinname == "__output__":
             continue
@@ -152,17 +155,50 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
             checksum = semantic_cache[semkey][0]
         if checksum is None:
             continue
-        # fingertipping must have happened before, but database could be there
-        buffer = get_buffer(checksum, remote=True)
-        if buffer is None:
-            raise CacheMissError(checksum.hex())
-        try:
-            value = await deserialize(buffer, checksum, celltype, False)
-        except Exception as exc:
-            e = traceback.format_exc()
-            raise Exception(pinname, e) from None
-        if value is None:
-            raise CacheMissError(pinname, codename)
+        from_filesystem = False
+        hash_pattern = None
+        fmt = transformation.get("__format__", {}).get(pinname)
+        if fmt is not None:
+            fs = fmt.get("filesystem")
+            fs_result = None
+            if fs is not None:
+                optional = fs["optional"]
+                mode = fs["mode"]
+                if mode == "file":
+                    fs_result = database_cache.get_filename(checksum)
+                else: # mode == "directory"                    
+                    fs_result = database_cache.get_directory(checksum)
+                fs_entry = deepcopy(fs)
+                if fs_result is None:
+                    if not optional:
+                        msg = "Could not find file/directory for {}"
+                        raise CacheMissError(msg.format(checksum.hex()))
+                else:
+                    fs_entry["filesystem"] = False
+                    value = fs_result
+                    from_filesystem = True
+                FILESYSTEM[pinname] = fs_entry
+            
+            if fs_result is None:
+                hash_pattern = fmt.get("hash_pattern")
+
+        if not from_filesystem:
+            # fingertipping must have happened before, but database could be there
+            buffer = get_buffer(checksum, remote=True)
+            if buffer is None:
+                raise CacheMissError(checksum.hex())            
+            try:
+                if hash_pattern is not None:
+                    deep_value = await deserialize(buffer, checksum, "plain", False)
+                    mode, value = await get_subpath(deep_value, hash_pattern, ())
+                    assert mode == "value"
+                else:
+                    value = await deserialize(buffer, checksum, celltype, False)
+            except Exception as exc:
+                e = traceback.format_exc()
+                raise Exception(pinname, e) from None
+            if value is None:
+                raise CacheMissError(pinname, codename)
         if pinname == "code":
             code = value
         elif (celltype, subcelltype) == ("plain", "module"):
@@ -175,7 +211,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
     for pinname in transformation:
         if pinname in (
             "__output__", "__env__", "__compilers__", 
-            "__languages__", "__as__", "__meta__"
+            "__languages__", "__as__", "__meta__", "__format__"
         ):
             continue
         celltype, _, _ = transformation[pinname]
@@ -199,6 +235,8 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
         )
         namespace["PINS"][pinname_as] = v
         namespace[pinname_as] = v
+    if len(FILESYSTEM):
+        namespace["FILESYSTEM"] = FILESYSTEM
     return code, namespace, modules_to_build
 
 
@@ -229,7 +267,7 @@ class TransformationJob:
         self.codename = codename
         assert "code" in transformation, transformation.keys()
         for pinname in transformation:
-            if pinname in ("__compilers__", "__languages__", "__as__", "__meta__"):
+            if pinname in ("__compilers__", "__languages__", "__as__", "__meta__", "__format__"):
                 continue
             if pinname != "__output__":
                 assert transformation[pinname][2] is not None, pinname

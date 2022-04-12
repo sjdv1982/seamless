@@ -66,6 +66,7 @@ macro.py
 macro2.py
 macro3.py
 pin-as.py
+pin-filesystem.sh: run as i=pin-filesystem; seamless-devel $i.sh > test-outputs/$i.out 2>&1
 checksum-cell.py
 structured_cell/simple-deepcell.py
 structured_cell/simple-deepcell-rawbuffer.py

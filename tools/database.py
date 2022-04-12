@@ -6,7 +6,6 @@ from seamless.util import parse_checksum
 from seamless.core.buffer_info import BufferInfo
 from collections import deque
 import gc
-from database_bucket import TopBucket
 import signal
 def raise_system_exit(*args, **kwargs): 
     raise SystemExit
@@ -58,6 +57,8 @@ def err(*args, **kwargs):
 def _get_filename(checksum):
     return os.path.join(SDB, "buffers", checksum)
 
+def _get_directory(checksum):
+    return os.path.join(SDB, "shared-directories", checksum)
 
 class DatabaseError(Exception):
     pass
@@ -77,7 +78,8 @@ types = (
     "compilation",
     "transformation",
     "elision",
-    "filename"
+    "filename",
+    "directory",
 )
 bucketnames = [
     "buffer_info", 
@@ -266,6 +268,12 @@ class DatabaseServer:
                 return filename
             return None # None is also a valid response
 
+        elif type == "directory":
+            directory = _get_directory(checksum)
+            if os.path.exists(directory):
+                return directory
+            return None # None is also a valid response
+
         elif type == "buffer":
             filename = _get_filename(checksum)
             result = await read_buffer(checksum, filename)
@@ -389,6 +397,7 @@ class DatabaseServer:
         return "OK"
 
 if __name__ == "__main__":
+    from database_bucket import TopBucket
     env = os.environ
     SDB = env.get("SEAMLESS_DATABASE_DIR")
     if SDB is None:
@@ -423,4 +432,5 @@ if __name__ == "__main__":
         asyncio.get_event_loop().run_forever()
     except KeyboardInterrupt:
         pass
-        
+else:
+    from .database_bucket import TopBucket

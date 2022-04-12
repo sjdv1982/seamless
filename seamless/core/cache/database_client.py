@@ -171,6 +171,24 @@ class DatabaseCache(DatabaseBase):
         if response is not None:
             return bytes.fromhex(response.content.decode())
 
+    def get_filename(self, checksum):
+        request = {
+            "type": "filename",
+            "checksum": parse_checksum(checksum),
+        }
+        response = self.send_request(request)
+        if response is not None:
+            return response.text
+
+    def get_directory(self, checksum):
+        request = {
+            "type": "directory",
+            "checksum": parse_checksum(checksum),
+        }
+        response = self.send_request(request)
+        if response is not None:
+            return response.text
+
     def sem2syn(self, semkey):
         sem_checksum, celltype, subcelltype = semkey
         request = {

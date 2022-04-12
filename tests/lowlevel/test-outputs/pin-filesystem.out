@@ -1,0 +1,90 @@
+Run 1
+Database not found
+A f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247 b'[\n  1,\n  2,\n  3\n]\n'
+B 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1 b'{\n  "file1.txt": "191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba"\n}\n'
+C a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e b'3\n'
+D 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2 b'{\n  "file2.txt": "a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e"\n}\n'
+None
+Status: error
+Could not find file/directory for a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
+Could not find file/directory for a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
+d000ae9ed2e0a27904ca13552e035f1d79f87ce9dcd90a95370c4a266a16a0e3
+Start database
+
+Run 2
+Database found
+A f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247 b'[\n  1,\n  2,\n  3\n]\n'
+B 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1 b'{\n  "file1.txt": "191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba"\n}\n'
+C a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e b'3\n'
+D 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2 b'{\n  "file2.txt": "a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e"\n}\n'
+None
+Status: error
+Could not find file/directory for 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
+Could not find file/directory for 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
+d000ae9ed2e0a27904ca13552e035f1d79f87ce9dcd90a95370c4a266a16a0e3
+
+Share folder 2 and restart database
+Computed deepfolder for testfolder2: deep buffer checksum 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
+Deepfolder checksum: 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
+Creating hard links in /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
+
+Run 3
+Database found
+A f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247 b'[\n  1,\n  2,\n  3\n]\n'
+B 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1 b'{\n  "file1.txt": "191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba"\n}\n'
+C a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e b'3\n'
+D 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2 b'{\n  "file2.txt": "a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e"\n}\n'
+OK
+Status: OK
+None
+*************************************************
+* Result
+*************************************************
+OK
+*************************************************
+* Standard output
+*************************************************
+{'a': {'mode': 'file', 'optional': True, 'filesystem': False}, 'b': {'mode': 'directory', 'optional': True}, 'c': {'mode': 'file', 'optional': False, 'filesystem': False}, 'd': {'mode': 'directory', 'optional': False, 'filesystem': False}}
+pin A /tmp/PIN-FILESYSTEM-TEST-DB/buffers/f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247
+pin B {'file1.txt': '2\n'}
+pin C /tmp/PIN-FILESYSTEM-TEST-DB/buffers/a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
+pin D /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
+
+*************************************************
+d000ae9ed2e0a27904ca13552e035f1d79f87ce9dcd90a95370c4a266a16a0e3
+
+Share folder 1 and restart database
+Computed deepfolder for testfolder1: deep buffer checksum 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1
+Deepfolder checksum: 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1
+Creating hard links in /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1
+
+Delete transformation result
+Transformation result deleted
+
+Run 4
+Database found
+A f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247 b'[\n  1,\n  2,\n  3\n]\n'
+B 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1 b'{\n  "file1.txt": "191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba"\n}\n'
+C a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e b'3\n'
+D 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2 b'{\n  "file2.txt": "a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e"\n}\n'
+OK
+Status: OK
+None
+*************************************************
+* Result
+*************************************************
+OK
+*************************************************
+* Standard output
+*************************************************
+{'a': {'mode': 'file', 'optional': True, 'filesystem': False}, 'b': {'mode': 'directory', 'optional': True, 'filesystem': False}, 'c': {'mode': 'file', 'optional': False, 'filesystem': False}, 'd': {'mode': 'directory', 'optional': False, 'filesystem': False}}
+pin A /tmp/PIN-FILESYSTEM-TEST-DB/buffers/f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247
+pin B /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1
+pin C /tmp/PIN-FILESYSTEM-TEST-DB/buffers/a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
+pin D /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
+
+*************************************************
+d000ae9ed2e0a27904ca13552e035f1d79f87ce9dcd90a95370c4a266a16a0e3
+
+Server log
+

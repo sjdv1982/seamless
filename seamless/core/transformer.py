@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import asyncio
+from copy import deepcopy
 import traceback
 
 from .worker import Worker, InputPin, OutputPin
@@ -48,6 +49,13 @@ class Transformer(Worker):
                 raise ValueError((p, param))
             if io == "input":
                 pin = InputPin(self, p, celltype, subcelltype, as_=as_)
+                if isinstance(param, dict):
+                    fs = param.get("filesystem")
+                    if fs is not None:
+                        pin.filesystem(**fs)
+                    hash_pattern = param.get("hash_pattern")
+                    if hash_pattern is not None:
+                        pin._hash_pattern = hash_pattern
             elif io == "output":
                 pin = OutputPin(self, p, celltype, subcelltype, as_=as_)
                 assert self._output_name is None  # can have only one output

@@ -20,6 +20,5 @@ echo
 echo 'Server log'
 cat $db.log
 echo ''
-exit
 rm -rf $db
 rm -f $db.log

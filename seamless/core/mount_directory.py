@@ -127,8 +127,6 @@ def write_to_directory(directory, data, *, cleanup, deep, text_only):
     """Writes data to directory
     
     Data must be a (deep) folder"""
-    from .protocol.serialize import serialize_sync
-    from .cache.buffer_cache import buffer_cache
     abs_dir = os.path.abspath(directory)
     os.makedirs(abs_dir, exist_ok=True)
     all_files = set()

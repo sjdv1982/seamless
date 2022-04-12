@@ -1,0 +1,16 @@
+{
+    "directory": {
+        "collection": "testfolder1"        
+        "path": "/tmp/PIN-FILESYSTEM-FOLDER1" 
+        "cross_device": false
+    }
+    actions: [
+        {
+            "action": "intern_collection"
+            "hardlink": true
+        }
+        {
+            "action": "deepfolder"
+        }
+    ]
+}
