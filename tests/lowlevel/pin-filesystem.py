@@ -5,7 +5,6 @@ from seamless.core import macro_mode_on
 import seamless
 from requests import ConnectionError
 
-from tools.database import cache_buffer
 try:
     seamless.database_cache.connect()
     seamless.database_sink.connect()

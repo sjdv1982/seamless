@@ -797,6 +797,7 @@ class Context(Base, HelpMixin):
                 ub_ctx._languages = env["languages"]
                 self._unbound_context = ub_ctx
                 ub_ctx._root_highlevel_context = weakref.ref(self)
+                #print("TRANSLATE", self)
                 translate(
                     graph, ub_ctx, 
                     self.environment
@@ -838,6 +839,7 @@ class Context(Base, HelpMixin):
                     try:
                         child._set_observers()
                     except Exception:
+                        import traceback; traceback.print_exc()
                         pass
                 elif isinstance(child, (PinWrapper, Link)):
                     continue

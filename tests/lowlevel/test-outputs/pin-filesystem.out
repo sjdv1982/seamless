@@ -6,9 +6,9 @@ C a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e b'3\n'
 D 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2 b'{\n  "file2.txt": "a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e"\n}\n'
 None
 Status: error
-Could not find file/directory for a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
-Could not find file/directory for a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
-d000ae9ed2e0a27904ca13552e035f1d79f87ce9dcd90a95370c4a266a16a0e3
+c: could not find file/directory for a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
+c: could not find file/directory for a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
+a05baafed55bf67251dcafb466b4cb5399dd59cb305f1eec9bdf069217fb8b01
 Start database
 
 Run 2
@@ -19,9 +19,9 @@ C a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e b'3\n'
 D 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2 b'{\n  "file2.txt": "a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e"\n}\n'
 None
 Status: error
-Could not find file/directory for 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
-Could not find file/directory for 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
-d000ae9ed2e0a27904ca13552e035f1d79f87ce9dcd90a95370c4a266a16a0e3
+d: could not find file/directory for 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
+d: could not find file/directory for 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
+a05baafed55bf67251dcafb466b4cb5399dd59cb305f1eec9bdf069217fb8b01
 
 Share folder 2 and restart database
 Computed deepfolder for testfolder2: deep buffer checksum 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
@@ -44,14 +44,14 @@ OK
 *************************************************
 * Standard output
 *************************************************
-{'a': {'mode': 'file', 'optional': True, 'filesystem': False}, 'b': {'mode': 'directory', 'optional': True}, 'c': {'mode': 'file', 'optional': False, 'filesystem': False}, 'd': {'mode': 'directory', 'optional': False, 'filesystem': False}}
+{'a': {'mode': 'file', 'optional': True, 'filesystem': True}, 'b': {'mode': 'directory', 'optional': True, 'filesystem': False}, 'c': {'mode': 'file', 'optional': False, 'filesystem': True}, 'd': {'mode': 'directory', 'optional': False, 'filesystem': True}}
 pin A /tmp/PIN-FILESYSTEM-TEST-DB/buffers/f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247
 pin B {'file1.txt': '2\n'}
 pin C /tmp/PIN-FILESYSTEM-TEST-DB/buffers/a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
 pin D /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
 
 *************************************************
-d000ae9ed2e0a27904ca13552e035f1d79f87ce9dcd90a95370c4a266a16a0e3
+a05baafed55bf67251dcafb466b4cb5399dd59cb305f1eec9bdf069217fb8b01
 
 Share folder 1 and restart database
 Computed deepfolder for testfolder1: deep buffer checksum 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1
@@ -77,14 +77,15 @@ OK
 *************************************************
 * Standard output
 *************************************************
-{'a': {'mode': 'file', 'optional': True, 'filesystem': False}, 'b': {'mode': 'directory', 'optional': True, 'filesystem': False}, 'c': {'mode': 'file', 'optional': False, 'filesystem': False}, 'd': {'mode': 'directory', 'optional': False, 'filesystem': False}}
+{'a': {'mode': 'file', 'optional': True, 'filesystem': True}, 'b': {'mode': 'directory', 'optional': True, 'filesystem': True}, 'c': {'mode': 'file', 'optional': False, 'filesystem': True}, 'd': {'mode': 'directory', 'optional': False, 'filesystem': True}}
 pin A /tmp/PIN-FILESYSTEM-TEST-DB/buffers/f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247
 pin B /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1
 pin C /tmp/PIN-FILESYSTEM-TEST-DB/buffers/a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
 pin D /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
 
 *************************************************
-d000ae9ed2e0a27904ca13552e035f1d79f87ce9dcd90a95370c4a266a16a0e3
+a05baafed55bf67251dcafb466b4cb5399dd59cb305f1eec9bdf069217fb8b01
 
 Server log
+Press Ctrl+C to end
 

@@ -1,10 +1,10 @@
 import weakref
-from seamless.metalevel import debugmode, debugmount
 import functools
-import pprint
 import json
 from copy import deepcopy
-from .Cell import Cell
+
+from .Base import Base
+from .Cell import Cell, FolderCell
 from .Module import Module
 from .Resource import Resource
 from .SelfWrapper import SelfWrapper
@@ -379,7 +379,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         return self._setattr(item, value)
 
     def _setattr(self, attr, value):
-        from .assign import assign_connection
+        from .assign import assign_connection        
         translate = False
         parent = self._parent()
         htf = self._get_htf()
@@ -391,7 +391,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         if attr == "main_module" and htf["compiled"] and attr not in htf["pins"]:
             raise TypeError("Cannot assign directly all module objects; assign individual elements")
 
-        if not self._has_tf() and not isinstance(value, (Cell, Module)) and attr != htf["RESULT"]:
+        if not self._has_tf() and not isinstance(value, (Cell, Module, DeepCellBase)) and attr != htf["RESULT"]:
             if isinstance(value, Resource):
                 value = value.data
             if "TEMP" not in htf or htf["TEMP"] is None:
@@ -404,6 +404,8 @@ You can set this dictionary directly, or you may assign .meta to a cell
                     code, _, _ = parse_function_code(value)
                 htf["TEMP"]["code"] = code
             else:
+                if isinstance(value, Base):
+                    raise TypeError(type(value))
                 get_form(value)
                 htf["TEMP"]["input_auth"][attr] = value
                 if attr not in htf["pins"]:
@@ -443,7 +445,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
                     tf.code.set(value)
         elif attr == htf["INPUT"]:
             target_path = self._path
-            if isinstance(value, Cell):
+            if isinstance(value, (Cell, DeepCellBase)):
                 assert value._parent() is parent
                 exempt = self._exempt()
                 assign_connection(parent, value._path, target_path, False, exempt=exempt)
@@ -462,6 +464,19 @@ You can set this dictionary directly, or you may assign .meta to a cell
             # TODO: suppress inchannel warning
             result.handle_no_inference.set(value)
         else:
+            pin0 = {}
+            if isinstance(value, DeepCell):
+                pin0 = {
+                    "celltype": "deepcell",
+                }
+            elif isinstance(value, DeepFolderCell):
+                pin0 = {
+                    "celltype": "deepfolder",
+                }
+            elif isinstance(value, FolderCell):
+                pin0 = {
+                    "celltype": "folder",
+                }
             if attr not in htf["pins"]:
                 if isinstance(value, Module):
                     pin = {
@@ -470,9 +485,12 @@ You can set this dictionary directly, or you may assign .meta to a cell
                     }
                 else:
                     pin = default_pin.copy()
+                pin.update(pin0)
                 htf["pins"][attr] = pin
                 translate = True
-            if isinstance(value, (Cell, Module)):
+            else:
+                htf["pins"][attr].update(pin0)
+            if isinstance(value, (Cell, Module, DeepCellBase)):
                 target_path = self._path + (attr,)
                 assert value._parent() is parent
                 assign_connection(parent, value._path, target_path, False)
@@ -1316,3 +1334,4 @@ class TransformerCopy:
 from .synth_context import SynthContext
 from .assign import check_libinstance_subcontext_binding
 from ..core.status import StatusReasonEnum
+from .DeepCell import DeepCellBase, DeepCell, DeepFolderCell

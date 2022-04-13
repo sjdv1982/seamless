@@ -1,7 +1,5 @@
 import inspect
 from copy import deepcopy
-import json
-import weakref
 
 def check_libinstance_subcontext_binding(ctx, path):
     for node in ctx._graph.nodes.values():
@@ -200,6 +198,7 @@ def assign_libinstance(ctx, path, libinstance):
 
 
 def assign_connection(ctx, source, target, standalone_target, exempt=[]):
+    # "standalone_target" is False for subcells or proxywrappers, True otherwise
     nodedict = ctx._graph[0]
     libinstance_source_node = under_libinstance_control(nodedict, source)
     if libinstance_source_node is not None:
@@ -280,12 +279,16 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
             hcell = s._get_hcell()
             if hcell.get("constant"):
                 raise TypeError("Cannot assign to constant cell")
-        elif isinstance(s, (Module, DeepCellBase)):
-            if isinstance(s, DeepCellBase) and isinstance(t, Cell):
-                if t.hash_pattern is None and t.celltype != "checksum":
-                    if isinstance(s, DeepFolderCell):
-                        c = "DeepFolderCell"   
-                        msg = """ERROR: assigning a Cell to a DeepFolderCell
+        elif isinstance(s, (Module, DeepCellBase)):            
+            if isinstance(s, DeepCellBase):
+                if not standalone_target:
+                    t2 = ctx._children.get(target[:-1])
+                    if not isinstance(t2, Transformer):
+                        raise ValueError("Cannot assign deep cell to subcell")
+                elif isinstance(t, (Cell, DeepCellBase)):
+                    if t.hash_pattern is None and t.celltype != "checksum":
+                        if isinstance(s, DeepFolderCell):
+                            msg = """ERROR: assigning a Cell to a DeepFolderCell
 
 When accessed, Cells have their complete content loaded into memory.
 This is not the case for DeepFolderCells, whose content can be very large in size.
@@ -299,8 +302,8 @@ but they are assumed to be small enough to be mounted to disk.
 If you really want to do so, assigning a Cell to a FolderCell is allowed.
 """
 
-                    else:
-                        msg = """ERROR: assigning a Cell to a DeepCell
+                        else:
+                            msg = """ERROR: assigning a Cell to a DeepCell
 
 When accessed, Cells have their complete content loaded into memory.
 This is not the case for DeepCells, whose content can be very large in size.
@@ -310,8 +313,9 @@ Therefore, the direct assignment of a Cell to a DeepCell is by default not allow
 If you really want to do this, create an intermediate Cell with hash pattern {"*": "#"},
 and assign the Cell to this intermediate Cell.
 """
-                    raise Exception(msg)
-
+                        raise Exception(msg)
+                elif isinstance(t, Base):
+                    raise ValueError("Cannot assign deep cell to {}".format(type(t)))
             pass
         else:
             raise TypeError(type(s))
@@ -501,7 +505,7 @@ def assign_to_deep_subcell(cell, attr, value):
         if removed:
             ctx._translate()
         if untranslated:
-            if isinstance(cell, DeepCell):
+            if isinstance(cell, (DeepCell, DeepFolderCell)):
                 if not isinstance(attr, str):
                     raise TypeError(type(attr))
                 temp_value = hcell.get("TEMP", {})
@@ -734,3 +738,4 @@ def assign(ctx, path, value, *, help_context=False):
         raise TypeError(str(value), type(value))
 
 from ..midlevel.util import get_path
+from .Base import Base

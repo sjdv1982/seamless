@@ -1,0 +1,16 @@
+{
+    "directory": {
+        "collection": "testfolder"        
+        "path": "./testfolder" 
+        "cross_device": true
+    }
+    actions: [
+        {
+            "action": "intern_collection"
+            "hardlink": false
+        }
+        {
+            "action": "deepfolder"
+        }
+    ]
+}

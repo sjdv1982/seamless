@@ -19,7 +19,7 @@ echo 'Run 2'
 python3 -u pin-filesystem.py
 echo
 echo 'Share folder 2 and restart database'
-kill %1
+kill `ps -ef | grep database | awk '{print $2}' | tac | awk 'NR > 1'`
 ../../tools/database-run-actions pin-filesystem-2.cson
 ../../tools/database-share-deepfolder-directory --collection testfolder2
 python3 ../../tools/database.py > $db.log 2>&1 &
@@ -29,7 +29,7 @@ echo 'Run 3'
 python3 -u pin-filesystem.py
 echo
 echo 'Share folder 1 and restart database'
-kill %1
+kill `ps -ef | grep database | awk '{print $2}' | tac | awk 'NR > 1'`
 ../../tools/database-run-actions pin-filesystem-1.cson
 ../../tools/database-share-deepfolder-directory --collection testfolder1
 python3 ../../tools/database.py > $db.log 2>&1 &
@@ -40,7 +40,7 @@ python3 ../../scripts/delete-transformation-result.py $checksum
 echo
 echo 'Run 4'
 python3 -u pin-filesystem.py
-kill %1
+kill `ps -ef | grep database | awk '{print $2}' | tac | awk 'NR > 1'`
 echo
 echo 'Server log'
 cat $db.log

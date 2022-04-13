@@ -102,10 +102,10 @@ def tf_get_buffer(transformation):
     assert isinstance(transformation, dict)
     d = {}
     for k in transformation:
-        if k in ("__compilers__", "__languages__", "__meta__", "__format__"):
+        if k in ("__compilers__", "__languages__", "__meta__"):
             continue
         v = transformation[k]
-        if k in ("__output__", "__as__"):
+        if k in ("__output__", "__as__", "__format__"):
             d[k] = v
             continue
         elif k == "__env__":

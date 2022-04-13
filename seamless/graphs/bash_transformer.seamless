@@ -1,12 +1,12 @@
 {
-  "__seamless__": "0.7",
+  "__seamless__": "0.8",
   "connections": [],
   "lib": [],
   "nodes": [
     {
       "celltype": "code",
       "checksum": {
-        "value": "38098a5c5145ebf988f660f8a50e20f9935c1de8b913a011f2c8ccd13534437e"
+        "value": "f7b277adb510feb55c83f40b22bc36f4bfdc9fa1a06d46a5305a2aba94aa35bf"
       },
       "datatype": "mixed",
       "language": "python",

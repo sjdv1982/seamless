@@ -171,10 +171,11 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
                 fs_entry = deepcopy(fs)
                 if fs_result is None:
                     if not optional:
-                        msg = "Could not find file/directory for {}"
-                        raise CacheMissError(msg.format(checksum.hex()))
-                else:
+                        msg = "{}: could not find file/directory for {}"
+                        raise CacheMissError(msg.format(pinname, checksum.hex()))
                     fs_entry["filesystem"] = False
+                else:
+                    fs_entry["filesystem"] = True
                     value = fs_result
                     from_filesystem = True
                 FILESYSTEM[pinname] = fs_entry
@@ -235,8 +236,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
         )
         namespace["PINS"][pinname_as] = v
         namespace[pinname_as] = v
-    if len(FILESYSTEM):
-        namespace["FILESYSTEM"] = FILESYSTEM
+    namespace["FILESYSTEM"] = FILESYSTEM
     return code, namespace, modules_to_build
 
 

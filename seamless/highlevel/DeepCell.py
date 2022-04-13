@@ -183,6 +183,29 @@ is stored as well, if available.
                     self._get_hcell()["metadata"] = metadata
             except Exception:
                 pass
+    @property
+    def filtered_checksum(self):
+        """Contains the filtered checksum of the cell, as SHA3-256 hash.
+
+This is after blacklist/whitelist filtering has been applied
+"""
+        hcell = self._get_hcell2()
+        if self._get_hcell().get("UNTRANSLATED"): 
+            return hcell.get("checksum", {}).get("filtered")
+        ctx = self._get_context()
+        return ctx.filtered0.checksum
+
+    @property
+    def filtered_keyorder(self):
+        """Contains the filtered keyorder of the cell.
+
+This is after blacklist/whitelist filtering has been applied
+"""
+        hcell = self._get_hcell2()
+        if self._get_hcell().get("UNTRANSLATED"): 
+            raise AttributeError
+        ctx = self._get_context()
+        return ctx.filtered_keyorder.value
 
     @property
     def data(self):
@@ -334,13 +357,13 @@ Use cell.data instead."""
             hcell["checksum"][key] = checksum
 
     def _set_observers(self):
-        from ..core.structured_cell import StructuredCell
         ctx = self._get_context()
         if len(ctx.origin.inchannels):
             origin = ctx.origin.auth
         else:
             origin = ctx.origin_integrated
-        origin._set_observer(partial(self._observe, "origin"))
+        if origin is not None:
+            origin._set_observer(partial(self._observe, "origin"))
         ctx.keyorder._set_observer(partial(self._observe, "keyorder"))
         ctx.filtered0._set_observer(partial(self._observe, "filtered"))
         ctx.blacklist._set_observer(partial(self._observe, "blacklist"))
@@ -394,7 +417,7 @@ Use cell.data instead."""
     def blacklist(self):
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
-            raise AttributeError
+            raise AttributeError("Can set blacklist only after translation")
         return self._get_bwlist("blacklist")
 
     @blacklist.setter
@@ -415,7 +438,7 @@ Use cell.data instead."""
     def whitelist(self, value):
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
-            raise AttributeError
+            raise AttributeError("Can set whitelist only after translation")
         return self._set_bwlist("whitelist", value)
 
     def __getitem__(self, item):

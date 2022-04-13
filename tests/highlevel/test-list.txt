@@ -79,6 +79,7 @@ twopi-graph-database.sh: run with Seamless database; e.g seamless-devel-database
                       delete job results (e.g. rm -rf /tmp/seamless-db)
                       run as i=twopi-graph-database; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
+pin-filesystem.sh: run as i=pin-filesystem; seamless-devel $i.sh > test-outputs/$i.out 2>&1
 load-graph.py
 load-graph2.py
 load-graph-static.py

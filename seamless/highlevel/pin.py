@@ -30,7 +30,7 @@ class PinWrapper:
     def celltype(self, value):
         if self._pinname == "code":
             raise AttributeError
-        #TODO: validation
+        #TODO: validation. Also allow "deepfolder", "folder", "deepcell"
         hpin = self._get_hpin()
         hpin["celltype"] = value
         self._parent()._parent()._translate()
