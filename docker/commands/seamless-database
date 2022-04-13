@@ -13,7 +13,7 @@ database_port=$2
 : ${database_port:=5522}
 
 database_host=$3
-: ${database_host:='localhost'}
+: ${database_host:='0.0.0.0'}
 
 seamlessdir=$SEAMLESSDIR
 
