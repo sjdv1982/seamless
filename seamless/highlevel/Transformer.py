@@ -254,7 +254,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         untranslate = False
         if old_compiled != compiled:
             htf["UNTRANSLATED"] = True
-        elif (old_language == "bash" != (lang  == "bash")):
+        elif (old_language == "bash") != (lang  == "bash"):
             htf["UNTRANSLATED"] = True
         htf["compiled"] = compiled
         htf["file_extension"] = extension

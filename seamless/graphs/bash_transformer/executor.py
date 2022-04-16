@@ -6,6 +6,7 @@ import json
 from io import BytesIO
 from silk import Silk
 from seamless.core.transformation import SeamlessStreamTransformationError
+from seamless.core.mount_directory import write_to_directory
 from silk.mixed.get_form import get_form
 from seamless import subprocess_ as subprocess
 from subprocess import PIPE
@@ -51,6 +52,15 @@ try:
         v = PINS[pin]
         if isinstance(v, Silk):
             v = v.unsilk
+        if pin in FILESYSTEM:
+            if FILESYSTEM[pin]["filesystem"]:
+                env[pin] = v
+                os.symlink(v, pin)
+                continue
+            elif FILESYSTEM[pin]["mode"] == "directory":
+                write_to_directory(pin, v, cleanup=False, deep=False, text_only=False)
+                env[pin] = pin
+                continue
         storage, form = get_form(v)
         if storage.startswith("mixed"):
             raise TypeError("pin '%s' has '%s' data" % (pin, storage))

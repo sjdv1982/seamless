@@ -8,6 +8,7 @@ def translate_py_transformer(
         *, ipy_template, py_bridge, has_meta_connection
     ):
     from .translate import set_structured_cell_from_checksum
+    from ..core.cache.buffer_cache import empty_dict_checksum
     from ..highlevel.Environment import Environment
     #TODO: simple translation, without a structured cell
 
@@ -17,7 +18,42 @@ def translate_py_transformer(
     env0._load(node.get("environment"))
     env = env0._to_lowlevel()
 
-    inchannels = [ic for ic in inchannels if ic[0] != "code"]
+    node_pins = deepcopy(node["pins"])
+    deep_pins = {}
+    for pinname,pin in list(node_pins.items()):
+        if pin.get("celltype") in ("folder", "deepfolder", "deepcell"):
+            if pin["celltype"] == "deepcell":
+                pin = {
+                    "celltype": "mixed",
+                    "hash_pattern": {"*": "#"},
+                    "filesystem": {
+                        "mode": "file",
+                        "optional": False
+                    },
+                }
+            elif pin["celltype"] == "deepfolder":
+                pin = {
+                    "celltype": "mixed",
+                    "hash_pattern": {"*": "##"},
+                    "filesystem": {
+                        "mode": "directory",
+                        "optional": False
+                    },
+                }
+            elif pin["celltype"] == "folder":
+                pin = {
+                    "celltype": "mixed",
+                    "hash_pattern": {"*": "##"},
+                    "filesystem": {
+                        "mode": "directory",
+                        "optional": True
+                    },
+                }
+            pin["io"] = "input"
+            deep_pins[pinname] = pin
+            node_pins.pop(pinname)
+    deep_inchannels = [ic for ic in inchannels if ic[0] in deep_pins]
+    inchannels = [ic for ic in inchannels if ic[0] != "code" and ic[0] not in deep_pins]
 
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
@@ -33,25 +69,31 @@ def translate_py_transformer(
         assert (not len(c)) or c[0] not in (result_name, result_cell_name) #should have been checked by highlevel
     all_inchannels = set(inchannels)
     pin_cells = {}
-    for pin in list(node["pins"].keys()):
+    for pin in list(node_pins.keys()) + list(deep_pins.keys()):
         pin_cell_name = pin + "_PIN"
-        celltype = node["pins"][pin].get("celltype")
-        if celltype is None:
-            if pin.endswith("_SCHEMA"):
-                celltype = "plain"
-            else:
+        hash_pattern = None
+        if pin in deep_pins:
+            celltype = deep_pins[pin]["celltype"]
+            hash_pattern = deep_pins[pin]["hash_pattern"]
+        else:
+            celltype = node_pins[pin].get("celltype")
+            if celltype is None:
+                if pin.endswith("_SCHEMA"):
+                    celltype = "plain"
+                else:
+                    celltype = "mixed"
+            if celltype == "silk":
                 celltype = "mixed"
-        if celltype == "silk":
-            celltype = "mixed"
-        if celltype == "checksum":
-            celltype = "plain"
+            if celltype == "checksum":
+                celltype = "plain"
         assert pin_cell_name not in all_inchannels
-        assert pin_cell_name not in node["pins"]
+        assert pin_cell_name not in node_pins
         pin_cell = cell(celltype)
+        pin_cell._hash_pattern = hash_pattern
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pin] = pin_cell
 
-    interchannels = [as_tuple(pin) for pin in node["pins"]]
+    interchannels = [as_tuple(pin) for pin in node_pins]
     mount = node.get("mount", {})
     inp, inp_ctx = build_structured_cell(
       ctx, input_name, inchannels, interchannels,
@@ -70,7 +112,7 @@ def translate_py_transformer(
         is_checksum = False
         if len(inchannel) == 1:            
             pinname = inchannel[0]
-            pin = node["pins"][pinname]
+            pin = node_pins[pinname]
             if pin.get("celltype") == "checksum":
                 is_checksum = True
         if is_checksum:
@@ -83,10 +125,15 @@ def translate_py_transformer(
             namespace[path, "target"] = pin_cell2, node
         else:
             namespace[path, "target"] = inp.inchannels[inchannel], node
+    for inchannel in deep_inchannels:
+        path = node["path"] + inchannel
+        pinname = inchannel[0]
+        pin_cell = pin_cells[pinname]
+        namespace[path, "target"] = pin_cell, node
 
     assert result_name not in node["pins"] #should have been checked by highlevel
     all_pins = {}
-    for pinname, pin in node["pins"].items():
+    for pinname, pin in node_pins.items():
         p = {"io": "input"}
         p.update(pin)
         if p.get("celltype") == "checksum":
@@ -115,6 +162,7 @@ def translate_py_transformer(
                 "celltype": "plain",
             },
         })
+    all_pins.update(deep_pins)
     ctx.tf = transformer(all_pins)
     if node["language"] == "ipython" or ipy_template is not None:
         if env is None:
@@ -220,6 +268,8 @@ def translate_py_transformer(
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
     inp_checksum = convert_checksum_dict(checksum, "input")
+    if not len(node_pins): # no non-deepcell pins. Just to avoid errors.
+        inp_checksum = {"auth": empty_dict_checksum}
     """
     print("INP CHECKSUM", inp_checksum)
     from ..core.context import Context
@@ -230,10 +280,15 @@ def translate_py_transformer(
     namespace[node["path"] + ("code",), "target"] = ctx.code, node
     namespace[node["path"] + ("code",), "source"] = ctx.code, node
 
-    for pin in list(node["pins"].keys()):
+    for pin in list(node_pins.keys()):
         target = ctx.tf.get_pin(pin)
         pin_cell = pin_cells[pin]
         inp.outchannels[(pin,)].connect(pin_cell)
+        pin_cell.connect(target)
+
+    for pin in list(deep_pins.keys()):
+        target = ctx.tf.get_pin(pin)
+        pin_cell = pin_cells[pin]
         pin_cell.connect(target)
 
     if has_meta_connection:

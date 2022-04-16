@@ -1,17 +1,19 @@
-import os, json
 from copy import deepcopy
 from seamless.core import cell, transformer, context
 from ..metalevel.stdgraph import load as load_stdgraph
+from ..core.cache.buffer_cache import empty_dict_checksum
 
 def translate_bashdocker_transformer(
-    node, root, namespace, inchannels, outchannels, *, 
+    node, root, namespace, 
+    node_pins, inchannels, outchannels, 
+    deep_inchannels, deep_pins,
+    *, 
     docker_image, docker_options, has_meta_connection, env
 ):
 
     sctx = load_stdgraph("bashdocker_transformer")
 
     from .translate import set_structured_cell_from_checksum
-    inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
     parent = get_path(root, node["path"][:-1], None, None)
     name = node["path"][-1]
@@ -23,19 +25,19 @@ def translate_bashdocker_transformer(
     result_cell_name = result_name + "_CELL"
     forbidden = [result_name, result_cell_name, "docker_command", "docker_image_", "docker_options", "pins_"]
     pin_intermediate = {}
-    for pin in node["pins"].keys():
+    for pin in list(node_pins.keys()) + list(deep_pins.keys()):
         pin_intermediate[pin] = input_name + "_PIN_" + pin
         forbidden.append(pin_intermediate[pin])
     for c in inchannels:
         assert (not len(c)) or c[0] not in forbidden #should have been checked by highlevel
 
-    pins = node["pins"].copy()
+    pins = node_pins.copy()
     pins["docker_command"] = {"celltype": "text"}
     pins["docker_image_"] = {"celltype": "str"}
     pins["docker_options"] = {"celltype": "plain"}
     pins["pins_"] = {"celltype": "plain"}
     pins0 = list(pins.keys())
-    ctx.pins = cell("plain").set(pins0)
+    ctx.pins = cell("plain").set(pins0 + list(deep_pins.keys()))
 
     interchannels = [as_tuple(pin) for pin in pins]
     mount = node.get("mount", {})
@@ -52,7 +54,22 @@ def translate_bashdocker_transformer(
         inp_ctx.schema.mount(**mount["input_schema"])
     for inchannel in inchannels:
         path = node["path"] + inchannel
-        namespace[path, "target"] = inp.inchannels[inchannel], node
+        is_checksum = False
+        if len(inchannel) == 1:            
+            pinname = inchannel[0]
+            pin = node_pins[pinname]
+            if pin.get("celltype") == "checksum":
+                is_checksum = True
+        if is_checksum:
+            pin_cell2 = cell("checksum")
+            cell_setattr(node, ctx, pinname + "_CHECKSUM", pin_cell2)
+            pin_cell3 = cell("plain")
+            cell_setattr(node, ctx, pinname + "_CHECKSUM2", pin_cell3)
+            pin_cell2.connect(pin_cell3)
+            pin_cell3.connect(inp.inchannels[inchannel])
+            namespace[path, "target"] = pin_cell2, node
+        else:
+            namespace[path, "target"] = inp.inchannels[inchannel], node
 
     assert result_name not in pins #should have been checked by highlevel
     all_pins = {}
@@ -67,6 +84,7 @@ def translate_bashdocker_transformer(
             "io": "input", "transfer_mode": "json",
             "access_mode": "json", "content_type": "json"
         }
+    all_pins.update(deep_pins)
     ctx.tf = transformer(all_pins)
     ctx.code = cell("text")
     if "code" in mount:
@@ -80,6 +98,8 @@ def translate_bashdocker_transformer(
     if "code" in checksum:
         ctx.code._set_checksum(checksum["code"], initial=True)
     inp_checksum = convert_checksum_dict(checksum, "input")
+    if not len(node_pins): # no non-deepcell pins. Just to avoid errors.
+        inp_checksum = {"auth": empty_dict_checksum}
     set_structured_cell_from_checksum(inp, inp_checksum)
 
     ctx.executor_code = sctx.executor_code.cell()
@@ -88,15 +108,43 @@ def translate_bashdocker_transformer(
     namespace[node["path"] + ("code",), "target"] = ctx.code, node
     namespace[node["path"] + ("code",), "source"] = ctx.code, node
 
-    for pinname, pin in node["pins"].items():
-        target = ctx.tf.get_pin(pinname)
-        celltype = pin.get("celltype", "mixed")
-        if celltype == "code":
-            celltype = "text"
-        intermediate_cell = cell(celltype)
-        cell_setattr(node, ctx, pin_intermediate[pinname], intermediate_cell)
-        inp.outchannels[(pinname,)].connect(intermediate_cell)
+    pin_cells = {}
+    for pin in list(node_pins.keys()) + list(deep_pins.keys()):        
+        hash_pattern = None
+        if pin in deep_pins:
+            celltype = deep_pins[pin]["celltype"]
+            hash_pattern = deep_pins[pin]["hash_pattern"]
+        else:
+            celltype = node_pins[pin].get("celltype")
+            if celltype is None:
+                if pin.endswith("_SCHEMA"):
+                    celltype = "plain"
+                else:
+                    celltype = "mixed"
+            if celltype == "silk":
+                celltype = "mixed"
+            if celltype == "checksum":
+                celltype = "plain"
+            if celltype == "code":
+                celltype = "text"
+        pin_cell = cell(celltype)
+        pin_cell._hash_pattern = hash_pattern
+        cell_setattr(node, ctx, pin_intermediate[pin], pin_cell)
+        pin_cells[pin] = pin_cell
+
+    for pin in list(node_pins.keys()):
+        target = ctx.tf.get_pin(pin)
+        intermediate_cell = pin_cells[pin]
+        inp.outchannels[(pin,)].connect(intermediate_cell)
         intermediate_cell.connect(target)
+
+    for inchannel in deep_inchannels:
+        path = node["path"] + inchannel
+        pinname = inchannel[0]
+        pin_cell = pin_cells[pinname]
+        target = ctx.tf.get_pin(pinname)
+        pin_cell.connect(target)
+        namespace[path, "target"] = pin_cell, node
 
     meta = deepcopy(node.get("meta", {}))
     meta["transformer_type"] = "bashdocker"

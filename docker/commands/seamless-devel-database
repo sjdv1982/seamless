@@ -26,6 +26,7 @@ docker run \
   -v $seamlessdir:/seamless \
   -e "PYTHONPATH=/seamless" \
   -e "SEAMLESS_DATABASE_DIR=/data" \
+  -e "SEAMLESS_DATABASE_EXTERNAL_DIR=$database_dir" \
   -e "SEAMLESS_DATABASE_PORT=$database_port" \
   -e "SEAMLESS_DATABASE_HOST=$database_host" \
   -u `id -u` \

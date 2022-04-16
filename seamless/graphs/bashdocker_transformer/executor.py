@@ -10,6 +10,7 @@ from silk.mixed.get_form import get_form
 from requests.exceptions import ConnectionError
 from urllib3.exceptions import ProtocolError
 from seamless.core.transformation import SeamlessStreamTransformationError
+from seamless.core.mount_directory import write_to_directory
 
 resultfile = "RESULT"
 
@@ -72,6 +73,15 @@ try:
         v = PINS[pin]
         if isinstance(v, Silk):
             v = v.unsilk
+        if pin in FILESYSTEM:
+            if FILESYSTEM[pin]["filesystem"]:
+                env[pin] = v
+                os.symlink(v, pin)
+                continue
+            elif FILESYSTEM[pin]["mode"] == "directory":
+                write_to_directory(pin, v, cleanup=False, deep=False, text_only=False)
+                env[pin] = pin
+                continue
         storage, form = get_form(v)
         if storage.startswith("mixed"):
             raise TypeError("pin '%s' has '%s' data" % (pin, storage))
@@ -100,6 +110,11 @@ try:
     volumes = {}
     options["volumes"] = volumes
     volumes[tempdir] = {"bind": "/run", "mode": "rw"}
+    for pin in FILESYSTEM:
+        fs = FILESYSTEM[pin]
+        if fs["filesystem"] and fs["mode"] == "directory": 
+            volumes[pin] = {"bind": PINS[pin], "mode": "ro"}
+
     if "working_dir" not in options:
         options["working_dir"] = "/run"
     with open("DOCKER-COMMAND","w") as f:

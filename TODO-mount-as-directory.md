@@ -87,24 +87,29 @@ tools to export contents of the database dir (notably, /downloads,
 DONE UPDATE3: make a PDB test, but rename stdlib.join to stdlib.select.
 
 6. DONE: Add filename support to transformers, as outlined in https://github.com/sjdv1982/seamless/issues/108. 
-TODO. There will be high-level transformer pin celltype "deepfolder", "deepcell".
-Assigning a transformer pin to a DeepFolderCell, DeepCell
+DONE: There will be high-level transformer pin celltype "folder", "deepfolder", "deepcell".
+Assigning a transformer pin to a FolderCell, DeepFolderCell, DeepCell
 creates a pin of that celltype.
-Assigning a transformer input to a FolderCell creates a "deepfolder" pin in case of a bash transformer
-, a "mixed" pin otherwise. 
-The high-level celltypes "deepfolder", "deepcell" do not exist at the low level.
-DONE: Instead, "mixed" pins are created with the correct hash patterns, i.e. receiving the raw deep structure.
-(test this!)
-TODO: However, bash transformers will create these pins with "filesystem": {"mode": "directory", "optional": False}. "optional" will be True if connected to a Folder (re-connecting it to a DeepFolder will set it to
-False). This makes sure that Seamless does not try to load/download gigantic datasets in memory and write them to disk by itself.
-Make a deepfolder pin subtype "small" that translates to "filesystem": {"mode": "directory", "optional": True} instead.
-Also: use "as_" to select the filename/folder to write to, overruling pin name.
-Pins of "deepfolder", "deepcell" are not part of the normal .inp structured cell and 
+These celltypes do not exist at the low level.
+Instead, "mixed" pins are created with the correct hash patterns, i.e. receiving the deep structure converted to a value. In addition, a "filesystem" will allow the value to be linked to a file or directory. This makes sure that Seamless does not try to load/download gigantic datasets in memory and write them to disk by itself.
+A: "deepcell" =>
+hash_pattern {"*": "#"}
+filesystem {"mode": "file", "optional": False}
+B: "deepfolder" =>
+hash_pattern {"*": "##"}
+filesystem {"mode": "directory", "optional": False}
+C: "folder" =>
+hash_pattern {"*": "##"}
+filesystem {"mode": "directory", "optional": True}
+
+For C, use "as_" to select the filename/folder to write to, overruling pin name.
+DONE: Pins of "deepfolder", "deepcell", "folder", are not part of the normal .inp structured cell and 
 are hence not amenable to transformer input schemas.
 
-Write tests, e.g. a hhblits search where the database path is a DeepFolder
+DONE: Write tests
+TODO: write example, e.g. a hhblits search where the database path is a DeepFolder
 checksum.
-Adapt Cloudless with Shell deployment + file name rewrite and test if 
+TODO: Adapt Cloudless with Shell deployment + file name rewrite and test if 
 the deepfolder folder name is transferred.
 7. DONE: fix the bug in the "DEBUGGING IN PROGRESS" commit (c9708d77598)
 8. TODO: Allow cells in a subcontext to be marked as "input" or "output".

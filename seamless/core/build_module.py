@@ -218,8 +218,7 @@ def _merge_objects(objects):
 
 def build_compiled_module(full_module_name, checksum, module_definition, *, module_error_name):
     from .cache.database_client import database_cache, database_sink
-    mchecksum = b"python-ext-" + checksum
-    module_code = database_cache.get_compile_result(mchecksum)
+    module_code = database_cache.get_compile_result(checksum)
     source_files = {}
     debug = (module_definition.get("target") == "debug")
     if module_code is None:
@@ -269,7 +268,7 @@ def build_compiled_module(full_module_name, checksum, module_definition, *, modu
             "compiler_verbose", CFFI_VERBOSE
           )
         )
-        database_sink.set_compile_result(mchecksum, module_code)
+        database_sink.set_compile_result(checksum, module_code)
     mod = import_extension_module(full_module_name, module_code, debug, source_files)
     return mod
 

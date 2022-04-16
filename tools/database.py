@@ -1,4 +1,5 @@
 from copy import deepcopy
+from tkinter import E
 from aiohttp import web
 import aiofiles
 import os, sys, asyncio, json, socket
@@ -54,12 +55,6 @@ def err(*args, **kwargs):
     exit(1)
 
 
-def _get_filename(checksum):
-    return os.path.join(SDB, "buffers", checksum)
-
-def _get_directory(checksum):
-    return os.path.join(SDB, "shared-directories", checksum)
-
 class DatabaseError(Exception):
     pass
 
@@ -111,15 +106,30 @@ def format_response(response, *, none_as_404=False):
 class DatabaseServer:
     future = None
     PROTOCOL = ("seamless", "database", "0.1")
-    def __init__(self, host, port):
+    def __init__(self, host, port, *, database_dir, external_dir=None):
+        """external_dir: name of the database dir for clients (outside the container)
+This is for get_filename and get_directory requests"""
         self.host = host
         self.port = port
+        self.database_dir = database_dir
+        if external_dir is None:
+            external_dir = database_dir
+        self.external_dir = external_dir
         self.buckets = {}
         for bucketname in bucketnames:
-            subdir = os.path.abspath(os.path.join(SDB, bucketname))
+            subdir = os.path.abspath(os.path.join(database_dir, bucketname))
             bucket = TopBucket(subdir)
             self.buckets[bucketname] = bucket
 
+    def _get_filename(self, checksum):
+        if checksum is None:
+            return None
+        return os.path.join(self.external_dir, "buffers", checksum)
+
+    def _get_directory(self, checksum):
+        if checksum is None:
+            return None
+        return os.path.join(self.external_dir, "shared-directories", checksum)
 
     async def _start(self):
         if is_port_in_use(self.host, self.port): # KLUDGE
@@ -257,25 +267,25 @@ class DatabaseServer:
             if checksum in buffer_cache:
                 found = True
             else:
-                filename = _get_filename(checksum)
+                filename = self._get_filename(checksum)
                 if os.path.exists(filename):
                     found = True
             return found
 
         elif type == "filename":
-            filename = _get_filename(checksum)
+            filename = self._get_filename(checksum)
             if os.path.exists(filename):
                 return filename
             return None # None is also a valid response
 
         elif type == "directory":
-            directory = _get_directory(checksum)
+            directory = self._get_directory(checksum)
             if os.path.exists(directory):
                 return directory
             return None # None is also a valid response
 
         elif type == "buffer":
-            filename = _get_filename(checksum)
+            filename = self._get_filename(checksum)
             result = await read_buffer(checksum, filename)
             return result # None is also a valid response
 
@@ -321,7 +331,7 @@ class DatabaseServer:
             independent = bool(request.get("independent", False))
             bucket = self.buckets["buffer_independence"]
             bucket.set(checksum, independent)
-            filename = _get_filename(checksum)
+            filename = self._get_filename(checksum)
             await write_buffer(checksum, value, filename)
 
         elif type == "delete_key":
@@ -404,6 +414,7 @@ if __name__ == "__main__":
         err("SEAMLESS_DATABASE_DIR undefined")
     if not os.path.exists(SDB):
         err("Directory '{}' does not exist".format(SDB))
+    SDB_external_dir = env.get("SEAMLESS_DATABASE_EXTERNAL_DIR")
 
     db_host = env.get("SEAMLESS_DATABASE_HOST")
     if db_host is None:
@@ -418,7 +429,10 @@ if __name__ == "__main__":
     if not os.path.exists(buffer_dir):
         os.mkdir(buffer_dir)
 
-    database_server = DatabaseServer(db_host, db_port)
+    database_server = DatabaseServer(
+        db_host, db_port, 
+        database_dir=SDB, external_dir=SDB_external_dir
+    )
     database_server.start()
 
     """

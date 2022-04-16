@@ -2,11 +2,16 @@ import glob
 from re import S
 from requests import ConnectionError
 
+import subprocess
+docker_file = """FROM ubuntu:latest
+RUN apt update && apt -y install openssl   
+"""
+subprocess.run("docker build -t openssl -", shell=True,input=docker_file.encode())
+
 import seamless
 from seamless.highlevel.Cell import FolderCell
 try:
     seamless.database_cache.connect()
-    seamless.database_sink.connect()
     print("Database found")
 except ConnectionError:
     print("Database not found")
@@ -74,6 +79,56 @@ print(ctx.tf._get_htf()["pins"])
 print(ctx.tf.status)
 print(ctx.tf.exception)
 print(ctx.tf.logs)
+print()
 
-#ctx.tf.language = "bash"
+print("Stage 4")
+ctx.tf.language = "bash"
+ctx.tf.code = """
+echo LS
+ls
+touch a
+cat a
+echo
+echo DEEPFOLDERPIN ${deepfolderpin}
+echo FOLDER_SUB_PIN ${folder_sub_pin}
+function list() {
+    dirname=$1
+    find -L $dirname -name '*' -type f -print -exec openssl dgst -sha3-256 {} \; | awk '{x=$1;getline}{print x,$2}'
+    echo ''
+}
+list deepfolderpin
+list folder_sub_pin
+list ${deepfolderpin}
+touch RESULT
+"""
+ctx.tf.environment.set_which(["openssl"], format="plain")
+ctx.compute()
+v = ctx.folder_sub.value.unsilk
+print(v.keys() if v is not None else None)
+print(ctx.folder_sub.checksum)
+print(ctx.tf.status)
+print(ctx.tf.exception)
+print(ctx.tf.logs)
 
+print("Stage 4a")
+ctx.tf.a = "TESTSTRING"
+ctx.compute()
+print(ctx.tf.status)
+print(ctx.tf.exception)
+print(ctx.tf.logs)
+del ctx.tf.pins.a
+
+print("Stage 5")
+ctx.tf.docker_image = "openssl"
+ctx.tf.environment.set_which(None, "plain")
+ctx.compute()
+print(ctx.tf.status)
+print(ctx.tf.exception)
+print(ctx.tf.logs)
+
+print("Stage 5a")
+ctx.tf.a = "TESTSTRING"
+ctx.compute()
+print(ctx.tf.status)
+print(ctx.tf.exception)
+print(ctx.tf.logs)

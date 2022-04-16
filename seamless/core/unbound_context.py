@@ -199,7 +199,7 @@ class UnboundContext(SeamlessBase):
         assert value is not None
         if attr in self._children and self._children[attr] is not value:
             raise AttributeError(
-             "Cannot assign to child '%s'" % attr)
+             "Cannot assign to existing child '%s'" % attr)
         self._add_child(attr, value)
 
     def __getattr__(self, attr):

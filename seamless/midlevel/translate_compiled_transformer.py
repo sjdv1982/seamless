@@ -94,6 +94,10 @@ def translate_compiled_transformer(
     env0._load(node.get("environment"))
     env = env0._to_lowlevel()
 
+    for pinname,pin in list(node["pins"].items()):
+        if pin.get("celltype") in ("folder", "deepfolder", "deepcell"):
+            raise ValueError("Compiled transformer does not support celltype '{}' (pin '{}')".format(pin["celltype"], pin))
+
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
     main_module_inchannels = [("link_options",), ("headers",)]
