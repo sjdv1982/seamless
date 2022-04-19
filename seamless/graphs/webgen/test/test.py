@@ -20,6 +20,7 @@ ctx.compute()
 ctx.webform = Cell("plain").mount("webform.json")
 ctx.webform0 = Cell("text")
 ctx.link(ctx.webform, ctx.webform0)
+ctx.webform_BASE = Cell("text").mount("webform-BASE.txt")
 ctx.webform_CONFLICT = Cell("text").mount("webform-CONFLICT.txt")
 ctx.webform_STATE = Cell("str")
 ctx.webform_DUMMY = Cell("text")
@@ -27,6 +28,7 @@ ctx.compute()
 
 ctx.merge_webform = ctx.lib.merge(
     upstream=ctx.initial_webform0,
+    base=ctx.webform_BASE,
     modified=ctx.webform0,
     conflict=ctx.webform_CONFLICT,
     merged=ctx.webform_DUMMY,
@@ -59,12 +61,14 @@ ctx.index_js.mount("index.js", mode="rw")
 
 ctx.index_html_INITIAL = ctx.webpage["index.html"]
 ctx.index_html_INITIAL.celltype = "text"
+ctx.index_html_BASE = Cell("text").mount("index-BASE.html")
 ctx.index_html_CONFLICT = Cell("text").mount("index-CONFLICT.html")
 ctx.index_html_STATE = Cell("str")
 ctx.index_html_DUMMY = Cell("text")
 
 ctx.merge_index_html = ctx.lib.merge(
     upstream=ctx.index_html_INITIAL,
+    base=ctx.index_html_BASE,
     modified=ctx.index_html,
     conflict=ctx.index_html_CONFLICT,
     merged=ctx.index_html_DUMMY,
@@ -73,12 +77,14 @@ ctx.merge_index_html = ctx.lib.merge(
 
 ctx.index_js_INITIAL = ctx.webpage["index.js"]
 ctx.index_js_INITIAL.celltype = "text"
+ctx.index_js_BASE = Cell("text").mount("index-BASE.js")
 ctx.index_js_CONFLICT = Cell("text").mount("index-CONFLICT.js")
 ctx.index_js_STATE = Cell("str")
 ctx.index_js_DUMMY = Cell("text")
 
 ctx.merge_index_js = ctx.lib.merge(
     upstream=ctx.index_js_INITIAL,
+    base=ctx.index_js_BASE,
     modified=ctx.index_js,
     conflict=ctx.index_js_CONFLICT,
     merged=ctx.index_js_DUMMY,
