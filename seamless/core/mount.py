@@ -110,6 +110,7 @@ class MountItem:
         if "r" in self.mode:
             assert cell.has_independence(), cell # mount read mode only for authoritative cells
         exists = self._exists()
+        has_written = False
         if self.mode == "rw" and self.authority == "cell":
             if cell._checksum is None and cell._void is not None and cell.has_independence():
                 # cell is being calculated. High risk for a conflict
@@ -178,6 +179,7 @@ class MountItem:
                     with self.lock:
                         self._write(cell_buffer)
                         self._after_write(cell_checksum)
+                        has_written = True
         else: #self.authority == "cell"
             if not cell_empty :
                 if not from_garbage or not exists:
@@ -185,6 +187,7 @@ class MountItem:
                         with self.lock:
                             self._write(cell_buffer)
                             self._after_write(cell_checksum)
+                            has_written = True
                 else:
                     self.last_checksum = cell_checksum
             elif exists:
@@ -201,6 +204,11 @@ class MountItem:
                 if update_file and "r" in self.mode:
                     self.set(file_buffer, checksum=file_checksum)
 
+        if not cell_empty and not exists and not has_written and self.as_directory:
+            # Write a non-existing folder to disk, even if it was in read mode
+            cell_buffer = get_buffer(cell_checksum, remote=True)
+            if cell_buffer is not None:
+                self._write_as_directory(cell_buffer, with_none=False)
         self._initialized = True
 
     def set(self, file_buffer, checksum):
@@ -363,7 +371,13 @@ class MountItem:
         cell = self.cell()
         if cell is None:
             return
+        cell_checksum = self.cell_checksum
         if not self._exists():
+            if cell_checksum and self.as_directory:
+                # Write a non-existing folder to disk, even if it was in read mode
+                cell_buffer = get_buffer(cell_checksum, remote=True)
+                if cell_buffer is not None:
+                    self._write_as_directory(cell_buffer)
             return
         with self.lock:
             if self._destroyed:
@@ -376,8 +390,7 @@ class MountItem:
                 if file_buffer0 is not None:
                     file_buffer = adjust_buffer(file_buffer0, cell._celltype)
                     file_checksum = calculate_checksum(file_buffer)
-                self._after_read(file_checksum, mtime=mtime)
-        cell_checksum = self.cell_checksum
+                self._after_read(file_checksum, mtime=mtime)        
         if "r" in self.mode:
             if file_checksum is None and self.cell()._checksum is None and cell_checksum is not None:
                 file_buffer = buffer_cache.get_buffer(cell_checksum)

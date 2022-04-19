@@ -201,7 +201,12 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
     checksum = node.get("checksum")
     if checksum is not None:
         if ct == "structured":
-            set_structured_cell_from_checksum(child, checksum)
+            if node["type"] == "foldercell" and mount is not None and mount.get("mode") == "r":                
+                cs = checksum.get("value")
+                if cs is not None:
+                    child_ctx.mountcell._set_checksum(cs, initial=True)
+            else:
+                set_structured_cell_from_checksum(child, checksum)
         else:
             if "value" in checksum and not len(inchannels):
                 child._set_checksum(checksum["value"], initial=True)

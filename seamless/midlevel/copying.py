@@ -22,8 +22,8 @@ def get_checksums(nodes, connections, *, with_annotations):
         hash_pattern = None
         if node["type"] == "cell" and subpath != "schema":
             hash_pattern = node.get("hash_pattern")
-        elif node["type"] == "folder" and subpath != "schema":
-            hash_pattern = {"*": "#"}
+        elif node["type"] == "foldercell" and subpath != "schema":
+            hash_pattern = {"*": "##"}
         elif node["type"] == "deepcell" and subpath == "origin":
             hash_pattern = {"*": "#"}
         elif node["type"] == "deepfoldercell" and subpath == "origin":
