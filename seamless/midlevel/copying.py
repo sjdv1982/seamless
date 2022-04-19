@@ -114,8 +114,9 @@ def get_buffer_dict_sync(manager, checksums):
     result = {}
     checksums = list(checksums)
     for checksum in checksums:
-        buffer = get_buffer(bytes.fromhex(checksum))
-        result[checksum] = buffer
+        buffer = get_buffer(bytes.fromhex(checksum),remote=True)
+        if buffer is not None:
+            result[checksum] = buffer
     return result
 
 def add_zip(manager, zipfile, incref=False):
