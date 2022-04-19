@@ -238,7 +238,7 @@ def download_buffer_sync(checksum, url_infos, celltype="bytes"):
                     raise ValueError(compression)
 
             url = _get_url(url_info)
-            print("Download", url)
+            #print("Download", url)
             buf = None
             """
             #DEBUG
