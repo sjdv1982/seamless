@@ -41,10 +41,10 @@ of named deepfolders. Include elision!
    TODO: additional read-only database directories (with their own buckets)
    TODO: jobless: adapt database client
    TODO: cloudless/jobless: rip redis, rewrite tests 
-   TODO: rewrite database-run-actions "buffer_info/"  from folder to bucket
+   DONE:rewrite database-run-actions "buffer_info/"  from folder to bucket
    (write database-flatfolder-to-bucketfolder conversion tool)
-   TODO: rename database-run-actions concept "transforms" to "operations"
-   DONE: implement serving shared-directories (TODO: TEST)
+   DONE: rename database-run-actions concept "transforms" to "operations"
+   DONE: implement serving shared-directories
    DONE: implement elision
 
 5a.

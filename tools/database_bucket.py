@@ -7,6 +7,7 @@ import json
 import atexit
 import time
 import asyncio
+import sys
 
 # A bucket will have up to 64 byte keys, and values of a few hundred bytes.
 # In total, maybe a kilobyte per entry
@@ -77,7 +78,13 @@ def get_data(filename):
     if result is None:
         try:
             with open(filename, "r") as f:
-                result = json.load(f)
+                try:
+                    result = json.load(f)
+                    if result is None:
+                        result = {}
+                except Exception:
+                    print("READING ERROR", filename, file=sys.stderr)
+                    result = {}
         except FileNotFoundError:
             result = {}
         bucket_cache[filename] = result

@@ -1,5 +1,4 @@
 from copy import deepcopy
-from tkinter import E
 from aiohttp import web
 import aiofiles
 import os, sys, asyncio, json, socket
@@ -8,11 +7,6 @@ from seamless.core.buffer_info import BufferInfo
 from collections import deque
 import gc
 import signal
-def raise_system_exit(*args, **kwargs): 
-    raise SystemExit
-signal.signal(signal.SIGTERM, raise_system_exit)
-signal.signal(signal.SIGHUP, raise_system_exit)
-signal.signal(signal.SIGINT, raise_system_exit)
 
 MAX_BUFFER_CACHE_SIZE = 5*1e8  # 500 million bytes
 buffer_cache = {}
@@ -121,15 +115,17 @@ This is for get_filename and get_directory requests"""
             bucket = TopBucket(subdir)
             self.buckets[bucketname] = bucket
 
-    def _get_filename(self, checksum):
+    def _get_filename(self, checksum, extern):
         if checksum is None:
             return None
-        return os.path.join(self.external_dir, "buffers", checksum)
+        dir = self.external_dir if extern else self.database_dir
+        return os.path.join(dir, "buffers", checksum)
 
-    def _get_directory(self, checksum):
+    def _get_directory(self, checksum, extern):
         if checksum is None:
             return None
-        return os.path.join(self.external_dir, "shared-directories", checksum)
+        dir = self.external_dir if extern else self.database_dir
+        return os.path.join(dir, "shared-directories", checksum)
 
     async def _start(self):
         if is_port_in_use(self.host, self.port): # KLUDGE
@@ -267,25 +263,26 @@ This is for get_filename and get_directory requests"""
             if checksum in buffer_cache:
                 found = True
             else:
-                filename = self._get_filename(checksum)
+                filename = self._get_filename(checksum, extern=False)
                 if os.path.exists(filename):
                     found = True
             return found
 
         elif type == "filename":
-            filename = self._get_filename(checksum)
+            filename = self._get_filename(checksum, extern=False)
             if os.path.exists(filename):
-                return filename
+                filename2 = self._get_filename(checksum, extern=True)
+                return filename2
             return None # None is also a valid response
 
         elif type == "directory":
-            directory = self._get_directory(checksum)
+            directory = self._get_directory(checksum, extern=False)
             if os.path.exists(directory):
-                return directory
+                return self._get_directory(checksum, extern=True)
             return None # None is also a valid response
 
         elif type == "buffer":
-            filename = self._get_filename(checksum)
+            filename = self._get_filename(checksum, extern=False)
             result = await read_buffer(checksum, filename)
             return result # None is also a valid response
 
@@ -331,7 +328,7 @@ This is for get_filename and get_directory requests"""
             independent = bool(request.get("independent", False))
             bucket = self.buckets["buffer_independence"]
             bucket.set(checksum, independent)
-            filename = self._get_filename(checksum)
+            filename = self._get_filename(checksum, extern=False)
             await write_buffer(checksum, value, filename)
 
         elif type == "delete_key":
@@ -429,6 +426,12 @@ if __name__ == "__main__":
     if not os.path.exists(buffer_dir):
         os.mkdir(buffer_dir)
 
+    def raise_system_exit(*args, **kwargs): 
+        raise SystemExit
+    signal.signal(signal.SIGTERM, raise_system_exit)
+    signal.signal(signal.SIGHUP, raise_system_exit)
+    signal.signal(signal.SIGINT, raise_system_exit)
+
     database_server = DatabaseServer(
         db_host, db_port, 
         database_dir=SDB, external_dir=SDB_external_dir
@@ -447,4 +450,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         pass
 else:
-    from .database_bucket import TopBucket
+    from database_bucket import TopBucket

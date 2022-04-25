@@ -133,7 +133,7 @@ with open(os.path.join(FD, "deepbuffer", deep_buffer_checksum), "wb") as f:
     f.write(deep_buffer)
 
 # Get deep buffer content length from deepcontent.csv
-deepcontent = load_csv(os.path.join(SDB, "deepcontent.csv"))
+deepcontent = load_csv(os.path.join(SDB, "deep_indices", "deepcontent.csv"))
 content_size = int(deepcontent[deep_buffer_checksum])
 
 

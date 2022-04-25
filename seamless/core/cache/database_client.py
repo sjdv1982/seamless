@@ -202,14 +202,15 @@ class DatabaseCache(DatabaseBase):
             return [bytes.fromhex(cs.strip()) for cs in response.json()]
 
     def get_buffer(self, checksum):
+        checksum = parse_checksum(checksum)
         request = {
             "type": "buffer",
-            "checksum": parse_checksum(checksum),
+            "checksum": checksum,
         }
         response = self.send_request(request)
         if response is not None:
             result = response.content
-            verify_checksum = calculate_checksum(result)
+            verify_checksum = parse_checksum(calculate_checksum(result))
             assert checksum == verify_checksum, "Database corruption!!! Checksum {}".format(parse_checksum(checksum))
             return result
 

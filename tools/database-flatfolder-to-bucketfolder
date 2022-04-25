@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+import sys, os, glob, json, asyncio
+source_directory = os.path.abspath(sys.argv[1])
+target_db_directory = sys.argv[2]
+target_bucket = sys.argv[3]
+
+from database import bucketnames
+from database_bucket import TopBucket
+assert target_bucket in bucketnames, target_bucket
+target_directory = os.path.abspath(os.path.join(target_db_directory, target_bucket))
+assert target_directory != source_directory, source_directory
+bucket = TopBucket(target_directory)
+for fnr, filename in enumerate(glob.glob(source_directory + "/*")):
+    checksum = os.path.split(filename)[1]
+    with open(filename) as f:
+        try:
+            data = json.load(f)
+        except Exception as exc:
+            print(filename)
+            raise exc from None
+        bucket.set(checksum, data)
+    if not fnr % 1000:
+        print(fnr)
+        asyncio.get_event_loop().run_until_complete(asyncio.sleep(0))

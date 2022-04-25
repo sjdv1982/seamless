@@ -23,6 +23,7 @@ from seamless.core.buffer_info import BufferInfo, convert_from_buffer_info
 from seamless.core.protocol.serialize import serialize_sync as serialize
 from seamless.core.protocol.deserialize import deserialize_sync as deserialize
 from seamless.core.protocol.calculate_checksum import calculate_checksum_cache, checksum_cache
+
 calculate_checksum_cache.disable()
 checksum_cache.disable()
 from seamless.core.protocol.serialize import serialize_cache
@@ -63,11 +64,6 @@ def load_csv(filename):
     return result
 
 def get_plain_buffer(d:dict):
-    """
-    txt = json.dumps(d, sort_keys=True, indent=2)
-    txt = txt.strip("\n") + "\n"
-    return txt.encode()
-    """
     return serialize(d, "plain")
 
 def write_json(d:dict, filename):
@@ -93,23 +89,16 @@ def intern_buffer(checksum, filename, hardlink):
         shutil.copyfile(filename, buffer_file)
 
 def get_buffer_info(checksum):
-    buffer_info_dir = get_subdir("buffer_info")
-    filename = os.path.join(buffer_info_dir, checksum)
-    if os.path.exists(filename):
-        with open(filename) as f:
-            try:
-                d = json.load(f)
-            except Exception:
-                return None
-            buffer_info = BufferInfo(checksum, d)
-            return buffer_info
+    d = buffer_info_bucket.get(checksum)
+    if d is None:
+        return None
+    assert isinstance(d, dict), d
+    return BufferInfo(checksum, d)
 
 def set_buffer_info(buffer_info: BufferInfo):
     checksum = buffer_info.checksum.hex()
-    buffer_info_dir = get_subdir("buffer_info")
-    filename = os.path.join(buffer_info_dir, checksum)
     d = buffer_info.as_dict()
-    write_json(d, filename)
+    buffer_info_bucket.set(checksum, d)
 
 def write_buffer_length(checksum, length):
     buffer_info = get_buffer_info(checksum)
@@ -182,7 +171,7 @@ def guarantee_buffer_info(buffer_info:BufferInfo, buffer, celltype:str):
     elif celltype in ("str", "int", "float", "bool"):
         update_buffer_info(buffer_info, "json_type", celltype)
 
-def do_transform(cmd, source_celltype, target_celltype, tfs):
+def do_operation(cmd, source_celltype, target_celltype, ops):
     # TODO: 
     # For cmd, try to synthesize a TransformationJob:
     #  e.g. bash transformer "ln -s inp inp.gz && gunzip -c inp.gz"
@@ -191,13 +180,13 @@ def do_transform(cmd, source_celltype, target_celltype, tfs):
     # even if all Seamless caches are cleaned and emptied.
     # For now, just clean up the executor every 1000 jobs
     result = []
-    for checksum, filename in tfs:
+    for checksum, filename in ops:
         if cmd is not None:
             proc = subprocess.run(cmd + [filename], stdout=subprocess.PIPE, text=False)
             if proc.returncode != 0:
                 if proc.returncode == -2:
                     raise KeyboardInterrupt
-                print("Error in transforming {}".format(filename))            
+                print("Error in operationing {}".format(filename))            
             buf = proc.stdout
         else:
             with open(filename, "rb") as f:
@@ -290,7 +279,10 @@ def do_transform(cmd, source_celltype, target_celltype, tfs):
     return result
 
 def write_deepcontent(deepdict_checksum, deepdict):    
-    buffersizefile = os.path.join(SDB, "buffersizes.csv")
+    deep_indices_dir = os.path.join(SDB, "deep_indices")
+    if not os.path.exists(deep_indices_dir):
+        os.mkdir(deep_indices_dir)
+    buffersizefile = os.path.join(SDB, "deep_indices", "buffersizes.csv")
     if os.path.exists(buffersizefile):
         buffersizes = load_csv(buffersizefile)
     else:
@@ -308,15 +300,25 @@ def write_deepcontent(deepdict_checksum, deepdict):
                 n, len(new_checksums)
             ))
         buffer_info = get_buffer_info(checksum)
-        if buffer_info is None:
-            raise Exception(checksum)
-        buffersize = buffer_info.length
+        try:
+            if buffer_info is None:
+                raise Exception(checksum)
+            buffersize = buffer_info.length
+            if buffersize is None:
+                raise Exception(checksum, buffer_info.as_dict())
+        except Exception:
+            buffer_file = os.path.join(buffer_dir, checksum)
+            with open(buffer_file, "rb") as f:
+                buffer = f.read()
+                buffersize = len(buffer)
+                buffer_info = BufferInfo(checksum)
+                update_buffer_info(buffer_info, "length", buffersize)
         deepcontent_size += buffersize
         buffersizes[checksum] = buffersize
     if len(new_checksums):
         write_csv(buffersizes, buffersizefile)        
     report("Write deep content size for {}: {}".format(deepdict_checksum, deepcontent_size))
-    deepcontentfile = os.path.join(SDB, "deepcontent.csv")
+    deepcontentfile = os.path.join(SDB, "deep_indices", "deepcontent.csv")
     if os.path.exists(deepcontentfile):
         deepcontent = load_csv(deepcontentfile)
     else:
@@ -327,6 +329,11 @@ def write_deepcontent(deepdict_checksum, deepdict):
 SDB = os.environ.get("SEAMLESS_DATABASE_DIR")
 if SDB is None:
     err("SEAMLESS_DATABASE_DIR undefined")
+
+from database_bucket import TopBucket
+buffer_info_dir = os.path.join(SDB, "buffer_info")
+buffer_info_bucket = TopBucket(buffer_info_dir)
+
 
 def get_subdir(subdirname):
     subdir = os.path.join(SDB, subdirname)
@@ -531,7 +538,7 @@ try:
             
             source_collection["interned"] = True
 
-        elif name == "transform_collection":
+        elif name == "operation":
             nproc = max(int(multiprocessing.cpu_count()/2), 1)
             target_collection_name = action["collection"]
             assert target_collection_name not in collections, target_collection_name
@@ -549,16 +556,16 @@ try:
             source_collection_name = action.get("source_collection", default_collection_name)
             source_collection = collections[source_collection_name]        
             buffer_dir = get_subdir("buffers")
-            transform_dir = get_subdir("transforms")
-            transform_file = os.path.join(transform_dir, target_collection_name) + ".csv"
-            if os.path.exists(transform_file):
-                old_transform = load_csv(transform_file)
+            operation_dir = get_subdir("operations")
+            operation_file = os.path.join(operation_dir, target_collection_name) + ".csv"
+            if os.path.exists(operation_file):
+                old_operation = load_csv(operation_file)
             else:
-                old_transform = {}
+                old_operation = {}
 
-            transform = {}
-            tfs = []
-            ntransform = 0
+            operation = {}
+            ops = []
+            noperation = 0
             if source_collection.get("default"):
                 origin_collection_name = default_collection_name
                 origin_collection = collections[default_collection_name]
@@ -566,21 +573,21 @@ try:
                 done_checksums = set()
                 for inode in inode_table:
                     checksum, _ = inode_table[inode]
-                    if checksum in old_transform:
-                        result_checksum = old_transform[checksum]
+                    if checksum in old_operation:
+                        result_checksum = old_operation[checksum]
                         result_checksum_file = os.path.join(buffer_dir, result_checksum)
                         if os.path.exists(result_checksum_file):
-                            ntransform += 1
-                            transform[checksum] = result_checksum
+                            noperation += 1
+                            operation[checksum] = result_checksum
                             continue                
                     if checksum in done_checksums:
                         continue
-                    ntransform += 1                
+                    noperation += 1                
                     done_checksums.add(checksum)
                     entry = inode_to_entry[inode]
-                    tf = os.path.join(dirpath, entry)
-                    tfs.append((checksum, tf))
-            elif source_collection.get("transformed"):
+                    op = os.path.join(dirpath, entry)
+                    ops.append((checksum, op))
+            elif source_collection.get("from_operation"):
                 raise NotImplementedError # TODO: make a test for this
                 origin_collection_name = source_collection["origin"]
                 origin_collection = collections[origin_collection_name]
@@ -595,45 +602,45 @@ try:
                 result = load_csv(result_file)
                 done_checksums = set()
                 for entry, checksum in result.items():
-                    if checksum in old_transform:
-                        result_checksum = old_transform[checksum]
+                    if checksum in old_operation:
+                        result_checksum = old_operation[checksum]
                         result_checksum_file = os.path.join(buffer_dir, result_checksum)
                         if os.path.exists(result_checksum_file):
-                            ntransform += 1
-                            transform[checksum] = result_checksum
+                            noperation += 1
+                            operation[checksum] = result_checksum
                             continue                
                     if checksum in done_checksums:
                         continue
-                    ntransform += 1                
+                    noperation += 1                
                     done_checksums.add(checksum)
-                    tf = os.path.join(source_collection_dir, entry)
-                    tfs.append((checksum, tf))
+                    op = os.path.join(source_collection_dir, entry)
+                    ops.append((checksum, op))
             else:
                 raise AssertionError(source_collection)
 
             futures = []
             chunksize = 30
-            last_transform_write = time.time()
-            curr_tfs = []
+            last_operation_write = time.time()
+            curr_ops = []
             assert source_celltype is not None
             if target_celltype is None:
                 target_celltype = source_celltype
-            for n in range(len(tfs)):
-                tf = tfs[n]
-                curr_tfs.append(tf)
-                last = (n == len(tfs) - 1)
+            for n in range(len(ops)):
+                op = ops[n]
+                curr_ops.append(op)
+                last = (n == len(ops) - 1)
                 cleanup = False
                 if (n+1) % 1000 == 0:
                     if source_celltype != target_celltype:
                         cleanup = True
-                if len(curr_tfs) == chunksize or last: 
+                if len(curr_ops) == chunksize or last: 
                     future = executor.submit(
-                        do_transform, cmd, 
+                        do_operation, cmd, 
                         source_celltype, target_celltype,
-                        curr_tfs
+                        curr_ops
                     )
                     futures.append(future)
-                    curr_tfs = []
+                    curr_ops = []
                 while len(futures) and (len(futures) == nproc or last or cleanup):
                     for future in futures:
                         if not future.done():
@@ -642,17 +649,17 @@ try:
                         futures.remove(future)
                         for checksum, result_checksum in result:
                             if result_checksum is not None:
-                                transform[checksum] = result_checksum
-                                if len(transform) % 1000 == 0:
-                                    report("Transformed {}/{} files".format(
-                                        len(transform), ntransform
+                                operation[checksum] = result_checksum
+                                if len(operation) % 1000 == 0:
+                                    report("Operated {}/{} files".format(
+                                        len(operation), noperation
                                     ))
 
                                 elapsed_time = time.time()
-                                if elapsed_time - last_transform_write > 20:
-                                    report("Save intermediate transform table to {}".format(transform_file)) 
-                                    write_csv(transform, transform_file)
-                                    last_transform_write = elapsed_time
+                                if elapsed_time - last_operation_write > 20:
+                                    report("Save intermediate operation table to {}".format(operation_file)) 
+                                    write_csv(operation, operation_file)
+                                    last_operation_write = elapsed_time
                         break
                     else:
                         time.sleep(1)
@@ -660,10 +667,10 @@ try:
                     executor.shutdown()
                     executor = concurrent.futures.ProcessPoolExecutor()
             assert not len(futures)
-            write_csv(transform, transform_file)
+            write_csv(operation, operation_file)
             collections[target_collection_name] = {
                 "name": target_collection_name,
-                "transformed": True,
+                "from_operation": True,
                 "celltype": target_celltype,
                 "origin": origin_collection_name
             }
@@ -685,7 +692,7 @@ try:
                 can_hardlink = cross_device
                 if origin_collection.get("interned"):
                     interned = True
-            elif source_collection.get("transformed"):
+            elif source_collection.get("from_operation"):
                 origin_collection_name = source_collection["origin"]
                 origin_collection = collections[origin_collection_name]
                 can_hardlink = True
@@ -728,11 +735,11 @@ try:
             else:
                 raise AssertionError(origin_collection)
 
-            if source_collection.get("transformed"):
-                transform_dir = get_subdir("transforms")
-                transform_file = os.path.join(transform_dir, source_collection_name) + ".csv"
-                transform = load_csv(transform_file)
-                checksums = {entry: transform[checksum] for entry, checksum in origin_checksums.items()}
+            if source_collection.get("from_operation"):
+                operation_dir = get_subdir("operations")
+                operation_file = os.path.join(operation_dir, source_collection_name) + ".csv"
+                operation = load_csv(operation_file)
+                checksums = {entry: operation[checksum] for entry, checksum in origin_checksums.items()}
             else:
                 checksums = origin_checksums
 
@@ -908,7 +915,7 @@ try:
                 celltype = None
             elif source_collection.get("copied"):
                 celltype = source_collection.get("celltype")
-            elif source_collection.get("transformed"):
+            elif source_collection.get("from_operation"):
                 celltype = source_collection.get("celltype")
             else:
                 celltype = None
@@ -926,10 +933,10 @@ try:
                 result_file = os.path.join(collection_dir, target_collection_name) + ".csv"
                 result = load_csv(result_file)
                 deepcell0 = result
-            elif source_collection.get("transformed"):
-                transform_dir = get_subdir("transforms")
-                transform_file = os.path.join(transform_dir, source_collection_name) + ".csv"
-                transform = load_csv(transform_file)
+            elif source_collection.get("from_operation"):
+                operation_dir = get_subdir("operations")
+                operation_file = os.path.join(operation_dir, source_collection_name) + ".csv"
+                operation = load_csv(operation_file)
                 origin_collection_name = source_collection["origin"]
                 origin_collection = collections[origin_collection_name]
 
@@ -940,14 +947,14 @@ try:
                     for inode in inode_table:
                         checksum, _ = inode_table[inode]
                         entry = inode_to_entry[inode]
-                        deepcell0[entry] = transform[checksum]
+                        deepcell0[entry] = operation[checksum]
                 elif origin_collection.get("copied"):
                     collection_dir = get_subdir("collections")
                     result_file = os.path.join(collection_dir, origin_collection_name) + ".csv"
                     result = load_csv(result_file)
                     deepcell0 = {}
                     for entry, checksum in result.items():
-                        deepcell0[entry] = transform[checksum]
+                        deepcell0[entry] = operation[checksum]
                 else:
                     raise AssertionError(origin_collection)
             else:

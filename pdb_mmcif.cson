@@ -26,13 +26,13 @@
         #  is aborted, unless --force is used        
 
         # Possible actions: 
-        #   intern_collection, transform_collection, copy_collection
+        #   intern_collection, operation, copy_collection
         #   build_download_index, deepfolder, deepcell
 
         # NOTE: re-running an action after a change does NOT always clean up
         # old files.
         # - intern_collection does only if hardlink
-        # - transform_collection does not clean up old transform results
+        # - operation does not clean up old operation results
         # - copy_collection does clean up
 
         # 1. Actions on the original (zipped) PDB-mmcif files
@@ -97,18 +97,18 @@
             #
             # The target collection can be the directory (requires cross_device=False) 
             #  or a collection created with copy_collection.
-            # A fully internal collection (such a generated with transform_collection) is not suitable.
+            # A fully internal collection (such a generated with operation) is not suitable.
         }
 
         # 2. The unzipped files
         {
-            # Applies a transformation on each checksum, to create checksum2
+            # Applies a operation on each checksum, to create checksum2
 
             # Create $SDB/buffers/<checksum2> for each checksum
             # If checksum is checksum2, a hard-link is created if possible
 
-            # Create $SDB/transforms/pdb_mmcif_unzip.csv, with a checksum-to-checksum2 table
-            "action": "transform_collection"
+            # Create $SDB/operations/pdb_mmcif_unzip.csv, with a checksum-to-checksum2 table
+            "action": "operation"
             # Command to execute. Can be unzip, gunzip, bunzip2, or undefined (not present)
             "command": "gunzip"
             
@@ -133,13 +133,13 @@
             # Create $SDB/collections/pdb_mmcif_unzip.csv with the checksum of each target file
             "collection": "pdb_mmcif_unzip"
 
-            # Instead of the original directory, we take a transformed collection as source
-            # This means that instead of the contents of source_file, we will copy the transformed buffer
+            # Instead of the original directory, we take a operated collection as source
+            # This means that instead of the contents of source_file, we will copy the operated buffer
             #  located in $SDB/buffers/<checksum2>
             "source_collection": "pdb_mmcif_unzip0"
 
-            # Note that since we use a transformed directory as input, 
-            # the source file names are that of the untransformed directory   
+            # Note that since we use a operated directory as input, 
+            # the source file names are that of the unoperated directory   
             #         
             # regular expression (Python re module)
             # Creates capturing groups to be used in target_file
@@ -152,7 +152,7 @@
             #   then files are created as hardlinks, so no extra disk space is used
             # If we would use the original source_collection (default)
             #   its cross_device would have to be False 
-            # But since we use a transformed collection as input, 
+            # But since we use a operated collection as input, 
             #  cross_device=False is not actually necessary, since it is fully internal,
             #  and hardlinking will always work.
             "hardlink": true
@@ -195,7 +195,7 @@
             # Here, we will build a deepfolder for the unzipped files            
 
             # Here, we operate on a copied collection
-            #  (transform_collection without copy_collection won't do; we need source_file entries)
+            #  (operation without copy_collection won't do; we need source_file entries)
             #  Checksums are then obtained for each source file from $SDB/collections/pdb_mmcif_unzip.csv 
 
             "action": "deepfolder"
@@ -217,7 +217,7 @@
             "collection": "pdb_mmcif_unzip_flat"
 
             # We can take another copied collection as the source collection
-            # (transform_collection without copy_collection won't do; we need source_file entries)
+            # (operation without copy_collection won't do; we need source_file entries)
             "source_collection": "pdb_mmcif_unzip"
 
             "source_file": "(.{2})/(.{4})\.cif"
@@ -279,12 +279,12 @@
             ]
         }
         {
-            # See above for an explanation of transform_collection.
+            # See above for an explanation of operation.
             # The goal here is to convert to "mixed", so that we can build a deepcell.
             # In effect, since .cif is text, the conversion to mixed means that we
             #  wrap the contents in double quotes (so that json.load works)
 
-            "action": "transform_collection"          
+            "action": "operation"          
             "source_collection": "pdb_mmcif_unzip_flat"
 
             "celltype": "mixed"
@@ -304,13 +304,13 @@
             "action": "deepcell"
             "collection": "pdb_mmcif_unzip_deepcell"
 
-            # Requires a source collection that is a transformed collection 
+            # Requires a source collection that is a operated collection 
             #  with celltype="mixed"
-            # Source file entries are obtained from the untransformed collection
+            # Source file entries are obtained from the unoperated collection
             #  ($SDB/collections/pdb_mmcif_unzip.csv)
-            # This also gives us the untransformed checksum
+            # This also gives us the unoperated checksum
             #  these are then mapped using the checksum-to-checksum2 table in 
-            #  $SDB/transforms/pdb_mmcif_unzip_mixed.csv
+            #  $SDB/operations/pdb_mmcif_unzip_mixed.csv
         
             "source_collection": "pdb_mmcif_unzip_mixed"
             
