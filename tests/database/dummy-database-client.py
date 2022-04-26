@@ -33,7 +33,7 @@ def main():
         "checksum": checksum,
     }
     response = s.get(url, data=json.dumps(request))
-    print(response.text, response.text == "1")
+    print(response.text, response.text == "true")
 
     request = {
         "type": "buffer",

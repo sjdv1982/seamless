@@ -1,7 +1,7 @@
 Stage 1
 Database server running
 OK
-1 True
+true True
 42
 
 
@@ -9,6 +9,10 @@ File system:
 /tmp/seamless-db/buffers/fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
 42
 
+/tmp/seamless-db/buffer_independence/ALL
+{
+  "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3": false
+}
 
 Server log
 Press Ctrl+C to end
@@ -22,6 +26,10 @@ File system:
 /tmp/seamless-db/buffers/fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
 42
 
+/tmp/seamless-db/buffer_independence/ALL
+{
+  "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3": false
+}
 OK
 42
 
@@ -29,6 +37,10 @@ File system:
 /tmp/seamless-db/buffers/fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
 42
 
+/tmp/seamless-db/buffer_independence/ALL
+{
+  "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3": false
+}
 Server log
 Press Ctrl+C to end
 /Server log
