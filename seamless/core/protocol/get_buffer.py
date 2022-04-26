@@ -129,7 +129,7 @@ Else, return None
             src, target = k.split("2")
             if _done is None:
                 _done = set()
-                _done.add(checksum)
+            _done.add(checksum)
             target_buf = get_buffer(bytes.fromhex(d[k]), remote=remote, _done=_done)
             if target_buf is not None:
                 try:
