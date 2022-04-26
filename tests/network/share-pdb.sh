@@ -13,6 +13,11 @@ bridge = json.load(sys.stdin)
 print(bridge[0]["IPAM"]["Config"][0]["Gateway"])
 ''')
 
+rundir=`python3 -c 'import os,sys;print(os.path.dirname(os.path.realpath(sys.argv[1])))' share-pdb.seamless`
+
+cd ${rundir}
+
+
 name=share-pdb
 communion_incoming=$bridge_ip:8602
 docker run --rm \
