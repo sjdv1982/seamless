@@ -47,12 +47,12 @@ parser.add_argument(
 
 parser.add_argument(
     "--version",
-    help="Version tag of the added distribution. Only requires if there is no date."
+    help="Version tag of the added distribution. Only required if there is no date."
 )
 
 parser.add_argument(
     "--date",
-    help="Date tag of the added distribution. Only requires if there is no version."
+    help="Date tag of the added distribution. Only required if there is no version."
 )
 
 parser.add_argument(
