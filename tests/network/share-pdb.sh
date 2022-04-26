@@ -22,6 +22,8 @@ name=share-pdb
 communion_incoming=$bridge_ip:8602
 docker run --rm \
   --name $name \
+  -p 5813:5813 \
+  -p 5138:5138 \
   -v $seamlessdir:/seamless \
   -e "PYTHONPATH=/seamless" \
   -e "SEAMLESS_DATABASE_HOST="$bridge_ip \
