@@ -2,6 +2,7 @@ from copy import deepcopy
 from aiohttp import web
 import aiofiles
 import os, sys, asyncio, json, socket
+from seamless import calculate_checksum
 from seamless.util import parse_checksum
 from seamless.core.buffer_info import BufferInfo
 from collections import deque
@@ -35,6 +36,9 @@ async def read_buffer(checksum, filename):
         return None
     async with aiofiles.open(filename, "rb") as f:
         buffer = await f.read()
+        cs = calculate_checksum(buffer, hex=True)
+        if cs != checksum: # database corruption!
+            return None
     cache_buffer(checksum, buffer)
     return buffer
 
@@ -96,36 +100,59 @@ def format_response(response, *, none_as_404=False):
         print("/ERROR: wrong response format")
         response = "ERROR: wrong response format"
     return status, response
-    
-class DatabaseServer:
-    future = None
-    PROTOCOL = ("seamless", "database", "0.1")
-    def __init__(self, host, port, *, database_dir, external_dir=None):
-        """external_dir: name of the database dir for clients (outside the container)
-This is for get_filename and get_directory requests"""
-        self.host = host
-        self.port = port
-        self.database_dir = database_dir
-        if external_dir is None:
-            external_dir = database_dir
-        self.external_dir = external_dir
+
+class DatabaseStore:
+    def __init__(self, config):
+        self.path = config["path"]
+        assert os.path.exists(self.path)
+        self.readonly = config["readonly"]
+        if not self.readonly:
+            if not os.path.exists(self.path):
+                os.mkdir(self.path)
+            buffer_dir = os.path.join(self.path, "buffers")
+            if not os.path.exists(buffer_dir):
+                os.mkdir(buffer_dir)
+        self.serve_filenames = config["serve_filenames"]
+        self.external_path = config.get("external_path", self.path)
+        self.user_path = config.get("user_path", self.external_path)
         self.buckets = {}
         for bucketname in bucketnames:
-            subdir = os.path.abspath(os.path.join(database_dir, bucketname))
+            subdir = os.path.abspath(os.path.join(self.path, bucketname))
             bucket = TopBucket(subdir)
             self.buckets[bucketname] = bucket
 
-    def _get_filename(self, checksum, extern):
+    def _get_filename(self, checksum, as_user_path):
+        if not self.serve_filenames:
+            return None
         if checksum is None:
             return None
-        dir = self.external_dir if extern else self.database_dir
+        dir = self.user_path if as_user_path else self.path
         return os.path.join(dir, "buffers", checksum)
 
-    def _get_directory(self, checksum, extern):
+    def _get_directory(self, checksum, as_user_path):
+        if not self.serve_filenames:
+            return None
         if checksum is None:
             return None
-        dir = self.external_dir if extern else self.database_dir
+        dir = self.user_path if as_user_path else self.path
         return os.path.join(dir, "shared-directories", checksum)
+
+    def _get_from_bucket(self, bucket, checksum):
+        result = bucket.get(checksum)
+        return result
+
+class DatabaseServer:
+    future = None
+    PROTOCOL = ("seamless", "database", "0.1")
+    def __init__(self, config):
+        self.host = config.get("host", "0.0.0.0")
+        self.port = int(config.get("port", 5522))
+        stores = []
+        for store_config in config["stores"]:
+            store = DatabaseStore(store_config)
+            stores.append(store)
+        self.stores = stores
+
 
     async def _start(self):
         if is_port_in_use(self.host, self.port): # KLUDGE
@@ -250,73 +277,88 @@ This is for get_filename and get_directory requests"""
             #print("END PUT REQUEST", hex(id(request)))
             pass
 
-
-    def _get_from_bucket(self, bucket, checksum):
-        result = bucket.get(checksum)
-        if result is None:
-            raise DatabaseError("Unknown key")
-        return result
-
     async def _get(self, type, checksum, request):
         if type == "has_buffer":
             found = False
             if checksum in buffer_cache:
                 found = True
             else:
-                filename = self._get_filename(checksum, extern=False)
-                if os.path.exists(filename):
-                    found = True
+                for store in self.stores:
+                    filename = store._get_filename(checksum, as_user_path=False)
+                    if os.path.exists(filename):
+                        found = True
             return found
 
         elif type == "filename":
-            filename = self._get_filename(checksum, extern=False)
-            if os.path.exists(filename):
-                filename2 = self._get_filename(checksum, extern=True)
-                return filename2
+            for store in self.stores:
+                filename = store._get_filename(checksum, as_user_path=False)
+                if os.path.exists(filename):
+                    filename2 = store._get_filename(checksum, as_user_path=True)
+                    return filename2
             return None # None is also a valid response
 
         elif type == "directory":
-            directory = self._get_directory(checksum, extern=False)
-            if os.path.exists(directory):
-                return self._get_directory(checksum, extern=True)
+            for store in self.stores:
+                directory = store._get_directory(checksum, as_user_path=False)
+                if os.path.exists(directory):
+                    return store._get_directory(checksum, as_user_path=True)
             return None # None is also a valid response
 
         elif type == "buffer":
-            filename = self._get_filename(checksum, extern=False)
-            result = await read_buffer(checksum, filename)
-            return result # None is also a valid response
+            for store in self.stores:
+                filename = store._get_filename(checksum, as_user_path=False)
+                if os.path.exists(filename):
+                    result = await read_buffer(checksum, filename)
+                    if result is not None:
+                        return result 
+            return None # None is also a valid response
 
         elif type == "buffer_info":
-            bucket = self.buckets["buffer_info"]
-            return self._get_from_bucket(bucket, checksum)
+            for store in self.stores:
+                bucket = store.buckets["buffer_info"]
+                result = store._get_from_bucket(bucket, checksum)
+                if result is not None:
+                    return result
+            raise DatabaseError("Unknown key")
 
         elif type == "semantic_to_syntactic":
             try:
                 celltype, subcelltype = request["celltype"], request["subcelltype"]
             except KeyError:
-                raise DatabaseError("Malformed semantic-to-syntactic request")
-            bucket = self.buckets["semantic_to_syntactic"]
-            all_results = self._get_from_bucket(bucket, checksum)
-            results = all_results.get(celltype + "-" + subcelltype)
-            if not len(results):
-                raise DatabaseError("Unknown key")
-            return list(results)
+                raise DatabaseError("Malformed semantic-to-syntactic request")            
+            for store in self.stores:
+                bucket = store.buckets["semantic_to_syntactic"]
+                all_results = store._get_from_bucket(bucket, checksum)
+                if all_results is not None:
+                    results = all_results.get(celltype + "-" + subcelltype)
+                    if len(results):
+                        return list(results)
+            raise DatabaseError("Unknown key")
 
         elif type == "compilation":
-            bucket = self.buckets["compilations"]
-            result = self._get_from_bucket(bucket, checksum)
-            return parse_checksum(result) # None is also a valid response
+            for store in self.stores:
+                bucket = store.buckets["compilations"]
+                result = store._get_from_bucket(bucket, checksum)
+                if result is not None:
+                    parse_checksum(result) 
+            return None # None is also a valid response
 
         elif type == "transformation":
-            bucket = self.buckets["transformations"]
-            result = self._get_from_bucket(bucket, checksum)
-            return parse_checksum(result) # None is also a valid response
+            for store in self.stores:
+                bucket = store.buckets["transformations"]
+                result = store._get_from_bucket(bucket, checksum)
+                if result is not None:
+                    return parse_checksum(result) 
+            return None # None is also a valid response
 
         elif type == "elision":
-            bucket = self.buckets["elisions"]
-            result = self._get_from_bucket(bucket, checksum)
-            json.dumps(result)
-            return result # None is also a valid response
+            for store in self.stores:
+                bucket = store.buckets["elisions"]
+                result = store._get_from_bucket(bucket, checksum)
+                if result is not None:
+                    json.dumps(result)
+                    return result
+            return None # None is also a valid response
 
         else:
             raise DatabaseError("Unknown request type")
@@ -326,20 +368,29 @@ This is for get_filename and get_directory requests"""
             if isinstance(value, str):
                 value = value.encode()
             independent = bool(request.get("independent", False))
-            bucket = self.buckets["buffer_independence"]
-            bucket.set(checksum, independent)
-            filename = self._get_filename(checksum, extern=False)
-            await write_buffer(checksum, value, filename)
+            for store in self.stores:
+                if store.readonly:
+                    continue
+                bucket = store.buckets["buffer_independence"]
+                bucket.set(checksum, independent)
+                filename = store._get_filename(checksum, as_user_path=False)
+                await write_buffer(checksum, value, filename)
 
         elif type == "delete_key":
-            try:
-                key_type = request["key_type"]
-                if key_type in ("transformation", "compilation"):
-                    key_type += "s"
-                bucket = self.buckets[key_type]
-            except KeyError:
-                raise DatabaseError("Malformed SET delete key request: invalid key_type")
-            deleted = bucket.set(checksum, None)
+            deleted = False
+            for store in self.stores:
+                if store.readonly:
+                    continue
+                try:
+                    key_type = request["key_type"]
+                    if key_type in ("transformation", "compilation"):
+                        key_type += "s"
+                    bucket = store.buckets[key_type]
+                except KeyError:
+                    raise DatabaseError("Malformed SET delete key request: invalid key_type")
+                store_deleted = bucket.set(checksum, None)
+                if store_deleted:
+                    deleted = True
             return deleted
 
 
@@ -351,8 +402,11 @@ This is for get_filename and get_directory requests"""
             except Exception:
                 raise DatabaseError("Malformed SET buffer info request") from None
             
-            bucket = self.buckets["buffer_info"]
-            bucket.set(checksum, value)
+            for store in self.stores:
+                if store.readonly:
+                    continue
+                bucket = store.buckets["buffer_info"]
+                bucket.set(checksum, value)
 
         elif type == "semantic_to_syntactic":
             if not isinstance(value, list):
@@ -361,25 +415,35 @@ This is for get_filename and get_directory requests"""
                 celltype, subcelltype = request["celltype"], request["subcelltype"]
             except KeyError:
                 raise DatabaseError("Malformed SET semantic-to-syntactic request")
-            bucket = self.buckets["semantic_to_syntactic"]
-            try:
-                all_results = self._get_from_bucket(bucket, checksum)
-                all_results = deepcopy(all_results)
-            except DatabaseError:
-                all_results = {}
+            all_results = {}
+            for store in self.stores:
+                bucket = store.buckets["semantic_to_syntactic"]
+                try:
+                    all_results0 = store._get_from_bucket(bucket, checksum)
+                    if all_results0 is not None:
+                        all_results.update(all_results0)
+                except DatabaseError:
+                    pass
             key = celltype + "-" + subcelltype
             existing_results = all_results.get(key, [])
             all_results[key] = existing_results + value
-            bucket.set(checksum, all_results)
-            
+            for store in self.stores:
+                if store.readonly:
+                    continue
+                bucket = store.buckets["semantic_to_syntactic"]
+                bucket.set(checksum, all_results)
+        
         elif type == "compilation":
             try:
                 checksum = parse_checksum(checksum)
                 value = parse_checksum(value)
             except ValueError:
                 raise DatabaseError("Malformed SET compilation result request: value must be a checksum")
-            bucket = self.buckets["compilations"]
-            bucket.set(checksum, value)
+            for store in self.stores:
+                if store.readonly:
+                    continue
+                bucket = store.buckets["compilations"]
+                bucket.set(checksum, value)
 
         
         elif type == "transformation":
@@ -388,16 +452,22 @@ This is for get_filename and get_directory requests"""
                 value = parse_checksum(value)
             except ValueError:
                 raise DatabaseError("Malformed SET transformation result request: value must be a checksum")
-            bucket = self.buckets["transformations"]
-            bucket.set(checksum, value)
+            for store in self.stores:
+                if store.readonly:
+                    continue
+                bucket = store.buckets["transformations"]
+                bucket.set(checksum, value)
 
         elif type == "elision":
             try:
                 checksum = parse_checksum(checksum)
             except ValueError:
                 raise DatabaseError("Malformed SET elision result request: value must be a checksum")
-            bucket = self.buckets["elisions"]
-            bucket.set(checksum, value)
+            for store in self.stores:
+                if store.readonly:
+                    continue
+                bucket = store.buckets["elisions"]
+                bucket.set(checksum, value)
 
         else:
             raise DatabaseError("Unknown request type")
@@ -405,26 +475,11 @@ This is for get_filename and get_directory requests"""
 
 if __name__ == "__main__":
     from database_bucket import TopBucket
-    env = os.environ
-    SDB = env.get("SEAMLESS_DATABASE_DIR")
-    if SDB is None:
-        err("SEAMLESS_DATABASE_DIR undefined")
-    if not os.path.exists(SDB):
-        err("Directory '{}' does not exist".format(SDB))
-    SDB_external_dir = env.get("SEAMLESS_DATABASE_EXTERNAL_DIR")
+    import ruamel.yaml
+    yaml = ruamel.yaml.YAML(typ='safe')
 
-    db_host = env.get("SEAMLESS_DATABASE_HOST")
-    if db_host is None:
-        err("SEAMLESS_DATABASE_HOST undefined")
-    db_port = env.get("SEAMLESS_DATABASE_PORT")
-    if db_port is None:
-        err("SEAMLESS_DATABASE_PORT undefined")
-    else:
-        db_port = int(db_port)
-
-    buffer_dir = os.path.join(SDB, "buffers")
-    if not os.path.exists(buffer_dir):
-        os.mkdir(buffer_dir)
+    config = yaml.load(open(sys.argv[1]))
+    # TODO: schema
 
     def raise_system_exit(*args, **kwargs): 
         raise SystemExit
@@ -432,10 +487,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGHUP, raise_system_exit)
     signal.signal(signal.SIGINT, raise_system_exit)
 
-    database_server = DatabaseServer(
-        db_host, db_port, 
-        database_dir=SDB, external_dir=SDB_external_dir
-    )
+    database_server = DatabaseServer(config)
     database_server.start()
 
     """

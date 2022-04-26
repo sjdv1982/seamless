@@ -58,9 +58,6 @@ Computed deepfolder for testfolder1: deep buffer checksum 45eda5dc76b4247d554e2b
 Deepfolder checksum: 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1
 Creating hard links in /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1
 
-Delete transformation result
-Transformation result deleted
-
 Run 4
 Database found
 A f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247 b'[\n  1,\n  2,\n  3\n]\n'

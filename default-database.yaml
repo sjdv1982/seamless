@@ -1,0 +1,13 @@
+host: "0.0.0.0"  # can be omitted, default is 0.0.0.0
+port:  5522  # can be omitted, default is 5522
+stores: 
+    -
+      external_path: "~/.seamless/database"
+      path: "/data"
+      
+      user_path: "~/.seamless/database"  # can be omitted, default is external_path
+      # But if Seamless itself runs inside a Docker container that mounts
+      #  "~/.seamless/database" to "/foo, then user_path must be "/foo"
+      
+      readonly: false
+      serve_filenames: true

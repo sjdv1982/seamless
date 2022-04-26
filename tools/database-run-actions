@@ -326,14 +326,6 @@ def write_deepcontent(deepdict_checksum, deepdict):
     deepcontent[deepdict_checksum] = deepcontent_size
     write_csv(deepcontent, deepcontentfile)
 
-SDB = os.environ.get("SEAMLESS_DATABASE_DIR")
-if SDB is None:
-    err("SEAMLESS_DATABASE_DIR undefined")
-
-from database_bucket import TopBucket
-buffer_info_dir = os.path.join(SDB, "buffer_info")
-buffer_info_bucket = TopBucket(buffer_info_dir)
-
 
 def get_subdir(subdirname):
     subdir = os.path.join(SDB, subdirname)
@@ -344,8 +336,15 @@ def get_subdir(subdirname):
         err("{} is not a directory".format(subdir))
     return subdir
 
+from database_bucket import TopBucket
+
 import argparse
 parser = argparse.ArgumentParser()
+parser.add_argument(
+    "database_dir",
+    help="Seamless database directory to operate on",
+    type=str
+)
 parser.add_argument(
     "actionfile",
     help="Database action file (json, cson or yaml) to run",
@@ -361,6 +360,14 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
+
+SDB = args.database_dir
+if not os.path.isdir(SDB):
+    print("Seamless database directory {} does not exist".format(SDB))
+
+buffer_info_dir = os.path.join(SDB, "buffer_info")
+buffer_info_bucket = TopBucket(buffer_info_dir)
+
 afname = args.actionfile.name
 if afname.endswith(".json"):
     loader = json.load
