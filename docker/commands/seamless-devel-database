@@ -32,11 +32,13 @@ print(result)
 '''
 
 if [ -z "$1" ]; then
-  database_config=$seamlessdir/default-database.yaml  
+  database_config=$seamlessdir/tools/default-database.yaml  
 else
   database_config=$(python -c "import sys, os; print(os.path.realpath(sys.argv[1]))" $1)
 fi
 docker_params=$(echo "$get_docker_params" | python /dev/stdin $database_config)
+echo $docker_params
+exit
 
 set -u -e
 
