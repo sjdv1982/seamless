@@ -140,9 +140,12 @@ class Macro(Base):
         parent = self._parent()
         node = self._get_node()
 
+        new_pin = False
         if attr != "code":
             if attr not in node["pins"]:
                 node["pins"][attr] = default_pin.copy()
+                translate = True
+                new_pin = True
             else:
                 if not isinstance(value, Cell):
                     pin = node["pins"][attr]
@@ -189,15 +192,14 @@ class Macro(Base):
                     value, _, _ = parse_function_code(value)
                 mctx.code.set(value)
         else:
-            if attr not in node["pins"]:
-                node["pins"][attr] = default_pin.copy()
-                translate = True
             pin = node["pins"][attr]
             if pin["io"] == "output":
                 raise AttributeError(
                   "Cannot assign to output pin '{}'".format(attr)
                 )
             if isinstance(value, Cell):
+                if new_pin and value.celltype == "checksum":
+                    pin["celltype"] = "checksum"
                 target_path = self._path + (attr,)
                 assert value._parent() is parent
                 assign_connection(parent, value._path, target_path, False)
@@ -243,7 +245,7 @@ class Macro(Base):
         parent = self._parent()
         if not self._has_mctx():
             if force:
-                raise Exception("Transformer has not yet been translated")
+                raise Exception("Macro has not yet been translated")
             return None
         p = parent._gen_context
         for subpath in self._path:

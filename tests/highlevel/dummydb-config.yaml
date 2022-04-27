@@ -1,16 +1,9 @@
-host: 0.0.0.0  # all IPs
-port: 5522
+host: "0.0.0.0"  # can be omitted, default is 0.0.0.0
+port:  5522  # can be omitted, default is 5522
+stores: 
+    -
+      path: "/tmp/dummy-db"      
+      readonly: false
+      serve_filenames: true
 
-flatfile:
-    directory: /tmp/dummy-db
 
-
-backends: # backends are queried sequentially, in order; you probably want to define cache sources before non-cache sources
--
-    type: source
-    backend: flatfile
-
--
-    type: sink
-    backend: flatfile
-    cache: False

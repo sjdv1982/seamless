@@ -1246,7 +1246,6 @@ class SubContext(Base, HelpMixin):
         if isinstance(value, Transformer):
             if value._parent is None:
                 parent._graph[0][path] = value
-                parent._children[path] = value
                 value._init(parent, path )
                 parent._translate()
             else:

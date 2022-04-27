@@ -383,6 +383,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
         translate = False
         parent = self._parent()
         htf = self._get_htf()
+        new_pin = False
 
         if isinstance(value, Resource):
             assert attr ==  "code"
@@ -485,12 +486,15 @@ You can set this dictionary directly, or you may assign .meta to a cell
                     }
                 else:
                     pin = default_pin.copy()
+                    new_pin = True
                 pin.update(pin0)
                 htf["pins"][attr] = pin
                 translate = True
             else:
                 htf["pins"][attr].update(pin0)
             if isinstance(value, (Cell, Module, DeepCellBase)):
+                if new_pin and isinstance(value, Cell) and value.celltype == "checksum":
+                    pin["celltype"] = "checksum"
                 target_path = self._path + (attr,)
                 assert value._parent() is parent
                 assign_connection(parent, value._path, target_path, False)
