@@ -34,7 +34,7 @@ print(result)
 if [ -z "$1" ]; then
   database_config=$seamlessdir/default-database.yaml  
 else
-  database_config=$1
+  database_config=$(python -c "import sys, os; print(os.path.realpath(sys.argv[1]))" $1)
 fi
 docker_params=$(echo "$get_docker_params" | python /dev/stdin $database_config)
 
@@ -45,7 +45,7 @@ echo "Starting container seamless-database-container"
 docker run \
   -d \
   --name seamless-database-container \
-  -v $database_config:/database-config.yaml \
+  -v $database_config:/database-config.yaml:ro \
   -v $seamlessdir:/seamless \
   $docker_params \
   -u `id -u` \
