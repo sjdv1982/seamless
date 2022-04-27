@@ -422,7 +422,9 @@ class StructuredCell(SeamlessBase):
         if self._destroyed:
             return
         super().destroy(from_del=from_del)
-        self._get_manager()._destroy_structured_cell(self)
+        manager = self._get_manager()
+        if not isinstance(manager, UnboundManager):
+            manager._destroy_structured_cell(self)
 
     def has_independence(self, path=None):
         if path is not None: raise NotImplementedError
@@ -439,6 +441,7 @@ class PathDict(dict):
         return super().__getitem__(item)
 
 from .cell import Cell
+from .unbound_context import UnboundManager
 from .protocol.serialize import _serialize as serialize
 from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from .protocol.deep_structure import validate_hash_pattern

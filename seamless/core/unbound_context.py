@@ -420,6 +420,15 @@ class UnboundContext(SeamlessBase):
             return self._bound.destroy(from_del=from_del)
         for childname, child in self._children.items():
             child.destroy(from_del=from_del)
+        highlevel_parent = self._synth_highlevel_context()
+        if highlevel_parent is not None:
+            path = self.path
+            lp = len(path)
+            for childname in list(highlevel_parent._children):
+                if not isinstance(childname, tuple):
+                    continue
+                if childname[:lp] == path:
+                    highlevel_parent._children.pop(childname)
 
 
     def __str__(self):

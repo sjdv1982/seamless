@@ -80,7 +80,7 @@ class Transformer(Base, HelpMixin):
         if self._temp_pins is not None:
             assert pins is None
             pins = self._temp_pins
-        parent._children[path] = self
+        parent._set_child(path, self)
         try:
             assert code is None
             assert pins is None

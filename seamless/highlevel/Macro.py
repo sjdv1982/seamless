@@ -72,7 +72,7 @@ class Macro(Base):
             node = None
         if node is None:
             node = new_macro(parent, path, code, pins)
-        parent._children[path] = self
+        parent._set_child(path, self)
 
     @property
     def self(self):

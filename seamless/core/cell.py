@@ -453,7 +453,8 @@ class Cell(SeamlessBase):
         if manager is None:
             manager = self._get_manager()
         self._unmount(from_del=from_del, manager=manager)
-        manager._destroy_cell(self)
+        if not isinstance(manager, UnboundManager):
+            manager._destroy_cell(self)
         for path in list(self._paths):
             path._bind(None, trigger=True)
 
@@ -462,6 +463,8 @@ class Cell(SeamlessBase):
         if self._unmounted:
             return
         self._unmounted = True
+        if isinstance(manager, UnboundManager):
+            return
         mountmanager = manager.mountmanager
         if not is_dummy_mount(self._mount):
             mountmanager.unmount(self, from_del=from_del)

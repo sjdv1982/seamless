@@ -303,7 +303,7 @@ languages: dict or None
         if self._toplevel and manager is None:
             manager = self._get_manager()
         for childname, child in self._children.items():
-            if isinstance(child, (Cell, Context, Worker)):
+            if isinstance(child, (Cell, Context, Worker, Macro)):
                 child.destroy(from_del=from_del, manager=manager)
         super().destroy(from_del=from_del)
         highlevel_parent = self._synth_highlevel_context()

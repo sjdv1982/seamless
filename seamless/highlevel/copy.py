@@ -60,7 +60,7 @@ def copy(source, target):
         obj._parent = weakref.ref(target_ctx)
         payload = deepcopy(source_ctx._graph[0][source_path])
         payload["path"] = target_path
-        target_ctx._children[target_path] = obj
+        target_ctx._set_child(target_path, obj)
         target_ctx._graph[0][target_path] = payload
     elif isinstance(source, LibInstance):
         raise NotImplementedError

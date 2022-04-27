@@ -4,6 +4,10 @@ import weakref
 
 class ExecError(Exception): pass
 
+class DummyContext:
+    def __init__(self, path):
+        self.path = path
+
 from .worker import Worker, InputPin, OutputPin
 class Macro(Worker):
     injected_modules = None
@@ -80,7 +84,9 @@ class Macro(Worker):
         try:    
             for path in list(self._paths.keys()):
                 mp = self._paths.pop(path)
-                mp.destroy()        
+                mp.destroy() 
+            unbound_ctx = None       
+            ctx = None
             with macro_mode_on(self):
                 unbound_ctx = UnboundContext(toplevel=False, macro=True)
                 ubmanager = unbound_ctx._realmanager
@@ -177,6 +183,12 @@ class Macro(Worker):
                 ok = True
         except Exception as exception:
             manager._set_macro_exception(self, exception)
+            if ctx is not None:
+                ctx.destroy()
+            if unbound_ctx is not None:
+                unbound_ctx._context = lambda: DummyContext(self.path) # KLUDGE
+                unbound_ctx.name = "ctx" # KLUDGE
+                unbound_ctx.destroy()
         finally:
             self._unbound_gen_context = None
         if ok:

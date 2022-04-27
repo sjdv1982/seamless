@@ -26,7 +26,7 @@ class Module(Base):
 
     def _init(self, parent, path):
         super().__init__(parent=parent, path=path)
-        parent._children[path] = self
+        parent._set_child(path, self)
 
     def _get_ctx_subpath(self, cell, subpath):
         p = cell

@@ -304,7 +304,7 @@ class Context(Base, HelpMixin):
         if isinstance(value, (Transformer, Macro)):
             if value._parent is None:
                 self._graph[0][attr2] = value
-                self._children[attr2] = value
+                self._set_child(attr2, value)
                 value._init(self, attr2 )
                 self._translate()
             else:
@@ -595,6 +595,10 @@ class Context(Base, HelpMixin):
         buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
         save_vault(dirname, annotated_checksums, buffer_dict)
 
+    def _set_child(self, path, child):
+        if self._translating:
+            return
+        self._children[path] = child
 
     def _set_lib(self, path, lib):
         old_lib = self._graph.lib.get(path)

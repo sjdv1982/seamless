@@ -44,7 +44,7 @@ class DeepCellBase(Base, HelpMixin):
 
     def _init(self, parent, path):
         super().__init__(parent=parent, path=path)
-        parent._children[path] = self
+        parent._set_child(path, self)
 
     @property
     def exception(self):
