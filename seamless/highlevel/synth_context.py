@@ -1,7 +1,7 @@
 import weakref
 
 class SynthContext:
-    """Context synthesized by a Library constructor"""
+    """Context synthesized by a Library or Macro constructor"""
     _context = None
     def __init__(self, parent, path, context=None):
         self._parent = weakref.ref(parent)

@@ -107,8 +107,6 @@ class DatabaseStore:
         assert os.path.exists(self.path)
         self.readonly = config["readonly"]
         if not self.readonly:
-            if not os.path.exists(self.path):
-                os.mkdir(self.path)
             buffer_dir = os.path.join(self.path, "buffers")
             if not os.path.exists(buffer_dir):
                 os.mkdir(buffer_dir)
