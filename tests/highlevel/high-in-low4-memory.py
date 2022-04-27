@@ -118,4 +118,4 @@ m.code = map_list
 ctx.result = m.result
 ctx.compute()
 print("Exception:", ctx.m.exception)
-print(ctx.result.data)
+print(ctx.result._data)

@@ -38,7 +38,7 @@ UPDATE: don't rip, but document it as an advanced property.
 - Re-design database.py so that the default YAML normally works well,
 and that there is a subfolder for download pages/buffer info pages
 of named deepfolders. Include elision!
-   TODO: additional read-only database directories (with their own buckets)
+   DONE: additional read-only database directories (with their own buckets)
    TODO: jobless: adapt database client
    TODO: cloudless/jobless: rip redis, rewrite tests 
    DONE:rewrite database-run-actions "buffer_info/"  from folder to bucket

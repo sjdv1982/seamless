@@ -306,6 +306,15 @@ languages: dict or None
             if isinstance(child, (Cell, Context, Worker)):
                 child.destroy(from_del=from_del, manager=manager)
         super().destroy(from_del=from_del)
+        highlevel_parent = self._synth_highlevel_context()
+        if highlevel_parent is not None:
+            path = self.path
+            lp = len(path)
+            for childname in list(highlevel_parent._children):
+                if not isinstance(childname, tuple):
+                    continue
+                if childname[:lp] == path:
+                    highlevel_parent._children.pop(childname)
         if self._toplevel:
             from .macro import _global_paths
             manager = self._get_manager()
