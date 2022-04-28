@@ -155,7 +155,11 @@ class DatabaseCache(DatabaseBase):
         if not self.active:
             return
         url = "http://" + self.host + ":" + str(self.port)
-        response = session.get(url, data=json.dumps(request))
+        if isinstance(request, bytes):
+            rqbuf = request
+        else:
+            rqbuf = json.dumps(request)
+        response = session.get(url, data=rqbuf)
         if response.status_code == 404:
             return None
         elif response.status_code >= 400:

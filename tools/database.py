@@ -179,6 +179,7 @@ class DatabaseServer:
             data = await request.read()
             #print("NEW GET REQUEST", data)
             status = 200
+            type = None
             try:
                 try:
                     rq = json.loads(data)

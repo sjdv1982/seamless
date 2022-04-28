@@ -531,9 +531,11 @@ class TransformationJob:
             meta = json.loads(meta.decode())
         # meta not used for now...
 
-        env = self.transformation.get("__env__")
-        if env is not None:
-            env = get_buffer(env, remote=False)
+        env_checksum = self.transformation.get("__env__")
+        if env_checksum is not None:
+            env = get_buffer(env_checksum, remote=True)
+            if env is None:
+                raise CacheMissError(env_checksum.hex())
             env = json.loads(env.decode())
             assert env is not None
             validate_environment(env)
