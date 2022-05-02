@@ -12,7 +12,6 @@ seamless-jupyter-trusted
 seamless-load-project
 seamless-load-project-trusted
 seamless-new-project
-seamless-redis
 seamless-serve-graph
 seamless-serve-graph-interactive
 seamless-serve-graph-trusted
