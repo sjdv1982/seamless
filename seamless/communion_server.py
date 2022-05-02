@@ -91,7 +91,7 @@ def is_port_in_use(address, port): # KLUDGE: For some reason, websockets does no
 
 WAIT_TIME = 1.5 # time to wait for network connections after a new manager
 
-import os, sys, asyncio, time, functools, json, traceback, base64, websockets
+import os, sys, asyncio, time, functools, json, traceback, base64
 from weakref import WeakSet
 from .communion_client import communion_client_manager
 
@@ -180,6 +180,7 @@ class CommunionServer:
         self.config_servant.update(update)
 
     async def _listen_peer(self, websocket, peer_config, incoming=False):
+        import websockets
         all_peer_ids = [peer["id"] for peer in self.peers.values()]
         if peer_config["id"] in all_peer_ids:
             return

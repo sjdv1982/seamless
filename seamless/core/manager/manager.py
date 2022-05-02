@@ -111,7 +111,13 @@ class Manager:
         sharemanager.start()
 
         from ...communion_server import communion_server
-        communion_server.start()
+        try:
+            import websockets
+        except ImportError:
+            # we are running in a minimal Seamless environment
+            pass
+        else:
+            communion_server.start()
 
     def add_context(self, ctx):
         assert ctx._toplevel

@@ -62,8 +62,12 @@ import json
 import base64
 
 from asyncio import CancelledError
-import aiohttp
-from websockets.exceptions import ConnectionClosed
+try:
+    import aiohttp
+    from websockets.exceptions import ConnectionClosed
+    miss_http_lib = False
+except ImportError:
+    miss_http_lib = True
 
 class UnboundShareError(AttributeError):
     pass
@@ -947,6 +951,8 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
         self.started = True
 
     def start(self):
+        if miss_http_lib:
+            raise ImportError("aiohttp and/or websockets are missing")
         if self.address is None:
             self.address = self.DEFAULT_ADDRESS
         if self.update_port is None:

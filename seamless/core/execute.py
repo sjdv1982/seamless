@@ -9,8 +9,10 @@ import sys
 import os
 import signal
 from numpy import multiply
-import wurlitzer
-import debugpy
+try:
+    import debugpy
+except ModuleNotFoundError:
+    debugpy = None
 
 from .cached_compile import exec_code, check_function_like
 from .protocol.serialize import _serialize as serialize
@@ -196,7 +198,9 @@ def execute(name, code,
             msg = debug.get("python_attach_message")
             if msg is not None:
                 print(msg)
-            print("*" * 80)        
+            print("*" * 80) 
+            if debugpy is None:
+                raise ModuleNotFoundError("No module named 'debugpy'")      
             debugpy.listen(("localhost", port))  # listen for incoming DAP client connections
             debugpy.wait_for_client()  # wait for a client to connect
 

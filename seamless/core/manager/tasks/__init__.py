@@ -147,7 +147,13 @@ class Task:
     async def _run0(self, taskmanager):
         taskmanager.launching_tasks.discard(self)
         await asyncio.shield(taskmanager.await_active())
-        await asyncio.shield(communion_server.startup)
+        try:
+            import websockets
+        except ImportError:
+            # we are running in a minimal Seamless environment
+            pass
+        else:            
+            await asyncio.shield(communion_server.startup)
         while len(taskmanager.synctasks):
             await asyncio.sleep(0.001)
         if not isinstance(self, (UponConnectionTask, EvaluateExpressionTask, GetBufferTask, BackgroundTask)):
