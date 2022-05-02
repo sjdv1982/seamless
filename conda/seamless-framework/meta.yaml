@@ -24,7 +24,7 @@ requirements:
     - requests==2.22.*
     - cffi==1.14.*
     - traitlets==5.0.*
-    - biopython==1.76.*
+  
     #- nglview==2.7.*
     #
     #- snakemake==5.5.*

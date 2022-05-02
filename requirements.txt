@@ -2,7 +2,6 @@ numpy==1.20.*
 requests==2.22.*
 cffi==1.14.*
 traitlets==5.0.*
-biopython==1.76.*
 nglview==2.7.*
 snakemake==5.5.*
 cson==0.8.*
@@ -17,7 +16,6 @@ async_timeout==3.0.*
 multidict==4.7.*
 wurlitzer==2.0.*
 yarl==1.4.*
-redis==3.3.*
 pandas==1.2.*
 IPython==7.23.*
 notebook==6.4.*
