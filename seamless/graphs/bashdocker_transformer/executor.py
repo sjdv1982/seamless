@@ -119,10 +119,12 @@ try:
         options["working_dir"] = "/run"
     with open("DOCKER-COMMAND","w") as f:
         bash_header = """set -u -e
+trap 'chmod -R 777 /run' EXIT
 """ # don't add "trap 'jobs -p | xargs -r kill' EXIT" as it gives serious problems
 
         f.write(bash_header)
         f.write(docker_command)
+        f.write("\nchmod -R 777 /run")
     options.update(docker_options)
     full_docker_command = """bash -c '''
 ls $(pwd) > /dev/null 2>&1 || (>&2 echo \"\"\"The Docker container cannot read the mounted temporary directory.

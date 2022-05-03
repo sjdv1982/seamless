@@ -15,6 +15,7 @@ ctx.result.celltype = "text"
 ctx.result.mount("/tmp/result", "w")
 ctx.translate(force=True)
 ctx.compute()
+exit(0)
 print(ctx.result.value)
 print(ctx.tf.exception)
 ctx.code = """
@@ -23,6 +24,7 @@ echo 'hello' > test.txt
 mkdir RESULT
 mv test.npy RESULT
 mv test.txt RESULT
+chmod -R a+w RESULT
 """
 ctx.tf.docker_image = "continuumio/anaconda3"
 del ctx.result.mount
