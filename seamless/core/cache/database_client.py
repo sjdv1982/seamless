@@ -148,6 +148,15 @@ class DatabaseSink(DatabaseBase):
         self.send_request(request)
 
 class DatabaseCache(DatabaseBase):
+    _filezones = None
+    def set_filezones(self, filezones:list):
+        if filezones is None:
+            self._filezones = None
+        else:
+            if not isinstance(filezones, list):
+                raise TypeError(filezones)
+            self._filezones = [str(filezone) for filezone in filezones]
+            
     def connect(self, *, host='localhost',port=5522):
         self._connect(host, port)
 
@@ -180,6 +189,8 @@ class DatabaseCache(DatabaseBase):
             "type": "filename",
             "checksum": parse_checksum(checksum),
         }
+        if self._filezones is not None:
+            request["filezones"] = self._filezones
         response = self.send_request(request)
         if response is not None:
             return response.text
@@ -189,6 +200,8 @@ class DatabaseCache(DatabaseBase):
             "type": "directory",
             "checksum": parse_checksum(checksum),
         }
+        if self._filezones is not None:
+            request["filezones"] = self._filezones
         response = self.send_request(request)
         if response is not None:
             return response.text

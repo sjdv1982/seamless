@@ -111,28 +111,28 @@ class DatabaseStore:
             if not os.path.exists(buffer_dir):
                 os.mkdir(buffer_dir)
         self.serve_filenames = config["serve_filenames"]
-        self.external_path = config.get("external_path", self.path)
-        self.user_path = config.get("user_path", self.external_path)
+        self.filezone = str(config.get("filezone", "local"))
+        self.external_path = config.get("external_path", self.path)        
         self.buckets = {}
         for bucketname in bucketnames:
             subdir = os.path.abspath(os.path.join(self.path, bucketname))
             bucket = TopBucket(subdir)
             self.buckets[bucketname] = bucket
 
-    def _get_filename(self, checksum, as_user_path):
+    def _get_filename(self, checksum, as_external_path):
         if not self.serve_filenames:
             return None
         if checksum is None:
             return None
-        dir = self.user_path if as_user_path else self.path
+        dir = self.external_path if as_external_path else self.path
         return os.path.join(dir, "buffers", checksum)
 
-    def _get_directory(self, checksum, as_user_path):
+    def _get_directory(self, checksum, as_external_path):
         if not self.serve_filenames:
             return None
         if checksum is None:
             return None
-        dir = self.user_path if as_user_path else self.path
+        dir = self.external_path if as_external_path else self.path
         return os.path.join(dir, "shared-directories", checksum)
 
     def _get_from_bucket(self, bucket, checksum):
@@ -144,7 +144,7 @@ class DatabaseServer:
     PROTOCOL = ("seamless", "database", "0.1")
     def __init__(self, config):
         self.host = config.get("host", "0.0.0.0")
-        self.port = int(config.get("port", 5522))
+        self.port = int(config.get("port", 5522))        
         stores = []
         for store_config in config["stores"]:
             store = DatabaseStore(store_config)
@@ -283,29 +283,45 @@ class DatabaseServer:
                 found = True
             else:
                 for store in self.stores:
-                    filename = store._get_filename(checksum, as_user_path=False)
+                    filename = store._get_filename(checksum, as_external_path=False)
                     if os.path.exists(filename):
                         found = True
             return found
 
         elif type == "filename":
+            filezones = request.get("filezones", [])
+            if not isinstance(filezones, list):
+                raise DatabaseError("Malformed filename request")
             for store in self.stores:
-                filename = store._get_filename(checksum, as_user_path=False)
+                if not store.serve_filenames:
+                    continue
+                if len(filezones):
+                    if store.filezone not in filezones:
+                        continue
+                filename = store._get_filename(checksum, as_external_path=False)
                 if os.path.exists(filename):
-                    filename2 = store._get_filename(checksum, as_user_path=True)
+                    filename2 = store._get_filename(checksum, as_external_path=True)
                     return filename2
             return None # None is also a valid response
 
         elif type == "directory":
+            filezones = request.get("filezones", [])
+            if not isinstance(filezones, list):
+                raise DatabaseError("Malformed directory request")
             for store in self.stores:
-                directory = store._get_directory(checksum, as_user_path=False)
+                if not store.serve_filenames:
+                    continue
+                if len(filezones):
+                    if store.filezone not in filezones:
+                        continue
+                directory = store._get_directory(checksum, as_external_path=False)
                 if os.path.exists(directory):
-                    return store._get_directory(checksum, as_user_path=True)
+                    return store._get_directory(checksum, as_external_path=True)
             return None # None is also a valid response
 
         elif type == "buffer":
             for store in self.stores:
-                filename = store._get_filename(checksum, as_user_path=False)
+                filename = store._get_filename(checksum, as_external_path=False)
                 if os.path.exists(filename):
                     result = await read_buffer(checksum, filename)
                     if result is not None:
@@ -324,7 +340,7 @@ class DatabaseServer:
             try:
                 celltype, subcelltype = request["celltype"], request["subcelltype"]
             except KeyError:
-                raise DatabaseError("Malformed semantic-to-syntactic request")            
+                raise DatabaseError("Malformed semantic-to-syntactic request")
             for store in self.stores:
                 bucket = store.buckets["semantic_to_syntactic"]
                 all_results = store._get_from_bucket(bucket, checksum)
@@ -372,7 +388,7 @@ class DatabaseServer:
                     continue
                 bucket = store.buckets["buffer_independence"]
                 bucket.set(checksum, independent)
-                filename = store._get_filename(checksum, as_user_path=False)
+                filename = store._get_filename(checksum, as_external_path=False)
                 await write_buffer(checksum, value, filename)
 
         elif type == "delete_key":

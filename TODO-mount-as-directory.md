@@ -46,9 +46,9 @@ of named deepfolders. Include elision!
    DONE: rename database-run-actions concept "transforms" to "operations"
    DONE: implement serving shared-directories
    DONE: implement elision
-   TODO: add filezones . default is "localhost" for both stores and client. Rip user_path
+   DONE: add filezones . default is "local" for both stores and client. Rip user_path
    DONE: mini seamless for script/run-transformation.py + external conda dir . based on continuumio/miniconda3
-   TODO: adapt jobless
+   TODO: adapt jobless for filezones
 
 
 5a.
