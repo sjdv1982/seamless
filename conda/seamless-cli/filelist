@@ -17,3 +17,7 @@ seamless-serve-graph-interactive
 seamless-serve-graph-trusted
 seamless-serve-graph-trusted-interactive
 seamless-shell-existing
+seamless-conda-env-export
+seamless-conda-env-modify
+seamless-conda-env-bash
+seamless-conda-env-run-transformation

@@ -3,6 +3,7 @@ LABEL author="Sjoerd de Vries <sjoerd.de-vries@inserm.fr>"
 LABEL version="0.8"
 USER root
 COPY seamless /usr/local/seamless
+COPY scripts /seamless-scripts
 COPY docker/seamless-minimal/environment.yml /seamless-minimal/environment.yml
 RUN export RPY2_CFFI_MODE=ABI
 ENV PYTHONPATH /usr/local:$PYTHONPATH

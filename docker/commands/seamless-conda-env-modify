@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# modifies a conda environment in the seamless-minimal Docker image
+# $1: the environment dir
+# $2: the environment.yml file to modify with
+
+set -u -e
+
+CONDA_ENV_DIR=$1
+yaml=$2
+
+docker run \
+  --rm \
+  -it \
+  -u `id -u`:`id -g` \
+  -e CONDA_ENV_DIR=$CONDA_ENV_DIR \
+  -e yaml=$yaml \
+  -v $CONDA_ENV_DIR:$CONDA_ENV_DIR \
+  -v $yaml:$yaml \
+  rpbs/seamless-minimal \
+  bash -i -c 'echo "conda activate $CONDA_ENV_DIR" >> /.bashrc; bash -c -i "mamba env update --file $yaml"'

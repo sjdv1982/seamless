@@ -39,13 +39,17 @@ UPDATE: don't rip, but document it as an advanced property.
 and that there is a subfolder for download pages/buffer info pages
 of named deepfolders. Include elision!
    DONE: additional read-only database directories (with their own buckets)
-   TODO: jobless: adapt database client
-   TODO: cloudless/jobless: rip redis, rewrite tests 
+   DONE: jobless: adapt database client
+   DONE: cloudless/jobless: rip redis, rewrite tests 
    DONE:rewrite database-run-actions "buffer_info/"  from folder to bucket
    (write database-flatfolder-to-bucketfolder conversion tool)
    DONE: rename database-run-actions concept "transforms" to "operations"
    DONE: implement serving shared-directories
    DONE: implement elision
+   TODO: add filezones . default is "localhost" for both stores and client. Rip user_path
+   DONE: mini seamless for script/run-transformation.py + external conda dir . based on continuumio/miniconda3
+   TODO: adapt jobless
+
 
 5a.
 - DONE: For DeepFolder/DeepCell (not Folder), support loading-by-name.

@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -u -e
+
+# loads the specified conda environment into a seamless-minimal
+# container and starts a shell
+# The conda environment is supposed to have been generated
+#  with seamless-conda-env-export, and potentially updated
+#  with seamless-conda-env-modify
+
+CONDA_ENV_DIR=$1
+
+HOSTCWD=`pwd`
+
+if [[ ! -v SEAMLESS_DEBUGGING_DIRECTORY ]]; then 
+  SEAMLESS_DEBUGGING_DIRECTORY=/tmp/seamless-debug
+  mkdir -p ${SEAMLESS_DEBUGGING_DIRECTORY}
+fi
+docker run \
+  --rm \
+  -e DOCKER_IMAGE=rpbs/seamless \
+  -e "SEAMLESS_DEBUGGING_DIRECTORY=${SEAMLESS_DEBUGGING_DIRECTORY}" \
+  --network=host \
+  -e HOSTCWD=$HOSTCWD \
+  -v $HOSTCWD:/cwd \
+  -v ${SEAMLESS_DEBUGGING_DIRECTORY}:${SEAMLESS_DEBUGGING_DIRECTORY} \
+  --workdir /cwd \
+  -it \
+  -u `id -u`:`id -g` \
+  -e CONDA_ENV_DIR=$CONDA_ENV_DIR \
+  -v $CONDA_ENV_DIR:$CONDA_ENV_DIR \
+  rpbs/seamless-minimal \
+  bash -c 'echo "conda activate $CONDA_ENV_DIR" >> /.bashrc; bash -i'
+

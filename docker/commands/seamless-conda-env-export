@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# exports the default seamless-minimal conda environment
+# (defined in /seamless-minimal/environment.yml)
+# to the specified directory
+# NOTE: exported directories can be backed up with cp -r
+# but when executed, they must run under the original directory name
+
+set -u -e
+
+CONDA_ENV_OUTPUT_DIR=$1
+mkdir -p $CONDA_ENV_OUTPUT_DIR
+
+docker run \
+  --rm \
+  -u `id -u`:`id -g` \
+  -e CONDA_ENV_OUTPUT_DIR=$CONDA_ENV_OUTPUT_DIR \
+  -v $CONDA_ENV_OUTPUT_DIR:$CONDA_ENV_OUTPUT_DIR \
+  rpbs/seamless-minimal \
+  bash -c 'conda env create --prefix $CONDA_ENV_OUTPUT_DIR --file /seamless-minimal/environment.yml'
+
+docker run \
+  --rm \
+  -it \
+  -u `id -u`:`id -g` \
+  -e CONDA_ENV_OUTPUT_DIR=$CONDA_ENV_OUTPUT_DIR \
+  -v $CONDA_ENV_OUTPUT_DIR:$CONDA_ENV_OUTPUT_DIR \
+  rpbs/seamless-minimal \
+  bash -i -c '''
+  echo "conda activate $CONDA_ENV_OUTPUT_DIR" >> /.bashrc
+  bash -i -c "mamba repoquery search conda -c conda-forge -c main"
+  '''  
