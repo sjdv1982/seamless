@@ -9,24 +9,23 @@
 set -u -e
 
 CONDA_ENV_OUTPUT_DIR=$1
+rm -rf $CONDA_ENV_OUTPUT_DIR
 mkdir -p $CONDA_ENV_OUTPUT_DIR
 
 docker run \
   --rm \
   -u `id -u`:`id -g` \
-  -e CONDA_ENV_OUTPUT_DIR=$CONDA_ENV_OUTPUT_DIR \
-  -v $CONDA_ENV_OUTPUT_DIR:$CONDA_ENV_OUTPUT_DIR \
+  -v $CONDA_ENV_OUTPUT_DIR:/SEAMLESS-CONDA-ENV \
   rpbs/seamless-minimal \
-  bash -c 'conda env create --prefix $CONDA_ENV_OUTPUT_DIR --file /seamless-minimal/environment.yml'
+  bash -c 'conda env create --prefix /SEAMLESS-CONDA-ENV --file /seamless-minimal/environment.yml'
 
 docker run \
   --rm \
   -it \
   -u `id -u`:`id -g` \
-  -e CONDA_ENV_OUTPUT_DIR=$CONDA_ENV_OUTPUT_DIR \
-  -v $CONDA_ENV_OUTPUT_DIR:$CONDA_ENV_OUTPUT_DIR \
+  -v $CONDA_ENV_OUTPUT_DIR:/SEAMLESS-CONDA-ENV \
   rpbs/seamless-minimal \
   bash -i -c '''
-  echo "conda activate $CONDA_ENV_OUTPUT_DIR" >> /.bashrc
+  echo "conda activate /SEAMLESS-CONDA-ENV" >> /.bashrc
   bash -i -c "mamba repoquery search conda -c conda-forge -c main"
   '''  

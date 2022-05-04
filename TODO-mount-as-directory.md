@@ -48,8 +48,8 @@ of named deepfolders. Include elision!
    DONE: implement elision
    DONE: add filezones . default is "local" for both stores and client. Rip user_path
    DONE: mini seamless for script/run-transformation.py + external conda dir . based on continuumio/miniconda3
-   TODO: adapt jobless for filezones
-
+   DONE: adapt jobless for filezones
+   TODO: jobless, create generic run-transformation backend (also slurm)
 
 5a.
 - DONE: For DeepFolder/DeepCell (not Folder), support loading-by-name.
@@ -113,8 +113,7 @@ are hence not amenable to transformer input schemas.
 DONE: Write tests
 TODO: write example, e.g. a hhblits search where the database path is a DeepFolder
 checksum.
-TODO: Adapt Cloudless with Shell deployment + file name rewrite and test if 
-the deepfolder folder name is transferred.
+TODO: Jobless: test if the deepfolder folder name is transferred.
 7. DONE: fix the bug in the "DEBUGGING IN PROGRESS" commit (c9708d77598)
 8. TODO: Allow cells in a subcontext to be marked as "input" or "output".
 A subcontext will not translate unless all "inputs" have been connected.

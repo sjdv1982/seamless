@@ -806,6 +806,15 @@ You can set this dictionary directly, or you may assign .meta to a cell
             return "Status: pending"
         return "Status: OK"
 
+    def get_transformation(self):
+        htf = self._get_htf()
+        tf = self._get_tf()
+        if htf["compiled"]:
+            return tf.executor.get_transformation()
+        else:
+            return tf.tf.get_transformation()
+
+
     @property
     def self(self):
         attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]

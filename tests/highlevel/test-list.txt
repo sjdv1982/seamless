@@ -156,6 +156,12 @@ share-pdb-docker.seamless/.zip: to test using:
       --status-graph /seamless/seamless/graphs/status-visualization.seamless \
       --add-zip /seamless/seamless/graphs/status-visualization.zip
     In that case, open also http://localhost:5813/status/index.html
+parse-pdb.py: will fail unless parse-pdb-environment.yml is installed
+              can be done when running the test, or afterwards using:
+               cs=...  # parse from initial output
+               seamless-conda-env-export SOMEDIR
+               seamless-conda-env-modify SOMEDIR parse-pdb-environment.yaml
+               seamless-conda-env-run-transformation SOMEDIR $cs
 plotting.py. Change ctx.plot.period and ctx.plot.npoints.
    Can be run automatically in a standard container (with python),
     and will exit at some point because Rust is not installed

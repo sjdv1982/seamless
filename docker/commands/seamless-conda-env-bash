@@ -27,8 +27,7 @@ docker run \
   --workdir /cwd \
   -it \
   -u `id -u`:`id -g` \
-  -e CONDA_ENV_DIR=$CONDA_ENV_DIR \
-  -v $CONDA_ENV_DIR:$CONDA_ENV_DIR \
+  -v $CONDA_ENV_DIR:/SEAMLESS-CONDA-ENV \
   rpbs/seamless-minimal \
-  bash -c 'echo "conda activate $CONDA_ENV_DIR" >> /.bashrc; bash -i'
+  bash -c 'echo "conda activate /SEAMLESS-CONDA-ENV" >> /.bashrc; bash -i'
 
