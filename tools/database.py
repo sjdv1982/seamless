@@ -32,7 +32,7 @@ async def read_buffer(checksum, filename):
     if hit is not None:
         _, buffer = hit
         return buffer
-    if not os.path.exists(filename):
+    if filename is None or not os.path.exists(filename):
         return None
     async with aiofiles.open(filename, "rb") as f:
         buffer = await f.read()
@@ -284,7 +284,7 @@ class DatabaseServer:
             else:
                 for store in self.stores:
                     filename = store._get_filename(checksum, as_external_path=False)
-                    if os.path.exists(filename):
+                    if filename is not None and os.path.exists(filename):
                         found = True
             return found
 
@@ -299,7 +299,7 @@ class DatabaseServer:
                     if store.filezone not in filezones:
                         continue
                 filename = store._get_filename(checksum, as_external_path=False)
-                if os.path.exists(filename):
+                if filename is not None and os.path.exists(filename):
                     filename2 = store._get_filename(checksum, as_external_path=True)
                     return filename2
             return None # None is also a valid response
@@ -315,14 +315,14 @@ class DatabaseServer:
                     if store.filezone not in filezones:
                         continue
                 directory = store._get_directory(checksum, as_external_path=False)
-                if os.path.exists(directory):
+                if directory is not None and os.path.exists(directory):
                     return store._get_directory(checksum, as_external_path=True)
             return None # None is also a valid response
 
         elif type == "buffer":
             for store in self.stores:
                 filename = store._get_filename(checksum, as_external_path=False)
-                if os.path.exists(filename):
+                if filename is not None and os.path.exists(filename):
                     result = await read_buffer(checksum, filename)
                     if result is not None:
                         return result 

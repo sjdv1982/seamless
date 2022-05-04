@@ -135,7 +135,7 @@ class DatabaseSink(DatabaseBase):
         }
         self.send_request(request)
 
-    def set_compile_result(self, checksum, buffer):
+    def set_compile_result(self, checksum, compile_checksum):
         if not self.active:
             return
         if not self.store_compile_result:
@@ -143,7 +143,7 @@ class DatabaseSink(DatabaseBase):
         request = {
             "type": "compilation",
             "checksum": parse_checksum(checksum),
-            "value": buffer,
+            "value": parse_checksum(compile_checksum),
         }
         self.send_request(request)
 

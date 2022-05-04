@@ -8,7 +8,7 @@ import pprint
 import traceback
 from types import ModuleType
 from weakref import WeakKeyDictionary
-from ..calculate_checksum import calculate_dict_checksum
+from ..calculate_checksum import calculate_checksum, calculate_dict_checksum
 from ..compiler.locks import locks, locklock
 from ..compiler import compile, complete
 from ..compiler.build_extension import build_extension_cffi
@@ -218,7 +218,10 @@ def _merge_objects(objects):
 
 def build_compiled_module(full_module_name, checksum, module_definition, *, module_error_name):
     from .cache.database_client import database_cache, database_sink
-    module_code = database_cache.get_compile_result(checksum)
+    module_code = None
+    module_code_checksum = database_cache.get_compile_result(checksum)
+    if module_code_checksum is not None:
+        module_code = database_cache.get_buffer(module_code_checksum)
     source_files = {}
     debug = (module_definition.get("target") == "debug")
     if module_code is None:
@@ -229,7 +232,10 @@ def build_compiled_module(full_module_name, checksum, module_definition, *, modu
         object_checksums = {}
         for object_file, object_ in objects.items():
             object_checksum = calculate_dict_checksum(object_)
-            binary_code = database_cache.get_compile_result(object_checksum)
+            binary_code = None
+            binary_code_checksum = database_cache.get_compile_result(object_checksum)
+            if binary_code_checksum is None:
+                binary_code = database_cache.get_buffer(binary_code_checksum)
             if binary_code is not None:
                 binary_objects[object_file] = binary_code
             else:
@@ -252,7 +258,9 @@ def build_compiled_module(full_module_name, checksum, module_definition, *, modu
             for object_file, binary_code in new_binary_objects.items():
                 binary_objects[object_file] = binary_code
                 object_checksum = object_checksums[object_file]
-                database_sink.set_compile_result(object_checksum, binary_code)
+                binary_code_checksum = calculate_checksum(binary_code)
+                database_sink.set_buffer(binary_code_checksum, binary_code, False)
+                database_sink.set_compile_result(object_checksum, binary_code_checksum)
         link_options = module_definition["link_options"]
         target = module_definition["target"]
         header = module_definition["public_header"]
@@ -268,7 +276,9 @@ def build_compiled_module(full_module_name, checksum, module_definition, *, modu
             "compiler_verbose", CFFI_VERBOSE
           )
         )
-        database_sink.set_compile_result(checksum, module_code)
+        module_code_checksum = calculate_checksum(module_code)
+        database_sink.set_buffer(module_code_checksum, module_code, False)
+        database_sink.set_compile_result(checksum, module_code_checksum)
     mod = import_extension_module(full_module_name, module_code, debug, source_files)
     return mod
 
