@@ -81,7 +81,7 @@ twopi-graph-database.sh: run with Seamless database
                       then: seamless-devel-database twopi-graph-database.yaml
                       run as i=twopi-graph-database; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
-pin-filesystem.sh: run as i=pin-filesystem; seamless-devel $i.sh > test-outputs/$i.out 2>&1
+pin-filesystem.sh: run as i=pin-filesystem; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
 load-graph.py
 load-graph2.py
 load-graph-static.py

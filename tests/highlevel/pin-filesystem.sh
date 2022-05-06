@@ -5,8 +5,8 @@ export SEAMLESS_DATABASE_DIR=$db
 export SEAMLESS_DATABASE_IP=localhost
 export SEAMLESS_DATABASE_PORT=5522
 echo 'Share folder'
-../../tools/database-run-actions pin-filesystem.cson
-../../tools/database-share-deepfolder-directory --collection testfolder
+../../tools/database-run-actions $db pin-filesystem.cson
+../../tools/database-share-deepfolder-directory $db --collection testfolder
 echo
 echo 'Run 1'
 python3 -u pin-filesystem.py > pin-filesystem.log 2>&1
@@ -15,17 +15,24 @@ cat pin-filesystem.log
 rm -f pin-filesystem.log
 echo
 echo 'Start database'
-python3 ../../tools/database.py > $db.log 2>&1 &
+dbconfig='''
+host: "0.0.0.0" 
+port:  5522
+stores: 
+    -
+      path: "'''$db'''"
+      readonly: false
+      serve_filenames: true
+'''
+echo "$dbconfig" | python3 ../../tools/database.py /dev/stdin > $db.log 2>&1 &
 sleep 2
 echo
 echo 'Run 2'
 python3 -u pin-filesystem.py
-kill %1
+kill `ps -ef | grep database | awk '{print $2}' | tac | awk 'NR > 1'`
 echo
 echo 'Server log'
 cat $db.log
-echo ''
-exit ###
 rm -rf $db
 rm -rf /tmp/PIN-FILESYSTEM-FOLDER
 rm -f $db.log

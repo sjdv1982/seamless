@@ -13,18 +13,12 @@ Step 2/2 : RUN apt update && apt -y install openssl
 Successfully built 659ab7d4d3df
 Successfully tagged openssl:latest
 Database not found
-Download https://fair.rpbs.univ-paris-diderot.fr/machine/deepbuffer/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-Download http://localhost:61918/machine/deepbuffer/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-Download https://fair.rpbs.univ-paris-diderot.fr/machine/keyorder/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 ERROR in incref'ing deep buffer '11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047'
-Download https://fair.rpbs.univ-paris-diderot.fr/machine/deepbuffer/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-Download https://fair.rpbs.univ-paris-diderot.fr/machine/keyorder/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 None
 seamless.core.cache.CacheMissError: 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 
 None
 
-Download https://fair.rpbs.univ-paris-diderot.fr/machine/deepbuffer/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 ERROR in incref'ing deep buffer '11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047'
 *tf*: Status: upstream => deepfolderpin undefined
 None
@@ -274,4 +268,3 @@ folder_sub_pin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86b
 
 Server log
 Press Ctrl+C to end
-

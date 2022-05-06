@@ -1,8 +1,9 @@
+export SEAMLESS_DATABASE_IP=localhost
 db=/tmp/ELISION-TEST-DB
 rm -rf $db
 mkdir $db
 dbconfig='''
-host: "localhost" 
+host: "0.0.0.0" 
 port:  5522
 stores: 
     -
