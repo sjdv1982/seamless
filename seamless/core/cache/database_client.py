@@ -1,7 +1,6 @@
-import re
 import requests
-import numpy as np
 import json
+import os
 
 from ..buffer_info import BufferInfo
 
@@ -15,7 +14,21 @@ session = requests.Session()
 
 class DatabaseBase:
     active = False
-    PROTOCOL = ("seamless", "database", "0.1")
+    PROTOCOL = ("seamless", "database", "0.1")    
+    def _get_host_port(self):
+        env = os.environ
+        host = env.get("SEAMLESS_DATABASE_IP")
+        if host is None:
+            raise ValueError("environment variable SEAMLESS_DATABASE_IP not defined")
+        port = env.get("SEAMLESS_DATABASE_PORT")
+        if port is None:
+            raise ValueError("environment variable SEAMLESS_DATABASE_PORT not defined")
+        try:
+            port = int(port)
+        except Exception:
+            raise TypeError("environment variable SEAMLESS_DATABASE_PORT must be integer") from None
+        return host, port
+
     def _connect(self, host, port):
         self.host = host
         self.port = port
@@ -23,7 +36,10 @@ class DatabaseBase:
         request = {
             "type": "protocol",
         }
-        response = session.get(url, data=json.dumps(request))
+        try:
+            response = session.get(url, data=json.dumps(request))
+        except requests.ConnectionError:
+            raise Exception("Cannot connect to Seamless database: host {}, port {}".format(self.host, self.port))
         try:
             assert response.json() == list(self.PROTOCOL)
         except (AssertionError, ValueError, json.JSONDecodeError):
@@ -65,9 +81,10 @@ class DatabaseBase:
         return response.json() == True
 
 class DatabaseSink(DatabaseBase):
-    def connect(self, *, host='localhost',port=5522,
+    def connect(self, *,
       store_compile_result=True
     ):
+        host, port = self._get_host_port()
         self.store_compile_result = store_compile_result
         self._connect(host, port)
 
@@ -157,7 +174,8 @@ class DatabaseCache(DatabaseBase):
                 raise TypeError(filezones)
             self._filezones = [str(filezone) for filezone in filezones]
             
-    def connect(self, *, host='localhost',port=5522):
+    def connect(self):
+        host, port = self._get_host_port()
         self._connect(host, port)
 
     def send_request(self, request):

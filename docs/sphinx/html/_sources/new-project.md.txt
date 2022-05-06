@@ -273,7 +273,7 @@ If not, go to `cwd` and start a new Python3 notebook. Rename it to PROJNAME. In 
     ```
     and execute it.
 
-8.  Open a second terminal and type `seamless-jupyter-console-existing` (pressing Tab for completion is recommended).
+8.  Open a second terminal and type `seamless-jupyter-connect` (pressing Tab for completion is recommended).
     This opens a console that connects to the same kernel as the Notebook. From here (or, if you really want, from the Notebook) you can modify `ctx` to implement the topology.
 
 9. Instead of using Jupyter, you can open your project in IPython instead by typing

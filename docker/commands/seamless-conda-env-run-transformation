@@ -13,8 +13,7 @@ shift 1
 docker run \
   --rm \
   -it \
-  --network=host \
-  -u `id -u`:`id -g` \
+  -u `id -u` \
   -e CONDA_ENV_DIR=$CONDA_ENV_DIR \
   -v $CONDA_ENV_DIR:$CONDA_ENV_DIR \
   -e tf_checksum=$tf_checksum \

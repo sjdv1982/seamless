@@ -2,7 +2,7 @@ db=/tmp/PIN-FILESYSTEM-TEST-DB
 rm -rf $db
 mkdir $db
 export SEAMLESS_DATABASE_DIR=$db
-export SEAMLESS_DATABASE_HOST=localhost
+export SEAMLESS_DATABASE_IP=localhost
 export SEAMLESS_DATABASE_PORT=5522
 echo 'Share folder'
 ../../tools/database-run-actions pin-filesystem.cson

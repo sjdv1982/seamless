@@ -771,7 +771,6 @@ from .accessor import ReadAccessor
 from .expression import Expression
 from .tasks.upon_connection import UponConnectionTask
 from .tasks.structured_cell import StructuredCellAuthTask, StructuredCellJoinTask
-from ...communion_server import communion_server
 from .tasks import BackgroundTask
 from ..manager.tasks.macro_update import MacroUpdateTask
 from ..transformer import Transformer

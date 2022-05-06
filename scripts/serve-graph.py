@@ -7,17 +7,34 @@ parser.add_argument(
 )
 parser.add_argument(
     "zipfile",
-    help="Zip file that contains the buffers of the graph checksum",
+    help="""Zip file that contains the buffers of the graph checksum.
+If not provided, the buffers must be read from the database or a communion peer""",
     nargs='?',
     type=argparse.FileType('rb')
 )
 parser.add_argument(
     "--database",
-    help="Connect to a Seamless database server",
+    help="""Connect to a Seamless database server.
+The environmental variables SEAMLESS_DATABASE_IP 
+and SEAMLESS_DATABASE_PORT must have been defined.
+""",
     action="store_true"
 )
-parser.add_argument("--communion_id",type=str,default="serve-graph")
-parser.add_argument("--communion_incoming",type=str)
+
+parser.add_argument(
+    "--communion",
+    help="""Connect to a Seamless communion peer, e.g. jobless or a jobslave.
+The environmental variables SEAMLESS_COMMUNION_IP 
+and SEAMLESS_COMMUNION_PORT must have been defined.
+Alternatively, a list of comma-separated communion server URLs 
+can be defined using SEAMLESS_COMMUNION_INCOMING.
+
+Note that serve-graph does not provide any buffers to communion peers.
+Communion peers must therefore connect to a database or to another peer.
+""",
+    action="store_true"
+)
+parser.add_argument("--communion_id",type=str,default="serve_graph", help="Name of this peer in the communion")
 parser.add_argument(
     "--interactive",
     help="Do not enter a mainloop. Assumes that the script was opened with an interactive shell (e.g. ipython -i)",
@@ -82,9 +99,6 @@ if args.debug:
 env = os.environ
 
 env["SEAMLESS_COMMUNION_ID"] = args.communion_id
-if args.communion_incoming is not None:
-    env["SEAMLESS_COMMUNION_INCOMING"] = args.communion_incoming
-
 
 import seamless
 
@@ -100,29 +114,32 @@ if args.no_lru:
 import seamless.shareserver
 from seamless import communion_server
 
-communion_server.configure_master({
-    "buffer": True,
-    "buffer_status": True,
-    "buffer_info": True,
-    "transformation_job": True,
-    "transformation_status": True,
-    "semantic_to_syntactic": True,
-})
-
-"""
-# will not work until load_graph will be much smarter
-if args.database:
-    communion_server.configure_servant({
-        "buffer": False,
-        "buffer_status": False,
-        "buffer_info": False,
-        "transformation_job": False,
-        "transformation_status": False,
-        "semantic_to_syntactic": False,
-        "hard_cancel": False,  # allow others to hard cancel our jobs
-        "clear_exception": False, # allow others to clear exceptions on our jobs
+if args.communion:
+    communion_server.configure_master({
+        "buffer": True,
+        "buffer_status": True,
+        "buffer_info": True,
+        "transformation_job": True,
+        "transformation_status": True,
+        "semantic_to_syntactic": True,
     })
-"""
+
+    """
+    # will not work until load_graph will be much smarter
+    if args.database:
+        communion_server.configure_servant({
+            "buffer": False,
+            "buffer_status": False,
+            "buffer_info": False,
+            "transformation_job": False,
+            "transformation_status": False,
+            "semantic_to_syntactic": False,
+            "hard_cancel": False,  # allow others to hard cancel our jobs
+            "clear_exception": False, # allow others to clear exceptions on our jobs
+        })
+    """
+
+    communion_server.start()
 
 if args.ncores is not None:
     seamless.set_ncores(args.ncores)
@@ -137,15 +154,8 @@ if shareserver_address is not None:
 import seamless.highlevel.stdlib
 
 if args.database:
-    params = {}
-    db_host = env.get("SEAMLESS_DATABASE_HOST")
-    if db_host is not None:
-        params["host"] = db_host
-    db_port = env.get("SEAMLESS_DATABASE_PORT")
-    if db_port is not None:
-        params["port"] = db_port
-    seamless.database_sink.connect(**params)
-    seamless.database_cache.connect(**params)
+    seamless.database_sink.connect()
+    seamless.database_cache.connect()
 
 from seamless.highlevel import load_graph, Context
 graph = json.load(args.graph)
@@ -170,6 +180,8 @@ if args.status_graph:
         zips=args.add_zip,
     )
 
+print("Serving graph...")
 if not args.interactive:
+    print("Press Ctrl+C to end")
     import asyncio
     asyncio.get_event_loop().run_forever()

@@ -9,6 +9,7 @@ communion_server.configure_servant(
     transformation_job=True,
     transformation_status=True,
 )
+communion_server.start()
 
 with macro_mode_on():
     ctx = context(toplevel=True)

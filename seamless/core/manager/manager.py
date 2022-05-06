@@ -86,7 +86,6 @@ class Manager:
         from .taskmanager import TaskManager
         from .cancel import CancellationCycle
         self.contexts = weakref.WeakSet()
-        from ... import communion_server
         self.livegraph = LiveGraph(self)
         self.cachemanager = CacheManager(self)
         self.taskmanager = TaskManager(self)
@@ -110,14 +109,6 @@ class Manager:
         self.shareserver = shareserver
         sharemanager.start()
 
-        from ...communion_server import communion_server
-        try:
-            import websockets
-        except ImportError:
-            # we are running in a minimal Seamless environment
-            pass
-        else:
-            communion_server.start()
 
     def add_context(self, ctx):
         assert ctx._toplevel

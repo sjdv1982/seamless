@@ -12,7 +12,7 @@ yaml=$2
 docker run \
   --rm \
   -it \
-  -u `id -u`:`id -g` \
+  -u `id -u` \
   -e yaml=$yaml \
   -v $CONDA_ENV_DIR:/SEAMLESS-CONDA-ENV \
   -v $yaml:$yaml \

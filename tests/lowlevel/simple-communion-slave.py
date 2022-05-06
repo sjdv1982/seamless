@@ -2,7 +2,7 @@
 
 import sys, os, asyncio
 os.environ["SEAMLESS_COMMUNION_ID"] = "simple-communion-slave"
-os.environ["SEAMLESS_COMMUNION_OUTGOING"] = "8602"
+os.environ["SEAMLESS_COMMUNION_OUTGOING_PORT"] = "8602"
 os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8600"
 
 from seamless import communion_server

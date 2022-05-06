@@ -1,5 +1,6 @@
 host: "0.0.0.0"  # can be omitted, default is 0.0.0.0
 port:  5522  # can be omitted, default is 5522
+             # Note that 5522 is assumed by many seamless-cli commands
 stores: 
     -
       external_path: "~/.seamless/database"

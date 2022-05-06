@@ -13,4 +13,4 @@ requirements:
     - openssl
     - ruamel.yaml
 about:
-  summary: This is a collection of shell scripts wrapping the Seamless Docker image
+  summary: This is a collection of bash scripts wrapping the Seamless Docker image.

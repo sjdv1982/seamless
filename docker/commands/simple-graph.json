@@ -1,0 +1,102 @@
+{
+  "__seamless__": "0.8",
+  "connections": [
+    {
+      "source": [
+        "a"
+      ],
+      "target": [
+        "transform",
+        "a"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "transform"
+      ],
+      "target": [
+        "myresult"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "tfcode"
+      ],
+      "target": [
+        "transform",
+        "code"
+      ],
+      "type": "connection"
+    }
+  ],
+  "lib": [],
+  "nodes": [
+    {
+      "celltype": "int",
+      "checksum": {
+        "value": "08d2d6aba49b53a764f897cf54cc0984e6568e3081d4dc31936eff54d90e79bd"
+      },
+      "datatype": "mixed",
+      "path": [
+        "a"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "int",
+      "checksum": {
+        "value": "a768afb52fb0be2c8bf1657ea5c892df910a2a70bac7310cd8595e0f62b89fbf"
+      },
+      "datatype": "mixed",
+      "path": [
+        "myresult"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "code",
+      "checksum": {
+        "value": "7bac9394e3698cf2e36b9f54b731adac7db26436c0dfeac4190f33453401a18a"
+      },
+      "language": "python",
+      "mimetype": "text/x-python",
+      "path": [
+        "tfcode"
+      ],
+      "transformer": true,
+      "type": "cell"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "7bac9394e3698cf2e36b9f54b731adac7db26436c0dfeac4190f33453401a18a",
+        "input": "d5d698b5a1b91f9d4320b9e6f86546a08799edfcc1338967be8133d2d581f1aa",
+        "input_auth": "1a10fbb545a609871cb3f3bcf1881eeae94ec08f1c789d4657a6b297ebbf3664",
+        "input_buffer": "d5d698b5a1b91f9d4320b9e6f86546a08799edfcc1338967be8133d2d581f1aa",
+        "result": "a768afb52fb0be2c8bf1657ea5c892df910a2a70bac7310cd8595e0f62b89fbf",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+      },
+      "compiled": false,
+      "hash_pattern": {
+        "*": "#"
+      },
+      "language": "python",
+      "path": [
+        "transform"
+      ],
+      "pins": {
+        "a": {},
+        "b": {}
+      },
+      "type": "transformer"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

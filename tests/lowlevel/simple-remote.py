@@ -1,4 +1,4 @@
-# run scripts/jobslave-nodatabase.py
+# run scripts/jobslave.py
 
 import os
 os.environ["SEAMLESS_COMMUNION_ID"] = "simple-remote"

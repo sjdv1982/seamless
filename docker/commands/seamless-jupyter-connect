@@ -1,4 +1,9 @@
 #!/bin/bash 
+
+if [ -z "$SEAMLESS_DOCKER_IMAGE" ]; then
+  export SEAMLESS_DOCKER_IMAGE=rpbs/seamless
+fi
+
 set -u -e
 
 command=$(python3 -c '''
@@ -20,8 +25,7 @@ If not provided, a running Seamless container will be searched.""",
 parser.add_argument(
    "--image",
     help="Seamless Docker image to search for among running containers",
-    type=str,
-    default="rpbs/seamless"
+    type=str
 )
 
 parser.add_argument(
@@ -32,8 +36,13 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
+import os
 
 DOCKER_IMAGE=args.image
+if DOCKER_IMAGE is None:
+    DOCKER_IMAGE = os.environ.get("SEAMLESS_DOCKER_IMAGE")
+    if DOCKER_IMAGE is None:
+        DOCKER_IMAGE = "rpbs/seamless"
 container = args.container
 def run(cmd, *args, **kwargs):
     return subprocess.run(
@@ -49,7 +58,7 @@ if container is None:
         print(result.stdout,file=sys.stderr)
         exit(result.returncode)
     lines = result.stdout.splitlines()
-    lines = [l for l in lines if len(l)]
+    lines = [l for l in lines if len(l) and l.split()[-1] != "seamless-database-container"]
     if len(lines) < 2:
         print("No running Seamless Docker containers found",file=sys.stderr)
         exit(1)
@@ -59,7 +68,7 @@ Multiple Seamless Docker containers found
 *****************************************************
 Do "docker ps --filter ancestor={}", and look at the last field.
 It will be something like "jolly_einstein".
-Then, run "seamless-jupyter-console-existing --container jolly_einstein"""
+Then, run "seamless-jupyter-connect --container jolly_einstein"""
 ,file=sys.stderr)
         exit(1)
     container = lines[1].decode().strip().split()[-1]

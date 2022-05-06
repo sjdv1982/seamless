@@ -15,7 +15,6 @@ ctx.result.celltype = "text"
 ctx.result.mount("/tmp/result", "w")
 ctx.translate(force=True)
 ctx.compute()
-exit(0)
 print(ctx.result.value)
 print(ctx.tf.exception)
 ctx.code = """

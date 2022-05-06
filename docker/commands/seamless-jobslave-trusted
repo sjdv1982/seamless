@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# sets up a Seamless jobslave
+
+set -e
+
+currdir=`python3 -c 'import os,sys;print(os.path.dirname(os.path.realpath(sys.argv[1])))' $0`
+source $currdir/seamless-fill-environment-variables
+
+if [ -z "$1" ]; then
+  name="jobslave"
+else
+  name=$1
+  shift 1
+fi
+
+if [ -z "$SEAMLESS_COMMUNION_OUTGOING_PORT" ]; then
+  export SEAMLESS_COMMUNION_OUTGOING_PORT=8602
+fi
+
+set -u -e
+
+x=$
+
+seamlessdir=$SEAMLESSDIR
+
+
+docker run \
+  -e DOCKER_IMAGE=$SEAMLESS_DOCKER_IMAGE \
+  --detach \
+  --name $name \
+  $SEAMLESS_DOCKER_RUN_PARAMS_X_DEVEL \
+  $SEAMLESS_DOCKER_RUN_PARAMS_X_TRUSTED \
+  -e DOCKER_IMAGE=$SEAMLESS_DOCKER_IMAGE \
+  -e SEAMLESS_DATABASE_IP=$SEAMLESS_DATABASE_IP \
+  -e SEAMLESS_DATABASE_PORT=$SEAMLESS_DATABASE_PORT \
+  -e SEAMLESS_COMMUNION_OUTGOING_IP=$SEAMLESS_COMMUNION_OUTGOING_IP \
+  -e SEAMLESS_COMMUNION_OUTGOING_PORT=$SEAMLESS_COMMUNION_OUTGOING_PORT \
+  -p $SEAMLESS_COMMUNION_OUTGOING_PORT:$SEAMLESS_COMMUNION_OUTGOING_PORT \
+  -v /tmp:/tmp \
+  -v `pwd`:/cwd \
+  --workdir /cwd \
+  -u `id -u` \
+  --group-add users \
+  $SEAMLESS_DOCKER_IMAGE start.sh python3 -u /home/jovyan/seamless-scripts/jobslave.py \
+    --communion_id $name $*

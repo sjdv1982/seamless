@@ -14,7 +14,7 @@ mkdir -p $CONDA_ENV_OUTPUT_DIR
 
 docker run \
   --rm \
-  -u `id -u`:`id -g` \
+  -u `id -u` \
   -v $CONDA_ENV_OUTPUT_DIR:/SEAMLESS-CONDA-ENV \
   rpbs/seamless-minimal \
   bash -c 'conda env create --prefix /SEAMLESS-CONDA-ENV --file /seamless-minimal/environment.yml'
@@ -22,7 +22,7 @@ docker run \
 docker run \
   --rm \
   -it \
-  -u `id -u`:`id -g` \
+  -u `id -u` \
   -v $CONDA_ENV_OUTPUT_DIR:/SEAMLESS-CONDA-ENV \
   rpbs/seamless-minimal \
   bash -i -c '''

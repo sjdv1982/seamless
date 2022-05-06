@@ -1,10 +1,9 @@
 #!/bin/bash
 
-set -u -e
+set -e
 
-seamlessdir=$SEAMLESSDIR
-
-set +u -e
+currdir=`python3 -c 'import os,sys;print(os.path.dirname(os.path.realpath(sys.argv[1])))' $0`
+source $currdir/seamless-fill-environment-variables
 
 get_docker_params='''
 import sys, os
@@ -34,6 +33,7 @@ print(result)
 if [ -z "$1" ]; then
   database_config=$seamlessdir/default-database.yaml  
   database_dir=$(python -c "import sys, os; print(os.path.realpath(sys.argv[1]))" ~/.seamless/database)
+  mkdir -p $database_dir
   docker_params="-p 5522:5522 -v "$database_dir":/data"
   database_config_intern=/home/jovyan/seamless-tools/default-database.yaml  
   database_config_mount=""
@@ -51,8 +51,9 @@ echo "Starting container seamless-database-container"
 docker run \
   -d \
   --name seamless-database-container \
+  $SEAMLESS_DOCKER_RUN_PARAMS_X_DEVEL \
   $database_config_mount \
   $docker_params \
   -u `id -u` \
   --group-add users \
-  rpbs/seamless start.sh python3 -u /home/jovyan/seamless-tools/database.py $database_config_intern
+  $SEAMLESS_DOCKER_IMAGE start.sh python3 -u /home/jovyan/seamless-tools/database.py $database_config_intern

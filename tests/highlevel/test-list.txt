@@ -63,8 +63,8 @@ simple.py
 simple-deepcell.py
 simple-pi.py: Also creates twopi.seamless, twopi-result.seamless, twopi-result.zip
 simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-result.seamless, twopi-deepcell-result.zip
-simple-pi-remote.py: run with jobslave-nodatabase
-simple-pi-remote-database.py: run with jobslave; makes no assumptions about the database contents
+simple-pi-remote.py: run with jobslave
+simple-pi-remote-database.py: run with jobslave --database; makes no assumptions about the database contents
 subcontext.py
 joincache.py
 reassign-transformer.py

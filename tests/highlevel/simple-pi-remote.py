@@ -1,4 +1,4 @@
-#use with jobslave-nodatabase.py
+#use with jobslave.py
 
 import os
 os.environ["SEAMLESS_COMMUNION_ID"] = "simple-pi-remote"

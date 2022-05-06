@@ -437,7 +437,7 @@ class ShareNamespace:
             raise exc from None
 
 class ShareServer(object):
-    DEFAULT_ADDRESS = '127.0.0.1'
+    DEFAULT_ADDRESS = '0.0.0.0'
     DEFAULT_SHARE_UPDATE_PORT = 5138
     DEFAULT_SHARE_REST_PORT = 5813
     DEFAULT_NAMESPACE = "ctx"

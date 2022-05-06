@@ -1,4 +1,4 @@
-# first start scripts/jobslave-nodatabase.py
+# first start scripts/jobslave.py
 import os
 os.environ["SEAMLESS_COMMUNION_ID"] = "simple-duplex-remote"
 os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8602"

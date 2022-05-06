@@ -12,6 +12,13 @@ CONDA_ENV_DIR=$1
 
 HOSTCWD=`pwd`
 
+host_ip=$(docker network inspect bridge \
+  | python3 -c '''
+import json, sys
+bridge = json.load(sys.stdin)
+print(bridge[0]["IPAM"]["Config"][0]["Gateway"])
+''')
+
 if [[ ! -v SEAMLESS_DEBUGGING_DIRECTORY ]]; then 
   SEAMLESS_DEBUGGING_DIRECTORY=/tmp/seamless-debug
   mkdir -p ${SEAMLESS_DEBUGGING_DIRECTORY}
@@ -20,13 +27,16 @@ docker run \
   --rm \
   -e DOCKER_IMAGE=rpbs/seamless \
   -e "SEAMLESS_DEBUGGING_DIRECTORY=${SEAMLESS_DEBUGGING_DIRECTORY}" \
-  --network=host \
+  --network=bridge \
+  -e "SEAMLESS_DATABASE_IP=${host_ip}" \
+  -e "SEAMLESS_DATABASE_PORT=5522" \
+  -p 5813 -p 5138 \
   -e HOSTCWD=$HOSTCWD \
   -v $HOSTCWD:/cwd \
   -v ${SEAMLESS_DEBUGGING_DIRECTORY}:${SEAMLESS_DEBUGGING_DIRECTORY} \
   --workdir /cwd \
   -it \
-  -u `id -u`:`id -g` \
+  -u `id -u` \
   -v $CONDA_ENV_DIR:/SEAMLESS-CONDA-ENV \
   rpbs/seamless-minimal \
   bash -c 'echo "conda activate /SEAMLESS-CONDA-ENV" >> /.bashrc; bash -i'

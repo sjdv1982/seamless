@@ -96,6 +96,17 @@ from weakref import WeakSet
 from .communion_client import communion_client_manager
 
 incoming = []
+
+communion_ip = os.environ.get("SEAMLESS_COMMUNION_IP")
+if communion_ip:
+    _communion_port = os.environ["SEAMLESS_COMMUNION_PORT"]
+    try:
+        communion_port = int(_communion_port)
+    except TypeError:
+        print_error("SEAMLESS_COMMUNION_PORT: invalid port '%s'" % _communion_port)
+    url = '{}:{}'.format(communion_ip, communion_port)
+    incoming.append(url)
+
 _incoming = os.environ.get("SEAMLESS_COMMUNION_INCOMING")
 if _incoming:
     for url in _incoming.split(","):
@@ -105,16 +116,14 @@ if _incoming:
         except TypeError:
             print_error("SEAMLESS_COMMUNION_INCOMING: invalid URL '%s'" % url)
 
-outgoing = None
-_outgoing = os.environ.get("SEAMLESS_COMMUNION_OUTGOING")
-if _outgoing:
+outgoing_port = None
+_outgoing_port = os.environ.get("SEAMLESS_COMMUNION_OUTGOING_PORT")
+if _outgoing_port:
     try:
-        outgoing = int(_outgoing)
+        outgoing_port = int(_outgoing_port)
     except TypeError:
-        print_error("SEAMLESS_COMMUNION_OUTGOING: invalid port '%s'" % outgoing)
-    outgoing_address = os.environ.get("SEAMLESS_COMMUNION_OUTGOING_ADDRESS")
-    if outgoing_address is None:
-        outgoing_address = "localhost"
+        print_error("SEAMLESS_COMMUNION_OUTGOING_PORT: invalid port '%s'" % _outgoing_port)
+    outgoing_ip = os.environ["SEAMLESS_COMMUNION_OUTGOING_IP"]
 
 # Default configuration for being a master, i.e. on using other peers as a service
 default_master_config = {
@@ -150,8 +159,8 @@ class CommunionServer:
     def __init__(self):
         self.config_master = default_master_config.copy()
         self.config_servant = default_servant_config.copy()
-        cid = os.environ.get("SEAMLESS_COMMUNION_ID")
-        if cid is None:
+        cid = os.environ.get("SEAMLESS_COMMUNION_ID", "")
+        if cid == "":
             cid = hash(int(id(self)) + int(10000*time.time()))
         self.id = cid
         self.peers = {}
@@ -161,7 +170,7 @@ class CommunionServer:
 
     def configure_master(self, config=None, **update):
         if self._started_outgoing and any(list(update.values())):
-            print_warning("CommunionServer has already started, added functionality will not be taken into account for existing peers", file=sys.stderr)
+            print_warning("CommunionServer has already started, added functionality will not be taken into account for existing peers")
         if config is not None:
             for key in config:
                 assert key in default_master_config, key
@@ -239,6 +248,7 @@ class CommunionServer:
         finally:
             if not ok:
                 start_incoming()
+
     async def _serve_outgoing(self, config, websocket, path):
         peer_config = await websocket.recv()
         peer_config = json.loads(peer_config)
@@ -258,13 +268,13 @@ class CommunionServer:
         import websockets
 
         coros = []
-        if outgoing is not None:
-            if is_port_in_use(outgoing_address, outgoing): # KLUDGE
-                print("ERROR: outgoing port %d already in use" % outgoing)
+        if outgoing_port is not None:
+            if is_port_in_use(outgoing_ip, outgoing_port): # KLUDGE
+                print("ERROR: outgoing port %d already in use" % outgoing_port)
                 raise Exception
             server = functools.partial(self._serve_outgoing, config)
-            coro_server = websockets.serve(server, outgoing_address, outgoing)
-            print("Set up a communion outgoing port %d" % outgoing)
+            coro_server = websockets.serve(server, outgoing_ip, outgoing_port)
+            print("Set up a communion outgoing port %d" % outgoing_port)
         if len(incoming):
             for n in range(len(incoming)):
                 url = incoming[n]
@@ -275,6 +285,8 @@ class CommunionServer:
                     pass
                 incoming[n] = url                
             self._to_start_incoming = incoming.copy()
+        else:
+            self._to_start_incoming = []
         for url in incoming:
             url0 = url
             if not url.startswith("ws://") and not url.startswith("wss://"):
@@ -282,12 +294,12 @@ class CommunionServer:
             coro = self._connect_incoming(config, url, url0)
             coros.append(coro)
 
-        if outgoing is not None:
+        if outgoing_port is not None:
             await coro_server
         self._started_outgoing = True
+        self._started = True
         if len(coros):
             await asyncio.gather(*coros)
-        self._started = True
 
     async def _startup(self):
         print_debug("Communion server startup commencing")
@@ -309,12 +321,36 @@ class CommunionServer:
         finally:
             print_info("Communion server startup complete")
 
-    def start(self):
+    async def start_async(self):
         if self.future is not None:
             return
-        coro = self._start()
-        self.future = asyncio.ensure_future(coro)
+        coro = self._start()        
         self.startup = asyncio.ensure_future(self._startup())
+        self.future = asyncio.ensure_future(coro)
+        await self.startup
+        while 1:
+            if self._started and not len(self._to_start_incoming):
+                break
+            await asyncio.sleep(0.1)
+
+    def start(self):
+        from seamless import running_in_jupyter
+        if running_in_jupyter:
+            raise RuntimeError("'communion_server.start()' cannot be called from within Jupyter. Use 'await communion_server.start_async()' instead")
+        elif asyncio.get_event_loop().is_running():
+            raise RuntimeError("'communion_server.start()' cannot be called from within a coroutine. Use 'await communion_server.start_async()' instead")
+
+        if self.future is not None:
+            return
+        coro = self._start()        
+        self.startup = asyncio.ensure_future(self._startup())
+        self.future = asyncio.ensure_future(coro)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.startup)
+        while 1:
+            if self._started and not len(self._to_start_incoming):
+                break
+            loop.run_until_complete(asyncio.sleep(0.1))
 
 
     async def _process_transformation_request(self, transformation, transformer, peer):
@@ -393,6 +429,8 @@ class CommunionServer:
                     if buffer_info is not None:
                         length = buffer_info.length                        
                         print_debug("STATUS SERVE BUFFER", length, checksum.hex())
+                        if length is None:
+                            length = 0 
                         if length <= 10000 or status != "small":
                             if has_buffer:
                                 return 1

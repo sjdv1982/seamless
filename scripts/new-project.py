@@ -97,6 +97,8 @@ PROJNAME = "%s"
 
 import os, sys, shutil
 
+import seamless
+
 from seamless.highlevel import Context, Cell, Transformer, Module, Macro
 
 ctx = None
@@ -112,6 +114,46 @@ async def define_graph(ctx):
     """
     pass
 
+def load_database():
+    # To connect to a Seamless database, specify the following environment variables:
+    # SEAMLESS_DATABASE_IP, SEAMLESS_DATABASE_PORT
+    #
+    # They are passed into the Seamless Docker container when you run 
+    #  seamless-load-project, seamless-jupyter, etc.
+    # Seamless provides default values for these environment variables
+    # These defaults will connect to the database started with seamless-database command.
+    # 
+    # Then, uncomment the following lines:
+    # To read buffers and transformation results from the database:
+    #
+    # seamless.database_cache.connect()  
+    #
+    # To write buffers and transformation results into the database:
+    #
+    # seamless.database_sink.connect()
+    return
+
+COMMUNION_MSG=""
+async def load_communion():
+    global COMMUNION_MSG
+    # To connect to a Seamless communion peer, such as jobless or a jobslave,
+    # specify the following environment variables:
+    # SEAMLESS_COMMUNION_IP
+    # SEAMLESS_COMMUNION_PORT
+    # or: SEAMLESS_COMMUNION_INCOMING (comma-separated list of multiple peers, as IP:port,IP:port,...)
+    #
+    # These are passed into the Seamless Docker container when you run 
+    #  seamless-load-project, seamless-jupyter, etc.
+    # Seamless provides default values for these environment variables
+    # These defaults will try to connect to jobless.
+    # 
+    # Then, uncomment the following lines:
+    #
+    # await seamless.communion_server.start_async()
+    # npeers = len(seamless.communion_server.peers)
+    # COMMUNION_MSG="\\n\\n{} communion peer(s) found.".format(npeers)
+    return
+
 async def load():
     from seamless.metalevel.bind_status_graph import bind_status_graph_async
     import json
@@ -126,7 +168,9 @@ async def load():
         if ctx is not None:
             pr('"ctx" already exists. To reload, do "ctx = None" or "del ctx" before load()')
             return
-    
+    load_database()    
+    await load_communion()
+
     for f in (
         "web/index-CONFLICT.html",
         "web/index-CONFLICT.js",
@@ -146,7 +190,10 @@ async def load():
         seamless._defining_graph = True
         await define_graph(ctx)
     finally:
-        del seamless._defining_graph
+        try:
+            del seamless._defining_graph
+        except AttributeError:
+            pass
     new_graph = await ctx._get_graph_async(copy=True)
     graph_file = "graph/" + PROJNAME + ".seamless"
     ctx.load_vault("vault")
@@ -192,8 +239,8 @@ async def load():
     Open http://localhost:<REST server port> to see the web page
     Open http://localhost:<REST server port>/status/status.html to see the status
 
-    Run save() to save the project
-    """)
+    Run save() to save the project{}
+    """.format(COMMUNION_MSG))
 ''' % (project_name,)
 
 with open("load-project.py", "w") as f:

@@ -147,13 +147,6 @@ class Task:
     async def _run0(self, taskmanager):
         taskmanager.launching_tasks.discard(self)
         await asyncio.shield(taskmanager.await_active())
-        try:
-            import websockets
-        except ImportError:
-            # we are running in a minimal Seamless environment
-            pass
-        else:            
-            await asyncio.shield(communion_server.startup)
         while len(taskmanager.synctasks):
             await asyncio.sleep(0.001)
         if not isinstance(self, (UponConnectionTask, EvaluateExpressionTask, GetBufferTask, BackgroundTask)):
@@ -263,4 +256,3 @@ from .structured_cell import StructuredCellAuthTask, StructuredCellJoinTask
 from .evaluate_expression import EvaluateExpressionTask
 from .get_buffer import GetBufferTask
 from ..manager import Manager
-from ....communion_server import communion_server

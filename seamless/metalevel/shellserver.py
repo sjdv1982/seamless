@@ -86,7 +86,7 @@ DOCKER_IMAGE = os.environ.get("DOCKER_IMAGE")
 if DOCKER_IMAGE is None and DOCKER_CONTAINER is None:
     CONSOLE_COMMAND = "jupyter console --existing"
 else:
-    CONSOLE_COMMAND = "seamless-jupyter-console-existing"
+    CONSOLE_COMMAND = "seamless-jupyter-connect"
     if DOCKER_CONTAINER is not None:
         CONSOLE_COMMAND += " --container {}".format(DOCKER_CONTAINER)
     elif DOCKER_IMAGE != "rpbs/seamless":

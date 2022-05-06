@@ -61,8 +61,17 @@ else:
                 buffer = f.read()
         except UnicodeDecodeError:
             err("File is not a text file. Did you forget the --binary option?")
+
+url = args.url
+for x in "http", "https":
+    s = x + "://localhost"
+    if url.startswith(s):
+        host_ip = os.environ.get("SEAMLESS_DOCKER_HOST_IP")
+        if host_ip:
+            url = x + "://" + host_ip + url[len(s):]
+
 try:
-    r = requests.get(args.url, params={"mode": "marker"})
+    r = requests.get(url, params={"mode": "marker"})
     marker = r.json()["marker"]
 except:
     err("Cannot obtain a marker from specified URL. It may be unreachable, or not a Seamless URL")
@@ -71,7 +80,7 @@ headers = {
     "Content-Type": "application/json; charset=utf-8",
 }
 payload=json.dumps({"buffer": buffer, "marker": marker + 1})
-r = requests.put(args.url, data=payload, headers=headers)
+r = requests.put(url, data=payload, headers=headers)
 if r.status_code != requests.codes.ok:
     print(r.text)
     err("The server yielded the following error reponse code: {}".format(r.status_code))

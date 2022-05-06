@@ -1,26 +1,29 @@
 #!/bin/bash
+
+set -e
+
+currdir=`python3 -c 'import os,sys;print(os.path.dirname(os.path.realpath(sys.argv[1])))' $0`
+source $currdir/seamless-fill-environment-variables
+
 set -u -e
 
-# - Current directory is mounted to /cwd, and the command is executed there
-# - Seamless has access to the Docker daemon, so it can launch its own Docker
-#    containers via the Docker transformer. This works only under Linux.
-#    NOTE: THIS IS A BIG SECURITY HOLE, IT CAN GIVE ROOT ACCESS TO YOUR SYSTEM
-# /tmp is also mounted, this is needed by Docker transformers (as they run on the host)
-
-###
-# The following does not currently work (Ubuntu 18.04.3, Docker 19.03.12); not even --privileged works, unless we are root:
-# gdbflags='--cap-add SYS_PTRACE --security-opt=seccomp:unconfined --security-opt=apparmor:unconfined'
-gdbflags='' ###
-
 docker run --rm \
-  $gdbflags \
-  -e DOCKER_IMAGE=rpbs/seamless \
-  --network=host \
+  $SEAMLESS_DOCKER_PUBLISH_SHARESERVER_PORTS \
+  $SEAMLESS_DOCKER_RUN_PARAMS_X_NAME \
+  $SEAMLESS_DOCKER_RUN_PARAMS_X_DEVEL \
+  $SEAMLESS_DOCKER_RUN_PARAMS_X_TRUSTED \
+  -e DOCKER_IMAGE=$SEAMLESS_DOCKER_IMAGE \
+  -e SHARESERVER_ADDRESS=$SEAMLESS_SHARESERVER_ADDRESS \
+  -e SEAMLESS_DOCKER_HOST_IP=$SEAMLESS_DOCKER_HOST_IP \
+  -e SEAMLESS_DATABASE_IP=$SEAMLESS_DATABASE_IP \
+  -e SEAMLESS_DATABASE_PORT=$SEAMLESS_DATABASE_PORT \
+  -e SEAMLESS_COMMUNION_INCOMING=$SEAMLESS_COMMUNION_INCOMING \
+  -e SEAMLESS_COMMUNION_IP=$SEAMLESS_COMMUNION_IP \
+  -e SEAMLESS_COMMUNION_PORT=$SEAMLESS_COMMUNION_PORT \
+  -e SEAMLESS_COMMUNION_ID=$SEAMLESS_COMMUNION_ID \
   -v `pwd`:/cwd \
-  -v /tmp:/tmp \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  --group-add $(getent group docker | cut -d: -f3) \
   --workdir /cwd \
+  -v /tmp:/tmp \
   -u `id -u` \
   --group-add users \
-  rpbs/seamless start.sh python3 -u /home/jovyan/seamless-scripts/serve-graph.py $*
+  $SEAMLESS_DOCKER_IMAGE start.sh python3 -u /home/jovyan/seamless-scripts/serve-graph.py $*
