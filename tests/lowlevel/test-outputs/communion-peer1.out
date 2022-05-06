@@ -1,4 +1,4 @@
-Set up a communion outgoing port 8601
+Set up a communion outgoing port 8601, listening on 0.0.0.0
 OUTGOING Peer1 Peer2
 ADD SERVANT buffer
 ADD SERVANT buffer_info
@@ -12,7 +12,7 @@ REMOVE SERVANT buffer
 REMOVE SERVANT buffer_info
 REMOVE SERVANT semantic_to_syntactic
 Traceback (most recent call last):
-  File "communion-peer1.py", line 39, in <module>
+  File "communion-peer1.py", line 40, in <module>
     asyncio.get_event_loop().run_forever()
   File "/opt/conda/lib/python3.8/asyncio/base_events.py", line 570, in run_forever
     self._run_once()

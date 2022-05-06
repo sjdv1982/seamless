@@ -274,7 +274,7 @@ class CommunionServer:
                 raise Exception
             server = functools.partial(self._serve_outgoing, config)
             coro_server = websockets.serve(server, outgoing_ip, outgoing_port)
-            print("Set up a communion outgoing port %d" % outgoing_port)
+            print("Set up a communion outgoing port {}, listening on {}".format(outgoing_port, outgoing_ip))
         if len(incoming):
             for n in range(len(incoming)):
                 url = incoming[n]
