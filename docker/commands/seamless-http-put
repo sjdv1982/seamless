@@ -8,6 +8,7 @@ set -u -e
 
 docker run --rm \
   $SEAMLESS_DOCKER_RUN_PARAMS_X_DEVEL \
+  $SEAMLESS_DOCKER_RUN_PARAMS_X_NETWORK \
   -e SEAMLESS_DOCKER_HOST_IP=$SEAMLESS_DOCKER_HOST_IP \
   -v `pwd`:/cwd \
   --workdir /cwd \

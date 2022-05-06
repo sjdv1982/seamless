@@ -2,15 +2,14 @@ This directory contains useful commands that invoke Seamless Docker images.
 It is recommended to use Seamless through these commands, rather than installing it as a Python package
 
 Requirements:
+- bash and a POSIX environment (Linux, OSX, MSYS2)
 - Availability of Docker
-- Installation of the "seamless" Docker image
+- Installation of the "rpbs/seamless" Docker image. 
+  The Docker image name can be changed using SEAMLESS_DOCKER_IMAGE.
+  Notably, setting it to "seamless-devel" makes it mount an external Seamless source directory 
+  (defined as $SEAMLESSDIR)
+- A few more dependencies. These are installed together with the commands in the seamless-cli conda package (channel rpbs)
 
-Some individual commands may have additional requirements.
-
-If the requirements are inappropriate for your system, you are encouraged to edit the commands.
-Examples of possible edits:
-- Using singularity or docker-compose instead of docker
-- Changing the networking mode, binding only certain ports
-- Using different ports for Redis
-- Mounting different folders and volumes
-- Additional Docker options: CPU/memory limits, linking to more containers, etc.
+The seamless-conda-env-XXX commands instead use the rpbs/seamless-minimal Docker image.
+This image relies on an *external* conda environment, mounted into the Docker image.
+This allows the user to install conda packages and then run a transformation

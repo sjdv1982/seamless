@@ -51,6 +51,7 @@ echo "Starting container seamless-database-container"
 docker run \
   -d \
   --name seamless-database-container \
+  $SEAMLESS_DOCKER_RUN_PARAMS_X_NETWORK \
   $SEAMLESS_DOCKER_RUN_PARAMS_X_DEVEL \
   $database_config_mount \
   $docker_params \

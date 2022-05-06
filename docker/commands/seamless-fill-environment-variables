@@ -52,6 +52,10 @@ if [ -z "$SEAMLESS_SHARESERVER_ADDRESS" ]; then
   export SEAMLESS_SHARESERVER_ADDRESS=0.0.0.0
 fi
 
+if [ -z "$SEAMLESS_DOCKER_RUN_PARAMS_X_NETWORK" ]; then
+  export SEAMLESS_DOCKER_RUN_PARAMS_X_NETWORK='--network=bridge'
+fi
+
 export SEAMLESS_DOCKER_RUN_PARAMS_X_TRUSTED="""-v /var/run/docker.sock:/var/run/docker.sock \
 --group-add $(getent group docker | cut -d: -f3)"""
 

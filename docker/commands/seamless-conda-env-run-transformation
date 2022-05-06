@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# modifies a conda environment in the seamless-minimal Docker image
+# runs a transformation in the seamless-minimal Docker image
 # $1: the environment dir
 # $2: the transformation checksum
 
