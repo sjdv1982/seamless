@@ -2,9 +2,10 @@
 
 import sys, os, asyncio
 os.environ["SEAMLESS_COMMUNION_ID"] = "simple-communion-master"
-os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8602"
+os.environ["SEAMLESS_COMMUNION_PORT"] = "8602"
 
 import seamless
+seamless.communion_server.start()
 from seamless.core import context, cell
 
 ctx = context(toplevel=True)

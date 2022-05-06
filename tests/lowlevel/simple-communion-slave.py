@@ -2,8 +2,8 @@
 
 import sys, os, asyncio
 os.environ["SEAMLESS_COMMUNION_ID"] = "simple-communion-slave"
+os.environ["SEAMLESS_COMMUNION_OUTGOING_IP"] = "0.0.0.0"
 os.environ["SEAMLESS_COMMUNION_OUTGOING_PORT"] = "8602"
-os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8600"
 
 from seamless import communion_server
 
@@ -11,6 +11,7 @@ communion_server.configure_servant(
     buffer=True,
     buffer_status=True
 )
+communion_server.start()
 
 import seamless
 from seamless.core import context, cell
