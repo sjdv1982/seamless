@@ -1,0 +1,28 @@
+For a real 0.8 release:
+
+- Re-run high-level tests once more
+- Update README documentation, indicate that OSX/MSYS2 should work, seamless-minimal, Conda is now niche.
+- Jobless: create generic run-transformation backend: Singularity + SLURM
+- write example, e.g. a hhblits search where the database path is a DeepFolder
+checksum.
+- Jobless: test if a deepfolder folder name is transferred.
+
+Post 0.8 (write in Github issues)
+
+- Allow cells in a subcontext to be marked as "input" or "output".
+A subcontext will not translate unless all "inputs" have been connected.
+.status of the subcontext and all its members will reflect this.
+- Allow "input"/"output" cells and all Transformer pins to have a "scatter" flag. Such cells or pins must be connected from DeepCell if "mixed", or DeepFolder if "bytes".
+Any Subcontext with "scatter" flags get translated via a stdlib.map
+construction. Transformer with "scatter" flags get upgraded to Subcontext. This makes stdlib.map an implicit part of the Seamless high-level language, essentially.
+Alternatively, "input"/"output" cells and transformer pins that are 
+*already* of the celltype DeepFolder/DeepCell/DeepListCell can have a "scatter_chunk" parameter, for map_dict_chunk evaluation. This does not
+change the celltype of what they are connected to (the context/transformer will still operate on a deep dict/list, albeit a much smaller one). DONE: need then an API to get execution order (for incremental)!
+Make sure that any scattered Subcontext/Transformer has no .mount or .share!
+Also, modifying the value of a cell/pin CANNOT be relayed to the low level
+(there are many low-level copies!) and a re-translation is necessary.
+Tell this to the user when they make such a modification!
+- Add a status redirection mechanism to catch error messages agnostic of the internal stdlib.map. NOT URGENT: SPIN OFF INTO GITHUB ISSUE.
+- Do includables (https://github.com/sjdv1982/seamless/issues/119),
+including finishing bootstrap.
+- Documentation and checks of seamless-cli
