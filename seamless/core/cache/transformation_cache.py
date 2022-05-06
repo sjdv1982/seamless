@@ -355,15 +355,15 @@ class TransformationCache:
                 result_checksum, prelim = self.transformation_results[tf_checksum]
                 buffer_cache.incref(result_checksum, False)
             for pinname in transformation:
-                if pinname in ("__compilers__", "__languages__", "__as__", "__meta__", "__format__"):
+                if pinname in ("__compilers__", "__languages__", "__as__",  "__format__"):
                     continue
                 if pinname == "__output__":
                     continue
-                if pinname == "__env__":
+                if pinname in ("__env__", "__meta__"):
                     sem_checksum = transformation[pinname]
                 else:
                     celltype, subcelltype, sem_checksum = transformation[pinname]
-                buffer_cache.incref(sem_checksum, (pinname == "__env__"))
+                buffer_cache.incref(sem_checksum, (pinname in ("__env__", "__meta__")))
 
         tf = self.transformations_to_transformers[tf_checksum]
         if transformer not in tf:
@@ -472,11 +472,11 @@ class TransformationCache:
             self.transformation_logs.pop(tf_checksum, None)
             # TODO: clear transformation_exceptions also at some moment??
         for pinname in transformation:
-            if pinname in ("__output__", "__languages__", "__compilers__", "__as__", "__meta__", "__format__"):
+            if pinname in ("__output__", "__languages__", "__compilers__", "__as__", "__format__"):
                 continue
-            if pinname == "__env__":
-                env_checksum = transformation["__env__"]
-                buffer_cache.decref(env_checksum)
+            if pinname in ("__env__", "__meta__"):
+                checksum = transformation[pinname]
+                buffer_cache.decref(checksum)
                 continue
             celltype, subcelltype, sem_checksum = transformation[pinname]
             buffer_cache.decref(sem_checksum)

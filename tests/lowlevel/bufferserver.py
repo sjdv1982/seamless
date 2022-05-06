@@ -26,6 +26,7 @@ def kill_docker():
     os.system("docker rm mynginx2")
 atexit.register(kill_docker)
 
+HOST_IP=os.environ.get("SEAMLESS_DOCKER_HOST_IP", "localhost")
 currdir = os.path.abspath(os.path.split(__file__)[0])
 if currdir.startswith("/cwd"):
     currdir = os.environ["HOSTCWD"] + currdir[4:]
@@ -37,8 +38,8 @@ os.system(docker_cmd.format(
 
 import time
 time.sleep(1)
-os.system("curl -s localhost:{port}/78aeb2071cba3943ebfc2a8a39216301d85107b2db2075169a31f82a362d0e4d".format(port=PORT))
-os.environ["SEAMLESS_BUFFER_SERVERS"] = "http://localhost:{port}".format(port=PORT)
+os.system("curl -s {HOST_IP}:{port}/78aeb2071cba3943ebfc2a8a39216301d85107b2db2075169a31f82a362d0e4d".format(port=PORT,HOST_IP=HOST_IP))
+os.environ["SEAMLESS_BUFFER_SERVERS"] = "http://{HOST_IP}:{port}".format(port=PORT,HOST_IP=HOST_IP)
 
 ctx = context(toplevel=True)
 ctx.c1 = cell("int").set_checksum("6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd")

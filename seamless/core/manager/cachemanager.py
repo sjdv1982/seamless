@@ -275,6 +275,9 @@ class CacheManager:
         async def fingertip_transformation(transformation, tf_checksum):
             coros = []
             for pinname in transformation:
+                if pinname in ("__meta__", "__env__"):
+                    coros.append(self._fingertip(transformation[pinname], must_have_cell=False, done=done))
+                    continue
                 if pinname.startswith("__"):
                     continue
                 celltype, subcelltype, sem_checksum = transformation[pinname]

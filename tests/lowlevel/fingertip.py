@@ -3,8 +3,8 @@ loop = asyncio.get_event_loop()
 
 import sys
 from seamless.core.cache.buffer_cache import buffer_cache, CacheMissError
-buffer_cache.LIFETIME_TEMP = 0.01
-buffer_cache.LIFETIME_TEMP_SMALL = 0.01
+buffer_cache.LIFETIME_TEMP = 0.1
+buffer_cache.LIFETIME_TEMP_SMALL = 0.1
 buffer_cache.LOCAL_MODE_FULL_PERSISTENCE = False
 from seamless.core.protocol import calculate_checksum_module as calculate_checksum
 calculate_checksum.checksum_cache.disable()

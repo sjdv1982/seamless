@@ -290,7 +290,9 @@ class Transformer(Worker):
         return future.result()
 
     def destroy(self, *, from_del=False, manager=None):
-        self._get_manager()._destroy_transformer(self)
+        manager = self._get_manager()
+        if not isinstance(manager, UnboundManager):
+            manager._destroy_transformer(self)
         super().destroy(from_del=from_del)
 
     def __str__(self):
@@ -350,3 +352,5 @@ Parameters
                 Describes the type of the cell(s) connected to the pin.
     """
     return Transformer(params, stream_params=stream_params)
+
+from .unbound_context import UnboundManager
