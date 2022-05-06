@@ -2,7 +2,7 @@
 
 import os
 os.environ["SEAMLESS_COMMUNION_ID"] = "compile-run-remote"
-os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8602"
+os.environ["SEAMLESS_COMMUNION_PORT"] = "8602"
 
 import seamless
 seamless.set_ncores(0)
@@ -17,6 +17,7 @@ communion_server.configure_servant(
     buffer=True,
 )
 
+communion_server.start()
 
 code = """
 #include <cmath>

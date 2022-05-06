@@ -55,13 +55,19 @@ transformation-raw.py
 transformation-raw-ipython.py
 meta.py
 simple-duplex.py
-simple-remote.py: run together with scripts/jobslave.py
+simple-remote.py: run together with seamless-jobslave
 simple-remote2.py: run together with:
-     python3 -u ../../scripts/jobslave.py --time 30 --direct-print > test-outputs/simple-remote2-jobslave.out 2>&1
+     seamless-jobslave jobslave --direct-print
+     after the run:
+     docker logs jobslave > test-outputs/simple-remote2-jobslave.out 2>&1
 simple-duplex-remote.py: run together with:
-     python3 -u ../../scripts/jobslave.py --time 40 --direct-print > test-outputs/simple-duplex-remote-jobslave.out 2>&1
-compile-run-remote.py: run together with scripts/jobslave.py --direct-print .
-     The jobslave output should include "ADD 8.141592979431152"
+     seamless-jobslave jobslave --direct-print
+     after the run:
+     docker logs jobslave > test-outputs/simple-duplex-remote-jobslave.out 2>&1
+compile-run-remote.py: 
+     seamless-jobslave jobslave --direct-print
+     after the run:
+     docker logs jobslave, should include "ADD 8.141592979431152"
 macro.py
 macro2.py
 macro3.py

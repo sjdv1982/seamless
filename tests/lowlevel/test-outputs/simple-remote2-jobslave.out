@@ -1,4 +1,6 @@
-Set up a communion outgoing port 8602
+Adding passwd file entry for 1001
+Executing the command: python3 -u /home/jovyan/seamless-scripts/jobslave.py --communion_id jobslave --time 30 --direct-print
+Set up a communion outgoing port 8602, listening on 0.0.0.0
 OUTGOING jobslave simple-remote2
 ADD SERVANT buffer
 ADD SERVANT buffer_info

@@ -24,6 +24,7 @@ parser.add_argument(
     help="Do not enter a mainloop. Assumes that the script was opened with an interactive shell (e.g. ipython -i)",
     action="store_true"
 )
+parser.add_argument("--direct-print", dest="direct_print", action="store_true")
 parser.add_argument(
     "--debug",
     help="Serve graph in debugging mode. Turns on asyncio debugging, and sets the Seamless logger to DEBUG",
@@ -53,6 +54,10 @@ from seamless import communion_server
 if args.ncores is not None and args.ncores > 0:
     seamless.set_ncores(args.ncores)
 
+if args.direct_print:
+    import seamless.core.execute
+    seamless.core.execute.DIRECT_PRINT = True
+
 communion_server.configure_servant(
     buffer=True,
     buffer_status=True,
@@ -64,7 +69,6 @@ communion_server.configure_servant(
 port=os.environ["SEAMLESS_COMMUNION_OUTGOING_PORT"]
 ip=os.environ["SEAMLESS_COMMUNION_OUTGOING_IP"]
 communion_server.start()
-print("Serving as jobslave on port {}, listening on {}".format(port, ip))
 
 from seamless.core import context
 ctx = context(toplevel=True)

@@ -1,7 +1,7 @@
 # first start scripts/jobslave.py
 import os
 os.environ["SEAMLESS_COMMUNION_ID"] = "simple-duplex-remote"
-os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8602"
+os.environ["SEAMLESS_COMMUNION_PORT"] = "8602"
 
 
 import seamless
@@ -13,6 +13,8 @@ communion_server.configure_master(
     transformation_job=True,
     transformation_status=True,
 )
+
+communion_server.start()
 
 from seamless.core import context, cell, transformer, unilink
 
