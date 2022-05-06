@@ -39,7 +39,7 @@ class DatabaseBase:
         try:
             response = session.get(url, data=json.dumps(request))
         except requests.ConnectionError:
-            raise Exception("Cannot connect to Seamless database: host {}, port {}".format(self.host, self.port))
+            raise requests.ConnectionError("Cannot connect to Seamless database: host {}, port {}".format(self.host, self.port))
         try:
             assert response.json() == list(self.PROTOCOL)
         except (AssertionError, ValueError, json.JSONDecodeError):

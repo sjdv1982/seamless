@@ -1,3 +1,4 @@
+export SEAMLESS_DATABASE_IP=localhost
 rm -rf /tmp/PIN-FILESYSTEM-FOLDER1
 rm -rf /tmp/PIN-FILESYSTEM-FOLDER2
 db=/tmp/PIN-FILESYSTEM-TEST-DB
@@ -10,7 +11,7 @@ cat pin-filesystem.log
 rm -f pin-filesystem.log
 echo 'Start database'
 dbconfig='''
-host: "localhost" 
+host: "0.0.0.0" 
 port:  5522
 stores: 
     -
@@ -19,7 +20,7 @@ stores:
       serve_filenames: true
 '''
 dbconfigro='''
-host: "localhost" 
+host: "0.0.0.0"
 port:  5522
 stores: 
     -

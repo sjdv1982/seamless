@@ -1,8 +1,6 @@
-# NOTE: See https://github.com/sjdv1982/seamless/issues/65 . Regressions expected!!!
-
 # In general, run with:
 #   python3 -u TEST.py > test-outputs/TEST.out 2>&1
-# Before each release, the test set must be run under seamless-devel AND under the Conda environment!
+# Before each release, the test set must be run under seamless-bash
 bytecell.py
 bytecell2.py
 bytecell3.py
@@ -72,7 +70,8 @@ macro.py
 macro2.py
 macro3.py
 pin-as.py
-pin-filesystem.sh: run as i=pin-filesystem; seamless-devel $i.sh > test-outputs/$i.out 2>&1
+pin-filesystem.sh: run as i=pin-filesystem; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
+  Make sure that the database is not running
 checksum-cell.py
 structured_cell/simple-deepcell.py
 structured_cell/simple-deepcell-rawbuffer.py
