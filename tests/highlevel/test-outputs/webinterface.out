@@ -15,12 +15,11 @@ or:
 
 Opened the seamless share update server at port 5138
 Opened the seamless REST server at port 5813
-[22;0t]0;IPython: cwd/webinterface-filesWarning: File path 'web/components' has a different value, overwriting cell
-Opened the seamless share update server at port 5138
+[22;0t]0;IPython: highlevel/webinterface-filesOpened the seamless share update server at port 5138
 Opened the seamless REST server at port 5813
 *** define_graph() function is empty. Loading 'graph/testproject.seamless' ***
 
-/seamless/seamless/core/mount.py:121: RuntimeWarning: coroutine 'sleep' was never awaited
+/seamless/seamless/core/mount.py:123: RuntimeWarning: coroutine 'sleep' was never awaited
   pass
 RuntimeWarning: Enable tracemalloc to get the object allocation traceback
 Project loaded.

@@ -1,8 +1,10 @@
-69.6 ns ± 0.198 ns per loop (mean ± std. dev. of 7 runs, 10000000 loops each)
+71.7 ns +- 1.13 ns per loop (mean +- std. dev. of 7 runs, 10000000 loops each)
+Waiting for: Seamless transformer: .transform.tf
 Waiting for: Seamless transformer: .transform.tf
 Waiting for: Seamless transformer: .transform.tf
 <Silk: None >
-67.6 ns ± 0.713 ns per loop (mean ± std. dev. of 7 runs, 10000000 loops each)
+73.7 ns +- 0.425 ns per loop (mean +- std. dev. of 7 runs, 10000000 loops each)
+Waiting for: Seamless transformer: .transform.tf
 Waiting for: Seamless transformer: .transform.tf
 Waiting for: Seamless transformer: .transform.tf
 <Silk: None >

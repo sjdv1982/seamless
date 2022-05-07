@@ -1,10 +1,11 @@
-import json
+import json, os
 import urllib.parse
 from seamless.download_buffer import download_buffer_sync, session
 from requests.exceptions import ConnectionError, ReadTimeout
 
+_localhost = os.environ.get("SEAMLESS_DOCKER_HOST_IP", "localhost")
 _servers = [
-    "http://localhost:61918",
+    "http://{}:61918".format(_localhost),
     "https://fair.rpbs.univ-paris-diderot.fr"
 ]
 
