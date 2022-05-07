@@ -1,11 +1,12 @@
 For a real 0.8 release:
 
 - Re-run high-level tests once more
-- Update README documentation, indicate that OSX/MSYS2 should work, seamless-minimal, Conda is now niche.
 - Jobless: create generic run-transformation backend: Singularity + SLURM
+- Update README documentation, indicate that OSX/MSYS2 should work, seamless-minimal, conda seamless-framework is now niche.
+- rebuild conda seamless-framework
+- Jobless: test if a deepfolder folder name is transferred.
 - write example, e.g. a hhblits search where the database path is a DeepFolder
 checksum.
-- Jobless: test if a deepfolder folder name is transferred.
 
 Post 0.8 (write in Github issues)
 
