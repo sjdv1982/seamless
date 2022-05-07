@@ -1,12 +1,16 @@
 7916576ad7f9a29fe458dfc70e50bf09  twopi.seamless
 7916576ad7f9a29fe458dfc70e50bf09  /tmp/twopi-database.seamless
-INCOMING jobmaster jobslave
+OUTGOING serve_graph jobmaster
+INCOMING jobmaster serve_graph
 ADD SERVANT buffer
 ADD SERVANT buffer_info
 ADD SERVANT semantic_to_syntactic
 ADD SERVANT transformation
-RESULT b'lambda a: 2 * a\n'
-RESULT b'3.141592653589793\n'
-RESULT b'3.141592653589793\n'
-ERROR: outgoing port 8602 already in use
+ADD SERVANT buffer
+ADD SERVANT buffer_info
+ADD SERVANT semantic_to_syntactic
+Set up a communion outgoing port 8602, listening on 0.0.0.0
+REMOVE SERVANT buffer
+REMOVE SERVANT buffer_info
+REMOVE SERVANT semantic_to_syntactic
 ef822974012dadbe557d55243db4f4de  twopi-colored-jobmaster.seamless
