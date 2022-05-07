@@ -1,9 +1,4 @@
-Download https://fair.rpbs.univ-paris-diderot.fr/machine/deepbuffer/0000000000000000000000000000000000000000000000000000000000000000
-Download http://localhost:61918/machine/deepbuffer/0000000000000000000000000000000000000000000000000000000000000000
-Download https://fair.rpbs.univ-paris-diderot.fr/machine/keyorder/0000000000000000000000000000000000000000000000000000000000000000
 ERROR in incref'ing deep buffer '0000000000000000000000000000000000000000000000000000000000000000'
-Download https://fair.rpbs.univ-paris-diderot.fr/machine/deepbuffer/0000000000000000000000000000000000000000000000000000000000000000
-Download https://fair.rpbs.univ-paris-diderot.fr/machine/keyorder/0000000000000000000000000000000000000000000000000000000000000000
 Status: exception
 seamless.core.cache.CacheMissError: 0000000000000000000000000000000000000000000000000000000000000000
 
@@ -11,9 +6,9 @@ Status: OK
 Status: OK
 *apply_blackwhite*: Status: error
 *apply_blackwhite*: Traceback (most recent call last):
-  File "/seamless/seamless/core/execute.py", line 67, in _execute
+  File "/home/jovyan/software/seamless/core/execute.py", line 69, in _execute
     exec_code(
-  File "/seamless/seamless/core/cached_compile.py", line 62, in exec_code
+  File "/home/jovyan/software/seamless/core/cached_compile.py", line 62, in exec_code
     exec(code_obj, namespace)
   File "Seamless transformer: .a.apply_blackwhite", line 16, in <module>
     result = apply_blackwhitelist(blackwhitelist=blackwhitelist,keyorder=keyorder,origin=origin)

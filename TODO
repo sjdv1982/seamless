@@ -1,8 +1,13 @@
 For a real 0.8 release:
 
 - Re-run high-level tests once more
-- Update README documentation, indicate that OSX/MSYS2 should work, seamless-minimal, Conda is now niche.
 - Jobless: create generic run-transformation backend: Singularity + SLURM
+- Update README documentation, indicate that OSX/MSYS2 should work, seamless-minimal, Conda is now niche.
+- Basic example notebook / README.md . Add "edit cell over HTTP" section.
+  Simple index.html for cell ctx.a with two buttons (get value, set value) and two fields. 
+  Move section 3 and 4 to the end (de-emphasize)
+  change validator "assert self.a < self.b" to "assert self.a + self.b < 100' 
+- rerun non-automatic tests (lowlevel and highlevel)
 - write example, e.g. a hhblits search where the database path is a DeepFolder
 checksum.
 - Jobless: test if a deepfolder folder name is transferred.

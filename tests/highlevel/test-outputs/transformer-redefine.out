@@ -1,14 +1,14 @@
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 360, in _execute
+  File "/home/jovyan/software/seamless/core/transformation.py", line 398, in _execute
     result, logs = await self._execute_local(
-  File "/seamless/seamless/core/transformation.py", line 526, in _execute_local
+  File "/home/jovyan/software/seamless/core/transformation.py", line 566, in _execute_local
     full_module_names = build_all_modules(
-  File "/seamless/seamless/core/build_module.py", line 357, in build_all_modules
+  File "/home/jovyan/software/seamless/core/build_module.py", line 366, in build_all_modules
     mod = build_module(
-  File "/seamless/seamless/core/build_module.py", line 317, in build_module
+  File "/home/jovyan/software/seamless/core/build_module.py", line 326, in build_module
     mod = build_compiled_module(
-  File "/seamless/seamless/core/build_module.py", line 249, in build_compiled_module
+  File "/home/jovyan/software/seamless/core/build_module.py", line 254, in build_compiled_module
     raise BuildModuleError(stderr)
 seamless.core.build_module.BuildModuleError: 
 g++ -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_834025c276fbf5fc7e04a238fe9f51e2395b3ae1ee021a175aa00eb33b6fcb0a_module/main.o /tmp/seamless-extensions/seamless_module_834025c276fbf5fc7e04a238fe9f51e2395b3ae1ee021a175aa00eb33b6fcb0a_module/main.cpp
