@@ -2,7 +2,7 @@
 
 import os
 os.environ["SEAMLESS_COMMUNION_ID"] = "simple-pi-remote"
-os.environ["SEAMLESS_COMMUNION_INCOMING"] = "localhost:8602"
+os.environ["SEAMLESS_COMMUNION_PORT"] = "8602"
 
 import seamless
 seamless.set_ncores(0)
@@ -15,6 +15,8 @@ communion_server.configure_master(
     transformation_job=True,
     transformation_status=True,
 )
+
+communion_server.start()
 
 import math
 from seamless.highlevel import Context, Cell
