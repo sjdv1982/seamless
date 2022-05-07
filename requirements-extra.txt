@@ -4,5 +4,5 @@ jupyter-core==4.6.1
 jupyterhub==1.0.0
 jupyterlab==1.2.*
 jupyterlab-server==1.0.6
-ipython==7.12.0
+ipython==7.16.3
 mistune==0.8.4

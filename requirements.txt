@@ -17,7 +17,7 @@ multidict==4.7.*
 wurlitzer==2.0.*
 yarl==1.4.*
 pandas==1.2.*
-IPython==7.23.*
+IPython==7.16.*
 notebook==6.4.*
 tornado==6.1.*
 ipykernel==5.5.*
