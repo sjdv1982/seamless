@@ -527,12 +527,16 @@ class Macro(Base):
         mctx = self._get_mctx(force=True)
         mctx.code._set_observer(self._observe_code)
         param = node["PARAM"]
-        paramcell = getattr(mctx, param)
-        paramcell.auth._set_observer(self._observe_param_auth)
-        paramcell.buffer._set_observer(self._observe_param_buffer)
-        paramcell._data._set_observer(self._observe_param)
-        schemacell = paramcell.schema
-        schemacell._set_observer(self._observe_schema)
+        if hasattr(mctx, param):
+            paramcell = getattr(mctx, param)
+            paramcell.auth._set_observer(self._observe_param_auth)
+            paramcell.buffer._set_observer(self._observe_param_buffer)
+            paramcell._data._set_observer(self._observe_param)
+            schemacell = paramcell.schema
+            schemacell._set_observer(self._observe_schema)
+        else:
+            # No non-deepcell parameters
+            node.pop("checksum", None)
 
     def __delattr__(self, attr):
         if attr.startswith("_"):

@@ -10,9 +10,9 @@ START
 <Silk: {'a': 12} >
 NO RESULT <Silk: None > <Silk: None >
 TRANSFORMER EXCEPTION Traceback (most recent call last):
-  File "/seamless/seamless/core/execute.py", line 67, in _execute
+  File "/home/jovyan/software/seamless/core/execute.py", line 69, in _execute
     exec_code(
-  File "/seamless/seamless/core/cached_compile.py", line 62, in exec_code
+  File "/home/jovyan/software/seamless/core/cached_compile.py", line 62, in exec_code
     exec(code_obj, namespace)
   File "Seamless transformer: .transform.tf", line 5, in <module>
     result = triple_it_b(a=a)
@@ -56,9 +56,9 @@ RUN!
 TRANSFORMER INPUT EXCEPTION None
 TRANSFORMER STATUS *tf*: Status: error
 TRANSFORMER EXCEPTION Traceback (most recent call last):
-  File "/seamless/seamless/core/execute.py", line 67, in _execute
+  File "/home/jovyan/software/seamless/core/execute.py", line 69, in _execute
     exec_code(
-  File "/seamless/seamless/core/cached_compile.py", line 62, in exec_code
+  File "/home/jovyan/software/seamless/core/cached_compile.py", line 62, in exec_code
     exec(code_obj, namespace)
   File "Seamless transformer: .transform.tf", line 5, in <module>
     result = triple_it_b(a=a,b=b)
@@ -79,9 +79,9 @@ RUN!
 TRANSFORMER INPUT EXCEPTION None
 TRANSFORMER STATUS *tf*: Status: error
 TRANSFORMER EXCEPTION Traceback (most recent call last):
-  File "/seamless/seamless/core/execute.py", line 67, in _execute
+  File "/home/jovyan/software/seamless/core/execute.py", line 69, in _execute
     exec_code(
-  File "/seamless/seamless/core/cached_compile.py", line 62, in exec_code
+  File "/home/jovyan/software/seamless/core/cached_compile.py", line 62, in exec_code
     exec(code_obj, namespace)
   File "Seamless transformer: .transform.tf", line 5, in <module>
     result = triple_it_b(a=a,b=b)

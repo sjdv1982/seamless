@@ -1,7 +1,7 @@
 # In general, run with:
 #   python3 -u TEST.py > test-outputs/TEST.out 2>&1
 #   Best also to test using "ipython3 TEST.py", since re-translation may work differently
-#   Before each release, the test set must be run under seamless-devel AND under the Conda environment!
+#   Before each release, the test set must be run under seamless-run.
 #   Docker tests require continuumio/anaconda3 to be pulled
 bytes-conversion.py
 mime.py
@@ -77,16 +77,16 @@ transformer-compiled-error.py
 transformer-compiled-module.py
 transformer-compiled-header.py
 twopi-graph-database.sh: run with Seamless database
-                      first delete job results: rm -rf /tmp/seamless-db
-                      then: seamless-devel-database twopi-graph-database.yaml
-                      run as i=twopi-graph-database; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
+                      first delete job reults: rm -rf /tmp/seamless-db
+                      then: seamless-database twopi-graph-database.yaml
+                      run as i=twopi-graph-database; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
-pin-filesystem.sh: run as i=pin-filesystem; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
+pin-filesystem.sh: run as i=pin-filesystem; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
 load-graph.py
 load-graph2.py
 load-graph-static.py
 build-structured-list.py
-vault.bash: run as i=vault; seamless-devel ./$i.bash > test-outputs/$i.out 2>&1
+vault.bash: run as i=vault; seamless-run ./$i.bash > test-outputs/$i.out 2>&1
 library.py
 library-context-argument.py
 library2.py
@@ -116,7 +116,7 @@ high-in-low7.py
 high-in-low8.py
 high-in-low4-memory.py    # Quite long test.
                           # Creates 5.6 GB of buffer cache in /tmp/dummy-db
-                          # Run with rm -rf /tmp/dummy-db  && mkdir -p /tmp/dummy-db && seamless-devel-database dummydb-config.yaml
+                          # Run with rm -rf /tmp/dummy-db  && mkdir -p /tmp/dummy-db && seamless-database dummydb-config.yaml
                           # Time is ~240 seconds, or ~165 seconds when re-executed
                           # Re-executing the test is faster, because the transformation results and input buffers are cached
                           # Exact output will depend on timings
@@ -146,11 +146,11 @@ highlink-cpp.py:  Run with ipython -i, then continue in interactive mode,
 mount.py:         Run with ipython -i, then continue in interactive mode.
                   Initial output is in test-outputs/mount.out
 cython_.py        Run with ipython -i                 
-observe-graph.ipynb: Run "seamless-devel-jupyter" and then open /cwd in the browser
+observe-graph.ipynb: Run "seamless-jupyter" and then open /cwd in the browser
 traitlets.ipynb: same as above
-share-pdb.py: open with seamless-devel-ipython -i, Open in http://localhost:5813/ctx/index.html
+share-pdb.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/index.html
 share-pdb-docker.seamless/.zip: to test using:
-      seamless-devel-serve-graph share-pdb-docker.seamless share-pdb-docker.zip
+      seamless-serve-graph share-pdb-docker.seamless share-pdb-docker.zip
     Open in http://localhost:5813/ctx/index.html
     Potentially, add:
       --status-graph /seamless/seamless/graphs/status-visualization.seamless \

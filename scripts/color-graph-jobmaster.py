@@ -19,6 +19,7 @@ infile, outfile = sys.argv[1:]
 graph = json.load(open(infile))
 
 seamless.database_cache.connect()
+seamless.communion_server.start()
 
 ctx = load_graph(graph)
 

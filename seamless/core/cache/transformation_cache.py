@@ -221,7 +221,7 @@ class TransformationCache:
         if root._languages is not None:
             transformation["__languages__"] = root._languages
         meta = {
-            "transformer_path": transformer.path,
+            "transformer_path": list(transformer.path),
         }
         if transformer.meta is not None:
             meta.update(transformer.meta)
@@ -233,11 +233,7 @@ class TransformationCache:
                 raise CacheMissError("META")
             inp_meta = json.loads(inp_metabuf)
             meta.update(inp_meta)
-        metabuf = await serialize(meta, "plain")
-        meta_checksum = calculate_checksum_func(metabuf)
-        buffer_cache.cache_buffer(meta_checksum, metabuf)
-        buffer_cache.guarantee_buffer_info(meta_checksum, "plain")
-        transformation["__meta__"] = meta_checksum
+        transformation["__meta__"] = meta
         if transformer.env is not None:
             envbuf = await serialize(transformer.env, "plain")
             env_checksum = calculate_checksum_func(envbuf)
@@ -355,15 +351,15 @@ class TransformationCache:
                 result_checksum, prelim = self.transformation_results[tf_checksum]
                 buffer_cache.incref(result_checksum, False)
             for pinname in transformation:
-                if pinname in ("__compilers__", "__languages__", "__as__",  "__format__"):
+                if pinname in ("__compilers__", "__languages__", "__as__",  "__format__", "__meta__"):
                     continue
                 if pinname == "__output__":
                     continue
-                if pinname in ("__env__", "__meta__"):
+                if pinname == "__env__":
                     sem_checksum = transformation[pinname]
                 else:
                     celltype, subcelltype, sem_checksum = transformation[pinname]
-                buffer_cache.incref(sem_checksum, (pinname in ("__env__", "__meta__")))
+                buffer_cache.incref(sem_checksum, pinname == "__env__")
 
         tf = self.transformations_to_transformers[tf_checksum]
         if transformer not in tf:
@@ -472,9 +468,9 @@ class TransformationCache:
             self.transformation_logs.pop(tf_checksum, None)
             # TODO: clear transformation_exceptions also at some moment??
         for pinname in transformation:
-            if pinname in ("__output__", "__languages__", "__compilers__", "__as__", "__format__"):
+            if pinname in ("__output__", "__languages__", "__compilers__", "__as__", "__format__", "__meta__"):
                 continue
-            if pinname in ("__env__", "__meta__"):
+            if pinname == "__env__":
                 checksum = transformation[pinname]
                 buffer_cache.decref(checksum)
                 continue

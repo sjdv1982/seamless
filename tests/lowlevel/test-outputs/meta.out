@@ -1,8 +1,8 @@
-{'calculation_time': '2s', 'transformer_path': ['tf']}
+{'transformer_path': ['tf'], 'calculation_time': '2s'}
 {'calculation_time': '1s'}
-{'calculation_time': '2s', 'transformer_path': ['tf']}
+{'transformer_path': ['tf'], 'calculation_time': '2s'}
 SET 4
 Waiting for: Seamless transformer: .tf
 Waiting for: Seamless transformer: .tf
 {'calculation_time': '4s'}
-{'calculation_time': '4s', 'transformer_path': ['tf']}
+{'transformer_path': ['tf'], 'calculation_time': '4s'}
