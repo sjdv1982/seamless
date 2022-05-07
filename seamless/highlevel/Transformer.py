@@ -1296,11 +1296,15 @@ You can set this dictionary directly, or you may assign .meta to a cell
 
     def _set_observers(self):
         htf = self._get_htf()
+        '''
+        # for now, assume that the internal structure of foreign transformers is not too different...
+
         if htf["compiled"] or htf["language"] not in ("python", "ipython", "bash", "docker"):
             if htf["compiled"]:
                 pass
             else:
                 raise NotImplementedError # NOTE: observers depend on the implementation of translate_XXX_transformer (midlevel)
+        '''
         tf = self._get_tf(force=True)
         tf.code._set_observer(self._observe_code)
         inp = htf["INPUT"]

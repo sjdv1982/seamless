@@ -526,9 +526,6 @@ class TransformationJob:
         with_ipython_kernel = False
 
         meta = self.transformation.get("__meta__")
-        if meta is not None:
-            meta = get_buffer(meta, remote=False)
-            meta = json.loads(meta.decode())
         # meta not used for now...
 
         env_checksum = self.transformation.get("__env__")

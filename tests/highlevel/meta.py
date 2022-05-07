@@ -7,8 +7,7 @@ def get_meta(tf):
     tf_cache = ctx._get_manager().cachemanager.transformation_cache
     tf_checksum = tf_cache.transformer_to_transformations[tf]
     transformation = tf_cache.transformations[tf_checksum]
-    meta_checksum = transformation["__meta__"]
-    meta = json.loads(get_buffer(meta_checksum,remote=True))
+    meta = transformation["__meta__"]
     return meta
 
 ctx = Context()

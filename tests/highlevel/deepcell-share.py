@@ -128,7 +128,7 @@ r = thread(
 )
 print(r.text)
 print()
-asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.5))  # to get the request processed
+asyncio.get_event_loop().run_until_complete(asyncio.sleep(1))  # to get the request processed
 print(ctx.c.status)
 print(ctx.c.exception)
 print(1, ctx.c._get_context().origin0.value)

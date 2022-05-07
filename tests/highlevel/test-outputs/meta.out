@@ -1,15 +1,15 @@
 {'transformer_path': ['func', 'tf']}
-{'somekey': 'somevalue', 'transformer_path': ['func', 'tf']}
-{'calculated meta': 42, 'transformer_path': ['func', 'tf']}
-{'somekey': 'somevalue2', 'transformer_path': ['func', 'tf'], 'transformer_type': 'bash'}
+{'transformer_path': ['func', 'tf'], 'somekey': 'somevalue'}
+{'transformer_path': ['func', 'tf'], 'calculated meta': 42}
+{'transformer_path': ['func', 'tf'], 'somekey': 'somevalue2', 'transformer_type': 'bash'}
 None
 <Silk: 12 >
-{'calculated meta': 42, 'transformer_path': ['func', 'tf'], 'transformer_type': 'bash'}
+{'transformer_path': ['func', 'tf'], 'transformer_type': 'bash', 'calculated meta': 42}
 
 gcc -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_e6a630b5479091b5b8ae0ef9f25dc956fabade79c25903692bdb97131e6b1532_module/main.o /tmp/seamless-extensions/seamless_module_e6a630b5479091b5b8ae0ef9f25dc956fabade79c25903692bdb97131e6b1532_module/main.c
 
 
-{'somekey': 'somevalue3', 'transformer_path': ['func', 'tf', 'executor']}
+{'transformer_path': ['func', 'tf', 'executor'], 'somekey': 'somevalue3'}
 None
 <Silk: 1013 >
-{'calculated meta': 42, 'transformer_path': ['func', 'tf', 'executor']}
+{'transformer_path': ['func', 'tf', 'executor'], 'calculated meta': 42}
