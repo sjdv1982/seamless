@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -u -e
+
+# modifies a conda environment in the seamless-minimal Docker image
+# $1: the environment dir
+# $2: the environment.yml file to modify with
+
+currdir=`python3 -c 'import os,sys;print(os.path.dirname(os.path.realpath(sys.argv[1])))' $0`
+
+CONDA_ENV_OUTPUT_DIR=$1
+rm -rf $CONDA_ENV_OUTPUT_DIR
+mkdir -p $CONDA_ENV_OUTPUT_DIR
+
+HOMEDIR=$(mktemp -d /tmp/temphome-XXXXXXXXXX)
+cp $currdir/dummy-bashrc $HOMEDIR/.bashrc
+
+ singularity run \
+   --cleanenv \
+   --containall \
+   --bind $CONDA_ENV_OUTPUT_DIR:/SEAMLESS-CONDA-ENV:rw \
+   --home $HOMEDIR \
+   $SEAMLESS_MINIMAL_SINGULARITY_IMAGE bash -c -i 'conda activate; cp /seamless-minimal/environment.yml /tmp; conda env create --prefix /SEAMLESS-CONDA-ENV --file /tmp/environment.yml'
+
+singularity run \
+  --cleanenv \
+  --bind $CONDA_ENV_OUTPUT_DIR:/SEAMLESS-CONDA-ENV:rw \
+  --home $HOMEDIR \
+  $SEAMLESS_MINIMAL_SINGULARITY_IMAGE bash -c -i 'conda activate; conda activate /SEAMLESS-CONDA-ENV; mamba repoquery search conda -c conda-forge -c main'
+
+rm -rf $HOMEDIR

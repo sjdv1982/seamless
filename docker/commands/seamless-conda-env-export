@@ -14,18 +14,20 @@ mkdir -p $CONDA_ENV_OUTPUT_DIR
 
 docker run \
   --rm \
-  -u `id -u` \
   -v $CONDA_ENV_OUTPUT_DIR:/SEAMLESS-CONDA-ENV \
   rpbs/seamless-minimal \
   bash -c 'conda env create --prefix /SEAMLESS-CONDA-ENV --file /seamless-minimal/environment.yml'
 
+Echo 'Caching package lists...'
+
 docker run \
   --rm \
   -it \
-  -u `id -u` \
+  -e USERID=`id -u` \
   -v $CONDA_ENV_OUTPUT_DIR:/SEAMLESS-CONDA-ENV \
   rpbs/seamless-minimal \
   bash -i -c '''
-  echo "conda activate /SEAMLESS-CONDA-ENV" >> /.bashrc
+  echo "conda activate /SEAMLESS-CONDA-ENV" >> /root/.bashrc
   bash -i -c "mamba repoquery search conda -c conda-forge -c main"
-  '''  
+  chown -R $USERID /SEAMLESS-CONDA-ENV
+  '''

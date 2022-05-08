@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# runs a transformation in the seamless-minimal Docker image
+# $1: the environment dir
+# $2: the transformation checksum
+
+if [ -z "$SEAMLESS_DOCKER_IMAGE" ]; then
+  # This defines which Transformer.docker_image values will be acceptable
+  export SEAMLESS_DOCKER_IMAGE=rpbs/seamless
+fi
+
+if [ -z "$SEAMLESS_DATABASE_IP" ]; then
+  export SEAMLESS_DATABASE_IP=localhost
+fi
+
+if [ -z "$SEAMLESS_DATABASE_PORT" ]; then
+  export SEAMLESS_DATABASE_PORT=5522
+fi
+
+echo SEAMLESS_MINIMAL_SINGULARITY_IMAGE=$(printenv SEAMLESS_MINIMAL_SINGULARITY_IMAGE)
+echo SEAMLESS_DOCKER_IMAGE=$(printenv SEAMLESS_DOCKER_IMAGE)
+echo SEAMLESS_DATABASE_IP=$(printenv SEAMLESS_DATABASE_IP)
+echo SEAMLESS_DATABASE_PORT=$(printenv SEAMLESS_DATABASE_PORT)
+
+set -u -e
+
+CONDA_ENV_DIR=$1
+tf_checksum=$2
+shift 2
+
+currdir=`python3 -c 'import os,sys;print(os.path.dirname(os.path.realpath(sys.argv[1])))' $0`
+
+HOMEDIR=$(mktemp -d /tmp/temphome-XXXXXXXXXX)
+cp $currdir/dummy-bashrc $HOMEDIR/.bashrc
+
+singularity run \
+  --cleanenv \
+  --env DOCKER_IMAGE=$SEAMLESS_DOCKER_IMAGE \
+  --env SEAMLESS_DOCKER_HOST_IP=localhost \
+  --env SEAMLESS_DATABASE_IP=$SEAMLESS_DATABASE_IP \
+  --env SEAMLESS_DATABASE_PORT=$SEAMLESS_DATABASE_PORT \
+  --bind $CONDA_ENV_DIR:/SEAMLESS-CONDA-ENV:ro \
+  --env tf_checksum=$tf_checksum \
+  --home $HOMEDIR \
+  $SEAMLESS_MINIMAL_SINGULARITY_IMAGE bash -c -i 'conda activate /SEAMLESS-CONDA-ENV; python /usr/local/seamless-scripts/run-transformation.py $tf_checksum'
+
+rm -rf $HOMEDIR

@@ -4,6 +4,11 @@
 # $1: the environment dir
 # $2: the transformation checksum
 
+set -e
+
+currdir=`python3 -c 'import os,sys;print(os.path.dirname(os.path.realpath(sys.argv[1])))' $0`
+source $currdir/seamless-fill-environment-variables
+
 set -u -e
 
 CONDA_ENV_DIR=$1
@@ -14,11 +19,15 @@ docker run \
   --rm \
   -it \
   -u `id -u` \
-  -e CONDA_ENV_DIR=$CONDA_ENV_DIR \
-  -v $CONDA_ENV_DIR:$CONDA_ENV_DIR \
+  $SEAMLESS_DOCKER_RUN_PARAMS_X_NETWORK \
+  -e DOCKER_IMAGE=$SEAMLESS_DOCKER_IMAGE \
+  -e SEAMLESS_DOCKER_HOST_IP=$SEAMLESS_DOCKER_HOST_IP \
+  -e SEAMLESS_DATABASE_IP=$SEAMLESS_DATABASE_IP \
+  -e SEAMLESS_DATABASE_PORT=$SEAMLESS_DATABASE_PORT \
+  -v $CONDA_ENV_DIR:/SEAMLESS-CONDA-ENV:ro \
   -e tf_checksum=$tf_checksum \
   rpbs/seamless-minimal \
   bash -i -c '''
-  echo "conda activate $CONDA_ENV_DIR" >> /.bashrc
-  bash -c -i "python /seamless-scripts/run-transformation.py $tf_checksum $*"
+  echo "conda activate /SEAMLESS-CONDA-ENV" >> /.bashrc
+  bash -c -i "python /usr/local/seamless-scripts/run-transformation.py $tf_checksum $*"
   ''' $*
