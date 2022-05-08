@@ -6,7 +6,7 @@ mandir=$comdir/doc/man
 cd $RECIPE_DIR
 
 cd $mandir
-seamless-run python3 ./build.py
+seamless-run-no-shareserver python3 ./build.py
 cd $RECIPE_DIR
 
 mkdir -p $PREFIX/bin
