@@ -44,7 +44,9 @@ Then, installation is as follows:
 docker pull rpbs/seamless
 
 # Install Seamless command line tools
-conda install -c rpbs seamless-cli
+conda env remove -n seamless
+conda create -n seamless -c rpbs -c conda-forge python seamless-cli -y
+conda activate seamless
 ```
 
 ### Getting started
