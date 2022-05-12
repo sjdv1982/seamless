@@ -441,7 +441,9 @@ class DatabaseServer:
                     pass
             key = celltype + "-" + subcelltype
             existing_results = all_results.get(key, [])
-            all_results[key] = existing_results + value
+            new_results = existing_results + value
+            new_results = list(set(new_results))
+            all_results[key] = new_results
             for store in self.stores:
                 if store.readonly:
                     continue
