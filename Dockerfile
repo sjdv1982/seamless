@@ -3,7 +3,7 @@ LABEL author="Sjoerd de Vries <sjoerd.de-vries@inserm.fr>"
 LABEL version="0.8"
 USER root
 COPY requirements.txt requirements.txt
-RUN apt update && apt install -y gfortran curl gdb iputils-ping redis-tools apt-transport-https ca-certificates gnupg-agent software-properties-common r-base
+RUN apt update && apt install -y gfortran curl gdb iputils-ping apt-transport-https ca-certificates gnupg-agent software-properties-common r-base
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository \
    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
    $(lsb_release -cs) \

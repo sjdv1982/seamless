@@ -14,7 +14,7 @@ source:
 
 requirements:
   build:
-    - python==3.8.8
+    - python {{ python }}
     - numpy==1.20.*
     - pip
     - setuptools
@@ -57,7 +57,7 @@ requirements:
     - aiofiles==0.8.*
     #- jupyter-console==6.1.*
     #
-    #- docker==3.7.*
+    #- docker==5.0.*
     #
     #- itables==0.2.*
     #
@@ -69,6 +69,7 @@ requirements:
     - rpy2==3.4.*
     - commentjson==0.9.*
     - jupyter-server-proxy==3.1.0
+    - aiofiles==0.8.*
     - silk
 #test:
 #  imports:
