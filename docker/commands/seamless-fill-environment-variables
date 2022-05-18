@@ -82,6 +82,10 @@ if [ -z ${SEAMLESS_DOCKER_PUBLISH_JUPYTER_PORTS+x} ]; then
   export SEAMLESS_DOCKER_PUBLISH_JUPYTER_PORTS="-p 8888:8888"
 fi
 
+if [ -z ${SEAMLESS_DOCKER_PUBLISH_DEBUG_PORTS+x} ]; then
+  export SEAMLESS_DOCKER_PUBLISH_DEBUG_PORTS="-p 5679:5679"
+fi
+
 printenv | sort | python3 -c '''
 import sys
 for l in sys.stdin.readlines():

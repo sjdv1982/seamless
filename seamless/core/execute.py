@@ -201,7 +201,7 @@ def execute(name, code,
             print("*" * 80) 
             if debugpy is None:
                 raise ModuleNotFoundError("No module named 'debugpy'")      
-            debugpy.listen(("localhost", port))  # listen for incoming DAP client connections
+            debugpy.listen(("0.0.0.0", port))  # listen for incoming DAP client connections
             debugpy.wait_for_client()  # wait for a client to connect
 
         if debug.get("generic_attach"):
