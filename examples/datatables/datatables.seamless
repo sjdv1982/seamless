@@ -251,10 +251,8 @@
       "type": "cell"
     },
     {
-      "celltype": "structured",
+      "celltype": "mixed",
       "checksum": {
-        "buffer": "9293d5f7a1fe5a021ea089caca8ed52e5edb1c74f573f692d7eb730886d6fdd1",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "9293d5f7a1fe5a021ea089caca8ed52e5edb1c74f573f692d7eb730886d6fdd1"
       },
       "datatype": "mixed",

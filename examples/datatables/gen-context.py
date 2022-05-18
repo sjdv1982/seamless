@@ -73,6 +73,7 @@ ctx.calc_bits.pins.a.celltype = "silk"
 ctx.calc_bits.b = ctx.b
 ctx.calc_bits.pins.b.celltype = "silk"
 ctx.bits = ctx.calc_bits
+ctx.bits.celltype = "mixed"
 ctx.compute()
 
 bits = ctx.bits.value
