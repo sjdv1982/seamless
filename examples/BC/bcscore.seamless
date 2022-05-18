@@ -1,4 +1,5 @@
 {
+  "__seamless__": "0.8",
   "connections": [
     {
       "source": [
@@ -125,21 +126,6 @@
     {
       "celltype": "structured",
       "checksum": {
-        "auth": "035c62295bade8d2c76a985c0d1015f4622798c1ae7d4f318cc660aebc691344",
-        "buffer": "035c62295bade8d2c76a985c0d1015f4622798c1ae7d4f318cc660aebc691344",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "035c62295bade8d2c76a985c0d1015f4622798c1ae7d4f318cc660aebc691344"
-      },
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "auto_translate"
-      ],
-      "type": "cell"
-    },
-    {
-      "celltype": "structured",
-      "checksum": {
         "buffer": "ef0b151105ecf660a8ecfa4947652f87b37b9b095d960afd2274f1145853acc6",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "ef0b151105ecf660a8ecfa4947652f87b37b9b095d960afd2274f1145853acc6"
@@ -160,7 +146,6 @@
       "language": "c",
       "mimetype": "text/x-csrc",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "BClib.c",
@@ -187,7 +172,6 @@
         "schema": "b54c98e19ca14701dc7146b0e9fe9b288d9e86d6ac22b85e5db4613451f2042d"
       },
       "compiled": true,
-      "debug": false,
       "file_extension": "c",
       "hash_pattern": {
         "*": "#"
@@ -225,7 +209,6 @@
       },
       "datatype": "mixed",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "r",
         "path": "bcscore-schema.json",
@@ -293,7 +276,9 @@
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
-      "debug": false,
+      "environment": {
+        "conda": "\nchannels:\n- bioconda\n- conda-forge\ndependencies:\n- biopython\n"
+      },
       "hash_pattern": {
         "*": "#"
       },
@@ -319,7 +304,9 @@
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
-      "debug": false,
+      "environment": {
+        "conda": "\nchannels:\n- bioconda\n- conda-forge\ndependencies:\n- biopython\n"
+      },
       "hash_pattern": {
         "*": "#"
       },
@@ -340,7 +327,6 @@
       "language": "python",
       "mimetype": "text/x-python",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "load_pdb.py",

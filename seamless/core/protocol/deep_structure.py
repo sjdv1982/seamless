@@ -372,7 +372,7 @@ def deep_structure_to_value_sync(deep_structure, hash_pattern, buffer_dict, copy
         asyncio.get_event_loop().run_until_complete(fut)
         return fut.result()
 
-    checksums0 = deep_structure_to_checksums(deep_structure, hash_pattern)
+    checksums0 = deep_structure_to_checksums(deep_structure, hash_pattern, with_raw=True)
     value_dict = {}
     for checksum0 in checksums0:
         checksum, is_raw  = checksum0
