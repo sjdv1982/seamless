@@ -6,6 +6,7 @@ from typing import OrderedDict
 import commentjson
 
 hostcwd = os.environ.get("HOSTCWD")
+host_project_dir = os.environ.get("HOST_PROJECT_DIR")
 from .debugmode import docker_container
 
 launch_json_py = {
@@ -52,6 +53,8 @@ def _vscode_init():
     curr_dir = "."
     if hostcwd is not None:
         curr_dir = "/cwd"
+    elif host_project_dir is not None:
+        curr_dir = host_project_dir
     vscode_dir = os.path.join(curr_dir, ".vscode")
     host_vscode_dir = os.path.abspath(vscode_dir)
     if hostcwd is not None:

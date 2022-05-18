@@ -24,7 +24,8 @@ In Visual Studio Code, set breakpoints in this file/directory.""",
 
 python_attach_messages = {
     "vscode": """In "Run and Debug", an entry "{name}" should be present.
-If not, make sure that {host_project_dir} is the primary directory of your VSCode workspace
+If not, make sure that {host_project_dir} is the primary directory of your VSCode workspace.
+If it isn't, please define the HOST_PROJECT_DIR environment variable.
 
 Transformer execution will now be halted until the VSCode debugger attaches itself.
 
@@ -40,6 +41,7 @@ In Visual Studio Code, set breakpoints in this file/directory.
 {object_mount_message}
 In "Run and Debug", an entry "{name}" should be present.
 If not, make sure that {host_project_dir} is the primary directory of your VSCode workspace
+If it isn't, please define the HOST_PROJECT_DIR environment variable.
 
 Transformer execution will now be halted until a SIGUSR1 signal is received.
 Debugging is done in VSCore as follows:
@@ -353,13 +355,17 @@ If this value is None, the default stdout and stderr are used."""
                 debug["python_attach"] = True
                 code_path = os.path.abspath(code_mount["path"])
                 host_path = code_path
-                host_project_dir = os.getcwd()
+                host_project_dir = os.environ.get("HOST_PROJECT_DIR")
                 hostcwd = os.environ.get("HOSTCWD")
                 if hostcwd is not None: # source mapping is needed
                     host_path = os.path.relpath(code_path, "/cwd")
                     host_path = os.path.join(hostcwd, host_path)
-                    host_project_dir = hostcwd
+                    if host_project_dir is None:
+                        host_project_dir = hostcwd
                     debug["source_map"] = [("/cwd", hostcwd)]
+                else:
+                    if host_project_dir is None:
+                        host_project_dir = os.getcwd()
                 debug["exec-identifier"] = code_path
                 msg = python_attach_headers[mode, self._ide].format(
                     host_path=host_path,
@@ -412,14 +418,18 @@ If this value is None, the default stdout and stderr are used."""
             elif node["compiled"]:
                 debug["generic_attach"] = True
                 code_path = os.path.abspath(code_mount["path"])
-                host_path = code_path
-                host_project_dir = os.getcwd()
+                host_path = code_path                
                 hostcwd = os.environ.get("HOSTCWD")
+                host_project_dir = os.environ.get("HOST_PROJECT_DIR")
                 if hostcwd is not None: # source mapping is needed
                     host_path = os.path.relpath(code_path, "/cwd")
                     host_path = os.path.join(hostcwd, host_path)
-                    host_project_dir = hostcwd
+                    if host_project_dir is None:
+                        host_project_dir = hostcwd
                     debug["source_map"] = [("/cwd", hostcwd)]
+                else:
+                    if host_project_dir is None:
+                        host_project_dir = os.getcwd()
                 debug["mounted_module_objects"] = {
                     "main": code_path
                 }
@@ -478,11 +488,16 @@ To create a directory where you can manually execute bash code, do Transformer.d
                     print("Debugger attach is {}".format("ON" if self._attach else "OFF"))
                     debug["direct_print"] = True            
             name = str(tf.path) + " Seamless transformer"
-            debug["name"] = name
-            host_project_dir = os.getcwd()
+            debug["name"] = name            
+            host_project_dir = os.environ.get("HOST_PROJECT_DIR")
             hostcwd = os.environ.get("HOSTCWD")
             if hostcwd is not None:
-                host_project_dir = hostcwd
+                if host_project_dir is None:
+                    host_project_dir = hostcwd
+            else:
+                if host_project_dir is None:
+                    host_project_dir = os.getcwd()
+
             if node["language"] == "python":                
                 debug["python_attach"] = True
                 msg = python_attach_headers[mode, self._ide].format(
