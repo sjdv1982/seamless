@@ -197,23 +197,28 @@ def _convert_reinterpret(checksum, buffer, target_celltype, *, source_celltype):
     if target_celltype == "binary":
         ok = buffer.startswith(MAGIC_NUMPY)
         buffer_cache.update_buffer_info(checksum, "is_numpy", ok)
+        if not ok:
+            exc = "Buffer is not a Numpy buffer"
     else:
         assert target_celltype in ("plain", "text", "python", "ipython", "cson", "yaml")
         try:
             text = buffer.decode().rstrip("\n")
             ok = True
-        except Exception as exc:
-            ok = False
+        except Exception as exc0:
+            exc = exc0
+            ok = False        
         buffer_cache.update_buffer_info(checksum, "is_utf8", ok)
-        if target_celltype == "plain":
-            try:
-                json.loads(text)
-                ok = True
-            except Exception as exc:
-                ok = False
-            buffer_cache.update_buffer_info(checksum, "is_json", ok)
-        else:
-            validate_text(text, target_celltype, "convert_from_buffer")
+        if ok:
+            if target_celltype == "plain":
+                try:
+                    json.loads(text)
+                    ok = True
+                except Exception as exc0:
+                    exc = exc0
+                    ok = False
+                buffer_cache.update_buffer_info(checksum, "is_json", ok)
+            else:
+                validate_text(text, target_celltype, "convert_from_buffer")
     if ok:                
         return checksum
     else:
