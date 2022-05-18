@@ -89,7 +89,7 @@ require.config({
 <script type="text/javascript">
 require(["datatables"], function (datatables) {
     $(document).ready(function () {        
-        var dt_args = {"columnDefs": [{"width": "70px", "targets": "_all"}, {"className": "dt-center", "targets": "_all"}], "data": [[5, 8, 2], [5, 9, 4], [5, 10, 3], [5, 11, 5], [8, 8, 1], [8, 9, 2], [8, 10, 2], [8, 11, 3], [11, 8, 3], [11, 9, 4], [11, 10, 5], [11, 11, 5], [14, 8, 3], [14, 9, 6], [14, 10, 3], [14, 11, 4], [17, 8, 2], [17, 9, 4], [17, 10, 4], [17, 11, 6]]};
+        var dt_args = {"columnDefs": [{"width": "70px", "targets": "_all"}, {"className": "dt-center", "targets": "_all"}], "data": [["<Silk: 5 >", "<Silk: 8 >", "<Silk: 2 >"], ["<Silk: 5 >", "<Silk: 9 >", "<Silk: 4 >"], ["<Silk: 5 >", "<Silk: 10 >", "<Silk: 3 >"], ["<Silk: 5 >", "<Silk: 11 >", "<Silk: 5 >"], ["<Silk: 8 >", "<Silk: 8 >", "<Silk: 1 >"], ["<Silk: 8 >", "<Silk: 9 >", "<Silk: 2 >"], ["<Silk: 8 >", "<Silk: 10 >", "<Silk: 2 >"], ["<Silk: 8 >", "<Silk: 11 >", "<Silk: 3 >"], ["<Silk: 11 >", "<Silk: 8 >", "<Silk: 3 >"], ["<Silk: 11 >", "<Silk: 9 >", "<Silk: 4 >"], ["<Silk: 11 >", "<Silk: 10 >", "<Silk: 5 >"], ["<Silk: 11 >", "<Silk: 11 >", "<Silk: 5 >"], ["<Silk: 14 >", "<Silk: 8 >", "<Silk: 3 >"], ["<Silk: 14 >", "<Silk: 9 >", "<Silk: 6 >"], ["<Silk: 14 >", "<Silk: 10 >", "<Silk: 3 >"], ["<Silk: 14 >", "<Silk: 11 >", "<Silk: 4 >"], ["<Silk: 17 >", "<Silk: 8 >", "<Silk: 2 >"], ["<Silk: 17 >", "<Silk: 9 >", "<Silk: 4 >"], ["<Silk: 17 >", "<Silk: 10 >", "<Silk: 4 >"], ["<Silk: 17 >", "<Silk: 11 >", "<Silk: 6 >"]]};
         dt_args = eval_functions(dt_args);
         table = $('#ad9c9d8a-61c4-415b-a1ac-ba60e64c4d81').DataTable(dt_args);
     });

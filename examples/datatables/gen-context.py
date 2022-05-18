@@ -19,6 +19,7 @@ def validate(self):
     assert self.length > 0
 
 ctx.schema = Cell("plain")
+ctx.translate()
 ctx.link(ctx.a.schema, ctx.schema)
 ctx.a.example.first = 0
 ctx.a.example.step = 0
@@ -68,7 +69,9 @@ print(bits[-3:])
 
 ctx.calc_bits = calc_bits
 ctx.calc_bits.a = ctx.a
+ctx.calc_bits.pins.a.celltype = "silk"
 ctx.calc_bits.b = ctx.b
+ctx.calc_bits.pins.b.celltype = "silk"
 ctx.bits = ctx.calc_bits
 ctx.compute()
 
@@ -80,7 +83,6 @@ def gen_datatable(bits):
     import itables
     itables.to_html = itables.javascript._datatables_repr_
     import pandas as pd
-    bits = bits.unsilk
     df = pd.DataFrame(data=bits, columns=["Factor A", "Factor B", "Bits of A*B"])
     columnDefs = [
         {'width': '70px', 'targets': "_all"}, 

@@ -1,4 +1,5 @@
 {
+  "__seamless__": "0.8",
   "connections": [
     {
       "source": [
@@ -253,6 +254,7 @@
       "celltype": "structured",
       "checksum": {
         "buffer": "9293d5f7a1fe5a021ea089caca8ed52e5edb1c74f573f692d7eb730886d6fdd1",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "9293d5f7a1fe5a021ea089caca8ed52e5edb1c74f573f692d7eb730886d6fdd1"
       },
       "datatype": "mixed",
@@ -268,22 +270,26 @@
       "SCHEMA": null,
       "checksum": {
         "code": "2aeaf924fb27f8d006d25aa2b7f6b104a99f396d2baaf176c2696a89f115337e",
-        "input": "ddb72a588ad24789c8d1b8a0c62a2b616de43b07efbea3fde0dd03f50ae4fc10",
-        "input_buffer": "ddb72a588ad24789c8d1b8a0c62a2b616de43b07efbea3fde0dd03f50ae4fc10",
-        "result": "9293d5f7a1fe5a021ea089caca8ed52e5edb1c74f573f692d7eb730886d6fdd1"
+        "input": "93319dd008ba28e82d5ae7ade497854ed9c696f9be20851fcfd885024f7e4592",
+        "input_buffer": "93319dd008ba28e82d5ae7ade497854ed9c696f9be20851fcfd885024f7e4592",
+        "result": "9293d5f7a1fe5a021ea089caca8ed52e5edb1c74f573f692d7eb730886d6fdd1",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
-      "debug": false,
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "python",
       "path": [
         "calc_bits"
       ],
       "pins": {
         "a": {
-          "celltype": "mixed"
+          "celltype": "silk"
         },
         "b": {
-          "celltype": "mixed"
+          "celltype": "silk"
         }
       },
       "type": "transformer"
@@ -327,21 +333,23 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "21c8e1b2a7a2261236ef28772135826694c223445cfbfe3debad03a4d744e83b",
-        "input": "a633855a74b0d9fbe6f89a76993a389534c5a406e7af5bb4501188dbd200316d",
-        "input_buffer": "a633855a74b0d9fbe6f89a76993a389534c5a406e7af5bb4501188dbd200316d",
-        "result": "18fcc85347d8855b4c44df0a141c46e916cfdec11bf8a701652f4c1c3467c076"
+        "code": "b8b868c9096209863699eae4612cb9cdcea975a6940c9a0f0585c266ac26f0c2",
+        "input": "5c1192cabd1730d8c1d4f0e067b08daf890c1638c38b3057e5f2723a70e4922a",
+        "input_buffer": "5c1192cabd1730d8c1d4f0e067b08daf890c1638c38b3057e5f2723a70e4922a",
+        "result": "18fcc85347d8855b4c44df0a141c46e916cfdec11bf8a701652f4c1c3467c076",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
-      "debug": false,
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "python",
       "path": [
         "gen_datatable"
       ],
       "pins": {
-        "bits": {
-          "celltype": "mixed"
-        }
+        "bits": {}
       },
       "type": "transformer"
     },
@@ -394,7 +402,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "f0abdac1afdb6b57312984a526441c769d257a88fbc91ef53b0b66ab9ff79bd4"
+        "value": "886c745003101649af2d4061e1fde45bc9104761fe46ce1a5c43e0a458434d71"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
