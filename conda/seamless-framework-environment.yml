@@ -1,12 +1,10 @@
 name: seamless-framework
 channels:
-  - rpbs
   - conda-forge
-  - defaults
 dependencies:
   - python=3.8
   - pip
-  - seamless-framework
+  - rpbs::seamless-framework
   - conda=4.12
   - pip:
     - nglview==2.7
