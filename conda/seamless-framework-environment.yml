@@ -1,0 +1,25 @@
+name: seamless-framework
+channels:
+  - rpbs
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - pip
+  - seamless-framework
+  - conda=4.12
+  - pip:
+    - nglview==2.7
+    - snakemake==5.5
+    - cson==0.8
+    - speg==0.3
+    - websockets==9.1
+    - aiohttp_cors==0.7
+    - async_timeout==3.0
+    - jupyter-console==6.1
+    - docker==5.0
+    - itables==0.2
+    - debugpy==1.2
+
+variables:
+    RPY2_CFFI_MODE: ABI
