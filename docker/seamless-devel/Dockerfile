@@ -1,14 +1,6 @@
-FROM jupyter/scipy-notebook@sha256:a891adee079e8c3eee54fef732cd282fe6b06c5fabe1948b9b11e07144526865
+FROM rpbs/seamless-deps
 LABEL author="Sjoerd de Vries <sjoerd.de-vries@inserm.fr>"
 USER root
-COPY requirements.txt requirements.txt
-RUN apt update && apt install -y gfortran curl gdb iputils-ping redis-tools apt-transport-https ca-certificates gnupg-agent software-properties-common 
-RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - && sudo add-apt-repository \
-   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-   $(lsb_release -cs) \
-   stable" && sudo apt update && sudo apt install -y docker-ce-cli
-RUN conda install -c conda-forge r-base r-cairo
-RUN pip install -r requirements.txt && conda install -c rpbs 'silk>=0.1.6' && jupyter-nbextension enable nglview --py --sys-prefix
 RUN mkdir /home/jovyan/software && \
     ln -s /seamless/seamless /home/jovyan/software/seamless && \
     ln -s /seamless/tests /home/jovyan/seamless-tests && \

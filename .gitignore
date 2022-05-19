@@ -1,8 +1,11 @@
 seamless.code-workspace
 .vscode/
 *.pyc
-build/
-dist/
+/build/
+/dist/
+**/build/*.1
+/docker/commands/doc/man/seamless-buffer-cache.zip
+/docker/commands/doc/man/seamless-result-cache.dat
 *.egg-info/
 *.*~
 */.snakemake/

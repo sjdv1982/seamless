@@ -1,0 +1,51 @@
+channels:
+  - rpbs
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - pip
+  - conda=4.12
+  - numpy==1.20.*
+  - requests==2.22.*
+  - cffi==1.14.*
+  - traitlets==5.0.*
+  - ruamel.yaml==0.16.*
+  - ruamel.yaml.clib==0.2.*
+  - jsonschema==3.2.*
+  - aiohttp==3.7.*
+  - multidict==4.7.*
+  - wurlitzer==2.0.*
+  - yarl==1.4.*
+  - pandas==1.2.*
+  - IPython==7.23.*
+  - notebook==6.4.*
+  - tornado==6.1.*
+  - ipykernel==5.5.*
+  - pyzmq==22.0.*
+  - jedi==0.18.*
+  - parso==0.8.*
+  - aiofiles==0.8.*
+  - cython==0.29.*
+  - r-base==4.0.*
+  - r-cairo==1.5_12.*
+  - rpy2==3.4.*
+  - commentjson==0.9.*
+  - jupyter-server-proxy==3.1.0
+  - aiofiles==0.8.*
+  - silk
+  - pip:
+    - nglview==2.7
+    - snakemake==5.5
+    - cson==0.8
+    - speg==0.3
+    - websockets==9.1
+    - aiohttp_cors==0.7
+    - async_timeout==3.0
+    - jupyter-console==6.1
+    - docker==5.0
+    - itables==0.2
+    - debugpy==1.2
+
+variables:
+    RPY2_CFFI_MODE: ABI

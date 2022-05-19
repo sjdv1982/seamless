@@ -9,12 +9,15 @@ result_cache = "seamless-result-cache.dat"
 
 import glob, os
 from seamless.highlevel import Context, Transformer, Cell
-import seamless
+currdir=os.path.dirname(os.path.realpath(__file__))
+print("MAN DOC CURRDIR", currdir)
+os.chdir(currdir)
 
 docfiles0 = glob.glob("{}/*.md".format(docdir))
 docfiles = [os.path.splitext(
               os.path.split(f)[1]
             )[0] for f in docfiles0]
+print("DOCFILES", docfiles)
 
 # TODO: make a real API for this
 from seamless.core.cache.transformation_cache import transformation_cache
@@ -36,7 +39,7 @@ if os.path.exists(buffer_cache):
 
 ctx.pandoc = """
 ln -s inputfile input.md
-pandoc --standalone --to man input.md -o /dev/stdout
+pandoc --standalone --to man input.md -o RESULT
 """
 for f in docfiles:
     setattr(ctx, f, Context())
@@ -53,6 +56,10 @@ for f in docfiles:
     sctx.result.mount("build/{}.1".format(f), "w")
 
 ctx.compute()
+print("Exception:")
+print(ctx["seamless-bash"].tf.exception)
+print(ctx["seamless-bash"].result.value)
+print()
 
 ctx.save_zip(buffer_cache)
 
