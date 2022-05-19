@@ -1,0 +1,1 @@
+docker build . -t rpbs/seamless-minimal -f seamless-minimal/Dockerfile
