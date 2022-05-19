@@ -1,4 +1,5 @@
 {
+  "__seamless__": "0.8",
   "connections": [
     {
       "source": [
@@ -35,7 +36,7 @@
     {
       "celltype": "plain",
       "checksum": {
-        "value": "7fe4adc8400af08efa2e47475b11a3ced519635f1d7b9242866d04bd866130fc"
+        "value": "d31923282290a41f9e2fcda93feb36aafdc11827f9bb4b63e11b2c099cf17325"
       },
       "datatype": "mixed",
       "mount": {
@@ -57,11 +58,11 @@
         "code": "c7345fa9caff8986101b28509b2e32097c5c0f4a154f3f108dc853fc3fe9e7e8",
         "input": "a5ec05ec2c27aee6af32664953c6747327f0c13e9fe6dba872cb59d7ef65e404",
         "input_buffer": "a5ec05ec2c27aee6af32664953c6747327f0c13e9fe6dba872cb59d7ef65e404",
-        "result": "f71463311ac046bb9c5ccc76dde8c833b598f379f71d4411ecfc811a9ee051f4",
+        "result": null,
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "13eaec72ac751c6131e4bd1d7a608875c8ccb7053df645f9ec9b7fd5c305753c"
       },
       "compiled": false,
-      "debug": false,
       "hash_pattern": {
         "*": "#"
       },
@@ -78,19 +79,15 @@
         "add"
       ],
       "pins": {
-        "a": {
-          "celltype": "mixed"
-        },
-        "b": {
-          "celltype": "mixed"
-        }
+        "a": {},
+        "b": {}
       },
       "type": "transformer"
     },
     {
       "celltype": "plain",
       "checksum": {
-        "value": "c2f4cccc4cff9eae7dd14ac75a6a01d23338c2007d38fdb4d6fd127a15c773a6"
+        "value": "8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad"
       },
       "datatype": "mixed",
       "mount": {
