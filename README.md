@@ -44,10 +44,10 @@ Then, installation is as follows:
 docker pull rpbs/seamless
 
 # Install Seamless command line tools
-conda env remove -n seamless
 conda create -n seamless -c rpbs -c conda-forge python seamless-cli -y
 conda activate seamless
 ```
+
 
 ### Getting started
 
@@ -397,14 +397,19 @@ Alternative installations
 
 ### Installation under conda
 
+```
+conda config --env --set channel_priority strict
+conda env create --file https://raw.githubusercontent.com/sjdv1982/seamless/stable/conda/seamless-framework-environment.yml
+```
+NOTE: installing gcc, g++, gfortran, docker-ce-cli is user's own responsibility
+
 **NOTE: this is EXPERIMENTAL**. The main application is running Seamless under OSX.
 
 ```
-conda create -n seamless
+  
+conda create -n seamless-framework -c rpbs -c conda-forge 'python==3.8.8' seamless-framework pip
 conda activate seamless
-conda install 'python==3.8.8' pip
 export RPY2_CFFI_MODE=ABI
-pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/stable/requirements.txt
 pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/stable/requirements-extra.txt
 conda install -c rpbs  -c conda-forge silk seamless-framework
 conda install -c conda-forge matplotlib psutil
@@ -416,15 +421,19 @@ Don't install the Seamless command line tools. Instead of commands like `seamles
 
 ### Installation under Singularity
 
+TODO: update!
+minimal: 
+Singularity: jobless commands...
+
 **NOTE: this is EXPERIMENTAL.** The main application for this is to run Seamless transformations
 and database adapters in an HPC environment. Launching e.g. Jupyter or Docker under Singularity is unlikely to work.
 
 ```
 wget https://raw.githubusercontent.com/sjdv1982/seamless/master/docker/seamless-simple/Singularity  # or download it manually
-sudo singularity build seamless.simg Singularity
+sudo singularity build seamless.sif Singularity
 ```
 
-A bash shell in a new Seamless container can then be started using e.g. `singularity run -c --cleanenv seamless.simg`.
+A bash shell in a new Seamless container can then be started using e.g. `singularity run -c --cleanenv seamless.sif`.
 If you run without `-c`, be sure to do `export PATH=/opt/conda/bin:$PATH` as the first command.
 
 
