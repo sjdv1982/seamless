@@ -34,19 +34,16 @@ Seamless does not run under Windows.
 Installation using Docker
 =========================
 
-First, you must [install Docker](https://docs.docker.com/get-docker/)
+- First, you must [install Docker](https://docs.docker.com/get-docker/)
 and [(mini)conda](https://docs.conda.io/en/latest/miniconda.html).
 
-Then, installation is as follows:
+- Pull the Docker image with `docker pull rpbs/seamless`
 
-```
-# Pull docker image
-docker pull rpbs/seamless
+- Install the Seamless command line tools. 
 
-# Install Seamless command line tools
-conda create -n seamless -c rpbs -c conda-forge python seamless-cli -y
-conda activate seamless
-```
+    It is best to create a new environment "seamless", and do `conda activate seamless` whenever you are using Seamless. In that case, do as follows: 
+    `conda create -n seamless -c rpbs -c conda-forge seamless-cli`
+    Or you can install the Seamless command tools into your current conda environment: `conda install -c rpbs seamless-cli`
 
 
 ### Getting started
@@ -397,10 +394,18 @@ Alternative installations
 
 ### Installation under conda
 
+`conda env create --force --file https://raw.githubusercontent.com/sjdv1982/seamless/stable/conda/seamless-framework-environment.yml`
+
+Solving the environment typically takes a few minutes. 
+However, it can take very much longer (i.e. forever) if your conda channel priority is not strict. The following commands enforce strict channel priority during installation:
+
 ```
+conda create --no-default-packages --no-pin --force -n seamless-framework -y
+conda activate seamless-framework
 conda config --env --set channel_priority strict
-conda env create --file https://raw.githubusercontent.com/sjdv1982/seamless/stable/conda/seamless-framework-environment.yml
+conda env update --file https://raw.githubusercontent.com/sjdv1982/seamless/stable/conda/seamless-framework-environment.yml
 ```
+
 NOTE: installing gcc, g++, gfortran, docker-ce-cli is user's own responsibility
 
 **NOTE: this is EXPERIMENTAL**. The main application is running Seamless under OSX.

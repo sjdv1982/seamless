@@ -48,7 +48,7 @@ injection3.py
 injection4.py: the output is approximate, depends on exact timings, see also [1]
 injection5.py: see above
 simple-share.py
-transformation-checksum.sh: run with Seamless database
+transformation-checksum.sh: run with Seamless database. If not in the Docker image, set SEAMLESS_SCRIPT_DIR
 transformation-raw.py
 transformation-raw-ipython.py
 meta.py
@@ -72,6 +72,7 @@ macro3.py
 pin-as.py
 pin-filesystem.sh: run as i=pin-filesystem; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
   Make sure that the database is not running
+  If not in the Docker image, set SEAMLESS_TOOLS_DIR to <seamless-tools-git>/tools
 checksum-cell.py
 structured_cell/simple-deepcell.py
 structured_cell/simple-deepcell-rawbuffer.py
@@ -113,6 +114,7 @@ communion-peer[12].sh:
      seamless-bash
      ./communion-peer1.sh > test-outputs/communion-peer1.out 2>&1
      In another seamless-bash terminal, run:
+     (if not inside Docker, first do "export SEAMLESS_DOCKER_HOST_IP=localhost")"
      ./communion-peer2.sh > test-outputs/communion-peer2.out 2>&1
      then Ctrl-C communion-peer1.sh
      The output is available in communion-peer[12].out
