@@ -1,5 +1,5 @@
 {% set name = "seamless-framework" %}
-{% set version = "0.8" %}
+{% set version = "0.8.1" %}
 
 package:
   name: "{{ name|lower }}"
@@ -45,7 +45,7 @@ requirements:
     #
     - multidict==4.7.*
     - wurlitzer==2.0.*
-    - yarl==1.4.*
+    - yarl==1.7.*
     - pandas==1.2.*
     - IPython==7.23.*
     - notebook==6.4.*

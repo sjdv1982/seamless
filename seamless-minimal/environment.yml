@@ -14,7 +14,7 @@ dependencies:
   - jsonschema=3.2.*
   - requests=2.22.*
   - wurlitzer=2.0.*
-  - yarl=1.4.*
+  - yarl=1.7.*
   - psutil=5.8.*
   - pandas=1.2.*
   - scipy=1.6.*
