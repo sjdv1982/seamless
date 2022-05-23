@@ -371,8 +371,12 @@ ctx.add.code.value
 
 More examples
 =============
+Run `seamless-jupyter-trusted`.
+
+Inside the notebook file tree, browse `seamless-examples`. 
 <https://github.com/sjdv1982/seamless/tree/master/examples>
 
+Inside the notebook file tree, browse `seamless-tests/highlevel`. 
 <https://github.com/sjdv1982/seamless/tree/master/tests/highlevel>
 
 ### Documentation: <http://sjdv1982.github.io/seamless>
