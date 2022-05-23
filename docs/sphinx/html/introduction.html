@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Seamless: a cell-based reactive programming framework &#8212; Seamless 0.8 documentation</title>
+    <title>Seamless: a cell-based interactive workflow framework &#8212; Seamless 0.8 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/nature.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
@@ -33,7 +33,7 @@
           <a href="index.html" title="Welcome to Seamless’s documentation!"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.8 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Seamless: a cell-based reactive programming framework</a></li> 
+        <li class="nav-item nav-item-this"><a href="">Seamless: a cell-based interactive workflow framework</a></li> 
       </ul>
     </div>  
 
@@ -42,12 +42,12 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="seamless-a-cell-based-reactive-programming-framework">
-<h1>Seamless: a cell-based reactive programming framework<a class="headerlink" href="#seamless-a-cell-based-reactive-programming-framework" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="seamless-a-cell-based-interactive-workflow-framework">
+<h1>Seamless: a cell-based interactive workflow framework<a class="headerlink" href="#seamless-a-cell-based-interactive-workflow-framework" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb"><img alt="Binder" src="https://mybinder.org/badge_logo.svg" /></a></p>
-<p>Seamless is a framework to set up protocols (workflows) and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations, and all cells can be edited interactively.</p>
+<p>Seamless is a framework to set up protocols (workflows) and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations. All cells and computations can be created, edited and connected interactively.</p>
 <p>The main application domains are data science, scientific computing, software prototyping, and interactive web services.</p>
-<p>Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible. Unlike other workflow systems, Seamless graphs are self-contained and do not depend on the content of external files, URLs, identifiers, version numbers, or other kinds of metadata.</p>
+<p>Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible.</p>
 <div class="section" id="documentation-http-sjdv1982-github-io-seamless">
 <h2>Documentation: <a class="reference external" href="http://sjdv1982.github.io/seamless">http://sjdv1982.github.io/seamless</a><a class="headerlink" href="#documentation-http-sjdv1982-github-io-seamless" title="Permalink to this headline">¶</a></h2>
 </div>
@@ -58,31 +58,16 @@
 thanks to the Binder project. Click on the badge below:</p>
 <p><a class="reference external" href="https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb"><img alt="Binder" src="https://mybinder.org/badge_logo.svg" /></a></p>
 </div>
-<div class="section" id="supported-platforms">
-<h1>Supported platforms<a class="headerlink" href="#supported-platforms" title="Permalink to this headline">¶</a></h1>
-<p>Seamless is meant to run from inside a Docker container. This is easy under Linux.</p>
-<p>This will not work under Mac OSX and Windows, because Docker support for networking is incomplete.</p>
-<p>Under Mac OSX, you can now install Seamless without Docker, into a conda environment (see Alternative installations).</p>
-<p>Seamless does not run under Windows.</p>
+<div class="section" id="quick-installation">
+<h1>Quick installation<a class="headerlink" href="#quick-installation" title="Permalink to this headline">¶</a></h1>
+<p>First, <a class="reference external" href="https://docs.docker.com/get-docker/">install Docker</a>
+and <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">miniconda</a>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">pull</span> <span class="n">rpbs</span><span class="o">/</span><span class="n">seamless</span>
+<span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">seamless</span> <span class="o">-</span><span class="n">c</span> <span class="n">rpbs</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">seamless</span><span class="o">-</span><span class="n">cli</span> <span class="o">-</span><span class="n">y</span>
+<span class="n">conda</span> <span class="n">activate</span> <span class="n">seamless</span>
+</pre></div>
 </div>
-<div class="section" id="installation-using-docker">
-<h1>Installation using Docker<a class="headerlink" href="#installation-using-docker" title="Permalink to this headline">¶</a></h1>
-<ul>
-<li><p>First, you must <a class="reference external" href="https://docs.docker.com/get-docker/">install Docker</a>
-and <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">(mini)conda</a>.</p></li>
-<li><p>Pull the Docker image with <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">pull</span> <span class="pre">rpbs/seamless</span></code></p></li>
-<li><p>Install the Seamless command line tools.</p>
-<p>It is best to create a new environment “seamless”, and do <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code> whenever you are using Seamless. This is done as follows:
-<code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">create</span> <span class="pre">-n</span> <span class="pre">seamless</span> <span class="pre">-c</span> <span class="pre">rpbs</span> <span class="pre">-c</span> <span class="pre">conda-forge</span> <span class="pre">seamless-cli</span></code>
-Or you can install the Seamless command tools into your current conda environment: <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">-c</span> <span class="pre">rpbs</span> <span class="pre">-c</span> <span class="pre">conda-forge</span> <span class="pre">seamless-cli</span></code></p>
-</li>
-</ul>
-<div class="section" id="getting-started">
-<h2>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
-<p>The command <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code> launches an IPython terminal inside a
-Seamless Docker container.</p>
-<p><code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code> does the same for Jupyter Notebook.</p>
-</div>
+<p>For more details, see <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/master/installation.md">Installation</a></p>
 </div>
 <div class="section" id="basic-example">
 <h1>Basic example<a class="headerlink" href="#basic-example" title="Permalink to this headline">¶</a></h1>
@@ -411,48 +396,6 @@ Seamless Docker container.</p>
 </ul>
 </div>
 </div>
-<div class="section" id="alternative-installations">
-<h1>Alternative installations<a class="headerlink" href="#alternative-installations" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="installation-under-conda">
-<h2>Installation under conda<a class="headerlink" href="#installation-under-conda" title="Permalink to this headline">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">env</span> <span class="pre">create</span> <span class="pre">--force</span> <span class="pre">--file</span> <span class="pre">https://raw.githubusercontent.com/sjdv1982/seamless/stable/conda/seamless-framework-environment.yml</span></code></p>
-<p>Solving the environment typically takes a few minutes.
-However, it can take very much longer (i.e. forever) if your conda channel priority is not strict. The following commands enforce strict channel priority during installation:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">--</span><span class="n">no</span><span class="o">-</span><span class="n">default</span><span class="o">-</span><span class="n">packages</span> <span class="o">--</span><span class="n">no</span><span class="o">-</span><span class="n">pin</span> <span class="o">--</span><span class="n">force</span> <span class="o">-</span><span class="n">n</span> <span class="n">seamless</span><span class="o">-</span><span class="n">framework</span> <span class="o">-</span><span class="n">y</span>
-<span class="n">conda</span> <span class="n">activate</span> <span class="n">seamless</span><span class="o">-</span><span class="n">framework</span>
-<span class="n">conda</span> <span class="n">config</span> <span class="o">--</span><span class="n">env</span> <span class="o">--</span><span class="nb">set</span> <span class="n">channel_priority</span> <span class="n">strict</span>
-<span class="n">conda</span> <span class="n">env</span> <span class="n">update</span> <span class="o">--</span><span class="n">file</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">raw</span><span class="o">.</span><span class="n">githubusercontent</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">sjdv1982</span><span class="o">/</span><span class="n">seamless</span><span class="o">/</span><span class="n">stable</span><span class="o">/</span><span class="n">conda</span><span class="o">/</span><span class="n">seamless</span><span class="o">-</span><span class="n">framework</span><span class="o">-</span><span class="n">environment</span><span class="o">.</span><span class="n">yml</span>
-</pre></div>
-</div>
-<p>NOTE: installing gcc, g++, gfortran, docker-ce-cli is user’s own responsibility</p>
-<p><strong>NOTE: this is EXPERIMENTAL</strong>. The main application is running Seamless under OSX.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  
-<span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">seamless</span><span class="o">-</span><span class="n">framework</span> <span class="o">-</span><span class="n">c</span> <span class="n">rpbs</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="s1">&#39;python==3.8.8&#39;</span> <span class="n">seamless</span><span class="o">-</span><span class="n">framework</span> <span class="n">pip</span>
-<span class="n">conda</span> <span class="n">activate</span> <span class="n">seamless</span>
-<span class="n">export</span> <span class="n">RPY2_CFFI_MODE</span><span class="o">=</span><span class="n">ABI</span>
-<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">raw</span><span class="o">.</span><span class="n">githubusercontent</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">sjdv1982</span><span class="o">/</span><span class="n">seamless</span><span class="o">/</span><span class="n">stable</span><span class="o">/</span><span class="n">requirements</span><span class="o">-</span><span class="n">extra</span><span class="o">.</span><span class="n">txt</span>
-<span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">rpbs</span>  <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">silk</span> <span class="n">seamless</span><span class="o">-</span><span class="n">framework</span>
-<span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">matplotlib</span> <span class="n">psutil</span>
-<span class="n">conda</span> <span class="n">install</span> <span class="n">conda</span>
-</pre></div>
-</div>
-<p>Don’t install the Seamless command line tools. Instead of commands like <code class="docutils literal notranslate"><span class="pre">seamless-bash</span></code>, <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code>, <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>, simply do <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code> and type <code class="docutils literal notranslate"><span class="pre">python</span></code>, <code class="docutils literal notranslate"><span class="pre">ipython</span></code> or <code class="docutils literal notranslate"><span class="pre">jupyter</span> <span class="pre">notebook</span></code>. The source code of the Seamless command line tools is at <code class="docutils literal notranslate"><span class="pre">https://github.com/sjdv1982/seamless/tree/master/docker/commands</span></code>.</p>
-</div>
-<div class="section" id="installation-under-singularity">
-<h2>Installation under Singularity<a class="headerlink" href="#installation-under-singularity" title="Permalink to this headline">¶</a></h2>
-<p>TODO: update!
-minimal:
-Singularity: jobless commands…</p>
-<p><strong>NOTE: this is EXPERIMENTAL.</strong> The main application for this is to run Seamless transformations
-and database adapters in an HPC environment. Launching e.g. Jupyter or Docker under Singularity is unlikely to work.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">wget</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">raw</span><span class="o">.</span><span class="n">githubusercontent</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">sjdv1982</span><span class="o">/</span><span class="n">seamless</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">docker</span><span class="o">/</span><span class="n">seamless</span><span class="o">-</span><span class="n">simple</span><span class="o">/</span><span class="n">Singularity</span>  <span class="c1"># or download it manually</span>
-<span class="n">sudo</span> <span class="n">singularity</span> <span class="n">build</span> <span class="n">seamless</span><span class="o">.</span><span class="n">sif</span> <span class="n">Singularity</span>
-</pre></div>
-</div>
-<p>A bash shell in a new Seamless container can then be started using e.g. <code class="docutils literal notranslate"><span class="pre">singularity</span> <span class="pre">run</span> <span class="pre">-c</span> <span class="pre">--cleanenv</span> <span class="pre">seamless.sif</span></code>.
-If you run without <code class="docutils literal notranslate"><span class="pre">-c</span></code>, be sure to do <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PATH=/opt/conda/bin:$PATH</span></code> as the first command.</p>
-</div>
-</div>
 <div class="section" id="more-examples">
 <h1>More examples<a class="headerlink" href="#more-examples" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/master/examples">https://github.com/sjdv1982/seamless/tree/master/examples</a></p>
@@ -472,16 +415,12 @@ If you run without <code class="docutils literal notranslate"><span class="pre">
   <div>
     <h3><a href="index.html">Table of Contents</a></h3>
     <ul>
-<li><a class="reference internal" href="#">Seamless: a cell-based reactive programming framework</a><ul>
+<li><a class="reference internal" href="#">Seamless: a cell-based interactive workflow framework</a><ul>
 <li><a class="reference internal" href="#documentation-http-sjdv1982-github-io-seamless">Documentation: http://sjdv1982.github.io/seamless</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#try-out-seamless">Try out Seamless</a></li>
-<li><a class="reference internal" href="#supported-platforms">Supported platforms</a></li>
-<li><a class="reference internal" href="#installation-using-docker">Installation using Docker</a><ul>
-<li><a class="reference internal" href="#getting-started">Getting started</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#quick-installation">Quick installation</a></li>
 <li><a class="reference internal" href="#basic-example">Basic example</a><ul>
 <li><a class="reference internal" href="#import-seamless-in-ipython-or-jupyter">1. Import Seamless in IPython or Jupyter</a></li>
 <li><a class="reference internal" href="#set-up-a-simple-seamless-context">2. Set up a simple Seamless context</a></li>
@@ -493,11 +432,6 @@ If you run without <code class="docutils literal notranslate"><span class="pre">
 <li><a class="reference internal" href="#save-the-entire-state-of-the-context">8. Save the entire state of the context</a></li>
 <li><a class="reference internal" href="#in-a-new-notebook-ipython-console">9. In a new notebook / IPython console:</a></li>
 <li><a class="reference internal" href="#additional-features">Additional features</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#alternative-installations">Alternative installations</a><ul>
-<li><a class="reference internal" href="#installation-under-conda">Installation under conda</a></li>
-<li><a class="reference internal" href="#installation-under-singularity">Installation under Singularity</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#more-examples">More examples</a><ul>
@@ -554,7 +488,7 @@ If you run without <code class="docutils literal notranslate"><span class="pre">
           <a href="index.html" title="Welcome to Seamless’s documentation!"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.8 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Seamless: a cell-based reactive programming framework</a></li> 
+        <li class="nav-item nav-item-this"><a href="">Seamless: a cell-based interactive workflow framework</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
