@@ -18,11 +18,11 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Seamless'
-copyright = '2016-2021, Sjoerd de Vries'
+copyright = '2016-2022, INSERM and code contributors'
 author = 'Sjoerd de Vries'
 
 # The full version, including alpha/beta/rc tags
-release = '0.5'
+release = '0.8'
 
 
 # -- General configuration ---------------------------------------------------

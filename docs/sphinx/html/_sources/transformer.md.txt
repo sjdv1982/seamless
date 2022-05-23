@@ -11,13 +11,19 @@ transformer `ctx.tf`, bound to context `ctx`.
 The inputs of a transformer are declared as *pins*. If `ctx.tf` does not have a pin `x`,
 then `ctx.tf.x = 10` creates a new pin `x` with the value 10. If it does have a pin `x`, it assigns the value 10 to it. A pin can also be connected to a cell `ctx.c` using `ctx.tf.x = ctx.c`.
 
-There is one special pin that always exists: `ctx.tf.code`. This pin defined the source code of the transformer, in the programming language defined by `ctx.tf.language`. Depending on the programming language, other special pins may exist as well (see below).
-
-Pin attributes can be accessed using `ctx.tf.pins`, e.g `ctx.tf.pins.x` for pin `x`. The celltype of a pin `x` can be changed using `ctx.tf.pins.x.celltype` . Pin `x` can be deleted using `del ctx.tf.pins.x` (the next version of Seamless will support `del ctx.tf.x`).
+Pin attributes can be accessed using `ctx.tf.pins`, e.g `ctx.tf.pins.x` for pin `x`. The celltype of a pin `x` can be changed using `ctx.tf.pins.x.celltype` . Pin `x` can be deleted using `del ctx.tf.pins.x` or `del ctx.tf.x`.
 
 Pins can be mounted to files, just like cells can. The same restrictions apply regarding dependent values and celltype. See the documentation of Cell for more details.
 
 Newly created/deleted/connected/mounted pins require a re-translation of the context to take effect. This is also the case for a change in pin celltype.
+
+### Alternative pin syntax
+As an alternative pin syntax, you can also use `ctx.tf["x"] = 10`.
+This allows pins with names that are not valid Python attributes, such as `ctx.tf["file.txt"] = 10`.
+
+### Code pin
+
+There is one special pin that always exists: `ctx.tf.code`. This pin defined the source code of the transformer, in the programming language defined by `ctx.tf.language`. Depending on the programming language, other special pins may exist as well (see below).
 
 ## Transformer execution
 
@@ -82,19 +88,53 @@ Bash and Docker transformers have `ctx.tf.language` set to "bash" and "docker".
 In both cases, `ctx.tf.code` is written in bash.
 The bash code will have access to every input pin stored as a file of the same name.
 Small inputs are also available as a bash variable of the same name.
-The bash code is literally executed under bash, Seamless does not perform parsing or substitution of any kind.
-After execution, Seamless expects that a file with the name `RESULT` has been created.
-This file must contain the result of the transformation.
-If multiple files are created (NOTE: for the next version of Seamless, `RESULT` may be a directory as well).
+You can use the alternative pin syntax to specify input pins that will be stored as a file
+with an extension: `ctx.tf["inputfile.txt"] = ctx.inputfile`, where `ctx.inputfile` is a cell.
 
-After execution, all files are deleted.
+Execution takes place in a temporary directory, that is cleaned up afterwards. The bash code is literally executed under bash, Seamless does not perform parsing or substitution of any kind.
+
+After execution, Seamless expects that a file or directory with the name `RESULT` has been created.
+This file/directory must contain the result of the transformation. This result will be assigned
+to the result pin (`ctx.tf.result`). In case of a result directory, the result will be a dict
+where the keys are the original file names within the `RESULT` directory and the values are the
+contents of those files. To get the individual result file values, use subcells (see the Cell documentation for more details). For example:
+```python
+ctx.tf = Transformer()
+ctx.tf.language = "bash"
+ctx.tf.a = 5
+ctx.tf["file.txt"] = "test"
+ctx.tf.code = """
+mkdir RESULT
+seq $a > RESULT/a.list
+mv file.txt RESULT
+"""
+ctx.result = ctx.tf.result
+ctx.alist = ctx.result["a.list"]
+ctx.alist.celltype = "text"
+ctx.filetxt = ctx.result["file.txt"]
+ctx.filetxt.celltype = "text"
+await ctx.computation()
+print(ctx.alist.value)
+print()
+print(ctx.filetxt.value)
+```
+
+```
+1
+2
+3
+4
+5
+
+test
+```
 
 Docker transformers are identical to bash transformers, except for the extra pin `ctx.tf.docker_image`. Note that to execute Docker transformer under standard Seamless
 (i.e. without configuring job servants to delegate the work), you will need to expose the Docker socket to Seamless, e.g using `seamless-bash-trusted` or `seamless-jupyter-trusted`.
 
 An example of a bash transformer is [here](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py). An example of a Docker transformer is [here](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py).
 
-Note that bash/docker transformer are executed in a separate execution directory, they have no access to the file system available to `ctx`. The execution directory is deleted after execution.
+Note that bash/docker transformer are executed in a separate temporary execution directory, they have no access to the file system available to `ctx`. The execution directory is deleted after execution.
 Also, the files inside this directory have file names that correspond only to the name of the transformer pins. There is also absolutely no relation with the cells to which these are connected. There is also no relation between these file names and the file names under which cells/pins are mounted or shared. This is demonstrated using the following example code:
 
 ```python

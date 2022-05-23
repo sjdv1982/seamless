@@ -57,8 +57,8 @@ def new_transformer(ctx, path, code, pins, hash_pattern={"*": "#"}):
 class Transformer(Base, HelpMixin):
     """Transforms input values to a result value
 
-    See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for documentation
-    """
+See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for documentation
+"""
     _temp_code = None
     _temp_pins = None
     def __init__(self, *, parent=None, path=None, code=None, pins=None, hash_pattern={"*": "#"}):
@@ -265,11 +265,15 @@ You can set this dictionary directly, or you may assign .meta to a cell
     @property
     def docker_image(self):
         """Defines the Docker image in which a transformer should run
-        Getting this property is syntactic sugar for:
-          Transformer.environment.get_docker()["name"]
-        Setting this property is more-or-less syntactic sugar for:
-          Transformer.environment.set_docker({"name": ...})
-        """
+Getting this property is syntactic sugar for:
+
+`Transformer.environment.get_docker()["name"]`
+
+Setting this property is more-or-less syntactic sugar for:
+
+`Transformer.environment.set_docker({"name": ...})`
+
+"""
         im = self.environment.get_docker()
         if im is None:
             return None

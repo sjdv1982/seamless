@@ -41,9 +41,9 @@ and [(mini)conda](https://docs.conda.io/en/latest/miniconda.html).
 
 - Install the Seamless command line tools. 
 
-    It is best to create a new environment "seamless", and do `conda activate seamless` whenever you are using Seamless. In that case, do as follows: 
+    It is best to create a new environment "seamless", and do `conda activate seamless` whenever you are using Seamless. This is done as follows: 
     `conda create -n seamless -c rpbs -c conda-forge seamless-cli`
-    Or you can install the Seamless command tools into your current conda environment: `conda install -c rpbs seamless-cli`
+    Or you can install the Seamless command tools into your current conda environment: `conda install -c rpbs -c conda-forge seamless-cli`
 
 
 ### Getting started

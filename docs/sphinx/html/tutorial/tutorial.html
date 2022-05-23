@@ -1,0 +1,548 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tutorial &#8212; Seamless 0.8 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/nature.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Contexts" href="../context.html" />
+    <link rel="prev" title="Seamless: a cell-based reactive programming framework" href="../introduction.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../context.html" title="Contexts"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../introduction.html" title="Seamless: a cell-based reactive programming framework"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Seamless 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Tutorial</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="tutorial">
+<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<!-- TODO: integrate new_project.md --></div>
+<div class="section" id="part-a-getting-started">
+<h1>Part A. Getting started<a class="headerlink" href="#part-a-getting-started" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="a1-how-to-use-seamless">
+<h2>A1. How to use Seamless<a class="headerlink" href="#a1-how-to-use-seamless" title="Permalink to this headline">¶</a></h2>
+<p>Seamless is meant to bring together …
+Intro:</p>
+<ul class="simple">
+<li><p>Seamless CLI</p></li>
+<li><p>example (link to simple cells) + status</p></li>
+<li><p>new project + status + web form (link to C5.)</p></li>
+<li><p>Interactive programming, interactive workflows.
+Blurring between programmer and user.
+More like Jupyter than like NextFlow (link)</p></li>
+</ul>
+<p>In-depth (no pre-requisites):</p>
+<ul class="simple">
+<li><p>run from conda environment</p></li>
+<li><p>Docker commands</p></li>
+<li><p>link: files are bad, database, job manager</p></li>
+</ul>
+</div>
+<div class="section" id="a2-getting-help">
+<h2>A2. Getting help<a class="headerlink" href="#a2-getting-help" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Link to reference documentation.</p></li>
+<li><p>Accessing the help system</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="part-b-seamless-basics">
+<h1>Part B. Seamless basics<a class="headerlink" href="#part-b-seamless-basics" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="b1-simple-cells-celltypes-and-checksums">
+<h2>B1. Simple cells, celltypes and checksums<a class="headerlink" href="#b1-simple-cells-celltypes-and-checksums" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Text cells</p></li>
+<li><p>Plain cells: str, float, int, bool</p></li>
+<li><p>Binary cells: numpy</p></li>
+<li><p>Mixed cells</p></li>
+</ul>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>.set, .observe</p></li>
+<li><p>Checksums and buffers: async. link to interactive plumbing.
+ctx.resolve</p></li>
+<li><p>Conversion</p></li>
+<li><p>Pin celltypes: link to transformers, libraries</p></li>
+<li><p>Code cells, cson, yaml
+(link to mounting, link to semantic checksums)</p></li>
+<li><p>scratch</p></li>
+<li><p>Pin as_ attribute</p></li>
+</ul>
+<p>In-depth:</p>
+<ul class="simple">
+<li><p>The illusion of values (link to fingertips)</p></li>
+<li><p>Subcelltypes</p></li>
+<li><p>Semantic checksums: code, cson, yaml</p></li>
+<li><p>Checksum cells (link to Structured cells::Deep cells)</p></li>
+</ul>
+</div>
+<div class="section" id="b2-transformers-and-transformations">
+<h2>B2. Transformers and transformations<a class="headerlink" href="#b2-transformers-and-transformations" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Python transformers</p></li>
+<li><p>.inp and .result (link to structured cells)</p></li>
+<li><p>Bash transformers</p>
+<ul>
+<li><p>RESULT file or directory</p></li>
+<li><p>filedict/filelist subcelltype TODO</p></li>
+</ul>
+</li>
+<li><p>Transformers in IPython and R</p></li>
+</ul>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>Docker (link to environments)</p></li>
+<li><p>Compiled transformers:</p>
+<ul>
+<li><p>header, integrator, executor</p></li>
+<li><p>main_module multiple files (link to module)</p></li>
+</ul>
+</li>
+<li><p>Meta parameters (computation times etc.)</p></li>
+<li><p>Transformations and checksums (link to universal delocalized computation)</p></li>
+</ul>
+<p>In-depth:</p>
+<ul class="simple">
+<li><p>Link to polyglot</p></li>
+<li><p>Hacking on bash/compiled transformers (not interactively)</p></li>
+<li><p>Changing the translation machinery (not interactively)</p></li>
+<li><p>Irreproducible transformers (link to determinism)</p></li>
+</ul>
+</div>
+<div class="section" id="b3-interactive-plumbing">
+<h2>B3. Interactive plumbing<a class="headerlink" href="#b3-interactive-plumbing" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Contexts and subcontexts</p></li>
+<li><p>Dot and bracket syntax</p></li>
+<li><p>Children, tab completion in IPython</p></li>
+<li><p>Dependency graph and cancel</p></li>
+<li><p>The .status attribute</p></li>
+<li><p>.exception</p></li>
+<li><p>logs</p></li>
+<li><p>Translate and compute and asynchronous. Link to “checksums and buffers”</p></li>
+<li><p>Link to web status (point out: if using project)</p></li>
+<li><p>Loading from/saving to graph/zip/vault</p></li>
+<li><p>Point to beginner’s gotchas</p></li>
+</ul>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>Independent vs dependent: history doesn’t matter, creating a new program</p></li>
+<li><p>bidirectional link</p></li>
+<li><p>Downstream dependency</p></li>
+<li><p>preliminary, progress</p></li>
+<li><p>clearing exceptions</p></li>
+</ul>
+<p>In-depth:</p>
+<ul class="simple">
+<li><p>Fingertipping, cache misses and irreproducibility (link to transformer)</p></li>
+<li><p>Resolving cycles</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="part-c-building-interactive-workflows">
+<h1>Part C. Building interactive workflows<a class="headerlink" href="#part-c-building-interactive-workflows" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="c1-jupyter-integration">
+<h2>C1. Jupyter integration<a class="headerlink" href="#c1-jupyter-integration" title="Permalink to this headline">¶</a></h2>
+<p>Repeat: more like Jupyter than like nextflow, blurring between programmer and user.
+Intro:</p>
+<ul class="simple">
+<li><p>await translation</p></li>
+<li><p>traitlets, output</p></li>
+</ul>
+</div>
+<div class="section" id="c2-mounting-to-the-file-system">
+<h2>C2. Mounting to the file system<a class="headerlink" href="#c2-mounting-to-the-file-system" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>mount, mode, authority</p></li>
+<li><p>Link to E1 (why files are bad)</p></li>
+</ul>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>Mount as directory</p></li>
+</ul>
+</div>
+<div class="section" id="c3-http-sharing">
+<h2>C3. HTTP sharing<a class="headerlink" href="#c3-http-sharing" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>share</p></li>
+<li><p>cell.mimetype</p></li>
+<li><p>REST</p></li>
+<li><p>Your own web page, Seamless as file server (link to beginner gotchas)</p></li>
+</ul>
+</div>
+<div class="section" id="c4-web-status-and-web-interface-generation">
+<h2>C4. Web status and web interface generation<a class="headerlink" href="#c4-web-status-and-web-interface-generation" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Web status</p></li>
+<li><p>Web interface</p></li>
+</ul>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>Customizing the web status generator</p></li>
+<li><p>The Seamless client library (and customize it)</p></li>
+<li><p>Adding your own web components</p></li>
+<li><p>Customizing the web interface generator</p></li>
+</ul>
+<p>In-depth:</p>
+<ul class="simple">
+<li><p>The metalevel, observers, and understanding the status generator</p></li>
+</ul>
+</div>
+<div class="section" id="c5-seamless-projects">
+<h2>C5. Seamless projects<a class="headerlink" href="#c5-seamless-projects" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>How to set up a project</p></li>
+</ul>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>Customize load-project</p></li>
+<li><p>Vaults, zips in relation to Git version control</p></li>
+</ul>
+</div>
+<div class="section" id="c6-beginner-gotchas">
+<h2>C6. Beginner gotchas<a class="headerlink" href="#c6-beginner-gotchas" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Import inside code (link to “checksums and buffers”)</p></li>
+<li><p>Don’t forget to translate (link to interactive plumbing)</p></li>
+<li><p>Seamless dislikes files:</p>
+<ul>
+<li><p>Filename in bash transformer</p></li>
+<li><p>Filename in share</p></li>
+<li><p>Filename in mount</p></li>
+<li><p>Link to “why files are bad”</p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="c7-creating-help-for-others">
+<h2>C7. Creating help for others<a class="headerlink" href="#c7-creating-help-for-others" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Managing help contexts, HTML</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="part-d-software-development-with-seamless">
+<h1>Part D. Software development with Seamless<a class="headerlink" href="#part-d-software-development-with-seamless" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="d1-structured-cells">
+<h2>D1. Structured cells<a class="headerlink" href="#d1-structured-cells" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Subcells and path building</p></li>
+<li><p>Silk (link to Silk::example, Silk::validation)</p></li>
+<li><p>Limitations: mount, read-only share with mimetype</p></li>
+</ul>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>Deep cells and hash patterns</p></li>
+</ul>
+</div>
+<div class="section" id="d2-silk">
+<h2>D2. Silk<a class="headerlink" href="#d2-silk" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Silk as a wrapper of mixed data; unsilk</p></li>
+<li><p>JavaScript-style attribute access</p></li>
+<li><p>example (cells and transformers)</p></li>
+<li><p>adding validation (cells and transformers)</p></li>
+</ul>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>Silk as a handle for structured cells: buffered and auth</p></li>
+<li><p>example and JSON schema; linking schemas.</p></li>
+<li><p>adding methods</p></li>
+<li><p>serialization</p></li>
+<li><p>Silk and _SCHEMA pins in transformers</p></li>
+</ul>
+</div>
+<div class="section" id="d3-environment">
+<h2>D3. Environment<a class="headerlink" href="#d3-environment" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Conda, powers, which, image, Docker</p></li>
+</ul>
+</div>
+<div class="section" id="d4-libraries-and-library-instances">
+<h2>D4. Libraries and Library instances<a class="headerlink" href="#d4-libraries-and-library-instances" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Scatter transformers</p></li>
+<li><p>Nextflow-style channels</p></li>
+<li><p>Gotcha: retranslate after setting a value</p></li>
+<li><p>Value and cell pins</p></li>
+<li><p>Celldict pins</p></li>
+</ul>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>Context pins
+(link to: how the high level wraps the graph data structure)</p></li>
+<li><p>StaticContext</p></li>
+<li><p>Constructor</p></li>
+<li><p>Making your own library</p></li>
+<li><p>How libraries are embedded in the graph (link to: how the high level wraps the graph data structure)</p></li>
+</ul>
+<p>In-depth:</p>
+<ul class="simple">
+<li><p>Elision</p></li>
+<li><p>Context schema and api schema</p></li>
+</ul>
+</div>
+<div class="section" id="d5-debugging-seamless-transformers">
+<h2>D5. Debugging Seamless transformers<a class="headerlink" href="#d5-debugging-seamless-transformers" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Link to “compiled and interpreted”</p></li>
+<li><p>Debug mode</p></li>
+</ul>
+</div>
+<div class="section" id="d6-polyglot-and-modules">
+<h2>D6. Polyglot and modules<a class="headerlink" href="#d6-polyglot-and-modules" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Compiled and interpreted</p></li>
+</ul>
+<p>In-depth:</p>
+<ul class="simple">
+<li><p>Adding your own language</p></li>
+</ul>
+</div>
+<div class="section" id="d7-seamless-and-big-data">
+<h2>D7. Seamless and big data<a class="headerlink" href="#d7-seamless-and-big-data" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Scatter transformers</p></li>
+</ul>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>stdlib.map</p></li>
+</ul>
+<p>In-depth:</p>
+<ul class="simple">
+<li><p>Elision (link to library elision)</p></li>
+</ul>
+</div>
+<div class="section" id="d8-the-low-level">
+<h2>D8. The low level<a class="headerlink" href="#d8-the-low-level" title="Permalink to this headline">¶</a></h2>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>High-level Macros</p></li>
+<li><p>Rules for the low level</p></li>
+<li><p>macro mode</p></li>
+<li><p>macros</p></li>
+<li><p>reactors and editpins</p></li>
+<li><p>high-in-low:</p>
+<ul>
+<li><p>HighLevelContext (link to: how the high level wraps the graph data structure)</p></li>
+<li><p>pseudo-connections;</p></li>
+</ul>
+</li>
+</ul>
+<p>In-depth:</p>
+<ul class="simple">
+<li><p>Libraries vs macros</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="part-e-seamless-and-the-rest-of-the-world">
+<h1>Part E. Seamless and the rest of the world<a class="headerlink" href="#part-e-seamless-and-the-rest-of-the-world" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="e1-why-files-are-bad">
+<h2>E1. Why files are bad<a class="headerlink" href="#e1-why-files-are-bad" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Why Seamless is different from nextflow</p></li>
+<li><p>Link to: Nextflow-style channels, scatter transformers</p></li>
+<li><p>Link to reproducibility</p></li>
+<li><p>Converting from snakemake</p></li>
+</ul>
+</div>
+<div class="section" id="e2-reproducibility">
+<h2>E2. Reproducibility<a class="headerlink" href="#e2-reproducibility" title="Permalink to this headline">¶</a></h2>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>Universal and delocalized computation</p></li>
+<li><p>Determinism, random generators, parallel/GPU.</p></li>
+</ul>
+<p>In-depth:</p>
+<ul class="simple">
+<li><p>Link to “files are bad”</p></li>
+<li><p>Files and URLs are not reproducible</p></li>
+<li><p>Reproducibility: weak, strong and brittle.</p></li>
+<li><p>Interoperability (FAIR): weak, strong and brittle</p></li>
+<li><p>Provenance. Link: federation.</p></li>
+</ul>
+</div>
+<div class="section" id="e3-deployment">
+<h2>E3. Deployment<a class="headerlink" href="#e3-deployment" title="Permalink to this headline">¶</a></h2>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Graph+zip</p></li>
+<li><p>serve-graph</p></li>
+</ul>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>Python deep down: link to low-level</p></li>
+<li><p>Communion</p></li>
+<li><p>Databases</p></li>
+<li><p>Cloudless and jobless</p></li>
+</ul>
+<p>In-depth:</p>
+<ul class="simple">
+<li><p>Computation where the data is</p></li>
+<li><p>Federation. Link: provenance</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="part-f-seamless-implementation">
+<h1>Part F. Seamless implementation<a class="headerlink" href="#part-f-seamless-implementation" title="Permalink to this headline">¶</a></h1>
+<p>(not quite developer docs, but very technical)</p>
+<ul class="simple">
+<li><p>How the high level wraps the graph data structure</p></li>
+<li><p>Various kinds of caches in Seamless</p></li>
+<li><p>Async tasks</p></li>
+</ul>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Tutorial</a></li>
+<li><a class="reference internal" href="#part-a-getting-started">Part A. Getting started</a><ul>
+<li><a class="reference internal" href="#a1-how-to-use-seamless">A1. How to use Seamless</a></li>
+<li><a class="reference internal" href="#a2-getting-help">A2. Getting help</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#part-b-seamless-basics">Part B. Seamless basics</a><ul>
+<li><a class="reference internal" href="#b1-simple-cells-celltypes-and-checksums">B1. Simple cells, celltypes and checksums</a></li>
+<li><a class="reference internal" href="#b2-transformers-and-transformations">B2. Transformers and transformations</a></li>
+<li><a class="reference internal" href="#b3-interactive-plumbing">B3. Interactive plumbing</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#part-c-building-interactive-workflows">Part C. Building interactive workflows</a><ul>
+<li><a class="reference internal" href="#c1-jupyter-integration">C1. Jupyter integration</a></li>
+<li><a class="reference internal" href="#c2-mounting-to-the-file-system">C2. Mounting to the file system</a></li>
+<li><a class="reference internal" href="#c3-http-sharing">C3. HTTP sharing</a></li>
+<li><a class="reference internal" href="#c4-web-status-and-web-interface-generation">C4. Web status and web interface generation</a></li>
+<li><a class="reference internal" href="#c5-seamless-projects">C5. Seamless projects</a></li>
+<li><a class="reference internal" href="#c6-beginner-gotchas">C6. Beginner gotchas</a></li>
+<li><a class="reference internal" href="#c7-creating-help-for-others">C7. Creating help for others</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#part-d-software-development-with-seamless">Part D. Software development with Seamless</a><ul>
+<li><a class="reference internal" href="#d1-structured-cells">D1. Structured cells</a></li>
+<li><a class="reference internal" href="#d2-silk">D2. Silk</a></li>
+<li><a class="reference internal" href="#d3-environment">D3. Environment</a></li>
+<li><a class="reference internal" href="#d4-libraries-and-library-instances">D4. Libraries and Library instances</a></li>
+<li><a class="reference internal" href="#d5-debugging-seamless-transformers">D5. Debugging Seamless transformers</a></li>
+<li><a class="reference internal" href="#d6-polyglot-and-modules">D6. Polyglot and modules</a></li>
+<li><a class="reference internal" href="#d7-seamless-and-big-data">D7. Seamless and big data</a></li>
+<li><a class="reference internal" href="#d8-the-low-level">D8. The low level</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#part-e-seamless-and-the-rest-of-the-world">Part E. Seamless and the rest of the world</a><ul>
+<li><a class="reference internal" href="#e1-why-files-are-bad">E1. Why files are bad</a></li>
+<li><a class="reference internal" href="#e2-reproducibility">E2. Reproducibility</a></li>
+<li><a class="reference internal" href="#e3-deployment">E3. Deployment</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#part-f-seamless-implementation">Part F. Seamless implementation</a></li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../introduction.html"
+                          title="previous chapter">Seamless: a cell-based reactive programming framework</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../context.html"
+                          title="next chapter">Contexts</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/tutorial/tutorial.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../context.html" title="Contexts"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../introduction.html" title="Seamless: a cell-based reactive programming framework"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Seamless 0.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Tutorial</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016-2022, INSERM and code contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
+    </div>
+  </body>
+</html>

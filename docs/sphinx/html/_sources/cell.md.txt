@@ -27,7 +27,7 @@ print(ctx.a.value)
 Cells are by default *structured cells*, which:
 - Contain values that are **mixed**: they can contain plain (JSON-serializable) values, Numpy arrays, or a mix of the two.
 - Have a schema (a superset of JSON schema)
-- Support sub-cells:
+- Support subcells:
 ```python
 ctx.a = Cell()
 ctx.b = Cell()
@@ -57,3 +57,21 @@ Cells can be *mounted* to a file using `Cell.mount`. By default, mounts are both
 Cells can be *shared* over HTTP (via the Seamless REST API), using `Cell.share`. By default, shares are read-only (only HTTP GET requests are supported). Independent cells can also be shared as read/write (their value can be changed using HTTP PUT requests).
 
 Newly created/connected/mounted/shared cells require a re-translation of the context to take effect. This is also the case for a change in celltype.
+
+## Alternative subcell syntax
+You can use `ctx.c["sub"]` to assign or refer to subcell `ctx.c.sub`. This way, you can also access subcells that are not valid Python variables, such as `ctx.c["file.txt"]`.
+You can also access individual elements from a list:
+```python
+ctx.c = [10, 20, 30]
+ctx.sub = ctx.c[1]
+await ctx.computation()
+print(ctx.sub.value)
+ctx.c = [101, 201, 301]
+await ctx.computation()
+print(ctx.sub.value)
+```
+
+```
+20
+201
+```
