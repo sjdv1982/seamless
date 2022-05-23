@@ -1,6 +1,7 @@
-"""Seamless: framework for interoperable interactive computing
+"""Seamless: a cell-based interactive workflow framework
 
-Copyright 2016-2021, Sjoerd de Vries
+Author: Sjoerd de Vries
+Copyright 2016-2022, INSERM and project contributors
 """
 import sys
 import traceback
