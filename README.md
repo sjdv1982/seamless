@@ -32,7 +32,7 @@ conda create -n seamless -c rpbs -c conda-forge seamless-cli -y
 conda activate seamless
 ```
 
-For more details, see [Installation](https://github.com/sjdv1982/seamless/installation.md)
+For more details, see [Installation](https://github.com/sjdv1982/seamless/blob/master/installation.md)
 
 
 Basic example
