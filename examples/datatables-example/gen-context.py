@@ -1,6 +1,7 @@
 from seamless.highlevel import Context, Cell
 ctx = Context()
 
+# Create first, step, length for sequence A
 ctx.a_first = Cell("int").set(5)
 ctx.a_first.share(readonly=False)
 ctx.a_step = Cell("int").set(3)
@@ -109,9 +110,10 @@ ctx.html.mimetype="html"
 ctx.js = Cell("text").mount("datatables-dynamic.js", authority="file").share("index.js")
 ctx.js.mimetype="js"
 
+# Get Seamless Javascript client from the Seamless distribution
 import os, seamless
 seamless_dir = os.path.dirname(seamless.__file__)
-c = ctx.js2 = Cell()
+c = ctx.seamless_client = Cell()
 c.celltype = "text"
 c.set(open(seamless_dir + "/js/seamless-client.js").read())
 c.mimetype = "text/javascript"
