@@ -819,6 +819,19 @@ Setting this property is more-or-less syntactic sugar for:
             return tf.tf.get_transformation()
 
 
+    def cancel(self):
+        """Hard-cancels the transformer"""
+
+        tf = self._get_tf(force=True)
+        htf = self._get_htf()
+        if htf["compiled"]:
+            for attr in "gen_header", "integrator", "executor":
+                tf2 = getattr(tf, attr)
+                tf2.cancel()
+        else:
+            tf.tf.cancel()            
+
+
     @property
     def self(self):
         attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
