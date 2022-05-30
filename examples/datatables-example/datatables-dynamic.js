@@ -3,6 +3,7 @@ ctx = connect_seamless()
 ctx.self.onsharelist = function(sharelist) {
     sharelist.forEach(element => {
         if (element.indexOf(".") != -1) {
+            // explicitly ignore datatables-dynamic.html, etc.
             return
         }
         var inputElement = document.getElementById(element)

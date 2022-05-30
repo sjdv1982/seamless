@@ -42,16 +42,6 @@
       "type": "link"
     },
     {
-      "first": [
-        "b",
-        "SCHEMA"
-      ],
-      "second": [
-        "schema"
-      ],
-      "type": "link"
-    },
-    {
       "source": [
         "b_first"
       ],
@@ -80,6 +70,16 @@
         "length"
       ],
       "type": "connection"
+    },
+    {
+      "first": [
+        "b",
+        "SCHEMA"
+      ],
+      "second": [
+        "schema"
+      ],
+      "type": "link"
     },
     {
       "source": [
@@ -136,7 +136,7 @@
       "celltype": "structured",
       "checksum": {
         "buffer": "3f90c3fef7d95b8c54216f6f5e63767619ee01220875f5cc03e3c3b767977eb6",
-        "schema": "b8c8d524a87f1e119f461f0324fddc91d509802bcc58393c9aa9ef91bf26ce45",
+        "schema": "354b5a364faf479ee70bc5e1a82420f379173c3a0760a939fa7b2a88e92d1c72",
         "value": "3f90c3fef7d95b8c54216f6f5e63767619ee01220875f5cc03e3c3b767977eb6"
       },
       "datatype": "mixed",
@@ -195,7 +195,7 @@
       "celltype": "structured",
       "checksum": {
         "buffer": "f7a36a9a11a2c35e27b375f227e78e5c0f1f1901926576c810049c20643e90a9",
-        "schema": "b8c8d524a87f1e119f461f0324fddc91d509802bcc58393c9aa9ef91bf26ce45",
+        "schema": "354b5a364faf479ee70bc5e1a82420f379173c3a0760a939fa7b2a88e92d1c72",
         "value": "f7a36a9a11a2c35e27b375f227e78e5c0f1f1901926576c810049c20643e90a9"
       },
       "datatype": "mixed",
@@ -251,12 +251,11 @@
       "type": "cell"
     },
     {
-      "celltype": "mixed",
+      "celltype": "binary",
       "checksum": {
         "value": "9293d5f7a1fe5a021ea089caca8ed52e5edb1c74f573f692d7eb730886d6fdd1"
       },
       "datatype": "mixed",
-      "hash_pattern": null,
       "path": [
         "bits"
       ],
@@ -267,7 +266,7 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "2aeaf924fb27f8d006d25aa2b7f6b104a99f396d2baaf176c2696a89f115337e",
+        "code": "25772e76193493a3216e0d5bb3d2ff55a1543a688b28d44a763df88184b70c82",
         "input": "93319dd008ba28e82d5ae7ade497854ed9c696f9be20851fcfd885024f7e4592",
         "input_buffer": "93319dd008ba28e82d5ae7ade497854ed9c696f9be20851fcfd885024f7e4592",
         "result": "9293d5f7a1fe5a021ea089caca8ed52e5edb1c74f573f692d7eb730886d6fdd1",
@@ -377,7 +376,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "bf25bb8dee4faeeb5b53a6fb0c8b026ccfc0340931df37095d397f372b0d39bf"
+        "value": "b23fd49e2b42d3d79817e3a2c9a15ba68b96438624a8ddefa051d502b90454c4"
       },
       "datatype": "mixed",
       "file_extension": "js",
@@ -398,6 +397,23 @@
       "type": "cell"
     },
     {
+      "celltype": "plain",
+      "checksum": {
+        "value": "354b5a364faf479ee70bc5e1a82420f379173c3a0760a939fa7b2a88e92d1c72"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "sequence_schema.json",
+        "persistent": true
+      },
+      "path": [
+        "schema"
+      ],
+      "type": "cell"
+    },
+    {
       "celltype": "text",
       "checksum": {
         "value": "886c745003101649af2d4061e1fde45bc9104761fe46ce1a5c43e0a458434d71"
@@ -405,23 +421,12 @@
       "datatype": "mixed",
       "mimetype": "text/javascript",
       "path": [
-        "js2"
+        "seamless_client"
       ],
       "share": {
         "path": "seamless-client.js",
         "readonly": true
       },
-      "type": "cell"
-    },
-    {
-      "celltype": "plain",
-      "checksum": {
-        "value": "b8c8d524a87f1e119f461f0324fddc91d509802bcc58393c9aa9ef91bf26ce45"
-      },
-      "datatype": "mixed",
-      "path": [
-        "schema"
-      ],
       "type": "cell"
     }
   ],
