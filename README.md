@@ -105,12 +105,12 @@ ctx.c.value.report()
 #### 5. Mount cells to the file system
 ```python
 ctx.a.celltype = "plain"
-ctx.a.mount("/tmp/a.txt")
+ctx.a.mount("a.json")
 ctx.b.celltype = "plain"
-ctx.b.mount("/tmp/b.txt")
+ctx.b.mount("b.json")
 ctx.c.celltype = "plain"
-ctx.c.mount("/tmp/c.txt", mode="w")
-ctx.add.code.mount("/tmp/code.py")
+ctx.c.mount("c.json", mode="w")
+ctx.add.code.mount("code.py")
 await ctx.translation()
 ```
 
