@@ -9,8 +9,10 @@ The datatable computation can be customized interactively,
 but this is NOT used in this example.
 Instead, the HTML web interface (datatables-dynamic.html, datatables-dynamic.js)
 has been manually written.
-The Seamless "webserver" examples DO use the automatic web interface generator, 
-and are simpler to follow.
+
+Other Seamless examples "webserver-example" and "webserver-demo" DO use the 
+automatic web interface generator, and are simpler to follow.
+
 However, the current example is much easier to understand 
 in terms of what happens exactly.
 
