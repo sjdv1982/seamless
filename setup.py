@@ -11,6 +11,7 @@ setup(
     package_data={
         "": [
             "mime.types",
+            "js/*.*",
             "compiler/*.cson",
             "graphs/*.seamless",
             "graphs/*.zip",
