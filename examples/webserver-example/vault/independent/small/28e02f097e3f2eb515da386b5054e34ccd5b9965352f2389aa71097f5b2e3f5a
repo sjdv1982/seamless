@@ -1,0 +1,65 @@
+        <section v-if="STATUS.value.transformers">
+            <b-field label="{{title}}">>                 
+            <b-icon
+                v-if="STATUS.value.transformers.{{TRANSFORMER}}.color == 'royalblue'"
+                pack="fa"
+                icon="circle"
+                size="is-large"
+                type="is-info">
+            </b-icon>
+            <b-icon
+                v-if="STATUS.value.transformers.{{TRANSFORMER}}.color == 'forestgreen'"
+                pack="fas"
+                icon="sync-alt"
+                size="is-large"
+                custom-class="fa-spin"
+                type="is-success">
+            </b-icon>
+            <b-icon
+                v-if="STATUS.value.transformers.{{TRANSFORMER}}.color == 'yellow'"
+                pack="fa"
+                icon="sync-alt"
+                size="is-large"
+                custom-class="fa-spin"
+                type="is-warning">
+            </b-icon>
+            <b-icon
+                v-if="STATUS.value.transformers.{{TRANSFORMER}}.color == 'orange'"
+                pack="fa"
+                icon="circle"
+                size="is-large"
+                type="is-danger">
+            </b-icon>
+            <b-icon
+                v-if="STATUS.value.transformers.{{TRANSFORMER}}.color == 'red'"
+                pack="fa"
+                icon="circle"
+                size="is-large"
+                type="is-danger">
+            </b-icon>
+            </b-field>
+            <b-collapse class="card" :open="false" animation="slide" aria-id="{{ID1}}">
+                <div
+                    v-if="STATUS.value.transformers.{{TRANSFORMER}}.status"
+                    slot="trigger"
+                    slot-scope="props"
+                    class="card-header"
+                    role="button"
+                    aria-controls="{{ID1}}">
+                    <p class="card-header-title">
+                        Error message
+                    </p>
+                    <a class="card-header-icon">
+                        <b-icon
+                            :icon="props.open ? 'menu-down' : 'menu-up'">
+                        </b-icon>
+                    </a>
+                </div>
+                <div class="card-content" v-if="STATUS.value.transformers.{{TRANSFORMER}}.status">
+                    <div class="content" style="overflow: auto; height: 400px;">
+                        <pre>{{ '{{' }} STATUS.value.transformers.{{TRANSFORMER}}.status {{ '}}' }}</pre>
+                    </div>
+                </div>
+            </b-collapse>
+
+        </section>

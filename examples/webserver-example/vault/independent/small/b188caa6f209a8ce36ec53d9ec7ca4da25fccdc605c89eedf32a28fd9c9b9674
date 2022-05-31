@@ -1,0 +1,7 @@
+Field to display an image
+This will only work for binary cells, because those are stored as Blob with the correct mimetype
+
+Parameters:
+- title (string).
+- width (CSS unit string)
+- height (CSS unit string)

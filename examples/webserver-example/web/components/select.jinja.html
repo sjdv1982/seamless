@@ -1,0 +1,11 @@
+<section>
+    <b-field label="{{title}}">
+        <b-select placeholder="{{placeholder}}" v-model="{{CELL}}.value">
+            <option
+                v-for="option in {{options}}"
+                :value="option.value"
+                :key="option.value">
+                {{ '{{' }} option.text {{ '}}' }}
+            </option>
+        </b-select>
+    </b-field>
