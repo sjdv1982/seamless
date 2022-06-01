@@ -126,7 +126,7 @@ print("""grid-editor.seamless and grid-editor.zip generated.
 You can serve the graph using the following command:
 seamless-serve-graph-interactive \\
     grid-editor.seamless \\
-    grid-editor.zip
+    grid-editor.zip --mounts
 
 Then, open http://localhost:5813/ctx/grid-editor.html
 """)
