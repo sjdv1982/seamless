@@ -242,9 +242,15 @@ print("""datatables.seamless and datatables.zip generated.
 You can open these using the datatables.ipynb Jupyter notebook.
 Alternatively, you can serve it independently using:
 
-seamless-serve-graph-interactive \\
+seamless-serve-graph \\
     datatables.seamless \\
     datatables.zip
+ 
+or:
+
+seamless-serve-graph \\
+    /home/jovyan/seamless-examples/datatables-example/datatables.seamless \\
+    /home/jovyan/seamless-examples/datatables-example/datatables.zip
 
 and opening http://localhost:5813 in the browser.
 """)
