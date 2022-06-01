@@ -2,11 +2,13 @@
 
 While the workflow graph is live, it is a Seamless context (ctx)
 It is saved in JSON format (.seamless extension)
-The .seamless graph file contains only checksums; the corresponding value buffers are in a zip file.
+The .seamless graph file contains only checksums; 
+ the corresponding value buffers are in a zip file.
 
 The datatable is originally computed as a three-column Numpy array.
 The first and second columns are elements from A and B.
-A and B are integer sequences whose values are defined by the "first", "step" and "length" parameters.
+A and B are integer sequences whose values are defined by 
+ the "first", "step" and "length" parameters.
 These parameters are controlled via Seamless cells that are shared over HTTP (REST).
 The third column is the number of bits of A*B.
 
@@ -19,8 +21,10 @@ ctx = Context()
 
 # Create "first", "step", "length" parameters for sequence A
 ctx.a_first = Cell("int").set(5)
-ctx.a_first.share(readonly=False)   # Because of .share, the cell value can be read via HTTP (e.g. in the browser)
-                                    # Because of readonly=False, this cell can also be set via HTTP (PUT request)
+ctx.a_first.share(readonly=False)   # Because of .share, the cell value can be read via HTTP 
+                                    #  (e.g. in the browser)
+                                    # Because of readonly=False, this cell can also be set via HTTP 
+                                    #  (PUT request)
 ctx.a_step = Cell("int").set(3)
 ctx.a_step.share(readonly=False)
 ctx.a_length = Cell("int").set(5)
@@ -190,7 +194,7 @@ with open("datatables-static.html", "w") as f:
 # Get Seamless Javascript client from the Seamless distribution
 #  The function of this client is to bidirectionally synchronize the ctx object 
 #    between the browser's Javascript variable space 
-#     and the Seamless server, for shared cells that change value.
+#    and the Seamless server, for shared cells that change value.
 #   In our case, these cells are ctx.datatable and ctx.a_step, ctx.b_step, etc.
 import os, seamless
 seamless_dir = os.path.dirname(seamless.__file__)
@@ -201,7 +205,7 @@ c.mimetype = "text/javascript"
 c.share("seamless-client.js")
 
 # Now, we will define a dynamic web page that allows us to:
-#   (1) update ctx.a_step, ctx.b_step, etc. in the browser
+#   (1) edit ctx.a_step, ctx.b_step, etc. in the browser
 #   (2) re-display the ctx.datatable HTML as it is regenerated.
 #
 # (1) happens in line 32-34 of in datatables-dynamic.js:
@@ -213,7 +217,7 @@ c.share("seamless-client.js")
 # The web page HTML and JS are *also* put in shared cells, 
 #  but they don't need to be bidirectionally synchronized.
 #  they just need to be accessible to the browser.
-# The web page will be accessible under <server>/ctx/datatables-dynamic.html etc.
+# The web page will be accessible under <server>/ctx/index.html etc.
 
 ctx.html = Cell("text").mount("datatables-dynamic.html", authority="file").share("index.html")
 ctx.html.mimetype="html"
@@ -237,7 +241,10 @@ ctx.save_zip("datatables.zip")
 print("""datatables.seamless and datatables.zip generated.
 You can open these using the datatables.ipynb Jupyter notebook.
 Alternatively, you can serve it independently using:
+
 seamless-serve-graph-interactive \\
     datatables.seamless \\
     datatables.zip
+
+and opening http://localhost:5813 in the browser.
 """)

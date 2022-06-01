@@ -51,9 +51,16 @@ using Jupyter widgets.
 With this dashboard, you can see the generated datatable and control its parameters.
 Note that the Jupyter notebook doesn't define the workflow itself, but simply loads it 
 from file. 
-Since the workflow also contains the web interface, this web interface also
-becomes accessible when the workflow is loaded in Jupyter.
+Since the web interface is contained inside the workflow,
+it becomes accessible when the workflow is loaded in Jupyter.
 You can interactively control and visualize the datatable using the dashboard, 
 the web interface, or both, as Seamless keeps them in sync.
 Multiple instances of the web interface are also kept in sync, making the web interface
 collaborative.
+
+Visualization of the web interface alone
+========================================
+
+- Run "seamless-serve-graph datatables.seamless datatables.zip". 
+  Ctrl+C will end the visualization.
+- Open http://localhost:5813 in the browser.
