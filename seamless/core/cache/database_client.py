@@ -61,6 +61,7 @@ class DatabaseBase:
 
     def delete_key(self, key_type, checksum):
         assert key_type in [
+            "buffer",
             "buffer_info", 
             "transformation",
             "compilation",
