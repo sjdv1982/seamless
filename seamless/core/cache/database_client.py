@@ -15,6 +15,22 @@ session = requests.Session()
 class DatabaseBase:
     active = False
     PROTOCOL = ("seamless", "database", "0.1")    
+    _loghandle = None
+
+    def set_log(self, log):
+        if isinstance(log, str):
+            loghandle = open(str, "w")
+        else:
+            assert hasattr(log, "write")
+            loghandle = log
+        self._loghandle = loghandle
+
+    def _log(self, type, checksum):
+        if self._loghandle is None:
+            return
+        logstr = "{} {}\n".format(type, checksum)
+        self._loghandle.write(logstr)
+
     def _get_host_port(self):
         env = os.environ
         host = env.get("SEAMLESS_DATABASE_IP")
@@ -82,6 +98,7 @@ class DatabaseBase:
         return response.json() == True
 
 class DatabaseSink(DatabaseBase):
+
     def connect(self, *,
       store_compile_result=True
     ):
@@ -108,6 +125,7 @@ class DatabaseSink(DatabaseBase):
             "checksum": parse_checksum(tf_checksum),
             "value": parse_checksum(checksum),
         }
+        self._log(request["type"], request["checksum"])
         self.send_request(request)
 
     def set_elision_result(self, elision_checksum, elision_result):        
@@ -116,6 +134,7 @@ class DatabaseSink(DatabaseBase):
             "checksum": parse_checksum(elision_checksum),
             "value": elision_result,
         }
+        self._log(request["type"], request["checksum"])
         self.send_request(request)
 
     def sem2syn(self, semkey, syn_checksums):
@@ -142,7 +161,7 @@ class DatabaseSink(DatabaseBase):
         '''
         ps = chr(int(persistent)).encode()
         rqbuf = b'SEAMLESS_BUFFER' + parse_checksum(checksum).encode() + ps + buffer
-
+        self._log("buffer", parse_checksum(checksum))
         self.send_request(rqbuf)
 
     def set_buffer_info(self, checksum, buffer_info:BufferInfo):
@@ -163,6 +182,7 @@ class DatabaseSink(DatabaseBase):
             "checksum": parse_checksum(checksum),
             "value": parse_checksum(compile_checksum),
         }
+        self._log(request["type"], request["checksum"])
         self.send_request(request)
 
 class DatabaseCache(DatabaseBase):
@@ -201,7 +221,9 @@ class DatabaseCache(DatabaseBase):
         }
         response = self.send_request(request)
         if response is not None:
-            return bytes.fromhex(response.content.decode())
+            result = bytes.fromhex(response.content.decode())
+            self._log(request["type"], request["checksum"])
+            return result
 
     def get_filename(self, checksum):
         request = {
@@ -248,6 +270,7 @@ class DatabaseCache(DatabaseBase):
             result = response.content
             verify_checksum = parse_checksum(calculate_checksum(result))
             assert checksum == verify_checksum, "Database corruption!!! Checksum {}".format(parse_checksum(checksum))
+            self._log(request["type"], request["checksum"])
             return result
 
     def get_buffer_info(self, checksum) -> BufferInfo:
@@ -266,7 +289,9 @@ class DatabaseCache(DatabaseBase):
         }
         response = self.send_request(request)
         if response is not None:
-            return bytes.fromhex(response.content.decode())
+            result = bytes.fromhex(response.content.decode())
+            self._log(request["type"], request["checksum"])
+            return result
 
     def get_elision_result(self, checksum):
         request = {
@@ -275,7 +300,9 @@ class DatabaseCache(DatabaseBase):
         }
         response = self.send_request(request)
         if response is not None:
-            return response.json()
+            result = response.json()
+            self._log(request["type"], request["checksum"])
+            return result
 
 database_sink = DatabaseSink()
 database_cache = DatabaseCache()
