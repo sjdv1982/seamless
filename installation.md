@@ -54,10 +54,16 @@ conda config --env --set channel_priority strict
 conda env update --file https://raw.githubusercontent.com/sjdv1982/seamless/stable/conda/seamless-framework-environment.yml
 ```
 
+The seamless-framework conda environment is big and installing additional packages
+may take a lot of time, even with strict channel priority.
+Therefore, it has `mamba` installed as a fast, drop-in replacement for the `conda` command.
+
 When running compiled transformers, Seamless assumes that gcc (for C), g++ (for C++) and gfortran are
 available. If you wish to run transformers written in these languages, you must install these compilers yourself.
 
 Most likely, you will want to checkout the [seamless-tools Git repo](https://github.com/sjdv1982/seamless-tools). Almost all Seamless commands are wrappers around Python scripts, either in `seamless-tools/scripts` (these scripts heavily rely on Seamless) or `seamless-tools/tools` (these scripts are mostly independent of Seamless). For example, the command `seamless-new-project` (which can be found in `seamless-tools/seamless-cli/seamless-new-project`) is a wrapper around `seamless-tools/scripts/new-project.py`
+
+
 
 ## Installation of minimal Seamless
 
