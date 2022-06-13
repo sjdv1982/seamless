@@ -51,7 +51,7 @@ rule bcftools_call:
         "calls/all.vcf"
     shell:
         "tar xzf {input.genome} genome.fa genome.fa.ann genome.fa.fai genome.fa.sa genome.fa.amb genome.fa.bwt genome.fa.pac;"
-        "samtools mpileup -g -f genome.fa {input.bam} | "
+        "bcftools mpileup -f genome.fa {input.bam} | "
         "bcftools call -mv - > {output};"
         "rm -f genome.fa genome.fa.ann genome.fa.fai genome.fa.sa genome.fa.amb genome.fa.bwt genome.fa.pac"
 '''
@@ -68,7 +68,7 @@ rule bcftools_call:
     shell:
         "sleep 5;"
         "tar xzf {input.genome} genome.fa genome.fa.ann genome.fa.fai genome.fa.sa genome.fa.amb genome.fa.bwt genome.fa.pac;"
-        "samtools mpileup -g -f genome.fa {input.Abam} {input.Bbam} | "
+        "bcftools mpileup -f genome.fa {input.Abam} {input.Bbam} | "
         "bcftools call -mv - > {output};"
         "rm -f genome.fa genome.fa.ann genome.fa.fai genome.fa.sa genome.fa.amb genome.fa.bwt genome.fa.pac"
 

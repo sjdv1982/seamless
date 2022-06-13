@@ -29,23 +29,7 @@ print("Compute...")
 ctx.compute()
 print()
 
-
-print("File system contents:")
-"""
-print(ctx.fs.status)
-print(ctx.fs.exception)
-fs = ctx.fs.value.unsilk
-assert fs is not None
-def print_file(f):
-    v = str(fs[f])
-    if len(v) > 80:
-        v = v[:35] + "." * 10  + v[-35:]
-    print(f, v)
-    print()
-
-for f in sorted(list(fs.keys())):
-    print_file(f)
-"""
+print("Virtual file system contents:")
 finished = []
 for fs_cellname in ctx.fs.get_children("cell"):
     fs_cell = getattr(ctx.fs, fs_cellname)
@@ -69,3 +53,5 @@ if "calls/all.vcf" in finished:
     os.system("mkdir -p calls")
     with open("calls/all.vcf", "w") as f:
         f.write(getattr(ctx.fs, "calls/all.vcf").value.unsilk)
+else:
+    print("FAILURE, calls/all.vcf not created")

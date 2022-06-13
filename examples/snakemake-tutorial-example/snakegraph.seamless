@@ -1,4 +1,5 @@
 {
+  "__seamless__": "0.8",
   "connections": [
     {
       "source": [
@@ -525,8 +526,10 @@
       "SCHEMA": null,
       "UNTRANSLATED": true,
       "compiled": false,
-      "debug": false,
       "file_extension": "sh",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "bash",
       "path": [
         "jobs",
@@ -567,8 +570,10 @@
       "SCHEMA": null,
       "UNTRANSLATED": true,
       "compiled": false,
-      "debug": false,
       "file_extension": "sh",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "bash",
       "path": [
         "jobs",
@@ -594,8 +599,10 @@
       "SCHEMA": null,
       "UNTRANSLATED": true,
       "compiled": false,
-      "debug": false,
       "file_extension": "sh",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "bash",
       "path": [
         "jobs",
@@ -621,8 +628,10 @@
       "SCHEMA": null,
       "UNTRANSLATED": true,
       "compiled": false,
-      "debug": false,
       "file_extension": "sh",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "bash",
       "path": [
         "jobs",
@@ -643,8 +652,10 @@
       "SCHEMA": null,
       "UNTRANSLATED": true,
       "compiled": false,
-      "debug": false,
       "file_extension": "sh",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "bash",
       "path": [
         "jobs",
@@ -665,8 +676,10 @@
       "SCHEMA": null,
       "UNTRANSLATED": true,
       "compiled": false,
-      "debug": false,
       "file_extension": "sh",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "bash",
       "path": [
         "jobs",
@@ -687,8 +700,10 @@
       "SCHEMA": null,
       "UNTRANSLATED": true,
       "compiled": false,
-      "debug": false,
       "file_extension": "sh",
+      "hash_pattern": {
+        "*": "#"
+      },
       "language": "bash",
       "path": [
         "jobs",
@@ -801,9 +816,10 @@
     {
       "celltype": "structured",
       "checksum": {
-        "auth": "9aae523d9dad4602d9fa8ffa4d42b9c1d067ae5b5daa985bfb4418495717f38c",
-        "buffer": "9aae523d9dad4602d9fa8ffa4d42b9c1d067ae5b5daa985bfb4418495717f38c",
-        "value": "9aae523d9dad4602d9fa8ffa4d42b9c1d067ae5b5daa985bfb4418495717f38c"
+        "auth": "5f41374d6d2266f14b72f573f28df99cc3b9063d4b083a9382fad78c2b4dd629",
+        "buffer": "5f41374d6d2266f14b72f573f28df99cc3b9063d4b083a9382fad78c2b4dd629",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "value": "5f41374d6d2266f14b72f573f28df99cc3b9063d4b083a9382fad78c2b4dd629"
       },
       "datatype": "mixed",
       "hash_pattern": null,
@@ -818,6 +834,7 @@
       "checksum": {
         "auth": "e1f5e1ad8969c8de58c9f29173f4de3bf145826a48c55325943ca75ebb4d9a67",
         "buffer": "e1f5e1ad8969c8de58c9f29173f4de3bf145826a48c55325943ca75ebb4d9a67",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "e1f5e1ad8969c8de58c9f29173f4de3bf145826a48c55325943ca75ebb4d9a67"
       },
       "datatype": "mixed",
@@ -833,6 +850,7 @@
       "checksum": {
         "auth": "e3e0f016f8482ab71ab764d89dee647dba625a1bceb946671837c0105b994a4e",
         "buffer": "e3e0f016f8482ab71ab764d89dee647dba625a1bceb946671837c0105b994a4e",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "e3e0f016f8482ab71ab764d89dee647dba625a1bceb946671837c0105b994a4e"
       },
       "datatype": "mixed",
@@ -848,6 +866,7 @@
       "checksum": {
         "auth": "ffa092f1a1c285f2ea8edf019a26375214027f7d53964405e7b035432625604b",
         "buffer": "ffa092f1a1c285f2ea8edf019a26375214027f7d53964405e7b035432625604b",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "ffa092f1a1c285f2ea8edf019a26375214027f7d53964405e7b035432625604b"
       },
       "datatype": "mixed",

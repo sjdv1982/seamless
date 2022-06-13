@@ -16,10 +16,10 @@ How to run the example
 ======================
 
 You can generate a Seamless graph by binding the Snakefile to the rule `bcftools_call` as follows:
-`seamless python3 ~/seamless-scripts/snakemake2seamless.py  bcftools_call` 
+`seamless-run python /home/jovyan/seamless-scripts/snakemake2seamless.py  bcftools_call` 
 
 The script `run-snakegraph.py` binds the contents of `/data` to the graph, and runs the computation. 
-NOTE: this script must be run inside a Docker container with samtools, bcftools and bwa installed! This can be done with the command `conda install -c bioconda samtools=1.9 bcftools=1.9 bwa=0.7`
+NOTE: this script must be run inside a Docker container with samtools, bcftools and bwa installed! This can be done with the command `mamba install -c bioconda -c conda-forge samtools bcftools bwa`.
 
 The Seamless graph can be run interactively using `ipython3 -i run-snakegraph-interactive.py`. This will create a live web page at http://localhost:5813/status/status-visualization.html that constantly shows the progress. 
 
@@ -32,6 +32,7 @@ In summary, the following commands will execute the workflow:
 ```bash
 seamless-bash
 python3 ~/seamless-scripts/snakemake2seamless.py bcftools_call
+conda config --env --set channel_priority strict
 conda install -c bioconda samtools=1.9 bcftools=1.9 bwa=0.7
 
 python3 run-snakegraph.py
