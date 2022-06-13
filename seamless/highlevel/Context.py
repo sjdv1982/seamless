@@ -180,6 +180,10 @@ class Context(Base, HelpMixin):
                 if child.debug.mode is not None:
                     msg = "Cannot delete {} in debug mode"
                     raise Exception(msg.format(child))
+        if isinstance(graph, str):
+            graph_file = graph
+            with open(graph_file) as f:
+                graph = json.load(f) 
         graph = graph_convert(graph, self)
         nodes = {}
         self._children.clear()

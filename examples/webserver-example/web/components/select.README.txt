@@ -1,0 +1,33 @@
+Drop-down select for multiple-choice values
+
+Parameters:
+- title (string).
+- options: a list of dicts
+  Each option dict must contain two items:
+  - value (string): the cell value associated with that option
+  - text (string): the text of the option in the drop-down menu
+
+Example cell, called "opt":
+    "opt": {
+      "celltype": "str",
+      "component": "select",
+      "params": {
+        "auto_read": true,
+        "options": [
+          {
+            "text": "Option 1",
+            "value": "opt1"
+          },
+          {
+            "text": "Option 2",
+            "value": "opt2"
+          }
+        ],
+        "title": "Cell Opt"
+      },
+      "share": {
+        "encoding": "json",
+        "read": true,
+        "write": true
+      }
+    },

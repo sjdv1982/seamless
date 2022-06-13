@@ -1,5 +1,5 @@
 {% set name = "seamless-framework" %}
-{% set version = "0.8.1" %}
+{% set version = "0.8.3" %}
 
 package:
   name: "{{ name|lower }}"
@@ -7,7 +7,7 @@ package:
 
 build:
   noarch: python
-  number: 3
+  number: 1
 
 source:
   path: ../..
@@ -71,6 +71,8 @@ requirements:
     - jupyter-server-proxy==3.1.0
     - aiofiles==0.8.*
     - silk
+    - psutil==5.8.*
+    - matplotlib
 #test:
 #  imports:
 #    - seamless

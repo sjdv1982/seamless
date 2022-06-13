@@ -1,8 +1,21 @@
 #!/bin/bash
 
+if [ -z "$SEAMLESS_TOOLS_DIR" ]; then
+  export SEAMLESS_TOOLS_DIR=~/seamless-tools
+fi
+
 export SEAMLESS_DATABASE_DIR=/tmp/seamless-db
-export SEAMLESS_DATABASE_PORT=5522
-export SEAMLESS_DATABASE_IP=0.0.0.0
+
+dbconfig='''
+host: "0.0.0.0" 
+port:  5522
+stores: 
+    -
+      path: "'''$SEAMLESS_DATABASE_DIR'''"
+      readonly: false
+      serve_filenames: true
+'''
+
 
 rm -rf $SEAMLESS_DATABASE_DIR
 mkdir $SEAMLESS_DATABASE_DIR
@@ -17,7 +30,7 @@ function filesystem() {
 }
 
 echo 'Stage 1'
-python3 -u ../../tools/database.py > test-dummy-server-stage1.log 2>&1 &
+echo "$dbconfig" | python3 -u $SEAMLESS_TOOLS_DIR/database.py /dev/stdin > test-dummy-server-stage1.log 2>&1 &
 p2=$!
 echo 'Database server running'
 sleep 3
@@ -33,7 +46,7 @@ echo '/Server log'
 echo
 
 echo 'Stage 2'
-python3 -u ../../tools/database.py > test-dummy-server-stage2.log 2>&1 &
+echo "$dbconfig" | python3 -u $SEAMLESS_TOOLS_DIR/database.py /dev/stdin  > test-dummy-server-stage2.log 2>&1 &
 p2=$!
 echo 'Database server running'
 sleep 3

@@ -1,3 +1,7 @@
+if [ -z "$SEAMLESS_TOOLS_DIR" ]; then
+  export SEAMLESS_TOOLS_DIR=~/seamless-tools
+fi
+
 db=/tmp/PIN-FILESYSTEM-TEST-DB
 rm -rf $db
 mkdir $db
@@ -5,8 +9,8 @@ export SEAMLESS_DATABASE_DIR=$db
 export SEAMLESS_DATABASE_IP=localhost
 export SEAMLESS_DATABASE_PORT=5522
 echo 'Share folder'
-../../tools/database-run-actions $db pin-filesystem.cson
-../../tools/database-share-deepfolder-directory $db --collection testfolder
+$SEAMLESS_TOOLS_DIR/database-run-actions $db pin-filesystem.cson
+$SEAMLESS_TOOLS_DIR/database-share-deepfolder-directory $db --collection testfolder
 echo
 echo 'Run 1'
 python3 -u pin-filesystem.py > pin-filesystem.log 2>&1
@@ -24,7 +28,7 @@ stores:
       readonly: false
       serve_filenames: true
 '''
-echo "$dbconfig" | python3 ../../tools/database.py /dev/stdin > $db.log 2>&1 &
+echo "$dbconfig" | python3 $SEAMLESS_TOOLS_DIR/database.py /dev/stdin > $db.log 2>&1 &
 sleep 2
 echo
 echo 'Run 2'

@@ -1,0 +1,95 @@
+SAMPLES = ["A", "B"]
+
+
+rule all:
+    input:
+        "report.html"
+
+
+rule bwa_map:
+    input:
+        genome="data/genome.tgz",
+        samples="data/samples/{sample}.fastq"
+    output:
+        "mapped_reads/{sample}.bam"
+    shell:
+        "sleep 5;"
+        "tar xzf {input.genome} genome.fa genome.fa.ann genome.fa.fai genome.fa.sa genome.fa.amb genome.fa.bwt genome.fa.pac;"
+        "bwa mem genome.fa {input.samples}| samtools view -Sb - > {output}"
+
+
+rule samtools_sort:
+    input:
+        "mapped_reads/{sample}.bam"
+    output:
+        "sorted_reads/{sample}.bam"
+    shell:
+        "sleep 5;"
+        "samtools sort -T sorted_reads/{wildcards.sample} "
+        "-O bam {input} > {output}"
+
+
+rule samtools_index:
+    input:
+        "sorted_reads/{sample}.bam"
+    output:
+        "sorted_reads/{sample}.bam.bai"
+    shell:
+        "sleep 5;"
+        "samtools index {input} {output}"
+
+
+SAMPLES = ['A', 'B']
+
+'''   # Not yet supported:
+rule bcftools_call:
+    input:
+        genome="data/genome.tgz",
+        bam=expand("sorted_reads/{sample}.bam", sample=SAMPLES),
+        bai=expand("sorted_reads/{sample}.bam.bai", sample=SAMPLES)
+    output:
+        "calls/all.vcf"
+    shell:
+        "tar xzf {input.genome} genome.fa genome.fa.ann genome.fa.fai genome.fa.sa genome.fa.amb genome.fa.bwt genome.fa.pac;"
+        "bcftools mpileup -f genome.fa {input.bam} | "
+        "bcftools call -mv - > {output};"
+        "rm -f genome.fa genome.fa.ann genome.fa.fai genome.fa.sa genome.fa.amb genome.fa.bwt genome.fa.pac"
+'''
+
+rule bcftools_call:
+    input:
+        genome="data/genome.tgz",
+        Abam="sorted_reads/A.bam",
+        Bbam="sorted_reads/B.bam",        
+        Abai="sorted_reads/A.bam.bai",
+        Bbai="sorted_reads/B.bam.bai"
+    output:
+        "calls/all.vcf"
+    shell:
+        "sleep 5;"
+        "tar xzf {input.genome} genome.fa genome.fa.ann genome.fa.fai genome.fa.sa genome.fa.amb genome.fa.bwt genome.fa.pac;"
+        "bcftools mpileup -f genome.fa {input.Abam} {input.Bbam} | "
+        "bcftools call -mv - > {output};"
+        "rm -f genome.fa genome.fa.ann genome.fa.fai genome.fa.sa genome.fa.amb genome.fa.bwt genome.fa.pac"
+
+rule report:
+    input:
+        "calls/all.vcf"
+    output:
+        "report.html"
+    run:
+        from snakemake.utils import report
+        samples = ", ".join(SAMPLES)
+        with open(input[0]) as vcf:
+            n_calls = sum(1 for l in vcf if not l.startswith("#"))
+
+        report("""
+        An example variant calling workflow
+        ===================================
+
+        Reads of samples {samples} were mapped to the Yeast
+        reference genome and variants were called jointly with
+        SAMtools/BCFtools.
+
+        This resulted in {n_calls} variants (see Table T1_).
+        """, output[0], T1=input[0])

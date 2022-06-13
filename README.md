@@ -1,13 +1,13 @@
-Seamless: a cell-based reactive programming framework
+Seamless: a cell-based interactive workflow framework
 =====================================================
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb)
 
-Seamless is a framework to set up protocols (workflows) and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations, and all cells can be edited interactively.
+Seamless is a framework to set up protocols (workflows) and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations. All cells and computations can be created, edited and connected interactively.
 
 The main application domains are data science, scientific computing, software prototyping, and interactive web services.
 
-Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible. Unlike other workflow systems, Seamless graphs are self-contained and do not depend on the content of external files, URLs, identifiers, version numbers, or other kinds of metadata.
+Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible.
 
 ### Documentation: <http://sjdv1982.github.io/seamless>
 
@@ -20,41 +20,19 @@ thanks to the Binder project. Click on the badge below:
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb)
 
 
-Supported platforms
-===================
+Quick installation
+==================
 
-Seamless is meant to run from inside a Docker container. This is easy under Linux.
-
-This will not work under Mac OSX and Windows, because Docker support for networking is incomplete.
-
-Under Mac OSX, you can now install Seamless without Docker, into a conda environment (see Alternative installations).
-
-Seamless does not run under Windows.
-
-Installation using Docker
-=========================
-
-First, you must [install Docker](https://docs.docker.com/get-docker/)
-and [(mini)conda](https://docs.conda.io/en/latest/miniconda.html).
-
-Then, installation is as follows:
+First, [install Docker](https://docs.docker.com/get-docker/)
+and [miniconda](https://docs.conda.io/en/latest/miniconda.html).
 
 ```
-# Pull docker image
 docker pull rpbs/seamless
-
-# Install Seamless command line tools
-conda create -n seamless -c rpbs -c conda-forge python seamless-cli -y
+conda create -n seamless -c rpbs -c conda-forge seamless-cli -y
 conda activate seamless
 ```
 
-
-### Getting started
-
-The command ```seamless-ipython``` launches an IPython terminal inside a
-Seamless Docker container.
-
-```seamless-jupyter``` does the same for Jupyter Notebook.
+For more details, see [Installation](https://github.com/sjdv1982/seamless/blob/master/installation.md)
 
 
 Basic example
@@ -127,12 +105,12 @@ ctx.c.value.report()
 #### 5. Mount cells to the file system
 ```python
 ctx.a.celltype = "plain"
-ctx.a.mount("/tmp/a.txt")
+ctx.a.mount("a.json")
 ctx.b.celltype = "plain"
-ctx.b.mount("/tmp/b.txt")
+ctx.b.mount("b.json")
 ctx.c.celltype = "plain"
-ctx.c.mount("/tmp/c.txt", mode="w")
-ctx.add.code.mount("/tmp/code.py")
+ctx.c.mount("c.json", mode="w")
+ctx.add.code.mount("code.py")
 await ctx.translation()
 ```
 
@@ -391,56 +369,14 @@ ctx.add.code.value
 - Seamless instances can communicate, serving as job slaves or result caches for transformations.
 - Interactive monitoring of status and exception messages.
 
-Alternative installations
-=========================
-
-
-### Installation under conda
-
-```
-conda config --env --set channel_priority strict
-conda env create --file https://raw.githubusercontent.com/sjdv1982/seamless/stable/conda/seamless-framework-environment.yml
-```
-NOTE: installing gcc, g++, gfortran, docker-ce-cli is user's own responsibility
-
-**NOTE: this is EXPERIMENTAL**. The main application is running Seamless under OSX.
-
-```
-  
-conda create -n seamless-framework -c rpbs -c conda-forge 'python==3.8.8' seamless-framework pip
-conda activate seamless
-export RPY2_CFFI_MODE=ABI
-pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/stable/requirements-extra.txt
-conda install -c rpbs  -c conda-forge silk seamless-framework
-conda install -c conda-forge matplotlib psutil
-conda install conda
-```
-
-Don't install the Seamless command line tools. Instead of commands like `seamless-bash`, `seamless-ipython`, `seamless-jupyter`, simply do `conda activate seamless` and type `python`, `ipython` or `jupyter notebook`. The source code of the Seamless command line tools is at `https://github.com/sjdv1982/seamless/tree/master/docker/commands`.
-
-
-### Installation under Singularity
-
-TODO: update!
-minimal: 
-Singularity: jobless commands...
-
-**NOTE: this is EXPERIMENTAL.** The main application for this is to run Seamless transformations
-and database adapters in an HPC environment. Launching e.g. Jupyter or Docker under Singularity is unlikely to work.
-
-```
-wget https://raw.githubusercontent.com/sjdv1982/seamless/master/docker/seamless-simple/Singularity  # or download it manually
-sudo singularity build seamless.sif Singularity
-```
-
-A bash shell in a new Seamless container can then be started using e.g. `singularity run -c --cleanenv seamless.sif`.
-If you run without `-c`, be sure to do `export PATH=/opt/conda/bin:$PATH` as the first command.
-
-
 More examples
 =============
+Run `seamless-jupyter-trusted`.
+
+Inside the notebook file tree, browse `seamless-examples`. 
 <https://github.com/sjdv1982/seamless/tree/master/examples>
 
+Inside the notebook file tree, browse `seamless-tests/highlevel`. 
 <https://github.com/sjdv1982/seamless/tree/master/tests/highlevel>
 
 ### Documentation: <http://sjdv1982.github.io/seamless>

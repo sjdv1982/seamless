@@ -4,14 +4,14 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>seamless.highlevel &#8212; Seamless 0.5 documentation</title>
-    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nature.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head><body>
@@ -25,7 +25,8 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../index.html">Seamless 0.5 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">seamless.highlevel</a></li> 
       </ul>
     </div>  
 
@@ -36,7 +37,6 @@
             
   <h1>Source code for seamless.highlevel</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">LambdaType</span>
 <span class="kn">from</span> <span class="nn">ast</span> <span class="kn">import</span> <span class="n">PyCF_ONLY_AST</span><span class="p">,</span> <span class="n">FunctionDef</span><span class="p">,</span> <span class="n">Expr</span><span class="p">,</span> <span class="n">Lambda</span>
 <span class="kn">import</span> <span class="nn">textwrap</span>
@@ -51,16 +51,16 @@
 
 <span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">import</span> <span class="nn">os</span>
+
 <span class="k">def</span> <span class="nf">set_resource</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
-    <span class="kn">from</span> <span class="nn">.Resource</span> <span class="kn">import</span> <span class="n">Resource</span>
     <span class="n">caller_frame</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_back</span>
     <span class="n">filename</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">caller_frame</span><span class="p">)</span>
     <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
     <span class="n">ff</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">ff</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmodule</span><span class="p">(</span><span class="n">caller_frame</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">Resource</span><span class="p">(</span><span class="n">ff</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Resource</span><span class="p">(</span><span class="n">ff</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">ff</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">data</span>
 
 <span class="k">def</span> <span class="nf">parse_function_code</span><span class="p">(</span><span class="n">code_or_func</span><span class="p">,</span> <span class="n">identifier</span><span class="o">=</span><span class="s2">&quot;&lt;None&gt;&quot;</span><span class="p">):</span>
@@ -94,10 +94,13 @@
 <span class="kn">from</span> <span class="nn">.Context</span> <span class="kn">import</span> <span class="n">Context</span>
 <span class="kn">from</span> <span class="nn">.Transformer</span> <span class="kn">import</span> <span class="n">Transformer</span>
 <span class="kn">from</span> <span class="nn">.Macro</span> <span class="kn">import</span> <span class="n">Macro</span>
-<span class="kn">from</span> <span class="nn">.Cell</span> <span class="kn">import</span> <span class="n">Cell</span>
+<span class="kn">from</span> <span class="nn">.Cell</span> <span class="kn">import</span> <span class="n">Cell</span><span class="p">,</span> <span class="n">FolderCell</span>
+<span class="kn">from</span> <span class="nn">.DeepCell</span> <span class="kn">import</span> <span class="n">DeepCell</span><span class="p">,</span> <span class="n">DeepFolderCell</span>
 <span class="kn">from</span> <span class="nn">.Module</span> <span class="kn">import</span> <span class="n">Module</span>
 <span class="kn">from</span> <span class="nn">.Link</span> <span class="kn">import</span> <span class="n">Link</span>
+<span class="kn">from</span> <span class="nn">.Resource</span> <span class="kn">import</span> <span class="n">Resource</span>
 <span class="kn">from</span> <span class="nn">..midlevel.StaticContext</span> <span class="kn">import</span> <span class="n">StaticContext</span>
+<span class="kn">from</span> <span class="nn">.copy</span> <span class="kn">import</span> <span class="n">copy</span>
 
 <div class="viewcode-block" id="load_graph"><a class="viewcode-back" href="../../reference.html#seamless.highlevel.load_graph">[docs]</a><span class="k">def</span> <span class="nf">load_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="nb">zip</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cache_ctx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">static</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mounts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shares</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Load a Context from graph.</span>
@@ -146,11 +149,13 @@
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;Context&quot;</span><span class="p">,</span> <span class="s2">&quot;Transformer&quot;</span><span class="p">,</span> <span class="s2">&quot;Macro&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Cell&quot;</span><span class="p">,</span> <span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;Graph&quot;</span><span class="p">,</span> <span class="s2">&quot;StaticContext&quot;</span><span class="p">,</span> <span class="s2">&quot;Module&quot;</span>
-    <span class="s2">&quot;load_graph&quot;</span>
+    <span class="s2">&quot;Cell&quot;</span><span class="p">,</span> <span class="s2">&quot;FolderCell&quot;</span><span class="p">,</span> <span class="s2">&quot;DeepCell&quot;</span><span class="p">,</span> <span class="s2">&quot;DeepFolderCell&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;Graph&quot;</span><span class="p">,</span> <span class="s2">&quot;StaticContext&quot;</span><span class="p">,</span> <span class="s2">&quot;Module&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Resource&quot;</span><span class="p">,</span> <span class="s2">&quot;load_graph&quot;</span><span class="p">,</span> <span class="s2">&quot;copy&quot;</span><span class="p">,</span>
 <span class="p">]</span>
 </pre></div>
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
@@ -160,7 +165,7 @@
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -180,12 +185,13 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../index.html">Seamless 0.5 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">seamless.highlevel</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2016-2021, Sjoerd de Vries.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
     </div>
   </body>
 </html>

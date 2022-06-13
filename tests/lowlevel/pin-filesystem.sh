@@ -1,3 +1,7 @@
+if [ -z "$SEAMLESS_TOOLS_DIR" ]; then
+  export SEAMLESS_TOOLS_DIR=~/seamless-tools
+fi
+
 export SEAMLESS_DATABASE_IP=localhost
 rm -rf /tmp/PIN-FILESYSTEM-FOLDER1
 rm -rf /tmp/PIN-FILESYSTEM-FOLDER2
@@ -28,7 +32,7 @@ stores:
       readonly: true
       serve_filenames: true
 '''
-echo "$dbconfig" | python3 ../../tools/database.py /dev/stdin > $db.log 2>&1 &
+echo "$dbconfig" | python3 $SEAMLESS_TOOLS_DIR/database.py /dev/stdin > $db.log 2>&1 &
 sleep 2
 echo
 echo 'Run 2'
@@ -36,9 +40,9 @@ python3 -u pin-filesystem.py
 echo
 echo 'Share folder 2 and restart database'
 kill `ps -ef | grep database | awk '{print $2}' | tac | awk 'NR > 1'`
-../../tools/database-run-actions $db pin-filesystem-2.cson
-../../tools/database-share-deepfolder-directory $db --collection testfolder2
-echo "$dbconfigro" | python3 ../../tools/database.py /dev/stdin > $db.log 2>&1 &
+$SEAMLESS_TOOLS_DIR/database-run-actions $db pin-filesystem-2.cson
+$SEAMLESS_TOOLS_DIR/database-share-deepfolder-directory $db --collection testfolder2
+echo "$dbconfigro" | python3 $SEAMLESS_TOOLS_DIR/database.py /dev/stdin > $db.log 2>&1 &
 sleep 2
 echo
 echo 'Run 3'
@@ -46,9 +50,9 @@ python3 -u pin-filesystem.py
 echo
 echo 'Share folder 1 and restart database'
 kill `ps -ef | grep database | awk '{print $2}' | tac | awk 'NR > 1'`
-../../tools/database-run-actions $db pin-filesystem-1.cson
-../../tools/database-share-deepfolder-directory  $db --collection testfolder1
-echo "$dbconfigro" | python3 ../../tools/database.py /dev/stdin > $db.log 2>&1 &
+$SEAMLESS_TOOLS_DIR/database-run-actions $db pin-filesystem-1.cson
+$SEAMLESS_TOOLS_DIR/database-share-deepfolder-directory  $db --collection testfolder1
+echo "$dbconfigro" | python3 $SEAMLESS_TOOLS_DIR/database.py /dev/stdin > $db.log 2>&1 &
 sleep 2
 echo
 echo 'Run 4'

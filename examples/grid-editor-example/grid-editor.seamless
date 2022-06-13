@@ -1,0 +1,275 @@
+{
+  "__seamless__": "0.8",
+  "connections": [
+    {
+      "source": [
+        "grid_params"
+      ],
+      "target": [
+        "combine_grid_params",
+        "grid_params"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "translation_"
+      ],
+      "target": [
+        "combine_grid_params",
+        "translation"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "combine_grid_params"
+      ],
+      "target": [
+        "combined_grid_params"
+      ],
+      "type": "connection"
+    }
+  ],
+  "lib": [],
+  "nodes": [
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "a0ca06bc5a063a64ac957bd367530d61c36634829ece4eacad21b333d9236fa3",
+        "input": "24f962a5b78bb3dec9b9e214130e69f2da809d1fe813f3bd696b1e9dbe74f198",
+        "input_buffer": "24f962a5b78bb3dec9b9e214130e69f2da809d1fe813f3bd696b1e9dbe74f198",
+        "result": "2dfceaeeffb6cce6fd7a77bb81345e97c9fb6fea1fde7bedeb91c7b3ae78d037",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+      },
+      "compiled": false,
+      "hash_pattern": {
+        "*": "#"
+      },
+      "language": "python",
+      "path": [
+        "combine_grid_params"
+      ],
+      "pins": {
+        "grid_params": {},
+        "translation": {}
+      },
+      "type": "transformer"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "2dfceaeeffb6cce6fd7a77bb81345e97c9fb6fea1fde7bedeb91c7b3ae78d037"
+      },
+      "datatype": "mixed",
+      "path": [
+        "combined_grid_params"
+      ],
+      "share": {
+        "path": null,
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "path": [
+        "files"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "ea6bec15afe96556066102ac3ad34b13be6de29036bde688f99fb745b980ee6a"
+      },
+      "datatype": "mixed",
+      "file_extension": "css",
+      "mimetype": "text/css",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "grid-editor.css",
+        "persistent": true
+      },
+      "path": [
+        "files",
+        "css"
+      ],
+      "share": {
+        "path": "grid-editor.css",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "74862781e045d1b162d8337f0c4f0eda51c05959a78b72ea3e1003762219ddcb"
+      },
+      "datatype": "mixed",
+      "file_extension": "html",
+      "mimetype": "text/html",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "grid-editor.html",
+        "persistent": true
+      },
+      "path": [
+        "files",
+        "html"
+      ],
+      "share": {
+        "path": "grid-editor.html",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "51529ad8c0c35d59ef748e8d28ea2e1b9b28a4eed97e492040f39665fc309ff2"
+      },
+      "datatype": "mixed",
+      "file_extension": "js",
+      "mimetype": "application/javascript",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "grid-editor.js",
+        "persistent": true
+      },
+      "path": [
+        "files",
+        "js"
+      ],
+      "share": {
+        "path": "grid-editor.js",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "6fa6e06ff56b30aedea1f92fdcfe217c285fc53c24130082751c1f067e89a39e"
+      },
+      "datatype": "mixed",
+      "file_extension": "js",
+      "mimetype": "application/javascript",
+      "path": [
+        "files",
+        "jslib"
+      ],
+      "share": {
+        "path": "grid-editor-lib.js",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "886c745003101649af2d4061e1fde45bc9104761fe46ce1a5c43e0a458434d71"
+      },
+      "datatype": "mixed",
+      "file_extension": "js",
+      "mimetype": "application/javascript",
+      "path": [
+        "files",
+        "seamless_client_js"
+      ],
+      "share": {
+        "path": "seamless-client.js",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "d276a9eb4d299b59e8dc9159a8a05d77e4f03737ffd6bbd5ce9cb034d9c59438"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "grid_data1.txt",
+        "persistent": true
+      },
+      "path": [
+        "grid_data1"
+      ],
+      "share": {
+        "path": null,
+        "readonly": false
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "e7b89087fadd4a5b2ac2baa4c5f9fd0091215853d0fee915b5d4469baee314f9"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "grid_data2.txt",
+        "persistent": true
+      },
+      "path": [
+        "grid_data2"
+      ],
+      "share": {
+        "path": null,
+        "readonly": false
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "25580884b524c1f3103c6a3621b76cbc3c6848cb07d38538b6673296fa2f9415"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "grid_params.json",
+        "persistent": true
+      },
+      "path": [
+        "grid_params"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "adb1fbf805ae76351ea4b1ef4b5c279da86f30893743194d52455d476b2de7fc"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "translation.json",
+        "persistent": true
+      },
+      "path": [
+        "translation_"
+      ],
+      "share": {
+        "path": "translation",
+        "readonly": false
+      },
+      "type": "cell"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}

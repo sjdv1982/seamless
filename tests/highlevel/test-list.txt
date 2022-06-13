@@ -1,7 +1,9 @@
 # In general, run with:
 #   python3 -u TEST.py > test-outputs/TEST.out 2>&1
 #   Best also to test using "ipython3 TEST.py", since re-translation may work differently
-#   Before each release, the test set must be run under seamless-run.
+#   Before each release, the test set must be run:
+#   - under seamless-bash/seamless-run (within Docker)
+#   - under seamless-framework (bare-metal conda)
 #   Docker tests require continuumio/anaconda3 to be pulled
 bytes-conversion.py
 mime.py
@@ -39,7 +41,9 @@ simpler-ipython.py: Run with ipython --no-term-title (not -i) (see issue 25). Ou
 macro-simple.py
 macro.py
 macro-elision.py
-macro-elision-database.sh: run as i=macro-elision-database; seamless-devel ./$i.sh > test-outputs/$i.out 2>&1
+macro-elision-database.sh: 
+  run as i=macro-elision-database; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
+  If not in the Docker image, set SEAMLESS_TOOLS_DIR to <seamless-tools-git>/tools
 reactor-edit-macro.py
 delay.py
 delay-logs-file.py
@@ -82,6 +86,7 @@ twopi-graph-database.sh: run with Seamless database
                       run as i=twopi-graph-database; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
 pin-filesystem.sh: run as i=pin-filesystem; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
+  If not in the Docker image, set SEAMLESS_TOOLS_DIR to <seamless-tools-git>/tools
 load-graph.py
 load-graph2.py
 load-graph-static.py

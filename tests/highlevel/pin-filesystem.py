@@ -93,7 +93,7 @@ echo DEEPFOLDERPIN ${deepfolderpin}
 echo FOLDER_SUB_PIN ${folder_sub_pin}
 function list() {
     dirname=$1
-    find -L $dirname -name '*' -type f -print -exec openssl dgst -sha3-256 {} \; | awk '{x=$1;getline}{print x,$2}'
+    find -L $dirname -name '*' -type f -print -exec openssl dgst -sha3-256 {} \; | awk '{x=$1;getline}{print x,$2}' | sort -k1 
     echo ''
 }
 list deepfolderpin

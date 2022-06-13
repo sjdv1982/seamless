@@ -338,7 +338,7 @@ class TransformationJob:
                     for fut in pending:
                         fut.cancel()
                     return
-            if not len(pending):
+            if not len(pending) or not len(done):
                 #print("BEST STATUS", best_status)
                 if best_status is None:
                     return

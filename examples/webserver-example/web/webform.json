@@ -1,0 +1,125 @@
+{
+  "cells": {
+    "limit": {
+      "celltype": "float",
+      "component": "slider",
+      "params": {
+        "auto_read": true,
+        "max": 100,
+        "min": 0,
+        "title": "Lower limit of the plot"
+      },
+      "share": {
+        "encoding": "json",
+        "read": true,
+        "write": true
+      }
+    },
+    "markerline": {
+      "celltype": "str",
+      "component": "input",
+      "params": {
+        "auto_read": true,
+        "editable": true,
+        "title": "Marker and line for drawing the plot"
+      },
+      "share": {
+        "encoding": "json",
+        "read": true,
+        "write": true
+      }
+    },
+    "mirror": {
+      "celltype": "float",
+      "component": "slider",
+      "params": {
+        "auto_read": true,
+        "max": 100,
+        "min": 0,
+        "title": "Value where the plot is mirrored"
+      },
+      "share": {
+        "encoding": "json",
+        "read": true,
+        "write": true
+      }
+    },
+    "period": {
+      "celltype": "float",
+      "component": "slider",
+      "params": {
+        "auto_read": true,
+        "max": 100,
+        "min": 0,
+        "title": "Period of the wave"
+      },
+      "share": {
+        "encoding": "json",
+        "read": true,
+        "write": true
+      }
+    },
+    "png": {
+      "celltype": "bytes",
+      "component": "image",
+      "params": {
+        "auto_read": true,
+        "title": "Plot"
+      },
+      "share": {
+        "encoding": "text",
+        "read": true
+      }
+    }
+  },
+  "extra_components": [
+    {
+      "cell": "limit",
+      "component": "",
+      "id": "EXAMPLE_ID",
+      "params": {}
+    }
+  ],
+  "index": {
+    "title": "Seamless webform"
+  },
+  "order": [
+    "period",
+    "mirror",
+    "limit",
+    "markerline",
+    "png"
+  ],
+  "transformers": {
+    "filter_plot": {
+      "component": "transformer-status",
+      "params": {
+        "title": "Transformer filter_plot"
+      }
+    },
+    "gen_wave": {
+      "component": "transformer-status",
+      "params": {
+        "title": "Transformer gen_wave"
+      }
+    },
+    "plot2png": {
+      "component": "transformer-status",
+      "params": {
+        "title": "Transformer plot2png"
+      }
+    },
+    "plot2txt": {
+      "component": "transformer-status",
+      "params": {
+        "title": "Transformer plot2txt"
+      }
+    },
+    "txt2plot": {
+      "component": "transformer-status",
+      "params": {
+        "title": "Transformer txt2plot"
+      }
+    }
+  }
+}

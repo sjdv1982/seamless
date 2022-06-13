@@ -1,47 +1,38 @@
-Seamless: a cell-based reactive programming framework
+Seamless: a cell-based interactive workflow framework
 =====================================================
 
-Seamless is a framework to set up protocols (workflows) and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations, and all cells can be edited interactively.
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb)
 
-The main application domains are scientific computing, scientific web services, data visualization, and interactive development of algorithms.
+Seamless is a framework to set up protocols (workflows) and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations. All cells and computations can be created, edited and connected interactively.
 
-Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible. Unlike other workflow systems, Seamless graphs are self-contained and do not depend on the content of external files, URLs, identifiers, version numbers, or other kinds of metadata.
+The main application domains are data science, scientific computing, software prototyping, and interactive web services.
+
+Protocols, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible.
 
 ### Documentation: <http://sjdv1982.github.io/seamless>
 
-Supported platforms
-===================
+Try out Seamless
+================
 
-Seamless is meant to run from inside a Docker container. This is easy under Linux.
+You can try out Seamless in your browser, without any installation,
+thanks to the Binder project. Click on the badge below:
 
-This will not work under Mac OSX and Windows, because Docker support for networking is incomplete.
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb)
 
-Under Mac OSX, you can now install Seamless without Docker, into a conda environment (see Alternative installations).
 
-Seamless does not run under Windows.
+Quick installation
+==================
 
-Installation using Docker
-=========================
-
-First, you must [install Docker](https://docs.docker.com/get-docker/)
-and [(mini)conda](https://docs.conda.io/en/latest/miniconda.html).
-
-Then, installation is as follows:
+First, [install Docker](https://docs.docker.com/get-docker/)
+and [miniconda](https://docs.conda.io/en/latest/miniconda.html).
 
 ```
-# Pull docker image
 docker pull rpbs/seamless
-
-# Install Seamless command line tools
-conda install -c rpbs seamless-cli
+conda create -n seamless -c rpbs -c conda-forge seamless-cli -y
+conda activate seamless
 ```
 
-### Getting started
-
-The command ```seamless-ipython``` launches an IPython terminal inside a
-Seamless Docker container.
-
-```seamless-jupyter``` does the same for Jupyter Notebook.
+For more details, see [Installation](https://github.com/sjdv1982/seamless/blob/master/installation.md)
 
 
 Basic example
@@ -66,7 +57,7 @@ ctx.b = 20              # ctx.b => Seamless cell
 ctx.add = add           # ctx.add => Seamless transformer
 ctx.add.a = ctx.a
 ctx.add.b = ctx.b
-ctx.c = ctx.add         # ctx.c => Seamless cell
+ctx.c = ctx.add.result  # ctx.c => Seamless cell
 await ctx.computation() # in a .py file, use "ctx.compute()" instead
 ctx.c.value
 ```
@@ -373,47 +364,19 @@ ctx.add.code.value
 ## Additional features
 - Transformers can be written in Python, IPython, bash, or any compiled language (C, C++, ...).
 - Bash transformers can be executed inside Docker images.
-- IPython transformers can use IPython magics, allowing the use of languages such as Cython (tested), Matlab/Octave (untested), Julia (untested), or R (untested).
+- IPython transformers can use IPython magics, allowing the use of languages such as Cython (tested), Matlab/Octave (untested), Julia (untested), or R (tested).
 - The use of Redis as a checksum-to-buffer cache
 - Seamless instances can communicate, serving as job slaves or result caches for transformations.
 - Interactive monitoring of status and exception messages.
 
-Alternative installations
-=========================
-
-
-### Installation under conda
-
-**NOTE: this is EXPERIMENTAL**. The main application is running Seamless under OSX.
-
-```
-conda create -n seamless
-conda activate seamless
-conda install 'python==3.7.3' pip
-pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements.txt
-pip install -r https://raw.githubusercontent.com/sjdv1982/seamless/experimental/requirements-extra.txt
-conda install -c rpbs silk seamless-framework
-```
-
-Don't install the Seamless command line tools. Instead of commands like `seamless-bash`, `seamless-ipython`, `seamless-jupyter`, simply do `conda activate seamless` and type `python`, `ipython` or `jupyter notebook`. The source code of the Seamless command line tools is at `https://github.com/sjdv1982/seamless/tree/master/docker/commands`.
-
-
-### Installation under Singularity
-
-**NOTE: this is EXPERIMENTAL.** The main application for this is to run Seamless transformations
-and database adapters in an HPC environment. Launching e.g. Jupyter or Docker under Singularity is unlikely to work.
-
-```
-wget https://raw.githubusercontent.com/sjdv1982/seamless/experimental/docker/seamless-simple/Singularity  # or download it manually
-sudo singularity build seamless.simg Singularity
-```
-
-A bash shell in a new Seamless container can then be started using e.g. `singularity run -c --cleanenv seamless.simg`.
-If you run without `-c`, be sure to do `export PATH=/opt/conda/bin:$PATH` as the first command.
-
-
 More examples
 =============
+Run `seamless-jupyter-trusted`.
+
+Inside the notebook file tree, browse `seamless-examples`. 
 <https://github.com/sjdv1982/seamless/tree/master/examples>
 
+Inside the notebook file tree, browse `seamless-tests/highlevel`. 
 <https://github.com/sjdv1982/seamless/tree/master/tests/highlevel>
+
+### Documentation: <http://sjdv1982.github.io/seamless>

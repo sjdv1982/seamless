@@ -1,0 +1,17 @@
+{
+  "properties": {
+    "first": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "length": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "step": {
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "type": "object"
+}
