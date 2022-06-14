@@ -33,7 +33,7 @@ In summary, the following commands will execute the workflow:
 seamless-bash
 python3 ~/seamless-scripts/snakemake2seamless.py bcftools_call
 conda config --env --set channel_priority strict
-conda install -c bioconda samtools=1.9 bcftools=1.9 bwa=0.7
+mamba install -c bioconda -c conda-forge samtools bcftools bwa
 
 python3 run-snakegraph.py
 # or:
