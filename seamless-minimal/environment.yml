@@ -27,6 +27,7 @@ dependencies:
   - r-cairo=1.5_12.*
   - scikit-learn=0.24.*
   - sympy=1.8.*
+  - matplotlib
   - pip:
     - cson==0.8.*
 
