@@ -216,7 +216,7 @@ class Share:
         await task
 
         checksum = task.result()
-        buffer_cache.cache_buffer(checksum, buffer)
+        buffer_cache.cache_buffer(checksum, new_buffer)
         return self.set_checksum(checksum, marker)
 
     async def _calc_checksum(self, buffer):
