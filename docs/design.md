@@ -369,6 +369,16 @@ To cleanly remove any kind of database entry, create a file with a format like
 `/seamless-tools/tools/jobless/tests/jobless-test-dblog-ORIGINAL.txt` and then
 run `seamless-delete-database-from-log <filename>`.
 
+Note that any workflow or transformation job slave 
+that needs the buffer but can't find it will report a CacheMissError. 
+This will happen for sure if the buffer is *independent*, i.e. is not the result
+of some kind of computation (transformation, conversion, cell expression etc.).
+If it *is* the result of a computation, and the computation is part of the workflow
+that is loaded by the Seamless instance, Seamless may try to repeat the computation
+in order to regenerate the buffer (this is called "fingertipping"). So you can be
+a bit more aggressive in deleting buffers of intermediate results (or even 
+final results), especially if they are large and/or quick to compute.
+
 ### Multiple database directories 
 
 It is possible to set up multiple database directories with Seamless database.
