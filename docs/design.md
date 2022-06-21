@@ -315,7 +315,7 @@ folder on the file system.
 - "Batteries included": web interface generator, status web page, graph-to-checksum tools, serve-graph.
 
 These features are important for the development of interactive workflows,
-but they do not impact deployment. Therefore, they are discussed in the architecture document (mostly TODO).
+but they do not impact deployment. Therefore, they are discussed in the architecture document (/docs/developer/architecture.txt, mostly TODO).
 
 What does impact deployment is the following.
 Typically, a web service consists of two graphs (.seamless files). 
