@@ -362,10 +362,10 @@ ctx.add.code.value
 
 
 ## Additional features
-- Transformers can be written in Python, IPython, bash, or any compiled language (C, C++, ...).
+- Transformers can be written in Python, IPython, bash, or any compiled language (C, C++, Rust, Go, ...).
 - Bash transformers can be executed inside Docker images.
 - IPython transformers can use IPython magics, allowing the use of languages such as Cython (tested), Matlab/Octave (untested), Julia (untested), or R (tested).
-- The use of Redis as a checksum-to-buffer cache
+- The use of a database as a checksum-to-buffer cache
 - Seamless instances can communicate, serving as job slaves or result caches for transformations.
 - Interactive monitoring of status and exception messages.
 

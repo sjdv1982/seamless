@@ -392,7 +392,7 @@ The Seamless database has a special request where you can ask directly for the
 filename that corresponds to the buffer. With the request, you can specify a
 file zone (or multiple file zones). 
 If the Seamless database directory is in the same file zone (or in one of the file
-zones), the file name (i.e. `/buffer/<checksum>`) is assumed to be accessible by the requesting instance, and is returned. In other words, "same file zone" means "same file system".
+zones), the file name (i.e. `/buffers/<checksum>`) is assumed to be accessible by the requesting instance, and is returned. In other words, "same file zone" means "same file system".
 This is very efficient in case of bash transformers,
 leading to a hard link instead of load-buffer-from-database + write-buffer-to-
 file-in-temp-directory.
