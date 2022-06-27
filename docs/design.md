@@ -184,7 +184,9 @@ Seamless will try to contact them. By default, it contains
 the RPBS buffer server, so that `https://buffer.rpbs.univ-paris-diderot.fr/<checksum>` will be contacted.
 
 **Deployment role: checksum-to-buffer service**
+
 **Deployment role: buffer info service**.
+
 **Deployment role: buffer server**.
 
 # Transformations
@@ -286,7 +288,9 @@ sent. After computation, the jobslave will deposit the result checksum for that 
 
 **Deployment role: transformation job service**. Needs to support as many types of 
 transformations as possible. It must also support the cancellation of jobs.
+
 **Deployment role: transformation result service**. Store transformation-to-result mapping.
+
 **Deployment role: compilation service**. Store mapping of source code (C/C++) to compiled binary.
  
 
@@ -300,7 +304,7 @@ the keys are strings and the values are checksums. The difference is the cell
 type of the checksums. For deep cells, the cell type is "mixed" 
 (Seamless's default cell type), which means that you can easily access an 
 individual element and convert it trivially to a normal Seamless cell.
-In contrast, for deep folders, the cell type is "binary", which means that
+In contrast, for deep folders, the cell type is "bytes", which means that
 buffer and value are the same. This allows a one-to-one mapping with a
 folder on the file system.
 
@@ -336,8 +340,11 @@ by `seamless-new-project` and `seamless-load-project`.
 ## Seamless database
 
 **Deployment role: checksum-to-buffer service**
+
 **Deployment role: buffer info service**
+
 **Deployment role: transformation result service**
+
 **Deployment role: compilation service**
 
 These roles are normally taken by the ***Seamless database***. A Seamless instance
@@ -480,6 +487,7 @@ simple program that does the following:
 ## Jobless
 
 **Deployment role: transformation job service**
+
 **Deployment role: compilation service**
 
 These roles are normally taken by ***jobless***. 
