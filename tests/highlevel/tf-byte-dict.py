@@ -1,7 +1,9 @@
+from __future__ import annotations
 from seamless.highlevel import Context
+import numpy as np
 
 ctx = Context()
-def code():
+def code() -> dict[str, np.ndarray]:
     import numpy as np
     a = np.arange(20,80).astype(np.int8)
     return {
