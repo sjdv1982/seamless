@@ -15,19 +15,24 @@ import json
 from weakref import WeakSet
 
 import logging
+
 logger = logging.getLogger("seamless")
+
 
 def print_info(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
 
+
 def print_warning(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.warning(msg)
 
+
 def print_debug(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
+
 
 def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
@@ -47,6 +52,7 @@ from ..midlevel.vault import save_vault, load_vault
 
 Graph = namedtuple("Graph", ("nodes", "connections", "params", "lib"))
 
+
 def run_in_mainthread(func):
     def func2(*args, **kwargs):
         ctx = args[0]
@@ -55,8 +61,10 @@ def run_in_mainthread(func):
             manager.taskmanager.add_synctask(func, args, kwargs, with_event=False)
         else:
             func(*args, **kwargs)
+
     functools.update_wrapper(func2, func)
     return func2
+
 
 Graph = namedtuple("Graph", ("nodes", "connections", "params", "lib"))
 
@@ -65,6 +73,7 @@ shareserver = None
 
 def get_status(parent, children, nodes, path):
     from ..core.context import StatusReport
+
     result = StatusReport()
     if path is not None:
         lp = len(path)
@@ -92,15 +101,22 @@ def get_status(parent, children, nodes, path):
     else:
         return "Status: OK"
 
+
 import weakref
+
 _contexts = weakref.WeakSet()
+
+
 def _destroy_contexts():
     for context in _contexts:
         try:
             context._destroy()
         except:
             pass
+
+
 import atexit
+
 atexit.register(_destroy_contexts)
 
 
@@ -115,14 +131,14 @@ def get_zip(buffer_dict):
     archive.close()
     return result
 
+
 class Context(Base, HelpMixin):
     """Context class. Organizes cells and workers hierarchically.
 
     See http://sjdv1982.github.io/seamless/sphinx/html/context.html for documentation
     """
-    _default_parameters = {
-        "share_namespace": "ctx"
-    }
+
+    _default_parameters = {"share_namespace": "ctx"}
     _translating = False
     _translate_count = 0
     _gen_context = None
@@ -133,10 +149,14 @@ class Context(Base, HelpMixin):
     _environment = None
     _libroot = None
     _untranslatable = False
-    _reverse_fallbacks = WeakSet()  # Fallback objects from other Contexts, that use a fallback cell in this Context
+    _reverse_fallbacks = (
+        WeakSet()
+    )  # Fallback objects from other Contexts, that use a fallback cell in this Context
 
     @classmethod
-    def from_graph(cls, graph, manager, *, mounts=True, shares=True, share_namespace=None, zip=None):
+    def from_graph(
+        cls, graph, manager, *, mounts=True, shares=True, share_namespace=None, zip=None
+    ):
         """Constructs a Context from a graph
 
         "graph" can be a file name or a JSON dict
@@ -160,7 +180,7 @@ class Context(Base, HelpMixin):
             self.add_zip(zip)
         if share_namespace is not None:
             self.share_namespace = share_namespace
-        self.set_graph(graph,mounts=mounts,shares=shares)
+        self.set_graph(graph, mounts=mounts, shares=shares)
         return self
 
     def set_graph(self, graph, *, mounts=True, shares=True):
@@ -175,6 +195,7 @@ class Context(Base, HelpMixin):
 
         """
         from ..midlevel.graph_convert import graph_convert
+
         for child in self._children.values():
             if isinstance(child, Transformer):
                 if child.debug.mode is not None:
@@ -183,7 +204,7 @@ class Context(Base, HelpMixin):
         if isinstance(graph, str):
             graph_file = graph
             with open(graph_file) as f:
-                graph = json.load(f) 
+                graph = json.load(f)
         graph = graph_convert(graph, self)
         nodes = {}
         self._children.clear()
@@ -199,7 +220,7 @@ class Context(Base, HelpMixin):
             if nodetype == "libinstance":
                 continue
             nodecls = nodeclasses[nodetype]
-            child = nodecls(parent=self,path=p)
+            child = nodecls(parent=self, path=p)
             if nodetype in ("cell", "transformer", "macro"):
                 node["UNTRANSLATED"] = True
         connections = graph["connections"]
@@ -231,13 +252,14 @@ class Context(Base, HelpMixin):
         """
         super().__init__(None, ())
         from seamless.core.manager import Manager
+
         if manager is not None:
             assert isinstance(manager, Manager), type(manager)
             self._manager = manager
         else:
             self._manager = Manager()
         self._manager._highlevel_refs += 1
-        self._graph = Graph({},[],{},{})
+        self._graph = Graph({}, [], {}, {})
         self._graph.params.update(deepcopy(self._default_parameters))
         self._children = {}
         self._needs_translation = True
@@ -245,7 +267,7 @@ class Context(Base, HelpMixin):
         self._traitlets = {}
         self._observers = set()
         self._environment = ContextEnvironment(self)
-        _contexts.add(self)        
+        _contexts.add(self)
 
     def _get_node(self, path):
         try:
@@ -266,7 +288,12 @@ class Context(Base, HelpMixin):
                 li = LibInstance(self, path=path)
                 li._bound = weakref.ref(self)
                 return li
-            assert node["type"] == "context", (path, node["type"]) #if not context, should be in children!
+            if node["type"] != "context":
+                raise AttributeError(
+                    "Node {} is not a Context, and not a child of this Context".format(
+                        path
+                    )
+                )
             return SubContext(self, path)
         attr = path
         if len(path) == 1:
@@ -289,8 +316,7 @@ class Context(Base, HelpMixin):
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
-        if hasattr(type(self), attr) or attr in self.__dict__ \
-          or attr == "path":
+        if hasattr(type(self), attr) or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         path = (attr,)
         try:
@@ -301,7 +327,7 @@ class Context(Base, HelpMixin):
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
-        members = {k:v for k,v in inspect.getmembers(type(self))}
+        members = {k: v for k, v in inspect.getmembers(type(self))}
         if attr in members and isinstance(members[attr], property):
             return object.__setattr__(self, attr, value)
         attr2 = (attr,)
@@ -309,7 +335,7 @@ class Context(Base, HelpMixin):
             if value._parent is None:
                 self._graph[0][attr2] = value
                 self._set_child(attr2, value)
-                value._init(self, attr2 )
+                value._init(self, attr2)
                 self._translate()
             else:
                 assign(self, attr2, value)
@@ -331,6 +357,7 @@ class Context(Base, HelpMixin):
 
     def _add_traitlet(self, path, trigger):
         from .SeamlessTraitlet import SeamlessTraitlet
+
         traitlet = self._traitlets.get(path)
         if traitlet is not None:
             return traitlet
@@ -355,6 +382,7 @@ class Context(Base, HelpMixin):
         i.e. under python or ipython, but not in a Jupyter kernel.
         """
         from seamless import verify_sync_compute
+
         verify_sync_compute()
         self.translate()
         return self._gen_context.compute(timeout, report)
@@ -396,6 +424,7 @@ class Context(Base, HelpMixin):
         i.e. under python or ipython, but not in a Jupyter kernel.
         """
         from seamless import verify_sync_translate
+
         if self._untranslatable:
             raise Exception("Context is untranslatable")
         verify_sync_translate()
@@ -458,8 +487,8 @@ class Context(Base, HelpMixin):
         finally:
             self._translating = False
         nodes, connections, params, lib = self._graph
-        nodes = [v for k,v in sorted(nodes.items(), key=lambda kv: kv[0])]
-        lib = [v for k,v in sorted(lib.items(), key=lambda kv: kv[0])]
+        nodes = [v for k, v in sorted(nodes.items(), key=lambda kv: kv[0])]
+        lib = [v for k, v in sorted(lib.items(), key=lambda kv: kv[0])]
         if copy:
             connections = deepcopy(connections)
             nodes = deepcopy(nodes)
@@ -486,8 +515,8 @@ class Context(Base, HelpMixin):
         finally:
             self._translating = False
         nodes, connections, params, lib = self._graph
-        nodes = [v for k,v in sorted(nodes.items(), key=lambda kv: kv[0])]
-        lib = [v for k,v in sorted(lib.items(), key=lambda kv: kv[0])]
+        nodes = [v for k, v in sorted(nodes.items(), key=lambda kv: kv[0])]
+        lib = [v for k, v in sorted(lib.items(), key=lambda kv: kv[0])]
         if copy:
             connections = deepcopy(connections)
             nodes = deepcopy(nodes)
@@ -541,11 +570,13 @@ class Context(Base, HelpMixin):
         The cache is returned as zipped bytes
         """
         # TODO: option to not follow deep cell checksums (currently, they are always followed)
-        force = (self._gen_context is None)
+        force = self._gen_context is None
         self._wait_for_auth_tasks("the graph buffers are obtained for zip")
         self._do_translate(force=force)
         graph = self.get_graph()
-        checksums = copying.get_graph_checksums(graph, with_libraries, with_annotations=False)
+        checksums = copying.get_graph_checksums(
+            graph, with_libraries, with_annotations=False
+        )
         manager = self._manager
         buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
         return get_zip(buffer_dict)
@@ -556,11 +587,13 @@ class Context(Base, HelpMixin):
         The cache is returned as zipped bytes
         """
         # TODO: option to not follow deep cell checksums (currently, they are always followed)
-        force = (self._gen_context is None)
+        force = self._gen_context is None
         await self._wait_for_auth_tasks_async("the graph buffers are obtained for zip")
         self._do_translate(force=force)
         graph = self.get_graph()
-        checksums = copying.get_graph_checksums(graph, with_libraries, with_annotations=False)
+        checksums = copying.get_graph_checksums(
+            graph, with_libraries, with_annotations=False
+        )
         manager = self._manager
         buffer_dict = await copying.get_buffer_dict(manager, checksums)
         return get_zip(buffer_dict)
@@ -584,10 +617,9 @@ class Context(Base, HelpMixin):
             f.write(zip)
 
     def save_vault(self, dirname, with_libraries=True):
-        """Save the checksum-to-buffer cache for the current graph in a vault directory
-        """
+        """Save the checksum-to-buffer cache for the current graph in a vault directory"""
         # TODO: option to not follow deep cell checksums (currently, they are always followed)
-        force = (self._gen_context is None)
+        force = self._gen_context is None
         self._wait_for_auth_tasks("the graph buffers are obtained for zip")
         self._do_translate(force=force)
         graph = self.get_graph()
@@ -611,15 +643,16 @@ class Context(Base, HelpMixin):
             checksums = copying.get_checksums(
                 lib["graph"]["nodes"],
                 lib["graph"]["connections"],
-                with_annotations=False
+                with_annotations=False,
             )
             for checksum in checksums:
                 buffer_cache.incref(bytes.fromhex(checksum), True)
         if old_lib is not None:
-            old_checksums = copying.get_checksums(old_lib["graph"]["nodes"], [], with_annotations=False)
+            old_checksums = copying.get_checksums(
+                old_lib["graph"]["nodes"], [], with_annotations=False
+            )
             for old_checksum in old_checksums:
                 buffer_cache.decref(bytes.fromhex(old_checksum))
-
 
     def add_zip(self, zip, incref=False):
         """Adds entries from "zip" to the checksum-to-buffer cache
@@ -660,7 +693,6 @@ class Context(Base, HelpMixin):
         """
         if self._gen_context is None:
             self._do_translate(force=True)
-        manager = self._manager
         return load_vault(vault_directory, incref=incref)
 
     def include(self, lib, only_zip=False, full_path=False):
@@ -671,6 +703,7 @@ class Context(Base, HelpMixin):
         using ctx.lib
         """
         from .library import Library
+
         if not isinstance(lib, Library):
             raise TypeError(type(lib))
         if only_zip:
@@ -679,14 +712,10 @@ class Context(Base, HelpMixin):
             lib.include(self, full_path=full_path)
         self._translate()
 
-
     def _wait_for_auth_tasks(self, what_happens_text):
         if self._gen_context is not None and not asyncio.get_event_loop().is_running():
             taskmanager = self._gen_context._get_manager().taskmanager
-            taskmanager.compute(
-                timeout=10, report=2,
-                get_tasks_func=get_auth_tasks
-            )
+            taskmanager.compute(timeout=10, report=2, get_tasks_func=get_auth_tasks)
             auth_lost_cells = set()
             for task in taskmanager.tasks:
                 if not isinstance(task, auth_task_types):
@@ -699,15 +728,17 @@ class Context(Base, HelpMixin):
             if len(auth_lost_cells):
                 warn = """WARNING: the following cells had their authoritative value under modification while %s
     These modifications have been CANCELED:
-    %s""" % (what_happens_text, list(auth_lost_cells))
+    %s""" % (
+                    what_happens_text,
+                    list(auth_lost_cells),
+                )
                 print(warn)
 
     async def _wait_for_auth_tasks_async(self, what_happens_text):
         if self._gen_context is not None:
             taskmanager = self._gen_context._get_manager().taskmanager
             await taskmanager.computation(
-                timeout=10, report=2,
-                get_tasks_func=get_auth_tasks
+                timeout=10, report=2, get_tasks_func=get_auth_tasks
             )
             auth_lost_cells = set()
             for task in taskmanager.tasks:
@@ -721,7 +752,10 @@ class Context(Base, HelpMixin):
             if len(auth_lost_cells):
                 warn = """WARNING: the following cells had their authoritative value under modification while %s
     These modifications have been CANCELED:
-    %s""" % (what_happens_text, list(auth_lost_cells))
+    %s""" % (
+                    what_happens_text,
+                    list(auth_lost_cells),
+                )
                 print(warn)
 
     @run_in_mainthread
@@ -735,12 +769,10 @@ class Context(Base, HelpMixin):
         await until_macro_mode_off()
         return self._do_translate2(graph0, force=force, explicit=explicit)
 
-
     def _do_translate2(self, graph0, force, explicit):
         from ..midlevel.translate import translate, import_before_translate
         from ..midlevel.pretranslate import pretranslate
-        from ..core.context import Context as CoreContext
-        #from pprint import pprint; pprint(graph0)
+
         if not force and not self._needs_translation:
             return
         if self._translating:
@@ -760,10 +792,7 @@ class Context(Base, HelpMixin):
         if graph is not graph0:
             libinstance_nodes = {node["path"]: node for node in graph["nodes"]}
             self._runtime_graph = Graph(
-                libinstance_nodes,
-                graph["connections"],
-                graph["params"],
-                graph["lib"]
+                libinstance_nodes, graph["connections"], graph["params"], graph["lib"]
             )
         else:
             graph0 = deepcopy(graph0)
@@ -771,7 +800,7 @@ class Context(Base, HelpMixin):
                 {node["path"]: node for node in graph0["nodes"]},
                 graph0["connections"],
                 graph0["params"],
-                graph0["lib"]
+                graph0["lib"],
             )
 
         self._translate_count += 1
@@ -779,14 +808,15 @@ class Context(Base, HelpMixin):
         try:
             ok = False
             self._translating = True
-            ctx = None
             if self._gen_context is not None:
                 self._gen_context.destroy()
                 print_info("*" * 30 + "DESTROYED BEFORE TRANSLATE" + "*" * 30)
                 ok1 = self._manager.livegraph.check_destroyed()
                 ok2 = self._manager.taskmanager.check_destroyed()
                 if not ok1 or not ok2:
-                    raise Exception("Cannot re-translate, since clean-up of old context was incomplete")
+                    raise Exception(
+                        "Cannot re-translate, since clean-up of old context was incomplete"
+                    )
             import_before_translate(graph)
             """ KLUDGE
             The translation process does NOT happen in one async step; it will start launching tasks
@@ -797,19 +827,13 @@ class Context(Base, HelpMixin):
             """
             livegraph._hold_observations = True
             with macro_mode_on():
-                ub_ctx = context(
-                    toplevel=True,
-                    manager=self._manager
-                )
+                ub_ctx = context(toplevel=True, manager=self._manager)
                 ub_ctx._compilers = env["compilers"]
                 ub_ctx._languages = env["languages"]
                 self._unbound_context = ub_ctx
                 ub_ctx._root_highlevel_context = weakref.ref(self)
-                #print("TRANSLATE", self)
-                translate(
-                    graph, ub_ctx, 
-                    self.environment
-                )
+                # print("TRANSLATE", self)
+                translate(graph, ub_ctx, self.environment)
                 nodedict = {node["path"]: node for node in graph["nodes"]}
                 nodedict0 = {node["path"]: node for node in graph0["nodes"]}
                 for path in nodedict:
@@ -843,12 +867,13 @@ class Context(Base, HelpMixin):
             livegraph._hold_observations = True
             self._translating = True
             for path, child in self._children.items():
-                if isinstance(child, (Cell, Transformer, Macro, Module, DeepCell, DeepFolderCell)):
+                if isinstance(
+                    child, (Cell, Transformer, Macro, Module, DeepCell, DeepFolderCell)
+                ):
                     try:
                         child._set_observers()
                     except Exception:
-                        import traceback; traceback.print_exc()
-                        pass
+                        traceback.print_exc()
                 elif isinstance(child, (PinWrapper, Link)):
                     continue
                 else:
@@ -876,7 +901,7 @@ class Context(Base, HelpMixin):
                 continue
             fallback = cell._fallback
             if fallback is not None:
-                fallback._activate()    
+                fallback._activate()
 
     def _get_shares(self):
         shares = {}
@@ -895,15 +920,15 @@ class Context(Base, HelpMixin):
         if shares is None:
             return
         from ..core import StructuredCell, Cell as core_cell
+
         global shareserver
         from .. import shareserver
         from ..core.share import sharemanager
+
         shareserver.start()
         if self._live_share_namespace is None:
             self._live_share_namespace = sharemanager.new_namespace(
-                self._manager,
-                name=self.share_namespace,
-                share_evaluate=False
+                self._manager, name=self.share_namespace, share_evaluate=False
             )
         for path, shareparams in shares.items():
             hcell = self._children[path]
@@ -915,16 +940,20 @@ class Context(Base, HelpMixin):
                 cell1 = hcell._get_context().options
                 sharepath1 = sharepath + "/OPTIONS"
                 cell1.share(
-                    sharepath1, readonly=False,
-                    mimetype="application/json", toplevel=toplevel,
-                    cellname=cell1._format_path()
+                    sharepath1,
+                    readonly=False,
+                    mimetype="application/json",
+                    toplevel=toplevel,
+                    cellname=cell1._format_path(),
                 )
                 cell2 = hcell._get_context().selected_option
                 sharepath2 = sharepath + "/SELECTED_OPTION"
                 cell2.share(
-                    sharepath2, readonly=False,
-                    mimetype="text/plain", toplevel=toplevel,
-                    cellname=cell2._format_path()
+                    sharepath2,
+                    readonly=False,
+                    mimetype="text/plain",
+                    toplevel=toplevel,
+                    cellname=cell2._format_path(),
                 )
 
                 continue
@@ -942,9 +971,11 @@ class Context(Base, HelpMixin):
             mimetype = hcell.mimetype
             toplevel = shareparams.get("toplevel", False)
             cell.share(
-                sharepath, readonly,
-                mimetype=mimetype, toplevel=toplevel,
-                cellname="." + ".".join(path)
+                sharepath,
+                readonly,
+                mimetype=mimetype,
+                toplevel=toplevel,
+                cellname="." + ".".join(path),
             )
 
     def _rename_path(self, path, newpath):
@@ -958,7 +989,7 @@ class Context(Base, HelpMixin):
             graph = self._runtime_graph
         nodes = graph.nodes
         for p in list(nodes.keys()):
-            if p[:len(path)] == path:
+            if p[: len(path)] == path:
                 node = nodes[p]
                 child = self._children.get(p)
                 if isinstance(child, Transformer):
@@ -966,7 +997,7 @@ class Context(Base, HelpMixin):
                         msg = "Cannot delete {} in debug mode"
                         raise Exception(msg.format(child))
         for p in list(nodes.keys()):
-            if p[:len(path)] == path:
+            if p[: len(path)] == path:
                 node = nodes[p]
                 child = self._children.get(p)
                 nodes.pop(p)
@@ -977,8 +1008,7 @@ class Context(Base, HelpMixin):
 
         nodes = graph.nodes
         l = len(nodes)
-        newnodes = {k:v for k,v in nodes.items() \
-                    if k[:len(path)] != path }
+        newnodes = {k: v for k, v in nodes.items() if k[: len(path)] != path}
         if len(newnodes) < l:
             nodes.clear()
             nodes.update(newnodes)
@@ -1002,6 +1032,7 @@ class Context(Base, HelpMixin):
     def lib(self):
         """Returns the libraries that were included in the graph"""
         from .library.include import IncludedLibraryContainer
+
         libroot = self._libroot
         if libroot is None:
             libroot = self
@@ -1014,13 +1045,18 @@ class Context(Base, HelpMixin):
         The checksum must be a SHA3-256 hash, as hex string or as bytes"""
         return self._manager.resolve(checksum, celltype=celltype, copy=True)
 
-    def observe(self, path, callback, polling_interval, observe_none=False, params=None):
+    def observe(
+        self, path, callback, polling_interval, observe_none=False, params=None
+    ):
         """Observes attributes of the context, analogous to Cell.observe"""
 
         observer = PollingObserver(
-            self, path, callback, polling_interval,
+            self,
+            path,
+            callback,
+            polling_interval,
             observe_none=observe_none,
-            params=params
+            params=params,
         )
         self._observers.add(observer)
         return observer
@@ -1038,9 +1074,7 @@ class Context(Base, HelpMixin):
             libroot = self
         lib = libroot._graph.lib
         lp = len(path)
-        result = {k[lp:]:v for k,v in lib.items() \
-                  if len(k) > lp and k[:lp] == path \
-                }
+        result = {k[lp:]: v for k, v in lib.items() if len(k) > lp and k[:lp] == path}
         return result
 
     def _get_lib(self, path):
@@ -1049,9 +1083,7 @@ class Context(Base, HelpMixin):
             libroot = self
         return libroot._graph.lib[tuple(path)]
 
-    def remove_connections(self, path, *,
-        runtime=False, endpoint="both", match="sub"
-    ):
+    def remove_connections(self, path, *, runtime=False, endpoint="both", match="sub"):
         """Removes all connections/links with source or target matching path
 
         "endpoint" can be "source", "target", "connection", "link" or "all".
@@ -1069,15 +1101,16 @@ class Context(Base, HelpMixin):
         assert endpoint in ("source", "target", "both", "link", "all")
         assert match in ("super", "sub", "exact", "all")
         lp = len(path)
+
         def matches(p):
             if match == "exact":
-                return (p == path)
+                return p == path
             elif match == "super":
-                return path[:len(p)] == p
+                return path[: len(p)] == p
             elif match == "sub":
                 return p[:lp] == path
-            else: # all
-                return p[:lp] == path or path[:len(p)] == p
+            else:  # all
+                return p[:lp] == path or path[: len(p)] == p
 
         def keep_con(con):
             if con["type"] == "link":
@@ -1100,11 +1133,12 @@ class Context(Base, HelpMixin):
                     if matches(ctarget):
                         return False
                 return True
+
         connections = self._graph[1]
         if runtime:
             connections = self._runtime_graph[1]
         new_connections = list(filter(keep_con, connections))
-        any_removed = (len(new_connections) < len(connections))
+        any_removed = len(new_connections) < len(connections)
         connections[:] = new_connections
         return any_removed
 
@@ -1149,7 +1183,7 @@ class Context(Base, HelpMixin):
         all_types = list(classless) + list(nodeclasses.keys())
         assert type is None or type in all_types, (type, all_types)
         children00 = []
-        for p,c in self._children.items():
+        for p, c in self._children.items():
             if isinstance(c, LibInstance) and type != "libinstance":
                 for child in c.ctx.get_children():
                     children00.append((child.path, child))
@@ -1158,8 +1192,8 @@ class Context(Base, HelpMixin):
         children0 = children00
         if type is not None and type not in classless:
             klass = nodeclasses[type]
-            children0 = [(p,c) for p,c in children00 if isinstance(c, klass)]
-        children = [p[0] for p,c in children0]
+            children0 = [(p, c) for p, c in children00 if isinstance(c, klass)]
+        children = [p[0] for p, c in children0]
         if type == "context":
             children = [p for p in children if (p,) not in children00]
         return sorted(list(set(children)))
@@ -1204,7 +1238,7 @@ class Context(Base, HelpMixin):
             checksums = copying.get_checksums(
                 lib["graph"]["nodes"],
                 lib["graph"]["connections"],
-                with_annotations=False
+                with_annotations=False,
             )
             for checksum in checksums:
                 buffer_cache.decref(bytes.fromhex(checksum))
@@ -1222,8 +1256,8 @@ class Context(Base, HelpMixin):
     def __del__(self):
         self._destroy()
 
-class SubContext(Base, HelpMixin):
 
+class SubContext(Base, HelpMixin):
     def __getitem__(self, attr):
         if not isinstance(attr, str):
             raise KeyError(attr)
@@ -1246,7 +1280,7 @@ class SubContext(Base, HelpMixin):
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
             return object.__setattr__(self, attr, value)
-        members = {k:v for k,v in inspect.getmembers(type(self))}
+        members = {k: v for k, v in inspect.getmembers(type(self))}
         if attr in members and isinstance(members[attr], property):
             return object.__setattr__(self, attr, value)
         parent = self._get_top_parent()
@@ -1254,7 +1288,7 @@ class SubContext(Base, HelpMixin):
         if isinstance(value, Transformer):
             if value._parent is None:
                 parent._graph[0][path] = value
-                value._init(parent, path )
+                value._init(parent, path)
                 parent._translate()
             else:
                 assign(parent, path, value)
@@ -1293,7 +1327,7 @@ class SubContext(Base, HelpMixin):
                             if len(arg) > lp and arg[:lp] == pathl:
                                 arg = arg[lp:]
                         elif param["type"] == "celldict":
-                            for k,v in arg.items():
+                            for k, v in arg.items():
                                 if isinstance(v, tuple):
                                     v = list(v)
                                 if not isinstance(v, list):
@@ -1344,14 +1378,19 @@ class SubContext(Base, HelpMixin):
 
     def get_children(self, type=None):
         classless = ("context", "libinstance")
-        assert type is None or type in classless or type in nodeclasses, (type, nodeclasses.keys())
+        if not (type is None or type in classless or type in nodeclasses):
+            raise TypeError("Unknown type {}, must be in {}".format(type, nodeclasses.keys()))
         l = len(self._path)
-        children00 = [(p[l:],c) for p,c in self._parent()._children.items() if len(p) > l and p[:l] == self._path]
+        children00 = [
+            (p[l:], c)
+            for p, c in self._parent()._children.items()
+            if len(p) > l and p[:l] == self._path
+        ]
         children0 = children00
         if type is not None and type not in classless:
             klass = nodeclasses[type]
-            children0 = [(p,c) for p,c in children00 if isinstance(c, klass)]
-        children = [p[0] for p,c in children0]
+            children0 = [(p, c) for p, c in children00 if isinstance(c, klass)]
+        children = [p[0] for p, c in children0]
         if type == "context":
             children = [p for p in children if (p,) not in children00]
         return sorted(list(set(children)))
@@ -1376,6 +1415,7 @@ class SubContext(Base, HelpMixin):
     def __dir__(self):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
         return sorted(d + self.get_children())
+
 
 from .Transformer import Transformer
 from .Cell import Cell, FolderCell
@@ -1402,9 +1442,9 @@ nodeclasses = {
 
 from ..core.manager.tasks.structured_cell import StructuredCellAuthTask
 from ..core.manager.tasks import SetCellValueTask, SetCellBufferTask
-auth_task_types = (
-    SetCellValueTask, SetCellBufferTask, StructuredCellAuthTask
-)
+
+auth_task_types = (SetCellValueTask, SetCellBufferTask, StructuredCellAuthTask)
+
 
 def get_auth_tasks(taskmanager):
     tasks = []
@@ -1412,5 +1452,6 @@ def get_auth_tasks(taskmanager):
         if isinstance(task, auth_task_types):
             tasks.append(task)
     return tasks
+
 
 from ..core.cache.buffer_cache import buffer_cache
