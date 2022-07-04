@@ -184,6 +184,16 @@ See http://sjdv1982.github.io/seamless/sphinx/html/cell.html for documentation
 
     @property
     def self(self):
+        """Returns a wrapper where the subcells are not directly accessible.
+        Only relevant for structured cells.
+
+        By default, a structured cell with value {"status": 123} will cause 
+        "cell.status" to return "123", and not the actual cell status.
+        
+        To be sure to get the cell status, you can invoke cell.self.status.
+        
+        NOTE: experimental, requires more testing
+        """
         attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
         return SelfWrapper(self, attributelist)
 

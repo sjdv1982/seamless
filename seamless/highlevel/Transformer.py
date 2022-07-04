@@ -834,6 +834,16 @@ Setting this property is more-or-less syntactic sugar for:
 
     @property
     def self(self):
+        """Returns a wrapper where the pins are not directly accessible.
+
+        By default, a pin called "compute" will cause "transformer.status" 
+        to return the pin, and not the actual transformer status.
+        
+        To be sure to get the transformer status, you can invoke transformer.self.status.
+        
+        NOTE: experimental, requires more testing
+        """
+
         attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
         return SelfWrapper(self, attributelist)
 

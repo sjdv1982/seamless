@@ -61,7 +61,7 @@ def with_cancel_cycle(func):
     functools.update_wrapper(func2, func)
     return func2
 
-def run_in_mainthread(func):
+def _run_in_mainthread(func):
     def func2(*args, **kwargs):
         manager = args[0]
         if threading.current_thread() != threading.main_thread():
@@ -209,7 +209,7 @@ class Manager:
                     elision.update()
 
 
-    @run_in_mainthread
+    @_run_in_mainthread
     def set_cell_checksum(self,
         cell, checksum, *,
         initial, from_structured_cell, trigger_bilinks
@@ -446,7 +446,7 @@ class Manager:
         self.cancel_macro(macro, True, reason=StatusReasonEnum.ERROR)
         self.cachemanager.macro_exceptions[macro] = exc
 
-    @run_in_mainthread
+    @_run_in_mainthread
     def set_cell(self, cell, value, origin_reactor=None):
         if self._destroyed or cell._destroyed:
             return
@@ -470,7 +470,7 @@ class Manager:
             sc._schema_value = deepcopy(value)
             self.structured_cell_trigger(sc, update_schema=True)
 
-    @run_in_mainthread
+    @_run_in_mainthread
     def set_cell_buffer(self, cell, buffer, checksum):
         if self._destroyed or cell._destroyed:
             return
@@ -579,7 +579,7 @@ class Manager:
     # API section III: Cancellation
     ##########################################################################
 
-    @run_in_mainthread
+    @_run_in_mainthread
     def _set_reactor_exception(self, reactor, codename, exception):
         if exception is None:
             self.cachemanager.reactor_exceptions[reactor] = None

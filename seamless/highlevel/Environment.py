@@ -207,6 +207,7 @@ client.containers.run of the Docker SDK for Python"""
         
 
 class ContextEnvironment(Environment):
+    """Global execution environment for an entire context"""
     _props = ["_conda", "_which", "_powers", "_docker", "_languages", "_compilers", "_ipy_templates"]
     def __init__(self, parent):
         super().__init__(parent)

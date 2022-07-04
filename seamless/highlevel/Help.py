@@ -4,7 +4,7 @@ from functools import wraps
 from seamless.core.macro import Path
 
 from .Cell import Cell
-from .Context import SubContext
+from .SubContext import SubContext
 
 class HelpWrapper:
     def __init__(self, wrapped, sub_path=None):

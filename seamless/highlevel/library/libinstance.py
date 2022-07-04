@@ -452,7 +452,8 @@ from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper, 
 from ..synth_context import SynthContext
 from ..Cell import Cell
 from ..SubCell import SubCell
-from ..Context import Context, SubContext
+from ..Context import Context
+from ..SubContext import SubContext
 from ...midlevel.StaticContext import StaticContext
 from ..Transformer import Transformer
 from ..Macro import Macro

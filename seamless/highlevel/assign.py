@@ -581,7 +581,8 @@ Run 'ctx.translate()' or 'await ctx.translation()'
 
 
 def assign(ctx, path, value, *, help_context=False):
-    from .Context import Context, SubContext
+    from .Context import Context
+    from .SubContext import SubContext
     from .library.libinstance import LibInstance
     from .library import Library, LibraryContainer
     from .library.include import IncludedLibrary, IncludedLibraryContainer

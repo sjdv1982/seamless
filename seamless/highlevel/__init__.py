@@ -109,9 +109,21 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
             zip=zip
         )
 
+from .SubContext import SubContext
+nodeclasses = {
+    "cell": Cell,
+    "transformer": Transformer,
+    "context": SubContext,
+    "macro": Macro,
+    "module": Module,
+    "foldercell": FolderCell,
+    "deepcell": DeepCell,
+    "deepfoldercell": DeepFolderCell,
+}
+
 __all__ = [
     "Context", "Transformer", "Macro",
     "Cell", "FolderCell", "DeepCell", "DeepFolderCell",
     "Link", "Graph", "StaticContext", "Module",
-    "Resource", "load_graph", "copy",
+    "Resource", "load_graph", "copy"
 ]
