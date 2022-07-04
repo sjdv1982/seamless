@@ -6,8 +6,6 @@ ctx.a.share() =>
 - http://localhost:5813/ctx/a gives the value of the cell (HTTP GET)
 - At the same address, the value of the cell can be changed with a HTTP PUT request
 - An update to ctx.a sends a notification to ws://localhost:5138/ctx
-- http://localhost:5813/ctx/compute with an HTTP PATCH request does 'await ctx.computation()' .
-  A timeout can be specified.
 
 Long version:
 There is a singleton ShareServer instance at localhost
@@ -857,51 +855,6 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
                 text="Unknown error"
             )
 
-
-    async def _handle_evaluate(self, request):
-        try:
-            tail = request.match_info.get('tail')
-            ns, key = tailsplit(tail)
-            text = await request.text()
-            data = json.loads(text)
-            timeout = data.get("timeout")
-            if timeout is not None:
-                timeout = float(timeout)
-        except:
-            logger.debug(traceback.format_exc())
-            return web.Response(
-                status=400,
-                text="Invalid request",
-            )
-
-        if ns not in self.namespaces or key != "compute":
-            return web.Response(
-                status=404,
-                body=json.dumps({'not found': 404}),
-                content_type='application/json'
-            )
-        namespace = self.namespaces[ns]
-        if not namespace._share_evaluate:
-            return web.Response(
-                status=404,
-                body=json.dumps({'compute is not shared': 404}),
-                content_type='application/json'
-            )
-
-        try:
-            result = await namespace.computation(timeout)
-            return web.Response(
-                status=200,
-                body=json.dumps(result),
-                content_type='application/json'
-            )
-        except:
-            logger.debug(traceback.format_exc())
-            return web.Response(
-                status=500,
-                text="Unknown error"
-            )
-
     async def serve_rest(self):
         global web
         from aiohttp import web
@@ -912,8 +865,7 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
         )
         app.add_routes([
             web.get('/{tail:.*}', self._handle_get),
-            web.put('/{tail:.*}', self._handle_put),
-            web.patch('/{tail:.*}', self._handle_evaluate),
+            web.put('/{tail:.*}', self._handle_put)
         ])
 
         # Configure default CORS settings.
@@ -922,7 +874,7 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
                     allow_credentials=True,
                     expose_headers="*",
                     allow_headers="*",
-                    allow_methods=["GET", "PATCH", "PUT"]
+                    allow_methods=["GET", "PUT"]
                 )
         })
 

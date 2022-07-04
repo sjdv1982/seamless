@@ -1,14 +1,6 @@
-from weakref import WeakValueDictionary, WeakKeyDictionary, WeakSet, ref
-from collections import deque, OrderedDict
-from speg.peg import ParseError
-import sys, os
+import weakref
 import time
 import traceback
-import copy
-from contextlib import contextmanager
-import json
-import itertools
-import functools
 import asyncio
 
 import logging
@@ -36,7 +28,7 @@ class ShareItem:
     ):
         self.path = path
         self.celltype = cell._celltype
-        self.cell = ref(cell)
+        self.cell = weakref.ref(cell)
         assert isinstance(readonly, bool)
         self.readonly = readonly
         self.mimetype = mimetype
