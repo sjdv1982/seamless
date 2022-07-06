@@ -45,5 +45,5 @@ class ChildrenWrapper(SelfWrapper):
     _ATTRIBUTES = "Children"
 
     def _get_prop(self, attr):
-        return self._wrapped._get_path((attr,))
+        return self._wrapped._get_from_path((attr,))
     

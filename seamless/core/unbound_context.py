@@ -229,6 +229,7 @@ class UnboundContext(SeamlessBase):
                 highlevel_context = None
                 if self._root_ is not None:
                     highlevel_context = self._root_._root_highlevel_context()
+                    assert highlevel_context is not None
                 child._translate(highlevel_context)
         else:
             self._children[childname] = child

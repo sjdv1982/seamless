@@ -2,8 +2,10 @@
 # In addition, it kills all subprocesses spawned by the process
 from subprocess import *
 
+
 def kill_children(process):
     import psutil
+
     children = []
     try:
         children = psutil.Process(process.pid).children(recursive=True)
@@ -15,8 +17,10 @@ def kill_children(process):
         except:
             pass
 
-def run(*popenargs,
-        input=None, capture_output=False, timeout=None, check=False, **kwargs):
+
+def run(  # type: ignore
+    *popenargs, input=None, capture_output=False, timeout=None, check=False, **kwargs
+):
     """Run command with arguments and return a CompletedProcess instance.
     The returned instance will have attributes args, returncode, stdout and
     stderr. By default, stdout and stderr are not captured, and those attributes
@@ -39,16 +43,17 @@ def run(*popenargs,
     The other arguments are the same as for the Popen constructor.
     """
     if input is not None:
-        if 'stdin' in kwargs:
-            raise ValueError('stdin and input arguments may not both be used.')
-        kwargs['stdin'] = PIPE
+        if "stdin" in kwargs:
+            raise ValueError("stdin and input arguments may not both be used.")
+        kwargs["stdin"] = PIPE
 
     if capture_output:
-        if ('stdout' in kwargs) or ('stderr' in kwargs):
-            raise ValueError('stdout and stderr arguments may not be used '
-                             'with capture_output.')
-        kwargs['stdout'] = PIPE
-        kwargs['stderr'] = PIPE
+        if ("stdout" in kwargs) or ("stderr" in kwargs):
+            raise ValueError(
+                "stdout and stderr arguments may not be used " "with capture_output."
+            )
+        kwargs["stdout"] = PIPE
+        kwargs["stderr"] = PIPE
 
     with Popen(*popenargs, **kwargs) as process:
         try:
@@ -61,18 +66,18 @@ def run(*popenargs,
             stdout, stderr = process.communicate()
             stdout = process._fileobj2output[process.stdout]
             stderr = process._fileobj2output[process.stderr]
-            raise TimeoutExpired(process.args, timeout, output=stdout,
-                                 stderr=stderr)
+            raise TimeoutExpired(process.args, timeout, output=stdout, stderr=stderr)
         except:  # Including KeyboardInterrupt, communicate handled that.
             kill_children(process)
             process.kill()
             # We don't call process.wait() as .__exit__ does that for us.
             raise
-        stdout = b''.join(stdout)
-        stderr = b''.join(stderr)
+        stdout = b"".join(stdout)
+        stderr = b"".join(stderr)
         retcode = process.poll()
         if check and retcode:
             print(stderr)
-            raise CalledProcessError(retcode, process.args,
-                                     output=stdout, stderr=stderr)
+            raise CalledProcessError(
+                retcode, process.args, output=stdout, stderr=stderr
+            )
     return CompletedProcess(process.args, retcode, stdout, stderr)

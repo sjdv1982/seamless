@@ -71,8 +71,9 @@ class SubContext(Base, HelpMixin):
         if hasattr(type(self), attr) or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
         parent = self._get_top_parent()
-        path = self._path + (attr,)
-        return parent._get_path(path)
+        assert self._path is not None
+        path: tuple[str, ...] = self._path + (attr,)
+        return parent._get_from_path(path)
 
     def __setattr__(self, attr: str, value: Any):
         if attr.startswith("_"):
@@ -81,7 +82,8 @@ class SubContext(Base, HelpMixin):
         if attr in members and isinstance(members[attr], property):
             return object.__setattr__(self, attr, value)
         parent = self._get_top_parent()
-        path = self._path + (attr,)
+        assert self._path is not None
+        path: tuple[str, ...] = self._path + (attr,)
         if isinstance(value, Transformer):
             if value._parent is None:
                 parent._graph[0][path] = value
@@ -101,12 +103,13 @@ class SubContext(Base, HelpMixin):
         path = self._path + (attr,)
         parent._destroy_path(path)
 
-    def _get_graph(self, copy: bool, runtime: bool = False) -> dict[str]:
+    def _get_graph_dict(self, copy: bool, runtime: bool = False) -> dict[str, Any]:
         """See .get_graph"""
-        parent = self._parent()
+        parent = self._get_parent()
         parent._wait_for_auth_tasks("the graph is being obtained")
         nodes, connections, params, _ = parent._graph
         path = self._path
+        assert path is not None
         pathl = list(path)
         lp = len(path)
         newnodes = []
@@ -161,33 +164,35 @@ class SubContext(Base, HelpMixin):
         }
         return graph
 
-    def get_graph(self, runtime: bool = False) -> dict[str]:
+    def get_graph(self, runtime: bool = False) -> dict[str, Any]:
         """Obtain our portion of the parent context's graph
         In essence, take the parent graph, select all child nodes that
         start with our path, and chop off that path.
         Retain connections between two nodes that are in our graph.
         """
-        graph = self._get_graph(copy=True, runtime=runtime)
+        graph = self._get_graph_dict(copy=True, runtime=runtime)
         return graph
 
     @property
-    def status(self) -> StatusReport:
+    def status(self) -> StatusReport | str:
         """Get the status of our children.
 
         Essentially, this does the same as Context.status,
         selecting only the children that are ours (start with self._path).
+
+        Returns a StatusReport with the .status of each child that is doesn't have status OK.
+        If there are no such children, return "Status: OK".
         """
-        parent = self._parent()
+        parent = self._get_parent()
         nodes, _, _, _ = parent._graph
-        return _get_status(parent, parent._children, nodes, self._path)
+        return _get_status(parent, parent._children, nodes, self._get_path())
 
     def _translate(self):
-        self._parent()._translate()
+        self._get_parent()._translate()
 
-    def get_children(self, type: Optional[str] = None) -> list[Base]:
-        """Select all children (Cell, Transformer, etc.) that are ours.
-
-        "Ours" is defined as "starting with self.path"
+    def get_children(self, type: Optional[str] = None) -> list[str]:
+        """Select all children that are directly ours.
+        A sorted list of strings (attribute names) is returned.
 
         It is possible to define a type of children, which can be one of:
           cell, transformer, context, macro, module, foldercell, deepcell,
@@ -205,10 +210,10 @@ class SubContext(Base, HelpMixin):
             raise TypeError(
                 "Unknown type {}, must be in {}".format(type, nodeclasses.keys())
             )
-        l = len(self._path)
+        l = len(self._get_path())
         children00 = [
             (p[l:], c)
-            for p, c in self._parent()._children.items()
+            for p, c in self._get_parent()._children.items()
             if len(p) > l and p[:l] == self._path
         ]
         children0 = children00
@@ -227,8 +232,8 @@ class SubContext(Base, HelpMixin):
         result = {}
         parent = self._get_top_parent()
         for k in self.get_children(type=None):
-            path = self._path + (k,)
-            child = parent._get_path(path)
+            path = self._get_path() + (k,)
+            child = parent._get_from_path(path)
             result[k] = child
         return result
 
@@ -244,4 +249,5 @@ class SubContext(Base, HelpMixin):
         return sorted(d + self.get_children())
 
 
-from .Context import _get_status
+from .Context import Context, _get_status
+from .Transformer import Transformer

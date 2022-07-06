@@ -1,7 +1,7 @@
 # Tutorial
 
 <!-- TODO: add more .help, especially to graph / stdlib>
-<!-- TODO: integrate new_project.md -->
+<!-- TODO: integrate/refer to new_project.md -->
 <!-- TODO: integrate design.md
 Leave that document as developer doc, but add its material in here -->
 <!-- TODO: move in-depth material to the end of each part -->

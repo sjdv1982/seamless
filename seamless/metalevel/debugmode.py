@@ -71,7 +71,7 @@ def get_code_mount(transformer):
         if tuple(con["target"]) == codepath:
             codecellpath = tuple(con["source"])
             try:
-                codecell = parent._get_path(codecellpath)            
+                codecell = parent._get_from_path(codecellpath)            
             except AttributeError:
                 continue
             if not isinstance(codecell, Cell):
@@ -100,7 +100,7 @@ def get_compiled_mounted_module_objects(transformer):
             objectname = con["target"][-2]
             codecellpath = tuple(con["source"])
             try:
-                codecell = parent._get_path(codecellpath)            
+                codecell = parent._get_from_path(codecellpath)            
             except AttributeError:
                 continue
             if not isinstance(codecell, Cell):
@@ -133,7 +133,7 @@ def find_transformer_modules(tf):
             if tuple(con["target"]) == modulepinpath:
                 modulepath = tuple(con["source"])
                 try:
-                    module = parent._get_path(modulepath)            
+                    module = parent._get_from_path(modulepath)            
                 except AttributeError:
                     continue
                 if not isinstance(module, Module):

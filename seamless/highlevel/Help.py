@@ -245,7 +245,7 @@ class HelpContext(HelpWrapper):
         if ctx is None:
             raise AttributeError
         path = self._context_path + (attr,)
-        result = ctx._get_path(path)
+        result = ctx._get_from_path(path)
         sub_path2 = self._sub_path + (attr,)
         if isinstance(result, Cell):
             return result
