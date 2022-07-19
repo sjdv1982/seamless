@@ -24,6 +24,8 @@
 """Context class to organize cells and workers hierarchically,
 and its helper functions."""
 
+# pylint: disable=too-many-lines
+
 from __future__ import annotations
 from typing import *
 import traceback
@@ -35,41 +37,44 @@ import threading
 import asyncio
 import inspect
 import functools
-import zipfile
-from zipfile import ZipFile, ZipInfo
+from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 from io import BytesIO
 import json
 from weakref import WeakSet
-
+import atexit
 import logging
 
 logger = logging.getLogger("seamless")
 
 
 def print_info(*args):
+    """Logger function"""
     msg = " ".join([str(arg) for arg in args])
     logger.info(msg)
 
 
 def print_warning(*args):
+    """Logger function"""
     msg = " ".join([str(arg) for arg in args])
     logger.warning(msg)
 
 
 def print_debug(*args):
+    """Logger function"""
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
 
 def print_error(*args):
+    """Logger function"""
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
 
 
 from .Base import Base
 from .HelpMixin import HelpMixin
-from ..core.macro_mode import macro_mode_on, get_macro_mode, until_macro_mode_off
-from ..core.context import StatusReport, context
+from ..core.macro_mode import macro_mode_on, until_macro_mode_off
+from ..core.context import StatusReport, context as core_context
 from .assign import assign
 from .proxy import Pull
 from ..midlevel import copying
@@ -118,8 +123,6 @@ def _get_status(
     Returns a StatusReport with the .status of each child that is doesn't have status OK.
     If there are no such children, return "Status: OK".
     """
-    from ..core.context import StatusReport
-
     result = StatusReport()
     if path is not None:
         lp = len(path)
@@ -153,18 +156,16 @@ def _destroy_contexts():
     for context in _contexts:
         try:
             context._destroy()
-        except:
+        except Exception:
             pass
 
-
-import atexit
 
 atexit.register(_destroy_contexts)
 
 
 def _get_zip(buffer_dict):
     archive = BytesIO()
-    with ZipFile(archive, mode="w", compression=zipfile.ZIP_DEFLATED) as zipf:
+    with ZipFile(archive, mode="w", compression=ZIP_DEFLATED) as zipf:
         for checksum in sorted(list(buffer_dict.keys())):
             buffer = buffer_dict[checksum]
             info = ZipInfo(checksum, date_time=(1980, 1, 1, 0, 0, 0))
@@ -230,6 +231,7 @@ class Context(Base, HelpMixin):
     _parent: Any  # weakref.ref or lambda returning None
     _traitlets: dict[tuple[str, ...], SeamlessTraitlet]
     _observers: set
+    _unbound_context: Any = None  # Optional[core.Context]
 
     @classmethod
     def from_graph(
@@ -240,7 +242,7 @@ class Context(Base, HelpMixin):
         mounts: bool = True,
         shares: bool = True,
         share_namespace: Optional[str] = None,
-        zip: Optional[str | bytes | ZipFile] = None
+        zip: Optional[str | bytes | ZipFile] = None  # pylint: disable=redefined-builtin
     ):
         """Construct a Context from a graph
 
@@ -428,12 +430,6 @@ class Context(Base, HelpMixin):
                 self._translate()
             else:
                 assign(self, attr2, value)
-            """
-        elif attr2 in self._children:
-            child = self._children[attr2]
-            if isinstance(child, Cell):
-                child.set(value)
-            """
         elif isinstance(value, Pull):
             value._proxy._pull_source(attr2)
         else:
@@ -445,8 +441,6 @@ class Context(Base, HelpMixin):
         self._destroy_path((attr,))
 
     def _add_traitlet(self, path, trigger):
-        from .SeamlessTraitlet import SeamlessTraitlet
-
         traitlet = self._traitlets.get(path)
         if traitlet is not None:
             return traitlet
@@ -718,18 +712,18 @@ class Context(Base, HelpMixin):
 
         The cache is saved to "filename", which should be a .zip file.
         """
-        zip = self.get_zip()
+        zipd = self.get_zip()
         with open(filename, "wb") as f:
-            f.write(zip)
+            f.write(zipd)
 
     async def save_zip_async(self, filename: str):
         """Save the checksum-to-buffer cache for the current graph.
 
         The cache is saved to "filename", which should be a .zip file.
         """
-        zip = self.get_zip_async()
+        zipd = self.get_zip_async()
         with open(filename, "wb") as f:
-            f.write(zip)
+            f.write(zipd)
 
     def save_vault(self, dirname: str, with_libraries: bool = True):
         """Save the checksum-to-buffer cache for the current graph in a vault directory"""
@@ -784,7 +778,7 @@ class Context(Base, HelpMixin):
             for old_checksum in old_checksums:
                 buffer_cache.decref(bytes.fromhex(old_checksum))
 
-    def add_zip(self, zip, incref: bool = False):
+    def add_zip(self, zip, incref: bool = False):  # pylint: disable=redefined-builtin
         """Add entries from "zip" to the checksum-to-buffer cache.
 
         "zip" can be a file name, zip-compressed bytes or a Python ZipFile object.
@@ -832,7 +826,6 @@ class Context(Base, HelpMixin):
         library instances (seamless.highlevel.LibInstance) can be constructed
         using ctx.lib
         """
-        from .library import Library
 
         if not isinstance(lib, Library):
             raise TypeError(type(lib))
@@ -867,9 +860,10 @@ class Context(Base, HelpMixin):
                 task.cancel()
 
             if len(auth_lost_cells):
-                warn = """WARNING: the following cells had their authoritative value under modification while %s
-    These modifications have been CANCELED:
-    %s""" % (
+                warn = """WARNING: the following cells had their authoritative value
+under modification while %s.
+    %s
+These modifications have been CANCELED.""" % (
                     what_happens_text,
                     list(auth_lost_cells),
                 )
@@ -1003,8 +997,9 @@ class Context(Base, HelpMixin):
 
         self._translate_count += 1
         livegraph = self._manager.livegraph
+        ok = False
         try:
-            ok = False
+            # pylint: disable=pointless-string-statement
             self._translating = True
             if self._gen_context is not None:
                 self._gen_context.destroy()
@@ -1025,7 +1020,7 @@ class Context(Base, HelpMixin):
             """
             livegraph._hold_observations = True
             with macro_mode_on():
-                ub_ctx = context(toplevel=True, manager=self._manager)
+                ub_ctx = core_context(toplevel=True, manager=self._manager)
                 ub_ctx._compilers = env["compilers"]
                 ub_ctx._languages = env["languages"]
                 self._unbound_context = ub_ctx
@@ -1127,7 +1122,9 @@ class Context(Base, HelpMixin):
         from ..core import StructuredCell, Cell as core_cell
 
         global shareserver
-        from .. import shareserver
+        from .. import shareserver as shareserver_
+
+        shareserver = shareserver_
         from ..core.share import sharemanager
 
         shareserver.start()
@@ -1215,7 +1212,6 @@ class Context(Base, HelpMixin):
                         raise Exception(msg.format(child))
         for p in list(nodes.keys()):
             if p[: len(path)] == path:
-                node = nodes[p]
                 child = self._children.get(p)
                 nodes.pop(p)
                 self._children.pop(p, None)
@@ -1391,7 +1387,9 @@ class Context(Base, HelpMixin):
                 result.append(Link(self, node=node))
         return result
 
-    def get_children(self, type: Optional[str] = None) -> list[str]:
+    def get_children(
+        self, type: Optional[str] = None  # pylint: disable=redefined-builtin
+    ) -> list[str]:
         """Select all children that are directly ours.
         A sorted list of strings (attribute names) is returned.
 
@@ -1502,4 +1500,6 @@ from .Environment import ContextEnvironment
 
 from ..core.cache.buffer_cache import buffer_cache
 from .SubContext import SubContext
-from seamless.core.manager import Manager
+from ..core.manager import Manager
+from .SeamlessTraitlet import SeamlessTraitlet
+from .library import Library

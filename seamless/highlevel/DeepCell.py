@@ -30,7 +30,7 @@ from .HelpMixin import HelpMixin
 
 class DeepCellBase(Base, HelpMixin):
     _node = None
-    _virtual_path = None
+    _virtual_path = None  # always None for deep cells
     celltype = "structured"
     _components = (
         "origin", "keyorder", "blacklist", "whitelist", "apply_blackwhite", 

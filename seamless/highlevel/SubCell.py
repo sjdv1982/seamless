@@ -9,8 +9,10 @@ class SubCell(Cell):
         fullpath = cell._path + subpath
         super().__init__(parent=parent, path=fullpath)
         self._cell = weakref.ref(cell)
-        self._readonly = readonly
         self._subpath = subpath
+        if not readonly and not self.authoritative:
+            readonly = True
+        self._readonly = readonly
 
     def _get_hcell(self):
         return self._cell()._get_hcell()
@@ -68,14 +70,6 @@ class SubCell(Cell):
         else:
             parent_subcell = SubCell(self._parent(), cell, self._subpath[:-1], False)
             return setattr(parent_subcell, attr, value)
-
-    @property
-    def _virtual_path(self):
-        cell = self._cell()
-        p = cell._virtual_path
-        if p is None:
-            return None
-        return p + self._subpath
 
     def _set_observers(self):
         pass

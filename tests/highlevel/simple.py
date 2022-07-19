@@ -1,5 +1,5 @@
-from seamless.highlevel import Context
 import json
+from seamless.highlevel import Context
 
 # 0
 ctx = Context()

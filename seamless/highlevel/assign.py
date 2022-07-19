@@ -123,7 +123,7 @@ def assign_constant(ctx, path, value, help_context=False):
     ctx._translate()
 
 def assign_resource(ctx, path, value):
-    result = assign_constant(value.data)
+    assign_constant(ctx, path, value.data)
     child = ctx._children[path]
     child.mount(value.filename)
 
@@ -609,8 +609,8 @@ def assign(ctx, path, value, *, help_context=False):
         value._init(ctx, path)
     elif isinstance(value, (Cell, DeepCellBase)):
         if value._parent() is None:
-            value._init(ctx, path)
             cellnode = deepcopy(value._node)
+            value._init(ctx, path)
             if isinstance(value, Cell):
                 if cellnode is None:
                     if isinstance(value, FolderCell):
@@ -652,8 +652,8 @@ def assign(ctx, path, value, *, help_context=False):
         v = value
         if isinstance(value, Resource):
             v = value.data
-        new_cell = assign_constant(ctx, path, v, help_context=help_context)
-        if new_cell:
+        creates_new_cell = assign_constant(ctx, path, v, help_context=help_context)
+        if creates_new_cell:
             ctx._translate()
         else:
             check_libinstance_subcontext_binding(ctx, path)
@@ -674,8 +674,8 @@ def assign(ctx, path, value, *, help_context=False):
         if help_context:
             raise TypeError(type(value))
         if value._parent() is None:
-            value._init(ctx, path)
             node = deepcopy(value._node)
+            value._init(ctx, path)
             if node is None:
                 node = get_new_module(path)
             else:

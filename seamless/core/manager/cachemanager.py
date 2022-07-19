@@ -456,9 +456,10 @@ class CacheManager:
             except CacheMissError:
                 pass
 
-        buffer = download_buffer_from_servers(checksum)
-        if buffer is not None:
-            return buffer
+        if remote:
+            buffer = download_buffer_from_servers(checksum)
+            if buffer is not None:
+                return buffer
         raise CacheMissError(checksum.hex())
 
 

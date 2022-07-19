@@ -29,6 +29,7 @@ import weakref
 
 
 class Base:
+    """Base class of all Seamless highlevel objects that can be in a Context"""
     _parent: Any  # weakref.ref or lambda returning None
     _parent = lambda self: None
     if TYPE_CHECKING:
@@ -69,7 +70,8 @@ class Base:
             return parent._get_parent()
 
     @property
-    def path(self):
+    def path(self) -> str:
+        """Return path as a string"""
         if self._path is None:
             return "<None>"
         return "." + ".".join(self._path)

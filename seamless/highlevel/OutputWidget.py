@@ -2,6 +2,9 @@
 
 # TODO: add more mimetypes, see module-IPython.display documentation
 
+from __future__ import annotations
+from typing import *
+
 import json
 
 mimetype_to_DOC = {
@@ -87,7 +90,7 @@ def get_doc_kwargs(cell, params):
 
 class OutputWidget:
     value = None
-    def __init__(self, cell, layout=None):
+    def __init__(self, cell, layout:Optional[dict]=None):
         from ipywidgets import Output
         if layout is None:
             self.output_instance = Output()
