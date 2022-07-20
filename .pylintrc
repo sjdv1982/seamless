@@ -11,7 +11,7 @@ disable=import-error,import-outside-toplevel,wrong-import-position,
   protected-access,invalid-name,broad-except,unspecified-encoding,
   unnecessary-lambda-assignment,global-statement,
   use-implicit-booleaness-not-len,
-  consider-using-f-string,too-many-branches,
+  consider-using-f-string,too-many-branches,too-many-arguments,
   no-member  #necessary, since ignored-classes is not quite working
 
 [TYPECHECK]
