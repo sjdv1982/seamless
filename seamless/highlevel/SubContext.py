@@ -128,7 +128,7 @@ class SubContext(Base, HelpMixin):
                             if len(arg) > lp and arg[:lp] == pathl:
                                 arg = arg[lp:]
                         elif param["type"] == "celldict":
-                            for k, v in arg.items():
+                            for _, v in arg.items():
                                 if isinstance(v, tuple):
                                     v = list(v)
                                 if not isinstance(v, list):
@@ -249,5 +249,5 @@ class SubContext(Base, HelpMixin):
         return sorted(d + self.get_children())
 
 
-from .Context import Context, _get_status
+from .Context import _get_status
 from .Transformer import Transformer

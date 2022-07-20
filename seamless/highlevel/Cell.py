@@ -819,7 +819,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
             hcell.pop("scratch", None)
 
     @property
-    def fingertip_no_remote(self):
+    def fingertip_no_remote(self) -> bool:
         """If True, remote calls are disabled for fingertipping.
 
         Remote calls can be for a database or a buffer server.
@@ -828,7 +828,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
         return hcell.get("fingertip_no_remote", False)
 
     @fingertip_no_remote.setter
-    def fingertip_no_remote(self, value):
+    def fingertip_no_remote(self, value:bool):
         if value not in (True, False):
             raise TypeError(value)
         hcell = self._get_hcell2()
@@ -838,7 +838,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
             hcell.pop("fingertip_no_remote", None)
 
     @property
-    def fingertip_no_recompute(self):
+    def fingertip_no_recompute(self) -> bool:
         """If True, recomputation is disabled for fingertipping.
 
         This means recomputation via a transformer, which can be intensive.
@@ -849,7 +849,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
         return hcell.get("fingertip_no_recompute", False)
 
     @fingertip_no_recompute.setter
-    def fingertip_no_recompute(self, value):
+    def fingertip_no_recompute(self, value:bool):
         if value not in (True, False):
             raise TypeError(value)
         hcell = self._get_hcell2()

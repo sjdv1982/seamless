@@ -20,7 +20,7 @@ import time
 import traceback
 from copy import deepcopy
 
-from ...calculate_checksum import calculate_dict_checksum, calculate_checksum as calculate_checksum_func
+from ...calculate_checksum import calculate_checksum as calculate_checksum_func
 """
 TODO: offload exceptions (as text) to database (also allow them to be cleared in database?)
 TODO: do the same with stdout, stderr

@@ -169,6 +169,7 @@ def assign_transformer(ctx, path, func):
 
 
 def assign_transformer_copy(ctx, path, tf):
+    assert tf._parent() is ctx
     if path in ctx._children:
         ctx._destroy_path(path)
 
