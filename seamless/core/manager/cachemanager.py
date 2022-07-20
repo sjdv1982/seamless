@@ -276,11 +276,13 @@ class CacheManager:
             coros = []
             for pinname in transformation:
                 if pinname == "__env__":
-                    coros.append(self._fingertip(transformation[pinname], must_have_cell=False, done=done))
+                    cs = bytes.fromhex(transformation[pinname])
+                    coros.append(self._fingertip(cs, must_have_cell=False, done=done))
                     continue
                 if pinname.startswith("__"):
                     continue
-                celltype, subcelltype, sem_checksum = transformation[pinname]
+                celltype, subcelltype, sem_checksum0 = transformation[pinname]
+                sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
                 sem2syn = tf_cache.semantic_to_syntactic_checksums
                 semkey = (sem_checksum, celltype, subcelltype)
                 checksum2 = sem2syn.get(semkey, [sem_checksum])[0]

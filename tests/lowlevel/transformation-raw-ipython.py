@@ -56,12 +56,12 @@ async def build_transformation():
         checksum = calculate_checksum(buf)
         buffer_cache.cache_buffer(checksum, buf)
         sem_checksum = await get_semantic_checksum(checksum, celltype, k)
-        transformation[k] = celltype, None, sem_checksum
+        transformation[k] = celltype, None, sem_checksum.hex()
 
     envbuf = await serialize(environment, "plain")
     checksum = calculate_checksum(envbuf)
     buffer_cache.cache_buffer(checksum, envbuf)
-    transformation["__env__"] = checksum
+    transformation["__env__"] = checksum.hex()
 
     tf_buf = tf_get_buffer(transformation)
     print(tf_buf.decode())

@@ -50,7 +50,7 @@ async def build_transformation():
         checksum = calculate_checksum(buf)
         buffer_cache.cache_buffer(checksum, buf)
         sem_checksum = await get_semantic_checksum(checksum, celltype, k)
-        transformation[k] = celltype, None, sem_checksum
+        transformation[k] = celltype, None, sem_checksum.hex()
 
     tf_buf = tf_get_buffer(transformation)
     print(tf_buf.decode())

@@ -360,7 +360,8 @@ class CommunionServer:
             for pinname in transformation:
                 if pinname.startswith("__"):
                     continue
-                celltype, subcelltype, sem_checksum = transformation[pinname]
+                celltype, subcelltype, sem_checksum0 = transformation[pinname]
+                sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
                 checksum2 = await tcache.serve_semantic_to_syntactic(
                     sem_checksum, celltype, subcelltype,
                     peer

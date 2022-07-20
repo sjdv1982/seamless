@@ -106,6 +106,7 @@ simple-communion:
      seamless-bash
      python3 -u simple-communion-slave.py > test-outputs/simple-communion-slave.out 2>&1
      then, in a different terminal, run:
+     seamless-bash
      python3 -u simple-communion-master.py > test-outputs/simple-communion-master.out 2>&1
      then Ctrl-C simple-communion-slave.py
      The output is available in simple-communion-[master/slave].out

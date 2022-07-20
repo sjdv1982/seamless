@@ -146,7 +146,8 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
             continue
         if pinname == "__output__":
             continue
-        celltype, subcelltype, sem_checksum = transformation[pinname]
+        celltype, subcelltype, sem_checksum0 = transformation[pinname]
+        sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
         if syntactic_is_semantic(celltype, subcelltype):
             checksum = sem_checksum
         else:
@@ -528,8 +529,9 @@ class TransformationJob:
         meta = self.transformation.get("__meta__")
         # meta not used for now...
 
-        env_checksum = self.transformation.get("__env__")
-        if env_checksum is not None:
+        env_checksum0 = self.transformation.get("__env__")
+        if env_checksum0 is not None:
+            env_checksum = bytes.fromhex(env_checksum0)
             env = get_buffer(env_checksum, remote=True)
             if env is None:
                 raise CacheMissError(env_checksum.hex())
