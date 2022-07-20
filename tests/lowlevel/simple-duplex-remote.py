@@ -67,7 +67,7 @@ for n in range(5):
     ctx.compute(0.5)
     report()
 
-ctx.tf.cancel()
+ctx.tf.hard_cancel()
 ctx.compute(0.5)
 report()
 print("EXCEPTION       ", ctx.tf.exception)

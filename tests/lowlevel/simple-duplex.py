@@ -55,7 +55,7 @@ def report():
 for n in range(3):
     ctx.compute(0.5)
     report()
-ctx.tf.cancel()
+ctx.tf.hard_cancel()
 ctx.compute(0.5)
 report()
 print("EXCEPTION       ", ctx.tf.exception)

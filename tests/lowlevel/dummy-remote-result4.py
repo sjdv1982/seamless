@@ -97,7 +97,7 @@ for n in range(5):
     report()
     ctx.compute(0.5)
 
-ctx.tf.cancel()
+ctx.tf.hard_cancel()
 ctx.compute(0.1)
 report()
 ctx.tf.clear_exception()

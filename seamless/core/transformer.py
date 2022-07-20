@@ -153,7 +153,7 @@ class Transformer(Worker):
         tcache = manager.cachemanager.transformation_cache
         tcache.clear_exception(self)
 
-    def cancel(self):
+    def hard_cancel(self):
         manager = self._get_manager()
         tcache = manager.cachemanager.transformation_cache
         tcache.hard_cancel(self)
