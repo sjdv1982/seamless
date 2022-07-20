@@ -794,6 +794,21 @@ class TransformationCache:
             return ret(semsyn)
         return None
 
+    def get_transformation_dict(self, tf_checksum:str) -> dict:
+        """Return transformation dict corresponding to a checksum
+        This transformation dict must have been previously defined
+        and registered, e.g. by a transformer.
+        Additional information that does not contribute to the checksum
+        (__meta__, __languages__ and __compilers__) is also included.
+        """
+        if not isinstance(tf_checksum, str):
+            raise TypeError(type(tf_checksum))
+        tf_checksum2 = bytes.fromhex(tf_checksum)
+        try:
+            return self.transformations[tf_checksum2]
+        except KeyError:
+            raise KeyError(tf_checksum) from None
+
     async def serve_get_transformation(self, tf_checksum, remote_peer_id):
         assert isinstance(tf_checksum, bytes)
         transformation = self.transformations.get(tf_checksum)
