@@ -6,9 +6,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>seamless.highlevel.Transformer &#8212; Seamless 0.8 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/nature.css" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
@@ -37,11 +37,43 @@
           <div class="body" role="main">
             
   <h1>Source code for seamless.highlevel.Transformer</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">weakref</span>
+<span></span><span class="c1"># Author: Sjoerd de Vries</span>
+<span class="c1"># Copyright (c) 2016-2022 INSERM, 2022 CNRS</span>
+
+<span class="c1"># The MIT License (MIT)</span>
+
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+
+<span class="sd">&quot;&quot;&quot;Transformer class for transforming input values to a result value,</span>
+<span class="sd">and its helper functions.&quot;&quot;&quot;</span>
+
+<span class="c1"># pylint: disable=too-many-lines</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="kn">import</span> <span class="nn">weakref</span>
 <span class="kn">import</span> <span class="nn">functools</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 
+<span class="kn">from</span> <span class="nn">silk.mixed.get_form</span> <span class="kn">import</span> <span class="n">get_form</span>
 <span class="kn">from</span> <span class="nn">.Base</span> <span class="kn">import</span> <span class="n">Base</span>
 <span class="kn">from</span> <span class="nn">.Cell</span> <span class="kn">import</span> <span class="n">Cell</span><span class="p">,</span> <span class="n">FolderCell</span>
 <span class="kn">from</span> <span class="nn">.Module</span> <span class="kn">import</span> <span class="n">Module</span>
@@ -49,33 +81,39 @@
 <span class="kn">from</span> <span class="nn">.SelfWrapper</span> <span class="kn">import</span> <span class="n">SelfWrapper</span>
 <span class="kn">from</span> <span class="nn">.proxy</span> <span class="kn">import</span> <span class="n">Proxy</span><span class="p">,</span> <span class="n">CodeProxy</span><span class="p">,</span> <span class="n">HeaderProxy</span>
 <span class="kn">from</span> <span class="nn">.pin</span> <span class="kn">import</span> <span class="n">PinsWrapper</span>
-<span class="kn">from</span> <span class="nn">.Base</span> <span class="kn">import</span> <span class="n">Base</span>
 <span class="kn">from</span> <span class="nn">..mime</span> <span class="kn">import</span> <span class="n">language_to_mime</span>
 <span class="kn">from</span> <span class="nn">..core.context</span> <span class="kn">import</span> <span class="n">Context</span> <span class="k">as</span> <span class="n">CoreContext</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">parse_function_code</span>
 <span class="kn">from</span> <span class="nn">.SchemaWrapper</span> <span class="kn">import</span> <span class="n">SchemaWrapper</span>
-<span class="kn">from</span> <span class="nn">silk</span> <span class="kn">import</span> <span class="n">Silk</span>
 <span class="kn">from</span> <span class="nn">.compiled</span> <span class="kn">import</span> <span class="n">CompiledObjectDict</span>
-<span class="kn">from</span> <span class="nn">silk.mixed.get_form</span> <span class="kn">import</span> <span class="n">get_form</span>
 <span class="kn">from</span> <span class="nn">.Environment</span> <span class="kn">import</span> <span class="n">Environment</span>
 <span class="kn">from</span> <span class="nn">.HelpMixin</span> <span class="kn">import</span> <span class="n">HelpMixin</span>
 
-<span class="c1"># removed celltype=&quot;mixed&quot; as of Seamless 0.7</span>
-<span class="n">default_pin</span> <span class="o">=</span> <span class="p">{</span>
-  
-<span class="p">}</span>
+<span class="n">default_pin</span> <span class="o">=</span> <span class="p">{}</span>
 
-<span class="k">def</span> <span class="nf">new_transformer</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">pins</span><span class="p">,</span> <span class="n">hash_pattern</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;*&quot;</span><span class="p">:</span> <span class="s2">&quot;#&quot;</span><span class="p">}):</span>
+
+<span class="k">def</span> <span class="nf">new_transformer</span><span class="p">(</span>
+    <span class="c1"># pylint: disable=dangerous-default-value</span>
+    <span class="n">ctx</span><span class="p">,</span>
+    <span class="n">path</span><span class="p">,</span>
+    <span class="n">code</span><span class="p">,</span>
+    <span class="n">pins</span><span class="p">,</span>
+    <span class="n">hash_pattern</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;*&quot;</span><span class="p">:</span> <span class="s2">&quot;#&quot;</span><span class="p">},</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Return a workflow graph node for a new transformer cell&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">pins</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">pins</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pins</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
-        <span class="n">pins</span> <span class="o">=</span> <span class="p">{</span><span class="n">pin</span><span class="p">:</span><span class="n">default_pin</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">pin</span> <span class="ow">in</span> <span class="n">pins</span><span class="p">}</span>
+        <span class="n">pins</span> <span class="o">=</span> <span class="p">{</span><span class="n">pin</span><span class="p">:</span> <span class="n">default_pin</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">pin</span> <span class="ow">in</span> <span class="n">pins</span><span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">pins</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">pins</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">pin</span> <span class="ow">in</span> <span class="n">pins</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">pin</span> <span class="o">==</span> <span class="s2">&quot;inp&quot;</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: pin &#39;inp&#39; for a transformer is NOT recommended (shadows the .inp attribute)&quot;</span><span class="p">)</span>
-    <span class="n">transformer</span> <span class="o">=</span>    <span class="p">{</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="c1"># pylint: disable=line-too-long</span>
+                <span class="s2">&quot;WARNING: pin &#39;inp&#39; for a transformer is NOT recommended (shadows the .inp attribute)&quot;</span>
+            <span class="p">)</span>
+    <span class="n">transformer</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
         <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;transformer&quot;</span><span class="p">,</span>
         <span class="s2">&quot;compiled&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
@@ -84,7 +122,8 @@
         <span class="s2">&quot;hash_pattern&quot;</span><span class="p">:</span> <span class="n">hash_pattern</span><span class="p">,</span>
         <span class="s2">&quot;RESULT&quot;</span><span class="p">:</span> <span class="s2">&quot;result&quot;</span><span class="p">,</span>
         <span class="s2">&quot;INPUT&quot;</span><span class="p">:</span> <span class="s2">&quot;inp&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;SCHEMA&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="c1">#the result schema can be exposed as an input pin to the transformer under this name</span>
+        <span class="c1"># the result schema can be exposed as an input pin to the transformer under this name</span>
+        <span class="s2">&quot;SCHEMA&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
         <span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">code</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -93,15 +132,20 @@
     <span class="n">ctx</span><span class="o">.</span><span class="n">_graph</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">transformer</span>
     <span class="k">return</span> <span class="n">transformer</span>
 
+
 <div class="viewcode-block" id="Transformer"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Transformer">[docs]</a><span class="k">class</span> <span class="nc">Transformer</span><span class="p">(</span><span class="n">Base</span><span class="p">,</span> <span class="n">HelpMixin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Transforms input values to a result value</span>
 
-<span class="sd">See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for documentation</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for documentation&quot;&quot;&quot;</span>
+
     <span class="n">_temp_code</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">_temp_pins</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hash_pattern</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;*&quot;</span><span class="p">:</span> <span class="s2">&quot;#&quot;</span><span class="p">}):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hash_pattern</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;*&quot;</span><span class="p">:</span> <span class="s2">&quot;#&quot;</span><span class="p">}</span>
+    <span class="p">):</span>  <span class="c1"># pylint: disable=dangerous-default-value,super-init-not-called</span>
         <span class="kn">from</span> <span class="nn">..metalevel.debugmode</span> <span class="kn">import</span> <span class="n">DebugMode</span>
+
         <span class="n">pins</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">pins</span><span class="p">)</span>
         <span class="k">assert</span> <span class="p">(</span><span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -111,7 +155,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_temp_pins</span> <span class="o">=</span> <span class="n">pins</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_debug</span> <span class="o">=</span> <span class="n">DebugMode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hash_pattern</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;*&quot;</span><span class="p">:</span> <span class="s2">&quot;#&quot;</span><span class="p">}):</span>
+    <span class="k">def</span> <span class="nf">_init</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hash_pattern</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;*&quot;</span><span class="p">:</span> <span class="s2">&quot;#&quot;</span><span class="p">}</span>
+    <span class="p">):</span>  <span class="c1"># pylint: disable=dangerous-default-value</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_temp_code</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">code</span> <span class="ow">is</span> <span class="kc">None</span>
@@ -136,26 +182,29 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_temp_pins</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">environment</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">environment</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Environment</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Computing environment to execute transformations in&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_environment</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">debug</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">debug</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;If debug mode is enabled.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_debug</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">meta</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">meta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
         <span class="sd">&quot;&quot;&quot;Dictionary of meta-parameters.</span>
-<span class="sd">These don&#39;t affect the computation result, but may affect job managers</span>
-<span class="sd">Example of meta-parameters: expected computation time, service name</span>
+<span class="sd">        These don&#39;t affect the computation result, but may affect job managers</span>
+<span class="sd">        Example of meta-parameters: expected computation time, service name</span>
 
-<span class="sd">You can set this dictionary directly, or you may assign .meta to a cell</span>
+<span class="sd">        You can set this dictionary directly, or you may assign .meta to a cell</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;meta&quot;</span><span class="p">))</span>
 
     <span class="nd">@meta</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">meta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">meta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">Cell</span><span class="p">):</span>
         <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">assign_connection</span>
+
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
         <span class="k">assert</span> <span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
@@ -170,18 +219,20 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
             <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-            <span class="n">parent</span><span class="o">.</span><span class="n">remove_connections</span><span class="p">(</span><span class="n">target_path</span><span class="p">,</span><span class="n">endpoint</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">remove_connections</span><span class="p">(</span><span class="n">target_path</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
             <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;meta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()[</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">RESULT</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">RESULT</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;The name of the result variable. Default is &quot;result&quot;.</span>
 
 <span class="sd">        This is also the attribute under which the result object is available</span>
 <span class="sd">        (i.e. Transformer.result by default). The result object is similar</span>
 <span class="sd">        to a (structured) Cell.</span>
+
+<span class="sd">        NOTE: changing this attribute is currently not implemented</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]</span>
@@ -196,12 +247,14 @@
         <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">INPUT</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">INPUT</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;The name of the input attribute. Default is &quot;inp&quot;.</span>
 
 <span class="sd">        This is the attribute under which the input object is available</span>
 <span class="sd">        (i.e. Transformer.inp by default). The input object is similar</span>
 <span class="sd">        to a (structured) Cell.</span>
+
+<span class="sd">        NOTE: changing this attribute is currently not implemented</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">]</span>
@@ -211,61 +264,91 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">fingertip_no_remote</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">fingertip_no_remote</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;If True, remote calls are disabled for fingertipping.</span>
+
+<span class="sd">        Remote calls can be for a database or a buffer server.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">htf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fingertip_no_remote&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
     <span class="nd">@fingertip_no_remote</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">fingertip_no_remote</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">fingertip_no_remote</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
             <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;fingertip_no_remote&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">htf</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;fingertip_no_remote&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">fingertip_no_recompute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">fingertip_no_recompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;If True, recomputation is disabled for fingertipping.</span>
+
+<span class="sd">        This means recomputation via transformation, which can be intensive.</span>
+<span class="sd">        Recomputation via conversion or subcell expression (which are quick)</span>
+<span class="sd">        is always enabled.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">htf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fingertip_no_recompute&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
     <span class="nd">@fingertip_no_recompute</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">fingertip_no_recompute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">fingertip_no_recompute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
             <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;fingertip_no_recompute&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">htf</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;fingertip_no_recompute&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">scratch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;TODO: document&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">scratch</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Is this transformer&#39;s result attribute a scratch cell.</span>
+
+<span class="sd">        Scratch cells are fully dependent cells that are big and/or easy to</span>
+<span class="sd">        recompute.</span>
+
+<span class="sd">        Scratch cell buffers are:</span>
+<span class="sd">        - Not added to saved zip archives and vaults.</span>
+<span class="sd">        - TODO: Annotated as &quot;scratch&quot; in databases</span>
+<span class="sd">        - TODO: cleared automatically from databases a short while after computation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
-        <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;scratch&quot;</span> <span class="ow">in</span> <span class="n">htf</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;scratch&quot;</span> <span class="ow">in</span> <span class="n">htf</span>
 
     <span class="nd">@scratch</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">scratch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
             <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;scratch&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">htf</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;scratch&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">clear_exception</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Transformer.clear_exception"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Transformer.clear_exception">[docs]</a>    <span class="k">def</span> <span class="nf">clear_exception</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Clear any exception associated with this transformer.</span>
+
+<span class="sd">        Re-execute of the associated transformation.</span>
+<span class="sd">        Both local and remote (via communion) execution are affected.</span>
+
+<span class="sd">        If this transformer has no transformation (missing or pending inputs),</span>
+<span class="sd">        this will set a flag, causing clear_exception to take effect</span>
+<span class="sd">        as soon as a transformation is present.</span>
+<span class="sd">        Re-translation will clear this flag.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tf</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;compiled&quot;</span><span class="p">]:</span>
             <span class="n">tf</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">clear_exception</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">tf</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">clear_exception</span><span class="p">()</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">clear_exception</span><span class="p">()</span></div>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">language</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">language</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Defines the programming language of the transformer&#39;s source code.</span>
 
 <span class="sd">        Allowed values are: python, ipython, bash,</span>
@@ -274,26 +357,28 @@
 <span class="sd">        See seamless.compiler.languages and seamless.compile.compilers for a list</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()[</span><span class="s2">&quot;language&quot;</span><span class="p">]</span>
+
     <span class="nd">@language</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">language</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="s2">&quot;docker&quot;</span><span class="p">:</span>
             <span class="kn">import</span> <span class="nn">warnings</span>
+
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="c1"># pylint: disable=line-too-long</span>
                 <span class="s1">&#39;Transformer.language=&quot;docker&quot; is deprecated. Use language=&quot;bash&quot; and set docker_image.&#39;</span><span class="p">,</span>
                 <span class="ne">FutureWarning</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;bash&quot;</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
         <span class="n">lang</span><span class="p">,</span> <span class="n">language</span><span class="p">,</span> <span class="n">extension</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">find_language</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-        <span class="n">compiled</span> <span class="o">=</span> <span class="p">(</span><span class="n">language</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;compiled&quot;</span><span class="p">)</span>
+        <span class="n">compiled</span> <span class="o">=</span> <span class="n">language</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;compiled&quot;</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="n">old_language</span> <span class="o">=</span> <span class="n">htf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;language&quot;</span><span class="p">)</span>
         <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;language&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lang</span>
         <span class="n">old_compiled</span> <span class="o">=</span> <span class="n">htf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;compiled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-        <span class="n">untranslate</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">old_compiled</span> <span class="o">!=</span> <span class="n">compiled</span><span class="p">:</span>
             <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="n">old_language</span> <span class="o">==</span> <span class="s2">&quot;bash&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">lang</span>  <span class="o">==</span> <span class="s2">&quot;bash&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">old_language</span> <span class="o">==</span> <span class="s2">&quot;bash&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">lang</span> <span class="o">==</span> <span class="s2">&quot;bash&quot;</span><span class="p">):</span>
             <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;compiled&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compiled</span>
         <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;file_extension&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extension</span>
@@ -302,17 +387,16 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">docker_image</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">docker_image</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Defines the Docker image in which a transformer should run</span>
-<span class="sd">Getting this property is syntactic sugar for:</span>
+<span class="sd">        Getting this property is syntactic sugar for:</span>
 
-<span class="sd">`Transformer.environment.get_docker()[&quot;name&quot;]`</span>
+<span class="sd">        `Transformer.environment.get_docker()[&quot;name&quot;]`</span>
 
-<span class="sd">Setting this property is more-or-less syntactic sugar for:</span>
+<span class="sd">        Setting this property is more-or-less syntactic sugar for:</span>
 
-<span class="sd">`Transformer.environment.set_docker({&quot;name&quot;: ...})`</span>
-
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        `Transformer.environment.set_docker({&quot;name&quot;: ...})`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">im</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">get_docker</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">im</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -330,18 +414,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">environment</span><span class="o">.</span><span class="n">set_docker</span><span class="p">(</span><span class="n">im</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">header</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;For a compiled transformer, the generated C header&quot;&quot;&quot;</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="k">assert</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;compiled&quot;</span><span class="p">]</span>
         <span class="n">dirs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;mount&quot;</span><span class="p">,</span> <span class="s2">&quot;mimetype&quot;</span><span class="p">,</span> <span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">HeaderProxy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;header&quot;</span><span class="p">,),</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">getter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_header_getter</span><span class="p">,</span> <span class="n">dirs</span><span class="o">=</span><span class="n">dirs</span><span class="p">)</span>
-
-    <span class="nd">@header</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="ow">not</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;compiled&quot;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setattr</span><span class="p">(</span><span class="s2">&quot;header&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">HeaderProxy</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;header&quot;</span><span class="p">,),</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">getter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_header_getter</span><span class="p">,</span> <span class="n">dirs</span><span class="o">=</span><span class="n">dirs</span>
+        <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_header_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
@@ -367,7 +447,7 @@
 <span class="sd">        See Cell.schema for more details&quot;&quot;&quot;</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="n">inp</span> <span class="o">=</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">]</span>
-        <span class="c1">#TODO: self.self</span>
+        <span class="c1"># TODO: self.self</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inp</span><span class="p">)</span><span class="o">.</span><span class="n">schema</span>
 
     <span class="nd">@property</span>
@@ -399,11 +479,12 @@
         <span class="sd">&quot;&quot;&quot;Adds a validator to the input, analogous to Cell.add_validator&quot;&quot;&quot;</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="n">inp</span> <span class="o">=</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">]</span>
-        <span class="c1">#TODO: self.self</span>
+        <span class="c1"># TODO: self.self</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inp</span><span class="p">)</span><span class="o">.</span><span class="n">add_validator</span><span class="p">(</span><span class="n">validator</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_assign_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hctx</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">assign_connection</span>
+
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
         <span class="n">result_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">+</span> <span class="p">(</span><span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">],)</span>
@@ -422,20 +503,27 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">assign_connection</span>        
+        <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">assign_connection</span>
+
         <span class="n">translate</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="n">new_pin</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Resource</span><span class="p">):</span>
-            <span class="k">assert</span> <span class="n">attr</span> <span class="o">==</span>  <span class="s2">&quot;code&quot;</span>
+            <span class="k">assert</span> <span class="n">attr</span> <span class="o">==</span> <span class="s2">&quot;code&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sub_mount</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">attr</span> <span class="o">==</span> <span class="s2">&quot;main_module&quot;</span> <span class="ow">and</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;compiled&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">attr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;pins&quot;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Cannot assign directly all module objects; assign individual elements&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot assign directly all module objects; assign individual elements&quot;</span>
+            <span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_tf</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">Cell</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">DeepCellBase</span><span class="p">))</span> <span class="ow">and</span> <span class="n">attr</span> <span class="o">!=</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_tf</span><span class="p">()</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">Cell</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">DeepCellBase</span><span class="p">))</span>
+            <span class="ow">and</span> <span class="n">attr</span> <span class="o">!=</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]</span>
+        <span class="p">):</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Resource</span><span class="p">):</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">data</span>
             <span class="k">if</span> <span class="s2">&quot;TEMP&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">htf</span> <span class="ow">or</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;TEMP&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -475,7 +563,9 @@
                 <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
                     <span class="n">value</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">parse_function_code</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
                 <span class="n">check_libinstance_subcontext_binding</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">)</span>
-                <span class="n">removed</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">remove_connections</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">+</span> <span class="p">(</span><span class="n">attr</span><span class="p">,),</span> <span class="n">endpoint</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+                <span class="n">removed</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">remove_connections</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">+</span> <span class="p">(</span><span class="n">attr</span><span class="p">,),</span> <span class="n">endpoint</span><span class="o">=</span><span class="s2">&quot;target&quot;</span>
+                <span class="p">)</span>
                 <span class="k">if</span> <span class="n">removed</span><span class="p">:</span>
                     <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
                     <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -492,12 +582,16 @@
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">Cell</span><span class="p">,</span> <span class="n">DeepCellBase</span><span class="p">)):</span>
                 <span class="k">assert</span> <span class="n">value</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="n">parent</span>
                 <span class="n">exempt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exempt</span><span class="p">()</span>
-                <span class="n">assign_connection</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">_path</span><span class="p">,</span> <span class="n">target_path</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">exempt</span><span class="o">=</span><span class="n">exempt</span><span class="p">)</span>
+                <span class="n">assign_connection</span><span class="p">(</span>
+                    <span class="n">parent</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">_path</span><span class="p">,</span> <span class="n">target_path</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">exempt</span><span class="o">=</span><span class="n">exempt</span>
+                <span class="p">)</span>
                 <span class="n">translate</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tf</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">inp</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tf</span><span class="p">,</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">])</span>
-                <span class="n">removed</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">remove_connections</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">+</span> <span class="p">(</span><span class="n">attr</span><span class="p">,),</span> <span class="n">endpoint</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+                <span class="n">removed</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">remove_connections</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">+</span> <span class="p">(</span><span class="n">attr</span><span class="p">,),</span> <span class="n">endpoint</span><span class="o">=</span><span class="s2">&quot;target&quot;</span>
+                <span class="p">)</span>
                 <span class="k">if</span> <span class="n">removed</span><span class="p">:</span>
                     <span class="n">translate</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="n">inp</span><span class="o">.</span><span class="n">handle_no_inference</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -555,7 +649,9 @@
                         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">mount_ctx</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
                 <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tf</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">inp</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tf</span><span class="p">,</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">])</span>
-                <span class="n">removed</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">remove_connections</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">+</span> <span class="p">(</span><span class="n">attr</span><span class="p">,),</span> <span class="n">endpoint</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+                <span class="n">removed</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">remove_connections</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">+</span> <span class="p">(</span><span class="n">attr</span><span class="p">,),</span> <span class="n">endpoint</span><span class="o">=</span><span class="s2">&quot;target&quot;</span>
+                <span class="p">)</span>
                 <span class="k">if</span> <span class="n">removed</span><span class="p">:</span>
                     <span class="n">translate</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="nb">setattr</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">handle_no_inference</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
@@ -625,8 +721,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">tf2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">executor</span>
         <span class="kn">from</span> <span class="nn">..metalevel.debugmode</span> <span class="kn">import</span> <span class="n">debugmountmanager</span>
-        <span class="k">return</span> <span class="n">debugmountmanager</span><span class="o">.</span><span class="n">_mounts</span><span class="p">[</span><span class="n">tf2</span><span class="p">]</span>
 
+        <span class="k">return</span> <span class="n">debugmountmanager</span><span class="o">.</span><span class="n">_mounts</span><span class="p">[</span><span class="n">tf2</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">_get_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
@@ -651,15 +747,13 @@
             <span class="n">p</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span>
             <span class="k">return</span> <span class="n">p</span>
 
-
 <div class="viewcode-block" id="Transformer.observe"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Transformer.observe">[docs]</a>    <span class="k">def</span> <span class="nf">observe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">polling_interval</span><span class="p">,</span> <span class="n">observe_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Observes attributes of the result, analogous to Cell.observe&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">attr</span> <span class="o">=</span> <span class="p">(</span><span class="n">attr</span><span class="p">,)</span>
         <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">+</span> <span class="n">attr</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_top_parent</span><span class="p">()</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span>
-            <span class="n">path</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">polling_interval</span><span class="p">,</span>
-            <span class="n">observe_none</span><span class="o">=</span><span class="n">observe_none</span>
+            <span class="n">path</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">polling_interval</span><span class="p">,</span> <span class="n">observe_none</span><span class="o">=</span><span class="n">observe_none</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Transformer.unobserve"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Transformer.unobserve">[docs]</a>    <span class="k">def</span> <span class="nf">unobserve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
@@ -678,7 +772,7 @@
 <span class="sd">        1. The construction of the input object (Transformer.inp).</span>
 <span class="sd">           The input object is cell-like, see Cell.exception for more details.</span>
 
-<span class="sd">        2. The construction of the individual input values </span>
+<span class="sd">        2. The construction of the individual input values</span>
 <span class="sd">           that are inserted into the transformer namespace before execution.</span>
 
 <span class="sd">        3. The execution of the transformer. For Python/IPython cells, this</span>
@@ -692,23 +786,36 @@
 <span class="sd">           The result object is cell-like, see Cell.exception for more details.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">class</span> <span class="nc">PlaceHolder</span><span class="p">:</span> <span class="k">pass</span>
+
+        <span class="k">class</span> <span class="nc">PlaceHolder</span><span class="p">:</span>
+            <span class="sd">&quot;&quot;&quot;Placeholder class&quot;&quot;&quot;</span>
+
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">htf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+            <span class="c1"># pylint: disable=line-too-long</span>
             <span class="k">return</span> <span class="s2">&quot;This transformer is untranslated; run &#39;ctx.translate()&#39; or &#39;await ctx.translation()&#39;&quot;</span>
         <span class="n">tf0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tf</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">tf</span> <span class="o">=</span> <span class="n">tf0</span><span class="o">.</span><span class="n">tf</span>
         <span class="k">if</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;compiled&quot;</span><span class="p">]:</span>
             <span class="n">attrs</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">],</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="n">PlaceHolder</span><span class="p">,</span>
-                <span class="s2">&quot;gen_header&quot;</span><span class="p">,</span> <span class="s2">&quot;integrator&quot;</span><span class="p">,</span> <span class="s2">&quot;executor&quot;</span><span class="p">,</span>
-                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]</span>
+                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;code&quot;</span><span class="p">,</span>
+                <span class="n">PlaceHolder</span><span class="p">,</span>
+                <span class="s2">&quot;gen_header&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;integrator&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;executor&quot;</span><span class="p">,</span>
+                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">],</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">attrs</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">],</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="n">PlaceHolder</span><span class="p">,</span>
-                <span class="s2">&quot;ipy_template_code&quot;</span><span class="p">,</span> <span class="s2">&quot;apply_ipy_template&quot;</span><span class="p">,</span> <span class="s2">&quot;ipy_code&quot;</span><span class="p">,</span> <span class="s2">&quot;tf&quot;</span><span class="p">,</span>
-                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]</span>
+                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;code&quot;</span><span class="p">,</span>
+                <span class="n">PlaceHolder</span><span class="p">,</span>
+                <span class="s2">&quot;ipy_template_code&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;apply_ipy_template&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ipy_code&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tf&quot;</span><span class="p">,</span>
+                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">],</span>
             <span class="p">)</span>
 
         <span class="n">exc</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
@@ -743,24 +850,26 @@
                 <span class="n">tf2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tf</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">item</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tf2</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>                    
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
                     <span class="k">continue</span>
                 <span class="n">curr_exc</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">exception</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">curr_exc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tf</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">exception</span>
             <span class="k">if</span> <span class="n">curr_exc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">&quot;executor&quot;</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">curr_exc</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">list</span><span class="p">(</span><span class="n">curr_exc</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;module&quot;</span><span class="p">]:</span>
-                        <span class="n">curr_exc</span> <span class="o">=</span> <span class="n">curr_exc</span><span class="p">[</span><span class="s2">&quot;module&quot;</span><span class="p">]</span>    
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">curr_exc</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">list</span><span class="p">(</span><span class="n">curr_exc</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="p">[</span>
+                        <span class="s2">&quot;module&quot;</span>
+                    <span class="p">]:</span>
+                        <span class="n">curr_exc</span> <span class="o">=</span> <span class="n">curr_exc</span><span class="p">[</span><span class="s2">&quot;module&quot;</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">curr_exc</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                     <span class="n">curr_exc2</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
                     <span class="k">for</span> <span class="n">kk</span> <span class="ow">in</span> <span class="n">curr_exc</span><span class="p">:</span>
-                        <span class="n">curr_exc2</span> <span class="o">+=</span> <span class="s2">&quot;  +++ &quot;</span> <span class="o">+</span> <span class="n">kk</span> <span class="o">+</span> <span class="s2">&quot; +++</span><span class="se">\n</span><span class="s2">&quot;</span>        
-                        <span class="n">curr_exc2</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">curr_exc</span><span class="p">[</span><span class="n">kk</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> 
+                        <span class="n">curr_exc2</span> <span class="o">+=</span> <span class="s2">&quot;  +++ &quot;</span> <span class="o">+</span> <span class="n">kk</span> <span class="o">+</span> <span class="s2">&quot; +++</span><span class="se">\n</span><span class="s2">&quot;</span>
+                        <span class="n">curr_exc2</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">curr_exc</span><span class="p">[</span><span class="n">kk</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
                         <span class="n">curr_exc2</span> <span class="o">+=</span> <span class="s2">&quot;  +++ /&quot;</span> <span class="o">+</span> <span class="n">kk</span> <span class="o">+</span> <span class="s2">&quot; +++</span><span class="se">\n</span><span class="s2">&quot;</span>
                     <span class="n">curr_exc</span> <span class="o">=</span> <span class="n">curr_exc2</span>
                 <span class="n">exc</span> <span class="o">+=</span> <span class="s2">&quot;*** &quot;</span> <span class="o">+</span> <span class="n">k</span> <span class="o">+</span> <span class="s2">&quot; ***</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="n">exc</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">curr_exc</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> 
+                <span class="n">exc</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">curr_exc</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
                 <span class="n">exc</span> <span class="o">+=</span> <span class="s2">&quot;*** /&quot;</span> <span class="o">+</span> <span class="n">k</span> <span class="o">+</span> <span class="s2">&quot; ***</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="n">curr_exc</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">exc</span><span class="p">):</span>
@@ -782,10 +891,10 @@
                 <span class="k">if</span> <span class="n">sublogs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">sublogs</span><span class="o">.</span><span class="n">strip</span><span class="p">()):</span>
                     <span class="n">logs</span> <span class="o">+=</span> <span class="s2">&quot;*** &quot;</span> <span class="o">+</span> <span class="n">k</span> <span class="o">+</span> <span class="s2">&quot; ***</span><span class="se">\n</span><span class="s2">&quot;</span>
                     <span class="n">logs</span> <span class="o">+=</span> <span class="n">sublogs</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
-                    <span class="n">logs</span> <span class="o">+=</span> <span class="s2">&quot;*** /&quot;</span> <span class="o">+</span> <span class="n">k</span> <span class="o">+</span> <span class="s2">&quot; ***</span><span class="se">\n</span><span class="s2">&quot;</span>    
+                    <span class="n">logs</span> <span class="o">+=</span> <span class="s2">&quot;*** /&quot;</span> <span class="o">+</span> <span class="n">k</span> <span class="o">+</span> <span class="s2">&quot; ***</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">logs</span><span class="p">):</span>
                 <span class="k">return</span> <span class="kc">None</span>
-            <span class="k">return</span> <span class="n">logs</span>                
+            <span class="k">return</span> <span class="n">logs</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">logs</span>
 
@@ -802,15 +911,22 @@
         <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tf</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">tf</span>
         <span class="k">if</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;compiled&quot;</span><span class="p">]:</span>
             <span class="n">attrs</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">],</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;gen_header&quot;</span><span class="p">,</span> <span class="s2">&quot;integrator&quot;</span><span class="p">,</span> <span class="s2">&quot;executor&quot;</span><span class="p">,</span>
-                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]</span>
+                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;code&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;gen_header&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;integrator&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;executor&quot;</span><span class="p">,</span>
+                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">],</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">attrs</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">],</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> 
-                <span class="s2">&quot;ipy_template_code&quot;</span><span class="p">,</span> <span class="s2">&quot;apply_ipy_template&quot;</span><span class="p">,</span> <span class="s2">&quot;ipy_code&quot;</span><span class="p">,</span> <span class="s2">&quot;tf&quot;</span><span class="p">,</span>
-                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]</span>
+                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;code&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ipy_template_code&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;apply_ipy_template&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ipy_code&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tf&quot;</span><span class="p">,</span>
+                <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">],</span>
             <span class="p">)</span>
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
             <span class="n">pending</span> <span class="o">=</span> <span class="kc">False</span>
@@ -818,7 +934,11 @@
             <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">],</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]):</span>
                 <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">htf</span><span class="p">[</span><span class="s2">&quot;pins&quot;</span><span class="p">]):</span>
                     <span class="k">continue</span>
-                <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="o">.</span><span class="n">enabled</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;sandbox&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">k</span> <span class="o">==</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]</span>
+                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="o">.</span><span class="n">enabled</span>
+                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;sandbox&quot;</span>
+                <span class="p">):</span>
                     <span class="k">continue</span>
                 <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
                 <span class="n">status</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">status</span>
@@ -830,7 +950,7 @@
                 <span class="n">tf2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tf</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">item</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tf2</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>                    
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
                     <span class="k">continue</span>
                 <span class="n">status</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">status</span>
             <span class="k">else</span><span class="p">:</span>
@@ -849,22 +969,85 @@
             <span class="k">return</span> <span class="s2">&quot;Status: pending&quot;</span>
         <span class="k">return</span> <span class="s2">&quot;Status: OK&quot;</span>
 
-    <span class="k">def</span> <span class="nf">get_transformation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Transformer.get_transformation"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Transformer.get_transformation">[docs]</a>    <span class="k">def</span> <span class="nf">get_transformation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Return the checksum of the transformation dict.</span>
+<span class="sd">        The transformation dict contains the checksums of all input pins,</span>
+<span class="sd">        including the code.</span>
+
+<span class="sd">        In addition, it may contain the following special keys:</span>
+<span class="sd">        - __output__: the name (usually &quot;result&quot;) and (sub)celltype of the output pin</span>
+<span class="sd">        - __env__: the checksum of the environment description</span>
+<span class="sd">        - __as__: a dictionary of pin-to-variable renames (pins.pinname.as_ attribute)</span>
+<span class="sd">        - __format__: a dictionary that contains deepcell and filesystem attributes</span>
+
+<span class="sd">        Finally, it may contain additional information that is not reflected</span>
+<span class="sd">        in this checksum:</span>
+
+<span class="sd">        - __meta__: meta information (Transformer.meta).</span>
+<span class="sd">        - __compilers__: context-wide compiler definitions.</span>
+<span class="sd">        - __languages__: context-wide language definition.</span>
+
+<span class="sd">        You can run a transformation with:</span>
+<span class="sd">        `seamless.run_transformation(checksum)`.</span>
+
+<span class="sd">        `ctx.resolve(checksum, &quot;plain&quot;)` will return the transformation dict,</span>
+<span class="sd">        minus __meta__, __compilers__ and __languages__. The checksum is</span>
+<span class="sd">        treated like any other buffer, i.e. including database, communion etc.</span>
+
+<span class="sd">        With the following code, you can obtain the full transformation dict,</span>
+<span class="sd">        including __meta__, __compilers__ and __languages__.</span>
+
+<span class="sd">        ```</span>
+<span class="sd">        from seamless.core.cache.transformation_cache import transformation_cache</span>
+<span class="sd">        transformation_cache.get_transformation_dict(checksum)</span>
+<span class="sd">        ```</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tf</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;compiled&quot;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">get_transformation</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">get_transformation</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">get_transformation</span><span class="p">()</span></div>
 
+<div class="viewcode-block" id="Transformer.cancel"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Transformer.cancel">[docs]</a>    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Hard-cancels the transformer.</span>
+
+<span class="sd">        This will send a cancel signal that will kill the transformation if</span>
+<span class="sd">        it is running.</span>
+
+<span class="sd">        The transformation is killed with a HardCancelError exception.</span>
+<span class="sd">        Clearing the exception using Transformer.clear_exception</span>
+<span class="sd">        will restart the transformation.</span>
+
+<span class="sd">        This affects both local and remote execution.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tf</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;compiled&quot;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="s2">&quot;gen_header&quot;</span><span class="p">,</span> <span class="s2">&quot;integrator&quot;</span><span class="p">,</span> <span class="s2">&quot;executor&quot;</span><span class="p">:</span>
+                <span class="n">tf2</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tf</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+                <span class="n">tf2</span><span class="o">.</span><span class="n">hard_cancel</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">hard_cancel</span><span class="p">()</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">self</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a wrapper where the pins are not directly accessible.</span>
+
+<span class="sd">        By default, a pin called &quot;compute&quot; will cause &quot;transformer.status&quot;</span>
+<span class="sd">        to return the pin, and not the actual transformer status.</span>
+
+<span class="sd">        To be sure to get the transformer status, you can invoke transformer.self.status.</span>
+
+<span class="sd">        NOTE: experimental, requires more testing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="n">attributelist</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__dict__</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)]</span>
         <span class="k">return</span> <span class="n">SelfWrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attributelist</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">link_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">link_options</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Linker options for compiled modules</span>
 <span class="sd">        They are a list of strings, for example:</span>
 <span class="sd">        [&quot;-lm&quot;, &quot;-lgfortran&quot;, &quot;-lcudart&quot;]</span>
@@ -873,9 +1056,6 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;compiled&quot;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Only for compiled transformers&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">htf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;link_options&quot;</span><span class="p">,</span> <span class="p">[]))</span>
-
-    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">TransformerCopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="nd">@link_options</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">link_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link_options</span><span class="p">):</span>
@@ -893,6 +1073,13 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;link_options must be a list of strings&quot;</span><span class="p">)</span>
         <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;link_options&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">link_options</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Transformer.copy"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Transformer.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a copy wrapper.</span>
+<span class="sd">        This wrapper can be assigned to a new Context attribute,</span>
+<span class="sd">        creating a copy of the current Transformer.</span>
+<span class="sd">        Input parameters and connections to input pins are all copied.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">TransformerCopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">):</span>
@@ -928,23 +1115,39 @@
         <span class="k">elif</span> <span class="n">attr</span> <span class="o">==</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">]:</span>
             <span class="n">getter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputgetter</span>
             <span class="n">dirs</span> <span class="o">=</span> <span class="p">[</span>
-              <span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;buffered&quot;</span><span class="p">,</span> <span class="s2">&quot;_data&quot;</span><span class="p">,</span> <span class="s2">&quot;checksum&quot;</span><span class="p">,</span>
-              <span class="s2">&quot;schema&quot;</span><span class="p">,</span> <span class="s2">&quot;example&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="s2">&quot;exception&quot;</span><span class="p">,</span>
-              <span class="s2">&quot;add_validator&quot;</span><span class="p">,</span> <span class="s2">&quot;handle&quot;</span>
+                <span class="s2">&quot;value&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;buffered&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;_data&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;checksum&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;schema&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;example&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;status&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;exception&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;add_validator&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;handle&quot;</span><span class="p">,</span>
             <span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">htf</span><span class="p">[</span><span class="s2">&quot;pins&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
             <span class="n">setter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputsetter</span>
             <span class="k">return</span> <span class="n">Proxy</span><span class="p">(</span>
-              <span class="bp">self</span><span class="p">,</span> <span class="p">(</span><span class="n">attr</span><span class="p">,),</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span>
-              <span class="n">pull_source</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">getter</span><span class="o">=</span><span class="n">getter</span><span class="p">,</span> <span class="n">dirs</span><span class="o">=</span><span class="n">dirs</span><span class="p">,</span>
-              <span class="n">setter</span><span class="o">=</span><span class="n">setter</span><span class="p">,</span>
-              <span class="n">deleter</span><span class="o">=</span><span class="n">deleter</span>
+                <span class="bp">self</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">attr</span><span class="p">,),</span>
+                <span class="s2">&quot;w&quot;</span><span class="p">,</span>
+                <span class="n">pull_source</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">getter</span><span class="o">=</span><span class="n">getter</span><span class="p">,</span>
+                <span class="n">dirs</span><span class="o">=</span><span class="n">dirs</span><span class="p">,</span>
+                <span class="n">setter</span><span class="o">=</span><span class="n">setter</span><span class="p">,</span>
+                <span class="n">deleter</span><span class="o">=</span><span class="n">deleter</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="n">attr</span> <span class="o">==</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]:</span>
             <span class="n">getter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resultgetter</span>
             <span class="n">dirs</span> <span class="o">=</span> <span class="p">[</span>
-              <span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;buffered&quot;</span><span class="p">,</span> <span class="s2">&quot;_data&quot;</span><span class="p">,</span> <span class="s2">&quot;checksum&quot;</span><span class="p">,</span>
-              <span class="s2">&quot;schema&quot;</span><span class="p">,</span> <span class="s2">&quot;example&quot;</span><span class="p">,</span> <span class="s2">&quot;exception&quot;</span><span class="p">,</span>
-              <span class="s2">&quot;add_validator&quot;</span>
+                <span class="s2">&quot;value&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;buffered&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;_data&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;checksum&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;schema&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;example&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;exception&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;add_validator&quot;</span><span class="p">,</span>
             <span class="p">]</span>
             <span class="n">pull_source</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">proxycls</span> <span class="o">=</span> <span class="n">Proxy</span>
@@ -957,21 +1160,20 @@
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
         <span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;w&quot;</span> <span class="k">if</span> <span class="n">setter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;r&quot;</span>
         <span class="k">return</span> <span class="n">proxycls</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> 
-            <span class="p">(</span><span class="n">attr</span><span class="p">,),</span> <span class="n">mode</span><span class="p">,</span> 
-            <span class="n">pull_source</span><span class="o">=</span><span class="n">pull_source</span><span class="p">,</span> 
-            <span class="n">getter</span><span class="o">=</span><span class="n">getter</span><span class="p">,</span> <span class="n">setter</span><span class="o">=</span><span class="n">setter</span><span class="p">,</span> <span class="n">dirs</span><span class="o">=</span><span class="n">dirs</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">attr</span><span class="p">,),</span>
+            <span class="n">mode</span><span class="p">,</span>
+            <span class="n">pull_source</span><span class="o">=</span><span class="n">pull_source</span><span class="p">,</span>
+            <span class="n">getter</span><span class="o">=</span><span class="n">getter</span><span class="p">,</span>
+            <span class="n">setter</span><span class="o">=</span><span class="n">setter</span><span class="p">,</span>
+            <span class="n">dirs</span><span class="o">=</span><span class="n">dirs</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_sub_mount_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">authority</span><span class="o">=</span><span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="n">persistent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;w&quot;</span>
         <span class="k">assert</span> <span class="n">authority</span> <span class="o">==</span> <span class="s2">&quot;cell&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sub_mount</span><span class="p">(</span>
-          <span class="s2">&quot;header&quot;</span><span class="p">,</span>
-          <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
-          <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
-          <span class="n">authority</span><span class="o">=</span><span class="n">authority</span><span class="p">,</span>
-          <span class="n">persistent</span><span class="o">=</span><span class="n">persistent</span>
+            <span class="s2">&quot;header&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">authority</span><span class="o">=</span><span class="n">authority</span><span class="p">,</span> <span class="n">persistent</span><span class="o">=</span><span class="n">persistent</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_sub_mount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rw&quot;</span><span class="p">,</span> <span class="n">authority</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="n">persistent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -992,7 +1194,7 @@
             <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
             <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">mode</span><span class="p">,</span>
             <span class="s2">&quot;authority&quot;</span><span class="p">:</span> <span class="n">authority</span><span class="p">,</span>
-            <span class="s2">&quot;persistent&quot;</span><span class="p">:</span> <span class="n">persistent</span>
+            <span class="s2">&quot;persistent&quot;</span><span class="p">:</span> <span class="n">persistent</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="s2">&quot;mount&quot;</span> <span class="ow">in</span> <span class="n">htf</span><span class="p">:</span>
             <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;mount&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1063,7 +1265,7 @@
                     <span class="n">c</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">mount_ctx</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
                     <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span>
             <span class="k">return</span> <span class="n">result</span>
-            
+
         <span class="k">if</span> <span class="n">attr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="s2">&quot;exception&quot;</span><span class="p">):</span>
             <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tf</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">inputcell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tf</span><span class="p">,</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">])</span>
@@ -1088,10 +1290,13 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">example</span>
         <span class="k">elif</span> <span class="n">attr</span> <span class="o">==</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">htf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+                <span class="c1"># pylint: disable=line-too-long</span>
                 <span class="k">return</span> <span class="s2">&quot;This transformer is untranslated; run &#39;ctx.translate()&#39; or &#39;await ctx.translation()&#39;&quot;</span>
             <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tf</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">inputcell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tf</span><span class="p">,</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">])</span>
-            <span class="k">return</span> <span class="n">inputcell</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">status</span> <span class="c1"># TODO; take into account validation, inchannel status</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">inputcell</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">status</span>
+            <span class="p">)</span>  <span class="c1"># TODO; take into account validation, inchannel status</span>
         <span class="k">elif</span> <span class="n">attr</span> <span class="o">==</span> <span class="s2">&quot;exception&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">htf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
                 <span class="k">return</span> <span class="s2">&quot;Status: error (ctx needs translation)&quot;</span>
@@ -1105,10 +1310,16 @@
 
     <span class="k">def</span> <span class="nf">_inputsetter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span>
-          <span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;_data&quot;</span><span class="p">,</span> <span class="s2">&quot;buffered&quot;</span><span class="p">,</span>
-          <span class="s2">&quot;checksum&quot;</span><span class="p">,</span> <span class="s2">&quot;handle&quot;</span><span class="p">,</span> <span class="s2">&quot;schema&quot;</span><span class="p">,</span>
-          <span class="s2">&quot;example&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="s2">&quot;exception&quot;</span><span class="p">,</span>
-          <span class="s2">&quot;add_validator&quot;</span>
+            <span class="s2">&quot;value&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_data&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;buffered&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;checksum&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;handle&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;schema&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;example&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;exception&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;add_validator&quot;</span><span class="p">,</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Cell</span><span class="p">):</span>
@@ -1184,15 +1395,18 @@
 
     <span class="k">def</span> <span class="nf">_pull_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">assign_connection</span>
+
         <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tf</span><span class="p">()</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
+
         <span class="k">def</span> <span class="nf">set_mount</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
             <span class="k">if</span> <span class="s2">&quot;mount&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">htf</span><span class="p">:</span>
                 <span class="k">return</span>
             <span class="k">if</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;mount&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">return</span>
             <span class="n">node</span><span class="p">[</span><span class="s2">&quot;mount&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;mount&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">)</span>
+
         <span class="n">language</span> <span class="o">=</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;language&quot;</span><span class="p">]</span>
         <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">attr</span> <span class="o">==</span> <span class="s2">&quot;code&quot;</span><span class="p">:</span>
@@ -1227,7 +1441,7 @@
                 <span class="s2">&quot;celltype&quot;</span><span class="p">:</span> <span class="s2">&quot;structured&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;datatype&quot;</span><span class="p">:</span> <span class="s2">&quot;mixed&quot;</span><span class="p">,</span>
             <span class="p">}</span>
-        <span class="n">child</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">parent</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span> <span class="c1">#inserts itself as child</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">parent</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>  <span class="c1"># inserts itself as child</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">_graph</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">cell</span>
         <span class="k">if</span> <span class="s2">&quot;file_extension&quot;</span> <span class="ow">in</span> <span class="n">htf</span><span class="p">:</span>
             <span class="n">child</span><span class="o">.</span><span class="n">mimetype</span> <span class="o">=</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;file_extension&quot;</span><span class="p">]</span>
@@ -1341,15 +1555,19 @@
 
     <span class="k">def</span> <span class="nf">_set_observers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
-        <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">        # for now, assume that the internal structure of foreign transformers is not too different...</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        # Disable the code below.</span>
+<span class="sd">        # for now, assume that the internal structure of foreign transformers</span>
+<span class="sd">        # is not too different...</span>
 
 <span class="sd">        if htf[&quot;compiled&quot;] or htf[&quot;language&quot;] not in (&quot;python&quot;, &quot;ipython&quot;, &quot;bash&quot;, &quot;docker&quot;):</span>
 <span class="sd">            if htf[&quot;compiled&quot;]:</span>
 <span class="sd">                pass</span>
 <span class="sd">            else:</span>
-<span class="sd">                raise NotImplementedError # NOTE: observers depend on the implementation of translate_XXX_transformer (midlevel)</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">                raise NotImplementedError</span>
+<span class="sd">                # NOTE: observers depend on the implementation of</span>
+<span class="sd">                # translate_XXX_transformer (midlevel)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tf</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">tf</span><span class="o">.</span><span class="n">code</span><span class="o">.</span><span class="n">_set_observer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_observe_code</span><span class="p">)</span>
         <span class="n">inp</span> <span class="o">=</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">]</span>
@@ -1367,7 +1585,6 @@
         <span class="k">if</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;compiled&quot;</span><span class="p">]:</span>
             <span class="n">tf</span><span class="o">.</span><span class="n">main_module</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">_set_observer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_observe_main_module</span><span class="p">)</span>
 
-
     <span class="k">def</span> <span class="fm">__delattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__delattr__</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
@@ -1377,7 +1594,7 @@
     <span class="k">def</span> <span class="fm">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
         <span class="n">d</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__dir__</span><span class="p">()</span>
-        <span class="n">std</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;pins&quot;</span><span class="p">,</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]</span> <span class="p">,</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">],</span> <span class="s2">&quot;exception&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">]</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;pins&quot;</span><span class="p">,</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">],</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;INPUT&quot;</span><span class="p">],</span> <span class="s2">&quot;exception&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;compiled&quot;</span><span class="p">]:</span>
             <span class="n">std</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">((</span><span class="s2">&quot;main_module&quot;</span><span class="p">,</span> <span class="s2">&quot;header&quot;</span><span class="p">))</span>
         <span class="n">pins</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">htf</span><span class="p">[</span><span class="s2">&quot;pins&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
@@ -1389,9 +1606,13 @@
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
+
 <span class="k">class</span> <span class="nc">TransformerCopy</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Wrapper around a Transformer.</span>
+<span class="sd">    To facilitate copying.&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transformer</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="n">transformer</span><span class="p">)</span>
+
 
 <span class="kn">from</span> <span class="nn">.synth_context</span> <span class="kn">import</span> <span class="n">SynthContext</span>
 <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">check_libinstance_subcontext_binding</span>
@@ -1409,7 +1630,7 @@
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -1436,7 +1657,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2016-2022, INSERM and code contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.4.
     </div>
   </body>
 </html>

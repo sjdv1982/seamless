@@ -6,9 +6,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Contexts &#8212; Seamless 0.8 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/nature.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
@@ -44,24 +44,33 @@
             
   <div class="section" id="contexts">
 <h1>Contexts<a class="headerlink" href="#contexts" title="Permalink to this headline">¶</a></h1>
-<p>The seamless.highlevel.Context class is a wrapper around a <em>dependency graph</em>, that contains of
+<p>The seamless.highlevel.Context class is a wrapper around a <em>workflow graph</em>, that contains of
 cells, connections, and workers (primarily transformers). By convention, a Context is called <code class="docutils literal notranslate"><span class="pre">ctx</span></code>.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> does not exist yet, then <code class="docutils literal notranslate"><span class="pre">ctx.a</span> <span class="pre">=</span> <span class="pre">X</span></code> :</p>
 <ul class="simple">
-<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a constant. <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> will be bound to <code class="docutils literal notranslate"><span class="pre">ctx</span></code> and have the value X. All cell values must be either JSON-serializable, or a Numpy array, or a mixture of both.</p></li>
+<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a constant. <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> will be bound to <code class="docutils literal notranslate"><span class="pre">ctx</span></code> and have the value X. The celltype will be “mixed”. This means that X must be either JSON-serializable, or a Numpy array, or a mixture of both.</p></li>
 <li><p>will create a new transformer <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a Python function. The transformer will copy the source code and function signature of X (see the documentation of the Transformer class for more details).</p></li>
 <li><p>will bind X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell, transformer or context that is not bound to a context.</p></li>
-<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell or transformer that is bound to a context. Then, a connection from X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> is created.</p></li>
-<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a transformer. Then, a new connection from <code class="docutils literal notranslate"><span class="pre">X.result</span></code>  to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> is created.</p></li>
+<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell, subcell, transformer outputpin etc. that is already bound to <code class="docutils literal notranslate"><span class="pre">ctx</span></code>. Then, a connection from X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> is created.</p></li>
+<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a transformer that is already bound to <code class="docutils literal notranslate"><span class="pre">ctx</span></code>. Then, a new connection from <code class="docutils literal notranslate"><span class="pre">X.result</span></code>  to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> is created.</p></li>
 </ul>
-<p>Cell values (and the workers’ input and output values) are stored as the <em>checksums</em> of their data buffers. Therefore, the dependency graph is always well-defined, yet small in size.</p>
+<p>Cell values (and the workers’ input and output values) are stored as the <em>checksums</em> of their data buffers. Therefore, the workflow graph is always well-defined, yet small in size.</p>
 <p>Seamless maintains a checksum-to-buffer cache, either in memory or in a database. It can also query remotely connected Seamless instances.</p>
-<p>The Context class can launch a <em>translation</em> of the dependency graph to
+<p>The Context class can launch a <em>translation</em> of the workflow graph to
 a low-level representation that can be evaluated.</p>
-<p>During evaluation, the dependency graph is in principle constant, i.e. immutable.
-Modification of the graph via the Context class creates a <em>new</em> graph that is re-translated and re-computed.</p>
+<p>The workflow graph consists of <em>dependent</em> and <em>independent</em> checksums. Independent checksums correspond to the code and the input parameters that have been directly defined by the programmer or the user. <em>dependent</em> checksums are the result of a computation, such as a transformer, a subcell expression, or a cell conversion. Parts of the graph that are under macro control (this includes the library instances of much of the stdlib) are also dependent.</p>
+<p>During evaluation, all dependent checksums of the workflow are computed. In principle, the independent checksums are constant, i.e. immutable: modification of the workflow via the Context class creates a <em>new</em> workflow that is re-translated and re-computed. However, the low-level representation also supports the modification of independent checksums, as it is capable of canceling the downstream dependent checksums and re-launching their computations. This means that independent checksums can be modified without re-translation. Any changes in the topology (cell types, new cells, new transformers, new connections, etc.) do require translation. If this is not desired (for example in a web interface), the topology generation must be under macro control.</p>
 <p>In the graph, each transformer performs a transformation from input + code to result. Seamless keeps a result cache of all transformations. Just like the checksum-to-buffer cache, databases or remote Seamless instances can also be queried. Because of this, the only transformations that are performed are those that have never been performed anywhere before, or where the result value is no longer accessible.</p>
-<p>Before any computation starts, a context has to be translated (using <code class="docutils literal notranslate"><span class="pre">ctx.translate()</span></code> or <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation</span></code>). Changing the topology of the graph (e.g. adding a cell) or changing the cell types only takes effect upon re-translation. The modification of cell <em>values</em> does not require re-translation.</p>
+<p>Before any computation starts, a context has to be translated (using
+<code class="docutils literal notranslate"><span class="pre">ctx.translate()</span></code> or <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation</span></code>). Implicit translation is done if
+<code class="docutils literal notranslate"><span class="pre">ctx.compute()</span></code> is invoked.
+Changing the topology of the graph (e.g. adding a cell) or changing the cell types
+only takes effect upon re-translation. The modification of cell <em>values</em> does not
+require re-translation. This is because translation creates a low-level context
+that does the work and holds the data. Most of the methods and properties of the
+Seamless high-level classes (Cell, Transformer, etc.) are wrappers that interact
+with their low-level counterparts. Seamless low-level contexts accept value changes
+but not modifications in topology.</p>
 <p>See <code class="docutils literal notranslate"><span class="pre">http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class</span></code> for more documentation.</p>
 </div>
 
@@ -72,16 +81,12 @@ Modification of the graph via the Context class creates a <em>new</em> graph tha
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="tutorial/tutorial.html"
-                          title="previous chapter">Tutorial</a></p>
-  </div>
-  <div>
-    <h4>Next topic</h4>
-    <p class="topless"><a href="cell.html"
-                          title="next chapter">Cells</a></p>
-  </div>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tutorial/tutorial.html"
+                        title="previous chapter">Tutorial</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cell.html"
+                        title="next chapter">Cells</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -93,7 +98,7 @@ Modification of the graph via the Context class creates a <em>new</em> graph tha
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -124,7 +129,7 @@ Modification of the graph via the Context class creates a <em>new</em> graph tha
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2016-2022, INSERM and code contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.4.
     </div>
   </body>
 </html>

@@ -11,23 +11,28 @@ When you modify a cell, you essentially create a new context graph where all dep
 Assigning a cell to another cell creates a connection from the second cell to the first cell.
 
 Changing cell values is asynchronous:
+
 ```python
 ctx.a = Cell()
 await ctx.translation()
 ctx.a = 123
 print(ctx.a.value)
 ```
-```None```
+
+`None`
+
 ```python
 await ctx.computation() # or wait a few milliseconds in IPython or Jupyter
 print(ctx.a.value)
 ```
-```<Silk 123>```
+
+`<Silk 123>`
 
 Cells are by default *structured cells*, which:
 - Contain values that are **mixed**: they can contain plain (JSON-serializable) values, Numpy arrays, or a mix of the two.
 - Have a schema (a superset of JSON schema)
 - Support subcells:
+
 ```python
 ctx.a = Cell()
 ctx.b = Cell()
@@ -42,7 +47,7 @@ await ctx.computation()
 print(ctx.c.value)
 ```
 
-```
+```text
 <Silk: {'sub1': {'x': 12}, 'sub2': 99} >
 <Silk: 12 >
 ```
@@ -59,6 +64,7 @@ Cells can be *shared* over HTTP (via the Seamless REST API), using `Cell.share`.
 Newly created/connected/mounted/shared cells require a re-translation of the context to take effect. This is also the case for a change in celltype.
 
 ## Alternative subcell syntax
+
 You can use `ctx.c["sub"]` to assign or refer to subcell `ctx.c.sub`. This way, you can also access subcells that are not valid Python variables, such as `ctx.c["file.txt"]`.
 You can also access individual elements from a list:
 ```python

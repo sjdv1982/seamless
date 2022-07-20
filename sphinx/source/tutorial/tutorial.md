@@ -1,6 +1,5 @@
 # Tutorial
 
-<!-- TODO: add more .help, especially to graph / stdlib>
 <!-- TODO: integrate/refer to new_project.md -->
 <!-- TODO: integrate design.md
 Leave that document as developer doc, but add its material in here -->
@@ -18,19 +17,15 @@ Intro:
 - new project + status + web form (link to C5.)
 - Interactive programming, interactive workflows.
   Blurring between programmer and user.
-  More like Jupyter than like NextFlow (link)
 
-In-depth (no pre-requisites):
-
-- run from conda environment
-- Docker commands
-- link: files are bad, database, job manager
+<!-- TODO: add more .help, especially to graph / stdlib
 
 ### A2. Getting help
 
 Intro:
 - Link to reference documentation.
 - Accessing the help system
+-->
 
 ## Part B. Seamless basics
 
@@ -46,7 +41,7 @@ Intro:
 Intermediate:
 
 - .set, .observe
-- Checksums and buffers: async. link to interactive plumbing. 
+- Checksums and buffers: async. link to interactive plumbing.
   ctx.resolve
 - Conversion
 - Pin celltypes: link to transformers, libraries
@@ -91,7 +86,7 @@ In-depth:
 - Changing the translation machinery (not interactively)
 - Irreproducible transformers (link to determinism)
 
-### B3. Interactive plumbing
+### B3. Interactive workflows
 
 Intro:
 

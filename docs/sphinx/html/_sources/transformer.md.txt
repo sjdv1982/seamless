@@ -1,33 +1,36 @@
-Transformers
-============
+# Transformers
 
-Transformers perform a data transformation (computation), with cells as input, and one cell as the output. The source code of the transformation is an additional input. In principle, transformations can be in any programming language. Currently, transformations in Python, IPython, bash/docker,or a compiled language (C, C++ or Fortran) are supported.
+Transformers perform a data transformation (computation), with cells as input, and one cell as the output. The source code of the transformation is an additional input. In principle, transformations can be in any programming language. Transformations in Python, IPython, bash, or a compiled language (C, C++ or Fortran) are supported directly. You can add your own languages as well.
 
-Transformers must be bound to a context. `ctx.tf = Transformer()` creates a new
-transformer `ctx.tf`, bound to context `ctx`.
+Transformers must be bound to a context. `ctx.tf = Transformer()` creates a new transformer `ctx.tf`, bound to context `ctx`.
+
+***In the documentation below, `ctx.tf = Transformer()` is assumed.***
 
 ## Pins
 
-The inputs of a transformer are declared as *pins*. If `ctx.tf` does not have a pin `x`,
-then `ctx.tf.x = 10` creates a new pin `x` with the value 10. If it does have a pin `x`, it assigns the value 10 to it. A pin can also be connected to a cell `ctx.c` using `ctx.tf.x = ctx.c`.
+The inputs of a transformer are declared as *pins*. If `ctx.tf` does not have a pin `x`, then `ctx.tf.x = 10` creates a new pin `x` with the value 10. If it does have a pin `x`, it assigns the value 10 to it. A pin can also be connected to a cell `ctx.c` using `ctx.tf.x = ctx.c`.
 
-Pin attributes can be accessed using `ctx.tf.pins`, e.g `ctx.tf.pins.x` for pin `x`. The celltype of a pin `x` can be changed using `ctx.tf.pins.x.celltype` . Pin `x` can be deleted using `del ctx.tf.pins.x` or `del ctx.tf.x`.
+Pin *values* can be accessed with e.g. `ctx.tf.x` for pin `x`.
+
+Pin *attributes* can be accessed using `ctx.tf.pins`, e.g `ctx.tf.pins.x` for pin `x`. The celltype of a pin `x` can be changed using `ctx.tf.pins.x.celltype` . Pin `x` can be deleted using `del ctx.tf.pins.x` or `del ctx.tf.x`.
 
 Pins can be mounted to files, just like cells can. The same restrictions apply regarding dependent values and celltype. See the documentation of Cell for more details.
 
 Newly created/deleted/connected/mounted pins require a re-translation of the context to take effect. This is also the case for a change in pin celltype.
 
 ### Alternative pin syntax
+
 As an alternative pin syntax, you can also use `ctx.tf["x"] = 10`.
 This allows pins with names that are not valid Python attributes, such as `ctx.tf["file.txt"] = 10`.
 
 ### Code pin
 
-There is one special pin that always exists: `ctx.tf.code`. This pin defined the source code of the transformer, in the programming language defined by `ctx.tf.language`. Depending on the programming language, other special pins may exist as well (see below).
+There is one special pin that always exists: `ctx.tf.code`. This pin defines the source code of the transformer, in the programming language defined by `ctx.tf.language`. Depending on the programming language, other special pins may exist as well (see below).
 
 ## Transformer execution
 
 Transformers (re-)execute whenever any of their pins change in value. If any pin is None, the transformer result is None as well. Transformers execute in perfect isolation:
+
 - Concurrently, without blocking the ipython shell, file mounting, HTTP sharing, or other transformers.
 - With no access to any variables other than the values of the pins.
 - In a separate directory, with no access to the directory where Seamless is running.
@@ -42,7 +45,7 @@ It is available as the *result pin* `ctx.tf.result`.
 The value of the result is available as `ctx.tf.result.value`
 The celltype of the result is always "structured". Use `ctx.tf.result.value.unsilk` to get it as "mixed" (i.e. a JSON-encodable Python object, a Numpy array, or a mix of both).
 
-The execution status of the transformater can be retrieved using `ctx.tf.status`. If it is "error", the error message can be retrieved using `ctx.tf.exception`.
+The execution status of the transformer can be retrieved using `ctx.tf.status`. If it is "error", the error message can be retrieved using `ctx.tf.exception`.
 
 Transformers can print to stdout or stderr during execution.
 The printed output is only available after execution has finished.
@@ -50,19 +53,21 @@ The printed output is only available after execution has finished.
 The printed output will be part of the error message if the transformation fails.
 If it succeeds, the printed output will be in `ctx.tf.logs`.
 
-To assign a transformer result to a cell `ctx.c`, do `ctx.c = ctx.tf`, or `ctx.c = ctx.tf.result`.
+To assign a transformer result to a cell `ctx.c`, do `ctx.c = ctx.tf`, or `ctx.c = ctx.tf.result` (preferred).
 
 ## Python transformers
 
 Python transformers have `ctx.tf.language = "python"`, which is the default. Python transformers can also be directly created from a Python function:
+
 ```python
 def func(a, b):
     return a + b
 ctx.tf = func
 ```
-This sets `ctx.tf.code` to the source code of `func`. You may want to mount `ctx.tf.code` to a `.py` file and edit that file in a text editor.
-When `ctx.tf` is first created, Seamless inspects the function signature of `func`
-to create two pins, `ctx.tf.a` and `ctx.tf.b`, with undefined value.
+
+The last statement creates the transformer `ctx.tf`. Seamless inspects the function signature of `func` to create two pins, `ctx.tf.a` and `ctx.tf.b`, with undefined value.
+In addition, `ctx.tf.code` is set to the source code of `func`.
+You may want to mount `ctx.tf.code` to a `.py` file and edit that file in a text editor.
 
 Note that during execution, the Python transformer has no access to the scope/namespace of ctx.
 For example, the following will not work:
@@ -81,9 +86,9 @@ Python source code can be an expression, a function, or simply a block of code. 
 
 TODO: document preliminary and progress
 
-## Bash/docker transformers
+## Bash transformers
 
-Bash and Docker transformers have `ctx.tf.language` set to "bash" and "docker".
+Bash transformers have `ctx.tf.language` set to "bash".
 
 In both cases, `ctx.tf.code` is written in bash.
 The bash code will have access to every input pin stored as a file of the same name.
@@ -98,6 +103,7 @@ This file/directory must contain the result of the transformation. This result w
 to the result pin (`ctx.tf.result`). In case of a result directory, the result will be a dict
 where the keys are the original file names within the `RESULT` directory and the values are the
 contents of those files. To get the individual result file values, use subcells (see the Cell documentation for more details). For example:
+
 ```python
 ctx.tf = Transformer()
 ctx.tf.language = "bash"
@@ -119,7 +125,7 @@ print()
 print(ctx.filetxt.value)
 ```
 
-```
+```text
 1
 2
 3
@@ -129,12 +135,14 @@ print(ctx.filetxt.value)
 test
 ```
 
-Docker transformers are identical to bash transformers, except for the extra pin `ctx.tf.docker_image`. Note that to execute Docker transformer under standard Seamless
-(i.e. without configuring job servants to delegate the work), you will need to expose the Docker socket to Seamless, e.g using `seamless-bash-trusted` or `seamless-jupyter-trusted`.
+Bash transformers with a docker_image attribute have their bash script executed
+inside a Docker container.
+Note that to execute a such transformer under standard Seamless
+(i.e. without configuring job servants to delegate the work), you will need to expose the Docker socket to Seamless, e.g using `seamless-bash-trusted` or `seamless-jupyter-trusted`. Also, unlike `docker run`, Seamless does not pull any Docker images for you.
 
-An example of a bash transformer is [here](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py). An example of a Docker transformer is [here](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py).
+An example of a bash transformer is [here](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py). An example of a bash transformer with Docker image is [here](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py).
 
-Note that bash/docker transformer are executed in a separate temporary execution directory, they have no access to the file system available to `ctx`. The execution directory is deleted after execution.
+Note that bash transformers are executed in a separate temporary execution directory, they have no access to the file system available to `ctx`. The execution directory is deleted after execution.
 Also, the files inside this directory have file names that correspond only to the name of the transformer pins. There is also absolutely no relation with the cells to which these are connected. There is also no relation between these file names and the file names under which cells/pins are mounted or shared. This is demonstrated using the following example code:
 
 ```python
@@ -146,10 +154,10 @@ ctx.tf = Transformer()
 ctx.tf.language = "bash"
 ctx.tf.name4 = ctx.name1
 ctx.tf.code = """
-echo $name4 > x
-seq $name4 > y
-cat name4 name4 > z
-tar --mtime=1970-01-01 -czf RESULT x y z
+mkdir RESULT
+echo $name4 > RESULT/x
+seq $name4 > RESULT/y
+cat name4 name4 > RESULT/z
 """
 ctx.result = ctx.tf
 ctx.x = ctx.result.x
@@ -163,4 +171,10 @@ ctx.compute()
 
 ## Compiled transformers
 
-TODO
+(STUB: This documentation is a stub)
+...
+
+## Adding new transformer languages
+
+(STUB: This documentation is a stub)
+...
