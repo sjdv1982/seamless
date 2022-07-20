@@ -91,6 +91,7 @@ class PinWrapper:
             raise TypeError(as_)
         hpin = self._get_hpin()
         hpin["as"] = as_
+        self._parent()._parent()._translate()
 
     def __getitem__(self, pinname):
         return getattr(self, pinname)

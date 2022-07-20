@@ -212,7 +212,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
             inputs.append(pinname_as)
     for pinname in transformation:
         if pinname in (
-            "__output__", "__env__", "__compilers__", 
+            "__output__", "__env__", "__compilers__",
             "__languages__", "__as__", "__meta__", "__format__"
         ):
             continue
