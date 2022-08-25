@@ -1,79 +1,5 @@
-Guide for creating a new Seamless project
-=========================================
 
-**This is a beginner's guide. Important aspects are explained. Guidelines and a recipe are provided. Once you know what you are doing, adapt it to your needs.**
-
-Only basic Seamless features (contexts, cells and transformers) are used. See the [basic example](http://sjdv1982.github.io/seamless/sphinx/html/introduction.html#basic-example) for a demonstration.
-
-Contexts contain contexts, cells and transformers. The whole Seamless graph is a top-level context.
-
-Cells contain data and code.
-
-Transformers perform a data transformation (computation), with cells as input, and one cell as the output. A transformation can be in bash, docker, Python, or a compiled language.
-
-## Project aspects
-
-A Seamless project must address the following aspects:
-
-- *Dependency graph*. Which data depends on which transformation? Which transformation depends on which data?
-
-- *Topology*. The dependency graph annotated with names, formats, programming languages, and other details that are necessary to make its execution well-defined.
-
-- *Code and parameters*. Together, these are the inputs that are not user-defined, i.e. their content must be specified.
-
-- *Validation*. Detection of invalid input and output data.
-
-- *Monitoring*. Execution status, progress, error messages.
-
-- *User experience (UX)*. Web forms/widgets for the input. Visualization of the output.
-
-- *Deployment*. Where will each transformation run? What are the resource limits? Where is the data stored, and for how long?
-
-- *Configuration*. Make sure that validation, monitoring, user experience, and deployment can be customized by changing some settings.
-
-
-Seamless is very flexible, in that you can completely change every aspect at any time, while everything keeps running. Still, it recommended to roughly divide the creation of a project into the following phases: design, implementation, visualization, validation, publishing.
-
-## Project phases
-
-
-## Design phase
-
-First, a dependency graph is designed. This part must be done outside of Seamless, as Seamless does not (yet) support visual programming.
-
-### Abstract dependency graph
-
-You should start with thinking of dependencies in an abstract way. Think of your program as a set of processes with well-defined inputs and outputs. Draw some flowcharts.
-
-Seamless is very strict about dependencies. Normal shell commands may implicitly assume that a certain package is installed, or that certain files are present. In contrast, Seamless transformations are executed in isolation: if there is any implicit dependency, they will loudly fail. This is considered a good thing.
-
-### Concrete dependency graph
-
-Once you have an abstract dependency graph, try to make it more concrete. Formulate every process as a transformation with one code input, several data/parameter inputs, and one data output. Decide the programming language for each transformation. Choose names for each input.
-
-### Command line workflows
-
-Dependency graphs are most straightforward if you are porting a workflow of command line tools, where all inputs and outputs are files. There several tools that specialize in such workflows, such as SnakeMake and NextFlow. You could define your concrete dependency graph using one of these tools, and then convert it to Seamless to add monitoring and visualization. For SnakeMake, there is an automatic converter (see [example](https://github.com/sjdv1982/seamless/tree/stable/examples/snakemake-tutorial)).
-
-A transformation may wrap a single bash command that invokes a single command line tool, or a small block of commands. In Seamless, such a transformation will be either a bash transformer ([example](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py)) or a Docker transformer ([example](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py)). In both cases, the transformer will have a code cell written in bash, and the result must be written to the file `RESULT`. For multiple outputs, create a tar file and copy that to `RESULT`. Within a bash/Docker transformer, every input X is available as file X. Small inputs are also accessible as a variable $X. After execution, all files are deleted.
-
-There are two strategies to define a command-line transformation.
-
-1. The best way is use a bash transformer and include the source code of every command line tool (except standard UNIX commands). This will make the transformation reproducible. The command line tool must not have any hard-coded "magic files" where it depends on. Also, if it is written in a compiled language, things become quite difficult. Seamless has compiled transformers, but they assume that data is exchanged as function arguments, and not via the file system.
-
-2. The alternative is to treat a command line tool as part of the environment. In that case, use a Docker transformer, where the command line tool must be installed in the Docker container. This is appropriate if the command line tool is immutable over the course of the project. You may also be forced to go this route if the assumptions above are violated. Any magic files must be installed in the Docker container.
-
-## Implementation phase
-
-Here, the design is implemented in Seamless.
-
-- The *topology* corresponds to the concrete dependency graph of the previous section. It is defined by modifying the Seamless graph. This is done from IPython and/or Jupyter, as shown in the [basic example](http://sjdv1982.github.io/seamless/sphinx/html/introduction.html#basic-example).
-
-- *Code and parameters* are defined as cell checksums in the Seamless graph. However, during development it is common to link them to files, and let the files have priority over the graph in case of a conflict. The files should be under version control (Git).
-
-- *Monitoring* is not part of the graph. In IPython/Jupyter, you can interactively access `Context.status` ,  `Cell.status` and `Transformer.status` , as well as `Cell.exception` and `Transformer.exception`. You can monitor this in the browser by setting up a poller that assigns the statuses to the cells of a second Seamless context (see the Recipe below).
-
-In addition, you can get the stdout and stderr of a transformer using `Transformer.logs`.
+TODO: version control / vaults, and new project
 
 ### Debugging
 
@@ -135,6 +61,8 @@ Whenever the transformer re-executes (due to changed source code or inputs), you
 
 NOTE: integration with Visual Studio code is currently in progress.
 
+TODO: beyond here, move some to "beginner"
+
 ## Visualization phase
 
 ### Using Jupyter notebooks ###
@@ -147,7 +75,7 @@ More powerful is to use UX cells (HTML, JS, CSS). These cells are shared over HT
 
 ### Web page generator
 
-As of Seamless 0.5, a Seamless project now automatically includes a web page generator.
+As of Seamless 0.8, a Seamless project now automatically includes a web page generator.
 When you share a cell (and retranslate the graph), an entry is automatically added in
 `/web/webform.json` . These entries are used to generate the web page in `web/index.html` and `web/index.js`. The web page is available under `http://localhost:<REST server port>`, normally `http://localhost:5813`.
 
@@ -169,7 +97,7 @@ Validation errors show up in the monitoring. At this point, the monitoring (whic
 
 This is also the time to create tests. A unit test should be a small Seamless context linked to the same files as the main project for code and schema cells. Other tests can be a copy of the main graph with some parameters changed. *Make sure to create some tests that are designed to fail, to verify that a correct and comprehensible error message is reported*.
 
-## Publishing phase
+## Deployment phase
 
 *TODO: expand this section*
 

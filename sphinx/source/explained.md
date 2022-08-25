@@ -1,27 +1,17 @@
-This document describes the high-level design choices of Seamless, 
-and how it interacts with the outside world (HTTP synchronization, buffer
-caching, transformations) with a focus on deployment. 
+# Seamless explained
 
-# Overall purpose and design
+## Core concepts
 
-First, Seamless is a framework for *interactive* programming/scripting. 
-There are essentially two ways that you can do this. The first is file-based,
-like the bash shell. The second is cell-based, such as IPython, Jupyter, 
-or a spreadsheet. Seamless follows the cell-based approach.
+First, Seamless is a framework for *interactive* programming/scripting. There are essentially two ways that you can do this. The first is file-based, like the bash shell. The second is cell-based, such as IPython, Jupyter, or a spreadsheet. Seamless follows the cell-based approach.
 
-Second, Seamless is a framework for building *workflows* 
-(dataflow programming), i.e. dependency graphs. 
-There are essentially three ways you can do this: stream-based (NoFlo),
-file-based (NextFlow, Snakemake) or cell-based (Jupyter, Excel). Again, 
-Seamless follows the cell-based approach. 
- 
-Most of Seamless revolves around ***cells***, that hold the data, 
-and ***transformers***, that do the computation. Transformers take cells as
-input and have a single cell as output.
+Second, Seamless is a framework for building *workflows* (dataflow programming), i.e. dependency graphs. There are essentially three ways you can do this: stream-based (NoFlo), file-based (NextFlow, Snakemake) or cell-based (Jupyter, Excel). Again, Seamless follows the cell-based approach.
+
+In a nutshell, most of Seamless revolves around ***cells***, that hold the data, and ***transformers***, that do the computation. Transformers take cells (including code cells) as input and have a single cell as output.
 
 ## Why checksums?
 
-Cells are based on checksums, not on values or identifiers (more details below).
+What makes Seamless special is that cells don't hold values or filenames, but ***checksums*** (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren't tied to a hierarchy of files, carefully named and accessible on a mounted file system. In Seamless, you *can* mount a cell to a file, but it just means that the cell's checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is free in terms of space, in the same way that a hardlink to a file is free. Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. Checksums are small, and a workflow description with checksums is small, but their underlying data values can be larger than what fits in memory, or on disk. Big data is possible with Seamless. On the flip side, you can't automatically assume that you can get hold of a cell's data. By default, Seamless sets up some simple checksum-to-data caching, but that reintroduces some of the problems (potential memory problems, file copying) that can be circumvented with some custom configuration.
+
 This means that you can replace a computation with its result, and replace a 
 result with its computation (referential transparency).
 This is good for reproducibility, and it provides *reactivity*: after cell 
@@ -78,8 +68,6 @@ for HTTP updates. You can't simply wait until the user submits a static webform
 with all the parameters and then fire up your workflow. Likewise, the browser 
 must be live too, and listen from continuous updates from the server, but this is 
 easy to do nowadays (web sockets).
-
-**Deployment role: live web servers**
 
 # Cells
 
@@ -163,31 +151,6 @@ b'"testvalue"\n'
 testvalue
 ```
 
-## Cells and deployment
-
-In Seamless, all of these operations are being cached for performance. However, 
-the checksum-to-buffer conversion cache is more than just for performance. The 
-correspondence between checksum and buffer is one-to-one, but you can only compute 
-the checksum from a buffer, not the other way around. Therefore,
-it is essential that for each checksum, the corresponding buffer is available 
-where needed. 
-
-In addition, sometimes very large buffers must be converted between different cell 
-types, e.g. from text to JSON. Caching the conversion will avoid the loading of 
-the source buffer from wherever it is stored. Seamless also caches the length of
-buffers and other info statistics, to reason if a conversion is a priori impossible
-or trivial.
-
-Finally, Seamless has a last-resort function to go from checksum to buffer. It 
-is possible to define a list of buffer servers (\$SEAMLESS_BUFFER_SERVERS) and
-Seamless will try to contact them. By default, it contains 
-the RPBS buffer server, so that `https://buffer.rpbs.univ-paris-diderot.fr/<checksum>` will be contacted.
-
-**Deployment role: checksum-to-buffer service**
-
-**Deployment role: buffer info service**.
-
-**Deployment role: buffer server**.
 
 # Transformations
 
@@ -265,6 +228,43 @@ for Seamless transformations:
 - Generic transformers (Python, compiled, etc.), with no environment
 - Generic transformers, with a conda environment.
 
+# Guidelines for experienced developers
+
+## Keep it simple, while you can
+
+The beginner's guide advice "keep it simple" contains good advice for a small, young project. With Jupyter, you can quickly set something up, adding Seamless's interactivity to Jupyter's own. This works best for workflows that are non-linear but with not too many steps, where the data is rather small, and the code too.
+
+When the code gets more complex, you should move away from Jupyter by mounting your code cells to files. Code that modifies the workflow becomes throw-away code. See "Moving away from Jupyter" for more details.
+
+When the data gets bigger, or execution becomes time-consuming, you should start thinking about data storage (TODO link) and job management (TODO link). With default settings, Seamless transformations are parallelized on your local machine and cached in memory, and you may want to change that. If the data gets really big, you should bring the computation where the data is. See the "big data" (TODO LINK) for more details. But even in that case, try to have a small-data version of your workflow that executes fast, so that you can modify the code easily and interactively. Whitelists work very well for this (TODO link).
+
+If either the code or the data gets bigger, you should start thinking about version control, and whether or not to use `seamless-new-project`. See the documentation for creating a Seamless project (TODO LINK) for more details.
+
+## Programming in two places
+
+Clearly distinguish between the "outside" code that *creates* the workflow, and the "inside" code cells (mostly transformers) that are part of the workflow. Inside code cells are polyglot and are executed in isolation (from each other, and from the outside). Outside code is written in Python, and you run it inside IPython or Jupyter. You don't need to keep outside code, because you can store the entire workflow as data.
+
+The "Moving away from Jupyter" section below explains that you should mount your code cells to the file system, and then remove the code from the notebook. Once it is part of your workflow, Seamless will store it for you, and you can also store it under version control as a file. Note that this applies only to "inside" code. In contrast, in a mature project, "outside" code that inspects or modifies the workflow should be considered ***throw-away code***. If you have moved away completely from Jupyter, you can simply use `seamless-ipython` to enter such code. Else, you can use `seamless-jupyter-connect` to connect a IPython-like console to Jupyter. In all cases, you execute the code, but you don't keep it: instead, you simply save the state of the workflow in a `.seamless` file.
+
+There is one use case where "outside" code may be kept. When it comes to describing the topology of the workflow (the steps and connections), you should normally rely on the status visualization web page (which you can modify, see "Edit the editor") or create your own flowcharts. But if that is not to your satisfaction, you do have the option to do it via code. In that case, modify the Seamless project's `define_graph` function in `load-project.py`. If you do so, `await load()` will execute that code instead of loading the `.seamless` file, assuming that it will build the connections and cell mounts of the workflow. If you don't use a Seamless project at all, simply store the "outside" code in a script and run it.
+
+## Moving away from Jupyter
+
+Seamless gives the illusion of being like Jupyter, but with non-linear execution. The **web server demo**( [BinderHub link TODO](), [GitHub link TODO]() ) gives an example where you start from a simple notebook and port it to Seamless, gaining an interactive web interface in the process. It is also about as far as you can push a Seamless workflow that is defined purely in Jupyter. Why is this? At the end of the demo, the next step would be to mount each code cell to a Python file, so that you can start modifying the calculation code of the workflow using a normal text editor or IDE. Whenever you save the file, the cell value is updated and the workflow recalculated. Each Python file can be put under Git version control, something that `seamless-new-project` sets up by default. However, the original unmodified code is still in the notebook! So if you re-run the notebook, and you re-mount the Python files, Seamless has to choose which version is correct: the one in the Python file, or the one in the notebook. In other words, either all of your modifications in the Python file get lost, or the code in the Python file supersedes the code of the notebook. By default, Seamless does the second thing (and gives you a warning), but it's ugly to have your notebook telling lies. It goes against the spirit of a notebook that tells a linear story on how you started from scratch and arrived at a result. And if you further modify the code also in the notebook, there will be no end of trouble. So the correct thing to do is to give up on the linear story and remove the now-outdated code from the notebook.
+
+Another case is the web interface generator, which is all based on files (`webform.json`, `index.html`, `index.js`) that are being auto-generated but that can be modified. In fact, these files are Seamless cells of a secondary context that are mounted to the file system (also see "Edit the editor"). Re-loading the notebook, executing cells that re-build the workflow bit-by-bit, is bound to give merge conflicts with a file that contains the modified web interface for the entire workflow in its final state.
+
+In summary, ***once you start to offload your workflow to edited files, the time for linear notebook storytelling is over***. Does that mean that you should abandon Jupyter altogether? Not necessarily. You can keep Jupyter around as a dashboard, linking Seamless `Cell.traitlet` and `Cell.output` with ipywidgets. Or you can still use it as a scratch pad where you can quickly try out code, then incorporate it into your workflow when it seems to work, mounting it to a file.
+
+Note that all of this applies primarily to "inside" code. In contrast, "outside" code is normally throw-away code. See "Programming in to places" for detail.
+
+## Edit the editor
+TODO
+(Status graph is your friend)
+Don't be afraid to modify it. Light-weight experience: don't use
+seamless-new-project at all
+
+
 ### Deployment of transformations
 
 Each Seamless instance is able to do its own computation, but during deployment, 
@@ -335,81 +335,41 @@ as it generates the web interface HTML by taking the main workflow graph as an
 input. During development, both graphs are developed, which is made possible
 by `seamless-new-project` and `seamless-load-project`.
 
+## Dependent and independent data
+
+...
+By default, Seamless maintains a checksum-to-data cache in-memory that distinguish between *dependent* (computed) and *independent* data. Dependent data may get evicted ... TODO
+
+- Independent vs dependent: history doesn't matter, creating a new workflow... syntax...
+Deeper:
+- Fingertipping, cache misses and irreproducibility (link to transformer)
+- Resolving cycles...
+- bidirectional link
+
+## Caching 
+
+TODO
+The checksum-to-buffer conversion cache is more than just for performance. The 
+correspondence between checksum and buffer is one-to-one, but you can only compute 
+the checksum from a buffer, not the other way around. Therefore,
+it is essential that for each checksum, the corresponding buffer is available 
+where needed. 
+
+In addition, sometimes very large buffers must be converted between different cell 
+types, e.g. from text to JSON. Caching the conversion will avoid the loading of 
+the source buffer from wherever it is stored. Seamless also caches the length of
+buffers and other info statistics, to reason if a conversion is a priori impossible
+or trivial.
+
+Finally, Seamless has a last-resort function to go from checksum to buffer. It 
+is possible to define a list of buffer servers (\$SEAMLESS_BUFFER_SERVERS) and
+Seamless will try to contact them. By default, it contains 
+the RPBS buffer server, so that `https://buffer.rpbs.univ-paris-diderot.fr/<checksum>` will be contacted.
+
+
+
 # Deployment roles
 
-## Seamless database
-
-**Deployment role: checksum-to-buffer service**
-
-**Deployment role: buffer info service**
-
-**Deployment role: transformation result service**
-
-**Deployment role: compilation service**
-
-These roles are normally taken by the ***Seamless database***. A Seamless instance
-connected to the database does not maintain its own checksum-to-buffer cache,
-and therefore uses a lot less memory.
-
-You can start the database with the command `seamless-database`. By default, 
-it loads  /seamless-tools/tools/default-database.yaml, which maintains the
-database dir in  \$HOME/.seamless/database, but you can supply your own
-configuration file. Primarily, the database dir contains /buffers, containing one file per buffer (the filename is the checksum, e.g. 
-/buffers/93237a60bf6417104795ed085c074d52f7ae99b5ec773004311ce665eddb4880).
-The other stores (buffer info, transformation result, compilation, and a few
-specialized others) map a checksum to either another checksum or something other that is very small. Therefore, each of those stores is organized as JSON files that
-are split in buckets as they grow larger. 
-
-### Using the database
-
-Seamless reads the database IP from the SEAMLESS_DATABASE_IP environment 
-variable, which defaults your Docker host IP. The default Seamless database port
-(SEAMLESS_DATABASE_PORT) is 5522.
-
-### Database cleanup
-
-The buckets do not take up much space, there is little reason to delete them. 
-In contrast, buffers/ can get very large. You can freely delete the contents of /
-buffers while the database is running, this will not cause any crash. The database 
-has a memory cache that may continue to hold the buffer for a while.
-To cleanly remove any kind of database entry, create a file with a format like
-`/seamless-tools/tools/jobless/tests/jobless-test-dblog-ORIGINAL.txt` and then
-run `seamless-delete-database-from-log <filename>`.
-
-Note that any workflow or transformation job slave 
-that needs the buffer but can't find it will report a CacheMissError. 
-This will happen for sure if the buffer is *independent*, i.e. is not the result
-of some kind of computation (transformation, conversion, cell expression etc.).
-If it *is* the result of a computation, and the computation is part of the workflow
-that is loaded by the Seamless instance, Seamless may try to repeat the computation
-in order to regenerate the buffer (this is called "fingertipping"). So you can be
-a bit more aggressive in deleting buffers of intermediate results (or even 
-final results), especially if they are large and/or quick to compute.
-
-### Multiple database directories 
-
-It is possible to set up multiple database directories with Seamless database.
-Only one will be written to, the other ones are read-only. The purpose can be:
-setting up specialized databases (e.g. the PDB), backup, or having them in
-different file zones.
-
-### File zones
-
-The Seamless database has a special request where you can ask directly for the 
-filename that corresponds to the buffer. With the request, you can specify a
-file zone (or multiple file zones). 
-If the Seamless database directory is in the same file zone (or in one of the file
-zones), the file name (i.e. `/buffers/<checksum>`) is assumed to be accessible by the requesting instance, and is returned. In other words, "same file zone" means "same file system".
-This is very efficient in case of bash transformers,
-leading to a hard link instead of load-buffer-from-database + write-buffer-to-
-file-in-temp-directory.
-In case of a deep folder, the special request is for a folder. 
-Seamless has a tool called `database-share-deepfolder-directory`. It takes a
-deep folder checksum (or its collection name, see below), reads the deep folder dict, creates a folder `/shared-directories/<deep checksum>/`, and creates a hard link `/shared-directories/<deep checksum>/key` to `/buffers/<checksum>` for every key:checksum pair in the dict. Therefore, `/shared-directories/<deep checksum>`i
-is an exact mirror of the deep folder mounted to disk, without taking any disk
-space whatsoever. Therefore, bash transformers that take a deep folder as input
-(e.g. a database search tool) get a soft link to `/shared-directories/<deep checksum>` instead of copying the entire database every time. Of course, this does
-require that the file zone is the same. 
 
 ### Buffer server
 
@@ -527,3 +487,12 @@ The example
 Seamless reads the jobless IP from the SEAMLESS_COMMUNION_IP environment 
 variable, which defaults your Docker host IP. The default jobless port
 (SEAMLESS_COMMUNION_PORT) is 5533.
+
+
+
+## Environments
+
+Try not to install packages in the running Docker container as outlined in the beginner's documentation. Study "environments" documentation instead.
+
+## Don't confuse files
+See beginner's documentation on "Don't confuse files". In addition, note that file mounting is something that happens only during development. When you save a workflow, the file's checksum gets incorporated into it. When you deploy a workflow (e.g. with `seamless-serve-graph`, Cloudless, or loading a .seamless file yourself), mounts are not needed to make the workflow run.

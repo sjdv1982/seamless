@@ -12,8 +12,7 @@ Note that Seamless is tested only with the Python version inside its Docker imag
 (For Seamless 0.8, this is Python 3.8). Currently, Seamless uses Python syntax
 that requires at least Python 3.7.
 
-3. Finally, there is also the seamless-minimal installation method. This is not a full Seamless installation, since Jupyter and IPython are missing. Instead, the aim of seamless-minimal is to run
-Seamless computations inside arbitrary conda environments.
+3. Finally, there is also the seamless-minimal installation method. This is not a full Seamless installation, since Jupyter and IPython are missing. Instead, the aim of seamless-minimal is to run Seamless computations inside arbitrary conda environments.
 
 ## Installation of Seamless running inside Docker containers
 

@@ -173,8 +173,50 @@ ctx.compute()
 
 (STUB: This documentation is a stub)
 ...
+TODO: from tutorial:
+- Compiled transformers:
+    - header, integrator, executor
+    - main_module multiple files (link to module)
 
 ## Adding new transformer languages
 
 (STUB: This documentation is a stub)
 ...
+
+...
+
+TODO: 
+- Pin celltypes: link to cell
+- Pin "as_" attribute
+
+TODO: from tutorial:
+
+Intro:
+
+- Python transformers
+- .inp and .result (link to structured cells)
+- Bash transformers
+
+    - RESULT file or directory
+    - filedict/filelist subcelltype TODO
+
+- Transformers in IPython and R
+
+Intermediate:
+
+- Docker (link to environments)
+- Meta parameters (computation times etc.)
+- Transformations and checksums (link to "Seamless explained")
+
+In-depth:
+
+- Hacking on bash/compiled transformers (not interactively)
+- Changing the translation machinery (not interactively)
+- Irreproducible transformers (link to determinism)
+
+- cancel, clearing exceptions
+
+
+## Modules
+
+TODO: probably its own document...

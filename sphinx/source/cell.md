@@ -6,7 +6,7 @@ Thus, cells are always part of a Context (called `ctx` by convention).
 
 Within this context graph, cell values are constant.
 
-When you modify a cell, you essentially create a new context graph where all dependencies of this cell are set to `None`, until they have been recomputed.
+When you modify a cell, you essentially create a new context graph where all dependencies on this cell are set to `None`, until they have been recomputed.
 
 Assigning a cell to another cell creates a connection from the second cell to the first cell.
 
@@ -81,3 +81,22 @@ print(ctx.sub.value)
 20
 201
 ```
+
+TODO:
+
+Cell types:
+
+- Text cells
+- Plain cells: str, float, int, bool
+- Binary cells: numpy
+- Mixed cells
+- Conversion
+- Code cells, cson, yaml
+- scratch
+
+In-depth:
+
+- The illusion of values (link to fingertips)
+- Subcelltypes
+- Semantic checksums: code, cson, yaml
+- Checksum cells

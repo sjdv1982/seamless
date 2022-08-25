@@ -168,7 +168,7 @@ class SubContext(Base, HelpMixin):
         """Obtain our portion of the parent context's graph
         In essence, take the parent graph, select all child nodes that
         start with our path, and chop off that path.
-        Retain connections between two nodes that are in our graph.
+        Retain connections between two child nodes that are in our graph.
         """
         graph = self._get_graph_dict(copy=True, runtime=runtime)
         return graph

@@ -10,16 +10,26 @@ Welcome to Seamless's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   introduction
+   introduction   
 
-   tutorial/tutorial.md
+   installation
+
+   getting-started
+
+   beginner
+
+   explained
+
+   new-project
 
    context
    cell
-   transformer
-   new-project
+   transformer   
    shareserver
 
+   data_storage
+   environments
+   
    reference
 
 Indices and tables

@@ -1,126 +1,13 @@
-# Tutorial
+TODO: split up!! Mostly to "features" documentation, some to "seamless explained"
 
-<!-- TODO: integrate/refer to new_project.md -->
-<!-- TODO: integrate design.md
-Leave that document as developer doc, but add its material in here -->
-<!-- TODO: move in-depth material to the end of each part -->
 
-## Part A. Getting started
-
-### A1. How to use Seamless
-
-Seamless is meant to bring together ...
-Intro:
-
-- Seamless CLI
-- example (link to simple cells) + status
-- new project + status + web form (link to C5.)
-- Interactive programming, interactive workflows.
-  Blurring between programmer and user.
-
-<!-- TODO: add more .help, especially to graph / stdlib
-
-### A2. Getting help
-
-Intro:
-- Link to reference documentation.
-- Accessing the help system
--->
-
-## Part B. Seamless basics
-
-### B1. Simple cells, celltypes and checksums
-
-Intro:
-
-- Text cells
-- Plain cells: str, float, int, bool
-- Binary cells: numpy
-- Mixed cells
-
-Intermediate:
-
-- .set, .observe
-- Checksums and buffers: async. link to interactive plumbing.
-  ctx.resolve
-- Conversion
-- Pin celltypes: link to transformers, libraries
-- Code cells, cson, yaml
-  (link to mounting, link to semantic checksums)
-- scratch
-- Pin as_ attribute
-
-In-depth:
-
-- The illusion of values (link to fingertips)
-- Subcelltypes
-- Semantic checksums: code, cson, yaml
-- Checksum cells
-
-### B2. Transformers and transformations
-
-Intro:
-
-- Python transformers
-- .inp and .result (link to structured cells)
-- Bash transformers
-
-    - RESULT file or directory
-    - filedict/filelist subcelltype TODO
-
-- Transformers in IPython and R
-
-Intermediate:
-
-- Docker (link to environments)
-- Compiled transformers:
-    - header, integrator, executor
-    - main_module multiple files (link to module)
-- Meta parameters (computation times etc.)
-- Transformations and checksums (link to universal delocalized computation)
-
-In-depth:
-
-- Link to polyglot
-- Hacking on bash/compiled transformers (not interactively)
-- Changing the translation machinery (not interactively)
-- Irreproducible transformers (link to determinism)
 
 ### B3. Interactive workflows
 
 Intro:
 
-- Contexts and subcontexts
-- Dot and bracket syntax
-- Children, tab completion in IPython
-- Dependency graph and cancel
-- The .status attribute
-- .exception
-- logs
-- Translate and compute and asynchronous. Link to "checksums and buffers"
-- Link to web status (point out: if using project)
-- Loading from/saving to graph/zip/vault
-- Point to beginner's gotchas
 
-Intermediate:
-
-- Independent vs dependent: history doesn't matter, creating a new workflow
-- bidirectional link
-- Downstream dependency
-- preliminary, progress
-- clearing exceptions
-
-In-depth:
-
-- Fingertipping, cache misses and irreproducibility (link to transformer)
-- Resolving cycles
-
-## Part C. Building interactive workflows
-
-### C1. Jupyter integration
-
-Repeat: more like Jupyter than like nextflow, blurring between programmer and user.
-Intro:
+### Jupyter integration
 
 - await translation
 - traitlets, output
@@ -174,17 +61,6 @@ Intermediate:
 - Customize load-project
 - Vaults, zips in relation to Git version control
 
-### C6. Beginner gotchas
-
-Intro:
-
-- Import inside code (link to "checksums and buffers")
-- Don't forget to translate (link to interactive plumbing)
-- Seamless dislikes files:
-    - Filename in bash transformer
-    - Filename in share
-    - Filename in mount
-    - Link to "why files are bad"
 
 ### C7. Creating help for others
 
@@ -296,10 +172,12 @@ In-depth:
 
 ### E1. Why files are bad
 
+RIP
 - Why Seamless is different from nextflow
 - Link to: Nextflow-style channels, scatter transformers
 - Link to reproducibility
 - Converting from snakemake
+/RIP
 
 ### E2. Reproducibility
 
