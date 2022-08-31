@@ -17,6 +17,8 @@ Seamless workflows are created in Python. This can be done in a Python script, b
 
 ## Working with Seamless
 
+UPDATE: maybe make a generic "Keep it simple" section, merging the section farther down into here...
+
 - Keep it simple (link): create a new project, use Jupyter
 - Children, tab completion.
 - Link to web status (point out: if using project)
@@ -29,6 +31,8 @@ Seamless workflows are created in Python. This can be done in a Python script, b
 ## Programming in two places
 
 With Seamless, there is programming in two places. First, there is the "outside": the Jupyter or IPython shell where the Seamless workflow is being created interactively. In addition, there is the "inside": 
+
+==>
 
 and Seamless supports many programming languages: bash, Python, and C/C++ are well-tested. Other languages such as R, Cython, Fortran or Go are also supported, but less tested. As a beginner, it is recommended to stick to transformers written in Python or bash.
 
@@ -51,34 +55,112 @@ Seamless workflows are dependency graphs. Transformations depend on cells, and s
 
 ## Structured cells
 
+Subcell access. ...
+(example with attribute access, then example with numeric index)
+The other major feature is that you can add schemas for data validation, but this is more advanced.
 ...
+
+## Visualization
+
+TODO: simplified summary of visualization.md
+
 
 # Guidelines
 
 ## Keep it simple
 
+Do simple things that run fast.
+
+Don't worry about deployment. Use seamless-new-project, no database, no jobless.
+
+Use Jupyter
+
 Status graph is your friend
+
 Else you have to rely on:
 - The .status attribute
 - .exception
 - logs
 
-# Beginner's gotcha's
-- Don't forget to translate 
-- Each step runs in isolation. ...
+Stick to Python and bash transformers. You can use R once it is better tested in Seamless.
 
-- Don't confuse files
+## Don't confuse files and cell names
+...
 Don't confuse "inside" files and "outside" files.
 "outside" files: mounted.
 "inside" files: alternative syntax for cells or for pins (good idea for bash transformers).
 Finally, .share as "file.txt" is clean but does not have any effect.
 Set mimetype!
 
+
+## Don't rely on files or URLs
+
+Don't put file names as strings inside cells, and don't use file names in transformation code. Doing so makes your workflow non-reproducible. For example:
+
+```python
+# Non-reproducible code!
+ctx.tf = Transformer()
+ctx.tf.language = "bash"
+ctx.tf.inputfile = "/home/user/file.txt"
+ctx.tf.code = "wc -l $inputfile"
+```
+
+Here, whenever someone or something changes the content of `/home/user/file.txt`, the result of `ctx.tf` will change. However, since the value of the input is still the same (it is still "/home/user/file.txt"), Seamless will never re-run the transformation, and re-use the previously computed result. Therefore, your workflow has become non-reproducible. And even if `/home/user/file.txt` would never change, your workflow is non-reproducible because it is now unportable between one computer and another.
+The correct way to set it up is as follows:
+
+```python
+ctx.tf = Transformer()
+ctx.tf.language = "bash"
+ctx.c = Cell("text")
+
+ctx.c.set(open("/home/user/file.txt").read())
+# or:
+ctx.c.mount("/home/user/file.txt", "r")
+
+ctx.tf.input = ctx.c
+ctx.tf.code = "wc -l input"  # note that there is no $
+```
+
+Now the workflow will contain the checksum of "/home/user/file.txt", but not its file name, and reproducibility is maintained.
+
+The same applies for URLs. Code that downloads from an URL must not be part of transformer code. It should be executed manually in Jupyter, assigning the downloaded data to a cell.
+
+# Beginner's gotchas
+
+- *Problem: I changed something in the workflow, but nothing seems to happen*. Solution: try to re-translate your workflow. This is necessary after e.g. adding a new cell. Re-translation is done with `await ctx.translation()`.
+
+- *Problem: error message "cannot mount structured cells"*. Solution: declare a celltype first. For mounting, celltype "text" is often a good choice.
+
+    ```python
+    ctx.c = Cell("text")
+    # or:
+    ctx.c = "somevalue"
+    ctx.c.celltype = "text"
+    ctx.c.mount(...)
+    ```
+
+    Don't forget to translate after declaring a celltype, with `await ctx.translation()`.
+
+- *Problem: I am using a cell's value in other Python code, with strange errors.* Solution: by default, cells are "structured", which wraps the cell value in a "Silk" structure. You can do nice things with a Silk structure, but often you want the raw value instead. In that case, do `.value.unsilk` on a cell. Alternative solution: declare a celltype (see the previous problem). Celltype  "plain" (list, dict, int, float) or `"binary"` (Numpy) does usually what you want. In that case, don't forget to translate with `await ctx.translation()`.
+
+- *Problem: Variables and imports missing ...* . Each step runs in isolation. ...
+
+
+- *Problem*: (https://github.com/sjdv1982/seamless/issues/128)
+...
+
+- *Problem*: (https://github.com/sjdv1982/seamless/issues/56)
+...
+
+
+######################
+
 <!--
 
 - *Dependency graph*. Which data depends on which transformation? Which transformation depends on which data?
 
 - *Topology*. The full dependency graph including connections, cell types, formats, programming languages, and other details that are necessary to make the flow of the data well-defined.
+NOTE TO SELF: to make sense of "programming in two places" and "new-project".
 
 - *Code and input parameters*. Together, ... TODO ... these are the inputs that are not user-defined, i.e. their content must be specified.
 -->
@@ -90,14 +172,12 @@ If you like to explore first and make design decisions later, Seamless may suit 
 
 If you feel lost, it is recommended to plan ahead, and roughly divide the creation of a project into the following phases: design, implementation, visualization, validation, deployment.
 Validation and deployment 
+NOTE: validation is more advanced
 -->
 
 <!--
-Do simple things that run fast. 
 
 - *Deployment*. Where will each transformation run? What are the resource limits? Where is the data stored, and for how long?
-
-Don't worry about deployment. Use seamless-new-project, no database, no jobless.
 -->
 
 <!--
@@ -109,7 +189,7 @@ Don't worry about deployment. Use seamless-new-project, no database, no jobless.
 
 ### Design phase
 
-Desiging a workflow must be done outside of Seamless, as Seamless does not (yet) support visual programming.
+Designing a workflow must be done outside of Seamless, as Seamless does not (yet) support visual programming.
 
 #### Abstract dependency graph
 
@@ -145,8 +225,6 @@ Here, the design is implemented in Seamless.
 - *Monitoring* is not part of the graph. In IPython/Jupyter, you can interactively access `Context.status` ,  `Cell.status` and `Transformer.status` , as well as `Cell.exception` and `Transformer.exception`. You can monitor this in the browser by setting up a poller that assigns the statuses to the cells of a second Seamless context (see the Recipe below).
 
 In addition, you can get the stdout and stderr of a transformer using `Transformer.logs`.
-
-TODO: beyond here, move some from "new-project"
 
 
 ### Monitoring / debugging

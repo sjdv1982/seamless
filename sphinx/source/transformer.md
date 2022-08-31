@@ -172,15 +172,20 @@ ctx.compute()
 ## Compiled transformers
 
 (STUB: This documentation is a stub)
+
+TODO: link to validation:schemas
+TODO: link to modules
 ...
 TODO: from tutorial:
 - Compiled transformers:
     - header, integrator, executor
     - main_module multiple files (link to module)
 
+
 ## Adding new transformer languages
 
 (STUB: This documentation is a stub)
+Advanced topic
 ...
 
 ...
@@ -216,7 +221,3 @@ In-depth:
 
 - cancel, clearing exceptions
 
-
-## Modules
-
-TODO: probably its own document...

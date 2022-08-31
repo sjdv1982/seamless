@@ -10,26 +10,32 @@ Welcome to Seamless's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   introduction   
-
+   introduction
    installation
-
    getting-started
-
    beginner
-
    explained
-
    new-project
 
    context
    cell
-   transformer   
+   transformer
+   mounting   
    shareserver
+   help
 
-   data_storage
+   visualization
+   validation
+   modules
+   debugging
    environments
-   
+   libraries
+   data_storage
+   deployment
+
+   deepcell
+   low_level
+
    reference
 
 Indices and tables
@@ -38,3 +44,9 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+
+
+
+

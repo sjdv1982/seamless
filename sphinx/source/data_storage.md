@@ -1,5 +1,3 @@
-- Loading from/saving to graph/zip/vault
-
 # Seamless database
 
 <!--
@@ -38,3 +36,9 @@ It is possible to set up multiple database directories with Seamless database. O
 ### File zones
 
 The Seamless database has a special request where you can ask directly for the filename that corresponds to the buffer. With the request, you can specify a file zone (or multiple file zones). If the Seamless database directory is in the same file zone (or in one of the file zones), the file name (i.e. `/buffers/<checksum>`) is assumed to be accessible by the requesting instance, and is returned. In other words, "same file zone" means "same file system". This is very efficient in case of bash transformers,leading to a hard link instead of load-buffer-from-database + write-buffer-to-file-in-temp-directory. In case of a deep folder, the special request is for a folder. Seamless has a tool called `database-share-deepfolder-directory`. It takes a deep folder checksum (or its collection name, see below), reads the deep folder dict, creates a folder `/shared-directories/<deep checksum>/`, and creates a hard link `/shared-directories/<deep checksum>/key` to `/buffers/<checksum>` for every key:checksum pair in the dict. Therefore, `/shared-directories/<deep checksum>` is an exact mirror of the deep folder mounted to disk, without taking any disk space whatsoever. Therefore, bash transformers that take a deep folder as input (e.g. a database search tool) get a soft link to `/shared-directories/<deep checksum>` instead of copying the entire database every time. Of course, this does require that the file zone is the same.
+
+TODO:
+- Loading from/saving to graph/zip/vault
+- Scratch cells
+
+

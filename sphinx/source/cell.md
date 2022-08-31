@@ -57,9 +57,9 @@ Using the `celltype` property, a cell can be changed to a non-structured cell (s
 Cells are *dependent* if (part of) the cell's value is computed from a dependency, i.e from a transformer or from another cell.
 Cells are *independent* if they have their own value, with no dependencies.
 
-Cells can be *mounted* to a file using `Cell.mount`. By default, mounts are both read (the cell changes its value when the file changes its value) and write (vice versa) . Only independent cells can have a read mount. Structured cells cannot be mounted.
+Cells can be *mounted* to a file using `Cell.mount`. By default, mounts are both read (the cell changes its value when the file changes its value) and write (vice versa) . Only independent cells can have a read mount. *Structured cells cannot be mounted.*
 
-Cells can be *shared* over HTTP (via the Seamless REST API), using `Cell.share`. By default, shares are read-only (only HTTP GET requests are supported). Independent cells can also be shared as read/write (their value can be changed using HTTP PUT requests).
+Cells can be *shared* over HTTP (via the Seamless REST API), using `Cell.share`. By default, shares are read-only (only HTTP GET requests are supported). Independent cells can also be shared as read/write (their value can be changed using HTTP PUT requests). If a cell is to be accessed as a URL from the browser, you are recommended to set `Cell.mimetype`.
 
 Newly created/connected/mounted/shared cells require a re-translation of the context to take effect. This is also the case for a change in celltype.
 
@@ -92,11 +92,6 @@ Cell types:
 - Mixed cells
 - Conversion
 - Code cells, cson, yaml
-- scratch
-
-In-depth:
-
-- The illusion of values (link to fingertips)
 - Subcelltypes
 - Semantic checksums: code, cson, yaml
 - Checksum cells
