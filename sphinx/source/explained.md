@@ -6,7 +6,7 @@ First, Seamless is a framework for *interactive* programming and scripting. Ther
 
 Second, Seamless is a framework for building *workflows* (dataflow programming), i.e. dependency graphs. There are essentially three ways you can do this: stream-based (NoFlo), file-based (NextFlow, Snakemake) or cell-based (Jupyter, Excel). Again, Seamless follows the cell-based approach.
 
-In a nutshell, most of Seamless revolves around ***cells***, that hold the data, and ***transformers***, that do the computation. Transformers take cells (including code cells) as input and have a single cell as output.
+In a nutshell, most of Seamless revolves around ***cells***, that hold the data and code, and ***transformers***, that do the computation. Transformers take cells (including code cells) as input and have a single cell as output.
 
 ### Checksums
 
@@ -116,7 +116,7 @@ Deeper:
 - Fingertipping, cache misses and irreproducibility (link to transformer)
 - Resolving cycles...
 - bidirectional link
-- Async tasks
+- Async tasks (link to low_level.md)
 
 ### Caching
 
@@ -214,6 +214,8 @@ Practical:
 - stdlib.map
 - Elision and incremental computing
 
+- Hacking the midlevel
+
 ## Guidelines for experienced developers
 
 ### Keep it simple, while you can
@@ -278,5 +280,5 @@ Transformer code is not the correct place for validation. Use schemas instead.
 
 ## Use structured cells
 ...
-Because of subcell access and schemas, and integration of independent (auth) and dependent (inchannel) data, and object oriented programming. Same reason why beginners should avoid them. Keep them small, else use DeepCells. At odds with "use celltypes".
+Because of subcell access and schemas, and integration of independent (auth) and dependent (inchannel) data, and cyclic dependencies, and object oriented programming. Same reason why beginners should avoid them. Keep them small, else use DeepCells. At odds with "use celltypes".
  

@@ -59,3 +59,5 @@ Finally, there are also low-level tests (`seamless-tests/lowlevel`), but these a
 - Seamless instances can communicate, serving as job slaves or result caches for transformations.
 - Interactive monitoring of status and exception messages.
 -->
+
+<!-- TODO: document the Seamless tools (man pages)>

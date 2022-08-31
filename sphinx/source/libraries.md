@@ -6,7 +6,7 @@ STUB
 Intro:
 
 - Scatter transformers: TODO
-- Nextflow-style channels
+- Nextflow-style channels (stdlib.channel )
 - Gotcha: retranslate after setting a value
 - Value and cell pins
 - Celldict pins
