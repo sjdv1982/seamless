@@ -26,7 +26,8 @@ UPDATE: maybe make a generic "Keep it simple" section, merging the section farth
 - `await load()` and `save()`
 - Point to beginner's gotchas
 
-
+## Simple deployment recipe
+(based on serve-graph, sharing the .seamless and zip).
 
 ## Programming in two places
 
