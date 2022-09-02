@@ -1,7 +1,7 @@
 STUB
 
-<!-->
-### D4. Libraries and Library instances
+<!--
+D4. Libraries and Library instances
 
 Intro:
 
