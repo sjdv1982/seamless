@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Debugging &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="D3. Environment" href="environments.html" />
+    <link rel="prev" title="Modules" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Seamless
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new-project.html">Recipe for a new Seamless project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html#creating-a-new-workflow-child">Creating a new workflow child</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html#dependent-and-independent-data">Dependent and independent data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html#transformation">Transformation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html#translation">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">D4. Libraries and Library instances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Debugging</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#debugging-with-print-statements">Debugging with print statements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#debugging-sessions">Debugging sessions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">D3. Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Debugging</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/debugging.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="debugging">
+<h1>Debugging<a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h1>
+<p>To debug your code, you can use either print statements, or a debugging session with breakpoints.</p>
+<div class="section" id="debugging-with-print-statements">
+<h2>Debugging with print statements<a class="headerlink" href="#debugging-with-print-statements" title="Permalink to this headline">¶</a></h2>
+<p>Seamless transformations can be executed anywhere. Therefore, they do not print their stdout or stderr to any terminal while they execute. Stdout and stderr are only captured when the transformation has finished.</p>
+<p>For Python transformers, the transformation is aborted if an exception is raised. <code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code> will then contain the exception traceback, stdout and stderr.
+If no exception is raised, stdout and stderr can be retrieved using <code class="docutils literal notranslate"><span class="pre">Transformer.logs</span></code></p>
+<p>For bash/Docker transformers, if any launched process returns with a non-zero error code, the transformation is aborted. <code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code> will then contain the bash error message, stdout and stderr. Else, stdout/stderr will be discarded. Therefore, if you want to debug with print statements, exit with a non-zero exit code (<code class="docutils literal notranslate"><span class="pre">exit</span> <span class="pre">1</span></code>).</p>
+<p>For compiled transformers (i.e. written in C/C++/Fortran/…), you should <em>not</em> do <code class="docutils literal notranslate"><span class="pre">exit(...)</span></code> with a non-zero exit code: this kills the transformation process immediately, including the machinery to capture stdout and stderr. Instead, make the main <code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">transform(...)</span></code> function return a non-zero value.</p>
+</div>
+<div class="section" id="debugging-sessions">
+<h2>Debugging sessions<a class="headerlink" href="#debugging-sessions" title="Permalink to this headline">¶</a></h2>
+<p>THE FOLLOWING IS OUTDATED
+Visual Studio Code and other IDEs do not yet support Seamless transformers.</p>
+<p><em><strong>Python transformers</strong></em></p>
+<p>To debug a Python transformer, you can use a slightly modified version of the pdb debugger. Add the following to your transformation code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">seamless.pdb</span> <span class="kn">import</span> <span class="n">set_trace</span>
+<span class="n">set_trace</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>NOTE: unfortunately, the pdb debugger only works if you execute Seamless with <code class="docutils literal notranslate"><span class="pre">python</span></code>,
+not with <code class="docutils literal notranslate"><span class="pre">ipython</span></code> or Jupyter.</p>
+<p><em><strong>Compiled transformers</strong></em></p>
+<p>Compiled transformers can be debugged with a debugger such as gdb.</p>
+<p>For this, set <code class="docutils literal notranslate"><span class="pre">Transformer.debug</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code> and re-translate the graph.
+(You may have to make a minimal change in the source code or input. Remind that Seamless does not re-execute transformations that have already been performed,
+debug or not).</p>
+<p>Once the transformer executes, you will see a Process ID printed.</p>
+<p>Start a separate shell in the same Docker container using <code class="docutils literal notranslate"><span class="pre">seamless-shell-existing</span></code>
+You will be root in this shell.</p>
+<p>Type “gdb” to start a GDB terminal.</p>
+<p>In the GDB terminal, type the following (where XXX is the process ID):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">gdb</span><span class="p">)</span> <span class="n">attach</span> <span class="n">XXX</span>
+<span class="p">(</span><span class="n">gdb</span><span class="p">)</span> <span class="k">break</span> <span class="n">main</span><span class="o">.</span><span class="n">cpp</span><span class="p">:</span><span class="n">transform</span>
+<span class="p">(</span><span class="n">gdb</span><span class="p">)</span> <span class="n">signal</span> <span class="n">SIGUSR1</span>
+</pre></div>
+</div>
+<p>and gdb will break when your main <code class="docutils literal notranslate"><span class="pre">transform</span></code> function starts.</p>
+<p>If your transformer is written in C, the main file will be “main.c” instead of “main.cpp”.</p>
+<p>Whenever the transformer re-executes (due to changed source code or inputs), you will have to re-attach, but your breakpoints normally remain active.</p>
+<p>NOTE: integration with Visual Studio code is currently in progress.</p>
+<p>/OUTDATED</p>
+<p>TODO: debugging modules (link to modules)</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="environments.html" class="btn btn-neutral float-right" title="D3. Environment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

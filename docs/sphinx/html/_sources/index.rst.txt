@@ -11,14 +11,30 @@ Welcome to Seamless's documentation!
    :caption: Contents:
 
    introduction
-
-   tutorial/tutorial.md
+   installation
+   getting-started
+   beginner
+   explained
+   new-project
 
    context
    cell
    transformer
-   new-project
+   mounting   
    shareserver
+   help
+
+   visualization
+   validation
+   libraries
+   modules
+   debugging
+   environments
+   data_storage
+   deployment
+
+   deepcell
+   low_level
 
    reference
 
@@ -28,3 +44,9 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+
+
+
+

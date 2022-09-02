@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deployment &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="deepcell.html" />
+    <link rel="prev" title="Seamless database" href="data_storage.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Seamless
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new-project.html">Recipe for a new Seamless project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html#creating-a-new-workflow-child">Creating a new workflow child</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html#dependent-and-independent-data">Dependent and independent data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html#transformation">Transformation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html#translation">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">D4. Libraries and Library instances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">D3. Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Deployment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#deploying-a-workflow-as-an-interactive-web-service">Deploying a workflow as an interactive web service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cloudless">Cloudless</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#jobless">Jobless</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-jobless">Using jobless</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#buffer-server">Buffer server</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#big-data-and-deployment">Big data and deployment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#collections-and-fair-databases">collections and FAIR databases</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Deployment</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/deployment.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="deployment">
+<h1>Deployment<a class="headerlink" href="#deployment" title="Permalink to this headline">¶</a></h1>
+<!--
+
+**Deployment role: transformation job service**. Needs to support as many types of 
+transformations as possible. It must also support the cancellation of jobs.
+
+**Deployment role: transformation result service**. Store transformation-to-result mapping.
+
+**Deployment role: compilation service**. Store mapping of source code (C/C++) to compiled binary.
+ 
+
+### E3. Deployment
+
+Intro:
+- Graph+zip
+- serve-graph
+
+Intermediate:
+- Python deep down: link to low-level
+- Communion
+- Databases
+- Buffer server
+- Cloudless and jobless
+
+In-depth:
+- Computation where the data is 
+- Federation. Link: provenance
+
+--><div class="section" id="deploying-a-workflow-as-an-interactive-web-service">
+<h2>Deploying a workflow as an interactive web service<a class="headerlink" href="#deploying-a-workflow-as-an-interactive-web-service" title="Permalink to this headline">¶</a></h2>
+<p>…
+You will need the .seamless file, and a zip file generated with <code class="docutils literal notranslate"><span class="pre">ctx.save_zip(...)</span></code>.
+…
+Seamless deployment is done using Cloudless (see section below).
+…
+Think of data storage…</p>
+</div>
+<div class="section" id="cloudless">
+<h2>Cloudless<a class="headerlink" href="#cloudless" title="Permalink to this headline">¶</a></h2>
+<p><strong>Deployment role: live web servers</strong></p>
+<p>This role is normally taken by <em><strong>Cloudless</strong></em>. Note that Seamless embeds its own HTTP server. Thus, Cloudless is a rather simple program that does the following:</p>
+<ul class="simple">
+<li><p>It has a directory “graphs” with Seamless graph files.</p></li>
+<li><p>It listens on port 3124. It has an admin interface on /admin.</p></li>
+<li><p>It can take requests to launch an instance of a particular Seamless graph.
+This launches a new Docker container with Seamless serving the graph (the <code class="docutils literal notranslate"><span class="pre">seamless-serve-graph</span> <span class="pre">--database</span></code> command). With this, the instance connects itself to Seamless DB. In addition, the instance connects itself to jobless if configured (see below).</p></li>
+<li><p>HTTP traffic <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">/instances/&lt;instanceID&gt;/</span></code> is redirected to/from the HTTP server ports of the Seamless instance.</p></li>
+<li><p>The graph of the Seamless instance is initially identical to that of the original graph. This changes whenever an input cell is changed over HTTP or a computation finishes. Every few seconds, the graph is stored in the “instances” directory. Note that the graph files are small as they contain only checksums. The underlying buffers are stored in the Seamless database.</p></li>
+<li><p>After 10 minutes of no HTTP traffic, the Seamless instance is killed. Whenever new traffic arrives, the Seamless instance is re-instantiated, not from the “graphs” directory, but from its graph file in the “instances” directory.</p></li>
+</ul>
+</div>
+<div class="section" id="jobless">
+<h2>Jobless<a class="headerlink" href="#jobless" title="Permalink to this headline">¶</a></h2>
+<p><strong>Deployment role: transformation job service</strong></p>
+<p><strong>Deployment role: compilation service</strong></p>
+<p>These roles are normally taken by <em><strong>jobless</strong></em>.</p>
+<p>Jobless works by configuring a jobless .yaml file and define “jobhandlers”. A jobhandler is a combination of a job plugin and a backend.</p>
+<p>Job plugins can be for bash transformations with Docker, bash transformations without Docker, or generic transformations with conda environments. (See the section “Types of transformations” for more detail).</p>
+<p>Backends can be:</p>
+<ul class="simple">
+<li><p>Local shell execution with seamless-cli (i.e. using Docker containers)</p></li>
+<li><p>Local shell execution with Singularity</p></li>
+<li><p>Slurm shell execution with Singulariy</p></li>
+<li><p>Local generic execution with seamless-cli</p></li>
+<li><p>Local generic execution with Singularity</p></li>
+<li><p>Slurm generic execution with Singularity</p></li>
+</ul>
+<p>Jobless requires connection to the Seamless database for itself. Generic jobhandlers also need connection to the Seamless database.</p>
+<p>Shell execution with Singularity requires a Singularity image for every Docker image that is being used. In contrast, generic execution only requires the “rpbs/seamless-minimal” Docker/Singularity image. This image contains only the Seamless source code, and relies on an <em>external</em> conda environment directory to provide the dependencies. Using seamless-cli commands, jobless exports, copies and updates these environment directories and provides them to the <code class="docutils literal notranslate"><span class="pre">seamless-minimal</span></code> container, in which the
+<code class="docutils literal notranslate"><span class="pre">seamless-conda-env-run-transformation</span></code> tool is run.</p>
+<p>Jobless is part of the seamless-tools repo. See that repo for more details.</p>
+<div class="section" id="using-jobless">
+<h3>Using jobless<a class="headerlink" href="#using-jobless" title="Permalink to this headline">¶</a></h3>
+<p>Seamless reads the jobless IP from the SEAMLESS_COMMUNION_IP environment  variable, which defaults your Docker host IP. The default jobless port (SEAMLESS_COMMUNION_PORT) is 5533.</p>
+</div>
+</div>
+</div>
+<div class="section" id="section-on-deployment-of-environments-jobless">
+<h1>Section on deployment of environments (jobless)<a class="headerlink" href="#section-on-deployment-of-environments-jobless" title="Permalink to this headline">¶</a></h1>
+<p>…</p>
+<div class="section" id="buffer-server">
+<h2>Buffer server<a class="headerlink" href="#buffer-server" title="Permalink to this headline">¶</a></h2>
+<p><strong>Deployment role: buffer server</strong></p>
+<p>The easiest way to set up a buffer server is to simply share the /buffers directory of a Seamless database directory over HTTP, e.g. using NGINX. The RPBS buffer server works like this.</p>
+</div>
+<div class="section" id="big-data-and-deployment">
+<h2>Big data and deployment<a class="headerlink" href="#big-data-and-deployment" title="Permalink to this headline">¶</a></h2>
+<p>(bring the data where the computation is, general remarks… and/or link to:</p>
+<ul class="simple">
+<li><p>Seamless explained</p></li>
+<li><p>deepcell).</p></li>
+</ul>
+<div class="section" id="collections-and-fair-databases">
+<h3>collections and FAIR databases<a class="headerlink" href="#collections-and-fair-databases" title="Permalink to this headline">¶</a></h3>
+<p>Seamless has some facilities for maintaining and sharing deep cells and deep folders.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">database-run-actions</span></code> tool revolves around the concept of “collection”, which is essentially a deep structure with a name.
+The tool does things like:</p>
+<ul class="simple">
+<li><p>Index an external directory (i.e. a directory under rsync control)
+into a “collection”.</p></li>
+<li><p>Copy each entry in a collection into /buffers, or hard-link each entry
+to the external directory.</p></li>
+<li><p>Build a deep folder buffer for a collection</p></li>
+<li><p>Convert a deep folder collection to a deep cell collection</p></li>
+<li><p>Unzip each file in a collection</p></li>
+<li><p>Build a download index for a collection, i.e. a list of URLs where
+each item in a collection might be found for download.</p></li>
+</ul>
+<p>In addition, there is a tool called <code class="docutils literal notranslate"><span class="pre">fair-add-distribution</span></code> that copies the “collection” deep structure buffers and their download indices, but NOT their underlying buffers, into a dataset “distribution”, marked with metadata such as dataset name, version, format and date.  While a collection can change, a distribution should not. Run this repeatedly whenever a collection changes, to create snapshots of the current collection state.</p>
+<p>There is an experimental tool “fairserver.py” that allows querying of datasets, distributions, etc. This is organized using the FAIR principles, i.e. “/access” will retrieve a list of download URLs from the download index. More work is needed to achieve FAIR compliance.</p>
+<p>An RPBS FAIR server is running at fair.rpbs.univ-paris-diderot.fr.
+Seamless itself has DeepFolder and DeepCell classes that integrate with the FAIR server. For example, <code class="docutils literal notranslate"><span class="pre">DeepCell.find_distribution(&quot;pdb&quot;,</span> <span class="pre">date=&quot;2022-02-18&quot;,</span> <span class="pre">format=&quot;mmcif&quot;)</span></code> by default contacts the RPBS FAIR server to retrieve the checksum of the distribution. A distribution also has a keyorder, which is important if you just ran a tool on each chunk of an old version of the database, and then update the new database, and you want to re-use the results of the old chunks.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="data_storage.html" class="btn btn-neutral float-left" title="Seamless database" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="deepcell.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

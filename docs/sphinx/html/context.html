@@ -1,135 +1,158 @@
-
 <!DOCTYPE html>
-
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Contexts &#8212; Seamless 0.8 documentation</title>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contexts &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Cells" href="cell.html" />
-    <link rel="prev" title="Tutorial" href="tutorial/tutorial.html" /> 
-  </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="cell.html" title="Cells"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="tutorial/tutorial.html" title="Tutorial"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.8 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Contexts</a></li> 
-      </ul>
-    </div>  
+    <link rel="prev" title="Recipe for a new Seamless project" href="new-project.html" /> 
+</head>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Seamless
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new-project.html">Recipe for a new Seamless project</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#creating-a-new-workflow-child">Creating a new workflow child</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#dependent-and-independent-data">Dependent and independent data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#transformation">Transformation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#translation">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">D4. Libraries and Library instances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">D3. Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Contexts</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/context.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <div class="section" id="contexts">
 <h1>Contexts<a class="headerlink" href="#contexts" title="Permalink to this headline">¶</a></h1>
-<p>The seamless.highlevel.Context class is a wrapper around a <em>workflow graph</em>, that contains of
-cells, connections, and workers (primarily transformers). By convention, a Context is called <code class="docutils literal notranslate"><span class="pre">ctx</span></code>.</p>
-<p>If <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> does not exist yet, then <code class="docutils literal notranslate"><span class="pre">ctx.a</span> <span class="pre">=</span> <span class="pre">X</span></code> :</p>
+<p>The seamless.highlevel.Context class is a wrapper around a <em>workflow graph</em>, that contains of <em>workflow children</em> (cells, transformers, modules, macros, library instances, and subcontexts). By convention, a Context is called <code class="docutils literal notranslate"><span class="pre">ctx</span></code>.</p>
+</div>
+<div class="section" id="creating-a-new-workflow-child">
+<h1>Creating a new workflow child<a class="headerlink" href="#creating-a-new-workflow-child" title="Permalink to this headline">¶</a></h1>
+<p>If <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> does not exist yet, then <code class="docutils literal notranslate"><span class="pre">ctx.a</span> <span class="pre">=</span> <span class="pre">X</span></code>:</p>
 <ul class="simple">
-<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a constant. <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> will be bound to <code class="docutils literal notranslate"><span class="pre">ctx</span></code> and have the value X. The celltype will be “mixed”. This means that X must be either JSON-serializable, or a Numpy array, or a mixture of both.</p></li>
-<li><p>will create a new transformer <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a Python function. The transformer will copy the source code and function signature of X (see the documentation of the Transformer class for more details).</p></li>
-<li><p>will bind X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell, transformer or context that is not bound to a context.</p></li>
-<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell, subcell, transformer outputpin etc. that is already bound to <code class="docutils literal notranslate"><span class="pre">ctx</span></code>. Then, a connection from X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> is created.</p></li>
-<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a transformer that is already bound to <code class="docutils literal notranslate"><span class="pre">ctx</span></code>. Then, a new connection from <code class="docutils literal notranslate"><span class="pre">X.result</span></code>  to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> is created.</p></li>
+<li><p>will bind X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell, transformer, module, macro or context that is not currently bound to a parent context. Example: <code class="docutils literal notranslate"><span class="pre">ctx.a</span> <span class="pre">=</span> <span class="pre">Transformer()</span></code>.</p></li>
+<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a constant. <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> will have the value X. The celltype will be “mixed”. This means that X must be either JSON-serializable, or a Numpy array, or a mixture of both.</p></li>
+<li><p>will create a new Python transformer <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a Python function. The transformer will copy the source code and function signature of X.</p></li>
+<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a transformer that is already bound to <code class="docutils literal notranslate"><span class="pre">ctx</span></code>. Then, a new connection from <code class="docutils literal notranslate"><span class="pre">X.result</span></code>  (the transformer outputpin) to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> is created.</p></li>
+<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell, subcell, or transformer outputpin that is already bound to <code class="docutils literal notranslate"><span class="pre">ctx</span></code>. Then, a connection from X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> is created.</p></li>
+<li><p>will create a new subcontext <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a context or a subcontext. The workflow children of X are copied into <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code>. If X is a context, all connections are copied as well. If X is a subcontext, connections within X are copied, but connections to/from X and its parent context (which may or may not be <code class="docutils literal notranslate"><span class="pre">ctx</span></code>) are not copied.</p></li>
 </ul>
+<p><code class="docutils literal notranslate"><span class="pre">ctx[&quot;a&quot;]</span></code> is an alternative syntax for <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code>. This allows the creation of children that are not valid Python attributes, such as <code class="docutils literal notranslate"><span class="pre">ctx[&quot;data.txt&quot;]</span> <span class="pre">=</span> <span class="pre">Cell(&quot;text&quot;)</span></code>.</p>
 <p>Cell values (and the workers’ input and output values) are stored as the <em>checksums</em> of their data buffers. Therefore, the workflow graph is always well-defined, yet small in size.</p>
 <p>Seamless maintains a checksum-to-buffer cache, either in memory or in a database. It can also query remotely connected Seamless instances.</p>
-<p>The Context class can launch a <em>translation</em> of the workflow graph to
-a low-level representation that can be evaluated.</p>
+<p>The Context class can launch a <em>translation</em> of the workflow graph to a low-level representation that can be evaluated.</p>
+</div>
+<div class="section" id="dependent-and-independent-data">
+<h1>Dependent and independent data<a class="headerlink" href="#dependent-and-independent-data" title="Permalink to this headline">¶</a></h1>
+<p>TODO: merge with the corresponding paragraph in explained.md</p>
 <p>The workflow graph consists of <em>dependent</em> and <em>independent</em> checksums. Independent checksums correspond to the code and the input parameters that have been directly defined by the programmer or the user. <em>dependent</em> checksums are the result of a computation, such as a transformer, a subcell expression, or a cell conversion. Parts of the graph that are under macro control (this includes the library instances of much of the stdlib) are also dependent.</p>
 <p>During evaluation, all dependent checksums of the workflow are computed. In principle, the independent checksums are constant, i.e. immutable: modification of the workflow via the Context class creates a <em>new</em> workflow that is re-translated and re-computed. However, the low-level representation also supports the modification of independent checksums, as it is capable of canceling the downstream dependent checksums and re-launching their computations. This means that independent checksums can be modified without re-translation. Any changes in the topology (cell types, new cells, new transformers, new connections, etc.) do require translation. If this is not desired (for example in a web interface), the topology generation must be under macro control.</p>
+</div>
+<div class="section" id="transformation">
+<h1>Transformation<a class="headerlink" href="#transformation" title="Permalink to this headline">¶</a></h1>
 <p>In the graph, each transformer performs a transformation from input + code to result. Seamless keeps a result cache of all transformations. Just like the checksum-to-buffer cache, databases or remote Seamless instances can also be queried. Because of this, the only transformations that are performed are those that have never been performed anywhere before, or where the result value is no longer accessible.</p>
-<p>Before any computation starts, a context has to be translated (using
-<code class="docutils literal notranslate"><span class="pre">ctx.translate()</span></code> or <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation</span></code>). Implicit translation is done if
-<code class="docutils literal notranslate"><span class="pre">ctx.compute()</span></code> is invoked.
-Changing the topology of the graph (e.g. adding a cell) or changing the cell types
-only takes effect upon re-translation. The modification of cell <em>values</em> does not
-require re-translation. This is because translation creates a low-level context
-that does the work and holds the data. Most of the methods and properties of the
-Seamless high-level classes (Cell, Transformer, etc.) are wrappers that interact
-with their low-level counterparts. Seamless low-level contexts accept value changes
-but not modifications in topology.</p>
+</div>
+<div class="section" id="translation">
+<h1>Translation<a class="headerlink" href="#translation" title="Permalink to this headline">¶</a></h1>
+<p>Before any computation starts, a context has to be translated (using <code class="docutils literal notranslate"><span class="pre">ctx.translate()</span></code> or <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation</span></code>). Implicit translation is done if <code class="docutils literal notranslate"><span class="pre">ctx.compute()</span></code> is invoked. Changing the topology of the graph (e.g. adding a cell) or changing the cell types only takes effect upon re-translation. The modification of cell <em>values</em> does not require re-translation. This is because translation creates a low-level context that does the work and holds the data. Most of the methods and properties of the Seamless high-level classes (Cell, Transformer, etc.) are wrappers that interact with their low-level counterparts. Seamless low-level contexts accept value changes but not modifications in topology.</p>
 <p>See <code class="docutils literal notranslate"><span class="pre">http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class</span></code> for more documentation.</p>
 </div>
 
 
-            <div class="clearer"></div>
+           </div>
           </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="new-project.html" class="btn btn-neutral float-left" title="Recipe for a new Seamless project" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cell.html" class="btn btn-neutral float-right" title="Cells" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="tutorial/tutorial.html"
-                        title="previous chapter">Tutorial</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="cell.html"
-                        title="next chapter">Cells</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/context.md.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="cell.html" title="Cells"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="tutorial/tutorial.html" title="Tutorial"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.8 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Contexts</a></li> 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-        &#169; Copyright 2016-2022, INSERM and code contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.4.
-    </div>
-  </body>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
 </html>

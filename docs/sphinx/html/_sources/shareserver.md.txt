@@ -14,3 +14,12 @@ The primary ways to interact with the share server are:
 - The seamless-http-put command, for PUT requests.
 
 - The seamless client (seamless-client.js)
+
+### C3. HTTP sharing
+
+Intro:
+
+- share
+- cell.mimetype
+- REST
+- Your own web page, Seamless as file server (link to beginner gotchas)

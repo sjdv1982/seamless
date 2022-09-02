@@ -1,47 +1,106 @@
-
 <!DOCTYPE html>
-
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Transformers &#8212; Seamless 0.8 documentation</title>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transformers &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Guide for creating a new Seamless project" href="new-project.html" />
+    <link rel="next" title="Mounting to the file system" href="mounting.html" />
     <link rel="prev" title="Cells" href="cell.html" /> 
-  </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="new-project.html" title="Guide for creating a new Seamless project"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="cell.html" title="Cells"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.8 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Transformers</a></li> 
-      </ul>
-    </div>  
+</head>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Seamless
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new-project.html">Recipe for a new Seamless project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html#creating-a-new-workflow-child">Creating a new workflow child</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html#dependent-and-independent-data">Dependent and independent data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html#transformation">Transformation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="context.html#translation">Translation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Transformers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pins">Pins</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alternative-pin-syntax">Alternative pin syntax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#code-pin">Code pin</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#transformer-execution">Transformer execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#transformer-result">Transformer result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#python-transformers">Python transformers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bash-transformers">Bash transformers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compiled-transformers">Compiled transformers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-new-transformer-languages">Adding new transformer languages</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">D4. Libraries and Library instances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">D3. Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Transformers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/transformer.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <div class="section" id="transformers">
 <h1>Transformers<a class="headerlink" href="#transformers" title="Permalink to this headline">¶</a></h1>
 <p>Transformers perform a data transformation (computation), with cells as input, and one cell as the output. The source code of the transformation is an additional input. In principle, transformations can be in any programming language. Transformations in Python, IPython, bash, or a compiled language (C, C++ or Fortran) are supported directly. You can add your own languages as well.</p>
@@ -188,90 +247,89 @@ Also, the files inside this directory have file names that correspond only to th
 </div>
 <div class="section" id="compiled-transformers">
 <h2>Compiled transformers<a class="headerlink" href="#compiled-transformers" title="Permalink to this headline">¶</a></h2>
-<p>(STUB: This documentation is a stub)
-…</p>
+<p>(STUB: This documentation is a stub)</p>
+<p>TODO: link to validation:schemas
+TODO: link to modules
+…
+TODO: from tutorial:</p>
+<ul class="simple">
+<li><p>Compiled transformers:</p>
+<ul>
+<li><p>header, integrator, executor</p></li>
+<li><p>main_module multiple files (link to module)</p></li>
+</ul>
+</li>
+</ul>
 </div>
 <div class="section" id="adding-new-transformer-languages">
 <h2>Adding new transformer languages<a class="headerlink" href="#adding-new-transformer-languages" title="Permalink to this headline">¶</a></h2>
 <p>(STUB: This documentation is a stub)
+Advanced topic
 …</p>
+<p>…</p>
+<p>TODO:</p>
+<ul class="simple">
+<li><p>Pin celltypes: link to cell</p></li>
+<li><p>Pin “as_” attribute</p></li>
+</ul>
+<p>TODO: from tutorial:</p>
+<p>Intro:</p>
+<ul class="simple">
+<li><p>Python transformers</p></li>
+<li><p>.inp and .result (link to structured cells)</p></li>
+<li><p>Bash transformers</p>
+<ul>
+<li><p>RESULT file or directory</p></li>
+<li><p>filedict/filelist subcelltype TODO</p></li>
+</ul>
+</li>
+<li><p>Transformers in IPython and R</p></li>
+</ul>
+<p>Intermediate:</p>
+<ul class="simple">
+<li><p>Docker (link to environments)</p></li>
+<li><p>Meta parameters (computation times etc.)</p></li>
+<li><p>Transformations and checksums (link to “Seamless explained”)</p></li>
+</ul>
+<p>In-depth:</p>
+<ul class="simple">
+<li><p>Hacking on bash/compiled transformers (not interactively)</p></li>
+<li><p>Changing the translation machinery (not interactively)</p></li>
+<li><p>Irreproducible transformers (link to determinism)</p></li>
+<li><p>cancel, clearing exceptions</p></li>
+</ul>
 </div>
 </div>
 
 
-            <div class="clearer"></div>
+           </div>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Transformers</a><ul>
-<li><a class="reference internal" href="#pins">Pins</a><ul>
-<li><a class="reference internal" href="#alternative-pin-syntax">Alternative pin syntax</a></li>
-<li><a class="reference internal" href="#code-pin">Code pin</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#transformer-execution">Transformer execution</a></li>
-<li><a class="reference internal" href="#transformer-result">Transformer result</a></li>
-<li><a class="reference internal" href="#python-transformers">Python transformers</a></li>
-<li><a class="reference internal" href="#bash-transformers">Bash transformers</a></li>
-<li><a class="reference internal" href="#compiled-transformers">Compiled transformers</a></li>
-<li><a class="reference internal" href="#adding-new-transformer-languages">Adding new transformer languages</a></li>
-</ul>
-</li>
-</ul>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="cell.html" class="btn btn-neutral float-left" title="Cells" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mounting.html" class="btn btn-neutral float-right" title="Mounting to the file system" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="cell.html"
-                        title="previous chapter">Cells</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="new-project.html"
-                        title="next chapter">Guide for creating a new Seamless project</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/transformer.md.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="new-project.html" title="Guide for creating a new Seamless project"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="cell.html" title="Cells"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.8 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Transformers</a></li> 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-        &#169; Copyright 2016-2022, INSERM and code contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.4.
-    </div>
-  </body>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
 </html>

@@ -10,13 +10,13 @@ Workflows, computations and results are all represented as directed acyclic grap
 
 ### Documentation: <http://sjdv1982.github.io/seamless>
 
-# Try out Seamless
+## Try out Seamless
 
 You can try out Seamless in your browser, without any installation, thanks to the Binder project. Click on the badge below:
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb)
 
-# Quick installation
+## Quick installation
 
 First, [install Docker](https://docs.docker.com/get-docker/)
 and [miniconda](https://docs.conda.io/en/latest/miniconda.html).
@@ -29,7 +29,7 @@ conda activate seamless
 
 For more details, see [Installation](https://github.com/sjdv1982/seamless/blob/master/installation.md)
 
-# Basic example
+## Basic example
 
 First, start **IPython** (`seamless-ipython`) or **Jupyter** (`seamless-jupyter` => create a new Python Notebook).
 
@@ -353,6 +353,6 @@ ctx.add.code.value
 35
 ```
 
-# Documentation
+##### Documentation
 
 <http://sjdv1982.github.io/seamless>
