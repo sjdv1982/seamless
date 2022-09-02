@@ -26,10 +26,10 @@ Welcome to Seamless's documentation!
 
    visualization
    validation
+   libraries
    modules
    debugging
    environments
-   libraries
    data_storage
    deployment
 

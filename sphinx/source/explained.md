@@ -18,9 +18,9 @@ The final implication is that since transformers are also based on checksums, an
 
 Seamless has three features that contribute to interactivity.
 
-First, based on the reactivity explained above. You can essentially re-run the entire workflow continuously, and recomputation only happens if something changes.
+First, based on the reactivity explained above. You can essentially re-run the entire workflow continuously without much cost, because recomputation only happens if something changes.
 
-Second, during development, you can always modify the workflow in IPython/Jupyter, while the workflow remains running. Both the topology of the workflow and the parameters can be modified.
+Second, while the workflow remains running, you can always modify it in IPython/Jupyter. Both the topology of the workflow and the parameters can be modified.
 
 Third, Seamless allows cells to be ***synchronized***. There are two mechanisms for this. The first mechanism is that during development, cells can be synchronized to the file system. In this way, you can define a code cell initially in a Jupyter Notebook, but then link it to a source code file under Git version control that you can edit with a standard text editor or IDE. The synchronization is two-way, which means that the file contains the cell buffer, and that the cell contains the file checksum. During deployment, the file is no longer needed, as long as the cell buffer can be retrieved from somewhere.
 
@@ -28,9 +28,9 @@ The other mechanism of synchronization is over HTTP. You can expose cells as rea
 
 In Seamless, there is no sharp difference between user and programmer. All sources of interactivity are treated the same: change of a cell over HTTP, change of a cell linked to the file system, or modification of the entire workflow via IPython. From Seamless's point of view, they are all acts of programming, although the user of a web interface normally has a very limited "API" at their disposition. You *can* allow actual programming via the web interface, by exposing code cells in read-write mode and link them to textarea editor elements in your HTML page. If you really want to.
 
-### Using Seamless as a web framework
+### Using Seamless as a reactive web framework
 
-Seamless's automatic reactivity and interactivity makes it convenient to make web services. In all cases, you never have to write server code that explicitly handles dynamic change, while this is required if you use Django or React or Flask or any of those web frameworks. ***Seamless workflows don't handle dynamic change, because there is none***. Whenever something changes, Seamless effectively discards the old workflow and replaces it with a new workflow. All computations that were excuted before by the old workflow (or that were ever executed by any workflow at all!) are re-used if they are present in the new workflow. In that sense, Seamless is more similar to a traditional static CGI web server, which doesn't require any dynamic change either.
+Seamless's automatic reactivity and interactivity makes it very convenient to make a certain type of web services. No matter what, you don't have to write server code that explicitly handles dynamic change, while this is required if you use Django or React or Flask or any of those web frameworks. ***Seamless workflows don't handle dynamic change, because there is none***. Whenever something changes, Seamless effectively discards the old workflow and replaces it with a new workflow. All computations that were excuted before by the old workflow (or that were ever executed by any workflow at all!) can be re-used. In that sense, Seamless is more similar to a traditional static CGI web server, which doesn't require any dynamic change either.
 
 However, the big difference with a static web server is that a dynamic, reactive web server must always be live: there must always a Seamless process that listens for HTTP updates. You can't simply wait until the user submits a static webform with all the parameters and then fire up your workflow. Likewise, the browser must be live too, and listen from continuous updates from the server, but this is easy to do nowadays (web sockets).
 
@@ -179,7 +179,7 @@ Each Seamless instance is able to do its own computation, but during deployment,
 Then, from a computing viewpoint, a Seamless instance can be seen as a black box, where cell values come in (via HTTP) and a stream of transformation requests come out. The transformation requests are small, as they contain only checksums.
 
 The communion protocol can also exchange buffers, but it is easier if both the Seamless instance and the job slave have access to the same Seamless database (LINK).
-In that case, the buffers corresponding to the input checksums will have beenpre-deposited by the Seamless instance, so only the transformation needs to be sent. After computation, the jobslave will deposit the result checksum for that transformation, and the corresponding buffer. The Seamless instance needs to interrogate only the database to retrieve the results
+In that case, the buffers corresponding to the input checksums will have beenpre-deposited by the Seamless instance, so only the transformation needs to be sent. After computation, the jobslave will deposit the result checksum for that transformation, and the corresponding buffer. The Seamless instance needs to interrogate only the database to retrieve the results.
 
 ### Deep structures
 
@@ -192,7 +192,6 @@ folder on the file system.
 
 What does impact deployment is the following. Typically, a web service consists of two graphs (.seamless files). 
 The first graph contains the main workflow. The second graph contains a status graph. The status graph can be bound by Seamless to the main graph (`seamless.metalevel.bind_status_graph`; this function is automatically invoked by `seamless-serve-graph` if you provide two graph files). In that case, the status graph receives the current value and status of the  main workflow graph as its input, and normally visualizes it as a web page. Manually-coded web interfaces are normally added to the main workflow graph. In contrast, the automatic web interface generator is part of the status graph, as it generates the web interface HTML by taking the main workflow graph as an input. During development, both graphs are developed, which is made possible by `seamless-new-project` and `seamless-load-project`.
-
 
 ## Understanding Seamless dependency graphs
 
@@ -220,7 +219,7 @@ Practical:
 
 ### Keep it simple, while you can
 
-The beginner's guide advice "keep it simple" contains good advice for a small, young project. With Jupyter, you can quickly set something up, adding Seamless's interactivity to Jupyter's own. This works best for workflows that are non-linear but with not too many steps, where the data is rather small, and the code too.
+The beginner's section on "how to keep it simple" contains good advice for a small, young project. With Jupyter, you can quickly set something up, adding Seamless's interactivity to Jupyter's own. This works best for workflows that are non-linear but with not too many steps, where the data is rather small, and the code too.
 
 When the code gets more complex, you should move away from Jupyter by mounting your code cells to files. Code that modifies the workflow becomes throw-away code. See "Moving away from Jupyter" for more details.
 
@@ -232,7 +231,7 @@ If either the code or the data gets bigger, you should start thinking about vers
 
 Clearly distinguish between the "outside" code that *creates* the workflow, and the "inside" code (mostly inside transformers) that is executed as part of the workflow. Inside codes are polyglot and executed in isolation (from each other, and from the outside). Outside code is written in Python, and you run it inside IPython or Jupyter. You don't need to keep outside code, because you can store the entire workflow as data.
 
-The "Moving away from Jupyter" section below explains that you should mount your code cells to the file system, and then remove their code from the notebook. Once it is part of your workflow, Seamless will store it (at least its checksum, and normally its content too), and you can also store it under Git version control as a file. Note that this applies only to "inside" code. In contrast, in a mature project, "outside" code that inspects or modifies the workflow should be considered ***throw-away code***. If you have moved away completely from Jupyter, you can simply use `seamless-ipython` to enter such code. Else, you can enter it in a temporary notebook cell, or use `seamless-jupyter-connect` to connect an IPython-like console to Jupyter. In all cases, you execute the code, but you don't keep it: instead, you simply save the state of the workflow in a `.seamless` file.
+The "Moving away from Jupyter" section below explains that you should mount your code cells to the file system, and then remove their code from the notebook. Once it has thus become part of your workflow, Seamless will store the code (at least its checksum, and normally its content too), and you can also store it under Git version control as a file. Note that this applies only to "inside" code. In contrast, in a mature project, "outside" code that inspects or modifies the workflow should be considered ***throw-away code***. If you have moved away completely from Jupyter, you can simply use `seamless-ipython` to enter such code. Else, you can enter it in a temporary notebook cell, or use `seamless-jupyter-connect` to connect an IPython-like console to Jupyter. In all cases, you execute the code, but you don't keep it: instead, you simply save the state of the workflow in a `.seamless` file.
 
 There is one use case where "outside" code may be kept. When it comes to describing the topology of the workflow (the steps and connections), you should normally rely on the status visualization web page (which you can modify, see "Edit the editor") or create your own flowcharts. But if that is not to your satisfaction, you do have the option to define your workflow topology from code. In that case, modify the Seamless project's `define_graph` function in `load-project.py`. If you do so, `await load()` will execute that code instead of loading the `.seamless` file, assuming that it will build the connections and cell mounts of the workflow. If you don't use a Seamless project at all, simply store the "outside" code in a script and run it.
 
@@ -257,9 +256,9 @@ Light-weight experience: don't use seamless-new-project at all
 
 Try not to install packages in the running Docker container as outlined in the beginner's documentation. Study "environments" documentation instead.
 
-### Don't confuse files
+### Don't confuse files and cell names
 
-See beginner's documentation on "Don't confuse files". In addition, note that file mounting is something that happens only during development. When you save a workflow, the file's checksum gets incorporated into it. When you deploy a workflow (e.g. with `seamless-serve-graph`, Cloudless, or loading a .seamless file yourself), mounts are not needed to make the workflow run.
+See beginner's documentation on "Don't confuse files and cell names". In addition, note that file mounting is something that happens only during development. When you save a workflow, the file's checksum gets incorporated into it. When you deploy a workflow (e.g. with `seamless-serve-graph`, Cloudless, or loading a .seamless file yourself), mounts are not needed to make the workflow run.
 
 ### Don't rely on file names or URLs
 
