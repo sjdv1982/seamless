@@ -34,6 +34,7 @@ Welcome to Seamless's documentation!
    debugging
    environments
    data_storage
+   job_management
    deployment
 
 .. toctree::

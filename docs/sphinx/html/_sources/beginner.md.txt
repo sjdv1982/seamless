@@ -76,7 +76,7 @@ Transformations depend on cells, and some cells depend on transformations. Other
 
 If you like to explore first and make design decisions later, Seamless may suit your style, even if you are a beginner. However, if you feel lost, it is recommended to plan ahead, and divide the work into phases that you complete one after another. This gives you an idea of what you should do at the moment. But don't hesitate to go back to a previous phase at any time when you feel that it needs to be corrected.
 
-The following phases are recommended: design, implementation, visualization, validation, deployment. For validation, see the documentation (TODO LINK), you can choose to skip it for simple projects.
+The following phases are recommended: design, implementation, visualization, validation, deployment. For validation, see the [documentation](http://sjdv1982.github.io/seamless/sphinx/html/documentation); you can choose to skip it for simple projects.
 
 ### Design phase
 
