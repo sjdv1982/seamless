@@ -1,3 +1,5 @@
+# Macros and the low level
+
 STUB
 
 <!--
@@ -6,8 +8,8 @@ STUB
 Intermediate:
 - High-level Macros
 - Rules for the low level
+- low-level macros
 - macro mode
-- macros
 - reactors and editpins
 - high-in-low: 
     - HighLevelContext (link to: how the high level wraps the graph data structure)

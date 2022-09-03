@@ -1,5 +1,4 @@
-Cells
-=====
+# Cells
 
 A cell (seamless.highlevel.Cell) contains a piece of data in the dependency graph that is contained by a Seamless Context.
 Thus, cells are always part of a Context (called `ctx` by convention).
@@ -82,6 +81,7 @@ print(ctx.sub.value)
 201
 ```
 
+<!--
 TODO:
 
 Cell types:
@@ -95,3 +95,4 @@ Cell types:
 - Subcelltypes
 - Semantic checksums: code, cson, yaml
 - Checksum cells
+-->

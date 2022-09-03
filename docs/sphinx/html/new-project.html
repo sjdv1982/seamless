@@ -34,9 +34,9 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption"><span class="caption-text">Introduction</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
 <li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
@@ -44,8 +44,8 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Recipe for a new Seamless project</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#a-setting-up-a-collaborative-project">A. Setting up a collaborative project</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#b-project-initialization">B. Project initialization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#c-project-implementation">C. Project implementation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#solo-projects">Solo projects</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#c-project-implementation">C. Project implementation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#solo-projects">Solo projects</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#for-collaborative-project-hosts">For collaborative project hosts</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#for-collaborative-project-guests">For collaborative project guests</a></li>
 </ul>
@@ -53,23 +53,32 @@
 <li class="toctree-l2"><a class="reference internal" href="#d-advanced-configuration">D. Advanced configuration</a></li>
 </ul>
 </li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#creating-a-new-workflow-child">Creating a new workflow child</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#dependent-and-independent-data">Dependent and independent data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#transformation">Transformation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#translation">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deployment.html#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
 
@@ -141,9 +150,8 @@ After adding the new directory, save the workspace as PROJDIR/PROJNAME, where PR
 </div>
 <div class="section" id="c-project-implementation">
 <h2>C. Project implementation<a class="headerlink" href="#c-project-implementation" title="Permalink to this headline">¶</a></h2>
-</div>
 <div class="section" id="solo-projects">
-<h2>Solo projects<a class="headerlink" href="#solo-projects" title="Permalink to this headline">¶</a></h2>
+<h3>Solo projects<a class="headerlink" href="#solo-projects" title="Permalink to this headline">¶</a></h3>
 <ol>
 <li><p>Open a new terminal and go to PROJDIR. Do <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code>.
 The following steps explain how to open your project in Jupyter.
@@ -160,6 +168,7 @@ This opens a console that connects to the same kernel as the Notebook. From here
 <li><p>Start the implementation stage. Modify the topology in the console terminal (do <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation()</span></code> after modification, and type <code class="docutils literal notranslate"><span class="pre">save()</span></code> often!). Mount cells to the file system, and edit them. Monitor error messages in the browser.
 You can start visualization in the Jupyter Notebook, then move on to HTML/JS. See <a class="reference external" href="#">visualization.md TODO LINK</a> for more details.</p></li>
 </ol>
+</div>
 <div class="section" id="for-collaborative-project-hosts">
 <h3>For collaborative project hosts<a class="headerlink" href="#for-collaborative-project-hosts" title="Permalink to this headline">¶</a></h3>
 <p><strong>For a collaborative project, only the host needs to do this. If you are a guest, go to the next section</strong></p>

@@ -83,7 +83,7 @@ Jobless is part of the seamless-tools repo. See that repo for more details.
 
 Seamless reads the jobless IP from the SEAMLESS_COMMUNION_IP environment  variable, which defaults your Docker host IP. The default jobless port (SEAMLESS_COMMUNION_PORT) is 5533.
 
-# Section on deployment of environments (jobless)
+## Section on deployment of environments (jobless)
 ...
 
 ## Buffer server

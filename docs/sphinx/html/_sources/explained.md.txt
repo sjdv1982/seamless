@@ -12,7 +12,7 @@ In a nutshell, most of Seamless revolves around ***cells***, that hold the data 
 
 What makes Seamless special is that cells don't hold values or filenames, but ***checksums*** (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren't tied to a hierarchy of files, carefully named and accessible on a mounted file system. In contrast, while in Seamless you *can* mount a cell to a file, it just means that the cell's checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is always free in terms of space, in the same way that a hardlink to a file is always free (but copying a file or value is not). Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. They just contain checksums, and data values are obtained only when they are needed. Checksums are small, and a workflow description with checksums is small, but their underlying data can be much larger than what fits in memory, or on disk. In other words, big data is possible with Seamless. On the flip side, you can't automatically assume that you have a cell's data at your fingertips. By default, Seamless sets up some simple checksum-to-data stores, but that reintroduces some of the problems (potential memory issues, file copying) of using files and values instead of checksums. These problems can be minimized by manually configuring your data storage.
 
-The final implication is that since transformers are also based on checksums, and since these checksums fully describe the computation (parameters *and* code *and* result), you can replace a computation with its result, and replace a result with its computation (referential transparency). This is very beneficial for ***reproducibility***, and it provides ***reactivity***: after cell updates, it is always obvious which computations need to be re-executed. No need for manual re-execution (Jupyter) or reliance on file modification times (SnakeMake). Finally, it means that computations are small to describe, and can run anywhere, as long as they can locate the data of their input checksums. More details are in the transformation section.
+The final implication is that since transformers are also based on checksums, and since these checksums fully describe the computation (parameters *and* code *and* result), you can replace a computation with its result, and replace a result with its computation (referential transparency). This is very beneficial for ***reproducibility***, and it provides ***reactivity***: after cell updates, it is always obvious which computations need to be re-executed. No need for manual re-execution (Jupyter) or reliance on file modification times (Snakemake). Finally, it means that computations are small to describe, and can run anywhere, as long as they can locate the data of their input checksums. More details are in the transformation section.
 
 ### Interactivity
 
@@ -22,7 +22,7 @@ First, based on the reactivity explained above. You can essentially re-run the e
 
 Second, while the workflow remains running, you can always modify it in IPython/Jupyter. Both the topology of the workflow and the parameters can be modified.
 
-Third, Seamless allows cells to be ***synchronized***. There are two mechanisms for this. The first mechanism is that during development, cells can be synchronized to the file system. In this way, you can define a code cell initially in a Jupyter Notebook, but then link it to a source code file under Git version control that you can edit with a standard text editor or IDE. The synchronization is two-way, which means that the file contains the cell buffer, and that the cell contains the file checksum. During deployment, the file is no longer needed, as long as the cell buffer can be retrieved from somewhere.
+Third, Seamless allows cells to be ***synchronized***. There are two mechanisms for this. The first mechanism is that during development, cells can be synchronized (mounted) to the file system. In this way, you can define a code cell initially in a Jupyter Notebook, but then link it to a source code file under Git version control that you can edit with a standard text editor or IDE. The synchronization is two-way, which means that the file contains the cell buffer, and that the cell contains the file checksum. During deployment, the file is no longer needed (or used), although the cell buffer must be retrievable from somewhere.
 
 The other mechanism of synchronization is over HTTP. You can expose cells as read-only, allowing their value to be read in the browser (HTTP GET), or as read-write, so that they can be modified (HTTP PUT). There is also a websocket port where you can receive notifications from Seamless when a cell has been updated. Seamless includes a simple javascript client that uses all of this to synchronize cell values bidirectionally between Seamless and the browser. This is how you build web interfaces that are fundamentally interactive.
 
@@ -161,7 +161,7 @@ A transformation describes a unique computation that transforms the input checks
 
 #### Types of transformations
 
-Seamless allows a transformation to contain an *environment*: as a Docker image, a conda environment definition, or a list of command line tools that must be available. This is a bit informal and should be used with care when it comes to reproducibility. See the documentation of "environments" (LINK) for more details.
+Seamless allows a transformation to contain an *environment*: as a Docker image, a conda environment definition, or a list of command line tools that must be available. This is a bit informal and should be used with care when it comes to reproducibility. See the [documentation of environments](http://sjdv1982.github.io/seamless/sphinx/html/environments.html) for more details.
 
 In addition, Seamless transformers can in principle be written in any language. Python/IPython transformers are executed directly. Interpreted languages (e.g. R) are executed via a bridge to IPython (e.g. using rpy). Bash transformers are executed using a special Python function. So are compiled transformers (e.g. in C++) after compilation.
 
@@ -178,7 +178,7 @@ Each Seamless instance is able to do its own computation, but during deployment,
 
 Then, from a computing viewpoint, a Seamless instance can be seen as a black box, where cell values come in (via HTTP) and a stream of transformation requests come out. The transformation requests are small, as they contain only checksums.
 
-The communion protocol can also exchange buffers, but it is easier if both the Seamless instance and the job slave have access to the same Seamless database (LINK).
+The communion protocol can also exchange buffers, but it is easier if both the Seamless instance and the job slave have access to the same Seamless database (see [documentation](http://sjdv1982.github.io/seamless/sphinx/html/data_storage.html)).
 In that case, the buffers corresponding to the input checksums will have beenpre-deposited by the Seamless instance, so only the transformation needs to be sent. After computation, the jobslave will deposit the result checksum for that transformation, and the corresponding buffer. The Seamless instance needs to interrogate only the database to retrieve the results.
 
 ### Deep structures
@@ -225,7 +225,7 @@ When the code gets more complex, you should move away from Jupyter by mounting y
 
 When the data gets bigger, or execution becomes time-consuming, you should start thinking about data storage (TODO link) and job management (TODO link). With default settings, Seamless transformations are parallelized on your local machine and cached in memory, and you may want to change that. If the data gets really big, you should bring the computation where the data is. But even in that case, try to have a small-data version of your workflow that executes fast, so that you can modify the code easily and interactively. Whitelists work very well for this (TODO link deepcells).
 
-If either the code or the data gets bigger, you should start thinking about version control, and whether or not to use `seamless-new-project`. See the documentation for creating a Seamless project (TODO LINK) for more details.
+If either the code or the data gets bigger, you should start thinking about version control, and whether or not to use `seamless-new-project`. See [the documentation for creating a Seamless project](http://sjdv1982.github.io/seamless/sphinx/html/new-project.html) for more details.
 
 ### Programming in two places
 

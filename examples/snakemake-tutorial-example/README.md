@@ -1,7 +1,7 @@
 Snakemake example
 =================
 
-Snakefile and data are from the original SnakeMake tutorial, with the following adaptations:
+Snakefile and data are from the original Snakemake tutorial, with the following adaptations:
 
 - The original `genome.fa` Snakemake dependency is unclean; `samtools` implicitly depends on `genome.fa.X`, where `X` = `anb`, `ann`, `bwt`, `fai`, `pac`, `sa`.
 Therefore, all files have been zipped to `genome.tgz` ; the Snakefile has been adapted accordingly
@@ -27,7 +27,7 @@ NOTE: this script must be run inside a Docker container with samtools, bcftools 
 
 This will look like this:
 
-![Status visualization animated GIF](run-snakegraph-interactive.gif "Status visualization of the SnakeMake tutorial workflow converted to Seamless")
+![Status visualization animated GIF](run-snakegraph-interactive.gif "Status visualization of the Snakemake tutorial workflow converted to Seamless")
 
 In summary, the following commands will execute the workflow:
 
@@ -45,7 +45,7 @@ ipython3 -i run-snakegraph-interactive.py  # follow the instructions
 Results
 =======
 
-A file "calls/all.vcf" is generated (and no others). You can then run SnakeMake ("snakemake report") to generate the report.
+A file "calls/all.vcf" is generated (and no others). You can then run Snakemake ("snakemake report") to generate the report.
 
 TODO: let snakemake2seamless report which files must be bound 
 

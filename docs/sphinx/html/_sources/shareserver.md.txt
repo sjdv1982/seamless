@@ -1,5 +1,4 @@
-The Seamless shareserver
-========================
+# The Seamless shareserver
 
 (This documentation is a stub)
 
@@ -15,7 +14,7 @@ The primary ways to interact with the share server are:
 
 - The seamless client (seamless-client.js)
 
-### C3. HTTP sharing
+## HTTP sharing
 
 Intro:
 

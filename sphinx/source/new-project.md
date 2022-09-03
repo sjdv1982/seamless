@@ -50,7 +50,7 @@ This is for both solo projects and collaborative projects. **For a collaborative
 
 ## C. Project implementation
 
-## Solo projects
+### Solo projects
 
 1. Open a new terminal and go to PROJDIR. Do `conda activate seamless`.
    The following steps explain how to open your project in Jupyter.

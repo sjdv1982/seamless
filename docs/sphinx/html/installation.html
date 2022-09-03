@@ -16,7 +16,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Getting started with Seamless" href="getting-started.html" />
-    <link rel="prev" title="Seamless: a cell-based interactive workflow framework" href="introduction.html" /> 
+    <link rel="prev" title="Seamless: a cell-based interactive workflow framework" href="whatis.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -34,37 +34,52 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption"><span class="caption-text">Introduction</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#installation-of-seamless-running-inside-docker-containers">Installation of Seamless running inside Docker containers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#installation-of-seamless-running-directly-in-a-conda-environment">Installation of Seamless running directly in a conda environment</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#installation-of-minimal-seamless">Installation of minimal Seamless</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#alternative-installation-of-minimal-seamless-using-singularity">Alternative installation of minimal Seamless using Singularity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#comparison-between-installation-methods">Comparison between installation methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation-instructions">Installation instructions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#installation-of-seamless-running-inside-docker-containers">1. Installation of Seamless running inside Docker containers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installation-of-seamless-running-directly-in-a-conda-environment">2. Installation of Seamless running directly in a conda environment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installation-of-minimal-seamless">3. Installation of minimal Seamless</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#alternative-installation-using-singularity">Alternative installation using Singularity</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
 <li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new-project.html">Recipe for a new Seamless project</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#creating-a-new-workflow-child">Creating a new workflow child</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#dependent-and-independent-data">Dependent and independent data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#transformation">Transformation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#translation">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deployment.html#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
 
@@ -94,57 +109,54 @@
              
   <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<p>There are three methods to run Seamless.</p>
-<ol class="simple">
-<li><p>The easiest method is to run Seamless inside Docker containers. With command-line tools such as
-<code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>, <code class="docutils literal notranslate"><span class="pre">seamless-bash</span></code> and <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code> you can create new Docker containers where you can import Seamless into Jupyter, IPython, etc.
-This method will work under any platform where you can install Docker, conda and bash. It has been tested under macOS and Linux. It should also work under Windows with MSYS2.</p></li>
-<li><p>Alternatively, you can create a conda environment to install Seamless directly, without using Docker. Then, instead of <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code> or <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code>, you activate the conda environment and launch Jupyter or IPython yourself. This will work out-of-the-box for many use cases, but sometimes you will have to define some environment variables, especially to connect to a Seamless database or a job servant. Features like live debugging are also harder to set up. Therefore, this is recommended only for advanced users.
-This method has been tested under macOS and Linux. As it relies on os.fork(), it will not work under Windows.
-Note that Seamless is tested only with the Python version inside its Docker image
-(For Seamless 0.8, this is Python 3.8). Currently, Seamless uses Python syntax
-that requires at least Python 3.7.</p></li>
+<p>There are three methods to run Seamless. Below, each of the three methods is briefly explained. The section after provides installation instructions for each of the methods.</p>
+<div class="section" id="comparison-between-installation-methods">
+<h2>Comparison between installation methods<a class="headerlink" href="#comparison-between-installation-methods" title="Permalink to this headline">¶</a></h2>
+<ol>
+<li><p>The easiest method is to run Seamless inside Docker containers. With command-line tools such as <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>, <code class="docutils literal notranslate"><span class="pre">seamless-bash</span></code> and <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code> you can create new Docker containers where you can import Seamless into Jupyter, IPython, etc.</p>
+<p>This method will work under any platform where you can install Docker, conda and bash. It has been tested under macOS and Linux. It should also work under Windows with MSYS2.</p>
+</li>
+<li><p>Alternatively, you can create a conda environment to install Seamless directly, without using Docker. Then, instead of <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code> or <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code>, you activate the conda environment and launch Jupyter or IPython yourself. This will work out-of-the-box for many use cases, but sometimes you will have to define some environment variables, especially to connect to a Seamless database or a job servant. Features like live debugging are also harder to set up. Therefore, this is recommended only for advanced users.</p>
+<p>This method has been tested under macOS and Linux. As it relies on <code class="docutils literal notranslate"><span class="pre">os.fork()</span></code>, it will not work under Windows.</p>
+<p>Note that Seamless is tested only with the Python version inside its Docker image (For Seamless 0.8, this is Python 3.8). Currently, Seamless uses Python syntax that requires at least Python 3.7.</p>
+</li>
 <li><p>Finally, there is also the seamless-minimal installation method. This is not a full Seamless installation, since Jupyter and IPython are missing. Instead, the aim of seamless-minimal is to run Seamless computations inside arbitrary conda environments.</p></li>
 </ol>
+</div>
+<div class="section" id="installation-instructions">
+<h2>Installation instructions<a class="headerlink" href="#installation-instructions" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="installation-of-seamless-running-inside-docker-containers">
-<h2>Installation of Seamless running inside Docker containers<a class="headerlink" href="#installation-of-seamless-running-inside-docker-containers" title="Permalink to this headline">¶</a></h2>
+<h3>1. Installation of Seamless running inside Docker containers<a class="headerlink" href="#installation-of-seamless-running-inside-docker-containers" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p>First, you must <a class="reference external" href="https://docs.docker.com/get-docker/">install Docker</a>
 and <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">(mini)conda</a>.</p></li>
 <li><p>Pull the Docker image with <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">pull</span> <span class="pre">rpbs/seamless</span></code></p></li>
 <li><p>Install the Seamless command line tools.</p>
-<p>It is best to create a new environment “seamless”, and do <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code> whenever you are using Seamless. This is done as follows:
-<code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">create</span> <span class="pre">-n</span> <span class="pre">seamless</span> <span class="pre">-c</span> <span class="pre">rpbs</span> <span class="pre">-c</span> <span class="pre">conda-forge</span> <span class="pre">seamless-cli</span></code>
-Or you can install the Seamless command tools into your current conda environment: <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">-c</span> <span class="pre">rpbs</span> <span class="pre">-c</span> <span class="pre">conda-forge</span> <span class="pre">seamless-cli</span></code></p>
+<p>It is best to create a new environment “seamless”, and do <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code> whenever you are using Seamless. This is done as follows: <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">create</span> <span class="pre">-n</span> <span class="pre">seamless</span> <span class="pre">-c</span> <span class="pre">rpbs</span> <span class="pre">-c</span> <span class="pre">conda-forge</span> <span class="pre">seamless-cli</span></code>.</p>
+<p>Or you can install the Seamless command line tools into your current conda environment: <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">-c</span> <span class="pre">rpbs</span> <span class="pre">-c</span> <span class="pre">conda-forge</span> <span class="pre">seamless-cli</span></code></p>
 </li>
-<li><p>The command <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code> launches an IPython terminal inside a
-Seamless Docker container.</p></li>
+<li><p>The command <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code> launches an IPython terminal inside a Seamless Docker container.</p></li>
 </ul>
-<p><code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code> does the same for Jupyter Notebook. Inside the notebook file tree,
-browse <code class="docutils literal notranslate"><span class="pre">seamless-examples</span></code>, or <code class="docutils literal notranslate"><span class="pre">cwd</span></code> for the current directory.</p>
+<p><code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code> does the same for Jupyter Notebook. Inside the notebook file tree, browse <code class="docutils literal notranslate"><span class="pre">seamless-examples</span></code>, or <code class="docutils literal notranslate"><span class="pre">cwd</span></code> for the current directory.</p>
 </div>
 <div class="section" id="installation-of-seamless-running-directly-in-a-conda-environment">
-<h2>Installation of Seamless running directly in a conda environment<a class="headerlink" href="#installation-of-seamless-running-directly-in-a-conda-environment" title="Permalink to this headline">¶</a></h2>
-<p><em>NOTE: with older conda versions (4.9 or earlier) you must download the .yml file first.</em></p>
-<p>First, you must <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">install (mini)conda</a>.</p>
+<h3>2. Installation of Seamless running directly in a conda environment<a class="headerlink" href="#installation-of-seamless-running-directly-in-a-conda-environment" title="Permalink to this headline">¶</a></h3>
+<p>First, you must <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">install (mini)conda</a>. Then, create a <code class="docutils literal notranslate"><span class="pre">seamless-framework</span></code> conda environment with the following command:</p>
 <p><code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">env</span> <span class="pre">create</span> <span class="pre">--force</span> <span class="pre">--file</span> <span class="pre">https://raw.githubusercontent.com/sjdv1982/seamless/stable/conda/seamless-framework-environment.yml</span></code></p>
-<p>Solving the environment typically takes a few minutes.
-However, it can take very much longer (i.e. forever) if your conda channel priority is not strict. Run the following commands to enforce strict channel priority during installation:</p>
+<p><em>NOTE: with older conda versions (4.9 or earlier) you must download the .yml file first.</em></p>
+<p>Solving the environment typically takes a few minutes. However, it can take very much longer (i.e. forever) if your conda channel priority is not strict. Replace the command above with the following commands to enforce strict channel priority during installation:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda create --no-default-packages --no-pin --force -n seamless-framework -y
 conda activate seamless-framework
 conda config --env --set channel_priority strict
 conda env update --file https://raw.githubusercontent.com/sjdv1982/seamless/stable/conda/seamless-framework-environment.yml
 </pre></div>
 </div>
-<p>The seamless-framework conda environment is big and installing additional packages
-may take a lot of time, even with strict channel priority.
-Therefore, it has <code class="docutils literal notranslate"><span class="pre">mamba</span></code> installed as a fast, drop-in replacement for the <code class="docutils literal notranslate"><span class="pre">conda</span></code> command.</p>
-<p>When running compiled transformers, Seamless assumes that gcc (for C), g++ (for C++) and gfortran are
-available. If you wish to run transformers written in these languages, you must install these compilers yourself.</p>
+<p>The seamless-framework conda environment is big and installing additional packages may take a lot of time, even with strict channel priority. Therefore, it has <code class="docutils literal notranslate"><span class="pre">mamba</span></code> installed as a fast, drop-in replacement for the <code class="docutils literal notranslate"><span class="pre">conda</span></code> command.</p>
+<p>When running compiled transformers, Seamless assumes that gcc (for C), g++ (for C++) and gfortran are available. These are not installed by default. If you wish to run transformers written in these languages, you must install these compilers yourself.</p>
 <p>Most likely, you will want to checkout the <a class="reference external" href="https://github.com/sjdv1982/seamless-tools">seamless-tools Git repo</a>. Almost all Seamless commands are wrappers around Python scripts, either in <code class="docutils literal notranslate"><span class="pre">seamless-tools/scripts</span></code> (these scripts heavily rely on Seamless) or <code class="docutils literal notranslate"><span class="pre">seamless-tools/tools</span></code> (these scripts are mostly independent of Seamless). For example, the command <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span></code> (which can be found in <code class="docutils literal notranslate"><span class="pre">seamless-tools/seamless-cli/seamless-new-project</span></code>) is a wrapper around <code class="docutils literal notranslate"><span class="pre">seamless-tools/scripts/new-project.py</span></code></p>
 </div>
 <div class="section" id="installation-of-minimal-seamless">
-<h2>Installation of minimal Seamless<a class="headerlink" href="#installation-of-minimal-seamless" title="Permalink to this headline">¶</a></h2>
+<h3>3. Installation of minimal Seamless<a class="headerlink" href="#installation-of-minimal-seamless" title="Permalink to this headline">¶</a></h3>
 <p>Installation is as follows:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker pull rpbs/seamless-minimal
 conda create -n seamless -c rpbs -c conda-forge seamless-cli -y
@@ -153,15 +165,15 @@ conda activate seamless
 </div>
 <ul class="simple">
 <li><p>Export the main conda environment to an external location with <code class="docutils literal notranslate"><span class="pre">seamless-conda-env-export</span> <span class="pre">SOMEDIR</span></code></p></li>
-<li><p>You can update the external conda environment using an environment file (normally, the same file used for Transformer.environment.set_conda)
-with <code class="docutils literal notranslate"><span class="pre">seamless-conda-env-modify</span> <span class="pre">SOMEDIR</span> <span class="pre">someenv.yml</span></code></p></li>
+<li><p>You can update the external conda environment using an environment file (normally, the same file used for Transformer.environment.set_conda) with <code class="docutils literal notranslate"><span class="pre">seamless-conda-env-modify</span> <span class="pre">SOMEDIR</span> <span class="pre">someenv.yml</span></code></p></li>
 <li><p>Execute a transformation using <code class="docutils literal notranslate"><span class="pre">seamless-conda-env-run-transformation</span> <span class="pre">SOMEDIR</span> <span class="pre">transformation-checksum</span></code>. The transformation checksum can be obtained using <code class="docutils literal notranslate"><span class="pre">Transformer.get_transformation()</span></code>. This requires a Seamless database to be connected.</p></li>
 </ul>
+<div class="section" id="alternative-installation-using-singularity">
+<h4>Alternative installation using Singularity<a class="headerlink" href="#alternative-installation-using-singularity" title="Permalink to this headline">¶</a></h4>
+<p>You can run seamless-minimal also under Singularity instead of Docker.</p>
+<p>In that case, checkout the <a class="reference external" href="https://github.com/sjdv1982/seamless-tools">seamless-tools Git repo</a> and follow the instructions in <code class="docutils literal notranslate"><span class="pre">/seamless-tools/seamless-cli-singularity/README.md</span></code></p>
 </div>
-<div class="section" id="alternative-installation-of-minimal-seamless-using-singularity">
-<h2>Alternative installation of minimal Seamless using Singularity<a class="headerlink" href="#alternative-installation-of-minimal-seamless-using-singularity" title="Permalink to this headline">¶</a></h2>
-<p>You can run seamless-minimal also under Singularity instead of Docker.
-In that case, checkout the <a class="reference external" href="https://github.com/sjdv1982/seamless-tools">seamless-tools Git repo</a> and follow the instructions in <code class="docutils literal notranslate"><span class="pre">/seamless-tools/seamless-cli-singularity/README.md</span></code></p>
+</div>
 </div>
 </div>
 
@@ -169,7 +181,7 @@ In that case, checkout the <a class="reference external" href="https://github.co
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="introduction.html" class="btn btn-neutral float-left" title="Seamless: a cell-based interactive workflow framework" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="whatis.html" class="btn btn-neutral float-left" title="Seamless: a cell-based interactive workflow framework" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="getting-started.html" class="btn btn-neutral float-right" title="Getting started with Seamless" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

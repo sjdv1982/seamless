@@ -20,7 +20,7 @@ Transformers perform a data transformation (computation), with cells as input, a
 
 Seamless workflows are created in Python. This can be done in a Python script, but normally it is done interactively, in IPython or Jupyter. Here, new cells, transformers and their connections are created. The workflow remains running all the time.
 
-You can save the entire workflow to a file, and then load it back. Workflows (.seamless files) are very small, because they contain only checksums. The underlying code data must be stored elsewhere. By default, it is stored as files inside the `vault/` folder.
+You can save the entire workflow to a file, and then load it back. Workflows (`.seamless` files) are very small, because they contain only checksums. The underlying code data must be stored elsewhere. By default, it is stored as files inside the `vault/` folder.
 
 ### Programming in two places
 
@@ -76,7 +76,7 @@ Transformations depend on cells, and some cells depend on transformations. Other
 
 If you like to explore first and make design decisions later, Seamless may suit your style, even if you are a beginner. However, if you feel lost, it is recommended to plan ahead, and divide the work into phases that you complete one after another. This gives you an idea of what you should do at the moment. But don't hesitate to go back to a previous phase at any time when you feel that it needs to be corrected.
 
-The following phases are recommended: design, implementation, visualization, validation, deployment. For validation, see the documentation (TODO LINK), you can choose to skip it for simple projects.
+The following phases are recommended: design, implementation, visualization, validation, deployment. For validation, see the [documentation](http://sjdv1982.github.io/seamless/sphinx/html/documentation); you can choose to skip it for simple projects.
 
 ### Design phase
 
@@ -94,7 +94,7 @@ You must avoid cyclic dependencies in your graph, i.e. computations that (direct
 
 Once you have an abstract dependency graph, try to make it more concrete. Formulate every computation as a block with one code input, several data/parameter inputs, and one data output. (You can have multiple data outputs, although the implementation will then be a little bit more complex, using Seamless structured cells). Decide the programming language for each block. Choose names for each input. These computation blocks will later become Seamless transformers. The inputs and outputs will become cells.
 
-If you are porting an existing workflow (bash, Jupyter, SnakeMake) that is not too complex, you could skip the concrete dependency graph and move straight to the implementation.
+If you are porting an existing workflow (bash, Jupyter, Snakemake) that is not too complex, you could skip the concrete dependency graph and move straight to the implementation.
 
 ### Implementation phase
 
@@ -123,7 +123,7 @@ If you are a beginner, the implementation phase is much simpler if you are start
 
 #### Porting an existing command line workflow
 
-Dependency graphs are most straightforward if you are starting from an existing workflow consisting of command line tools, where all inputs and outputs are files. In many cases, such a workflow will have been implemented as a linear bash script. However, there several frameworks that specialize in such workflows, such as SnakeMake and NextFlow. You could implement your workflow initially using one of these frameworks, and then port it to Seamless to add an interactive web interface, monitoring and visualization. For SnakeMake, there is an automatic converter (see [example](https://github.com/sjdv1982/seamless/tree/stable/examples/snakemake-tutorial)), although it doesn't support all SnakeMake features.
+Dependency graphs are most straightforward if you are starting from an existing workflow consisting of command line tools, where all inputs and outputs are files. In many cases, such a workflow will have been implemented as a linear bash script. However, there several frameworks that specialize in such workflows, such as Snakemake and NextFlow. You could implement your workflow initially using one of these frameworks, and then port it to Seamless to add an interactive web interface, monitoring and visualization. For Snakemake, there is an automatic converter (see [example](https://github.com/sjdv1982/seamless/tree/stable/examples/snakemake-tutorial)), although it doesn't support all Snakemake features.
 
 Each computation wraps a single bash command that invokes a single command line tool, or a small list of commands. In Seamless, such a computation will be a bash transformer ([example](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py)) that may have a Docker image ([example](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py)). In this case, the transformer will have a code cell written in bash, and the result must be written to the file `RESULT`. For multiple outputs, create a directory `RESULT` instead. Within a bash transformer, every input pin X is available as file X. Small inputs are also accessible as a variable $X. After execution, all files are deleted.
 

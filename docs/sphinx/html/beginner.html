@@ -34,9 +34,9 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption"><span class="caption-text">Introduction</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Beginner’s guide</a><ul>
@@ -83,23 +83,32 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new-project.html">Recipe for a new Seamless project</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#creating-a-new-workflow-child">Creating a new workflow child</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#dependent-and-independent-data">Dependent and independent data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#transformation">Transformation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#translation">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deployment.html#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
 
@@ -141,7 +150,7 @@
 <p>Cells contain data or code.</p>
 <p>Transformers perform a data transformation (computation), with cells as input, and one cell as the output. One of the input cells must be a code cell.</p>
 <p>Seamless workflows are created in Python. This can be done in a Python script, but normally it is done interactively, in IPython or Jupyter. Here, new cells, transformers and their connections are created. The workflow remains running all the time.</p>
-<p>You can save the entire workflow to a file, and then load it back. Workflows (.seamless files) are very small, because they contain only checksums. The underlying code data must be stored elsewhere. By default, it is stored as files inside the <code class="docutils literal notranslate"><span class="pre">vault/</span></code> folder.</p>
+<p>You can save the entire workflow to a file, and then load it back. Workflows (<code class="docutils literal notranslate"><span class="pre">.seamless</span></code> files) are very small, because they contain only checksums. The underlying code data must be stored elsewhere. By default, it is stored as files inside the <code class="docutils literal notranslate"><span class="pre">vault/</span></code> folder.</p>
 </div>
 <div class="section" id="programming-in-two-places">
 <h3>Programming in two places<a class="headerlink" href="#programming-in-two-places" title="Permalink to this headline">¶</a></h3>
@@ -200,7 +209,7 @@ NOTE TO SELF: to make sense of "programming in two places" and "new-project".
 <div class="section" id="concrete-dependency-graph">
 <h4>Concrete dependency graph<a class="headerlink" href="#concrete-dependency-graph" title="Permalink to this headline">¶</a></h4>
 <p>Once you have an abstract dependency graph, try to make it more concrete. Formulate every computation as a block with one code input, several data/parameter inputs, and one data output. (You can have multiple data outputs, although the implementation will then be a little bit more complex, using Seamless structured cells). Decide the programming language for each block. Choose names for each input. These computation blocks will later become Seamless transformers. The inputs and outputs will become cells.</p>
-<p>If you are porting an existing workflow (bash, Jupyter, SnakeMake) that is not too complex, you could skip the concrete dependency graph and move straight to the implementation.</p>
+<p>If you are porting an existing workflow (bash, Jupyter, Snakemake) that is not too complex, you could skip the concrete dependency graph and move straight to the implementation.</p>
 </div>
 </div>
 <div class="section" id="implementation-phase">
@@ -228,7 +237,7 @@ NOTE TO SELF: to make sense of "programming in two places" and "new-project".
 </div>
 <div class="section" id="porting-an-existing-command-line-workflow">
 <h4>Porting an existing command line workflow<a class="headerlink" href="#porting-an-existing-command-line-workflow" title="Permalink to this headline">¶</a></h4>
-<p>Dependency graphs are most straightforward if you are starting from an existing workflow consisting of command line tools, where all inputs and outputs are files. In many cases, such a workflow will have been implemented as a linear bash script. However, there several frameworks that specialize in such workflows, such as SnakeMake and NextFlow. You could implement your workflow initially using one of these frameworks, and then port it to Seamless to add an interactive web interface, monitoring and visualization. For SnakeMake, there is an automatic converter (see <a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/snakemake-tutorial">example</a>), although it doesn’t support all SnakeMake features.</p>
+<p>Dependency graphs are most straightforward if you are starting from an existing workflow consisting of command line tools, where all inputs and outputs are files. In many cases, such a workflow will have been implemented as a linear bash script. However, there several frameworks that specialize in such workflows, such as Snakemake and NextFlow. You could implement your workflow initially using one of these frameworks, and then port it to Seamless to add an interactive web interface, monitoring and visualization. For Snakemake, there is an automatic converter (see <a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/snakemake-tutorial">example</a>), although it doesn’t support all Snakemake features.</p>
 <p>Each computation wraps a single bash command that invokes a single command line tool, or a small list of commands. In Seamless, such a computation will be a bash transformer (<a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py">example</a>) that may have a Docker image (<a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py">example</a>). In this case, the transformer will have a code cell written in bash, and the result must be written to the file <code class="docutils literal notranslate"><span class="pre">RESULT</span></code>. For multiple outputs, create a directory <code class="docutils literal notranslate"><span class="pre">RESULT</span></code> instead. Within a bash transformer, every input pin X is available as file X. Small inputs are also accessible as a variable $X. After execution, all files are deleted.</p>
 <p>There are two strategies to define a command-line transformation.</p>
 <ol class="simple">

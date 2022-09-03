@@ -34,9 +34,9 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption"><span class="caption-text">Introduction</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
 <li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
@@ -77,23 +77,32 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="new-project.html">Recipe for a new Seamless project</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#creating-a-new-workflow-child">Creating a new workflow child</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#dependent-and-independent-data">Dependent and independent data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#transformation">Transformation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#translation">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deployment.html#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
 
@@ -131,14 +140,14 @@
 <div class="section" id="checksums">
 <h3>Checksums<a class="headerlink" href="#checksums" title="Permalink to this headline">¶</a></h3>
 <p>What makes Seamless special is that cells don’t hold values or filenames, but <em><strong>checksums</strong></em> (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren’t tied to a hierarchy of files, carefully named and accessible on a mounted file system. In contrast, while in Seamless you <em>can</em> mount a cell to a file, it just means that the cell’s checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is always free in terms of space, in the same way that a hardlink to a file is always free (but copying a file or value is not). Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. They just contain checksums, and data values are obtained only when they are needed. Checksums are small, and a workflow description with checksums is small, but their underlying data can be much larger than what fits in memory, or on disk. In other words, big data is possible with Seamless. On the flip side, you can’t automatically assume that you have a cell’s data at your fingertips. By default, Seamless sets up some simple checksum-to-data stores, but that reintroduces some of the problems (potential memory issues, file copying) of using files and values instead of checksums. These problems can be minimized by manually configuring your data storage.</p>
-<p>The final implication is that since transformers are also based on checksums, and since these checksums fully describe the computation (parameters <em>and</em> code <em>and</em> result), you can replace a computation with its result, and replace a result with its computation (referential transparency). This is very beneficial for <em><strong>reproducibility</strong></em>, and it provides <em><strong>reactivity</strong></em>: after cell updates, it is always obvious which computations need to be re-executed. No need for manual re-execution (Jupyter) or reliance on file modification times (SnakeMake). Finally, it means that computations are small to describe, and can run anywhere, as long as they can locate the data of their input checksums. More details are in the transformation section.</p>
+<p>The final implication is that since transformers are also based on checksums, and since these checksums fully describe the computation (parameters <em>and</em> code <em>and</em> result), you can replace a computation with its result, and replace a result with its computation (referential transparency). This is very beneficial for <em><strong>reproducibility</strong></em>, and it provides <em><strong>reactivity</strong></em>: after cell updates, it is always obvious which computations need to be re-executed. No need for manual re-execution (Jupyter) or reliance on file modification times (Snakemake). Finally, it means that computations are small to describe, and can run anywhere, as long as they can locate the data of their input checksums. More details are in the transformation section.</p>
 </div>
 <div class="section" id="interactivity">
 <h3>Interactivity<a class="headerlink" href="#interactivity" title="Permalink to this headline">¶</a></h3>
 <p>Seamless has three features that contribute to interactivity.</p>
 <p>First, based on the reactivity explained above. You can essentially re-run the entire workflow continuously without much cost, because recomputation only happens if something changes.</p>
 <p>Second, while the workflow remains running, you can always modify it in IPython/Jupyter. Both the topology of the workflow and the parameters can be modified.</p>
-<p>Third, Seamless allows cells to be <em><strong>synchronized</strong></em>. There are two mechanisms for this. The first mechanism is that during development, cells can be synchronized to the file system. In this way, you can define a code cell initially in a Jupyter Notebook, but then link it to a source code file under Git version control that you can edit with a standard text editor or IDE. The synchronization is two-way, which means that the file contains the cell buffer, and that the cell contains the file checksum. During deployment, the file is no longer needed, as long as the cell buffer can be retrieved from somewhere.</p>
+<p>Third, Seamless allows cells to be <em><strong>synchronized</strong></em>. There are two mechanisms for this. The first mechanism is that during development, cells can be synchronized (mounted) to the file system. In this way, you can define a code cell initially in a Jupyter Notebook, but then link it to a source code file under Git version control that you can edit with a standard text editor or IDE. The synchronization is two-way, which means that the file contains the cell buffer, and that the cell contains the file checksum. During deployment, the file is no longer needed (or used), although the cell buffer must be retrievable from somewhere.</p>
 <p>The other mechanism of synchronization is over HTTP. You can expose cells as read-only, allowing their value to be read in the browser (HTTP GET), or as read-write, so that they can be modified (HTTP PUT). There is also a websocket port where you can receive notifications from Seamless when a cell has been updated. Seamless includes a simple javascript client that uses all of this to synchronize cell values bidirectionally between Seamless and the browser. This is how you build web interfaces that are fundamentally interactive.</p>
 <p>In Seamless, there is no sharp difference between user and programmer. All sources of interactivity are treated the same: change of a cell over HTTP, change of a cell linked to the file system, or modification of the entire workflow via IPython. From Seamless’s point of view, they are all acts of programming, although the user of a web interface normally has a very limited “API” at their disposition. You <em>can</em> allow actual programming via the web interface, by exposing code cells in read-write mode and link them to textarea editor elements in your HTML page. If you really want to.</p>
 </div>
@@ -255,7 +264,7 @@ or trivial.</p>
 </div>
 <div class="section" id="types-of-transformations">
 <h4>Types of transformations<a class="headerlink" href="#types-of-transformations" title="Permalink to this headline">¶</a></h4>
-<p>Seamless allows a transformation to contain an <em>environment</em>: as a Docker image, a conda environment definition, or a list of command line tools that must be available. This is a bit informal and should be used with care when it comes to reproducibility. See the documentation of “environments” (LINK) for more details.</p>
+<p>Seamless allows a transformation to contain an <em>environment</em>: as a Docker image, a conda environment definition, or a list of command line tools that must be available. This is a bit informal and should be used with care when it comes to reproducibility. See the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/environments.html">documentation of environments</a> for more details.</p>
 <p>In addition, Seamless transformers can in principle be written in any language. Python/IPython transformers are executed directly. Interpreted languages (e.g. R) are executed via a bridge to IPython (e.g. using rpy). Bash transformers are executed using a special Python function. So are compiled transformers (e.g. in C++) after compilation.</p>
 <p>The following combinations of language and environment are currently possible for Seamless transformations:</p>
 <ul class="simple">
@@ -269,7 +278,7 @@ or trivial.</p>
 <h4>Deployment of transformations<a class="headerlink" href="#deployment-of-transformations" title="Permalink to this headline">¶</a></h4>
 <p>Each Seamless instance is able to do its own computation, but during deployment, this is normally not very efficient. So Seamless has a protocol (communion protocol) where a Seamless instance can delegate transformation requests (jobs) to another Seamless instance (a jobslave)or to a dedicated job manager (jobless). Transformation requests can then be delegated further, e.g. to a job slave on a HPC cluster.</p>
 <p>Then, from a computing viewpoint, a Seamless instance can be seen as a black box, where cell values come in (via HTTP) and a stream of transformation requests come out. The transformation requests are small, as they contain only checksums.</p>
-<p>The communion protocol can also exchange buffers, but it is easier if both the Seamless instance and the job slave have access to the same Seamless database (LINK).
+<p>The communion protocol can also exchange buffers, but it is easier if both the Seamless instance and the job slave have access to the same Seamless database (see <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/data_storage.html">documentation</a>).
 In that case, the buffers corresponding to the input checksums will have beenpre-deposited by the Seamless instance, so only the transformation needs to be sent. After computation, the jobslave will deposit the result checksum for that transformation, and the corresponding buffer. The Seamless instance needs to interrogate only the database to retrieve the results.</p>
 </div>
 </div>
@@ -313,7 +322,7 @@ Note that library instances require translation, macros do not. Translation is i
 <p>The beginner’s section on “how to keep it simple” contains good advice for a small, young project. With Jupyter, you can quickly set something up, adding Seamless’s interactivity to Jupyter’s own. This works best for workflows that are non-linear but with not too many steps, where the data is rather small, and the code too.</p>
 <p>When the code gets more complex, you should move away from Jupyter by mounting your code cells to files. Code that modifies the workflow becomes throw-away code. See “Moving away from Jupyter” for more details.</p>
 <p>When the data gets bigger, or execution becomes time-consuming, you should start thinking about data storage (TODO link) and job management (TODO link). With default settings, Seamless transformations are parallelized on your local machine and cached in memory, and you may want to change that. If the data gets really big, you should bring the computation where the data is. But even in that case, try to have a small-data version of your workflow that executes fast, so that you can modify the code easily and interactively. Whitelists work very well for this (TODO link deepcells).</p>
-<p>If either the code or the data gets bigger, you should start thinking about version control, and whether or not to use <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span></code>. See the documentation for creating a Seamless project (TODO LINK) for more details.</p>
+<p>If either the code or the data gets bigger, you should start thinking about version control, and whether or not to use <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span></code>. See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/new-project.html">the documentation for creating a Seamless project</a> for more details.</p>
 </div>
 <div class="section" id="programming-in-two-places">
 <h3>Programming in two places<a class="headerlink" href="#programming-in-two-places" title="Permalink to this headline">¶</a></h3>

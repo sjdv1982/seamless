@@ -15,7 +15,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="&lt;no title&gt;" href="deepcell.html" />
+    <link rel="next" title="Deep cells" href="deepcell.html" />
     <link rel="prev" title="Seamless database" href="data_storage.html" /> 
 </head>
 
@@ -34,28 +34,30 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Seamless: a cell-based interactive workflow framework</a></li>
+              <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
 <li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new-project.html">Recipe for a new Seamless project</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#creating-a-new-workflow-child">Creating a new workflow child</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#dependent-and-independent-data">Dependent and independent data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#transformation">Transformation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#translation">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Deployment</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#deploying-a-workflow-as-an-interactive-web-service">Deploying a workflow as an interactive web service</a></li>
@@ -64,9 +66,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#using-jobless">Using jobless</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#buffer-server">Buffer server</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#big-data-and-deployment">Big data and deployment</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#collections-and-fair-databases">collections and FAIR databases</a></li>
@@ -74,7 +74,11 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
 </ul>
 
         </div>
@@ -178,10 +182,10 @@ This launches a new Docker container with Seamless serving the graph (the <code 
 <p>Seamless reads the jobless IP from the SEAMLESS_COMMUNION_IP environment  variable, which defaults your Docker host IP. The default jobless port (SEAMLESS_COMMUNION_PORT) is 5533.</p>
 </div>
 </div>
-</div>
 <div class="section" id="section-on-deployment-of-environments-jobless">
-<h1>Section on deployment of environments (jobless)<a class="headerlink" href="#section-on-deployment-of-environments-jobless" title="Permalink to this headline">¶</a></h1>
+<h2>Section on deployment of environments (jobless)<a class="headerlink" href="#section-on-deployment-of-environments-jobless" title="Permalink to this headline">¶</a></h2>
 <p>…</p>
+</div>
 <div class="section" id="buffer-server">
 <h2>Buffer server<a class="headerlink" href="#buffer-server" title="Permalink to this headline">¶</a></h2>
 <p><strong>Deployment role: buffer server</strong></p>
@@ -223,7 +227,7 @@ Seamless itself has DeepFolder and DeepCell classes that integrate with the FAIR
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="data_storage.html" class="btn btn-neutral float-left" title="Seamless database" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="deepcell.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="deepcell.html" class="btn btn-neutral float-right" title="Deep cells" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
