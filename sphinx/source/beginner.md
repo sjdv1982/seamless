@@ -10,6 +10,8 @@ The most important guidelines for beginners are: "learn the basics", "keep it si
 
 ### Basic Seamless features
 
+***IMPORTANT: This documentation section is a draft. The preliminary text is shown below***
+
 The basic Seamless features are contexts, cells and transformers. See the [basic example](http://sjdv1982.github.io/seamless/sphinx/html/introduction.html#basic-example) for a demonstration.
 
 Contexts contain cells, transformers and other contexts. The whole Seamless workflow is a context.
@@ -24,6 +26,8 @@ You can save the entire workflow to a file, and then load it back. Workflows (`.
 
 ### Programming in two places
 
+***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
+
 With Seamless, there is programming in two places. First, there is the "outside": the Jupyter or IPython shell where the Seamless workflow is being created interactively. In addition, there is the "inside": 
 
 ...
@@ -32,17 +36,19 @@ and Seamless supports many programming languages: bash, Python, and C/C++ are we
 
 ### Mounting a cell to the file system
 
-STUB.
+***IMPORTANT: This documentation section is a stub.***
+
 <!-- This is just an aide to make it easier for you to edit a cell's data or code. It doesn't play any role in the execution of the workflow. -->
 
 ### Sharing a cell over HTTP
 
-STUB.
+***IMPORTANT: This documentation section is a stub.***
 
 ### Dependency graphs
 
-Seamless workflows are dependency graphs.
+***IMPORTANT: This documentation section is an outline. The outline is shown below***
 
+Seamless workflows are dependency graphs.
 <!--
 
 - *Dependency graph*. Which data depends on which transformation? Which transformation depends on which data?
@@ -76,7 +82,7 @@ Transformations depend on cells, and some cells depend on transformations. Other
 
 If you like to explore first and make design decisions later, Seamless may suit your style, even if you are a beginner. However, if you feel lost, it is recommended to plan ahead, and divide the work into phases that you complete one after another. This gives you an idea of what you should do at the moment. But don't hesitate to go back to a previous phase at any time when you feel that it needs to be corrected.
 
-The following phases are recommended: design, implementation, visualization, validation, deployment. For validation, see the [documentation](http://sjdv1982.github.io/seamless/sphinx/html/documentation); you can choose to skip it for simple projects.
+The following phases are recommended: design, implementation, visualization, validation, deployment. For validation, see the [validation documentation](http://sjdv1982.github.io/seamless/sphinx/html/validation.html); you can choose to skip it for simple projects.
 
 ### Design phase
 
@@ -102,6 +108,8 @@ Here, the design is implemented in Seamless.
 
 #### Creating an new project
 
+***IMPORTANT: This documentation section is an outline. The outline is shown below***
+
 ... TODO ... (choose PROJDIR and PROJNAME, bash snippet)
 
 ```bash
@@ -111,7 +119,10 @@ conda activate seamless
 
 #### Starting the implementation
 
+***IMPORTANT: This documentation section is a stub.***
+<!--
 ... (seamless-jupyter-trusted) ...
+-->
 
 #### Examples of porting existing workflows
 
@@ -139,6 +150,8 @@ There are two strategies to define a command-line transformation.
 
 #### Monitoring / debugging
 
+***IMPORTANT: This documentation section is a draft. The preliminary text is shown below***
+
 - *Monitoring* is not part of the graph. In IPython/Jupyter, you can interactively access `Context.status` ,  `Cell.status` and `Transformer.status` , as well as `Cell.exception` and `Transformer.exception`. You can monitor this in the browser... TODO
 
 In addition, you can get the stdout and stderr of a transformer using `Transformer.logs`.
@@ -153,7 +166,9 @@ Use simple print statements to debug.
 
 ADVANCED: Environment => install package => clear_exception
 
-## How to keep things simple
+## How to keep it simple
+
+***IMPORTANT: This documentation section is an outline. The outline is shown below***
 
 TODO: merging the next section into here...
 
@@ -183,6 +198,8 @@ Else you have to rely on:
 <!--
 ### Getting help
 
+(TODO when the help system has more entries)
+
 help(...) and .?
 Again, status graph is your friend
  TODO: add more .help, especially to graph / stdlib
@@ -190,8 +207,10 @@ Again, status graph is your friend
 
 ### Simple cells
 
-STUB. Discuss structured cells and celltype.
+***IMPORTANT: This documentation section is a stub.***
 <!--
+STUB. Discuss structured cells and celltype.
+
 #### Structured cells
 
 Subcell access. ...
@@ -203,23 +222,25 @@ The other major feature is that you can add schemas for data validation, but thi
 
 ### Simple web interfaces
 
-STUB. 
-<!-- TODO:  Discuss browser URL vs web form. Discuss making it work vs making it pretty. Link to visualization, recommend to read it. -->.
+***IMPORTANT: This documentation section is a stub.***
+
+<!-- TODO:  Discuss browser URL vs web form. Discuss making it work vs making it pretty. Link to visualization, recommend to read it. -->
 
 ### Simple deployment
 
-STUB.
+***IMPORTANT: This documentation section is a stub.***
+
 <!-- TODO (based on serve-graph, sharing the .seamless and zip). -->
 
 ### Simple features
 
-Seamless is more than just cells, transformers and contexts. But as a beginner, you are recommended to stick to them. Once you feel comfortable, you could then learn JSON Schema, library instances, or debugging. Other Seamless features are better suited for experienced programmers. In particular, as a beginner, you should stay away from macros and the low level. In addition, deep cells must be used with caution, as mistakes may lead to massive use of memory, disk space and/or download bandwidth. In the future, it may be possible to configure Seamless such that manual confirmation is required before massive resources are being claimed via deep cells.
+Seamless is more than just cells, transformers and contexts. But as a beginner, you are recommended to stick to them. Once you feel comfortable, you could then learn [validation](http://sjdv1982.github.io/seamless/sphinx/html/validation.html), using [libraries](http://sjdv1982.github.io/seamless/sphinx/html/libraries.html), or [debugging](http://sjdv1982.github.io/seamless/sphinx/html/debugging.html). Other Seamless features are better suited for experienced programmers. In particular, as a beginner, you should stay away from macros and the low level. In addition, [deep cells](http://sjdv1982.github.io/seamless/sphinx/html/deepcell.html) must be used with caution, as mistakes may lead to massive use of memory, disk space and/or download bandwidth. In the future, it may be possible to configure Seamless such that manual confirmation is required before massive resources are being claimed via deep cells.
 
 ## Do's and don'ts
 
 ### Do write reproducible code
 
-STUB.
+***IMPORTANT: This documentation section is a stub.***
 
 <!--
 Intro:
@@ -234,6 +255,7 @@ Intro:
 
 ### Don't confuse files and cell names
 
+***IMPORTANT: This documentation section is an outline. The outline is shown below***
 ...
 Don't confuse "inside" files and "outside" files.
 "outside" files: mounted.
@@ -275,9 +297,13 @@ The same applies for URLs. Code that downloads from an URL must not be part of t
 
 ## Troubleshooting
 
-- *Problem: I changed something in the workflow, but nothing seems to happen*. Solution: try to re-translate your workflow. This is necessary after e.g. adding a new cell. Re-translation is done with `await ctx.translation()`.
+- *Problem: I changed something in the workflow, but nothing seems to happen*.
 
-- *Problem: error message "cannot mount structured cells"*. Solution: declare a celltype first. For mounting, celltype "text" is often a good choice.
+    Solution: try to re-translate your workflow. This is necessary after e.g. adding a new cell. Re-translation is done with `await ctx.translation()`.
+
+- *Problem: error message "cannot mount structured cells"*. 
+
+    Solution: declare a celltype first. For mounting, celltype "text" is often a good choice.
 
     ```python
     ctx.c = Cell("text")
@@ -289,20 +315,34 @@ The same applies for URLs. Code that downloads from an URL must not be part of t
 
     Don't forget to translate after declaring a celltype, with `await ctx.translation()`.
 
-- *Problem: I am using a cell's value in other Python code, with strange errors.* Solution: by default, cells are "structured", which wraps the cell value in a "Silk" structure. You can do nice things with a Silk structure, but often you want the raw value instead. In that case, do `.value.unsilk` on a cell. Alternative solution: declare a celltype (see the previous problem). Celltype  "plain" (list, dict, int, float) or `"binary"` (Numpy) does usually what you want. In that case, don't forget to translate with `await ctx.translation()`.
+- *Problem: I am using a cell's value in other Python code, with strange errors.* 
 
-- *Problem: Variables and imports missing ...* . Each step runs in isolation. ...
+    Solution: by default, cells are "structured", which wraps the cell value in a "Silk" structure. You can do nice things with a Silk structure, but often you want the raw value instead. In that case, do `.value.unsilk` on a cell. Alternative solution: declare a celltype (see the previous problem). Celltype  "plain" (list, dict, int, float) or `"binary"` (Numpy) does usually what you want. In that case, don't forget to translate with `await ctx.translation()`.
+
+- *Problem: Variables and imports missing ...* .
+
+    ***IMPORTANT: This documentation section is a stub.***
+    <!-- Each step runs in isolation. ... -->
 
 - *Problem*: (https://github.com/sjdv1982/seamless/issues/128)
-...
+    
+    ***IMPORTANT: This documentation section is a stub.***
 
 - *Problem*: (https://github.com/sjdv1982/seamless/issues/56)
-...
+    
+    ***IMPORTANT: This documentation section is a stub.***
 
 - *Problem*: [error message not kept]
-...
-If Seamless says that an error message was not kept, simply make
-a trivial change to the code (e.g. in Python, adding the word `pass` at the end. In bash, simply add a comment #).
+    
+    ***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
+    
+    ...
+    
+    If Seamless says that an error message was not kept, simply make
+    a trivial change to the code (e.g. in Python, adding the word `pass` at the end. In bash, simply add a comment #).
 
 - *Problem*: [cachemiss error]
-... (Misconfiguration. Save and load... first git commit. vault/*/<name of checksum> in earlier versions)
+
+    ***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
+    
+    ... (Misconfiguration. Save and load... first git commit. vault/*/<name of checksum> in earlier versions)

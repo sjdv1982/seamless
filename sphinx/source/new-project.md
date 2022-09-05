@@ -69,7 +69,7 @@ This is for both solo projects and collaborative projects. **For a collaborative
 `seamless-load-project-trusted`.
 
 5. Start the implementation stage. Modify the topology in the console terminal (do `await ctx.translation()` after modification, and type `save()` often!). Mount cells to the file system, and edit them. Monitor error messages in the browser.
-You can start visualization in the Jupyter Notebook, then move on to HTML/JS. See [visualization.md TODO LINK]() for more details.
+You can start visualization in the Jupyter Notebook, then move on to HTML/JS. See [visualization](http://sjdv1982.github.io/seamless/sphinx/html/visualization.html) for more details.
 
 ### For collaborative project hosts
 
@@ -116,7 +116,7 @@ Click on it, then on "invite others", and paste the link in a message to the gue
     - If you want them to get full Jupyter Notebook access, you must share the Jupyter port (8888). However, Jupyter Notebooks do not really support collaborative editing, so communicate clearly. Note that Jupyter allows you to open new command line terminals in the browser.
 
 11. Start the implementation stage. Modify the topology in the console terminal (do `await ctx.translation()` after modification, and type `save()` often!). Mount cells to the file system, and tell the guests to edit them. Monitor error messages in the browser.
-You could start visualization in the Jupyter Notebook, but this will surely give glitches with multiple users. Best to move on early to HTML/JS. See [visualization.md TODO LINK]() for more details.
+You could start visualization in the Jupyter Notebook, but this will surely give glitches with multiple users. Best to move on early to HTML/JS. See [visualization](http://sjdv1982.github.io/seamless/sphinx/html/visualization.html) for more details.
 
 ### For collaborative project guests
 
@@ -135,7 +135,8 @@ Click on it, then choose "Join Collaboration Session". Enter the link that the h
 
 ## D. Advanced configuration
 
-*TODO: expand this section*
+***IMPORTANT: This documentation section is an outline. The outline is shown below***
+
 (Discuss `/vault` and .gitignore. The vault contains the value for each checksum in
 the graph )
 TODO in code: save() deletes /vault.

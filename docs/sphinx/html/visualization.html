@@ -16,7 +16,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Validation" href="validation.html" />
-    <link rel="prev" title="&lt;no title&gt;" href="help.html" /> 
+    <link rel="prev" title="The help system" href="help.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -34,23 +34,23 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Seamless: a cell-based interactive workflow framework</a></li>
+              <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
 <li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new-project.html">Recipe for a new Seamless project</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#creating-a-new-workflow-child">Creating a new workflow child</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#dependent-and-independent-data">Dependent and independent data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#transformation">Transformation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#translation">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Visualization</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#using-jupyter-notebooks">Using Jupyter notebooks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#using-web-visualization">Using web visualization</a></li>
@@ -59,12 +59,18 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deployment.html#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
 
@@ -96,14 +102,26 @@
 <h1>Visualization<a class="headerlink" href="#visualization" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="using-jupyter-notebooks">
 <h2>Using Jupyter notebooks<a class="headerlink" href="#using-jupyter-notebooks" title="Permalink to this headline">¶</a></h2>
-<p><em>User experience</em> (UX) can be done initially using Jupyter notebooks (very quick to set up). See <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/traitlets.ipynb">this simple example</a>, to be opened with <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>.</p>
+<p><em>User experience</em> (UX) can be done initially using Jupyter notebooks (very quick to set up). See <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/traitlets.ipynb">this simple test</a>, to be opened with <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>.</p>
 </div>
 <div class="section" id="using-web-visualization">
 <h2>Using web visualization<a class="headerlink" href="#using-web-visualization" title="Permalink to this headline">¶</a></h2>
-<p>More powerful is to use UX cells (HTML, JS, CSS). These cells are shared over HTTP (read-only), so that they can be accessed via the browser. Input cells (read-write) and output cells (read-only) are also shared over HTTP, so that the UX cells (loaded in the browser) can access and manipulate them. See <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/share-pdb.py">this example</a>, to be opened with <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span> <span class="pre">-i</span></code>.</p>
+<p><strong>Relevant examples:</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/datatables-example">datatables</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/grid-editor-example">grid editor</a></p></li>
+</ul>
+<p>See <a class="reference external" href="https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-examples-locally">Running examples</a> on how to run examples.</p>
+<p>More powerful is to use UX cells (HTML, JS, CSS). These cells are shared over HTTP (read-only), so that they can be accessed via the browser. Input cells (read-write) and output cells (read-only) are also shared over HTTP, so that the UX cells (loaded in the browser) can access and manipulate them. See <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/share-pdb.py">this test</a>, to be opened with <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span> <span class="pre">-i</span></code>.</p>
 </div>
 <div class="section" id="web-interface-generator">
 <h2>Web interface generator<a class="headerlink" href="#web-interface-generator" title="Permalink to this headline">¶</a></h2>
+<p><strong>Relevant examples:</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/webserver-demo">webserver demo</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/webserver-example">webserver example</a></p></li>
+</ul>
+<p>See <a class="reference external" href="https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-examples-locally">Running examples</a> on how to run examples.</p>
 <p>A Seamless project automatically includes a web interface generator.
 When you share a cell (and retranslate the graph), an entry is automatically added in
 <code class="docutils literal notranslate"><span class="pre">/web/webform.json</span></code> . These entries are used to generate the web interface in <code class="docutils literal notranslate"><span class="pre">web/index.html</span></code> and <code class="docutils literal notranslate"><span class="pre">web/index.js</span></code>. The web interface is available under <code class="docutils literal notranslate"><span class="pre">http://localhost:&lt;REST</span> <span class="pre">server</span> <span class="pre">port&gt;</span></code>, normally <code class="docutils literal notranslate"><span class="pre">http://localhost:5813</span></code>.</p>
@@ -116,7 +134,7 @@ When you share a cell (and retranslate the graph), an entry is automatically add
 </div>
 <div class="section" id="modifying-the-web-status-generator">
 <h2>Modifying the web status generator<a class="headerlink" href="#modifying-the-web-status-generator" title="Permalink to this headline">¶</a></h2>
-<p>TODO.</p>
+<p>TODO. Integrate/merge with “visualization and monitoring” in “Seamless explained”.</p>
 <!--
 
 ### C4. Web status and web interface generation
@@ -148,7 +166,7 @@ Github... Running test...
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="help.html" class="btn btn-neutral float-left" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="help.html" class="btn btn-neutral float-left" title="The help system" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="validation.html" class="btn btn-neutral float-right" title="Validation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

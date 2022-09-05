@@ -58,9 +58,10 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#deep-structures">Deep structures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#visualization-and-monitoring">Visualization and monitoring</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#understanding-seamless-dependency-graphs">Understanding Seamless dependency graphs</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#understanding-seamless-dependency-graphs">Understanding Seamless dependency graphs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#guidelines-for-experienced-developers">Guidelines for experienced developers</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#keep-it-simple-while-you-can">Keep it simple, while you can</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#programming-in-two-places">Programming in two places</a></li>
@@ -88,12 +89,9 @@
 <li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
 <li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
-<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Advanced features</span></p>
@@ -139,7 +137,8 @@
 <p>In a nutshell, most of Seamless revolves around <em><strong>cells</strong></em>, that hold the data and code, and <em><strong>transformers</strong></em>, that do the computation. Transformers take cells (including code cells) as input and have a single cell as output.</p>
 <div class="section" id="checksums">
 <h3>Checksums<a class="headerlink" href="#checksums" title="Permalink to this headline">¶</a></h3>
-<p>What makes Seamless special is that cells don’t hold values or filenames, but <em><strong>checksums</strong></em> (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren’t tied to a hierarchy of files, carefully named and accessible on a mounted file system. In contrast, while in Seamless you <em>can</em> mount a cell to a file, it just means that the cell’s checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is always free in terms of space, in the same way that a hardlink to a file is always free (but copying a file or value is not). Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. They just contain checksums, and data values are obtained only when they are needed. Checksums are small, and a workflow description with checksums is small, but their underlying data can be much larger than what fits in memory, or on disk. In other words, big data is possible with Seamless. On the flip side, you can’t automatically assume that you have a cell’s data at your fingertips. By default, Seamless sets up some simple checksum-to-data stores, but that reintroduces some of the problems (potential memory issues, file copying) of using files and values instead of checksums. These problems can be minimized by manually configuring your data storage.</p>
+<p>What makes Seamless special is that cells don’t hold values or filenames, but <em><strong>checksums</strong></em> (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren’t tied to a hierarchy of files, carefully named and accessible on a mounted file system. In contrast, while in Seamless you <em>can</em> mount a cell to a file, it just means that the cell’s checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is always free in terms of space, in the same way that a hardlink to a file is always free (but copying a file or value is not). Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. They just contain checksums, and data values are obtained only when they are needed. Checksums are small, and a workflow description with checksums is small, but their underlying data can be much larger than what fits in memory, or on disk. In other words, big data is possible with Seamless.</p>
+<p>On the flip side, you can’t automatically assume that you have a cell’s data at your fingertips. By default, Seamless sets up some simple checksum-to-data stores, but that reintroduces some of the problems (potential memory issues, file copying) of using files and values instead of checksums. These problems can be minimized by manually configuring your data storage.</p>
 <p>The final implication is that since transformers are also based on checksums, and since these checksums fully describe the computation (parameters <em>and</em> code <em>and</em> result), you can replace a computation with its result, and replace a result with its computation (referential transparency). This is very beneficial for <em><strong>reproducibility</strong></em>, and it provides <em><strong>reactivity</strong></em>: after cell updates, it is always obvious which computations need to be re-executed. No need for manual re-execution (Jupyter) or reliance on file modification times (Snakemake). Finally, it means that computations are small to describe, and can run anywhere, as long as they can locate the data of their input checksums. More details are in the transformation section.</p>
 </div>
 <div class="section" id="interactivity">
@@ -216,6 +215,7 @@
 </div>
 <div class="section" id="dependent-and-independent-data">
 <h3>Dependent and independent data<a class="headerlink" href="#dependent-and-independent-data" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
 <p>TODO: merge with the corresponding paragraph in context.md
 …
 By default, Seamless maintains a checksum-to-data cache in-memory that distinguish between <em>dependent</em> (computed) and <em>independent</em> data. Dependent data may get evicted … TODO</p>
@@ -230,6 +230,7 @@ Deeper:</p></li>
 </div>
 <div class="section" id="caching">
 <h3>Caching<a class="headerlink" href="#caching" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is a draft. The preliminary text is shown below</strong></em></p>
 <p>TODO</p>
 <ul class="simple">
 <li><p>Various kinds of caches in Seamless</p></li>
@@ -284,17 +285,22 @@ In that case, the buffers corresponding to the input checksums will have beenpre
 </div>
 <div class="section" id="deep-structures">
 <h3>Deep structures<a class="headerlink" href="#deep-structures" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
 <p>TODO: move/clone into deepcell.md</p>
 <p>A transformation is in fact a “deep structure”. Its checksum corresponds to a dictionary, where each value is itself a checksum (of the input cells).</p>
 <p>Seamless has support for two other kinds of deep structures: deep cells and deep folders. In both cases, the deep structure is again a dictionary, where the keys are strings and the values are checksums. The difference is the cell type of the checksums. For deep cells, the cell type is “mixed” (Seamless’s default cell type), which means that you can easily access an individual element and convert it trivially to a normal Seamless cell. In contrast, for deep folders, the cell type is “bytes”, which means that buffer and value are the same. This allows a one-to-one mapping with a
 folder on the file system.</p>
-<p>What does impact deployment is the following. Typically, a web service consists of two graphs (.seamless files).
+</div>
+<div class="section" id="visualization-and-monitoring">
+<h3>Visualization and monitoring<a class="headerlink" href="#visualization-and-monitoring" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
+<p>TODO: integrate/merge with visualization.md</p>
+<p>Typically, a web service consists of two graphs (.seamless files).
 The first graph contains the main workflow. The second graph contains a status graph. The status graph can be bound by Seamless to the main graph (<code class="docutils literal notranslate"><span class="pre">seamless.metalevel.bind_status_graph</span></code>; this function is automatically invoked by <code class="docutils literal notranslate"><span class="pre">seamless-serve-graph</span></code> if you provide two graph files). In that case, the status graph receives the current value and status of the  main workflow graph as its input, and normally visualizes it as a web page. Manually-coded web interfaces are normally added to the main workflow graph. In contrast, the automatic web interface generator is part of the status graph, as it generates the web interface HTML by taking the main workflow graph as an input. During development, both graphs are developed, which is made possible by <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span></code> and <code class="docutils literal notranslate"><span class="pre">seamless-load-project</span></code>.</p>
 </div>
-</div>
 <div class="section" id="understanding-seamless-dependency-graphs">
-<h2>Understanding Seamless dependency graphs<a class="headerlink" href="#understanding-seamless-dependency-graphs" title="Permalink to this headline">¶</a></h2>
-<p>TODO</p>
+<h3>Understanding Seamless dependency graphs<a class="headerlink" href="#understanding-seamless-dependency-graphs" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is an outline. The outline is shown below</strong></em></p>
 <ul class="simple">
 <li><p>Topology vs parameters.</p></li>
 <li><p>Seamless translation machinery (midlevel), metalevel. How the high level wraps the graph data structure</p></li>
@@ -309,48 +315,50 @@ Note that library instances require translation, macros do not. Translation is i
 </ul>
 <p>Practical:</p>
 <ul class="simple">
-<li><p>Scatter transformers (TODO)</p></li>
+<li><p>Scatter transformers</p></li>
 <li><p>stdlib.map</p></li>
 <li><p>Elision and incremental computing</p></li>
 <li><p>Hacking the midlevel</p></li>
 </ul>
 </div>
+</div>
 <div class="section" id="guidelines-for-experienced-developers">
 <h2>Guidelines for experienced developers<a class="headerlink" href="#guidelines-for-experienced-developers" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="keep-it-simple-while-you-can">
 <h3>Keep it simple, while you can<a class="headerlink" href="#keep-it-simple-while-you-can" title="Permalink to this headline">¶</a></h3>
-<p>The beginner’s section on “how to keep it simple” contains good advice for a small, young project. With Jupyter, you can quickly set something up, adding Seamless’s interactivity to Jupyter’s own. This works best for workflows that are non-linear but with not too many steps, where the data is rather small, and the code too.</p>
+<p>The beginner’s guide’s section on “how to keep it simple” contains good advice for a small, young project. With Jupyter, you can quickly set something up, adding Seamless’s interactivity to Jupyter’s own. This works best for workflows that are non-linear but with not too many steps, where the data is rather small, and the code too.</p>
 <p>When the code gets more complex, you should move away from Jupyter by mounting your code cells to files. Code that modifies the workflow becomes throw-away code. See “Moving away from Jupyter” for more details.</p>
 <p>When the data gets bigger, or execution becomes time-consuming, you should start thinking about <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/data_storage.html">data storage</a> and <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/job_management.html">job management</a>. With default settings, Seamless transformations are parallelized on your local machine and cached in memory, and you may want to change that. If the data gets really big, you should bring the computation where the data is. But even in that case, try to have a small-data version of your workflow that executes fast, so that you can modify the code easily and interactively. Whitelists work very well for this <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/deep_cells.html">see deep cells</a>.</p>
 <p>If either the code or the data gets bigger, you should start thinking about version control, and whether or not to use <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span></code>. See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/new-project.html">the documentation for creating a Seamless project</a> for more details.</p>
 </div>
 <div class="section" id="programming-in-two-places">
 <h3>Programming in two places<a class="headerlink" href="#programming-in-two-places" title="Permalink to this headline">¶</a></h3>
-<p>Clearly distinguish between the “outside” code that <em>creates</em> the workflow, and the “inside” code (mostly inside transformers) that is executed as part of the workflow. Inside codes are polyglot and executed in isolation (from each other, and from the outside). Outside code is written in Python, and you run it inside IPython or Jupyter. You don’t need to keep outside code, because you can store the entire workflow as data.</p>
+<p>Clearly distinguish between the “outside” code that <em>creates</em> the workflow, and the “inside” code (mostly within transformers) that is executed as part of the workflow. Inside codes are polyglot and executed in isolation (from each other, and from the outside). Outside code is written in Python, and you run it inside IPython or Jupyter. You don’t need to keep outside code, because you can store the entire workflow as data. The “Programming in two places” section in the beginner’s guide explains it in slightly more detail.</p>
 <p>The “Moving away from Jupyter” section below explains that you should mount your code cells to the file system, and then remove their code from the notebook. Once it has thus become part of your workflow, Seamless will store the code (at least its checksum, and normally its content too), and you can also store it under Git version control as a file. Note that this applies only to “inside” code. In contrast, in a mature project, “outside” code that inspects or modifies the workflow should be considered <em><strong>throw-away code</strong></em>. If you have moved away completely from Jupyter, you can simply use <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code> to enter such code. Else, you can enter it in a temporary notebook cell, or use <code class="docutils literal notranslate"><span class="pre">seamless-jupyter-connect</span></code> to connect an IPython-like console to Jupyter. In all cases, you execute the code, but you don’t keep it: instead, you simply save the state of the workflow in a <code class="docutils literal notranslate"><span class="pre">.seamless</span></code> file.</p>
 <p>There is one use case where “outside” code may be kept. When it comes to describing the topology of the workflow (the steps and connections), you should normally rely on the status visualization web page (which you can modify, see “Edit the editor”) or create your own flowcharts. But if that is not to your satisfaction, you do have the option to define your workflow topology from code. In that case, modify the Seamless project’s <code class="docutils literal notranslate"><span class="pre">define_graph</span></code> function in <code class="docutils literal notranslate"><span class="pre">load-project.py</span></code>. If you do so, <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">load()</span></code> will execute that code instead of loading the <code class="docutils literal notranslate"><span class="pre">.seamless</span></code> file, assuming that it will build the connections and cell mounts of the workflow. If you don’t use a Seamless project at all, simply store the “outside” code in a script and run it.</p>
 </div>
 <div class="section" id="moving-away-from-jupyter">
 <h3>Moving away from Jupyter<a class="headerlink" href="#moving-away-from-jupyter" title="Permalink to this headline">¶</a></h3>
-<p>Seamless gives the illusion of being like Jupyter, but with non-linear execution. The <strong>web server demo</strong>( [open on GitHub], <a class="reference external" href="https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=webserver.ipynb">run on mybinder.org</a>, or <a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/webserver-demo">open on GitHub</a> ) gives an example where you start from a simple notebook and port it to Seamless, gaining an interactive web interface in the process. It is also about as far as you can push a Seamless workflow that is defined purely in Jupyter. Why is this? At the end of the demo, the next step would be to mount each code cell to a Python file, so that you can start modifying the calculation code of the workflow using a normal text editor or IDE. Whenever you save the file, the cell value is updated and the workflow recalculated. Each Python file can be put under Git version control, something that <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span></code> sets up by default. However, the original unmodified code is still in the notebook! So if you re-run the notebook, and you re-mount the Python files, Seamless has to choose which version is correct: the one in the Python file, or the one in the notebook. In other words, either all of your modifications in the Python file get lost, or the code in the Python file supersedes the code of the notebook. By default, Seamless does the second thing (and gives you a warning), but it’s ugly to have your notebook telling lies. It goes against the spirit of a notebook that tells a linear story on how you started from scratch and arrived at a result. And if then further modify the code also in the notebook, there will be no end of trouble. So in that case, the correct thing to do is to give up on the linear story and remove the now-outdated code from the notebook.</p>
+<p>Seamless gives the illusion of being like Jupyter, but with non-linear execution. The <strong>web server demo</strong>( <a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/webserver-demo">open on GitHub</a>, or <a class="reference external" href="https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=webserver.ipynb">run on mybinder.org</a>) gives an example where you start from a simple notebook and port it to Seamless, gaining an interactive web interface in the process. It is also about as far as you can push a Seamless workflow that is defined purely in Jupyter. Why is this? At the end of the demo, the next step would be to mount each code cell to a Python file, so that you can start modifying the calculation code of the workflow using a normal text editor or IDE. Whenever you save the file, the cell value is updated and the workflow recalculated. Each Python file can be put under Git version control, something that <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span></code> sets up by default. However, the original unmodified code is still in the notebook! So if you re-run the notebook, and you re-mount the Python files, Seamless has to choose which version is correct: the one in the Python file, or the one in the notebook. In other words, either all of your modifications in the Python file get lost, or the code in the Python file supersedes the code of the notebook. By default, Seamless does the second thing (and gives you a warning), but it’s ugly to have your notebook telling lies. It goes against the spirit of a notebook that tells a linear story on how you started from scratch and arrived at a result. And if then further modify the code also in the notebook, there will be no end of trouble. So in that case, the correct thing to do is to give up on the linear story and remove the now-outdated code from the notebook.</p>
 <p>Another case is the web interface generator, which is all based on files (<code class="docutils literal notranslate"><span class="pre">webform.json</span></code>, <code class="docutils literal notranslate"><span class="pre">index.html</span></code>, <code class="docutils literal notranslate"><span class="pre">index.js</span></code>) that are being auto-generated but that can be modified. In fact, these files are Seamless cells of a secondary context <code class="docutils literal notranslate"><span class="pre">webctx</span></code> that are mounted to the file system (also see “Edit the editor”). Re-loading the notebook, executing cells that re-build the workflow bit-by-bit, is bound to give merge conflicts with a file that contains the modified web interface for the entire workflow in its final state.</p>
 <p>In summary, <em><strong>once you start offloading your workflow to edited files, the time for linear notebook storytelling is over</strong></em>. Does that mean that you should abandon Jupyter altogether? Not necessarily. You can keep Jupyter around as a dashboard, linking Seamless <code class="docutils literal notranslate"><span class="pre">Cell.traitlet</span></code> and <code class="docutils literal notranslate"><span class="pre">Cell.output</span></code> with ipywidgets. Or you can still use it as a scratch pad where you can quickly try out code, then incorporate it into your workflow when it seems to work, deleting it from the notebook.</p>
 <p>Note that all of this applies primarily to “inside” code. In contrast, “outside” code is normally throw-away code. See “Programming in two places” for detail.</p>
 </div>
 <div class="section" id="edit-the-editor">
 <h3>Edit the editor<a class="headerlink" href="#edit-the-editor" title="Permalink to this headline">¶</a></h3>
-<p>TODO
+<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
+<p>TODO: perhaps merge with “visualization and monitoring”.
 (Status graph is your friend)
 Don’t be afraid to modify it (Link to last paragraph in visualization). If you have HTML/JS skills, you can organize the cells and transformers into cleaner flowcharts. Beyond that, there is nothing to stop you from extending the webctx further into a full visual programming interface.
 Light-weight experience: don’t use seamless-new-project at all</p>
 </div>
 <div class="section" id="environments">
 <h3>Environments<a class="headerlink" href="#environments" title="Permalink to this headline">¶</a></h3>
-<p>Try not to install packages in the running Docker container as outlined in the beginner’s documentation. Study “environments” documentation instead.</p>
+<p>The beginner’s guide’s documentation recommends to install packages in the running Docker container. Don’t do that. Study the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/environments.html">documentation of environments</a> instead.</p>
 </div>
 <div class="section" id="don-t-confuse-files-and-cell-names">
 <h3>Don’t confuse files and cell names<a class="headerlink" href="#don-t-confuse-files-and-cell-names" title="Permalink to this headline">¶</a></h3>
-<p>See beginner’s documentation on “Don’t confuse files and cell names”. In addition, note that file mounting is something that happens only during development. When you save a workflow, the file’s checksum gets incorporated into it. When you deploy a workflow (e.g. with <code class="docutils literal notranslate"><span class="pre">seamless-serve-graph</span></code>, Cloudless, or loading a .seamless file yourself), mounts are not needed to make the workflow run.</p>
+<p>See the beginner’s guide on “Don’t confuse files and cell names”. In addition, note that file mounting is something that happens only during development. When you save a workflow, the file’s checksum gets incorporated into it. When you deploy a workflow (e.g. with <code class="docutils literal notranslate"><span class="pre">seamless-serve-graph</span></code>, Cloudless, or loading a .seamless file yourself), mounts are not needed to make the workflow run.</p>
 </div>
 <div class="section" id="don-t-rely-on-file-names-or-urls">
 <h3>Don’t rely on file names or URLs<a class="headerlink" href="#don-t-rely-on-file-names-or-urls" title="Permalink to this headline">¶</a></h3>
@@ -360,17 +368,17 @@ Light-weight experience: don’t use seamless-new-project at all</p>
 <div class="section" id="use-celltypes">
 <h3>Use celltypes<a class="headerlink" href="#use-celltypes" title="Permalink to this headline">¶</a></h3>
 <p>By default, every cell is a structured cell, which is normally overkill. Structured cells are great for subcell access and for schemas, but not every cell needs those features. Setting the celltype to something simpler may clarify the workflow.</p>
-<p>Note that transformer pins have celltypes too. Their default celltype is “mixed”.</p>
+<p>All celltypes and their conversions are described in the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/cell.html">cell documentation</a>. Note that transformer pins have celltypes too. Their default celltype is “mixed”.</p>
 </div>
 <div class="section" id="use-schemas">
 <h3>Use schemas<a class="headerlink" href="#use-schemas" title="Permalink to this headline">¶</a></h3>
-<p>…
-Transformer code is not the correct place for validation. Use schemas instead.</p>
+<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
+<p>Transformer code is not the correct place for validation. Use schemas instead.</p>
 </div>
 <div class="section" id="use-structured-cells">
 <h3>Use structured cells<a class="headerlink" href="#use-structured-cells" title="Permalink to this headline">¶</a></h3>
-<p>…
-Because of subcell access and schemas, and integration of independent (auth) and dependent (inchannel) data, and cyclic dependencies, and object oriented programming. Same reason why beginners should avoid them. Keep them small, else use DeepCells. At odds with “use celltypes”.</p>
+<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
+<p>Because of subcell access and schemas, and integration of independent (auth) and dependent (inchannel) data, and cyclic dependencies, and object oriented programming. Same reason why beginners should avoid them. Keep them small, else use DeepCells. At odds with “use celltypes”.</p>
 </div>
 </div>
 </div>

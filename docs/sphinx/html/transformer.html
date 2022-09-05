@@ -34,19 +34,18 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Seamless: a cell-based interactive workflow framework</a></li>
+              <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
 <li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new-project.html">Recipe for a new Seamless project</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#creating-a-new-workflow-child">Creating a new workflow child</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#dependent-and-independent-data">Dependent and independent data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#transformation">Transformation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#translation">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Transformers</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#pins">Pins</a><ul>
@@ -57,6 +56,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#transformer-execution">Transformer execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#transformer-result">Transformer result</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#python-transformers">Python transformers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preliminary-results-and-progress">Preliminary results and progress</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#bash-transformers">Bash transformers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#compiled-transformers">Compiled transformers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#adding-new-transformer-languages">Adding new transformer languages</a></li>
@@ -64,14 +64,21 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deployment.html#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
 
@@ -167,7 +174,10 @@ For example, the following will not work:</p>
 <p>This is because <code class="docutils literal notranslate"><span class="pre">np</span></code> is not defined inside of <code class="docutils literal notranslate"><span class="pre">func</span></code>, but outside of it,
 so the transformer will not have access to it.</p>
 <p>Python source code can be an expression, a function, or simply a block of code. For an expression or a function, the return value is the result value. A code block must define a variable named “result”.</p>
-<p>TODO: document preliminary and progress</p>
+</div>
+<div class="section" id="preliminary-results-and-progress">
+<h2>Preliminary results and progress<a class="headerlink" href="#preliminary-results-and-progress" title="Permalink to this headline">¶</a></h2>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 </div>
 <div class="section" id="bash-transformers">
 <h2>Bash transformers<a class="headerlink" href="#bash-transformers" title="Permalink to this headline">¶</a></h2>
@@ -245,58 +255,76 @@ Also, the files inside this directory have file names that correspond only to th
 </div>
 <div class="section" id="compiled-transformers">
 <h2>Compiled transformers<a class="headerlink" href="#compiled-transformers" title="Permalink to this headline">¶</a></h2>
-<p>(STUB: This documentation is a stub)</p>
-<p>TODO: link to validation:schemas
-TODO: link to modules
-…
-TODO: from tutorial:</p>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
+<p><strong>Relevant examples:</strong></p>
 <ul class="simple">
-<li><p>Compiled transformers:</p>
-<ul>
-<li><p>header, integrator, executor</p></li>
-<li><p>main_module multiple files (link to module)</p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/BC">BC</a></p></li>
 </ul>
-</li>
+<p>See <a class="reference external" href="https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-examples-locally">Running examples</a> on how to run examples.</p>
+<p><strong>Relevant test examples:</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/transformer-compiled.py">transformer-compiled.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/transformer-compiled-error.py">transformer-compiled-error.py</a></p></li>
 </ul>
-</div>
+<p>See <a class="reference external" href="https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-tests-locally">Running tests</a> on how to execute tests.</p>
+<!--
+
+TODO: link to validation:schemas
+TODO: link to modules
+...
+TODO: from tutorial:
+- Compiled transformers:
+    - header, integrator, executor
+    - main_module multiple files (link to module)
+--></div>
 <div class="section" id="adding-new-transformer-languages">
 <h2>Adding new transformer languages<a class="headerlink" href="#adding-new-transformer-languages" title="Permalink to this headline">¶</a></h2>
-<p>(STUB: This documentation is a stub)
-Advanced topic
-…</p>
-<p>…</p>
-<p>TODO:</p>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
+<p><strong>Relevant test examples:</strong></p>
 <ul class="simple">
-<li><p>Pin celltypes: link to cell</p></li>
-<li><p>Pin “as_” attribute</p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment.py">environment.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment2.py">environment2.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment3.py">environment3.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment6.py">environment6.py</a></p></li>
 </ul>
-<p>TODO: from tutorial:</p>
-<p>Intro:</p>
-<ul class="simple">
-<li><p>Python transformers</p></li>
-<li><p>.inp and .result (link to structured cells)</p></li>
-<li><p>Bash transformers</p>
-<ul>
-<li><p>RESULT file or directory</p></li>
-<li><p>filedict/filelist subcelltype TODO</p></li>
-</ul>
-</li>
-<li><p>Transformers in IPython and R</p></li>
-</ul>
-<p>Intermediate:</p>
-<ul class="simple">
-<li><p>Docker (link to environments)</p></li>
-<li><p>Meta parameters (computation times etc.)</p></li>
-<li><p>Transformations and checksums (link to “Seamless explained”)</p></li>
-</ul>
-<p>In-depth:</p>
-<ul class="simple">
-<li><p>Hacking on bash/compiled transformers (not interactively)</p></li>
-<li><p>Changing the translation machinery (not interactively)</p></li>
-<li><p>Irreproducible transformers (link to determinism)</p></li>
-<li><p>cancel, clearing exceptions</p></li>
-</ul>
-</div>
+<p>See <a class="reference external" href="https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-tests-locally">Running tests</a> on how to execute tests.</p>
+<!--
+Is Advanced topic
+...
+
+...
+
+TODO: 
+- Pin celltypes: link to cell
+- Pin "as_" attribute
+
+TODO: from tutorial:
+
+Intro:
+
+- Python transformers
+- .inp and .result (link to structured cells)
+- Bash transformers
+
+    - RESULT file or directory
+    - filedict/filelist subcelltype TODO
+
+- Transformers in IPython and R
+
+Intermediate:
+
+- Docker (link to environments)
+- Meta parameters (computation times etc.)
+- Transformations and checksums (link to "Seamless explained")
+
+In-depth:
+
+- Hacking on bash/compiled transformers (not interactively)
+- Changing the translation machinery (not interactively)
+- Irreproducible transformers (link to determinism)
+
+- cancel, clearing exceptions
+--></div>
 </div>
 
 

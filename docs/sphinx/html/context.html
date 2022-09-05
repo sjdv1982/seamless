@@ -35,13 +35,16 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption"><span class="caption-text">Introduction</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
 <li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new-project.html">Recipe for a new Seamless project</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Contexts</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#creating-a-new-workflow-child">Creating a new workflow child</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dependent-and-independent-data">Dependent and independent data</a></li>
@@ -56,12 +59,18 @@
 <li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deployment.html#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
 
@@ -110,6 +119,7 @@
 </div>
 <div class="section" id="dependent-and-independent-data">
 <h2>Dependent and independent data<a class="headerlink" href="#dependent-and-independent-data" title="Permalink to this headline">¶</a></h2>
+<p><em><strong>IMPORTANT: This documentation section is a draft. The preliminary text is shown below</strong></em></p>
 <p>TODO: merge with the corresponding paragraph in explained.md</p>
 <p>The workflow graph consists of <em>dependent</em> and <em>independent</em> checksums. Independent checksums correspond to the code and the input parameters that have been directly defined by the programmer or the user. <em>dependent</em> checksums are the result of a computation, such as a transformer, a subcell expression, or a cell conversion. Parts of the graph that are under macro control (this includes the library instances of much of the stdlib) are also dependent.</p>
 <p>During evaluation, all dependent checksums of the workflow are computed. In principle, the independent checksums are constant, i.e. immutable: modification of the workflow via the Context class creates a <em>new</em> workflow that is re-translated and re-computed. However, the low-level representation also supports the modification of independent checksums, as it is capable of canceling the downstream dependent checksums and re-launching their computations. This means that independent checksums can be modified without re-translation. Any changes in the topology (cell types, new cells, new transformers, new connections, etc.) do require translation. If this is not desired (for example in a web interface), the topology generation must be under macro control.</p>

@@ -10,7 +10,9 @@ In a nutshell, most of Seamless revolves around ***cells***, that hold the data 
 
 ### Checksums
 
-What makes Seamless special is that cells don't hold values or filenames, but ***checksums*** (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren't tied to a hierarchy of files, carefully named and accessible on a mounted file system. In contrast, while in Seamless you *can* mount a cell to a file, it just means that the cell's checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is always free in terms of space, in the same way that a hardlink to a file is always free (but copying a file or value is not). Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. They just contain checksums, and data values are obtained only when they are needed. Checksums are small, and a workflow description with checksums is small, but their underlying data can be much larger than what fits in memory, or on disk. In other words, big data is possible with Seamless. On the flip side, you can't automatically assume that you have a cell's data at your fingertips. By default, Seamless sets up some simple checksum-to-data stores, but that reintroduces some of the problems (potential memory issues, file copying) of using files and values instead of checksums. These problems can be minimized by manually configuring your data storage.
+What makes Seamless special is that cells don't hold values or filenames, but ***checksums*** (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren't tied to a hierarchy of files, carefully named and accessible on a mounted file system. In contrast, while in Seamless you *can* mount a cell to a file, it just means that the cell's checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is always free in terms of space, in the same way that a hardlink to a file is always free (but copying a file or value is not). Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. They just contain checksums, and data values are obtained only when they are needed. Checksums are small, and a workflow description with checksums is small, but their underlying data can be much larger than what fits in memory, or on disk. In other words, big data is possible with Seamless.
+
+On the flip side, you can't automatically assume that you have a cell's data at your fingertips. By default, Seamless sets up some simple checksum-to-data stores, but that reintroduces some of the problems (potential memory issues, file copying) of using files and values instead of checksums. These problems can be minimized by manually configuring your data storage.
 
 The final implication is that since transformers are also based on checksums, and since these checksums fully describe the computation (parameters *and* code *and* result), you can replace a computation with its result, and replace a result with its computation (referential transparency). This is very beneficial for ***reproducibility***, and it provides ***reactivity***: after cell updates, it is always obvious which computations need to be re-executed. No need for manual re-execution (Jupyter) or reliance on file modification times (Snakemake). Finally, it means that computations are small to describe, and can run anywhere, as long as they can locate the data of their input checksums. More details are in the transformation section.
 
@@ -107,6 +109,8 @@ testvalue
 
 ### Dependent and independent data
 
+***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
+
 TODO: merge with the corresponding paragraph in context.md
 ...
 By default, Seamless maintains a checksum-to-data cache in-memory that distinguish between *dependent* (computed) and *independent* data. Dependent data may get evicted ... TODO
@@ -120,7 +124,10 @@ Deeper:
 
 ### Caching
 
+***IMPORTANT: This documentation section is a draft. The preliminary text is shown below***
+
 TODO
+
 - Various kinds of caches in Seamless
 
 The checksum-to-buffer conversion cache is more than just for performance. The 
@@ -183,6 +190,8 @@ In that case, the buffers corresponding to the input checksums will have beenpre
 
 ### Deep structures
 
+***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
+
 TODO: move/clone into deepcell.md
 
 A transformation is in fact a "deep structure". Its checksum corresponds to a dictionary, where each value is itself a checksum (of the input cells).
@@ -190,12 +199,18 @@ A transformation is in fact a "deep structure". Its checksum corresponds to a di
 Seamless has support for two other kinds of deep structures: deep cells and deep folders. In both cases, the deep structure is again a dictionary, where the keys are strings and the values are checksums. The difference is the cell type of the checksums. For deep cells, the cell type is "mixed" (Seamless's default cell type), which means that you can easily access an individual element and convert it trivially to a normal Seamless cell. In contrast, for deep folders, the cell type is "bytes", which means that buffer and value are the same. This allows a one-to-one mapping with a
 folder on the file system.
 
-What does impact deployment is the following. Typically, a web service consists of two graphs (.seamless files). 
+### Visualization and monitoring
+
+***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
+
+TODO: integrate/merge with visualization.md
+
+Typically, a web service consists of two graphs (.seamless files).
 The first graph contains the main workflow. The second graph contains a status graph. The status graph can be bound by Seamless to the main graph (`seamless.metalevel.bind_status_graph`; this function is automatically invoked by `seamless-serve-graph` if you provide two graph files). In that case, the status graph receives the current value and status of the  main workflow graph as its input, and normally visualizes it as a web page. Manually-coded web interfaces are normally added to the main workflow graph. In contrast, the automatic web interface generator is part of the status graph, as it generates the web interface HTML by taking the main workflow graph as an input. During development, both graphs are developed, which is made possible by `seamless-new-project` and `seamless-load-project`.
 
-## Understanding Seamless dependency graphs
+### Understanding Seamless dependency graphs
 
-TODO
+***IMPORTANT: This documentation section is an outline. The outline is shown below***
 
 - Topology vs parameters.
 - Seamless translation machinery (midlevel), metalevel. How the high level wraps the graph data structure
@@ -209,17 +224,17 @@ TODO
 - Always keep a test where you maintain interactivity.
 
 Practical:
-- Scatter transformers (TODO)
+
+- Scatter transformers
 - stdlib.map
 - Elision and incremental computing
-
 - Hacking the midlevel
 
 ## Guidelines for experienced developers
 
 ### Keep it simple, while you can
 
-The beginner's section on "how to keep it simple" contains good advice for a small, young project. With Jupyter, you can quickly set something up, adding Seamless's interactivity to Jupyter's own. This works best for workflows that are non-linear but with not too many steps, where the data is rather small, and the code too.
+The beginner's guide's section on "how to keep it simple" contains good advice for a small, young project. With Jupyter, you can quickly set something up, adding Seamless's interactivity to Jupyter's own. This works best for workflows that are non-linear but with not too many steps, where the data is rather small, and the code too.
 
 When the code gets more complex, you should move away from Jupyter by mounting your code cells to files. Code that modifies the workflow becomes throw-away code. See "Moving away from Jupyter" for more details.
 
@@ -229,7 +244,7 @@ If either the code or the data gets bigger, you should start thinking about vers
 
 ### Programming in two places
 
-Clearly distinguish between the "outside" code that *creates* the workflow, and the "inside" code (mostly inside transformers) that is executed as part of the workflow. Inside codes are polyglot and executed in isolation (from each other, and from the outside). Outside code is written in Python, and you run it inside IPython or Jupyter. You don't need to keep outside code, because you can store the entire workflow as data.
+Clearly distinguish between the "outside" code that *creates* the workflow, and the "inside" code (mostly within transformers) that is executed as part of the workflow. Inside codes are polyglot and executed in isolation (from each other, and from the outside). Outside code is written in Python, and you run it inside IPython or Jupyter. You don't need to keep outside code, because you can store the entire workflow as data. The "Programming in two places" section in the beginner's guide explains it in slightly more detail.
 
 The "Moving away from Jupyter" section below explains that you should mount your code cells to the file system, and then remove their code from the notebook. Once it has thus become part of your workflow, Seamless will store the code (at least its checksum, and normally its content too), and you can also store it under Git version control as a file. Note that this applies only to "inside" code. In contrast, in a mature project, "outside" code that inspects or modifies the workflow should be considered ***throw-away code***. If you have moved away completely from Jupyter, you can simply use `seamless-ipython` to enter such code. Else, you can enter it in a temporary notebook cell, or use `seamless-jupyter-connect` to connect an IPython-like console to Jupyter. In all cases, you execute the code, but you don't keep it: instead, you simply save the state of the workflow in a `.seamless` file.
 
@@ -237,7 +252,7 @@ There is one use case where "outside" code may be kept. When it comes to describ
 
 ### Moving away from Jupyter
 
-Seamless gives the illusion of being like Jupyter, but with non-linear execution. The **web server demo**( [open on GitHub], [run on mybinder.org](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=webserver.ipynb), or [open on GitHub](https://github.com/sjdv1982/seamless/tree/stable/examples/webserver-demo) ) gives an example where you start from a simple notebook and port it to Seamless, gaining an interactive web interface in the process. It is also about as far as you can push a Seamless workflow that is defined purely in Jupyter. Why is this? At the end of the demo, the next step would be to mount each code cell to a Python file, so that you can start modifying the calculation code of the workflow using a normal text editor or IDE. Whenever you save the file, the cell value is updated and the workflow recalculated. Each Python file can be put under Git version control, something that `seamless-new-project` sets up by default. However, the original unmodified code is still in the notebook! So if you re-run the notebook, and you re-mount the Python files, Seamless has to choose which version is correct: the one in the Python file, or the one in the notebook. In other words, either all of your modifications in the Python file get lost, or the code in the Python file supersedes the code of the notebook. By default, Seamless does the second thing (and gives you a warning), but it's ugly to have your notebook telling lies. It goes against the spirit of a notebook that tells a linear story on how you started from scratch and arrived at a result. And if then further modify the code also in the notebook, there will be no end of trouble. So in that case, the correct thing to do is to give up on the linear story and remove the now-outdated code from the notebook.
+Seamless gives the illusion of being like Jupyter, but with non-linear execution. The **web server demo**( [open on GitHub](https://github.com/sjdv1982/seamless/tree/stable/examples/webserver-demo), or [run on mybinder.org](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=webserver.ipynb)) gives an example where you start from a simple notebook and port it to Seamless, gaining an interactive web interface in the process. It is also about as far as you can push a Seamless workflow that is defined purely in Jupyter. Why is this? At the end of the demo, the next step would be to mount each code cell to a Python file, so that you can start modifying the calculation code of the workflow using a normal text editor or IDE. Whenever you save the file, the cell value is updated and the workflow recalculated. Each Python file can be put under Git version control, something that `seamless-new-project` sets up by default. However, the original unmodified code is still in the notebook! So if you re-run the notebook, and you re-mount the Python files, Seamless has to choose which version is correct: the one in the Python file, or the one in the notebook. In other words, either all of your modifications in the Python file get lost, or the code in the Python file supersedes the code of the notebook. By default, Seamless does the second thing (and gives you a warning), but it's ugly to have your notebook telling lies. It goes against the spirit of a notebook that tells a linear story on how you started from scratch and arrived at a result. And if then further modify the code also in the notebook, there will be no end of trouble. So in that case, the correct thing to do is to give up on the linear story and remove the now-outdated code from the notebook.
 
 Another case is the web interface generator, which is all based on files (`webform.json`, `index.html`, `index.js`) that are being auto-generated but that can be modified. In fact, these files are Seamless cells of a secondary context `webctx` that are mounted to the file system (also see "Edit the editor"). Re-loading the notebook, executing cells that re-build the workflow bit-by-bit, is bound to give merge conflicts with a file that contains the modified web interface for the entire workflow in its final state.
 
@@ -247,18 +262,20 @@ Note that all of this applies primarily to "inside" code. In contrast, "outside"
 
 ### Edit the editor
 
-TODO
+***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
+
+TODO: perhaps merge with "visualization and monitoring".
 (Status graph is your friend)
 Don't be afraid to modify it (Link to last paragraph in visualization). If you have HTML/JS skills, you can organize the cells and transformers into cleaner flowcharts. Beyond that, there is nothing to stop you from extending the webctx further into a full visual programming interface.
 Light-weight experience: don't use seamless-new-project at all
 
 ### Environments
 
-Try not to install packages in the running Docker container as outlined in the beginner's documentation. Study "environments" documentation instead.
+The beginner's guide's documentation recommends to install packages in the running Docker container. Don't do that. Study the [documentation of environments](http://sjdv1982.github.io/seamless/sphinx/html/environments.html) instead.
 
 ### Don't confuse files and cell names
 
-See beginner's documentation on "Don't confuse files and cell names". In addition, note that file mounting is something that happens only during development. When you save a workflow, the file's checksum gets incorporated into it. When you deploy a workflow (e.g. with `seamless-serve-graph`, Cloudless, or loading a .seamless file yourself), mounts are not needed to make the workflow run.
+See the beginner's guide on "Don't confuse files and cell names". In addition, note that file mounting is something that happens only during development. When you save a workflow, the file's checksum gets incorporated into it. When you deploy a workflow (e.g. with `seamless-serve-graph`, Cloudless, or loading a .seamless file yourself), mounts are not needed to make the workflow run.
 
 ### Don't rely on file names or URLs
 
@@ -270,14 +287,16 @@ There is one exception to this rule: you may choose to embed external data sourc
 
 By default, every cell is a structured cell, which is normally overkill. Structured cells are great for subcell access and for schemas, but not every cell needs those features. Setting the celltype to something simpler may clarify the workflow.
 
-Note that transformer pins have celltypes too. Their default celltype is "mixed".
+All celltypes and their conversions are described in the [cell documentation](http://sjdv1982.github.io/seamless/sphinx/html/cell.html). Note that transformer pins have celltypes too. Their default celltype is "mixed".
 
 ### Use schemas
 
-...
+***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
+
 Transformer code is not the correct place for validation. Use schemas instead.
 
 ### Use structured cells
-...
+
+***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
+
 Because of subcell access and schemas, and integration of independent (auth) and dependent (inchannel) data, and cyclic dependencies, and object oriented programming. Same reason why beginners should avoid them. Keep them small, else use DeepCells. At odds with "use celltypes".
- 

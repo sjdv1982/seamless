@@ -81,9 +81,11 @@ print(ctx.sub.value)
 201
 ```
 
-<!--
-TODO:
+## Cell types and conversion
 
+***IMPORTANT: This documentation section is a stub.***
+
+<!--
 Cell types:
 
 - Text cells

@@ -23,6 +23,8 @@ The Context class can launch a *translation* of the workflow graph to a low-leve
 
 ## Dependent and independent data
 
+***IMPORTANT: This documentation section is a draft. The preliminary text is shown below***
+
 TODO: merge with the corresponding paragraph in explained.md
 
 The workflow graph consists of *dependent* and *independent* checksums. Independent checksums correspond to the code and the input parameters that have been directly defined by the programmer or the user. *dependent* checksums are the result of a computation, such as a transformer, a subcell expression, or a cell conversion. Parts of the graph that are under macro control (this includes the library instances of much of the stdlib) are also dependent.

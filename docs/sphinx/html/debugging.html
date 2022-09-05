@@ -15,7 +15,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="&lt;no title&gt;" href="environments.html" />
+    <link rel="next" title="Environments" href="environments.html" />
     <link rel="prev" title="Modules" href="modules.html" /> 
 </head>
 
@@ -34,35 +34,55 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Seamless: a cell-based interactive workflow framework</a></li>
+              <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
 <li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new-project.html">Recipe for a new Seamless project</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#creating-a-new-workflow-child">Creating a new workflow child</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#dependent-and-independent-data">Dependent and independent data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#transformation">Transformation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#translation">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Debugging</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#debugging-with-print-statements">Debugging with print statements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#debugging-sessions">Debugging sessions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#debugging-sessions">Debugging sessions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#debug-mode-light-or-sandbox">Debug mode: light or sandbox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#debugging-python-transformers">Debugging Python transformers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#debugging-bash-transformers">Debugging bash transformers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#debugging-compiled-transformers">Debugging compiled transformers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#debugging-modules">Debugging modules</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#debugging-python-modules">Debugging Python modules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#debugging-compiled-modules">Debugging compiled modules</a></li>
 </ul>
 </li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deployment.html#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
 
@@ -95,45 +115,109 @@
 <p>To debug your code, you can use either print statements, or a debugging session with breakpoints.</p>
 <div class="section" id="debugging-with-print-statements">
 <h2>Debugging with print statements<a class="headerlink" href="#debugging-with-print-statements" title="Permalink to this headline">¶</a></h2>
-<p>Seamless transformations can be executed anywhere. Therefore, they do not print their stdout or stderr to any terminal while they execute. Stdout and stderr are only captured when the transformation has finished.</p>
-<p>For Python transformers, the transformation is aborted if an exception is raised. <code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code> will then contain the exception traceback, stdout and stderr.
-If no exception is raised, stdout and stderr can be retrieved using <code class="docutils literal notranslate"><span class="pre">Transformer.logs</span></code></p>
-<p>For bash/Docker transformers, if any launched process returns with a non-zero error code, the transformation is aborted. <code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code> will then contain the bash error message, stdout and stderr. Else, stdout/stderr will be discarded. Therefore, if you want to debug with print statements, exit with a non-zero exit code (<code class="docutils literal notranslate"><span class="pre">exit</span> <span class="pre">1</span></code>).</p>
-<p>For compiled transformers (i.e. written in C/C++/Fortran/…), you should <em>not</em> do <code class="docutils literal notranslate"><span class="pre">exit(...)</span></code> with a non-zero exit code: this kills the transformation process immediately, including the machinery to capture stdout and stderr. Instead, make the main <code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">transform(...)</span></code> function return a non-zero value.</p>
+<p>This the most easy form of debugging: add print statements (or <code class="docutils literal notranslate"><span class="pre">echo</span></code>/<code class="docutils literal notranslate"><span class="pre">cat</span></code>/<code class="docutils literal notranslate"><span class="pre">cout</span></code>/<code class="docutils literal notranslate"><span class="pre">printf</span></code>/…) to your transformer code.</p>
+<p>For Python transformers, the transformation is aborted if an exception is raised. <code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code> will then contain the exception traceback, stdout and stderr. If no exception is raised, stdout and stderr can be retrieved using <code class="docutils literal notranslate"><span class="pre">Transformer.logs</span></code></p>
+<p>For bash/Docker transformers, if any launched process returns with a non-zero error code, the transformation is aborted. <code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code> will then contain the bash error message, stdout and stderr. If there is no non-zero error code, stdout and stderr can be retrieved using <code class="docutils literal notranslate"><span class="pre">Transformer.logs</span></code>.</p>
+<p>For compiled transformers (i.e. written in C/C++/Fortran/…), you must <em>not</em> do <code class="docutils literal notranslate"><span class="pre">exit(...)</span></code> with a non-zero exit code: this kills the transformation process immediately, including the machinery to capture stdout and stderr. Instead, make the main <code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">transform(...)</span></code> function return a non-zero value.</p>
+<p>Seamless transformations can be executed anywhere. Therefore, by default, <em>they do not print their <code class="docutils literal notranslate"><span class="pre">stdout</span></code> or <code class="docutils literal notranslate"><span class="pre">stderr</span></code> to any terminal while they execute</em>. <code class="docutils literal notranslate"><span class="pre">stdout</span></code> and <code class="docutils literal notranslate"><span class="pre">stderr</span></code> are only captured when the transformation has finished. You can overrule this behavior with <code class="docutils literal notranslate"><span class="pre">Transformer.debug.direct_print</span> <span class="pre">=</span> <span class="pre">True</span></code>. This will force local evaluation (transformation jobs will not be forwarded to e.g. jobless), and the result of print statements are printed directly to <code class="docutils literal notranslate"><span class="pre">stdout</span></code>/<code class="docutils literal notranslate"><span class="pre">stderr</span></code>, or to a file specified in <code class="docutils literal notranslate"><span class="pre">Transformer.debug.direct_print_file</span></code>. See <a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/delay-direct-print-file.py">this test</a> for a demonstration.</p>
+<p><strong>Relevant test examples:</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/simpler-tf-print.py">simpler-tf-print.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/bash-debug.py">bash-debug.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/docker-debug.py">docker-debug.py</a></p></li>
+</ul>
+<p>See <a class="reference external" href="https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-tests-locally">Running tests</a> on how to execute tests.</p>
 </div>
 <div class="section" id="debugging-sessions">
 <h2>Debugging sessions<a class="headerlink" href="#debugging-sessions" title="Permalink to this headline">¶</a></h2>
-<p>THE FOLLOWING IS OUTDATED
-Visual Studio Code and other IDEs do not yet support Seamless transformers.</p>
-<p><em><strong>Python transformers</strong></em></p>
-<p>To debug a Python transformer, you can use a slightly modified version of the pdb debugger. Add the following to your transformation code:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">seamless.pdb</span> <span class="kn">import</span> <span class="n">set_trace</span>
-<span class="n">set_trace</span><span class="p">()</span>
-</pre></div>
+<p>Debugging sessions with breakpoints are directly supported, but only in Visual Studio Code. Other IDEs are currently not supported, but they should be in the future. If you are willing to help, see <a class="reference external" href="https://github.com/sjdv1982/seamless/issues/132">this GitHub issue</a>.</p>
+<p>Debugging sessions with Seamless is best learned by running some of the Seamless tests. Open a terminal within Visual Studio Code. Start a Seamless container with <code class="docutils literal notranslate"><span class="pre">seamless-bash-trusted</span></code>, the  do <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">~/seamless-tests/highlevel</span></code>, and run any test with <code class="docutils literal notranslate"><span class="pre">ipython</span> <span class="pre">-i</span></code> (any test) or <code class="docutils literal notranslate"><span class="pre">python</span></code> (any test that doesn’t end with “-shell.py”). Follow the instructions printed on screen.</p>
+<p>NOTE: <code class="docutils literal notranslate"><span class="pre">seamless-bash-trusted</span></code> is needed because its exposes ports 5679-5785 for use by <code class="docutils literal notranslate"><span class="pre">debugpy</span></code>. If you get a “connection refused” error in Visual Studio Code, you probably used <code class="docutils literal notranslate"><span class="pre">seamless-bash</span></code> instead.</p>
+<div class="section" id="debug-mode-light-or-sandbox">
+<h3>Debug mode: light or sandbox<a class="headerlink" href="#debug-mode-light-or-sandbox" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em>
+(shells can be opened only in sandbox mode. Not for compiled transformers)</p>
 </div>
-<p>NOTE: unfortunately, the pdb debugger only works if you execute Seamless with <code class="docutils literal notranslate"><span class="pre">python</span></code>,
-not with <code class="docutils literal notranslate"><span class="pre">ipython</span></code> or Jupyter.</p>
-<p><em><strong>Compiled transformers</strong></em></p>
-<p>Compiled transformers can be debugged with a debugger such as gdb.</p>
-<p>For this, set <code class="docutils literal notranslate"><span class="pre">Transformer.debug</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code> and re-translate the graph.
+<div class="section" id="debugging-python-transformers">
+<h3>Debugging Python transformers<a class="headerlink" href="#debugging-python-transformers" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
+<p><strong>Relevant test examples:</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-py-light.py">debugmode-py-light.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-py-sandbox.py">debugmode-py-sandbox.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-py-shell.py">debugmode-py-shell.py</a></p></li>
+</ul>
+</div>
+<div class="section" id="debugging-bash-transformers">
+<h3>Debugging bash transformers<a class="headerlink" href="#debugging-bash-transformers" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
+<p><strong>Relevant test examples:</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-bash-shell.py">debugmode-bash-shell.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-docker-shell.py">debugmode-docker-shell.py</a></p></li>
+</ul>
+</div>
+<div class="section" id="debugging-compiled-transformers">
+<h3>Debugging compiled transformers<a class="headerlink" href="#debugging-compiled-transformers" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
+<p><strong>Relevant test examples:</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-compiled-light.py">debugmode-compiled-light.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-compiled-sandbox.py">debugmode-compiled-sandbox.py</a></p></li>
+</ul>
+<!--
+THE FOLLOWING IS OUTDATED
+Compiled transformers can be debugged with a debugger such as gdb.
+
+For this, set `Transformer.debug` to `True` and re-translate the graph.
 (You may have to make a minimal change in the source code or input. Remind that Seamless does not re-execute transformations that have already been performed,
-debug or not).</p>
-<p>Once the transformer executes, you will see a Process ID printed.</p>
-<p>Start a separate shell in the same Docker container using <code class="docutils literal notranslate"><span class="pre">seamless-shell-existing</span></code>
-You will be root in this shell.</p>
-<p>Type “gdb” to start a GDB terminal.</p>
-<p>In the GDB terminal, type the following (where XXX is the process ID):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">gdb</span><span class="p">)</span> <span class="n">attach</span> <span class="n">XXX</span>
-<span class="p">(</span><span class="n">gdb</span><span class="p">)</span> <span class="k">break</span> <span class="n">main</span><span class="o">.</span><span class="n">cpp</span><span class="p">:</span><span class="n">transform</span>
-<span class="p">(</span><span class="n">gdb</span><span class="p">)</span> <span class="n">signal</span> <span class="n">SIGUSR1</span>
-</pre></div>
+debug or not).
+
+Once the transformer executes, you will see a Process ID printed.
+
+Start a separate shell in the same Docker container using `seamless-shell-existing`
+You will be root in this shell.
+
+Type "gdb" to start a GDB terminal.
+
+In the GDB terminal, type the following (where XXX is the process ID):
+```
+(gdb) attach XXX
+(gdb) break main.cpp:transform
+(gdb) signal SIGUSR1
+```
+and gdb will break when your main `transform` function starts.
+
+If your transformer is written in C, the main file will be "main.c" instead of "main.cpp".
+
+Whenever the transformer re-executes (due to changed source code or inputs), you will have to re-attach, but your breakpoints normally remain active.
+
+NOTE: integration with Visual Studio code is currently in progress.
+
+/OUTDATED
+--></div>
+<div class="section" id="debugging-modules">
+<h3>Debugging modules<a class="headerlink" href="#debugging-modules" title="Permalink to this headline">¶</a></h3>
+<p>See the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/modules.html">modules documentation</a> for more information about modules.</p>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
+<div class="section" id="debugging-python-modules">
+<h4>Debugging Python modules<a class="headerlink" href="#debugging-python-modules" title="Permalink to this headline">¶</a></h4>
+<p><strong>Relevant test examples:</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-pymodule-light.py">debugmode-pymodule-light.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-pymodule-sandbox.py">debugmode-pymodule-sandbox.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-pypackage-light.py">debugmode-pypackage-light.py</a></p></li>
+</ul>
 </div>
-<p>and gdb will break when your main <code class="docutils literal notranslate"><span class="pre">transform</span></code> function starts.</p>
-<p>If your transformer is written in C, the main file will be “main.c” instead of “main.cpp”.</p>
-<p>Whenever the transformer re-executes (due to changed source code or inputs), you will have to re-attach, but your breakpoints normally remain active.</p>
-<p>NOTE: integration with Visual Studio code is currently in progress.</p>
-<p>/OUTDATED</p>
-<p>TODO: debugging modules (link to modules)</p>
+<div class="section" id="debugging-compiled-modules">
+<h4>Debugging compiled modules<a class="headerlink" href="#debugging-compiled-modules" title="Permalink to this headline">¶</a></h4>
+<p><strong>Relevant test examples:</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-compiledmodule-light.py">debugmode-compiledmodule-light.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-compiledmodule-sandbox.py">debugmode-compiledmodule-sandbox.py</a></p></li>
+</ul>
+</div>
+</div>
 </div>
 </div>
 
@@ -142,7 +226,7 @@ You will be root in this shell.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="modules.html" class="btn btn-neutral float-left" title="Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="environments.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="environments.html" class="btn btn-neutral float-right" title="Environments" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

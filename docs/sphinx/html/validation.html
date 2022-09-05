@@ -15,7 +15,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="&lt;no title&gt;" href="libraries.html" />
+    <link rel="next" title="Libraries and libinstances" href="libraries.html" />
     <link rel="prev" title="Visualization" href="visualization.html" /> 
 </head>
 
@@ -34,31 +34,43 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Seamless: a cell-based interactive workflow framework</a></li>
+              <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
 <li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new-project.html">Recipe for a new Seamless project</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#creating-a-new-workflow-child">Creating a new workflow child</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#dependent-and-independent-data">Dependent and independent data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#transformation">Transformation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html#translation">Translation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Validation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#silk">Silk</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Validation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#silk">Silk</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deployment.html#section-on-deployment-of-environments-jobless">Section on deployment of environments (jobless)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
 
@@ -88,14 +100,23 @@
              
   <div class="section" id="validation">
 <h1>Validation<a class="headerlink" href="#validation" title="Permalink to this headline">¶</a></h1>
+<p><strong>Relevant examples:</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples">basic example</a></p></li>
+</ul>
+<p>See <a class="reference external" href="https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-examples-locally">Running examples</a> on how to run examples.</p>
+<p><strong>Relevant test examples:</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/simplest.py">simplest.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/simpler.py">simpler.py</a></p></li>
+</ul>
 <p>As a rule, <em>validation</em> happens on the data. Transformation code is not the correct place to do validation.</p>
 <p>Validation in Seamless is defined in schema cells. Schema cells contain a superset of JSON Schema. You can write them directly, but it is easier to fill them up using the <code class="docutils literal notranslate"><span class="pre">Cell.example</span></code> attribute. See <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/highlink-cpp.py">this example</a>, to be opened with <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span> <span class="pre">-i</span></code>.</p>
 <p>Validation errors show up in the monitoring. At this point, the monitoring (which had previously its own UX cells) should be adapted so that error messages and progress are displayed in the main web UI.</p>
 <p>This is also the time to create tests. A unit test should be a small Seamless context linked to the same files as the main project for code and schema cells. Other tests can be a copy of the main graph with some parameters changed. <em>Make sure to create some tests that are designed to fail, to verify that a correct and comprehensible error message is reported</em>.</p>
-</div>
 <div class="section" id="silk">
-<h1>Silk<a class="headerlink" href="#silk" title="Permalink to this headline">¶</a></h1>
-<p>STUB</p>
+<h2>Silk<a class="headerlink" href="#silk" title="Permalink to this headline">¶</a></h2>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <!--
 ### D2. Silk
 
@@ -114,13 +135,14 @@ Intermediate:
 - serialization
 - Silk and _SCHEMA pins in transformers
 --></div>
+</div>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="visualization.html" class="btn btn-neutral float-left" title="Visualization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="libraries.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="libraries.html" class="btn btn-neutral float-right" title="Libraries and libinstances" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

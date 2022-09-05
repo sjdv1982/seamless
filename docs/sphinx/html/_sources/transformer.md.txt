@@ -84,7 +84,9 @@ so the transformer will not have access to it.
 
 Python source code can be an expression, a function, or simply a block of code. For an expression or a function, the return value is the result value. A code block must define a variable named "result".
 
-TODO: document preliminary and progress
+## Preliminary results and progress
+
+***IMPORTANT: This documentation section is a stub.***
 
 ## Bash transformers
 
@@ -171,7 +173,22 @@ ctx.compute()
 
 ## Compiled transformers
 
-(STUB: This documentation is a stub)
+***IMPORTANT: This documentation section is a stub.***
+
+**Relevant examples:**
+- [BC](https://github.com/sjdv1982/seamless/tree/stable/examples/BC)
+
+See [Running examples](https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-examples-locally) on how to run examples.
+
+**Relevant test examples:**
+
+- [transformer-compiled.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/transformer-compiled.py)
+
+- [transformer-compiled-error.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/transformer-compiled-error.py)
+
+See [Running tests](https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-tests-locally) on how to execute tests.
+
+<!--
 
 TODO: link to validation:schemas
 TODO: link to modules
@@ -180,12 +197,26 @@ TODO: from tutorial:
 - Compiled transformers:
     - header, integrator, executor
     - main_module multiple files (link to module)
-
+-->
 
 ## Adding new transformer languages
 
-(STUB: This documentation is a stub)
-Advanced topic
+***IMPORTANT: This documentation section is a stub.***
+
+**Relevant test examples:**
+
+- [environment.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment.py)
+
+- [environment2.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment2.py)
+
+- [environment3.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment3.py)
+
+- [environment6.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment6.py)
+
+See [Running tests](https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-tests-locally) on how to execute tests.
+
+<!--
+Is Advanced topic
 ...
 
 ...
@@ -220,4 +251,4 @@ In-depth:
 - Irreproducible transformers (link to determinism)
 
 - cancel, clearing exceptions
-
+-->

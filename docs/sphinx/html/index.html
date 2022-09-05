@@ -52,12 +52,12 @@
 <li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
 <li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
 <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Data storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Advanced features</span></p>
@@ -120,14 +120,13 @@
 <li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="beginner.html#learning-the-basics">Learning the basics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="beginner.html#dividing-the-work-into-phases">Dividing the work into phases</a></li>
-<li class="toctree-l2"><a class="reference internal" href="beginner.html#how-to-keep-things-simple">How to keep things simple</a></li>
+<li class="toctree-l2"><a class="reference internal" href="beginner.html#how-to-keep-it-simple">How to keep it simple</a></li>
 <li class="toctree-l2"><a class="reference internal" href="beginner.html#do-s-and-don-ts">Do’s and don’ts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="beginner.html#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="explained.html#core-concepts">Core concepts</a></li>
-<li class="toctree-l2"><a class="reference internal" href="explained.html#understanding-seamless-dependency-graphs">Understanding Seamless dependency graphs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="explained.html#guidelines-for-experienced-developers">Guidelines for experienced developers</a></li>
 </ul>
 </li>
@@ -152,6 +151,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="cell.html#alternative-subcell-syntax">Alternative subcell syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cell.html#cell-types-and-conversion">Cell types and conversion</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a><ul>
@@ -159,6 +159,7 @@
 <li class="toctree-l2"><a class="reference internal" href="transformer.html#transformer-execution">Transformer execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="transformer.html#transformer-result">Transformer result</a></li>
 <li class="toctree-l2"><a class="reference internal" href="transformer.html#python-transformers">Python transformers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transformer.html#preliminary-results-and-progress">Preliminary results and progress</a></li>
 <li class="toctree-l2"><a class="reference internal" href="transformer.html#bash-transformers">Bash transformers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="transformer.html#compiled-transformers">Compiled transformers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="transformer.html#adding-new-transformer-languages">Adding new transformer languages</a></li>
@@ -177,11 +178,14 @@
 <li class="toctree-l2"><a class="reference internal" href="visualization.html#modifying-the-web-status-generator">Modifying the web status generator</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="validation.html#silk">Silk</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="modules.html#python-modules">Python modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#ipython-modules">IPython modules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="modules.html#compiled-modules">Compiled modules</a></li>
 </ul>
 </li>
@@ -190,14 +194,18 @@
 <li class="toctree-l2"><a class="reference internal" href="debugging.html#debugging-sessions">Debugging sessions</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="data_storage.html#using-the-database">Using the database</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data_storage.html#database-cleanup">Database cleanup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data_storage.html#multiple-database-directories">Multiple database directories</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data_storage.html#file-zones">File zones</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="environments.html#transformer-environments">Transformer environments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="environments.html#context-environments">Context environments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="environments.html#relevant-test-examples">Relevant test examples</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Data storage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_storage.html#data-storage-explained">Data storage explained</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_storage.html#the-seamless-database">The Seamless database</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#deploying-a-workflow-as-an-interactive-web-service">Deploying a workflow as an interactive web service</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#cloudless">Cloudless</a></li>

@@ -64,7 +64,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#how-to-keep-things-simple">How to keep things simple</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-keep-it-simple">How to keep it simple</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#keep-it-simple">Keep it simple</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#simple-cells">Simple cells</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#simple-web-interfaces">Simple web interfaces</a></li>
@@ -94,12 +94,12 @@
 <li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="validation.html#silk">Silk</a></li>
 <li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
 <li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Seamless database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Data storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Advanced features</span></p>
@@ -145,6 +145,7 @@
 <h2>Learning the basics<a class="headerlink" href="#learning-the-basics" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="basic-seamless-features">
 <h3>Basic Seamless features<a class="headerlink" href="#basic-seamless-features" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is a draft. The preliminary text is shown below</strong></em></p>
 <p>The basic Seamless features are contexts, cells and transformers. See the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/introduction.html#basic-example">basic example</a> for a demonstration.</p>
 <p>Contexts contain cells, transformers and other contexts. The whole Seamless workflow is a context.</p>
 <p>Cells contain data or code.</p>
@@ -154,20 +155,22 @@
 </div>
 <div class="section" id="programming-in-two-places">
 <h3>Programming in two places<a class="headerlink" href="#programming-in-two-places" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
 <p>With Seamless, there is programming in two places. First, there is the “outside”: the Jupyter or IPython shell where the Seamless workflow is being created interactively. In addition, there is the “inside”:</p>
 <p>…</p>
 <p>and Seamless supports many programming languages: bash, Python, and C/C++ are well-tested. Other languages such as R, Cython, Fortran or Go are also supported, but less tested. As a beginner, it is recommended to stick to transformers written in Python or bash.</p>
 </div>
 <div class="section" id="mounting-a-cell-to-the-file-system">
 <h3>Mounting a cell to the file system<a class="headerlink" href="#mounting-a-cell-to-the-file-system" title="Permalink to this headline">¶</a></h3>
-<p>STUB.</p>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <!-- This is just an aide to make it easier for you to edit a cell's data or code. It doesn't play any role in the execution of the workflow. --></div>
 <div class="section" id="sharing-a-cell-over-http">
 <h3>Sharing a cell over HTTP<a class="headerlink" href="#sharing-a-cell-over-http" title="Permalink to this headline">¶</a></h3>
-<p>STUB.</p>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 </div>
 <div class="section" id="dependency-graphs">
 <h3>Dependency graphs<a class="headerlink" href="#dependency-graphs" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is an outline. The outline is shown below</strong></em></p>
 <p>Seamless workflows are dependency graphs.</p>
 <!--
 
@@ -196,7 +199,7 @@ NOTE TO SELF: to make sense of "programming in two places" and "new-project".
 <div class="section" id="dividing-the-work-into-phases">
 <h2>Dividing the work into phases<a class="headerlink" href="#dividing-the-work-into-phases" title="Permalink to this headline">¶</a></h2>
 <p>If you like to explore first and make design decisions later, Seamless may suit your style, even if you are a beginner. However, if you feel lost, it is recommended to plan ahead, and divide the work into phases that you complete one after another. This gives you an idea of what you should do at the moment. But don’t hesitate to go back to a previous phase at any time when you feel that it needs to be corrected.</p>
-<p>The following phases are recommended: design, implementation, visualization, validation, deployment. For validation, see the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/documentation">documentation</a>; you can choose to skip it for simple projects.</p>
+<p>The following phases are recommended: design, implementation, visualization, validation, deployment. For validation, see the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/validation.html">validation documentation</a>; you can choose to skip it for simple projects.</p>
 <div class="section" id="design-phase">
 <h3>Design phase<a class="headerlink" href="#design-phase" title="Permalink to this headline">¶</a></h3>
 <p>Designing a workflow must be done outside of Seamless, as Seamless does not (yet) support any kind visual programming. It involves drawing a dependency graph, first in an abstract sense, then concretely.</p>
@@ -217,6 +220,7 @@ NOTE TO SELF: to make sense of "programming in two places" and "new-project".
 <p>Here, the design is implemented in Seamless.</p>
 <div class="section" id="creating-an-new-project">
 <h4>Creating an new project<a class="headerlink" href="#creating-an-new-project" title="Permalink to this headline">¶</a></h4>
+<p><em><strong>IMPORTANT: This documentation section is an outline. The outline is shown below</strong></em></p>
 <p>… TODO … (choose PROJDIR and PROJNAME, bash snippet)</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda activate seamless
 ...
@@ -225,8 +229,10 @@ NOTE TO SELF: to make sense of "programming in two places" and "new-project".
 </div>
 <div class="section" id="starting-the-implementation">
 <h4>Starting the implementation<a class="headerlink" href="#starting-the-implementation" title="Permalink to this headline">¶</a></h4>
-<p>… (seamless-jupyter-trusted) …</p>
-</div>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
+<!--
+... (seamless-jupyter-trusted) ...
+--></div>
 <div class="section" id="examples-of-porting-existing-workflows">
 <h4>Examples of porting existing workflows<a class="headerlink" href="#examples-of-porting-existing-workflows" title="Permalink to this headline">¶</a></h4>
 <p>If you are a beginner, the implementation phase is much simpler if you are starting from an existing workflow. There are two examples of how to do that for a workflow that has been already defined in a Jupyter notebook. In both cases, an interactive web interface is built as well.</p>
@@ -252,6 +258,7 @@ NOTE TO SELF: to make sense of "programming in two places" and "new-project".
 </div>
 <div class="section" id="monitoring-debugging">
 <h4>Monitoring / debugging<a class="headerlink" href="#monitoring-debugging" title="Permalink to this headline">¶</a></h4>
+<p><em><strong>IMPORTANT: This documentation section is a draft. The preliminary text is shown below</strong></em></p>
 <ul class="simple">
 <li><p><em>Monitoring</em> is not part of the graph. In IPython/Jupyter, you can interactively access <code class="docutils literal notranslate"><span class="pre">Context.status</span></code> ,  <code class="docutils literal notranslate"><span class="pre">Cell.status</span></code> and <code class="docutils literal notranslate"><span class="pre">Transformer.status</span></code> , as well as <code class="docutils literal notranslate"><span class="pre">Cell.exception</span></code> and <code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code>. You can monitor this in the browser… TODO</p></li>
 </ul>
@@ -265,8 +272,9 @@ Same message can be obtained by:
 </div>
 </div>
 </div>
-<div class="section" id="how-to-keep-things-simple">
-<h2>How to keep things simple<a class="headerlink" href="#how-to-keep-things-simple" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="how-to-keep-it-simple">
+<h2>How to keep it simple<a class="headerlink" href="#how-to-keep-it-simple" title="Permalink to this headline">¶</a></h2>
+<p><em><strong>IMPORTANT: This documentation section is an outline. The outline is shown below</strong></em></p>
 <p>TODO: merging the next section into here…</p>
 <ul class="simple">
 <li><p>Keep it simple (link): create a new project, use Jupyter</p></li>
@@ -290,14 +298,18 @@ Same message can be obtained by:
 <!--
 ### Getting help
 
+(TODO when the help system has more entries)
+
 help(...) and .?
 Again, status graph is your friend
  TODO: add more .help, especially to graph / stdlib
 !--></div>
 <div class="section" id="simple-cells">
 <h3>Simple cells<a class="headerlink" href="#simple-cells" title="Permalink to this headline">¶</a></h3>
-<p>STUB. Discuss structured cells and celltype.</p>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <!--
+STUB. Discuss structured cells and celltype.
+
 #### Structured cells
 
 Subcell access. ...
@@ -308,22 +320,22 @@ The other major feature is that you can add schemas for data validation, but thi
 --></div>
 <div class="section" id="simple-web-interfaces">
 <h3>Simple web interfaces<a class="headerlink" href="#simple-web-interfaces" title="Permalink to this headline">¶</a></h3>
-<p>STUB.</p>
-<!-- TODO:  Discuss browser URL vs web form. Discuss making it work vs making it pretty. Link to visualization, recommend to read it. -->.</div>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
+<!-- TODO:  Discuss browser URL vs web form. Discuss making it work vs making it pretty. Link to visualization, recommend to read it. --></div>
 <div class="section" id="simple-deployment">
 <h3>Simple deployment<a class="headerlink" href="#simple-deployment" title="Permalink to this headline">¶</a></h3>
-<p>STUB.</p>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <!-- TODO (based on serve-graph, sharing the .seamless and zip). --></div>
 <div class="section" id="simple-features">
 <h3>Simple features<a class="headerlink" href="#simple-features" title="Permalink to this headline">¶</a></h3>
-<p>Seamless is more than just cells, transformers and contexts. But as a beginner, you are recommended to stick to them. Once you feel comfortable, you could then learn JSON Schema, library instances, or debugging. Other Seamless features are better suited for experienced programmers. In particular, as a beginner, you should stay away from macros and the low level. In addition, deep cells must be used with caution, as mistakes may lead to massive use of memory, disk space and/or download bandwidth. In the future, it may be possible to configure Seamless such that manual confirmation is required before massive resources are being claimed via deep cells.</p>
+<p>Seamless is more than just cells, transformers and contexts. But as a beginner, you are recommended to stick to them. Once you feel comfortable, you could then learn <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/validation.html">validation</a>, using <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/libraries.html">libraries</a>, or <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/debugging.html">debugging</a>. Other Seamless features are better suited for experienced programmers. In particular, as a beginner, you should stay away from macros and the low level. In addition, <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/deepcell.html">deep cells</a> must be used with caution, as mistakes may lead to massive use of memory, disk space and/or download bandwidth. In the future, it may be possible to configure Seamless such that manual confirmation is required before massive resources are being claimed via deep cells.</p>
 </div>
 </div>
 <div class="section" id="do-s-and-don-ts">
 <h2>Do’s and don’ts<a class="headerlink" href="#do-s-and-don-ts" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="do-write-reproducible-code">
 <h3>Do write reproducible code<a class="headerlink" href="#do-write-reproducible-code" title="Permalink to this headline">¶</a></h3>
-<p>STUB.</p>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <!--
 Intro:
 - Deterministic code
@@ -336,7 +348,8 @@ Intro:
 --></div>
 <div class="section" id="don-t-confuse-files-and-cell-names">
 <h3>Don’t confuse files and cell names<a class="headerlink" href="#don-t-confuse-files-and-cell-names" title="Permalink to this headline">¶</a></h3>
-<p>…
+<p><em><strong>IMPORTANT: This documentation section is an outline. The outline is shown below</strong></em>
+…
 Don’t confuse “inside” files and “outside” files.
 “outside” files: mounted.
 “inside” files: alternative syntax for cells or for pins (good idea for bash transformers).
@@ -374,8 +387,11 @@ The correct way to set it up is as follows:</p>
 <div class="section" id="troubleshooting">
 <h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><p><em>Problem: I changed something in the workflow, but nothing seems to happen</em>. Solution: try to re-translate your workflow. This is necessary after e.g. adding a new cell. Re-translation is done with <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation()</span></code>.</p></li>
-<li><p><em>Problem: error message “cannot mount structured cells”</em>. Solution: declare a celltype first. For mounting, celltype “text” is often a good choice.</p>
+<li><p><em>Problem: I changed something in the workflow, but nothing seems to happen</em>.</p>
+<p>Solution: try to re-translate your workflow. This is necessary after e.g. adding a new cell. Re-translation is done with <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation()</span></code>.</p>
+</li>
+<li><p><em>Problem: error message “cannot mount structured cells”</em>.</p>
+<p>Solution: declare a celltype first. For mounting, celltype “text” is often a good choice.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">)</span>
 <span class="c1"># or:</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;somevalue&quot;</span>
@@ -385,18 +401,28 @@ The correct way to set it up is as follows:</p>
 </div>
 <p>Don’t forget to translate after declaring a celltype, with <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation()</span></code>.</p>
 </li>
-<li><p><em>Problem: I am using a cell’s value in other Python code, with strange errors.</em> Solution: by default, cells are “structured”, which wraps the cell value in a “Silk” structure. You can do nice things with a Silk structure, but often you want the raw value instead. In that case, do <code class="docutils literal notranslate"><span class="pre">.value.unsilk</span></code> on a cell. Alternative solution: declare a celltype (see the previous problem). Celltype  “plain” (list, dict, int, float) or <code class="docutils literal notranslate"><span class="pre">&quot;binary&quot;</span></code> (Numpy) does usually what you want. In that case, don’t forget to translate with <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation()</span></code>.</p></li>
-<li><p><em>Problem: Variables and imports missing …</em> . Each step runs in isolation. …</p></li>
-<li><p><em>Problem</em>: (https://github.com/sjdv1982/seamless/issues/128)
-…</p></li>
-<li><p><em>Problem</em>: (https://github.com/sjdv1982/seamless/issues/56)
-…</p></li>
-<li><p><em>Problem</em>: [error message not kept]
-…
-If Seamless says that an error message was not kept, simply make
-a trivial change to the code (e.g. in Python, adding the word <code class="docutils literal notranslate"><span class="pre">pass</span></code> at the end. In bash, simply add a comment #).</p></li>
-<li><p><em>Problem</em>: [cachemiss error]
-… (Misconfiguration. Save and load… first git commit. vault/*/<name of checksum> in earlier versions)</p></li>
+<li><p><em>Problem: I am using a cell’s value in other Python code, with strange errors.</em></p>
+<p>Solution: by default, cells are “structured”, which wraps the cell value in a “Silk” structure. You can do nice things with a Silk structure, but often you want the raw value instead. In that case, do <code class="docutils literal notranslate"><span class="pre">.value.unsilk</span></code> on a cell. Alternative solution: declare a celltype (see the previous problem). Celltype  “plain” (list, dict, int, float) or <code class="docutils literal notranslate"><span class="pre">&quot;binary&quot;</span></code> (Numpy) does usually what you want. In that case, don’t forget to translate with <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation()</span></code>.</p>
+</li>
+<li><p><em>Problem: Variables and imports missing …</em> .</p>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
+  <!-- Each step runs in isolation. ... --></li>
+<li><p><em>Problem</em>: (https://github.com/sjdv1982/seamless/issues/128)</p>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
+</li>
+<li><p><em>Problem</em>: (https://github.com/sjdv1982/seamless/issues/56)</p>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
+</li>
+<li><p><em>Problem</em>: [error message not kept]</p>
+<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
+<p>…</p>
+<p>If Seamless says that an error message was not kept, simply make
+a trivial change to the code (e.g. in Python, adding the word <code class="docutils literal notranslate"><span class="pre">pass</span></code> at the end. In bash, simply add a comment #).</p>
+</li>
+<li><p><em>Problem</em>: [cachemiss error]</p>
+<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
+<p>… (Misconfiguration. Save and load… first git commit. vault/*/<name of checksum> in earlier versions)</p>
+</li>
 </ul>
 </div>
 </div>

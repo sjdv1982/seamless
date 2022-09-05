@@ -1,6 +1,18 @@
 # The Seamless shareserver
 
-(This documentation is a stub)
+***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
+
+**Relevant examples:**
+
+- [basic example](https://github.com/sjdv1982/seamless/tree/stable/examples)
+
+- [webserver demo](https://github.com/sjdv1982/seamless/tree/stable/examples/webserver-demo)
+
+- [webserver example](https://github.com/sjdv1982/seamless/tree/stable/examples/webserver-example)
+
+- [datatables](https://github.com/sjdv1982/seamless/tree/stable/examples/datatables-example)
+
+- [grid editor](https://github.com/sjdv1982/seamless/tree/stable/examples/grid-editor-example)
 
 The shareserver is to share Seamless cells via its REST API.
 By default, the REST port is 5813

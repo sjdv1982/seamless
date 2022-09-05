@@ -1,6 +1,12 @@
 # Macros and the low level
 
-STUB
+***IMPORTANT: This documentation section is a stub.***
+
+Relevant tests:
+
+- macro-simple.py, macro.py, macro-elision.py
+- the high-in-low tests
+- all low-level tests
 
 <!--
 ### D8. The low level

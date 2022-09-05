@@ -1,4 +1,16 @@
-## Validation
+# Validation
+
+**Relevant examples:**
+
+- [basic example](https://github.com/sjdv1982/seamless/tree/stable/examples)
+
+See [Running examples](https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-examples-locally) on how to run examples.
+
+**Relevant test examples:**
+
+- [simplest.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/simplest.py)
+
+- [simpler.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/simpler.py)
 
 As a rule, *validation* happens on the data. Transformation code is not the correct place to do validation.
 
@@ -8,10 +20,9 @@ Validation errors show up in the monitoring. At this point, the monitoring (whic
 
 This is also the time to create tests. A unit test should be a small Seamless context linked to the same files as the main project for code and schema cells. Other tests can be a copy of the main graph with some parameters changed. *Make sure to create some tests that are designed to fail, to verify that a correct and comprehensible error message is reported*.
 
+## Silk
 
-# Silk
-
-STUB
+***IMPORTANT: This documentation section is a stub.***
 
 <!--
 ### D2. Silk
