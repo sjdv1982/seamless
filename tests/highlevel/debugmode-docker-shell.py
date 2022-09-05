@@ -16,4 +16,5 @@ ctx.result.celltype = "mixed"
 ctx.compute()
 print(ctx.result.value)
 
-ctx.tf.debug.enable("sandbox", sandbox_name="docker-shell")
+ctx.tf.debug.enable("sandbox", sandbox_name="docker-sandbox")
+ctx.tf.debug.shell()

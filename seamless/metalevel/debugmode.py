@@ -231,7 +231,7 @@ class DebugMode:
             if tf.language == "bash":
                 special = "bash"
             elif node.get("compiled"):
-                special = "compiled"        
+                special = "compiled"       
             core_transformer = self._get_core_transformer(force=True)
             self._mount = debugmountmanager.add_mount(
                 core_transformer, special=special, prefix=sandbox_name
@@ -269,7 +269,7 @@ Only sandbox debug mode is possible."""
 
     @property
     def attach(self):
-        """Debugger attach. 
+        """Debugger attach.
 If True, the transformer will wait for a debugger to attach"""
         return self._attach
 
@@ -292,6 +292,7 @@ If True, the transformer will wait for a debugger to attach"""
                 print("Debugger attach has changed: no effect on current debug mode")
 
     @property
+
     def mode(self):
         return self._mode
     

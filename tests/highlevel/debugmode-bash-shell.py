@@ -21,4 +21,5 @@ try:
 except ValidationError as exc:
     traceback.print_exc(limit=0)
 
-ctx.tf.debug.enable("sandbox", sandbox_name="bash-shell")
+ctx.tf.debug.enable("sandbox", sandbox_name="bash-sandbox")
+ctx.tf.debug.shell()

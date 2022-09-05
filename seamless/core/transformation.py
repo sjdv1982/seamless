@@ -69,10 +69,8 @@ class SeamlessStreamTransformationError(Exception):
 
 _locks = [None] * multiprocessing.cpu_count()
 
-# NOTE: if you run Seamless outside the Docker host network bridge,
-# you probably want these ports exposed... TODO
 _python_attach_ports = {
-    port: None for port in range(5679, 5680)
+    port: None for port in range(5679, 5685)
 }
 
 def set_ncores(ncores):
