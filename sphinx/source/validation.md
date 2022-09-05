@@ -1,5 +1,7 @@
 # Validation
 
+***IMPORTANT: This documentation section is a draft. The preliminary text is shown below***
+
 **Relevant examples:**
 
 - [basic example](https://github.com/sjdv1982/seamless/tree/stable/examples)

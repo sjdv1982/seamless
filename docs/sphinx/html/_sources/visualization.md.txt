@@ -1,5 +1,7 @@
 # Visualization
 
+***IMPORTANT: This documentation section is a draft. The preliminary text is shown below***
+
 ## Using Jupyter notebooks
 
 *User experience* (UX) can be done initially using Jupyter notebooks (very quick to set up). See [this simple test](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/traitlets.ipynb), to be opened with `seamless-jupyter`.

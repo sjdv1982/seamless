@@ -203,6 +203,8 @@ TODO: from tutorial:
 
 ***IMPORTANT: This documentation section is a stub.***
 
+(integrate or delegate to [documentation on environments](https://sjdv1982.github.io/seamless/sphinx/html/environments))
+
 **Relevant test examples:**
 
 - [environment.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment.py)

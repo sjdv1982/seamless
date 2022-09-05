@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Recipe for a new Seamless project &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <title>Seamless projects &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
@@ -41,9 +41,9 @@
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
 <li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Recipe for a new Seamless project</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Seamless projects</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#a-setting-up-a-collaborative-project">A. Setting up a collaborative project</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#b-project-initialization">B. Project initialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#b-setting-up-a-solo-project">B. Setting up a solo project</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#c-project-implementation">C. Project implementation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#solo-projects">Solo projects</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#for-collaborative-project-hosts">For collaborative project hosts</a></li>
@@ -66,6 +66,9 @@
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Data storage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
 </ul>
@@ -93,7 +96,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Recipe for a new Seamless project</li>
+      <li>Seamless projects</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/new-project.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -103,45 +106,46 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="recipe-for-a-new-seamless-project">
-<h1>Recipe for a new Seamless project<a class="headerlink" href="#recipe-for-a-new-seamless-project" title="Permalink to this headline">¶</a></h1>
-<p>Seamless is well-suited for remote collaborative projects, where one person is the <em><strong>host</strong></em> and the others are <em><strong>guests</strong></em>. The host must have Seamless installed, but the guests can be under Windows or any OS, as long as they can install Visual Studio Code.</p>
+  <div class="section" id="seamless-projects">
+<h1>Seamless projects<a class="headerlink" href="#seamless-projects" title="Permalink to this headline">¶</a></h1>
+<p>It is possible to work with Seamless in the form of a <em>project</em>, where basic data storage, monitoring over the web, and collaborative web forms have been set up by default.</p>
+<p>Seamless is well-suited for collaborative coding projects, where one person is the <em><strong>host</strong></em> and the others are <em><strong>guests</strong></em>. The host must have Seamless installed, but the guests can be under Windows or any OS, as long as they can install Visual Studio Code.</p>
 <p>If you are working solo and don’t want remote collaboration, proceed with section B.</p>
 <div class="section" id="a-setting-up-a-collaborative-project">
 <h2>A. Setting up a collaborative project<a class="headerlink" href="#a-setting-up-a-collaborative-project" title="Permalink to this headline">¶</a></h2>
 <p><strong>Only the host needs to do this. If you are a guest, go to section C.</strong></p>
-<ol class="simple">
+<ol>
 <li><p>Install <a class="reference external" href="https://code.visualstudio.com/">Visual Studio Code</a>.</p></li>
 <li><p>Step 3-5 are for hosting on a remote machine (via ssh). If you are hosting from your own local machine, go to step 6. <em>It is not recommended to host a remote directory that has been mounted locally (sshfs).</em></p></li>
 <li><p>In Visual Studio Code, install the Remote Development extension (Ctrl+Shift+X, type “Remote Development”).</p></li>
 <li><p>Set up your <code class="docutils literal notranslate"><span class="pre">~/.ssh/config</span></code>.  Below is an example for a machine <em>gateway</em> that is accessible directly, and a machine
-<em>workstation</em> that is only accessible from <em>gateway</em>:</p></li>
-</ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Host</span> <span class="n">gateway</span>
-    <span class="n">HostName</span> <span class="mf">999.999.1.99</span>
-    <span class="n">User</span> <span class="n">yourname</span>
+<em>workstation</em> that is only accessible from <em>gateway</em>:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Host gateway
+    HostName 999.999.1.99
+    User yourname
 
-<span class="n">Host</span> <span class="n">workstation</span>
-    <span class="n">HostName</span> <span class="mf">192.168.1.86</span>
-    <span class="n">User</span> <span class="n">yourname</span>
-    <span class="n">ProxyCommand</span> <span class="n">ssh</span> <span class="o">-</span><span class="n">q</span> <span class="o">-</span><span class="n">W</span> <span class="o">%</span><span class="n">h</span><span class="p">:</span><span class="o">%</span><span class="n">p</span> <span class="n">gateway</span>
+Host workstation
+    HostName 192.168.1.86
+    User yourname
+    ProxyCommand ssh -q -W %h:%p gateway
 </pre></div>
 </div>
 <p>To verify that it works, do <code class="docutils literal notranslate"><span class="pre">ssh</span> <span class="pre">workstation</span></code> and/or <code class="docutils literal notranslate"><span class="pre">ssh</span> <span class="pre">gateway</span></code> from the command line.</p>
-<ol class="simple">
+</li>
 <li><p>In Visual Studio Code, connect to the Remote Explorer (icon on the left, or Ctrl-Shift-P =&gt; type “Remote Explorer”).
 Connect to the remote host machine.</p></li>
-<li><p>In Visual Studio Code, type <code class="docutils literal notranslate"><span class="pre">Ctrl-Shift-(backtick)</span></code> to open a new terminal, or use the Terminal menu. Create a new directory PROJDIR, go there. and do <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless;</span> <span class="pre">seamless-</span></code>.</p></li>
+<li><p>On the host machine, install Seamless.</p></li>
+<li><p>In Visual Studio Code, type <code class="docutils literal notranslate"><span class="pre">Ctrl-Shift-(backtick)</span></code> to open a new terminal, or use the Terminal menu. Create a new directory PROJDIR, go there. Type <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code>. Type <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span> <span class="pre">PROJNAME</span></code> where <code class="docutils literal notranslate"><span class="pre">PROJNAME</span></code> is the name you choose for your project.</p></li>
 <li><p>In Visual Studio Code, in the File menu, click “Add Folder to Workspace”.
 After adding the new directory, save the workspace as PROJDIR/PROJNAME, where PROJNAME is the name of the project.</p></li>
+<li><p>If you are an advanced user, now it is the moment to customize version control and set up databases and job handlers. See “Advanced configuration” for more detail.</p></li>
 </ol>
 </div>
-<div class="section" id="b-project-initialization">
-<h2>B. Project initialization<a class="headerlink" href="#b-project-initialization" title="Permalink to this headline">¶</a></h2>
-<p>This is for both solo projects and collaborative projects. <strong>For a collaborative project, only the host needs to do this (on the host machine). If you are a guest, go to section C.</strong></p>
+<div class="section" id="b-setting-up-a-solo-project">
+<h2>B. Setting up a solo project<a class="headerlink" href="#b-setting-up-a-solo-project" title="Permalink to this headline">¶</a></h2>
 <ol class="simple">
-<li><p>On the host machine, install Seamless.</p></li>
-<li><p>Create a new directory PROJDIR. Open a shell in the new directory. Type <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span> <span class="pre">PROJNAME</span></code> where <code class="docutils literal notranslate"><span class="pre">PROJNAME</span></code> is the name you choose for your project.</p></li>
+<li><p>Install Seamless.</p></li>
+<li><p>Create a new directory PROJDIR. Open a shell in the new directory. Type <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code>. Type <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span> <span class="pre">PROJNAME</span></code> where <code class="docutils literal notranslate"><span class="pre">PROJNAME</span></code> is the name you choose for your project.</p></li>
 <li><p>If you are an advanced user, now it is the moment to customize version control and set up databases and job handlers. See “Advanced configuration” for more detail.</p></li>
 </ol>
 </div>
@@ -193,7 +197,7 @@ This opens a console that connects to the same kernel as the Notebook. From here
 <ul class="simple">
 <li><p>If you do nothing, guests can only edit files. In the case of file-mounted code cells, this still means arbitrary execution of code.</p></li>
 <li><p>To let them see any web form, you must expose the HTTP ports used by Seamless, which are by default 5138 and 5813 (this is reported in the first Jupyter Notebook output).
-In Visual Studio Code, click again on your name on the bottom and select “Share server” and enter the port number. Once you have shared both ports, you and any guest can see the monitoring at http://localhost:5813/status/status.html</p></li>
+In Visual Studio Code, click again on your name on the bottom and select “Share server” and enter the port number. Once you have shared both ports, you and any guest can see the monitoring at http://localhost:5813/status/status.html.</p></li>
 <li><p>To let them help with the topology, you must share the terminal in which the “jupyter console” or “ipython” command is running. Terminals can be shared in the Live Share menu. Note that you can launch arbitrary commands from within a Jupyter console.</p></li>
 <li><p>If you want them to get full Jupyter Notebook access, you must share the Jupyter port (8888). However, Jupyter Notebooks do not really support collaborative editing, so communicate clearly. Note that Jupyter allows you to open new command line terminals in the browser.</p></li>
 </ul>

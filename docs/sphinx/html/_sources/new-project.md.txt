@@ -1,6 +1,8 @@
-# Recipe for a new Seamless project
+# Seamless projects
 
-Seamless is well-suited for remote collaborative projects, where one person is the ***host*** and the others are ***guests***. The host must have Seamless installed, but the guests can be under Windows or any OS, as long as they can install Visual Studio Code.
+It is possible to work with Seamless in the form of a *project*, where basic data storage, monitoring over the web, and collaborative web forms have been set up by default.
+
+Seamless is well-suited for collaborative coding projects, where one person is the ***host*** and the others are ***guests***. The host must have Seamless installed, but the guests can be under Windows or any OS, as long as they can install Visual Studio Code.
 
 If you are working solo and don't want remote collaboration, proceed with section B.
 
@@ -17,34 +19,36 @@ If you are working solo and don't want remote collaboration, proceed with sectio
 4. Set up your `~/.ssh/config`.  Below is an example for a machine *gateway* that is accessible directly, and a machine
 *workstation* that is only accessible from *gateway*:
 
-```
-Host gateway
-    HostName 999.999.1.99
-    User yourname
+    ```text
+    Host gateway
+        HostName 999.999.1.99
+        User yourname
 
-Host workstation
-    HostName 192.168.1.86
-    User yourname
-    ProxyCommand ssh -q -W %h:%p gateway
-```
+    Host workstation
+        HostName 192.168.1.86
+        User yourname
+        ProxyCommand ssh -q -W %h:%p gateway
+    ```
 
-To verify that it works, do `ssh workstation` and/or `ssh gateway` from the command line.
+    To verify that it works, do `ssh workstation` and/or `ssh gateway` from the command line.
 
 5. In Visual Studio Code, connect to the Remote Explorer (icon on the left, or Ctrl-Shift-P => type "Remote Explorer").
 Connect to the remote host machine.
 
-6. In Visual Studio Code, type `Ctrl-Shift-(backtick)` to open a new terminal, or use the Terminal menu. Create a new directory PROJDIR, go there. and do `conda activate seamless; seamless-`.
+6. On the host machine, install Seamless.
 
-7. In Visual Studio Code, in the File menu, click "Add Folder to Workspace".
+7. In Visual Studio Code, type `Ctrl-Shift-(backtick)` to open a new terminal, or use the Terminal menu. Create a new directory PROJDIR, go there. Type `conda activate seamless`. Type `seamless-new-project PROJNAME` where `PROJNAME` is the name you choose for your project.
+
+8. In Visual Studio Code, in the File menu, click "Add Folder to Workspace".
 After adding the new directory, save the workspace as PROJDIR/PROJNAME, where PROJNAME is the name of the project.
 
-## B. Project initialization
+9. If you are an advanced user, now it is the moment to customize version control and set up databases and job handlers. See "Advanced configuration" for more detail.
 
-This is for both solo projects and collaborative projects. **For a collaborative project, only the host needs to do this (on the host machine). If you are a guest, go to section C.**
+## B. Setting up a solo project
 
-1. On the host machine, install Seamless.
+1. Install Seamless.
 
-2. Create a new directory PROJDIR. Open a shell in the new directory. Type `seamless-new-project PROJNAME` where `PROJNAME` is the name you choose for your project.
+2. Create a new directory PROJDIR. Open a shell in the new directory. Type `conda activate seamless`. Type `seamless-new-project PROJNAME` where `PROJNAME` is the name you choose for your project.
 
 3. If you are an advanced user, now it is the moment to customize version control and set up databases and job handlers. See "Advanced configuration" for more detail.
 
@@ -98,7 +102,7 @@ Click on it, then on "invite others", and paste the link in a message to the gue
 
 7. Open the Jupyter window in the browser. A notebook called PROJNAME.ipynb will exist in PROJDIR.
 
-8.  Open a second terminal, do `conda activate seamless`, and type `seamless-jupyter-connect` (pressing Tab for completion is recommended).
+8. Open a second terminal, do `conda activate seamless`, and type `seamless-jupyter-connect` (pressing Tab for completion is recommended).
     This opens a console that connects to the same kernel as the Notebook. From here (or, if you really want, from the Notebook) you can modify `ctx` to implement the topology.
 
 9. Instead of using Jupyter, you can open your project in IPython instead by typing
@@ -109,7 +113,7 @@ Click on it, then on "invite others", and paste the link in a message to the gue
     - If you do nothing, guests can only edit files. In the case of file-mounted code cells, this still means arbitrary execution of code.
 
     - To let them see any web form, you must expose the HTTP ports used by Seamless, which are by default 5138 and 5813 (this is reported in the first Jupyter Notebook output).
-    In Visual Studio Code, click again on your name on the bottom and select "Share server" and enter the port number. Once you have shared both ports, you and any guest can see the monitoring at http://localhost:5813/status/status.html
+    In Visual Studio Code, click again on your name on the bottom and select "Share server" and enter the port number. Once you have shared both ports, you and any guest can see the monitoring at http://localhost:5813/status/status.html.
 
     - To let them help with the topology, you must share the terminal in which the "jupyter console" or "ipython" command is running. Terminals can be shared in the Live Share menu. Note that you can launch arbitrary commands from within a Jupyter console.
 

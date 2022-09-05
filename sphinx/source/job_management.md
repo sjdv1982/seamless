@@ -4,7 +4,7 @@
 
 Relevant tests:
 
-- See the seamless-tools repo (https://github.com/sjdv1982/seamless-tools)
+- See the [seamless-tools repo](https://github.com/sjdv1982/seamless-tools), in particular the jobless section.
 
 - For a very detailed understanding, the low-level communion tests (see https://github.com/sjdv1982/seamless/tree/stable/tests/lowlevel/test-list.txt)
 
