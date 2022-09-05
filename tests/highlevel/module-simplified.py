@@ -3,8 +3,6 @@
 This is a simplified test for modules, treating the module as a structured Cell.
 """
 
-import seamless.core.execute
-
 tf_code = '''
 print(__name__)
 print(testmodule)
