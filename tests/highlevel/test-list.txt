@@ -168,6 +168,7 @@ parse-pdb.py: will fail unless parse-pdb-environment.yml is installed
                seamless-conda-env-modify SOMEDIR parse-pdb-environment.yaml
                seamless-conda-env-run-transformation SOMEDIR $cs
 plotting.py. Change ctx.plot.period and ctx.plot.npoints.
+environment.py
    Can be run automatically in a standard container (with python),
     and will exit at some point because Rust is not installed
     (see test-outputs/environment.out)

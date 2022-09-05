@@ -16,6 +16,12 @@ ctx.tf1 = func
 ctx.tf1.a = 1
 ctx.tf1.delay = 5
 ctx.tf1.debug.direct_print = True
-ctx.tf1.debug.direct_print_file = "/tmp/direct-print.out"
 ctx.result = ctx.tf1
-ctx.translate()
+ctx.compute()
+ctx.tf1.delay = 10
+print("Print to file /tmp/direct-print.out")
+ctx.tf1.debug.direct_print_file = "/tmp/direct-print.out"
+ctx.compute()
+import os
+print("Content of /tmp/direct-print.out")
+os.system("cat /tmp/direct-print.out")
