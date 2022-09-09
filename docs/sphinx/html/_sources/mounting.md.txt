@@ -1,5 +1,7 @@
 # Mounting to the file system
 
+The purpose of mounting cells (and transformer pins) to the file system is that you can use editors (text editors, IDEs, image editors) on your computer to edit and visualize a cell *while you develop a Seamless workflow*. Mounting has no influence whatsoever on the execution of the workflow.
+
 ***IMPORTANT: This documentation section is a stub.***
 
 **Relevant examples:**

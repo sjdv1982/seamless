@@ -1,5 +1,7 @@
 # Data storage
 
+In Seamless, everything revolves around checksums. The primary purpose of data storage is to retrieve the underlying buffer of each checksum. In addition, there is "buffer info", the keeping of statistics that help in converting buffers from one celltype to another. Third, there is the storage of transformation results, in the form of a mapping of transformation checksum to result checksum. Finally, there is also compilation, the checksum-to-checksum mapping of source code in e.g. C/C++ to its compiled binary.
+
 ## Data storage explained
 
 ***IMPORTANT: This documentation section is an outline. The outline is shown below***

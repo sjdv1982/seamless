@@ -97,6 +97,7 @@
              
   <div class="section" id="deep-cells">
 <h1>Deep cells<a class="headerlink" href="#deep-cells" title="Permalink to this headline">¶</a></h1>
+<p>The primary function of deep cells is to describe data that is too big to fit in memory, by using a checksum-of-checksums approach. A deep cell has a checksum where the underlying value is itself a dict of checksums. Those checksums can either be of celltype “mixed” (DeepCell) or “bytes” (DeepFolderCell, FolderCell).</p>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <p>(relevant tests are probably not that useful without explanation first. Integrate with “deep structures” in “Seamless explained”.)</p>
 <!--

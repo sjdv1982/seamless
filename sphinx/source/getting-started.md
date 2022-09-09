@@ -14,11 +14,13 @@ If the above overview makes you feel overwhelmed, please read the next chapter, 
 
 If you are an experienced developer, you are strongly advised to read [Seamless explained](http://sjdv1982.github.io/seamless/sphinx/html/explained.html). It is easy to be confused when Seamless seems to work like something else that you already know, until it doesn't. Sometimes, Seamless can give the illusion of being like Jupyter, but with non-linear execution and the ability to mount cells to the file system. At other times, Seamless can give the illusion of being like NextFlow or Snakemake, but based on values in memory instead of files, together with a reactive web interface. These illusions are on purpose, to make Seamless easier to learn, but under certain circumstances they break down. This is mostly because of checksums, which are used everywhere in Seamless to provide reproducibility.
 
-## Moving forward
+## Further documentation
 
 In the rest of this documentation, the features of Seamless are discussed. A decent knowledge of programming is assumed.
 
 At the end, there is the documentation generated from the source code docstrings.
+
+## Examples and tests
 
 A final source of information are the examples and the tests. The feature documentation often refers to them.
 

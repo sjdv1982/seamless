@@ -4,7 +4,7 @@ If you are beginner in programming, you focus on one thing at a time. However, S
 
 The most important guidelines for beginners are: "learn the basics", "keep it simple", and "one thing after another". The guide consists of one section for each guideline, followed by general guidelines and troubleshooting.
 
-***Disclaimer**: this guide is by definition a rather patronizing document. Feel free to ignore every guideline that doesn't apply to you. If you believe that the guide contains bad advice (i.e. guidelines that shouldn't apply to **anyone**), you are very welcome to propose improvements*.
+***Disclaimer**: this guide is by definition a rather patronizing document. If you are an experienced developer, you can skim or skip it altogether: the [next section](http://sjdv1982.github.io/seamless/sphinx/html/explained.html) will be more useful to you. In any case, feel free to ignore every guideline that doesn't apply to you. If you believe that the guide contains bad advice (i.e. guidelines that shouldn't apply to **anyone**), you are very welcome to propose improvements*.
 
 ## Learning the basics
 
@@ -86,21 +86,21 @@ The following phases are recommended: design, implementation, visualization, val
 
 ### Design phase
 
-Designing a workflow must be done outside of Seamless, as Seamless does not (yet) support any kind visual programming. It involves drawing a dependency graph, first in an abstract sense, then concretely.
+Designing a workflow must be done outside of Seamless, as Seamless does not (yet) support any kind of visual programming. It involves drawing a dependency graph, first in an abstract sense, then concretely.
 
 #### Abstract dependency graph
 
-You should start with thinking of dependencies in an abstract way. Think of your workflow as a set of independent computations with well-defined inputs and outputs. Draw some flowcharts.
+The goal of this phase is to describe your entire computation as a workflow in an abstract way. First, divide your computation into different steps. Put the steps in order. Such a linear sequence of steps is the simplest possible workflow. Most of the time, your workflow is non-linear: for example, step 3 may not require step 2 to be complete, only step 1. In other words, step 3 depends on step 1, and step 2 depends on step 1, but step 3 does not depend on step 2. Draw a flowchart, consisting of all of the steps and their dependencies. Give names to the steps, and also enumerate their inputs and outputs. If step 3 depends on step 1, indicate if step 3 needs the entire output or only part of it. Once you have done this, your flowchart is now essentially a *dependency graph*.
 
-Seamless is very strict about dependencies. Normal shell commands may implicitly assume that a certain package is installed, or that certain files are present. In contrast, Seamless transformations are executed in isolation: if there is any implicit dependency, they will loudly fail. This is considered a good thing.
-
-You must avoid cyclic dependencies in your graph, i.e. computations that (directly or indirectly) have their own output as input.
+You must avoid cyclic dependencies in your graph, i.e. computations that (directly or indirectly) have their own output as input. This happens if your workflow has several iterations where the same steps are being performed with the output of the previous iteration. Seamless has support for cyclic dependencies, but such workflows are not for beginners.
 
 #### Concrete dependency graph
 
-Once you have an abstract dependency graph, try to make it more concrete. Formulate every computation as a block with one code input, several data/parameter inputs, and one data output. (You can have multiple data outputs, although the implementation will then be a little bit more complex, using Seamless structured cells). Decide the programming language for each block. Choose names for each input. These computation blocks will later become Seamless transformers. The inputs and outputs will become cells.
+Once you have a dependency graph, try to make it as concrete as possible. Formulate every computation as a block with one code input, several data/parameter inputs, and one data output. (You can have multiple data outputs, although the implementation will then be a little bit more complex, using Seamless structured cells). Decide the programming language for each block. Choose names for each input. These computation blocks will later become Seamless transformers. The inputs and outputs will become cells.
 
-If you are porting an existing workflow (bash, Jupyter, Snakemake) that is not too complex, you could skip the concrete dependency graph and move straight to the implementation.
+Seamless is very strict about dependencies. If your computation consists of shell commands, make sure that you understand their inputs and outputs. Normal shell commands may implicitly assume that a certain package is installed, or that certain files are present. In contrast, Seamless transformations are executed in isolation: if there is any implicit dependency, they will loudly fail. This is considered a good thing, because it detects problems in reproducibility. For reproducible computations, all inputs and outputs (no matter if they are files or Seamless cells) must be carefully enumerated. If not, your workflow may work on your computer, but nowhere else. With Seamless, it will probably work not at all.
+
+If you can avoid the above problem, and if you are porting an existing workflow (bash, Jupyter, Snakemake) that is not too complex, you could skip the concrete dependency graph and move straight to the implementation.
 
 ### Implementation phase
 
@@ -140,7 +140,7 @@ Each computation wraps a single bash command that invokes a single command line 
 
 There are two strategies to define a command-line transformation.
 
-1. The best way is use a bash transformer where you include the source code of every command line tool (except standard UNIX commands). This will make the transformation reproducible. There are two limitations:
+1. The best way is use a bash transformer where you include the source code of every command line tool that is being used (except standard UNIX commands). This will make the transformation reproducible. There are two limitations:
 
     - The command line tool must not have any hard-coded "magic files" where it depends on, unless the content of such a file can be included as one of the transformer inputs.
 
@@ -263,7 +263,7 @@ Don't confuse "inside" files and "outside" files.
 Finally, .share as "file.txt" is clean but does not have any effect.
 Set mimetype!
 
-### Don't rely on files or URLs
+### Don't rely on file names or URLs
 
 Don't put file names as strings inside cells, and don't use file names in transformation code. Doing so makes your workflow non-reproducible. For example:
 

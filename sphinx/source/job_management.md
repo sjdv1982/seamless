@@ -1,5 +1,7 @@
 # Job management
 
+The purpose of job management is the remote (over the network) execution of Seamless transformations, either by another Seamless instance, or by a job manager. In the [seamless-tools repo](https://github.com/sjdv1982/seamless-tools) there exists an experimental job manager for Seamless named "jobless".
+
 ***IMPORTANT: This documentation section is a stub.***
 
 Relevant tests:

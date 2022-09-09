@@ -1,5 +1,11 @@
 # Modules
 
+The purpose of modules is to represent extra code objects that are added to a transformation.
+
+If added to a Python transformation, a Seamless module of Python (or IPython) code becomes a Python module or package, whereas a Seamless module of compiled code becomes a shared library.
+
+Modules added to non-Python transformations are currently not supported.
+
 ***IMPORTANT: This documentation section is a stub.***
 
 **Relevant test examples:**
