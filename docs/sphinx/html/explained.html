@@ -133,6 +133,7 @@
              
   <div class="section" id="seamless-explained">
 <h1>Seamless explained<a class="headerlink" href="#seamless-explained" title="Permalink to this headline">¶</a></h1>
+<p>This document is for experienced developers. If you are a beginner in programming,</p>
 <div class="section" id="core-concepts">
 <h2>Core concepts<a class="headerlink" href="#core-concepts" title="Permalink to this headline">¶</a></h2>
 <p>First, Seamless is a framework for <em>interactive</em> programming and scripting. There are essentially two ways that you can do this. The first is file-based, like the bash shell. The second is cell-based, such as IPython, Jupyter, or a spreadsheet. Seamless follows the cell-based approach.</p>
@@ -140,7 +141,7 @@
 <p>In a nutshell, most of Seamless revolves around <em><strong>cells</strong></em>, that hold the data and code, and <em><strong>transformers</strong></em>, that do the computation. Transformers take cells (including code cells) as input and have a single cell as output.</p>
 <div class="section" id="checksums">
 <h3>Checksums<a class="headerlink" href="#checksums" title="Permalink to this headline">¶</a></h3>
-<p>What makes Seamless special is that cells don’t hold values or filenames, but <em><strong>checksums</strong></em> (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren’t tied to a hierarchy of files, carefully named and accessible on a mounted file system. In contrast, while in Seamless you <em>can</em> mount a cell to a file, it just means that the cell’s checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is always free in terms of space, in the same way that a hardlink to a file is always free (but copying a file or value is not). Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. They just contain checksums, and data values are obtained only when they are needed. Checksums are small, and a workflow description with checksums is small, but their underlying data can be much larger than what fits in memory, or on disk. In other words, big data is possible with Seamless.</p>
+<p>What makes Seamless special is that cells don’t hold values or filenames, but <em><strong>checksums</strong></em> (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren’t tied to a hierarchy of files, carefully named and accessible on a mounted file system. Although in Seamless you <em>can</em> mount a cell to a file, it just means that the cell’s checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is always free in terms of space, in the same way that a hardlink to a file is always free (but copying a file or value is not). Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. They just contain checksums, and data values are obtained only when they are needed. Checksums are small, and a workflow description with checksums is small, but their underlying data can be much larger than what fits in memory, or on disk. In other words, big data is possible with Seamless.</p>
 <p>On the flip side, you can’t automatically assume that you have a cell’s data at your fingertips. By default, Seamless sets up some simple checksum-to-data stores, but that reintroduces some of the problems (potential memory issues, file copying) of using files and values instead of checksums. These problems can be minimized by manually configuring your data storage.</p>
 <p>The final implication is that since transformers are also based on checksums, and since these checksums fully describe the computation (parameters <em>and</em> code <em>and</em> result), you can replace a computation with its result, and replace a result with its computation (referential transparency). This is very beneficial for <em><strong>reproducibility</strong></em>, and it provides <em><strong>reactivity</strong></em>: after cell updates, it is always obvious which computations need to be re-executed. No need for manual re-execution (Jupyter) or reliance on file modification times (Snakemake). Finally, it means that computations are small to describe, and can run anywhere, as long as they can locate the data of their input checksums. More details are in the transformation section.</p>
 </div>
@@ -307,12 +308,12 @@ The first graph contains the main workflow. The second graph contains a status g
 <ul class="simple">
 <li><p>Topology vs parameters.</p></li>
 <li><p>Seamless translation machinery (midlevel), metalevel. How the high level wraps the graph data structure</p></li>
-<li><p>Discussion of the limitations of workflows (dependency graphs): if statements, for loops.
+<li><p>Discussion of the limitations of workflows (dependency graphs): if statements, for loops, cyclic dependencies.
 Dummy solution: for loop and if statement inside transformer code.
 Proper duration of a transformer: seconds to minutes.
 Alternative solution: move away from dependency graph, launch jobs imperatively (Prefect 2.0).</p></li>
 <li><p>Ways to work around these limitations:
-libraries and macros.
+libraries, macros and reactors.
 Note that library instances require translation, macros do not. Translation is in fact a macro.</p></li>
 <li><p>Always keep a test where you maintain interactivity.</p></li>
 </ul>

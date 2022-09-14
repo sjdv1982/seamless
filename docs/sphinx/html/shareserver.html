@@ -49,10 +49,7 @@
 <li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">The Seamless shareserver</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#http-sharing">HTTP sharing</a></li>
-</ul>
-</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The Seamless shareserver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
@@ -100,6 +97,7 @@
              
   <div class="section" id="the-seamless-shareserver">
 <h1>The Seamless shareserver<a class="headerlink" href="#the-seamless-shareserver" title="Permalink to this headline">¶</a></h1>
+<p>The purpose of the shareserver is that you can share cell values over HTTP. That means that you can see the cell value when you type its URL in your browser. In addition, if you use a Seamless project, a web interface is automatically generated from all shared cells. By default, shared cells are readonly, and can only be visualized. Shared cells with readonly disabled can also be edited via a web interface.</p>
 <p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
 <p><strong>Relevant examples:</strong></p>
 <ul class="simple">
@@ -119,17 +117,16 @@ http://localhost:5813/ctx/a will get the value of cell “a”, if it has been s
 <li><p>The seamless-http-put command, for PUT requests.</p></li>
 <li><p>The seamless client (seamless-client.js)</p></li>
 </ul>
-<div class="section" id="http-sharing">
-<h2>HTTP sharing<a class="headerlink" href="#http-sharing" title="Permalink to this headline">¶</a></h2>
-<p>Intro:</p>
-<ul class="simple">
-<li><p>share</p></li>
-<li><p>cell.mimetype</p></li>
-<li><p>REST</p></li>
-<li><p>Your own web page, Seamless as file server (link to beginner gotchas)</p></li>
-</ul>
-</div>
-</div>
+<!--
+## HTTP sharing
+
+Intro:
+
+- share
+- cell.mimetype
+- REST
+- Your own web page, Seamless as file server (link to beginner gotchas)
+--></div>
 
 
            </div>

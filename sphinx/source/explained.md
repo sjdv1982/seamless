@@ -1,5 +1,7 @@
 # Seamless explained
 
+This document is for experienced developers. If you are a beginner in programming, 
+
 ## Core concepts
 
 First, Seamless is a framework for *interactive* programming and scripting. There are essentially two ways that you can do this. The first is file-based, like the bash shell. The second is cell-based, such as IPython, Jupyter, or a spreadsheet. Seamless follows the cell-based approach.
@@ -10,7 +12,7 @@ In a nutshell, most of Seamless revolves around ***cells***, that hold the data 
 
 ### Checksums
 
-What makes Seamless special is that cells don't hold values or filenames, but ***checksums*** (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren't tied to a hierarchy of files, carefully named and accessible on a mounted file system. In contrast, while in Seamless you *can* mount a cell to a file, it just means that the cell's checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is always free in terms of space, in the same way that a hardlink to a file is always free (but copying a file or value is not). Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. They just contain checksums, and data values are obtained only when they are needed. Checksums are small, and a workflow description with checksums is small, but their underlying data can be much larger than what fits in memory, or on disk. In other words, big data is possible with Seamless.
+What makes Seamless special is that cells don't hold values or filenames, but ***checksums*** (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren't tied to a hierarchy of files, carefully named and accessible on a mounted file system. Although in Seamless you *can* mount a cell to a file, it just means that the cell's checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is always free in terms of space, in the same way that a hardlink to a file is always free (but copying a file or value is not). Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. They just contain checksums, and data values are obtained only when they are needed. Checksums are small, and a workflow description with checksums is small, but their underlying data can be much larger than what fits in memory, or on disk. In other words, big data is possible with Seamless.
 
 On the flip side, you can't automatically assume that you have a cell's data at your fingertips. By default, Seamless sets up some simple checksum-to-data stores, but that reintroduces some of the problems (potential memory issues, file copying) of using files and values instead of checksums. These problems can be minimized by manually configuring your data storage.
 
@@ -214,12 +216,12 @@ The first graph contains the main workflow. The second graph contains a status g
 
 - Topology vs parameters.
 - Seamless translation machinery (midlevel), metalevel. How the high level wraps the graph data structure
-- Discussion of the limitations of workflows (dependency graphs): if statements, for loops.
+- Discussion of the limitations of workflows (dependency graphs): if statements, for loops, cyclic dependencies.
   Dummy solution: for loop and if statement inside transformer code.
   Proper duration of a transformer: seconds to minutes.
   Alternative solution: move away from dependency graph, launch jobs imperatively (Prefect 2.0).
 - Ways to work around these limitations:
-  libraries and macros.
+  libraries, macros and reactors.
   Note that library instances require translation, macros do not. Translation is in fact a macro.
 - Always keep a test where you maintain interactivity.
 

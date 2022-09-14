@@ -100,6 +100,8 @@
              
   <div class="section" id="validation">
 <h1>Validation<a class="headerlink" href="#validation" title="Permalink to this headline">¶</a></h1>
+<p>The goal of validation is to make sure that invalid or unreasonable input values do not occur. In Seamless, validation should happen on the <em>data</em>, which means <em>cells</em> or <em>transformer input pins</em>. That means that transformation code can assume that its inputs are sensible, eliminating one class of errors. <em>Transformation code is not the correct place to do validation</em>.</p>
+<p>The simplest way to do validation is to declare a cell type (see cell documentation). Otherwise, validation happens via <em>schemas</em>. Schemas can be only attached to structured cells and the <code class="docutils literal notranslate"><span class="pre">Transformer.inp</span></code> and <code class="docutils literal notranslate"><span class="pre">Transformer.result</span></code> objects. Seamless schemas have also some similarities with Python classes, and can be used for object-oriented programming of cells.</p>
 <p><em><strong>IMPORTANT: This documentation section is a draft. The preliminary text is shown below</strong></em></p>
 <p><strong>Relevant examples:</strong></p>
 <ul class="simple">
@@ -111,9 +113,11 @@
 <li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/simplest.py">simplest.py</a></p></li>
 <li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/simpler.py">simpler.py</a></p></li>
 </ul>
-<p>As a rule, <em>validation</em> happens on the data. Transformation code is not the correct place to do validation.</p>
 <p>Validation in Seamless is defined in schema cells. Schema cells contain a superset of JSON Schema. You can write them directly, but it is easier to fill them up using the <code class="docutils literal notranslate"><span class="pre">Cell.example</span></code> attribute. See <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/highlink-cpp.py">this example</a>, to be opened with <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span> <span class="pre">-i</span></code>.</p>
+<p>Schemas are also the place to define APIs to interrogate and manipulate structured cell values, in an object-oriented manner.
+…</p>
 <p>Validation errors show up in the monitoring. At this point, the monitoring (which had previously its own UX cells) should be adapted so that error messages and progress are displayed in the main web UI.</p>
+<p>…</p>
 <p>This is also the time to create tests. A unit test should be a small Seamless context linked to the same files as the main project for code and schema cells. Other tests can be a copy of the main graph with some parameters changed. <em>Make sure to create some tests that are designed to fail, to verify that a correct and comprehensible error message is reported</em>.</p>
 <div class="section" id="silk">
 <h2>Silk<a class="headerlink" href="#silk" title="Permalink to this headline">¶</a></h2>

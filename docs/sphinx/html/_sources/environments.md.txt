@@ -1,5 +1,12 @@
 # Environments
 
+The goal of environments is to describe a software environment with certain tools or packages installed, where 1) specific transformer code can run; 2) additional programming languages are understood and can be executed.
+
+For 1), environments are defined for a specific transformer, and revolve around conda, command line tools and/or Docker images.
+Transformer environments are part of the transformation, and passed along to any job slave or job manager. Currently, Seamless transformer environments are a bit informal and do not necessarily define a guaranteed reproducible environment. This is hopefully improved in future versions.
+
+For 2), environments are defined for the context as a whole, and revolve around defining languages, compilers, and IPython bridges.
+
 ***IMPORTANT: This documentation section is a stub.***
 
 ## Transformer environments

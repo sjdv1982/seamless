@@ -1,5 +1,7 @@
 # Visualization
 
+The goal of visualization is the interactive visualization and editing of Seamless cells in the browser. This can be done either via Jupyter, or directly using the [Seamless shareserver](http://sjdv1982.github.io/seamless/sphinx/html/shareserver.html)
+
 ***IMPORTANT: This documentation section is a draft. The preliminary text is shown below***
 
 ## Using Jupyter notebooks

@@ -1,6 +1,8 @@
 # Debugging
 
-To debug your code, you can use either print statements, or a debugging session with breakpoints.
+The goal of debugging is to get rid of errors in the code inside your workflow, i.e. transformer code.
+
+To debug your transformer code, you can use either print statements, or a debugging session with breakpoints.
 
 ## Debugging with print statements
 

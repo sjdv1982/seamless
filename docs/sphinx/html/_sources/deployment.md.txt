@@ -1,5 +1,15 @@
 # Deployment
 
+Deployment involves the sharing of a finished workflow with the outside world. Note that a workflow may consist in three forms:
+
+- Code, input parameters and results. Here, deployment means visualization and modification by others. Preferably, modification should be interactive.
+
+- Code, input parameters and missing results. Here, deployment means the calculation of the workflow results, e.g. on an HPC cluster.
+
+- Code, missing input parameters and missing results. Here, deployment means offering the workflow as a *web service*, where
+the user fills in their own parameters, *resulting in*
+the calculation of the workflow results, e.g. on an HPC cluster. Preferably, this should be interactive.
+
 ***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
 
 <!--

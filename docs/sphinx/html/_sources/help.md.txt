@@ -1,5 +1,7 @@
 # The help system
 
+The purpose of the help system is to annotate contexts, cells and transformers with docstrings or other documentation.
+
 ***IMPORTANT: This documentation section is a stub.***
 
 **Relevant test examples:**

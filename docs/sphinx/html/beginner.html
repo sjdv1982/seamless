@@ -79,7 +79,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#do-s-and-don-ts">Do’s and don’ts</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#do-write-reproducible-code">Do write reproducible code</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#don-t-confuse-files-and-cell-names">Don’t confuse files and cell names</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#don-t-rely-on-files-or-urls">Don’t rely on files or URLs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#don-t-rely-on-file-names-or-urls">Don’t rely on file names or URLs</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
@@ -144,7 +144,7 @@
 <h1>Beginner’s guide<a class="headerlink" href="#beginner-s-guide" title="Permalink to this headline">¶</a></h1>
 <p>If you are beginner in programming, you focus on one thing at a time. However, Seamless is very non-linear: you can change anything at any time, interactively. If that makes you feel lost, this guide can give you a sense of direction.</p>
 <p>The most important guidelines for beginners are: “learn the basics”, “keep it simple”, and “one thing after another”. The guide consists of one section for each guideline, followed by general guidelines and troubleshooting.</p>
-<p><em><strong>Disclaimer</strong>: this guide is by definition a rather patronizing document. Feel free to ignore every guideline that doesn’t apply to you. If you believe that the guide contains bad advice (i.e. guidelines that shouldn’t apply to <strong>anyone</strong>), you are very welcome to propose improvements</em>.</p>
+<p><em><strong>Disclaimer</strong>: this guide is by definition a rather patronizing document. If you are an experienced developer, you can skim or skip it altogether: the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/explained.html">next section</a> will be more useful to you. In any case, feel free to ignore every guideline that doesn’t apply to you. If you believe that the guide contains bad advice (i.e. guidelines that shouldn’t apply to <strong>anyone</strong>), you are very welcome to propose improvements</em>.</p>
 <div class="section" id="learning-the-basics">
 <h2>Learning the basics<a class="headerlink" href="#learning-the-basics" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="basic-seamless-features">
@@ -265,17 +265,17 @@ NOTE TO SELF: to make sense of "programming in two places" and "new-project".
 <p>The following phases are recommended: design, implementation, visualization, validation, deployment. For validation, see the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/validation.html">validation documentation</a>; you can choose to skip it for simple projects.</p>
 <div class="section" id="design-phase">
 <h3>Design phase<a class="headerlink" href="#design-phase" title="Permalink to this headline">¶</a></h3>
-<p>Designing a workflow must be done outside of Seamless, as Seamless does not (yet) support any kind visual programming. It involves drawing a dependency graph, first in an abstract sense, then concretely.</p>
+<p>Designing a workflow must be done outside of Seamless, as Seamless does not (yet) support any kind of visual programming. It involves drawing a dependency graph, first in an abstract sense, then concretely.</p>
 <div class="section" id="abstract-dependency-graph">
 <h4>Abstract dependency graph<a class="headerlink" href="#abstract-dependency-graph" title="Permalink to this headline">¶</a></h4>
-<p>You should start with thinking of dependencies in an abstract way. Think of your workflow as a set of independent computations with well-defined inputs and outputs. Draw some flowcharts.</p>
-<p>Seamless is very strict about dependencies. Normal shell commands may implicitly assume that a certain package is installed, or that certain files are present. In contrast, Seamless transformations are executed in isolation: if there is any implicit dependency, they will loudly fail. This is considered a good thing.</p>
-<p>You must avoid cyclic dependencies in your graph, i.e. computations that (directly or indirectly) have their own output as input.</p>
+<p>The goal of this phase is to describe your entire computation as a workflow in an abstract way. First, divide your computation into different steps. Put the steps in order. Such a linear sequence of steps is the simplest possible workflow. Most of the time, your workflow is non-linear: for example, step 3 may not require step 2 to be complete, only step 1. In other words, step 3 depends on step 1, and step 2 depends on step 1, but step 3 does not depend on step 2. Draw a flowchart, consisting of all of the steps and their dependencies. Give names to the steps, and also enumerate their inputs and outputs. If step 3 depends on step 1, indicate if step 3 needs the entire output or only part of it. Once you have done this, your flowchart is now essentially a <em>dependency graph</em>.</p>
+<p>You must avoid cyclic dependencies in your graph, i.e. computations that (directly or indirectly) have their own output as input. This happens if your workflow has several iterations where the same steps are being performed with the output of the previous iteration. Seamless has support for cyclic dependencies, but such workflows are not for beginners.</p>
 </div>
 <div class="section" id="concrete-dependency-graph">
 <h4>Concrete dependency graph<a class="headerlink" href="#concrete-dependency-graph" title="Permalink to this headline">¶</a></h4>
-<p>Once you have an abstract dependency graph, try to make it more concrete. Formulate every computation as a block with one code input, several data/parameter inputs, and one data output. (You can have multiple data outputs, although the implementation will then be a little bit more complex, using Seamless structured cells). Decide the programming language for each block. Choose names for each input. These computation blocks will later become Seamless transformers. The inputs and outputs will become cells.</p>
-<p>If you are porting an existing workflow (bash, Jupyter, Snakemake) that is not too complex, you could skip the concrete dependency graph and move straight to the implementation.</p>
+<p>Once you have a dependency graph, try to make it as concrete as possible. Formulate every computation as a block with one code input, several data/parameter inputs, and one data output. (You can have multiple data outputs, although the implementation will then be a little bit more complex, using Seamless structured cells). Decide the programming language for each block. Choose names for each input. These computation blocks will later become Seamless transformers. The inputs and outputs will become cells.</p>
+<p>Seamless is very strict about dependencies. If your computation consists of shell commands, make sure that you understand their inputs and outputs. Normal shell commands may implicitly assume that a certain package is installed, or that certain files are present. In contrast, Seamless transformations are executed in isolation: if there is any implicit dependency, they will loudly fail. This is considered a good thing, because it detects problems in reproducibility. For reproducible computations, all inputs and outputs (no matter if they are files or Seamless cells) must be carefully enumerated. If not, your workflow may work on your computer, but nowhere else. With Seamless, it will probably work not at all.</p>
+<p>If you can avoid the above problem, and if you are porting an existing workflow (bash, Jupyter, Snakemake) that is not too complex, you could skip the concrete dependency graph and move straight to the implementation.</p>
 </div>
 </div>
 <div class="section" id="implementation-phase">
@@ -310,7 +310,7 @@ NOTE TO SELF: to make sense of "programming in two places" and "new-project".
 <p>Each computation wraps a single bash command that invokes a single command line tool, or a small list of commands. In Seamless, such a computation will be a bash transformer (<a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py">example</a>) that may have a Docker image (<a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py">example</a>). In this case, the transformer will have a code cell written in bash, and the result must be written to the file <code class="docutils literal notranslate"><span class="pre">RESULT</span></code>. For multiple outputs, create a directory <code class="docutils literal notranslate"><span class="pre">RESULT</span></code> instead. Within a bash transformer, every input pin X is available as file X. Small inputs are also accessible as a variable $X. After execution, all files are deleted.</p>
 <p>There are two strategies to define a command-line transformation.</p>
 <ol class="simple">
-<li><p>The best way is use a bash transformer where you include the source code of every command line tool (except standard UNIX commands). This will make the transformation reproducible. There are two limitations:</p>
+<li><p>The best way is use a bash transformer where you include the source code of every command line tool that is being used (except standard UNIX commands). This will make the transformation reproducible. There are two limitations:</p>
 <ul class="simple">
 <li><p>The command line tool must not have any hard-coded “magic files” where it depends on, unless the content of such a file can be included as one of the transformer inputs.</p></li>
 <li><p>If the command line tool is written in a compiled language, things become quite difficult. Seamless has compiled transformers, but they assume that data is exchanged as function arguments, and not via the file system. As a beginner, you are not recommended to use compiled transformers.</p></li>
@@ -419,8 +419,8 @@ Don’t confuse “inside” files and “outside” files.
 Finally, .share as “file.txt” is clean but does not have any effect.
 Set mimetype!</p>
 </div>
-<div class="section" id="don-t-rely-on-files-or-urls">
-<h3>Don’t rely on files or URLs<a class="headerlink" href="#don-t-rely-on-files-or-urls" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="don-t-rely-on-file-names-or-urls">
+<h3>Don’t rely on file names or URLs<a class="headerlink" href="#don-t-rely-on-file-names-or-urls" title="Permalink to this headline">¶</a></h3>
 <p>Don’t put file names as strings inside cells, and don’t use file names in transformation code. Doing so makes your workflow non-reproducible. For example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Non-reproducible code!</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">tf</span> <span class="o">=</span> <span class="n">Transformer</span><span class="p">()</span>
