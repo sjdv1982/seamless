@@ -42,8 +42,12 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Beginner’s guide</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#learning-the-basics">Learning the basics</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#basic-seamless-features">Basic Seamless features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#programming-in-two-places">Programming in two places</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mounting-a-cell-to-the-file-system">Mounting a cell to the file system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#programming-in-two-places">Programming in two places</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#example-1">Example 1</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#example-2">Example 2</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#sharing-a-cell-over-http">Sharing a cell over HTTP</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dependency-graphs">Dependency graphs</a></li>
 </ul>
@@ -153,17 +157,76 @@
 <p>Seamless workflows are created in Python. This can be done in a Python script, but normally it is done interactively, in IPython or Jupyter. Here, new cells, transformers and their connections are created. The workflow remains running all the time.</p>
 <p>You can save the entire workflow to a file, and then load it back. Workflows (<code class="docutils literal notranslate"><span class="pre">.seamless</span></code> files) are very small, because they contain only checksums. The underlying code data must be stored elsewhere. By default, it is stored as files inside the <code class="docutils literal notranslate"><span class="pre">vault/</span></code> folder.</p>
 </div>
-<div class="section" id="programming-in-two-places">
-<h3>Programming in two places<a class="headerlink" href="#programming-in-two-places" title="Permalink to this headline">¶</a></h3>
-<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
-<p>With Seamless, there is programming in two places. First, there is the “outside”: the Jupyter or IPython shell where the Seamless workflow is being created interactively. In addition, there is the “inside”:</p>
-<p>…</p>
-<p>and Seamless supports many programming languages: bash, Python, and C/C++ are well-tested. Other languages such as R, Cython, Fortran or Go are also supported, but less tested. As a beginner, it is recommended to stick to transformers written in Python or bash.</p>
-</div>
 <div class="section" id="mounting-a-cell-to-the-file-system">
 <h3>Mounting a cell to the file system<a class="headerlink" href="#mounting-a-cell-to-the-file-system" title="Permalink to this headline">¶</a></h3>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
-<!-- This is just an aide to make it easier for you to edit a cell's data or code. It doesn't play any role in the execution of the workflow. --></div>
+<!-- This is just an aide to make it easier for you to edit a cell's data or code. It doesn't play any role in the execution of the workflow.
+(block vs function (object))
+--></div>
+<div class="section" id="programming-in-two-places">
+<h3>Programming in two places<a class="headerlink" href="#programming-in-two-places" title="Permalink to this headline">¶</a></h3>
+<p>With Seamless, there is programming in two places. First, there is the “outside”: the Jupyter or IPython shell where the Seamless workflow is being created interactively. Here you enter Python code that does something with the workflow, for example: adding a new Seamless cell, changing a value, creating a connection, printing a status or a result, etc.</p>
+<p>In addition, there is code on the “inside”, code that is part of the workflow. This code is executed by Seamless, in reaction to changes in one of its inputs. In the example below, the inside code is written in an R file.</p>
+<div class="section" id="example-1">
+<h4>Example 1<a class="headerlink" href="#example-1" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="aspercent-r-inside-code">
+<h5>asPercent.R: “inside” code<a class="headerlink" href="#aspercent-r-inside-code" title="Permalink to this headline">¶</a></h5>
+<div class="highlight-R notranslate"><div class="highlight"><pre><span></span><span class="n">asPercent</span> <span class="o">&lt;-</span> <span class="nf">function</span><span class="p">(</span><span class="n">x</span><span class="p">){</span>
+ <span class="n">percent</span> <span class="o">&lt;-</span> <span class="nf">round</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="m">100</span><span class="p">,</span> <span class="n">digits</span> <span class="o">=</span> <span class="m">1</span><span class="p">)</span>
+ <span class="n">result</span> <span class="o">&lt;-</span> <span class="nf">paste</span><span class="p">(</span><span class="n">percent</span><span class="p">,</span> <span class="s">&quot;%&quot;</span><span class="p">,</span> <span class="n">sep</span> <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+ <span class="nf">return</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="n">frac</span> <span class="o">=</span> <span class="n">a</span> <span class="o">/</span> <span class="n">b</span>
+<span class="n">result</span> <span class="o">&lt;-</span> <span class="nf">asPercent</span><span class="p">(</span><span class="n">frac</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="example-ipynb-outside-code">
+<h5>example.ipynb: “outside” code<a class="headerlink" href="#example-ipynb-outside-code" title="Permalink to this headline">¶</a></h5>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">asPercent</span> <span class="o">=</span> <span class="n">Transformer</span><span class="p">()</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">asPercent</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">22</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">asPercent</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">asPercent</span><span class="o">.</span><span class="n">language</span> <span class="o">=</span> <span class="s2">&quot;r&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">asPercent</span><span class="o">.</span><span class="n">code</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;asPercent.R&quot;</span><span class="p">)</span>
+
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">asPercent</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&lt;Silk: 314.3% &gt;
+</pre></div>
+</div>
+<p>Concretely, what this means in the example above is that the pins (<code class="docutils literal notranslate"><span class="pre">a</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code> and <code class="docutils literal notranslate"><span class="pre">result</span></code>) are the only way that the “inside” and the “outside” code can communicate. For the rest, the “inside” code has no access to “outside” code variables such as <code class="docutils literal notranslate"><span class="pre">ctx</span></code>. And the “outside” code has no access to “inside” code variables such as <code class="docutils literal notranslate"><span class="pre">frac</span></code> and <code class="docutils literal notranslate"><span class="pre">percent</span></code>. This is not difficult to see: after all, the inside code is in a different file, and written in a different language (R for the inside, Python for the outside). But now, consider a second example that does exactly the same thing:</p>
+</div>
+</div>
+<div class="section" id="example-2">
+<h4>Example 2<a class="headerlink" href="#example-2" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="example-ipynb-both-outside-and-inside-code">
+<h5>example.ipynb: both “outside” and “inside” code<a class="headerlink" href="#example-ipynb-both-outside-and-inside-code" title="Permalink to this headline">¶</a></h5>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+<span class="c1"># inside code</span>
+<span class="k">def</span> <span class="nf">asPercent</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">frac</span> <span class="o">=</span> <span class="n">a</span> <span class="o">/</span> <span class="n">b</span>
+    <span class="n">percent</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">frac</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">%&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">percent</span><span class="p">)</span>
+
+<span class="c1"># outside code</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">asPercent</span> <span class="o">=</span> <span class="n">asPercent</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">asPercent</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">22</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">asPercent</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mi">7</span>
+
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">asPercent</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&lt;Silk: 314.3% &gt;
+</pre></div>
+</div>
+<p>The exact same boundaries between inside and outside code as in the first example apply: inside and outside code can’t access each other’s variables, the only thing that is shared are <code class="docutils literal notranslate"><span class="pre">a</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code> and <code class="docutils literal notranslate"><span class="pre">result</span></code>. The <em>reason</em> why is that inside code must be reproducible, giving always the same result no matter what the outside code is. But it is much less obvious here than in the first example, because of the single-file single-language implementation. Seamless gives you the choice if you want to mount your code to an external file or not. Regarding language, “outside” code is always in Python (or IPython). However, “inside” code <em>can</em> be in Python, but it doesn’t have to be. Seamless supports many programming languages: bash, Python, and C/C++ are well-tested. Other languages such as R, Cython, Fortran or Go are also supported, but less well-tested (and may require a bit more setup). As a beginner, it is recommended to stick to transformers written in Python or bash. Or perhaps simple R code, as the first example shows.</p>
+</div>
+</div>
+</div>
 <div class="section" id="sharing-a-cell-over-http">
 <h3>Sharing a cell over HTTP<a class="headerlink" href="#sharing-a-cell-over-http" title="Permalink to this headline">¶</a></h3>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>

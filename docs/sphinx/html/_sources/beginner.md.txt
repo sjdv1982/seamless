@@ -24,21 +24,80 @@ Seamless workflows are created in Python. This can be done in a Python script, b
 
 You can save the entire workflow to a file, and then load it back. Workflows (`.seamless` files) are very small, because they contain only checksums. The underlying code data must be stored elsewhere. By default, it is stored as files inside the `vault/` folder.
 
-### Programming in two places
-
-***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
-
-With Seamless, there is programming in two places. First, there is the "outside": the Jupyter or IPython shell where the Seamless workflow is being created interactively. In addition, there is the "inside": 
-
-...
-
-and Seamless supports many programming languages: bash, Python, and C/C++ are well-tested. Other languages such as R, Cython, Fortran or Go are also supported, but less tested. As a beginner, it is recommended to stick to transformers written in Python or bash.
-
 ### Mounting a cell to the file system
 
 ***IMPORTANT: This documentation section is a stub.***
 
-<!-- This is just an aide to make it easier for you to edit a cell's data or code. It doesn't play any role in the execution of the workflow. -->
+<!-- This is just an aide to make it easier for you to edit a cell's data or code. It doesn't play any role in the execution of the workflow.
+(block vs function (object))
+-->
+
+### Programming in two places
+
+With Seamless, there is programming in two places. First, there is the "outside": the Jupyter or IPython shell where the Seamless workflow is being created interactively. Here you enter Python code that does something with the workflow, for example: adding a new Seamless cell, changing a value, creating a connection, printing a status or a result, etc.
+
+In addition, there is code on the "inside", code that is part of the workflow. This code is executed by Seamless, in reaction to changes in one of its inputs. In the example below, the inside code is written in an R file.
+
+#### Example 1
+
+##### asPercent.R: "inside" code
+
+```R
+asPercent <- function(x){
+ percent <- round(x * 100, digits = 1)
+ result <- paste(percent, "%", sep = "")
+ return(result)
+}
+
+frac = a / b
+result <- asPercent(frac)
+```
+
+##### example.ipynb: "outside" code
+
+```python
+ctx.asPercent = Transformer()
+ctx.asPercent.a = 22
+ctx.asPercent.b = 7
+ctx.asPercent.language = "r"
+ctx.asPercent.code.mount("asPercent.R")
+
+await ctx.computation()
+print(ctx.asPercent.result.value)
+```
+
+```text
+<Silk: 314.3% >
+```
+
+Concretely, what this means in the example above is that the pins (`a`, `b` and `result`) are the only way that the "inside" and the "outside" code can communicate. For the rest, the "inside" code has no access to "outside" code variables such as `ctx`. And the "outside" code has no access to "inside" code variables such as `frac` and `percent`. This is not difficult to see: after all, the inside code is in a different file, and written in a different language (R for the inside, Python for the outside). But now, consider a second example that does exactly the same thing:
+
+#### Example 2
+
+##### example.ipynb: both "outside" and "inside" code
+
+```python
+
+# inside code
+def asPercent(a, b):
+    frac = a / b
+    percent = round(frac * 100, 1)
+    return "{}%".format(percent)
+
+# outside code
+ctx.asPercent = asPercent
+ctx.asPercent.a = 22
+ctx.asPercent.b = 7
+
+await ctx.computation()
+print(ctx.asPercent.result.value)
+```
+
+```text
+<Silk: 314.3% >
+```
+
+The exact same boundaries between inside and outside code as in the first example apply: inside and outside code can't access each other's variables, the only thing that is shared are `a`, `b` and `result`. The *reason* why is that inside code must be reproducible, giving always the same result no matter what the outside code is. But it is much less obvious here than in the first example, because of the single-file single-language implementation. Seamless gives you the choice if you want to mount your code to an external file or not. Regarding language, "outside" code is always in Python (or IPython). However, "inside" code *can* be in Python, but it doesn't have to be. Seamless supports many programming languages: bash, Python, and C/C++ are well-tested. Other languages such as R, Cython, Fortran or Go are also supported, but less well-tested (and may require a bit more setup). As a beginner, it is recommended to stick to transformers written in Python or bash. Or perhaps simple R code, as the first example shows.
 
 ### Sharing a cell over HTTP
 
