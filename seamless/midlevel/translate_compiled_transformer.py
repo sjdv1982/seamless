@@ -71,7 +71,7 @@ def _finalize(
     #2: among library cells
     ctx.header = cell("text")
     ctf.gen_header.result.connect(ctx.header)
-    ctx.header.connect(ctf.integrator.header)
+    ctx.header.connect(ctf.integrator.header_)
 
     ctx.language.connect(ctf.integrator.lang)
     ctx.code.connect(ctf.integrator.compiled_code)

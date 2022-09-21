@@ -80,7 +80,7 @@ def gen_basic_type(name, schema, *, verify_integer_bytesize, item=False):
     ###    print("WARNING: " + warning)
     return result
 
-def gen_array(name, schema, *, verify_shape, const, is_result=False):
+def gen_array(name, schema, *, verify_shape, const):
     name2 = name
     if isinstance(name, (tuple, list)):
         name2 = ".".join(name)
@@ -249,7 +249,7 @@ elif return_jtype == "array":
     return_ctype = "void"
     output_ctype, struct_header = gen_array(
         result_name, result_schema, 
-        verify_shape=False, const=False, is_result=True
+        verify_shape=True, const=False
     )
     header += struct_header
     input_args.append(output_ctype + " *" + result_name)
