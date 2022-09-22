@@ -96,7 +96,10 @@ def build_array_struct(name, arr, with_strides):
         arr = arr.data
     ptr = ffi.from_buffer(arr)
     array_struct = ffi.new(array_struct_name + " *")
-    array_struct.shape[0:len(arr.shape)] = arr.shape[:]
+    if not len(arr.shape):
+        array_struct.shape[0] = arr.nbytes
+    else:    
+        array_struct.shape[0:len(arr.shape)] = arr.shape[:]
     if with_strides:
         array_struct.strides[0:len(arr.strides)] = arr.strides[:]
     array_struct.data = ffi.cast(ffi.typeof(array_struct.data), ptr)
