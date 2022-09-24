@@ -236,7 +236,7 @@ class TransformationCache:
             envbuf = await serialize(transformer.env, "plain")
             env_checksum = calculate_checksum_func(envbuf)
             buffer_cache.cache_buffer(env_checksum, envbuf)
-            buffer_cache.guarantee_buffer_info(env_checksum, "plain")
+            buffer_cache.guarantee_buffer_info(env_checksum, "plain", sync_to_remote=True)
             transformation["__env__"] = env_checksum.hex()
         transformation_build_exception = None
         

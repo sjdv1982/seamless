@@ -62,7 +62,7 @@ def integrate_compiled_module(mod_lang, mod_rest, object_codes):
     new_value_buffer = serialize_sync(new_value, "plain")
     new_checksum = calculate_checksum_sync(new_value_buffer)
     buffer_cache.cache_buffer(new_checksum, new_value_buffer)
-    buffer_cache.guarantee_buffer_info(new_checksum, "plain")
+    buffer_cache.guarantee_buffer_info(new_checksum, "plain", sync_to_remote=False)
     return new_checksum
 
 def integrate_kwargs(kwargs_checksums):
@@ -78,7 +78,7 @@ def integrate_kwargs(kwargs_checksums):
     result_buffer = serialize_sync(result, "mixed")
     result_checksum = calculate_checksum_sync(result_buffer)
     buffer_cache.cache_buffer(result_checksum, result_buffer)
-    buffer_cache.guarantee_buffer_info(result_checksum, "mixed")
+    buffer_cache.guarantee_buffer_info(result_checksum, "mixed", sync_to_remote=False)
     return result_checksum
 
 def pull_module(pinname, upstreams, manager):

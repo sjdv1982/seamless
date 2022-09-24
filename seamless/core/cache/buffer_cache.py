@@ -1,10 +1,6 @@
 import time
-import weakref
-import traceback
-import copy
-from weakref import WeakValueDictionary
 import functools
-from collections import namedtuple
+from seamless.core import buffer_info
 
 from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 
@@ -62,6 +58,7 @@ class BufferCache:
         self.buffer_refcount = {} #buffer-checksum-to-refcount
         # Buffer info cache (never expire)
         self.buffer_info = {} #checksum-to-buffer-info
+        self.synced_buffer_info = set()  #set of bufferinfo checksums that are in-sync with the database
         self.non_persistent = set()
         self.missing = set()
         self.downloaded = set()  # keep track of downloaded buffers, don't cache them for long
@@ -130,7 +127,7 @@ class BufferCache:
         assert isinstance(buffer, bytes)
         #print("LOCAL CACHE", checksum.hex())
         self._update_time(checksum, len(buffer))
-        self.update_buffer_info(checksum, "length", len(buffer), update_remote=False)        
+        self.update_buffer_info(checksum, "length", len(buffer), sync_remote=False)
         local = (not database_sink.active) or (not database_cache.active)
         if local or checksum not in self.buffer_refcount:
             if checksum not in self.buffer_cache:
@@ -151,11 +148,13 @@ class BufferCache:
         assert len(checksum) == 32
         assert isinstance(buffer, bytes)
         l = len(buffer)
-        self.update_buffer_info(checksum, "length", l, fetch_remote=False)
+        self.update_buffer_info(checksum, "length", l, sync_remote=False)
         return self._incref([checksum], self._is_persistent(authoritative), [buffer])
 
     def _incref(self, checksums, persistent, buffers):
         for n, checksum in enumerate(checksums):
+            if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
+                continue
             buffer = None
             if buffers is not None:
                 buffer = buffers[n]
@@ -236,6 +235,8 @@ class BufferCache:
 
     def _decref(self, checksums):
         for checksum in checksums:
+            if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
+                continue
             if checksum not in self.buffer_refcount:
                 print_warning("double decref, %s" % checksum.hex())
                 return
@@ -269,13 +270,17 @@ class BufferCache:
             checksum = bytes.fromhex(checksum)
         assert isinstance(checksum, bytes)
         assert len(checksum) == 32
+        if checksum.hex() == empty_dict_checksum:
+            return b'{}'
+        elif checksum.hex() == empty_list_checksum:
+            return b'[]'
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
             assert isinstance(buffer, bytes)
             return buffer
         buffer = self.buffer_cache.get(checksum)
         if buffer is not None:
-            assert isinstance(buffer, bytes)
+            assert isinstance(buffer, bytes), type(buffer)
             return buffer
         if remote:
             try:
@@ -295,34 +300,62 @@ class BufferCache:
 
         return buffer
 
-    def get_buffer_info(self, checksum, *, remote=True, force_length=True):
+    def _sync_buffer_info_from_remote(self, checksum): 
+        local_buffer_info = self.buffer_info[checksum]       
+        if checksum in self.synced_buffer_info:
+            return        
+        buffer_info_remote = database_cache.get_buffer_info(checksum)
+        if buffer_info_remote is None:
+            return
+        buffer_info_remote_old = buffer_info_remote.as_dict()
+        buffer_info_remote.update(local_buffer_info)
+        local_buffer_info.update(buffer_info_remote)
+        if buffer_info_remote.as_dict() == buffer_info_remote_old:
+            self.synced_buffer_info.add(checksum)
+
+    def _sync_buffer_info_to_remote(self, checksum):
+        local_buffer_info = self.buffer_info[checksum]        
+        if checksum in self.synced_buffer_info:
+            return
+        database_sink.set_buffer_info(checksum, local_buffer_info)
+        self.synced_buffer_info.add(checksum)
+
+    def get_buffer_info(self, checksum, *, sync_remote, buffer_from_remote, force_length):
         if checksum is None:
             return None
         assert isinstance(checksum, bytes)
         assert len(checksum) == 32
         buffer_info = self.buffer_info.get(checksum)
-        if buffer_info is not None:
+        if buffer_info is None:
+            buffer_info = BufferInfo(checksum)
+            self.buffer_info[checksum] = buffer_info
+        if sync_remote:
+            self._sync_buffer_info_from_remote(checksum)
+        if not force_length or buffer_info.length is not None:
             return buffer_info
-        if remote:
+
+        if buffer_from_remote:
             remotes = [False, True]
         else:
             remotes = [False]
-        for do_remote in remotes:
-            buffer_info = database_cache.get_buffer_info(checksum)
-            if buffer_info is not None:
-                return buffer_info
-            if force_length:
-                buf = self.get_buffer(checksum, remote=do_remote)
-                if buf is not None:
-                    length = len(buf)
-                    self.update_buffer_info(checksum, "length", length, fetch_remote=False)
-                    buffer_info = self.buffer_info[checksum]
-            if buffer_info is None:                
-                buffer_info = BufferInfo(checksum, {})
-                self.buffer_info[checksum] = buffer_info
-            return buffer_info
 
-    def update_buffer_info(self, checksum, attr, value, *, fetch_remote=True, update_remote=True):
+        for do_remote in remotes:
+            buf = self.get_buffer(checksum, remote=do_remote)
+            if buf is not None:
+                length = len(buf)
+                self.update_buffer_info(
+                    checksum, "length", length,
+                    sync_remote=sync_remote,
+                    no_sync_from_remote=True,
+                )
+                break
+        else:
+            raise CacheMissError(checksum.hex())
+        
+        return buffer_info
+
+
+    def update_buffer_info(self, checksum, attr, value, *, sync_remote, no_sync_from_remote=False):
         co_flags = {
             "is_json": ("is_utf8",),
             "json_type": ("is_json",),
@@ -338,33 +371,26 @@ class BufferCache:
         }
 
         buffer_info = self.buffer_info.get(checksum)
-        if fetch_remote:
-            buffer_info_remote = self.get_buffer_info(checksum, force_length=False)            
-            if buffer_info_remote is not None:
-                if buffer_info is None:
-                    buffer_info = buffer_info_remote                    
-                else:
-                    buffer_info_remote.update(buffer_info)
-                    buffer_info = buffer_info_remote
-                self.buffer_info[checksum] = buffer_info
-        old_buffer_info = copy.copy(buffer_info)
         if buffer_info is None:
-            buffer_info = BufferInfo(checksum, {})
+            buffer_info = BufferInfo(checksum)
             self.buffer_info[checksum] = buffer_info
+        if sync_remote and (not no_sync_from_remote) and checksum not in self.synced_buffer_info:
+            self._sync_buffer_info_from_remote(checksum)
+        if buffer_info[attr] != value:
+            self.synced_buffer_info.discard(checksum)
         buffer_info[attr] = value
         if value:
             for f in co_flags.get(attr, []):
-                self.update_buffer_info(checksum, f, True, update_remote=False)
+                self.update_buffer_info(checksum, f, True, sync_remote=False)
             for f in anti_flags.get(attr, []):
-                self.update_buffer_info(checksum, f, False, update_remote=False)                
+                self.update_buffer_info(checksum, f, False, sync_remote=False)
         elif value == False:
             for f in co_flags.get(attr, []):
-                self.update_buffer_info(checksum, f, False, update_remote=False)
-        if update_remote:
-            if old_buffer_info != buffer_info:
-                database_sink.set_buffer_info(checksum, buffer_info)
+                self.update_buffer_info(checksum, f, False, sync_remote=False)
+        if sync_remote:
+            self._sync_buffer_info_to_remote(checksum)
 
-    def guarantee_buffer_info(self, checksum:bytes, celltype:str):
+    def guarantee_buffer_info(self, checksum:bytes, celltype:str, *, sync_to_remote:bool):
         """Modify buffer_info to reflect that checksum is surely deserializable into celltype
         """
         # for mixed: if possible, retrieve the buffer locally to check for things like is_numpy etc.
@@ -379,31 +405,30 @@ class BufferCache:
             # parsability as IPython/python/cson/yaml is out-of-scope for buffer info
             celltype = "text"
 
-        old_buffer_info = copy.copy(self.buffer_info.get(checksum))
-
         if celltype == "mixed":
             buffer = self.get_buffer(checksum, remote=False)
             if buffer is not None:
                 if buffer.startswith(MAGIC_NUMPY):
-                    self.update_buffer_info(checksum, "is_numpy", True, update_remote=False)
+                    self.update_buffer_info(checksum, "is_numpy", True, sync_remote=False)
                 elif buffer.startswith(MAGIC_SEAMLESS_MIXED):
-                    self.update_buffer_info(checksum, "is_seamless_mixed", True, update_remote=False)
+                    self.update_buffer_info(checksum, "is_seamless_mixed", True, sync_remote=False)
                 else:
-                    self.update_buffer_info(checksum, "is_json", True, update_remote=False)
+                    self.update_buffer_info(checksum, "is_json", True, sync_remote=False)
+            elif checksum not in self.buffer_info:
+                self.buffer_info[checksum] = BufferInfo(checksum)
         elif celltype == "binary":
-            self.update_buffer_info(checksum, "is_numpy", True, update_remote=False)
+            self.update_buffer_info(checksum, "is_numpy", True, sync_remote=False)
         elif celltype == "plain":
-            self.update_buffer_info(checksum, "is_json", True, update_remote=False)
+            self.update_buffer_info(checksum, "is_json", True, sync_remote=False)
         elif celltype == "text":
-            self.update_buffer_info(checksum, "is_utf8", True, update_remote=False)
+            self.update_buffer_info(checksum, "is_utf8", True, sync_remote=False)
         elif celltype in ("str", "int", "float", "bool"):
-            self.update_buffer_info(checksum, "json_type", celltype, update_remote=False)
+            self.update_buffer_info(checksum, "json_type", celltype, sync_remote=False)
+        else:
+            raise TypeError(celltype)
 
-        buffer_info = self.buffer_info.get(checksum)
-
-        if old_buffer_info != buffer_info:
-            database_sink.set_buffer_info(checksum, buffer_info)
-
+        if sync_to_remote:
+            self._sync_buffer_info_to_remote(checksum)
 
     def buffer_check(self, checksum):
         """For the communion_server..."""

@@ -5,7 +5,7 @@ import functools
 from ..cache import CacheMissError
 from ...download_buffer import download_buffer_from_servers
 from ..status import StatusReasonEnum
-from ..cache.buffer_cache import buffer_cache
+from ..cache.buffer_cache import buffer_cache, empty_dict_checksum, empty_list_checksum
 from ... import calculate_dict_checksum
 
 import json
@@ -35,6 +35,9 @@ RECOMPUTE_OVER_REMOTE = int(100e6) # after this threshold, better to recompute t
                                 # - stored recomputation time from provenance server
                                 # - internet connection speed
 
+MAX_DEEP_BUFFER_SIZE = 10**9     # Don't incref member buffers inside a deep buffer larger than this
+MAX_DEEP_BUFFER_MEMBERS = 1000   # Don't incref member buffers inside a deep buffer with more members than this
+
 _deep_buffer_coro_count = 0
 def new_deep_buffer_coro_id():
     global _deep_buffer_coro_count
@@ -46,15 +49,23 @@ deep_buffer_coros = []
 invalid_deep_buffers = set()
 
 async def decref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
+    if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
+        return
     while deep_buffer_coros[0] != deep_buffer_coro_id:
         await asyncio.sleep(0.01)
     if (checksum, calculate_dict_checksum(hash_pattern)) in invalid_deep_buffers:
+        return
+    deep_buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=False, buffer_from_remote=False, force_length=False)
+    if deep_buffer_info.members is not None and deep_buffer_info.members > MAX_DEEP_BUFFER_MEMBERS:
         return
     try:
         deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
         sub_checksums = deep_structure_to_checksums(
             deep_structure, hash_pattern
         )
+        buffer_cache.update_buffer_info(checksum, "members", len(sub_checksums), sync_remote=False)
+        if len(sub_checksums) > MAX_DEEP_BUFFER_MEMBERS:
+            return
         """
         # too slow...
         for sub_checksum in sub_checksums:
@@ -67,13 +78,21 @@ async def decref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative,
         deep_buffer_coros.pop(0)
 
 async def incref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
+    if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
+        return
     while deep_buffer_coros[0] != deep_buffer_coro_id:
-        await asyncio.sleep(0.01)    
+        await asyncio.sleep(0.01)
+    deep_buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=False, force_length=False)
+    if deep_buffer_info.members is not None and deep_buffer_info.members > MAX_DEEP_BUFFER_MEMBERS:
+        return
     try:
         deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
         sub_checksums = deep_structure_to_checksums(
             deep_structure, hash_pattern
         )
+        buffer_cache.update_buffer_info(checksum, "members", len(sub_checksums), sync_remote=False)
+        if len(sub_checksums) > MAX_DEEP_BUFFER_MEMBERS:
+            return
         """
         # too slow...
         for sub_checksum in sub_checksums:
@@ -223,6 +242,12 @@ class CacheManager:
             self.checksum_refs[checksum].add(item)
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if incref_hash_pattern:
+            if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
+                return    
+            deep_buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=True, force_length=True)
+            deep_buffer_length = deep_buffer_info.length
+            if deep_buffer_length > MAX_DEEP_BUFFER_SIZE:
+                return
             try:
                 deep_buffer = get_buffer(checksum, remote=True, deep=True)
                 if deep_buffer is None:
@@ -236,6 +261,7 @@ class CacheManager:
             except Exception as exc:
                 print("ERROR in incref'ing deep buffer '{}'".format(checksum.hex()))
                 incref_deep_buffer_done(self, checksum, refholder, authoritative, result, exc)
+    
     async def fingertip(self, checksum, *, must_have_cell=False):
         """Tries to put the checksum's corresponding buffer 'at your fingertips'
         Normally, first reverse provenance (recompute) is tried,
@@ -360,10 +386,9 @@ class CacheManager:
             raise CacheMissError(checksum.hex())
 
         if recompute - remote in (0, 1) and remote > 0:
-            buffer_info = buffer_cache.get_buffer_info(checksum)
-            if buffer_info is not None:
-                if buffer_info.get("length", 0) <= RECOMPUTE_OVER_REMOTE:
-                    remote = recompute + 1
+            buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=False, force_length=False)
+            if buffer_info.get("length", 0) <= RECOMPUTE_OVER_REMOTE:
+                remote = recompute + 1
 
         if remote > recompute:
             try:
@@ -486,6 +511,10 @@ class CacheManager:
             cell = refholder
             if cell._hash_pattern is not None:
                 if (checksum, calculate_dict_checksum(cell._hash_pattern)) not in invalid_deep_buffers:
+                    deep_buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=True, force_length=True)
+                    deep_buffer_length = deep_buffer_info.length
+                    if deep_buffer_length > MAX_DEEP_BUFFER_SIZE:
+                        return
                     deep_buffer = get_buffer(checksum,remote=True)
                     deep_buffer_coro_id = new_deep_buffer_coro_id()
                     deep_buffer_coros.append(deep_buffer_coro_id)

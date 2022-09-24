@@ -328,7 +328,7 @@ async def set_subpath(value, hash_pattern, path, subvalue):
             new_sub_checksum = await calculate_checksum(new_sub_buffer)
             buffer_cache.cache_buffer(new_sub_checksum, new_sub_buffer)
             # Don't write buffer_info for sub buffers, that would be too much...
-            ## buffer_cache.guarantee_buffer_info(new_sub_checksum, "mixed")
+            ## buffer_cache.guarantee_buffer_info(new_sub_checksum, "mixed", sync_to_remote=False)
             new_sub_cs = new_sub_checksum.hex()
 
 

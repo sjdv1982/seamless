@@ -120,7 +120,7 @@ Else, return None
         buffer = tf_get_buffer(transformation)
         return buffer
     
-    buffer_info = buffer_cache.get_buffer_info(checksum)
+    buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=remote, buffer_from_remote=False, force_length=False)
     if buffer_info is not None:
         d = buffer_info.as_dict()
         for k in d:
@@ -145,7 +145,6 @@ Else, return None
                     return buffer
 
     return None
-
 
 
 from ..cache import CacheMissError

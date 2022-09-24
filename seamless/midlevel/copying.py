@@ -232,7 +232,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
     if checksum is None:
         return
     buffer_cache.cache_buffer(checksum, buf)
-    buffer_cache.guarantee_buffer_info(checksum, datatype)
+    buffer_cache.guarantee_buffer_info(checksum, datatype, sync_to_remote=False)
     if hash_pattern is not None:
         try:
             checksum = apply_hash_pattern_sync(

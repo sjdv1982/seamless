@@ -188,7 +188,7 @@ def try_convert_single(
     
     assert not isinstance(result, str)
     if isinstance(result, bytes):
-        buffer_cache.guarantee_buffer_info(result, target_celltype)
+        buffer_cache.guarantee_buffer_info(result, target_celltype, sync_to_remote=True)
     return result
 
 def _convert_reinterpret(checksum, buffer, target_celltype, *, source_celltype):
@@ -196,7 +196,7 @@ def _convert_reinterpret(checksum, buffer, target_celltype, *, source_celltype):
     exc = None
     if target_celltype == "binary":
         ok = buffer.startswith(MAGIC_NUMPY)
-        buffer_cache.update_buffer_info(checksum, "is_numpy", ok)
+        buffer_cache.update_buffer_info(checksum, "is_numpy", ok, sync_remote=True)
         if not ok:
             exc = "Buffer is not a Numpy buffer"
     else:
@@ -207,7 +207,7 @@ def _convert_reinterpret(checksum, buffer, target_celltype, *, source_celltype):
         except Exception as exc0:
             exc = exc0
             ok = False        
-        buffer_cache.update_buffer_info(checksum, "is_utf8", ok)
+        buffer_cache.update_buffer_info(checksum, "is_utf8", ok, sync_remote=True)
         if ok:
             if target_celltype == "plain":
                 try:
@@ -216,7 +216,7 @@ def _convert_reinterpret(checksum, buffer, target_celltype, *, source_celltype):
                 except Exception as exc0:
                     exc = exc0
                     ok = False
-                buffer_cache.update_buffer_info(checksum, "is_json", ok)
+                buffer_cache.update_buffer_info(checksum, "is_json", ok, sync_remote=True)
             else:
                 validate_text(text, target_celltype, "convert_from_buffer")
     if ok:                
@@ -242,28 +242,28 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
         conv = (source_celltype, target_celltype)
         if conv == ("bytes", "binary") or conv == ("bytes", "mixed"):
             if buffer.startswith(MAGIC_NUMPY):
-                buffer_cache.guarantee_buffer_info(checksum, "binary")
+                buffer_cache.guarantee_buffer_info(checksum, "binary", sync_to_remote=True)
                 return checksum
             elif target_celltype == "mixed" and buffer.startswith(MAGIC_SEAMLESS_MIXED):
-                buffer_cache.guarantee_buffer_info(checksum, "mixed")
+                buffer_cache.guarantee_buffer_info(checksum, "mixed", sync_to_remote=True)
                 return checksum
             else:
                 target_value = None
                 if target_celltype == "mixed":
                     try:
                         textvalue = deserialize_sync(buffer, checksum, "text", copy=False)                        
-                        buffer_cache.guarantee_buffer_info(checksum, "text")
+                        buffer_cache.guarantee_buffer_info(checksum, "text", sync_to_remote=True)
                         try:
                             deserialize_sync(buffer, checksum, "plain", copy=False)
-                            buffer_cache.guarantee_buffer_info(checksum, "plain")
+                            buffer_cache.guarantee_buffer_info(checksum, "plain", sync_to_remote=True)
                             return checksum
                         except Exception:
                             target_buffer = serialize_sync(textvalue, "str")
                             target_checksum = calculate_checksum_sync(target_buffer)
-                            buffer_cache.guarantee_buffer_info(target_checksum, "str")
                             conv_attr = ("text2str", "str2text")
-                            buffer_cache.update_buffer_info(checksum, conv_attr[0], target_checksum)
-                            buffer_cache.update_buffer_info(target_checksum, conv_attr[1], checksum)
+                            buffer_cache.update_buffer_info(checksum, conv_attr[0], target_checksum, sync_remote=True)
+                            buffer_cache.update_buffer_info(target_checksum, conv_attr[1], checksum, sync_remote=False)
+                            buffer_cache.guarantee_buffer_info(target_checksum, "str", sync_to_remote=True)
                     except Exception:
                         pass
 
@@ -286,12 +286,12 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
                 target_value = source_value
                 conv_attr = ("str2text", "text2str")
             else:
-                buffer_cache.guarantee_buffer_info(checksum, target_celltype)
+                buffer_cache.guarantee_buffer_info(checksum, target_celltype, sync_to_remote=True)
                 return checksum
         elif conv == ("text", "plain"):
             try:
                 deserialize_sync(buffer, checksum, "plain", copy=False)
-                buffer_cache.guarantee_buffer_info(checksum, target_celltype)
+                buffer_cache.guarantee_buffer_info(checksum, target_celltype, sync_to_remote=True)
                 return checksum
             except Exception:
                 text = deserialize_sync(buffer, checksum, "text", copy=False)
@@ -316,10 +316,10 @@ def _convert_reformat(checksum, buffer, source_celltype, target_celltype):
     if target_checksum is None:
         target_checksum = calculate_checksum_sync(target_buffer)
     buffer_cache.cache_buffer(target_checksum, target_buffer)
-    buffer_cache.guarantee_buffer_info(target_checksum, target_celltype)
     if conv_attr is not None:
-        buffer_cache.update_buffer_info(checksum, conv_attr[0], target_checksum)
-        buffer_cache.update_buffer_info(target_checksum, conv_attr[1], checksum)
+        buffer_cache.update_buffer_info(checksum, conv_attr[0], target_checksum, sync_remote=True)
+        buffer_cache.update_buffer_info(target_checksum, conv_attr[1], checksum, sync_remote=False)
+    buffer_cache.guarantee_buffer_info(target_checksum, target_celltype, sync_to_remote=True)
     return target_checksum
 
 def _convert_possible(checksum, buffer, source_celltype, target_celltype):
@@ -347,7 +347,7 @@ def _convert_possible(checksum, buffer, source_celltype, target_celltype):
     target_buffer = serialize_sync(target_value, target_celltype)
     target_checksum = calculate_checksum_sync(target_buffer)
     buffer_cache.cache_buffer(target_checksum, target_buffer)
-    buffer_cache.guarantee_buffer_info(target_checksum, target_celltype)
+    buffer_cache.guarantee_buffer_info(target_checksum, target_celltype, sync_to_remote=True)
     return target_checksum
 
 def _convert_from_buffer(checksum, buffer, source_celltype, target_celltype):
