@@ -32,8 +32,6 @@ class MacroUpdateTask(Task):
         self._dependencies.append(macro)
 
     async def _run(self):
-        while get_macro_mode():
-            await asyncio.sleep(0.01)
         macro = self.macro
         manager = self.manager()
         if manager is None or manager._destroyed:
@@ -47,11 +45,13 @@ class MacroUpdateTask(Task):
         task_id = self.taskid
         MAX_RUNNING_TASKS = self.MAX_RUNNING_TASKS
         while 1:
-            if task_id in macro_task_ids[:3]:
-                if len(tasks) - len(macro_task_ids) <= MAX_RUNNING_TASKS:
+            # Macro tasks in LIFO!
+            if task_id in macro_task_ids[-10:]:
+                if (not get_macro_mode()) and len(tasks) - len(macro_task_ids) <= MAX_RUNNING_TASKS:
                     break
-            
-            await asyncio.sleep(0.05)
+                await asyncio.sleep(0.01)
+            else:        
+                await asyncio.sleep(0.1)
 
         if macro._void:
             print("WARNING: macro %s is void, shouldn't happen during macro update" % macro)
