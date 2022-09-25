@@ -1,7 +1,5 @@
 from copy import deepcopy
-from numpy import e, isin
-from ..core import cell, \
- transformer, context
+from ..core import cell, transformer, context
 
 def translate_py_transformer(
         node, root, namespace, inchannels, outchannels,

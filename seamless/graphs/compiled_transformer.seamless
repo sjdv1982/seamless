@@ -146,8 +146,10 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "ddab434659b1b8998c4a75076f07389d89c27cea77181e9d8a56ad660c633cfa",
-        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "code": "bdb4c43be3cbfab25525ce05f726406be52871c2044c7e04597a094037515008",
+        "input": "8a7ca6177c0ac30222dc5af00cf0bad446ea689e7c3f820aea083322df3ecfba",
+        "input_auth": "8a7ca6177c0ac30222dc5af00cf0bad446ea689e7c3f820aea083322df3ecfba",
+        "input_buffer": "8a7ca6177c0ac30222dc5af00cf0bad446ea689e7c3f820aea083322df3ecfba",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -168,6 +170,7 @@
         "executor"
       ],
       "pins": {
+        "direct_print_": {},
         "input_name": {
           "celltype": "text"
         },
@@ -192,7 +195,7 @@
     {
       "celltype": "plain",
       "checksum": {
-        "value": "ce81e055d491eb62162187e0e307116e52ba1945c10e48fa3800ee655958add0"
+        "value": "36c5cd1aa65f99b26a72cb14a7d8025e82607a6ef3b831dae38699685d3ebcd0"
       },
       "datatype": "mixed",
       "path": [

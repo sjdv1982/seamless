@@ -30,7 +30,7 @@ pins["header_"]["celltype"] = "text"
 pins["header_"]["as_"] = "header"
 pins["main_module"]["celltype"] = "plain"
 
-def func(module, pins, input_schema, result_schema, input_name, result_name, kwargs):
+def func(module, pins, input_schema, result_schema, input_name, result_name, direct_print_, kwargs):
     None
 
 ctx.executor = func
@@ -90,6 +90,7 @@ ctf.input_schema = ctx.input_schema
 ctf.result_schema = ctx.result_schema
 ctf.input_name = ctx.input_name
 ctf.result_name = ctx.result_name
+ctf.direct_print_ = False
 ctx.result = ctx.executor
 ctx.result.celltype = "float"
 
@@ -148,6 +149,8 @@ if ctx.result.value is None:
     print(ctx.executor.status)
     print(ctx.executor.exception)
     sys.exit()
+
+print(ctx.executor.logs)
 
 # 4: Save graph and zip
 

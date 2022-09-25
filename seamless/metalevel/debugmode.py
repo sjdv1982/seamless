@@ -216,6 +216,14 @@ class DebugMode:
                 if debug == {"direct_print": False}:
                     debug = None
                 tf._debug = debug
+        
+        tf = self._tf()
+        node = tf._get_htf()        
+        if node.get("compiled") and self._direct_print:
+            tf = tf._get_tf()
+            if tf is not None:
+                tf.tf.executor.direct_print_.set(True)
+
 
     def enable(self, mode, sandbox_name=None):
         if self._mode is not None:
@@ -231,7 +239,7 @@ class DebugMode:
             if tf.language == "bash":
                 special = "bash"
             elif node.get("compiled"):
-                special = "compiled"       
+                special = "compiled"
             core_transformer = self._get_core_transformer(force=True)
             self._mount = debugmountmanager.add_mount(
                 core_transformer, special=special, prefix=sandbox_name
@@ -308,7 +316,13 @@ If this value is None, direct print is True if debugging is enabled."""
         if not isinstance(value, bool) and value is not None:
             raise TypeError(type(value))
         self._direct_print = value
-        self._tf()._parent()._translate()
+        tf = self._tf()
+        tf._parent()._translate()
+        node = tf._get_htf()   
+        if node.get("compiled"):
+            tf = tf._get_tf()
+            if tf is not None:
+                tf.tf.executor.direct_print_.set(value)
 
     @property
     def direct_print_file(self):

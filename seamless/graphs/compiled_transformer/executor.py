@@ -267,10 +267,13 @@ def run():
         result = args[-1][0]
     return 0, result
 
-with wurlitzer.pipes() as (stdout, stderr):
+if direct_print_:
     error_code, result = run()
-sys.stderr.write(stderr.read())
-sys.stdout.write(stdout.read())
+else:
+    with wurlitzer.pipes() as (stdout, stderr):
+        error_code, result = run()
+    sys.stderr.write(stderr.read())
+    sys.stdout.write(stdout.read())
 ARRAYS.clear()
 if error_code != 0:
     raise SeamlessStreamTransformationError("Compiled transformer returned non-zero value: {}".format(error_code))
