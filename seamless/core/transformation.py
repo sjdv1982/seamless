@@ -574,7 +574,8 @@ class TransformationJob:
                 result_checksum = await calculate_checksum(result_buffer)
                 # execute.py will have done a successful serialization for output_celltype
                 buffer_cache.guarantee_buffer_info(
-                    result_checksum, output_celltype
+                    result_checksum, output_celltype,
+                    sync_to_remote=True
                 )
                 validate_evaluation_subcelltype(
                     result_checksum, result_buffer, 

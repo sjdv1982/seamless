@@ -53,10 +53,10 @@ class SetCellValueTask(Task):
                 assert buffer is None or isinstance(buffer, bytes)
                 checksum = await CalculateChecksumTask(manager, buffer).run()
             if checksum is not None:
-                buffer_cache.guarantee_buffer_info(checksum, cell._celltype)
                 if isinstance(value, np.ndarray):
-                    buffer_cache.update_buffer_info(checksum, "shape", value.shape, update_remote=False)
-                    buffer_cache.update_buffer_info(checksum, "dtype", str(value.dtype))
+                    buffer_cache.update_buffer_info(checksum, "shape", value.shape, sync_remote=False)
+                    buffer_cache.update_buffer_info(checksum, "dtype", str(value.dtype), sync_remote=False)
+                buffer_cache.guarantee_buffer_info(checksum, cell._celltype, sync_to_remote=True)
                 validate_evaluation_subcelltype(
                     checksum, buffer,
                     cell._celltype, cell._subcelltype,

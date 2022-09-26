@@ -6,6 +6,7 @@ import gzip
 import bz2
 from concurrent.futures import ThreadPoolExecutor
 from requests.exceptions import ConnectionError, ReadTimeout
+from seamless.core.cache import CacheMissError
 
 from seamless.util import parse_checksum
 
@@ -132,9 +133,17 @@ def sort_mirrors_by_download_time(mirrorlist, buffer_length):
 
 def get_buffer_length(checksum, mirrorlist):
     if checksum is not None and buffer_cache is not None:
-        buffer_info = buffer_cache.get_buffer_info(bytes.fromhex(checksum), remote=False)
-        if buffer_info is not None:
-            return buffer_info.length
+        try:
+            buffer_info = buffer_cache.get_buffer_info(
+                bytes.fromhex(checksum), 
+                force_length=True,
+                buffer_from_remote=False,
+                sync_remote=False
+            )
+            if buffer_info is not None and buffer_info.length is not None:
+                return buffer_info.length
+        except CacheMissError:
+            pass
     for mirror, url in sort_mirrors_by_latency(mirrorlist):
         t = time.time()
         try:

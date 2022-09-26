@@ -351,7 +351,7 @@ class Manager:
         
         print_debug("SET CHECKSUM", cell, "None:", checksum is None, checksum == old_checksum)
         if checksum is not None:
-            buffer_cache.guarantee_buffer_info(checksum, cell.celltype)
+            buffer_cache.guarantee_buffer_info(checksum, cell.celltype, sync_to_remote=False)
         cell._checksum = checksum
         cell._void = void
         cell._status_reason = status_reason
@@ -513,9 +513,10 @@ class Manager:
             return buffer
         if checksum is None:
             return None
-        empty_dict_checksum = 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c'
         if checksum.hex() == empty_dict_checksum:
             return b"{}\n"
+        if checksum.hex() == empty_list_checksum:
+            return b"[]\n"
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
             assert isinstance(buffer, bytes)
@@ -889,7 +890,7 @@ from .tasks import (
 from ..protocol.calculate_checksum import checksum_cache
 from ..protocol.deserialize import deserialize_cache, deserialize_sync
 from ..protocol.get_buffer import get_buffer
-from ..cache.buffer_cache import buffer_cache
+from ..cache.buffer_cache import buffer_cache, empty_dict_checksum, empty_list_checksum
 from .unvoid import unvoid_cell
 from ..cell import Cell
 from ..worker import Worker

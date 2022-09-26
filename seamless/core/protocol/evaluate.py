@@ -24,9 +24,7 @@ def has_validated_evaluation(checksum, celltype):
         celltype = "text"
     if (checksum, celltype) in text_validation_celltype_cache:
         return True
-    buffer_info = buffer_cache.get_buffer_info(checksum, remote=False)
-    if buffer_info is None:
-        return False
+    buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=False, buffer_from_remote=False, force_length=False)
     return verify_buffer_info(buffer_info, celltype)
         
 text_subcelltype_validation_cache = set()
@@ -86,7 +84,7 @@ async def conversion(
 
     buffer_info = None
     if not fingertip_mode:
-        buffer_info = buffer_cache.get_buffer_info(checksum, force_length=False)
+        buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=False, force_length=False)
     conv_chain = make_conversion_chain(celltype, target_celltype)
 
     curr_celltype = celltype  
@@ -159,7 +157,7 @@ async def value_conversion(checksum, source_celltype, target_celltype):
             try:
                 if isinstance(source_value, (int, float, bool)):
                     target_value = np.array(source_value)
-                    buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", True)
+                    buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", True, sync_remote=True)
                 else:         
                     if not isinstance(source_value, list):
                         raise ValueError(msg)
@@ -168,10 +166,10 @@ async def value_conversion(checksum, source_celltype, target_celltype):
                         target_value = np.array(source_value)
                         if target_value.dtype == object:
                             raise ValueError(msg)
-                    buffer_cache.update_buffer_info(checksum, "is_json_numeric_array", True)
+                    buffer_cache.update_buffer_info(checksum, "is_json_numeric_array", True, sync_remote=True)
             except ValueError as exc:
-                buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", False, update_remote=False)
-                buffer_cache.update_buffer_info(checksum,"is_json_numeric_array", False)
+                buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", False, sync_remote=False)
+                buffer_cache.update_buffer_info(checksum,"is_json_numeric_array", False, sync_remote=True)
                 raise exc from None
     except Exception as exc:
         msg0 = "%s cannot be converted from %s to %s"
@@ -183,15 +181,15 @@ async def value_conversion(checksum, source_celltype, target_celltype):
     buffer_cache.cache_buffer(target_checksum, target_buffer)
     
     if conv == ("plain", "binary"):
-        buffer_cache.update_buffer_info(target_checksum, "shape", target_value.shape, update_remote=False)
-        buffer_cache.update_buffer_info(target_checksum, "dtype", str(target_value.dtype))
-        buffer_cache.update_buffer_info(checksum, "json2binary", target_checksum)
-        buffer_cache.update_buffer_info(target_checksum, "binary2json", checksum)
+        buffer_cache.update_buffer_info(target_checksum, "shape", target_value.shape, sync_remote=False)
+        buffer_cache.update_buffer_info(target_checksum, "dtype", str(target_value.dtype), sync_remote=False)
+        buffer_cache.update_buffer_info(target_checksum, "binary2json", checksum, sync_remote=False)
+        buffer_cache.update_buffer_info(checksum, "json2binary", target_checksum, sync_remote=True)
     elif conv == ("binary", "plain"): 
-        buffer_cache.update_buffer_info(checksum, "binary2json", target_checksum)
-        buffer_cache.update_buffer_info(target_checksum, "json2binary", checksum)
+        buffer_cache.update_buffer_info(checksum, "binary2json", target_checksum, sync_remote=True)
+        buffer_cache.update_buffer_info(target_checksum, "json2binary", checksum, sync_remote=False)
 
-    buffer_cache.guarantee_buffer_info(target_checksum, target_celltype)
+    buffer_cache.guarantee_buffer_info(target_checksum, target_celltype, sync_to_remote=True)
     return target_checksum
     
 

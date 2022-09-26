@@ -55,7 +55,7 @@ Cell can be None.
     result_checksum = calculate_checksum_sync(result_buf)
     assert result_checksum is not None
     buffer_cache.cache_buffer(result_checksum, result_buf)
-    buffer_cache.guarantee_buffer_info(result_checksum, "plain")
+    buffer_cache.guarantee_buffer_info(result_checksum, "plain", sync_to_remote=False)
     result_checksum = result_checksum.hex()
     if cell is not None:
         cell.set_checksum(result_checksum)
@@ -117,7 +117,7 @@ If there is no connected Seamless database, Seamless will hold all file buffers 
     assert result_checksum is not None
     if cell is not None or cache_buffers:
         buffer_cache.cache_buffer(result_checksum, result_buf)
-        buffer_cache.guarantee_buffer_info(result_checksum, "plain")
+        buffer_cache.guarantee_buffer_info(result_checksum, "plain", sync_to_remote=False)
     result_checksum = result_checksum.hex()
     if cell is not None:
         cell.set_checksum(result_checksum)
