@@ -53,26 +53,26 @@ if __name__ == "__main__":
     lib_module_dict = bootstrap(lib)
     lib_codeblock = build_codeblock(lib)
 
-    ctx = Context()
-    ctx.lib_module_dict = Cell("plain").set(lib_module_dict)
-    ctx.lib_codeblock = Cell("plain").set(lib_codeblock)
+    ctx0 = Context()
+    ctx0.lib_module_dict = Cell("plain").set(lib_module_dict)
+    ctx0.lib_codeblock = Cell("plain").set(lib_codeblock)
 
     from seamless.highlevel.library import LibraryContainer
     mylib = LibraryContainer("mylib")
 
-    mylib.map_list = ctx
+    mylib.map_list = ctx0
     mylib.map_list.constructor = constructors.map_list.constructor
     mylib.map_list.params =  constructors.map_list.constructor_params
 
-    mylib.map_list_N = ctx
+    mylib.map_list_N = ctx0
     mylib.map_list_N.constructor = constructors.map_list_N.constructor
     mylib.map_list_N.params = constructors.map_list_N.constructor_params
 
-    mylib.map_dict = ctx
+    mylib.map_dict = ctx0
     mylib.map_dict.constructor = constructors.map_dict.constructor
     mylib.map_dict.params =  constructors.map_dict.constructor_params
 
-    mylib.map_dict_chunk = ctx
+    mylib.map_dict_chunk = ctx0
     mylib.map_dict_chunk.constructor = constructors.map_dict_chunk.constructor
     mylib.map_dict_chunk.params =  constructors.map_dict_chunk.constructor_params
 
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     for attr in ("map_list", "map_list_N", "map_dict", "map_dict_chunk"):
         setattr(libctx, attr, Context())
         l = getattr(libctx, attr)
-        l.static = ctx
+        l.static = ctx0
         l.constructor_code = Cell("code").set(getattr(constructors, attr).constructor)
         l.constructor_params = getattr(constructors, attr).constructor_params
     libctx.compute()

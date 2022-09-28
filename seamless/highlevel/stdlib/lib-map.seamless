@@ -1,286 +1,7 @@
 {
   "__seamless__": "0.8",
-  "connections": [
-    {
-      "source": [
-        "map_list",
-        "static",
-        "mul",
-        "inp"
-      ],
-      "target": [
-        "map_list",
-        "static",
-        "mul",
-        "tf",
-        "a"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "map_list",
-        "static",
-        "mul",
-        "uniform"
-      ],
-      "target": [
-        "map_list",
-        "static",
-        "mul",
-        "tf",
-        "factor"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "map_list",
-        "static",
-        "mul",
-        "tf"
-      ],
-      "target": [
-        "map_list",
-        "static",
-        "mul",
-        "result"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "map_list_N",
-        "static",
-        "mul",
-        "inp"
-      ],
-      "target": [
-        "map_list_N",
-        "static",
-        "mul",
-        "tf",
-        "a"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "map_list_N",
-        "static",
-        "mul",
-        "uniform"
-      ],
-      "target": [
-        "map_list_N",
-        "static",
-        "mul",
-        "tf",
-        "factor"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "map_list_N",
-        "static",
-        "mul",
-        "tf"
-      ],
-      "target": [
-        "map_list_N",
-        "static",
-        "mul",
-        "result"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "map_dict",
-        "static",
-        "mul",
-        "inp"
-      ],
-      "target": [
-        "map_dict",
-        "static",
-        "mul",
-        "tf",
-        "a"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "map_dict",
-        "static",
-        "mul",
-        "uniform"
-      ],
-      "target": [
-        "map_dict",
-        "static",
-        "mul",
-        "tf",
-        "factor"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "map_dict",
-        "static",
-        "mul",
-        "tf"
-      ],
-      "target": [
-        "map_dict",
-        "static",
-        "mul",
-        "result"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "map_dict_chunk",
-        "static",
-        "mul",
-        "inp"
-      ],
-      "target": [
-        "map_dict_chunk",
-        "static",
-        "mul",
-        "tf",
-        "a"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "map_dict_chunk",
-        "static",
-        "mul",
-        "uniform"
-      ],
-      "target": [
-        "map_dict_chunk",
-        "static",
-        "mul",
-        "tf",
-        "factor"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "map_dict_chunk",
-        "static",
-        "mul",
-        "tf"
-      ],
-      "target": [
-        "map_dict_chunk",
-        "static",
-        "mul",
-        "result"
-      ],
-      "type": "connection"
-    }
-  ],
-  "lib": [
-    {
-      "api": "pyseamless",
-      "constructor": "def constructor(\n  ctx, libctx, chunksize, context_graph, \n  inp, keyorder0, uniform,\n  result, elision, elision_chunksize, keyorder\n):\n    m = ctx.m = Macro()\n    m.elision = elision\n    m.graph = context_graph\n    m.pins.graph.celltype = \"plain\"\n\n    m.pins.result = {\"io\": \"output\", \"celltype\": \"mixed\", \"hash_pattern\": {\"*\": \"#\"}}\n\n    m.chunksize = chunksize\n    m.pins.chunksize.celltype = \"int\"\n\n    m.elision_ = elision\n    m.pins.elision_.celltype = \"bool\"\n    m.elision_chunksize = elision_chunksize\n    m.pins.elision_chunksize.celltype = \"int\"\n\n    c = Cell()\n    ctx.inp1 = c\n    c.hash_pattern = {\"*\": \"#\"}\n    inp.connect(c)\n    ctx.inp2 = Cell(\"checksum\")\n    ctx.inp2 = ctx.inp1\n    m.inp = ctx.inp2\n    m.pins.inp.celltype = \"checksum\"\n\n    if uniform is not None:\n        c = ctx.uniform = Cell(\"mixed\")\n        uniform.connect(c)\n        m.pins.uniform = {\"io\": \"input\", \"celltype\": \"mixed\"}\n        m.uniform = c\n        m.has_uniform = True\n    else:\n        m.has_uniform = False\n\n    lib_module_dict = libctx.lib_module_dict.value\n    ctx.lib_module_dict = Cell(\"plain\").set(lib_module_dict)  # not strictly necessary to create a cell\n    m.lib_module_dict = ctx.lib_module_dict\n    m.pins.lib_module_dict.celltype = \"plain\"\n\n    ctx.keyorder0 = Cell(\"plain\").set(keyorder0)\n    ctx.calc_keyorder = Transformer()\n    ctx.calc_keyorder.code = lib_module_dict[\"helper\"][\"calc_keyorder\"]\n    ctx.calc_keyorder.inp_ = ctx.inp2\n    ctx.calc_keyorder.pins.inp_.celltype = \"checksum\"\n    ctx.calc_keyorder.keyorder0 = ctx.keyorder0\n    ctx.calc_keyorder.pins.keyorder0.celltype = \"plain\"\n    ctx.keyorder = ctx.calc_keyorder\n    ctx.keyorder.celltype = \"plain\"\n    m.keyorder = ctx.keyorder\n    keyorder.connect_from(ctx.keyorder)\n    m.pins.keyorder.celltype = \"plain\"\n\n    lib_codeblock = libctx.lib_codeblock.value\n    ctx.lib_codeblock = Cell(\"plain\").set(lib_codeblock)  # not strictly necessary to create a cell\n    m.lib_codeblock = ctx.lib_codeblock\n    m.pins.lib_codeblock.celltype = \"plain\"\n\n    lib_code = {\n        \"type\": \"interpreted\",\n        \"language\": \"python\",\n        \"code\": lib_codeblock\n    }\n    ctx.lib_code = Cell(\"plain\").set(lib_code)  # not strictly necessary to create a cell\n    m.lib = ctx.lib_code\n    m.pins.lib.celltype = \"plain\"\n    m.pins.lib.subcelltype = \"module\"\n\n    if elision:\n        m.code = lib_module_dict[\"map_dict_chunk\"][\"top\"]\n    else:\n        m.code = lib_module_dict[\"map_dict_chunk\"][\"main\"]\n    ctx.result = Cell()\n    ctx.result.hash_pattern = {\"*\": \"#\"}\n    ctx.result = m.result\n    result.connect_from(ctx.result)\n",
-      "graph": {
-        "__seamless__": "0.8",
-        "connections": [],
-        "lib": [],
-        "nodes": [
-          {
-            "celltype": "plain",
-            "checksum": {
-              "value": "f9389c18cb8e5f9fe97dcec37e9bfac7618fb662ec6c1d188e6c8caa341515d5"
-            },
-            "datatype": "mixed",
-            "path": [
-              "lib_codeblock"
-            ],
-            "type": "cell"
-          },
-          {
-            "celltype": "plain",
-            "checksum": {
-              "value": "352d65072e15a3c3585b9d20e18dadfa5bf00779d85388ecc37f91f433ebd80c"
-            },
-            "datatype": "mixed",
-            "path": [
-              "lib_module_dict"
-            ],
-            "type": "cell"
-          }
-        ],
-        "params": {
-          "share_namespace": "ctx"
-        }
-      },
-      "language": "python",
-      "params": {
-        "chunksize": {
-          "default": 10,
-          "io": "input",
-          "type": "value"
-        },
-        "context_graph": {
-          "default": null,
-          "io": "input",
-          "type": "context"
-        },
-        "elision": {
-          "default": false,
-          "io": "input",
-          "type": "value"
-        },
-        "elision_chunksize": {
-          "default": 100,
-          "io": "input",
-          "type": "value"
-        },
-        "inp": {
-          "default": null,
-          "io": "input",
-          "type": "cell"
-        },
-        "keyorder": {
-          "celltype": "plain",
-          "default": null,
-          "io": "output",
-          "type": "cell"
-        },
-        "keyorder0": {
-          "default": [],
-          "io": "input",
-          "type": "value"
-        },
-        "result": {
-          "default": null,
-          "io": "output",
-          "type": "cell"
-        },
-        "uniform": {
-          "default": null,
-          "io": "input",
-          "must_be_defined": false,
-          "type": "cell"
-        }
-      },
-      "path": [
-        "map_dict_chunk"
-      ]
-    }
-  ],
+  "connections": [],
+  "lib": [],
   "nodes": [
     {
       "path": [
@@ -325,178 +46,28 @@
       "type": "context"
     },
     {
-      "celltype": "structured",
+      "celltype": "plain",
       "checksum": {
-        "auth": "45ecee4cb55e5529e7729fe4b83bd1f08ced03855b3a62aec29ee17b601d5ea6",
-        "buffer": "45ecee4cb55e5529e7729fe4b83bd1f08ced03855b3a62aec29ee17b601d5ea6",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "45ecee4cb55e5529e7729fe4b83bd1f08ced03855b3a62aec29ee17b601d5ea6"
+        "value": "f9389c18cb8e5f9fe97dcec37e9bfac7618fb662ec6c1d188e6c8caa341515d5"
       },
       "datatype": "mixed",
-      "hash_pattern": null,
       "path": [
         "map_dict",
         "static",
-        "factor"
-      ],
-      "type": "cell"
-    },
-    {
-      "celltype": "structured",
-      "checksum": {
-        "auth": "8a40657e78ce6dea186869cba0ee5a41bb5b32ab0f283a5644b4f5d58661ce9f",
-        "buffer": "8a40657e78ce6dea186869cba0ee5a41bb5b32ab0f283a5644b4f5d58661ce9f",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "8a40657e78ce6dea186869cba0ee5a41bb5b32ab0f283a5644b4f5d58661ce9f"
-      },
-      "datatype": "mixed",
-      "hash_pattern": {
-        "*": "#"
-      },
-      "path": [
-        "map_dict",
-        "static",
-        "inp"
+        "lib_codeblock"
       ],
       "type": "cell"
     },
     {
       "celltype": "plain",
       "checksum": {
-        "value": "fdc2dbd739c73000add967ee2d9597cca1929727abd8f87e01814d8fd434e50e"
+        "value": "352d65072e15a3c3585b9d20e18dadfa5bf00779d85388ecc37f91f433ebd80c"
       },
       "datatype": "mixed",
       "path": [
         "map_dict",
         "static",
-        "keyorder"
-      ],
-      "type": "cell"
-    },
-    {
-      "arguments": {
-        "chunksize": 2,
-        "context_graph": [
-          "map_dict",
-          "static",
-          "mul"
-        ],
-        "elision": true,
-        "elision_chunksize": 3,
-        "inp": [
-          "map_dict",
-          "static",
-          "inp"
-        ],
-        "keyorder": [
-          "map_dict",
-          "static",
-          "keyorder"
-        ],
-        "keyorder0": [],
-        "result": [
-          "map_dict",
-          "static",
-          "result"
-        ],
-        "uniform": [
-          "map_dict",
-          "static",
-          "factor"
-        ]
-      },
-      "libpath": [
-        "map_dict_chunk"
-      ],
-      "path": [
-        "map_dict",
-        "static",
-        "mapping"
-      ],
-      "type": "libinstance"
-    },
-    {
-      "path": [
-        "map_dict",
-        "static",
-        "mul"
-      ],
-      "type": "context"
-    },
-    {
-      "celltype": "mixed",
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_dict",
-        "static",
-        "mul",
-        "inp"
-      ],
-      "type": "cell"
-    },
-    {
-      "celltype": "mixed",
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_dict",
-        "static",
-        "mul",
-        "result"
-      ],
-      "type": "cell"
-    },
-    {
-      "INPUT": "inp",
-      "RESULT": "result",
-      "SCHEMA": null,
-      "checksum": {
-        "code": "350d3d6424e566f914728418c4dcc846c7b5bceb8ea2d3b996f6e7f1ae16be12",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
-      "compiled": false,
-      "hash_pattern": {
-        "*": "#"
-      },
-      "language": "python",
-      "path": [
-        "map_dict",
-        "static",
-        "mul",
-        "tf"
-      ],
-      "pins": {
-        "a": {},
-        "factor": {}
-      },
-      "type": "transformer"
-    },
-    {
-      "celltype": "mixed",
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_dict",
-        "static",
-        "mul",
-        "uniform"
-      ],
-      "type": "cell"
-    },
-    {
-      "celltype": "structured",
-      "checksum": {
-        "buffer": "75571bff9bbf78f19766c8001a4d3366d9220a3105ba965d3331207efae3320d",
-        "value": "75571bff9bbf78f19766c8001a4d3366d9220a3105ba965d3331207efae3320d"
-      },
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_dict",
-        "static",
-        "result"
+        "lib_module_dict"
       ],
       "type": "cell"
     },
@@ -543,178 +114,28 @@
       "type": "context"
     },
     {
-      "celltype": "structured",
+      "celltype": "plain",
       "checksum": {
-        "auth": "45ecee4cb55e5529e7729fe4b83bd1f08ced03855b3a62aec29ee17b601d5ea6",
-        "buffer": "45ecee4cb55e5529e7729fe4b83bd1f08ced03855b3a62aec29ee17b601d5ea6",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "45ecee4cb55e5529e7729fe4b83bd1f08ced03855b3a62aec29ee17b601d5ea6"
+        "value": "f9389c18cb8e5f9fe97dcec37e9bfac7618fb662ec6c1d188e6c8caa341515d5"
       },
       "datatype": "mixed",
-      "hash_pattern": null,
       "path": [
         "map_dict_chunk",
         "static",
-        "factor"
-      ],
-      "type": "cell"
-    },
-    {
-      "celltype": "structured",
-      "checksum": {
-        "auth": "8a40657e78ce6dea186869cba0ee5a41bb5b32ab0f283a5644b4f5d58661ce9f",
-        "buffer": "8a40657e78ce6dea186869cba0ee5a41bb5b32ab0f283a5644b4f5d58661ce9f",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "8a40657e78ce6dea186869cba0ee5a41bb5b32ab0f283a5644b4f5d58661ce9f"
-      },
-      "datatype": "mixed",
-      "hash_pattern": {
-        "*": "#"
-      },
-      "path": [
-        "map_dict_chunk",
-        "static",
-        "inp"
+        "lib_codeblock"
       ],
       "type": "cell"
     },
     {
       "celltype": "plain",
       "checksum": {
-        "value": "fdc2dbd739c73000add967ee2d9597cca1929727abd8f87e01814d8fd434e50e"
+        "value": "352d65072e15a3c3585b9d20e18dadfa5bf00779d85388ecc37f91f433ebd80c"
       },
       "datatype": "mixed",
       "path": [
         "map_dict_chunk",
         "static",
-        "keyorder"
-      ],
-      "type": "cell"
-    },
-    {
-      "arguments": {
-        "chunksize": 2,
-        "context_graph": [
-          "map_dict_chunk",
-          "static",
-          "mul"
-        ],
-        "elision": true,
-        "elision_chunksize": 3,
-        "inp": [
-          "map_dict_chunk",
-          "static",
-          "inp"
-        ],
-        "keyorder": [
-          "map_dict_chunk",
-          "static",
-          "keyorder"
-        ],
-        "keyorder0": [],
-        "result": [
-          "map_dict_chunk",
-          "static",
-          "result"
-        ],
-        "uniform": [
-          "map_dict_chunk",
-          "static",
-          "factor"
-        ]
-      },
-      "libpath": [
-        "map_dict_chunk"
-      ],
-      "path": [
-        "map_dict_chunk",
-        "static",
-        "mapping"
-      ],
-      "type": "libinstance"
-    },
-    {
-      "path": [
-        "map_dict_chunk",
-        "static",
-        "mul"
-      ],
-      "type": "context"
-    },
-    {
-      "celltype": "mixed",
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_dict_chunk",
-        "static",
-        "mul",
-        "inp"
-      ],
-      "type": "cell"
-    },
-    {
-      "celltype": "mixed",
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_dict_chunk",
-        "static",
-        "mul",
-        "result"
-      ],
-      "type": "cell"
-    },
-    {
-      "INPUT": "inp",
-      "RESULT": "result",
-      "SCHEMA": null,
-      "checksum": {
-        "code": "350d3d6424e566f914728418c4dcc846c7b5bceb8ea2d3b996f6e7f1ae16be12",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
-      "compiled": false,
-      "hash_pattern": {
-        "*": "#"
-      },
-      "language": "python",
-      "path": [
-        "map_dict_chunk",
-        "static",
-        "mul",
-        "tf"
-      ],
-      "pins": {
-        "a": {},
-        "factor": {}
-      },
-      "type": "transformer"
-    },
-    {
-      "celltype": "mixed",
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_dict_chunk",
-        "static",
-        "mul",
-        "uniform"
-      ],
-      "type": "cell"
-    },
-    {
-      "celltype": "structured",
-      "checksum": {
-        "buffer": "75571bff9bbf78f19766c8001a4d3366d9220a3105ba965d3331207efae3320d",
-        "value": "75571bff9bbf78f19766c8001a4d3366d9220a3105ba965d3331207efae3320d"
-      },
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_dict_chunk",
-        "static",
-        "result"
+        "lib_module_dict"
       ],
       "type": "cell"
     },
@@ -761,178 +182,28 @@
       "type": "context"
     },
     {
-      "celltype": "structured",
+      "celltype": "plain",
       "checksum": {
-        "auth": "45ecee4cb55e5529e7729fe4b83bd1f08ced03855b3a62aec29ee17b601d5ea6",
-        "buffer": "45ecee4cb55e5529e7729fe4b83bd1f08ced03855b3a62aec29ee17b601d5ea6",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "45ecee4cb55e5529e7729fe4b83bd1f08ced03855b3a62aec29ee17b601d5ea6"
+        "value": "f9389c18cb8e5f9fe97dcec37e9bfac7618fb662ec6c1d188e6c8caa341515d5"
       },
       "datatype": "mixed",
-      "hash_pattern": null,
       "path": [
         "map_list",
         "static",
-        "factor"
-      ],
-      "type": "cell"
-    },
-    {
-      "celltype": "structured",
-      "checksum": {
-        "auth": "8a40657e78ce6dea186869cba0ee5a41bb5b32ab0f283a5644b4f5d58661ce9f",
-        "buffer": "8a40657e78ce6dea186869cba0ee5a41bb5b32ab0f283a5644b4f5d58661ce9f",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "8a40657e78ce6dea186869cba0ee5a41bb5b32ab0f283a5644b4f5d58661ce9f"
-      },
-      "datatype": "mixed",
-      "hash_pattern": {
-        "*": "#"
-      },
-      "path": [
-        "map_list",
-        "static",
-        "inp"
+        "lib_codeblock"
       ],
       "type": "cell"
     },
     {
       "celltype": "plain",
       "checksum": {
-        "value": "fdc2dbd739c73000add967ee2d9597cca1929727abd8f87e01814d8fd434e50e"
+        "value": "352d65072e15a3c3585b9d20e18dadfa5bf00779d85388ecc37f91f433ebd80c"
       },
       "datatype": "mixed",
       "path": [
         "map_list",
         "static",
-        "keyorder"
-      ],
-      "type": "cell"
-    },
-    {
-      "arguments": {
-        "chunksize": 2,
-        "context_graph": [
-          "map_list",
-          "static",
-          "mul"
-        ],
-        "elision": true,
-        "elision_chunksize": 3,
-        "inp": [
-          "map_list",
-          "static",
-          "inp"
-        ],
-        "keyorder": [
-          "map_list",
-          "static",
-          "keyorder"
-        ],
-        "keyorder0": [],
-        "result": [
-          "map_list",
-          "static",
-          "result"
-        ],
-        "uniform": [
-          "map_list",
-          "static",
-          "factor"
-        ]
-      },
-      "libpath": [
-        "map_dict_chunk"
-      ],
-      "path": [
-        "map_list",
-        "static",
-        "mapping"
-      ],
-      "type": "libinstance"
-    },
-    {
-      "path": [
-        "map_list",
-        "static",
-        "mul"
-      ],
-      "type": "context"
-    },
-    {
-      "celltype": "mixed",
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_list",
-        "static",
-        "mul",
-        "inp"
-      ],
-      "type": "cell"
-    },
-    {
-      "celltype": "mixed",
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_list",
-        "static",
-        "mul",
-        "result"
-      ],
-      "type": "cell"
-    },
-    {
-      "INPUT": "inp",
-      "RESULT": "result",
-      "SCHEMA": null,
-      "checksum": {
-        "code": "350d3d6424e566f914728418c4dcc846c7b5bceb8ea2d3b996f6e7f1ae16be12",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
-      "compiled": false,
-      "hash_pattern": {
-        "*": "#"
-      },
-      "language": "python",
-      "path": [
-        "map_list",
-        "static",
-        "mul",
-        "tf"
-      ],
-      "pins": {
-        "a": {},
-        "factor": {}
-      },
-      "type": "transformer"
-    },
-    {
-      "celltype": "mixed",
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_list",
-        "static",
-        "mul",
-        "uniform"
-      ],
-      "type": "cell"
-    },
-    {
-      "celltype": "structured",
-      "checksum": {
-        "buffer": "75571bff9bbf78f19766c8001a4d3366d9220a3105ba965d3331207efae3320d",
-        "value": "75571bff9bbf78f19766c8001a4d3366d9220a3105ba965d3331207efae3320d"
-      },
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_list",
-        "static",
-        "result"
+        "lib_module_dict"
       ],
       "type": "cell"
     },
@@ -979,178 +250,28 @@
       "type": "context"
     },
     {
-      "celltype": "structured",
+      "celltype": "plain",
       "checksum": {
-        "auth": "45ecee4cb55e5529e7729fe4b83bd1f08ced03855b3a62aec29ee17b601d5ea6",
-        "buffer": "45ecee4cb55e5529e7729fe4b83bd1f08ced03855b3a62aec29ee17b601d5ea6",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "45ecee4cb55e5529e7729fe4b83bd1f08ced03855b3a62aec29ee17b601d5ea6"
+        "value": "f9389c18cb8e5f9fe97dcec37e9bfac7618fb662ec6c1d188e6c8caa341515d5"
       },
       "datatype": "mixed",
-      "hash_pattern": null,
       "path": [
         "map_list_N",
         "static",
-        "factor"
-      ],
-      "type": "cell"
-    },
-    {
-      "celltype": "structured",
-      "checksum": {
-        "auth": "8a40657e78ce6dea186869cba0ee5a41bb5b32ab0f283a5644b4f5d58661ce9f",
-        "buffer": "8a40657e78ce6dea186869cba0ee5a41bb5b32ab0f283a5644b4f5d58661ce9f",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "8a40657e78ce6dea186869cba0ee5a41bb5b32ab0f283a5644b4f5d58661ce9f"
-      },
-      "datatype": "mixed",
-      "hash_pattern": {
-        "*": "#"
-      },
-      "path": [
-        "map_list_N",
-        "static",
-        "inp"
+        "lib_codeblock"
       ],
       "type": "cell"
     },
     {
       "celltype": "plain",
       "checksum": {
-        "value": "fdc2dbd739c73000add967ee2d9597cca1929727abd8f87e01814d8fd434e50e"
+        "value": "352d65072e15a3c3585b9d20e18dadfa5bf00779d85388ecc37f91f433ebd80c"
       },
       "datatype": "mixed",
       "path": [
         "map_list_N",
         "static",
-        "keyorder"
-      ],
-      "type": "cell"
-    },
-    {
-      "arguments": {
-        "chunksize": 2,
-        "context_graph": [
-          "map_list_N",
-          "static",
-          "mul"
-        ],
-        "elision": true,
-        "elision_chunksize": 3,
-        "inp": [
-          "map_list_N",
-          "static",
-          "inp"
-        ],
-        "keyorder": [
-          "map_list_N",
-          "static",
-          "keyorder"
-        ],
-        "keyorder0": [],
-        "result": [
-          "map_list_N",
-          "static",
-          "result"
-        ],
-        "uniform": [
-          "map_list_N",
-          "static",
-          "factor"
-        ]
-      },
-      "libpath": [
-        "map_dict_chunk"
-      ],
-      "path": [
-        "map_list_N",
-        "static",
-        "mapping"
-      ],
-      "type": "libinstance"
-    },
-    {
-      "path": [
-        "map_list_N",
-        "static",
-        "mul"
-      ],
-      "type": "context"
-    },
-    {
-      "celltype": "mixed",
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_list_N",
-        "static",
-        "mul",
-        "inp"
-      ],
-      "type": "cell"
-    },
-    {
-      "celltype": "mixed",
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_list_N",
-        "static",
-        "mul",
-        "result"
-      ],
-      "type": "cell"
-    },
-    {
-      "INPUT": "inp",
-      "RESULT": "result",
-      "SCHEMA": null,
-      "checksum": {
-        "code": "350d3d6424e566f914728418c4dcc846c7b5bceb8ea2d3b996f6e7f1ae16be12",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
-      "compiled": false,
-      "hash_pattern": {
-        "*": "#"
-      },
-      "language": "python",
-      "path": [
-        "map_list_N",
-        "static",
-        "mul",
-        "tf"
-      ],
-      "pins": {
-        "a": {},
-        "factor": {}
-      },
-      "type": "transformer"
-    },
-    {
-      "celltype": "mixed",
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_list_N",
-        "static",
-        "mul",
-        "uniform"
-      ],
-      "type": "cell"
-    },
-    {
-      "celltype": "structured",
-      "checksum": {
-        "buffer": "75571bff9bbf78f19766c8001a4d3366d9220a3105ba965d3331207efae3320d",
-        "value": "75571bff9bbf78f19766c8001a4d3366d9220a3105ba965d3331207efae3320d"
-      },
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "map_list_N",
-        "static",
-        "result"
+        "lib_module_dict"
       ],
       "type": "cell"
     }
