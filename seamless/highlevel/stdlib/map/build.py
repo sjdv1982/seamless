@@ -77,8 +77,7 @@ if __name__ == "__main__":
     mylib.map_dict_chunk.params =  constructors.map_dict_chunk.constructor_params
 
     from testing import test
-    test(mylib)
-
+    ctx = test(mylib)
     
     libctx = Context()
     for attr in ("map_list", "map_list_N", "map_dict", "map_dict_chunk"):

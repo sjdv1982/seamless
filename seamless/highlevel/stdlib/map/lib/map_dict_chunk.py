@@ -116,7 +116,7 @@ def map_dict_chunk_nested(
     length = len(inp)
     #print("NEST", length, keyorder[0])
 
-    if elision and elision_chunksize > 1 and length > elision_chunksize:
+    if elision and elision_chunksize > 1 and length > elision_chunksize * chunksize:
         merge_subresults = lib_module_dict["helper"]["merge_subresults_dict"]
         ctx.lib_module_dict = cell("plain").set(lib_module_dict)
         ctx.lib_codeblock = cell("plain").set(lib_codeblock)
@@ -149,11 +149,11 @@ def map_dict_chunk_nested(
         if has_uniform:
             ctx.uniform = cell("mixed")
         subresults = {}
-        chunksize = elision_chunksize
-        while chunksize * elision_chunksize < length:
-            chunksize *= elision_chunksize
-        for n in range(0, length, chunksize):
-            chunk_keyorder = keyorder[n:n+chunksize]
+        chunksize2 = chunksize
+        while chunksize2 * elision_chunksize < length:
+            chunksize2 *= elision_chunksize
+        for n in range(0, length, chunksize2):
+            chunk_keyorder = keyorder[n:n+chunksize2]
             chunk_inp = {k: inp[k] for k in chunk_keyorder}
             chunk_index += 1
             subresult = cell("checksum")
