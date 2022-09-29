@@ -235,6 +235,9 @@ class MacroManager:
         self.cancel_macro(macro)
         self.macros.remove(macro)
 
+    def destroy(self):
+        self._destroyed = True
+
 from .tasks.accessor_update import AccessorUpdateTask
 from .tasks.evaluate_expression import EvaluateExpressionTask
 from ..protocol.get_buffer import get_buffer
