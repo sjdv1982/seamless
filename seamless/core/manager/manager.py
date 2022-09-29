@@ -84,11 +84,13 @@ class Manager:
         from .livegraph import LiveGraph
         from .cachemanager import CacheManager
         from .taskmanager import TaskManager
+        from .macromanager import MacroManager
         from .cancel import CancellationCycle
         self.contexts = weakref.WeakSet()
         self.livegraph = LiveGraph(self)
         self.cachemanager = CacheManager(self)
         self.taskmanager = TaskManager(self)
+        self.macromanager = MacroManager(self)
         self.cancel_cycle = CancellationCycle(self)
         self._destroyed = False
         loop_run_synctasks = self.taskmanager.loop_run_synctasks()
@@ -165,7 +167,7 @@ class Manager:
     def register_macro(self, macro):
         self.cachemanager.register_macro(macro)
         self.livegraph.register_macro(macro)
-        self.taskmanager.register_macro(macro)
+        self.macromanager.register_macro(macro)
 
     @mainthread
     def register_macropath(self, macropath):
@@ -846,7 +848,7 @@ If origin_task is provided, that task is not cancelled."""
     def _destroy_macro(self, macro):
         self.cachemanager.destroy_macro(macro)
         self.livegraph.destroy_macro(self, macro)
-        self.taskmanager.destroy_macro(macro, full=True)
+        self.macromanager.destroy_macro(macro)
         if len(macro._paths):
             for path in macro._paths.values():
                 path.destroy()

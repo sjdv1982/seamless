@@ -49,16 +49,16 @@ deep_buffer_coros = []
 invalid_deep_buffers = set()
 
 async def decref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
-    if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
-        return
-    while deep_buffer_coros[0] != deep_buffer_coro_id:
-        await asyncio.sleep(0.01)
-    if (checksum, calculate_dict_checksum(hash_pattern)) in invalid_deep_buffers:
-        return
-    deep_buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=False, buffer_from_remote=False, force_length=False)
-    if deep_buffer_info.members is not None and deep_buffer_info.members > MAX_DEEP_BUFFER_MEMBERS:
-        return
     try:
+        if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
+            return
+        while deep_buffer_coros[0] != deep_buffer_coro_id:
+            await asyncio.sleep(0.01)
+        if (checksum, calculate_dict_checksum(hash_pattern)) in invalid_deep_buffers:
+            return
+        deep_buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=False, buffer_from_remote=False, force_length=False)
+        if deep_buffer_info.members is not None and deep_buffer_info.members > MAX_DEEP_BUFFER_MEMBERS:
+            return
         deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
         sub_checksums = deep_structure_to_checksums(
             deep_structure, hash_pattern
@@ -73,6 +73,7 @@ async def decref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative,
         """
         # instead
         sub_checksums2 = [bytes.fromhex(cs) for cs in sub_checksums]
+        #print("DECR DEEP", checksum.hex(), len(sub_checksums))
         buffer_cache._decref(sub_checksums2)
     finally:
         deep_buffer_coros.pop(0)
@@ -100,10 +101,9 @@ async def incref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative,
         """
         # instead:
         sub_checksums2 = [bytes.fromhex(cs) for cs in sub_checksums]
+        #print("INC DEEP", checksum.hex(), len(sub_checksums))
         persistent = buffer_cache._is_persistent(authoritative)
         buffer_cache._incref(sub_checksums2, persistent, None)
-        
-        #invalid_deep_buffers.add((checksum, hash_pattern))
     finally:
         deep_buffer_coros.pop(0)
 
@@ -243,8 +243,13 @@ class CacheManager:
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if incref_hash_pattern:
             if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
-                return    
-            deep_buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=True, force_length=True)
+                return
+            try:
+                deep_buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=True, force_length=True)
+            except Exception as exc:
+                print("ERROR in incref'ing deep buffer '{}'".format(checksum.hex()))
+                incref_deep_buffer_done(self, checksum, refholder, authoritative, result, exc)
+                return
             deep_buffer_length = deep_buffer_info.length
             if deep_buffer_length > MAX_DEEP_BUFFER_SIZE:
                 return

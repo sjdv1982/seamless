@@ -483,6 +483,7 @@ class CancellationCycle:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
         self.taskmanager = manager.taskmanager
+        self.macromanager = manager.macromanager
         self._clear()
         self._known_inconsistencies = {}
         self.to_void = deque()
@@ -837,9 +838,9 @@ class CancellationCycle:
 
         self.macros[macro] = (void, reason)
 
-    def _resolve_macro(self, taskmanager, manager, macro, void, reason):
+    def _resolve_macro(self, macromanager, manager, macro, void, reason):
         gen_context = macro._gen_context
-        taskmanager.cancel_macro(macro)
+        macromanager.cancel_macro(macro)
         if gen_context is not None:
             print_debug("***CANCEL***: marked for destruction %s" % macro)
             self.macros_to_destroy.append(macro)
@@ -870,6 +871,7 @@ class CancellationCycle:
             manager = self.manager()
             livegraph = manager.livegraph
             taskmanager = self.taskmanager
+            macromanager = self.macromanager
 
             for cell, (void, reason) in self.cells.items():
                 self._resolve_cell(taskmanager, manager, cell, void, reason)
@@ -886,7 +888,7 @@ class CancellationCycle:
                 else:
                     self._resolve_reactor(taskmanager, manager, worker, void, reason, fired_unvoid)
             for macro, (void, reason) in list(self.macros.items()):
-                self._resolve_macro(taskmanager, manager, macro, void, reason)
+                self._resolve_macro(macromanager, manager, macro, void, reason)
             self._clear()
             #print("/CYCLE")
 
