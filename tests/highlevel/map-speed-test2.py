@@ -31,6 +31,7 @@ ctx.inp = DeepCell()
 ctx.inp = ctx.inp0
 ctx.uniform = 1000
 ctx.result = DeepCell()
+
 ctx.mapped_ctx = Context()
 ctx.keyorder = Cell("plain")
 ctx.mapping = ctx.lib.map_dict_chunk(
@@ -70,7 +71,7 @@ ctx.mapped_ctx = mapped_ctx
 ctx.translate()
 for ELISION_CHUNKSIZE in (10, 1000):
     ctx.mapping.elision_chunksize = ELISION_CHUNKSIZE
-    for pcount in range(3,10):
+    for pcount in range(3,20):
         count = 2**pcount
         t=run(count)        
         print("TIME", count, t)
