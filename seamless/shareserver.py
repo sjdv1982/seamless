@@ -181,6 +181,7 @@ class Share:
         return marker
 
     async def set_buffer(self, buffer, marker=None, *, binary_buffer):
+        from .core.share import sharemanager
         if marker is not None and marker <= self._marker:
             if marker == self._marker:
                 return
@@ -215,6 +216,7 @@ class Share:
 
         checksum = task.result()
         buffer_cache.cache_buffer(checksum, new_buffer)
+        await sharemanager.run_once()
         return self.set_checksum(checksum, marker)
 
     async def _calc_checksum(self, buffer):
@@ -374,7 +376,7 @@ class ShareNamespace:
             checksum = value
             if checksum is not None:
                 checksum = bytes.fromhex(checksum)
-            return await share.set_checksum(checksum, marker)
+            return share.set_checksum(checksum, marker)
         else:            
             if share.binary:
                 try:
