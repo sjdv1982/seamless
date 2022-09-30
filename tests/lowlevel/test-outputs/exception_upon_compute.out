@@ -4,9 +4,9 @@ Status: {
 Traceback (most recent call last):
   File "/seamless/seamless/core/execute.py", line 69, in _execute
     exec_code(
-  File "/seamless/seamless/core/cached_compile.py", line 62, in exec_code
+  File "/seamless/seamless/core/cached_compile.py", line 63, in exec_code
     exec(code_obj, namespace)
-  File "Seamless transformer: .tf", line 1, in <module>
+  File "Seamless transformer: .tf", line 2, in <module>
     print('TEST'); raise Exception(a)
 Exception: 1
 
