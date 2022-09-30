@@ -1,11 +1,11 @@
 5
 
-g++ -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_ddc81e9dc953985e1e54c944bbd1fefd8cd899621c7e31e780268559d6997082_module/main.o /tmp/seamless-extensions/seamless_module_ddc81e9dc953985e1e54c944bbd1fefd8cd899621c7e31e780268559d6997082_module/main.cpp
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_ddc81e9dc953985e1e54c944bbd1fefd8cd899621c7e31e780268559d6997082_module/main.o /tmp/seamless-extensions/seamless_module_ddc81e9dc953985e1e54c944bbd1fefd8cd899621c7e31e780268559d6997082_module/main.cpp
 
 
 5.0
 
-g++ -c -O3 -ffast-math -march=native -fPIC -p -g -o /tmp/seamless-extensions/seamless_module_cf2def09caf663ad619fff2da4f3671b072b0f63843a647fcc1a23ff1da9c254_module/main.o /tmp/seamless-extensions/seamless_module_cf2def09caf663ad619fff2da4f3671b072b0f63843a647fcc1a23ff1da9c254_module/main.cpp
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_cf2def09caf663ad619fff2da4f3671b072b0f63843a647fcc1a23ff1da9c254_module/main.o /tmp/seamless-extensions/seamless_module_cf2def09caf663ad619fff2da4f3671b072b0f63843a647fcc1a23ff1da9c254_module/main.cpp
 
 
 40.0
