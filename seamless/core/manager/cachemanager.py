@@ -63,7 +63,7 @@ class DeepRefManager:
 
     def _invalidate(self, checksum, hash_pattern, exc):
         # crude, but hard to do otherwise. If this happens, we have encountered a Seamless bug anyway
-        self.invalid_deep_buffers.add((checksum, hash_pattern))
+        self.invalid_deep_buffers.add((checksum, calculate_dict_checksum(hash_pattern)))
         cachemanager = self.cachemanager()
         if cachemanager is None:
             return
