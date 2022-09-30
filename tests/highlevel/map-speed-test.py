@@ -3,7 +3,8 @@ from seamless.highlevel.stdlib import map
 
 ctx1 = Context()
 ctx1.inp = Cell("mixed")
-ctx1.result = Cell("mixed").set(42)
+ctx1.result = Cell("mixed")
+ctx1.uniform = Cell("mixed")
 
 ctx2 = Context()
 ctx2.inp = Cell("mixed")
@@ -70,5 +71,5 @@ for mapped_ctx in ctx1, ctx2:
         count = 2**pcount
         t=run(count)
         print("TIME", count, t)
-        if t > 100 or t > 10: ###
+        if t > 20:
             break
