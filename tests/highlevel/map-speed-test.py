@@ -3,7 +3,7 @@ from seamless.highlevel.stdlib import map
 
 ctx1 = Context()
 ctx1.inp = Cell("mixed")
-ctx1.result = Cell("mixed")
+ctx1.result = Cell("mixed").set(42)
 
 ctx2 = Context()
 ctx2.inp = Cell("mixed")
@@ -23,8 +23,9 @@ ctx2.compute()
 ctx = Context()
 ctx.include(map.map_dict)
 
-ctx.inp0 = DeepCell()
+ctx.inp0 = Cell("mixed")
 ctx.inp = DeepCell()
+ctx.inp = ctx.inp0
 ctx.uniform = 1000
 ctx.result = DeepCell()
 ctx.mapped_ctx = Context()
@@ -47,14 +48,13 @@ import time
 globcount = 0
 def run(count):
     global globcount
-    ctx.inp.checksum = None
     ctx.inp0.set({})
     old = globcount
+    inp = {}
     for n in range(count):
         globcount += 1
-        ctx.inp0["k" + str(n+1)].set({"a": globcount, "b": globcount + 0.1})    
-    ctx.compute(report=False)
-    ctx.inp.checksum = ctx.inp0.checksum
+        inp["k" + str(n+1)] = {"a": globcount, "b": globcount + 0.1}
+    ctx.inp0.set(inp)
     t = time.time()
     ctx.compute(report=False)
     t2 = time.time() - t
@@ -70,5 +70,5 @@ for mapped_ctx in ctx1, ctx2:
         count = 2**pcount
         t=run(count)
         print("TIME", count, t)
-        if t > 100:
+        if t > 100 or t > 10: ###
             break

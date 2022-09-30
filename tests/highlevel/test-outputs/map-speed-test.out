@@ -1,55 +1,640 @@
-TIME 1 0.5026609897613525
-TIME 2 0.5062212944030762
-TIME 4 0.5035147666931152
-TIME 8 0.5048837661743164
-TIME 16 0.6207091808319092
-TIME 32 0.618675947189331
-TIME 64 0.6518454551696777
-TIME 128 0.8188886642456055
-TIME 256 1.006873369216919
-TIME 512 1.4241218566894531
-TIME 1024 2.5520355701446533
-double decref, 62daa12c74d53277aeb550be73408336b994da61660f16e3c03b4da4d804e5e8
-TIME 2048 4.584497690200806
-TIME 4096 9.43986988067627
-TIME 8192 23.168204307556152
-double decref, 6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd
-double decref, 6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd
-TIME 16384 48.778709173202515
-TIME 32768 144.99536442756653
-double decref, d275d55d98574b54abe3b8979bfc48f9d002238b953af74ddaa6ec4716bb319b
-double decref, 6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd
-double decref, 62daa12c74d53277aeb550be73408336b994da61660f16e3c03b4da4d804e5e8
+TIME 1 0.5068883895874023
+TIME 2 0.439511775970459
+TIME 4 0.3987114429473877
+TIME 8 0.40663647651672363
+TIME 16 0.5062057971954346
+TIME 32 0.4945700168609619
+TIME 64 0.5864698886871338
+TIME 128 0.6847872734069824
+TIME 256 0.7492449283599854
+TIME 512 1.2005813121795654
+TIME 1024 1.6907942295074463
+TIME 2048 3.242966651916504
+TIME 4096 5.976084470748901
+TIME 8192 13.812607049942017
+TIME 16384 55.30653977394104
+TIME 32768 161.66944408416748
 1
 132072.1 132072.1
-TIME 1 1.1878533363342285
+TIME 1 1.3414525985717773
 2
 264150.2 264150.2
-TIME 2 1.4454574584960938
+TIME 2 1.3866071701049805
 4
 528324.4 528324.4
-TIME 4 2.200474262237549
+TIME 4 1.5460455417633057
 8
 1056744.8 1056744.8
-TIME 8 1.9448564052581787
-double decref, 6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd
-double decref, 6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd
+TIME 8 2.124384880065918
 16
 2113873.6000000006 2113873.6
-TIME 16 2.7827377319335938
+TIME 16 2.8123316764831543
 32
 4229283.200000002 4229283.2
-TIME 32 5.532619953155518
+TIME 32 4.524694442749023
 64
 8464710.399999991 8464710.4
-TIME 64 9.22688913345337
-double decref, 6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd
-double decref, 6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd
+TIME 64 7.6768293380737305
 128
 16953996.79999997 16953996.8
-TIME 128 33.305044174194336
+TIME 128 18.167102575302124
 256
 34006297.60000016 34006297.6
-TIME 256 109.23749446868896
-double decref, f9389c18cb8e5f9fe97dcec37e9bfac7618fb662ec6c1d188e6c8caa341515d5
-double decref, 352d65072e15a3c3585b9d20e18dadfa5bf00779d85388ecc37f91f433ebd80c
+TIME 256 29.389482259750366
+512
+68405811.20000046 68405811.2
+TIME 512 64.98132157325745
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/0bbbf174376d9c47c9d1e5b68663a5f4190310cab09a37285eb635977e772e51' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/0bbbf174376d9c47c9d1e5b68663a5f4190310cab09a37285eb635977e772e51' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/637d89321fda1b7fcd3aee2cf72ef5f218218269a3181f2ba3c23a1a7a61fb81' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/637d89321fda1b7fcd3aee2cf72ef5f218218269a3181f2ba3c23a1a7a61fb81' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/129eb6fd49c8c6c6fb4f5f6587d279803740f0fe69e1cec21775246378be786b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/129eb6fd49c8c6c6fb4f5f6587d279803740f0fe69e1cec21775246378be786b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d1f5061532be7e6c0cd2c511fe4d76a073b217e91ba16406056674618fa058ae' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d1f5061532be7e6c0cd2c511fe4d76a073b217e91ba16406056674618fa058ae' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/dad437ea98d6222031a18a47cfb86430935d7946ce62c80c1b00b059cdd5bd4e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/dad437ea98d6222031a18a47cfb86430935d7946ce62c80c1b00b059cdd5bd4e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b81392fa56593b0b8d093ab8a436dfdaed4fc8de4f20248e56756fb5cf67aa16' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b81392fa56593b0b8d093ab8a436dfdaed4fc8de4f20248e56756fb5cf67aa16' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1fd07d2caef4be2e7c1dc2064f64097bc8b653d0b1d29121390dbf66d5b62fc1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1fd07d2caef4be2e7c1dc2064f64097bc8b653d0b1d29121390dbf66d5b62fc1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/05acc3a32bede906378cf37931ee08749e67d3a65692d0ef3c5df368e6e04dd1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/05acc3a32bede906378cf37931ee08749e67d3a65692d0ef3c5df368e6e04dd1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/11da24a43424542e426c514d2f47ef91d929a0a42295ba8bb897b7d7033a8330' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/11da24a43424542e426c514d2f47ef91d929a0a42295ba8bb897b7d7033a8330' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7bc85949cb85560fa9ad6988d13d558cee3b72b013e8caa725f87ba0bea8070f' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7bc85949cb85560fa9ad6988d13d558cee3b72b013e8caa725f87ba0bea8070f' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e81e56e5174aeeb59b4aa8e856de0c2ef2550fbf338d8d781bbcfdb1ffd27f4e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/de05586023c7d3ca6eabbaef9f74b9894f5005d734ab25388f4080660d002178' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/de05586023c7d3ca6eabbaef9f74b9894f5005d734ab25388f4080660d002178' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/0480d5b65dcd0519c03be9d9e763082618f3a835e869c347232580b6a9a03744' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/0480d5b65dcd0519c03be9d9e763082618f3a835e869c347232580b6a9a03744' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4e7cccbc783969533850e6fc55785ad1ea40349de8f44c0a4c7b5915f4dcd257' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4e7cccbc783969533850e6fc55785ad1ea40349de8f44c0a4c7b5915f4dcd257' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/edc54dc6059efd740966807b7c597b3c0e340093db689cbe866a92a952e5d69b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/edc54dc6059efd740966807b7c597b3c0e340093db689cbe866a92a952e5d69b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a3718b8479db6a85195c7034eb2fbed07269a16d6e99e415711d18922b33778c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a3718b8479db6a85195c7034eb2fbed07269a16d6e99e415711d18922b33778c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/29f3f28980dee44e1784502beb761665a4fd891095cac8fcea67b1bb0b0e767e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/29f3f28980dee44e1784502beb761665a4fd891095cac8fcea67b1bb0b0e767e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e193773a1cb06c2096dd83b4b51fa2eb2049591f60202fa1190a4c8ba6f8c05a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e193773a1cb06c2096dd83b4b51fa2eb2049591f60202fa1190a4c8ba6f8c05a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/363681517df576f2886781ac7977d82a9e874702b175b00ba2a30a970a8bfac7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/363681517df576f2886781ac7977d82a9e874702b175b00ba2a30a970a8bfac7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fa8511ef3c8b88058f5af281c02ca302c253c907424d70c44ca49fba8ab2e0f0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fa8511ef3c8b88058f5af281c02ca302c253c907424d70c44ca49fba8ab2e0f0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e81e56e5174aeeb59b4aa8e856de0c2ef2550fbf338d8d781bbcfdb1ffd27f4e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d64c88cc0163c97b32630a81f1850244c04067644a875d6c8071640b8ad38f2d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d64c88cc0163c97b32630a81f1850244c04067644a875d6c8071640b8ad38f2d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8b4a148ffcd2cc4f568ce9d8957b05c9a6ddd66abcedb0a1c5c73b59abed9fae' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8b4a148ffcd2cc4f568ce9d8957b05c9a6ddd66abcedb0a1c5c73b59abed9fae' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/74e5ddb24b8ad8e2cb4d6de9b82ecc0b51373ca587b7e82582a6e900449d433d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/74e5ddb24b8ad8e2cb4d6de9b82ecc0b51373ca587b7e82582a6e900449d433d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f8136ea84f6756a12d989130e78138b995df479bfc6986f48a5126a3773624db' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f8136ea84f6756a12d989130e78138b995df479bfc6986f48a5126a3773624db' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/48029f75acdf7489f0ebae8bb17c2f89783f1a1f32a5d5d35df08a2321f16d3f' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/48029f75acdf7489f0ebae8bb17c2f89783f1a1f32a5d5d35df08a2321f16d3f' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a4463512577abf7a8b85963fcef9f43641a0be31c43fc8f037e576f713b49981' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a4463512577abf7a8b85963fcef9f43641a0be31c43fc8f037e576f713b49981' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/17267fbc59e18436fb7ebf2a72ac4b7f8816a19d0bfadf53dda1427836b265d6' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/17267fbc59e18436fb7ebf2a72ac4b7f8816a19d0bfadf53dda1427836b265d6' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ab5600aba7fa4d43fa49871d8fcd65bbca8494178766f1519b82c0add3a80784' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ab5600aba7fa4d43fa49871d8fcd65bbca8494178766f1519b82c0add3a80784' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9772663d463888e893fe44efc2cd1f7da2a494829622c7f2c8ee803fb1713839' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9772663d463888e893fe44efc2cd1f7da2a494829622c7f2c8ee803fb1713839' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a6c7f2e68f7247f6646d0085ded006d95197af4468bba53d5ef26e5f444e1aef' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a6c7f2e68f7247f6646d0085ded006d95197af4468bba53d5ef26e5f444e1aef' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/520fad26d0dd6a4445da9f93c0d50da039b60a6989f992b02ad54ec1bd7f0f27' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/55cd3628249438c9a0809aa0edd0170d07f3b02c3525396bbf606427688a0650' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/55cd3628249438c9a0809aa0edd0170d07f3b02c3525396bbf606427688a0650' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4e63c8be536691fa5553d60deb5f67d90871c9eb93c7724487a0f2f2ab5499f0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4e63c8be536691fa5553d60deb5f67d90871c9eb93c7724487a0f2f2ab5499f0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/88fcc50f701a74a74dbcccf3a37bdf21c1135b5781203f206a9d63756f9fad57' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/88fcc50f701a74a74dbcccf3a37bdf21c1135b5781203f206a9d63756f9fad57' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/29bf547c94d4e62eb7ce8dbfef18334dbe49603c1462ffcb6b5399d12e0238c7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/29bf547c94d4e62eb7ce8dbfef18334dbe49603c1462ffcb6b5399d12e0238c7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/000b1540a4021a49172d1b78de5c66e6354f3a0f86d940718a916ec819a5036a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/000b1540a4021a49172d1b78de5c66e6354f3a0f86d940718a916ec819a5036a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3415ef1c08f04f881dc7304867c90ea3d07c9d14e72b651ef0e80ef6c1269e99' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3415ef1c08f04f881dc7304867c90ea3d07c9d14e72b651ef0e80ef6c1269e99' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e8748aef3ea61dd33301d0fb4e14d8fc257ea3ad8e7135c8d9320e8d854c5773' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e8748aef3ea61dd33301d0fb4e14d8fc257ea3ad8e7135c8d9320e8d854c5773' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/acfe9342ae3e4cfd489c2cdb82970efbbc966a99b561b474288ce62487a94867' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/acfe9342ae3e4cfd489c2cdb82970efbbc966a99b561b474288ce62487a94867' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c3a6572ff0572910592a7eb3ac1e48c79789d04a20925220f41221832e0e1e74' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c3a6572ff0572910592a7eb3ac1e48c79789d04a20925220f41221832e0e1e74' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9cda7c2f9dfbdd657ce83ec9eb94a67cab8f852873aa81043c6396fcc1dcdd85' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9cda7c2f9dfbdd657ce83ec9eb94a67cab8f852873aa81043c6396fcc1dcdd85' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3b0d020e362d2ef1c19d87073fdd7ff8e6563d2865e02b78d8a71f8b0f937643' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3b0d020e362d2ef1c19d87073fdd7ff8e6563d2865e02b78d8a71f8b0f937643' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/291d400e739f075e22283dc43ba25833ddcd72d9dbf85a0e0c497d374a4b2138' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/291d400e739f075e22283dc43ba25833ddcd72d9dbf85a0e0c497d374a4b2138' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a5e223ef08937f2dd070fa9b90c5996f259c234d3c54d50115db97df414a9aea' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a5e223ef08937f2dd070fa9b90c5996f259c234d3c54d50115db97df414a9aea' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/012e2a7ef7c4f24aa10711eb008849573b7ce8a9b21d6882ff6ac9c810c282ae' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/012e2a7ef7c4f24aa10711eb008849573b7ce8a9b21d6882ff6ac9c810c282ae' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8c2227fdad70045ea67f315395b376cbdd6663ae4cc226b3dbe6ec3b1cad96c6' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8c2227fdad70045ea67f315395b376cbdd6663ae4cc226b3dbe6ec3b1cad96c6' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/11aca8c0d0d2f5d98445615e79bccdbfdddb0b02436a3108d0962bb9c4a0e097' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/11aca8c0d0d2f5d98445615e79bccdbfdddb0b02436a3108d0962bb9c4a0e097' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9642f79e35f1a3680f2e48acaa9ee6128d0bf12e56d93a4b8ae7fa5732b3f65d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9642f79e35f1a3680f2e48acaa9ee6128d0bf12e56d93a4b8ae7fa5732b3f65d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3e73cbc466722c643be5ceacc72bc233a11031f8faa5c40d3f6a6f30dccdf542' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/98d3341b6f640f2644e7850c7c3f3d49a74111a7376838425969f8d497a4e30c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/98d3341b6f640f2644e7850c7c3f3d49a74111a7376838425969f8d497a4e30c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/72d134df30b8c9eaa5399864886215daaa65f66d74d33cfeb012c4fc5e8cea8d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/72d134df30b8c9eaa5399864886215daaa65f66d74d33cfeb012c4fc5e8cea8d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/645eaf1b308b70bf64b8839820314b45b5b5157619b5b2f73834b4a0e254704c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/645eaf1b308b70bf64b8839820314b45b5b5157619b5b2f73834b4a0e254704c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/db27923d9b04acd7d03e5cb70bd5904b7bf043613e40e5937ca22df6544bd666' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/db27923d9b04acd7d03e5cb70bd5904b7bf043613e40e5937ca22df6544bd666' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6e3467335604ecc78c4a2ca70006429b6ae98158a025babaa88ca2456d64269e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6e3467335604ecc78c4a2ca70006429b6ae98158a025babaa88ca2456d64269e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c7d5c459bb197623d4ed16570c8f90eea393efab9f07d60a3b5a96ce5001f5b5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c7d5c459bb197623d4ed16570c8f90eea393efab9f07d60a3b5a96ce5001f5b5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/06f9acc4af84bf853da51a925784aed301b42c60074a2516302ef7392b2f821d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/06f9acc4af84bf853da51a925784aed301b42c60074a2516302ef7392b2f821d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f191fa49bc1a82b53f3f579c343345b0b43ffa645d5ee56cf5a870e3077002c7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f191fa49bc1a82b53f3f579c343345b0b43ffa645d5ee56cf5a870e3077002c7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/412fdab6f207a9bf5ec90ceac924304160d0abf2b28a61607ca9537cdd060496' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/412fdab6f207a9bf5ec90ceac924304160d0abf2b28a61607ca9537cdd060496' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2e660dedc5625598af6cf0c45c307e61bca0d23cb33506991b0e1a553d3cad49' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2e660dedc5625598af6cf0c45c307e61bca0d23cb33506991b0e1a553d3cad49' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3e73cbc466722c643be5ceacc72bc233a11031f8faa5c40d3f6a6f30dccdf542' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2f385914dbe28137f405370c4733ea5b47f6e8af01a2a78b8b249442383ad607' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2f385914dbe28137f405370c4733ea5b47f6e8af01a2a78b8b249442383ad607' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/520fad26d0dd6a4445da9f93c0d50da039b60a6989f992b02ad54ec1bd7f0f27' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/65ac1d5dd15b44890a1c72977e6f3af71b7497c456dd8f049a5ae95dfda821db' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/65ac1d5dd15b44890a1c72977e6f3af71b7497c456dd8f049a5ae95dfda821db' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6b7b30f9f5cf5075fbcac7d344354ad94fa66913512e1bdd72c2468c74bb5351' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6b7b30f9f5cf5075fbcac7d344354ad94fa66913512e1bdd72c2468c74bb5351' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b3bcbaea597c8e7856c01b6566a17e6b53420b14b7f46cc3396e2814939f859e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b3bcbaea597c8e7856c01b6566a17e6b53420b14b7f46cc3396e2814939f859e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8dd8e7495df1f8b8cb4d99d844b111d0ee7ae40089790f7087fe99850c2df989' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8dd8e7495df1f8b8cb4d99d844b111d0ee7ae40089790f7087fe99850c2df989' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2157c5798e09c48d6775712892ac604ef39e5ea4901e1658318cf21c858af0b7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2157c5798e09c48d6775712892ac604ef39e5ea4901e1658318cf21c858af0b7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fe28bcd0fb08ca84662da5aa5e199623c8ac5ef4d5d584438112b4331697dc92' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fe28bcd0fb08ca84662da5aa5e199623c8ac5ef4d5d584438112b4331697dc92' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c0f56e26a6e1ec41cd05d213c08a5f142dfb98d54c3e5f41cb7b3bebfaffde8f' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c0f56e26a6e1ec41cd05d213c08a5f142dfb98d54c3e5f41cb7b3bebfaffde8f' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/bd52c82c387dccf94de16df0818a9e9c3f5dd5b3e9e045cb4f5c1d7056c134ac' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/bd52c82c387dccf94de16df0818a9e9c3f5dd5b3e9e045cb4f5c1d7056c134ac' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/94b2d1a49f1858557e75bdaa2366833d7ce6f2557820e66cda1e5866442f1c14' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/94b2d1a49f1858557e75bdaa2366833d7ce6f2557820e66cda1e5866442f1c14' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d8fe81aaaa1aceadff6d42bb475c282accace30b2ef8f492006598d5bca051cd' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d8fe81aaaa1aceadff6d42bb475c282accace30b2ef8f492006598d5bca051cd' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f941f83002870b20d5133c88db61916f4557fd37d3fc92a41cd2ae50a9862a85' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f941f83002870b20d5133c88db61916f4557fd37d3fc92a41cd2ae50a9862a85' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fe89159539470112d38cacde681a779d3f388445fe9ff4930aa95744459ba516' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fe89159539470112d38cacde681a779d3f388445fe9ff4930aa95744459ba516' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b0bfc74f92578ff38e3df5c1f2a627480282a1a80c3f673cb27e974ade6a7adc' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b0bfc74f92578ff38e3df5c1f2a627480282a1a80c3f673cb27e974ade6a7adc' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/34cb037a0aca9ca19c97133c3c19f24c4a03cbb3a9829b9c1ce046813b1e1c62' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/34cb037a0aca9ca19c97133c3c19f24c4a03cbb3a9829b9c1ce046813b1e1c62' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4f665a618604c67a74549de4e6282bbce3b7185f796f6460403523e2490d6538' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4f665a618604c67a74549de4e6282bbce3b7185f796f6460403523e2490d6538' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a75ee103659c7c5245c8abdcb31d7ee17e2a594f6cb882824bc152e023eca8a6' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a75ee103659c7c5245c8abdcb31d7ee17e2a594f6cb882824bc152e023eca8a6' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6848a271932c99d06a63559159aa1ae2fcd0dc88b15515c51c9c1646dc65aa2e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6848a271932c99d06a63559159aa1ae2fcd0dc88b15515c51c9c1646dc65aa2e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d06a0fc80d9c67c97fdfaeb92392a543620b288fa0d7f9ad42cd094431df3b07' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d06a0fc80d9c67c97fdfaeb92392a543620b288fa0d7f9ad42cd094431df3b07' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/322b945f56476205b50ed016ca0d3e6a96fbd1de1b532d04116391175f38d3ff' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/322b945f56476205b50ed016ca0d3e6a96fbd1de1b532d04116391175f38d3ff' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fb682df9228b74e0a0f06d17a9ef719769ef74dd1228f06e2c0af798da51ab5c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fb682df9228b74e0a0f06d17a9ef719769ef74dd1228f06e2c0af798da51ab5c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4058a310707b383822811a3e9d63d634d4fbc3bcc0d350806c072e76209b71d7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4058a310707b383822811a3e9d63d634d4fbc3bcc0d350806c072e76209b71d7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b9d7b92af8fd004127b3591c0fd73a59f042f7b9db52cb69121cd7c7a4f7cea1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b9d7b92af8fd004127b3591c0fd73a59f042f7b9db52cb69121cd7c7a4f7cea1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d88fa5f82b9071e8101d3f47c8a293e16e27cbff76ffe76401e05ebc7e7e8e53' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d88fa5f82b9071e8101d3f47c8a293e16e27cbff76ffe76401e05ebc7e7e8e53' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b0243532a0a43f1d582a7985ac8307cdfb04e7919f0c2b9730963fdf1f96a2db' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b0243532a0a43f1d582a7985ac8307cdfb04e7919f0c2b9730963fdf1f96a2db' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ace52b261e7bd28b171e338f1f00c0dfb0f134dde72482a2e312bc09243350a4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ace52b261e7bd28b171e338f1f00c0dfb0f134dde72482a2e312bc09243350a4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2823acde3a37982effec92f0ea7d9cd60de47d6d79b7de3d154c1a80d816dfe5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2823acde3a37982effec92f0ea7d9cd60de47d6d79b7de3d154c1a80d816dfe5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b1a8036fac5f4138c12096ac78d98897dd3b46886e6dae004b4f0c08b85056e1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b1a8036fac5f4138c12096ac78d98897dd3b46886e6dae004b4f0c08b85056e1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d30ebeedf3bc94a758a6beec4689bea6c5b27b393a9f5eee4c975e30673568e1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d30ebeedf3bc94a758a6beec4689bea6c5b27b393a9f5eee4c975e30673568e1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/56a12ccf9aabf9e59eff8a006b8c6d359baf933d4d6fbfd4051bff3cf084a617' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/56a12ccf9aabf9e59eff8a006b8c6d359baf933d4d6fbfd4051bff3cf084a617' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e13d5b26b974aea56fdc26d5db797c62bb5c71d1bbeb1f1a580b9e21d417d599' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e13d5b26b974aea56fdc26d5db797c62bb5c71d1bbeb1f1a580b9e21d417d599' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/013350e44f2c3c2a8decfd6a9c3053981ee9d980387573779eba7b0e63f73a4c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/013350e44f2c3c2a8decfd6a9c3053981ee9d980387573779eba7b0e63f73a4c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4219e644719f123b63004de0a81dec64c33dcdb771318c2b3455bc326ec8d809' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4219e644719f123b63004de0a81dec64c33dcdb771318c2b3455bc326ec8d809' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7d136a6aac1ab13235cbb23a64f27e82b979400ddc5c3e8877d85ac3fc80f31c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7d136a6aac1ab13235cbb23a64f27e82b979400ddc5c3e8877d85ac3fc80f31c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d8320eb813216f46698aa5d436704055f9d916e3d1b93cdc7c90d2478b42cf8b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d8320eb813216f46698aa5d436704055f9d916e3d1b93cdc7c90d2478b42cf8b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/bc403157b18e6135e1069dbf32600169920e94c2aaf3485573bf401c430efbfe' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/bc403157b18e6135e1069dbf32600169920e94c2aaf3485573bf401c430efbfe' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b3aab4a4dfa41027ed47f458700b5d744e8f8821e3411054782c6a958143f124' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b3aab4a4dfa41027ed47f458700b5d744e8f8821e3411054782c6a958143f124' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/07940e2bdbc5e7dbd84f72b099ff0833515eb8a17c89af139b10870c3b62501d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/07940e2bdbc5e7dbd84f72b099ff0833515eb8a17c89af139b10870c3b62501d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7cec11970a24edc19753db6cf90ffbabc54b5ebd4edfd2bd81acb3546a95fd65' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7cec11970a24edc19753db6cf90ffbabc54b5ebd4edfd2bd81acb3546a95fd65' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/990220a5ebc7bb6bc927e51b535fa0d155da262d7a3c090c77d656086ca74912' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/990220a5ebc7bb6bc927e51b535fa0d155da262d7a3c090c77d656086ca74912' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/388830efe48be58ac701e76273f99eca843a4092752c278019cd582e3d1643d5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/388830efe48be58ac701e76273f99eca843a4092752c278019cd582e3d1643d5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a1e8f955def5a2ff91e43458e03c05145b2eca2af9536245dc7185380aa2bfa8' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a1e8f955def5a2ff91e43458e03c05145b2eca2af9536245dc7185380aa2bfa8' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/26d9c0799db8a2cb7a2d02b14c1e4b8a26b84e88923404e2d8369879e87a829d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/26d9c0799db8a2cb7a2d02b14c1e4b8a26b84e88923404e2d8369879e87a829d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/cb08608b022af27d4c78c516c3cfdfd5b263cb71b519996294f81bb016bc8482' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/cb08608b022af27d4c78c516c3cfdfd5b263cb71b519996294f81bb016bc8482' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e696a8ae2f6b2d0da8debf8b2132eea353083c611385563541a0e3abed139238' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e696a8ae2f6b2d0da8debf8b2132eea353083c611385563541a0e3abed139238' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/717e662a06fba938f8f33393ffed9563f5db56b39aa64dd3141e3a8472f00b97' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/717e662a06fba938f8f33393ffed9563f5db56b39aa64dd3141e3a8472f00b97' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2abd41519040ad234ccff096d058633063550112ecba604f17bbacabaac8778a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2abd41519040ad234ccff096d058633063550112ecba604f17bbacabaac8778a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/315fa8c48390c171fc522b244310d3e7b0486ff23ec88b462878652cca405cca' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/315fa8c48390c171fc522b244310d3e7b0486ff23ec88b462878652cca405cca' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/270f09f9fe3c67421d40a2b1f2d53b385efd54e301ef04563338b472f666cb3f' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/270f09f9fe3c67421d40a2b1f2d53b385efd54e301ef04563338b472f666cb3f' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/45a49bff8ced6d9f4e453668cc98937fe6d1f5e1a0626b29aa3b10fed959b323' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/45a49bff8ced6d9f4e453668cc98937fe6d1f5e1a0626b29aa3b10fed959b323' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/344fa01b3929215a26a117f1f39dd1110101e6b2513173a403ed5b834e7d1d5a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/344fa01b3929215a26a117f1f39dd1110101e6b2513173a403ed5b834e7d1d5a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7dc035c09567073337c8c4404dd05f9b460ad90c3403994323c38908872058c7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7dc035c09567073337c8c4404dd05f9b460ad90c3403994323c38908872058c7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fbed39303fffecbf1df3fedcca46e890a3cc803858e0c1f1ad549511ce23b455' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fbed39303fffecbf1df3fedcca46e890a3cc803858e0c1f1ad549511ce23b455' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1083a2f66a738935e381a702dab6b9fd082c7e616ee9b4cdfb7d67ec7fe83227' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1083a2f66a738935e381a702dab6b9fd082c7e616ee9b4cdfb7d67ec7fe83227' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/02d6375ffb40969b79736580de3be7367c693b1c5d74590d17de50077d420952' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/02d6375ffb40969b79736580de3be7367c693b1c5d74590d17de50077d420952' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c92abbe75d6dabd4c9ffb8902f7e670ab3c6abfe5347006fcde8de12004f8916' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c92abbe75d6dabd4c9ffb8902f7e670ab3c6abfe5347006fcde8de12004f8916' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/722e32260023fa49bf42bd04fbcc22b0773e3e560de83ea7491bb85d5583f214' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/722e32260023fa49bf42bd04fbcc22b0773e3e560de83ea7491bb85d5583f214' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e134a2270c603c16059f80aa6c19db66b82dc56f558d08dc9604f629d7b396c4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e134a2270c603c16059f80aa6c19db66b82dc56f558d08dc9604f629d7b396c4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fb9ca7f34749a17594cae8c7d9366fdbeeff7f2bfb0e8b531bd6d311408a55fa' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fb9ca7f34749a17594cae8c7d9366fdbeeff7f2bfb0e8b531bd6d311408a55fa' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c078e9c9a89ac4ed186a1d0d7face5a81199a9eee90f984304bf1367b7c8a0bb' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c078e9c9a89ac4ed186a1d0d7face5a81199a9eee90f984304bf1367b7c8a0bb' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ce799fe3555927ab82f4cd454773199ecc0ac514995155e045a23c109a35598e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ce799fe3555927ab82f4cd454773199ecc0ac514995155e045a23c109a35598e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f242ae0dcc40e94ec9f8f32a805042f1f84e011e93dc97f1d604fc1ac47758f3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f242ae0dcc40e94ec9f8f32a805042f1f84e011e93dc97f1d604fc1ac47758f3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7be5e5b9ace69a9f0808bab25542aa3489342f2a374b38d536a5e5c633595f86' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7be5e5b9ace69a9f0808bab25542aa3489342f2a374b38d536a5e5c633595f86' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7b25b6430330bb7b6d0400fe9d6e5e048859ba871f65b504792f03c26c597d1a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7b25b6430330bb7b6d0400fe9d6e5e048859ba871f65b504792f03c26c597d1a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/db423ffbf7a51dc1d1c61771fd3a832868840bc11fee885299025ff6c68179e1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/db423ffbf7a51dc1d1c61771fd3a832868840bc11fee885299025ff6c68179e1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f5f0e66023201bd82a3ed34a8e15b99ef2b3c0c3f40817f44478c3e6ef840d87' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f5f0e66023201bd82a3ed34a8e15b99ef2b3c0c3f40817f44478c3e6ef840d87' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3ae274fe0b1707aad94cdb9d782ade3efcb77985d2c14c3f4f598659168642d3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3ae274fe0b1707aad94cdb9d782ade3efcb77985d2c14c3f4f598659168642d3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/21fc42ba20dfa148e56912b5bd3e634a92adf3d9361d7defea0f35577ed616df' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/21fc42ba20dfa148e56912b5bd3e634a92adf3d9361d7defea0f35577ed616df' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3664742c29b0f7e4cb242d658597587c07d0d0b78d7c3cbf539dfc11f1fa77f7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3664742c29b0f7e4cb242d658597587c07d0d0b78d7c3cbf539dfc11f1fa77f7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3d9a57e700fadd06886d3bc0fe0ea00c86f3278fc4e4af4bec193ea214a248e8' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3d9a57e700fadd06886d3bc0fe0ea00c86f3278fc4e4af4bec193ea214a248e8' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9364be8f7ae7f08b143a0aed26a9907535e57985bf5e1444c25170b7ba4e5ed0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9364be8f7ae7f08b143a0aed26a9907535e57985bf5e1444c25170b7ba4e5ed0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/58ab51e9d322814891148dfae2c67d7a09c8b65808034ea95d08166208994f23' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/58ab51e9d322814891148dfae2c67d7a09c8b65808034ea95d08166208994f23' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/935a27e54a1fe2a926eed197c293a9fa1301c100f7ddf52e2aecb1bc940abdf1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/935a27e54a1fe2a926eed197c293a9fa1301c100f7ddf52e2aecb1bc940abdf1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6761494a0500fe6b65ada0ed9174b5ada88c44e5dd4644e83288eaeada70f9c8' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6761494a0500fe6b65ada0ed9174b5ada88c44e5dd4644e83288eaeada70f9c8' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6b81bda0c4b10e4e3a3734957052dbf991de24b4a8b31f462ddcca4ceb56b586' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6b81bda0c4b10e4e3a3734957052dbf991de24b4a8b31f462ddcca4ceb56b586' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2d1dbeb5dbe0d2b2d052e897d4c49c9254c86cecfe9f8d49d7bc1e151647aa59' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2d1dbeb5dbe0d2b2d052e897d4c49c9254c86cecfe9f8d49d7bc1e151647aa59' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/29c5a40ca95f1b45430df6fd65b92de4c83d3ad4ad27cdc0a4f7c45de77cd74e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/29c5a40ca95f1b45430df6fd65b92de4c83d3ad4ad27cdc0a4f7c45de77cd74e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a0bc74d10982cd47157d1b47dabcea894f92125a7876bea680255b99c18c14de' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a0bc74d10982cd47157d1b47dabcea894f92125a7876bea680255b99c18c14de' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9fdb48b0b6fbf4b07ea9c93faa72572470281faa4f211928880814fc5bf5cdb4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9fdb48b0b6fbf4b07ea9c93faa72572470281faa4f211928880814fc5bf5cdb4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f6104d4e5ee5ba8488b4366cecf4f60bff8e56430dc96e102f55d3bff2ab66e0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f6104d4e5ee5ba8488b4366cecf4f60bff8e56430dc96e102f55d3bff2ab66e0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/738c3c2b2180fe0f7e109356bec7c2ad2f70dd490f77f73cea00f91ddeb6b9af' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/738c3c2b2180fe0f7e109356bec7c2ad2f70dd490f77f73cea00f91ddeb6b9af' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a6b0feb8d6d848d1c47f2bd47d01c45369751e0734747cc584546bc39d62f633' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a6b0feb8d6d848d1c47f2bd47d01c45369751e0734747cc584546bc39d62f633' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d5dbbe471296d5b7208025fda15b1ce7cef33e8893db6c6b0205a878a00b6697' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d5dbbe471296d5b7208025fda15b1ce7cef33e8893db6c6b0205a878a00b6697' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f56194d39cfa596cc60071889c2664694904f0442b46237d24169de465603340' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f56194d39cfa596cc60071889c2664694904f0442b46237d24169de465603340' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/0576ccb302787b5a8b578f4bb55527f47e1ef634c8cca46e067102b3e0fbb61c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/0576ccb302787b5a8b578f4bb55527f47e1ef634c8cca46e067102b3e0fbb61c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f75abab9dbe0f30cb2333fdf4fdc9dae69df3a9ca7bb7e19c0dcbe38aa32fceb' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f75abab9dbe0f30cb2333fdf4fdc9dae69df3a9ca7bb7e19c0dcbe38aa32fceb' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3ff18209e2cc82e22d2b49def1beccc5f76ee4e28fd35394e91587347bdc013d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3ff18209e2cc82e22d2b49def1beccc5f76ee4e28fd35394e91587347bdc013d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a91d263206f3a1d981310f0a52462ab8bdebeb2217207b8c4eb149a87d7cfc86' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a91d263206f3a1d981310f0a52462ab8bdebeb2217207b8c4eb149a87d7cfc86' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2bf4a84d552c077af3fa6f251613634caac2e1aa5907be98e30b83362310b64d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2bf4a84d552c077af3fa6f251613634caac2e1aa5907be98e30b83362310b64d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9b930325140705a04454e3b0d3550d7e6544eaf2d68927e81a633ecbfcb308db' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9b930325140705a04454e3b0d3550d7e6544eaf2d68927e81a633ecbfcb308db' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a509390153f17dd9196031008418e9fd001faf64e4cbd5e2d2dfe77060d4ec35' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a509390153f17dd9196031008418e9fd001faf64e4cbd5e2d2dfe77060d4ec35' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9ed3d21296c8d57eea1ceac7fafa7feaa4ef9b4e02a15c169d9e7ce12b235ec1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9ed3d21296c8d57eea1ceac7fafa7feaa4ef9b4e02a15c169d9e7ce12b235ec1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f6c808c5364076b570462262888fc827d47b10ac4ef3a0c76560a64df8eebdee' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f6c808c5364076b570462262888fc827d47b10ac4ef3a0c76560a64df8eebdee' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2877bb08c5720b9325094c3b2de20a915c547287bc865db3234e128138669406' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2877bb08c5720b9325094c3b2de20a915c547287bc865db3234e128138669406' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/117a0eb99fcfdb4c4d5491cbac4923b235ae0b57a635729deb2a8e22a78aa5f4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/117a0eb99fcfdb4c4d5491cbac4923b235ae0b57a635729deb2a8e22a78aa5f4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8188fc794f937b50e2d4b9fafba0fa96170d073c4d9e2980da565a319df7c4f3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8188fc794f937b50e2d4b9fafba0fa96170d073c4d9e2980da565a319df7c4f3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/779e814a05ff241a7e12f9629c62b454e1a183a6beebd01d45ceb3a041773311' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/779e814a05ff241a7e12f9629c62b454e1a183a6beebd01d45ceb3a041773311' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e8b710998fd3ec8c4d38f35f62152c4139d9cdb4d3d716058a072fd6d44c8cd5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e8b710998fd3ec8c4d38f35f62152c4139d9cdb4d3d716058a072fd6d44c8cd5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8448e03bf5377e8fab5b1d152664191c6a18c911d26134cc0163e69017c536fa' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8448e03bf5377e8fab5b1d152664191c6a18c911d26134cc0163e69017c536fa' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ecf8142db87f4b660a3d4a759ef13ea92b7b337207faf0a862f3077081461993' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ecf8142db87f4b660a3d4a759ef13ea92b7b337207faf0a862f3077081461993' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1e4ab5d8346d275daa6b7f26d06be4cae39b9080dda46cf2be52ea3e0b3de600' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1e4ab5d8346d275daa6b7f26d06be4cae39b9080dda46cf2be52ea3e0b3de600' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/61924d5c99468aa2a6dbb9d7c4bb427109dc84862b64ea39bf0fb392d9c9e172' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/61924d5c99468aa2a6dbb9d7c4bb427109dc84862b64ea39bf0fb392d9c9e172' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/23c13df949f7e3fbaef3c6bec64728fc3166ffa190dff8a79f13e9b65b1e6f3e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/23c13df949f7e3fbaef3c6bec64728fc3166ffa190dff8a79f13e9b65b1e6f3e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/88425b496a9fa1e33c3e6539a44bca277c237168d94601250a18669ceabf8723' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/88425b496a9fa1e33c3e6539a44bca277c237168d94601250a18669ceabf8723' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3aaf0e45a6d119d43a1383420bd549dd85d5684a84e6da489420bae087d9645b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3aaf0e45a6d119d43a1383420bd549dd85d5684a84e6da489420bae087d9645b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/102ba911c660cd490b81cfc029af74fa7370175e60e6c20ca72269cfe4bbd26a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/102ba911c660cd490b81cfc029af74fa7370175e60e6c20ca72269cfe4bbd26a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ff0da6ba97d651d2585f1daf19bdbe5fd3457f029988339647b6598a12ae846b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ff0da6ba97d651d2585f1daf19bdbe5fd3457f029988339647b6598a12ae846b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a6a48abf2c9cc2636b64aee138a789eec563a91d12e5fd376741a5217debb4a9' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a6a48abf2c9cc2636b64aee138a789eec563a91d12e5fd376741a5217debb4a9' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d315814a7ca7721eea651a90a6a693bc0388c0fd416ee7f598d8015fa846910a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d315814a7ca7721eea651a90a6a693bc0388c0fd416ee7f598d8015fa846910a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/92e3c7f1cf0cba3282d218f416d99476a2b7b519520bd5d3e9ab6dbe2e8931b1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/92e3c7f1cf0cba3282d218f416d99476a2b7b519520bd5d3e9ab6dbe2e8931b1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/bc04c427ebc4fcf5ecbdbc412dea31e7eee48dd42eb10591fa7c6c11ab2fccc6' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/bc04c427ebc4fcf5ecbdbc412dea31e7eee48dd42eb10591fa7c6c11ab2fccc6' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/526529b91f804793daa8136da9cac39d86c8111a3b3d5b6d08a2bd441e9c12ba' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/526529b91f804793daa8136da9cac39d86c8111a3b3d5b6d08a2bd441e9c12ba' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/75e06e0d5c28395799675f52f2a000518aa18d4178071b0f05a65e6832c19db3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/75e06e0d5c28395799675f52f2a000518aa18d4178071b0f05a65e6832c19db3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c69382395142628eaf29b3aa5667bef05ab8e4bfe0bd6dc51822792213eb2dc1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c69382395142628eaf29b3aa5667bef05ab8e4bfe0bd6dc51822792213eb2dc1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e868260f39df86ebb6f282e279ace0dff45a9c2aadd68b30e1d0206ff14ac5b7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e868260f39df86ebb6f282e279ace0dff45a9c2aadd68b30e1d0206ff14ac5b7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ae9d537ce55e296972f093e3eeb043bfe3a83dd5c6117a67891f47944347cfa8' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ae9d537ce55e296972f093e3eeb043bfe3a83dd5c6117a67891f47944347cfa8' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/5f1afad06142076cfcc44df9445d0e0364bece3d75f2bf0630d5368e7233f9ac' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/5f1afad06142076cfcc44df9445d0e0364bece3d75f2bf0630d5368e7233f9ac' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d71953109db40e958cb636f6a113971836bdf2ae9f0fe8bc6218c97a216de3a4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d71953109db40e958cb636f6a113971836bdf2ae9f0fe8bc6218c97a216de3a4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4b65fa01dcf453e43b65172ecafcd09ef1b0577e44c38ccdbfa8223ec692c517' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4b65fa01dcf453e43b65172ecafcd09ef1b0577e44c38ccdbfa8223ec692c517' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/242fcf11d50b02c4901f06246a46e556123b620d0a29a9ee753374a2d1820768' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/242fcf11d50b02c4901f06246a46e556123b620d0a29a9ee753374a2d1820768' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c0d2de3574c0164c9a4b144fdbef3a47760452ea75fdac6992588693c172045b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c0d2de3574c0164c9a4b144fdbef3a47760452ea75fdac6992588693c172045b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/0fe9845d675155af6f1a996ef2e15139055a1fd381235656ffaaee25bb376ad5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/0fe9845d675155af6f1a996ef2e15139055a1fd381235656ffaaee25bb376ad5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/73ce7757456a3260786c58af93b75147d4828fe3045a3b6d961dc2a7008e8640' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/73ce7757456a3260786c58af93b75147d4828fe3045a3b6d961dc2a7008e8640' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/730ec56082c7f5fe08ee1d256a067680934e9e82298899ec645ce488052b23cf' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/730ec56082c7f5fe08ee1d256a067680934e9e82298899ec645ce488052b23cf' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8f983b00c9e2fac634c9edf20ee3d4a6dc03f256cdc24b9eac1e142cd3a80ce7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8f983b00c9e2fac634c9edf20ee3d4a6dc03f256cdc24b9eac1e142cd3a80ce7' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/94cc1ad85ff89218b1927d3286ff72e313d4b580b66a621eb631fb9a5c3001f0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/94cc1ad85ff89218b1927d3286ff72e313d4b580b66a621eb631fb9a5c3001f0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/36670a1720f26c155badd41b7eb21d45fea7f88824eaacbc03863be1adbab819' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/36670a1720f26c155badd41b7eb21d45fea7f88824eaacbc03863be1adbab819' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6eb696c0ef5ff2d3f7f388efcd30854a8e3dceab5321257a25477c7dc7ea3841' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6eb696c0ef5ff2d3f7f388efcd30854a8e3dceab5321257a25477c7dc7ea3841' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a59329746a2911316b4707f9ee9eb21195f2cfc59a248ae710e5852354ec43e2' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a59329746a2911316b4707f9ee9eb21195f2cfc59a248ae710e5852354ec43e2' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e8206f499ef41ae7fbe8558a7e6ea16f846face5f7eef4706d4a6d49a9306e4d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e8206f499ef41ae7fbe8558a7e6ea16f846face5f7eef4706d4a6d49a9306e4d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/dbb1d49502832509d56b69b2498fa705c8e09d709b07deb61581ea0e7d390845' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/dbb1d49502832509d56b69b2498fa705c8e09d709b07deb61581ea0e7d390845' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3dbf10754be53bb1b5b1ae07d555a50dc814c670dcbd6f424d294f19a9f43cf3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3dbf10754be53bb1b5b1ae07d555a50dc814c670dcbd6f424d294f19a9f43cf3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b66398e2d15b65c22fe0e7d541aa310aadbf065f2f900fa2ac6253f28291b30a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b66398e2d15b65c22fe0e7d541aa310aadbf065f2f900fa2ac6253f28291b30a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b13e681798d58348056e04b31fedfcfd9cb168e008bcb64a2985be358b06da75' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b13e681798d58348056e04b31fedfcfd9cb168e008bcb64a2985be358b06da75' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8e450bad8c93b17f0ad4aa34d3c238960b00f9f49932a96495d2a538da5c8904' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8e450bad8c93b17f0ad4aa34d3c238960b00f9f49932a96495d2a538da5c8904' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/473cbd61032115dc0454869e29aa92f42e2b4c09ffaf156895b94cded7d2e64c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/473cbd61032115dc0454869e29aa92f42e2b4c09ffaf156895b94cded7d2e64c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d3b1fb36722a2250a27aabbb01959e9177fa3018e9a1ce2ef30c132fe3827913' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d3b1fb36722a2250a27aabbb01959e9177fa3018e9a1ce2ef30c132fe3827913' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a9b441f9c20f95e65a72eca30005be89d6418a8a65deeb493d10533dd66523c1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a9b441f9c20f95e65a72eca30005be89d6418a8a65deeb493d10533dd66523c1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/088b7906fbb6f00bb18b58905bcf29cdcca8f6a54282f4f6b4c82f304d2a43b4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/088b7906fbb6f00bb18b58905bcf29cdcca8f6a54282f4f6b4c82f304d2a43b4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8195d600b0aab0804aae90b69dba76f2607397f6147a8898b0fcb112e5bd999f' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8195d600b0aab0804aae90b69dba76f2607397f6147a8898b0fcb112e5bd999f' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/81463c2fd26c402ff63083fbe4909e0f4c5556a5b9322c471e41845413db681c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/81463c2fd26c402ff63083fbe4909e0f4c5556a5b9322c471e41845413db681c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7ce50b6617006926e2618748a791281f30b33f69ca5e6527d7406ec57f967e99' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7ce50b6617006926e2618748a791281f30b33f69ca5e6527d7406ec57f967e99' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/13205a8d3db31306aa337d0bd885ef9dd79c083475c6cf8ccb756d772ac8da42' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/13205a8d3db31306aa337d0bd885ef9dd79c083475c6cf8ccb756d772ac8da42' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/dcdfc19c9d62157ee94bde77487c9f237e3a0c1f88960d0cfac4ef28291888a2' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/dcdfc19c9d62157ee94bde77487c9f237e3a0c1f88960d0cfac4ef28291888a2' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/50c536e82120a2da01c755e3137c130528a67bb11ef3de28e566da226c710c1c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/50c536e82120a2da01c755e3137c130528a67bb11ef3de28e566da226c710c1c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/49bc014118132f7545102e4597120e8d6ade18807528acdb5fadcabfc7369e04' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/49bc014118132f7545102e4597120e8d6ade18807528acdb5fadcabfc7369e04' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4bb9c1ebce3aeadd89dab1b086314c9fc579087254dff8a82fa8051a11514528' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4bb9c1ebce3aeadd89dab1b086314c9fc579087254dff8a82fa8051a11514528' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4cb9e3757e212b3ca3669a6d7b68ffb3781d4c9ef85ca524fe2658e92ff51d0c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4cb9e3757e212b3ca3669a6d7b68ffb3781d4c9ef85ca524fe2658e92ff51d0c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e22ff6b616a51b340503454cd9ec66ff476dac43d7a9dbafac157d67ff1b5e55' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e22ff6b616a51b340503454cd9ec66ff476dac43d7a9dbafac157d67ff1b5e55' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1a06bf6ae46d1574e53e79f3e893a86788a74d3abb0c6fa6391cd337b7a76c14' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1a06bf6ae46d1574e53e79f3e893a86788a74d3abb0c6fa6391cd337b7a76c14' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/135bb82c4bb2ddd8b56820b276281cc4a56187d9d04f3670daf6bb2091c329d3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/135bb82c4bb2ddd8b56820b276281cc4a56187d9d04f3670daf6bb2091c329d3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a134f1e6d9c9e4c1a58d1ca11adb97529f6f613bf19eb743ca2c370845c971c5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a134f1e6d9c9e4c1a58d1ca11adb97529f6f613bf19eb743ca2c370845c971c5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3fcd85aebc69b2e707e69c2dd023db081cc721785c4820e708d95678f3e66d51' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3fcd85aebc69b2e707e69c2dd023db081cc721785c4820e708d95678f3e66d51' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/efa79b4159a0bf6b6275ba817e457657f5a821edc98638b1bf1bcab2e405f740' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/efa79b4159a0bf6b6275ba817e457657f5a821edc98638b1bf1bcab2e405f740' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/11544e7a550420e38c260937803e89361ca6e96c757cf11f058b42de7a5b20c5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/11544e7a550420e38c260937803e89361ca6e96c757cf11f058b42de7a5b20c5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3081006435e6adc0edd4d3e1cb75cf86a1748f7306f339bbed82507cc386dd70' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3081006435e6adc0edd4d3e1cb75cf86a1748f7306f339bbed82507cc386dd70' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/21c350bca9cec811ad0769f99c0213cae527b2fe09247fe408bb8c1ff8b4d664' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/21c350bca9cec811ad0769f99c0213cae527b2fe09247fe408bb8c1ff8b4d664' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/93efef87b59dc01b4b09cf6faae8f2ec5f94cff505024f2e8cc2321fa973f8b9' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/93efef87b59dc01b4b09cf6faae8f2ec5f94cff505024f2e8cc2321fa973f8b9' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1c36d2f7693601591f5605801ca0dc26593b5bfdeefe1a4805973ee4d91e6518' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1c36d2f7693601591f5605801ca0dc26593b5bfdeefe1a4805973ee4d91e6518' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6b62a0813110923ba552cac8be6afbf3c39a1913f45671ac8495eab8ea32fbfb' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6b62a0813110923ba552cac8be6afbf3c39a1913f45671ac8495eab8ea32fbfb' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2a24aa86c972633beb093f18ac0ecaada0ba50a1eb6dbb8299d75d5c97501be3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2a24aa86c972633beb093f18ac0ecaada0ba50a1eb6dbb8299d75d5c97501be3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8026593ff9e1e93321e2f337599b78d603444bbd05096d33b1c616002e111a86' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8026593ff9e1e93321e2f337599b78d603444bbd05096d33b1c616002e111a86' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c28e10f15685d5959a11aa58099c3005359d5052c0aed869aef2447f55150a7b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c28e10f15685d5959a11aa58099c3005359d5052c0aed869aef2447f55150a7b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6bea28aaaf028fc5273251e14a53cd4699ed294bcd0cdb53e0ca4ca5de507db4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6bea28aaaf028fc5273251e14a53cd4699ed294bcd0cdb53e0ca4ca5de507db4' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/aacc4ac7d10724c39f18c52477e2e09af0efea03b73fe30cb34be8918a4f4c7d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/aacc4ac7d10724c39f18c52477e2e09af0efea03b73fe30cb34be8918a4f4c7d' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a1c3abae12606f9220a6826ae855ac0719a5f68948c86f4e59ca2b59e0ee449e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a1c3abae12606f9220a6826ae855ac0719a5f68948c86f4e59ca2b59e0ee449e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b76c5ace6aff52bc957dca084306cb859e03eaa4bb54ac82c6f88a97979979ff' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b76c5ace6aff52bc957dca084306cb859e03eaa4bb54ac82c6f88a97979979ff' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/837ea36bf4277cd4e99b1cb663250ec5fe93166468da1ce1ea0b1133b21d3b0c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/837ea36bf4277cd4e99b1cb663250ec5fe93166468da1ce1ea0b1133b21d3b0c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ede8d8a71c5cc98b47bb2b3fe6055180a3947c372b9f957ef440c5c4bd0f53cd' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ede8d8a71c5cc98b47bb2b3fe6055180a3947c372b9f957ef440c5c4bd0f53cd' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4650e13bde1c7b566fb3221382f76f81661d7d6c2b893cfc2a7c5ac1d32177fd' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4650e13bde1c7b566fb3221382f76f81661d7d6c2b893cfc2a7c5ac1d32177fd' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/53c4ccfdd321ddd63db6f16de7a40892769462e064a28512ef78462e8cee602b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/53c4ccfdd321ddd63db6f16de7a40892769462e064a28512ef78462e8cee602b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f5e371369e4be3baa1ef2331e483a0de201804d252ee03ef6fcb9d22d2aad2b6' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f5e371369e4be3baa1ef2331e483a0de201804d252ee03ef6fcb9d22d2aad2b6' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f61a54fca9f37ae8f7bd2df114640471483bf09519c0b6a42f50b9ff52a66457' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f61a54fca9f37ae8f7bd2df114640471483bf09519c0b6a42f50b9ff52a66457' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b9cda9937894d8bf0cdb094a6fb750081a0f5ead466abc95f6dfb2276a163066' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b9cda9937894d8bf0cdb094a6fb750081a0f5ead466abc95f6dfb2276a163066' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/92152ea47e280fd7f5b7388efb638de92139f88d952544a496166ea0f6422018' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/92152ea47e280fd7f5b7388efb638de92139f88d952544a496166ea0f6422018' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/409b56811f94feb558d6aaeaab7959a42329c00108849c8a003ff22dc5480602' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/409b56811f94feb558d6aaeaab7959a42329c00108849c8a003ff22dc5480602' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8459c4a640e3bfeb9443068b612c846335dc724bf3f2f91170e01bdb0244a657' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8459c4a640e3bfeb9443068b612c846335dc724bf3f2f91170e01bdb0244a657' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e583f034d3ac1ccdab4e9d14d3adf68190e4e7e7abe8c721ab30d3f17a923a74' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e583f034d3ac1ccdab4e9d14d3adf68190e4e7e7abe8c721ab30d3f17a923a74' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8cc8f0df5b15eb22fc3ffe055098190835695d6207d77229d4be5835c2f6b76b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8cc8f0df5b15eb22fc3ffe055098190835695d6207d77229d4be5835c2f6b76b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2cbbb513653c0d71ca073c45207ade85ab51307419c38901c5073872092fd286' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/2cbbb513653c0d71ca073c45207ade85ab51307419c38901c5073872092fd286' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ec39791b7d1456ab3fe2a037817143ff2e776c90a9858dd1f8a796eea0394fb0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/ec39791b7d1456ab3fe2a037817143ff2e776c90a9858dd1f8a796eea0394fb0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/60d341c3b6586bf0f92ff6db6fe3caafc2831219d6a505f3492f55ceac915979' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/60d341c3b6586bf0f92ff6db6fe3caafc2831219d6a505f3492f55ceac915979' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/bc743bc01b409d049ac994e4623f8099885e73a38932745ae36cf22fd47a37ad' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/bc743bc01b409d049ac994e4623f8099885e73a38932745ae36cf22fd47a37ad' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d464726fdc2a548a8811d887e780c87a24118b32d05149acc7b83ebbb0cf7c07' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d464726fdc2a548a8811d887e780c87a24118b32d05149acc7b83ebbb0cf7c07' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8ed37bdd3162628e6afafbc8e974fa3e4062eed800b8be3a02dcd6a7a5952aac' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8ed37bdd3162628e6afafbc8e974fa3e4062eed800b8be3a02dcd6a7a5952aac' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7a0282cf48aea63afb9ca4b13112c757291c345f88256b8aa798e76c1621c35e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7a0282cf48aea63afb9ca4b13112c757291c345f88256b8aa798e76c1621c35e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4ba5d378a6b5b9ef3c82fe6876ff78714651dfea01e516a157595ce19807454a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/4ba5d378a6b5b9ef3c82fe6876ff78714651dfea01e516a157595ce19807454a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/cc690c94a2f5adcc0cbbc5b5ad0e4dffeb13b7ce5338bec28a20dc48650e0b58' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/cc690c94a2f5adcc0cbbc5b5ad0e4dffeb13b7ce5338bec28a20dc48650e0b58' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/611d458d212955e0885d224d3d418aaf533128569ff9039fdccf923d6433a982' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/611d458d212955e0885d224d3d418aaf533128569ff9039fdccf923d6433a982' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/476ae709f4dab03a072dc683845038ea3f1e05859417a533d93951a9dd13250b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/476ae709f4dab03a072dc683845038ea3f1e05859417a533d93951a9dd13250b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6fc4713ae6207368132537848a6ac91720e8bc14d5d111b577a4ae243016e09a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6fc4713ae6207368132537848a6ac91720e8bc14d5d111b577a4ae243016e09a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c3c5bf9aeb307e37fbfe5b53d07d17d2d1877d4f83e2f32a2833f2c24459b24a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c3c5bf9aeb307e37fbfe5b53d07d17d2d1877d4f83e2f32a2833f2c24459b24a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a73b2195dbde8314c52660f66f7b137065de868435785734e2703253fb71615c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a73b2195dbde8314c52660f66f7b137065de868435785734e2703253fb71615c' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fd102ac245cfb908112cd91d424900e1d7c19f7ce24b887d986de631e2277d7e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fd102ac245cfb908112cd91d424900e1d7c19f7ce24b887d986de631e2277d7e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/cc0d6ccdde25b19b3bbebd706e2708724da46183f8a07a87ed3994b1625fb4f9' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/cc0d6ccdde25b19b3bbebd706e2708724da46183f8a07a87ed3994b1625fb4f9' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b8aeaedd170bdc56a36dadcd94610e0ddf077fb00b3319498bdbc09522118259' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b8aeaedd170bdc56a36dadcd94610e0ddf077fb00b3319498bdbc09522118259' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1c8b7fab76d9bcf895bbeefbf5b87c08b60652df3eeff86908708bdad48d180a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1c8b7fab76d9bcf895bbeefbf5b87c08b60652df3eeff86908708bdad48d180a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/eef64b8220f73d68a0a6f88863b8a883c5a574512d3045c1de146609a745e826' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/eef64b8220f73d68a0a6f88863b8a883c5a574512d3045c1de146609a745e826' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/77ba95f3564528ccfe3848a76cfd5a9ff0f2a96d276b5d5f952b4c2dd689c6d5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/77ba95f3564528ccfe3848a76cfd5a9ff0f2a96d276b5d5f952b4c2dd689c6d5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/386ead91571b36458b62ef73748eafb33272d71a1c0914558d852042b9088a6a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/386ead91571b36458b62ef73748eafb33272d71a1c0914558d852042b9088a6a' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1c55e6fd83ab1ae3509dab9952faad0f621afa138eec0b2b0c9837a590222f22' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1c55e6fd83ab1ae3509dab9952faad0f621afa138eec0b2b0c9837a590222f22' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d2c224ed467e960590712ccf05b3c6f9f5c4a088b0fdb18765787ebbab99cb91' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/d2c224ed467e960590712ccf05b3c6f9f5c4a088b0fdb18765787ebbab99cb91' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e741c36b2df7dee6091b94fe2a28f7579eaad0393e3aa131ed6983f288e4aa57' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e741c36b2df7dee6091b94fe2a28f7579eaad0393e3aa131ed6983f288e4aa57' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/eab1edd1d069741e30870eb7fecc45dd7f6c5408b8321a72692e73c79df7dbc0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/eab1edd1d069741e30870eb7fecc45dd7f6c5408b8321a72692e73c79df7dbc0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9029ae795ff17385c7dd80943556406e46b59b708363aa918e139d370bfbb0f3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9029ae795ff17385c7dd80943556406e46b59b708363aa918e139d370bfbb0f3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/74ec1a4f191504238c53542f435585d06f7bd239821430ccd0e5aa45afbbb2da' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/74ec1a4f191504238c53542f435585d06f7bd239821430ccd0e5aa45afbbb2da' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e34b9487235214bee7400ea3265daff77cf47dec56d4b862224353d60adaa9b9' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e34b9487235214bee7400ea3265daff77cf47dec56d4b862224353d60adaa9b9' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/38c163692a44511edf2e70be92f2614437c0a32c3055e7b8ba82c1241bb69ca1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/38c163692a44511edf2e70be92f2614437c0a32c3055e7b8ba82c1241bb69ca1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e12ecf47c393f0f11092e6e3fd2901581a4d687865c4eea62a951f2219cd7b20' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e12ecf47c393f0f11092e6e3fd2901581a4d687865c4eea62a951f2219cd7b20' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fccf9c12ce9484dc7cee14bded83a83e24dfb0efb5b85399725ea2d66c7d9786' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/fccf9c12ce9484dc7cee14bded83a83e24dfb0efb5b85399725ea2d66c7d9786' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/db494cc5435aec97ef2eb0bc098d62924e00c9fd94a0f7f0707417228eb669f5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/db494cc5435aec97ef2eb0bc098d62924e00c9fd94a0f7f0707417228eb669f5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/35e989462fa72a3a8fb691ebd8b9fe56c1529745adcf850a9c7a0ccd848a1f54' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/35e989462fa72a3a8fb691ebd8b9fe56c1529745adcf850a9c7a0ccd848a1f54' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/13ad43eb443b3807fe8dfec26a1aa5ee48a9ed0e10829d100aaabfbea9f59dd0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/13ad43eb443b3807fe8dfec26a1aa5ee48a9ed0e10829d100aaabfbea9f59dd0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8ee80756c37a25f71f5278861c4785579980012987d2224ed94ad2610c4365d1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/8ee80756c37a25f71f5278861c4785579980012987d2224ed94ad2610c4365d1' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7eae185239478220c06aa104ba8d5840578f2a30b5bb6734d5579b1a65b5f4a8' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7eae185239478220c06aa104ba8d5840578f2a30b5bb6734d5579b1a65b5f4a8' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/217c102e6f25406b242c4b4099eda509c8c623e5294e875fee5dfa7e610156cb' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/217c102e6f25406b242c4b4099eda509c8c623e5294e875fee5dfa7e610156cb' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/98906ffd7e6b2198ef9f4a8594c82522f684970ce6c05473174547ceaac5b253' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/98906ffd7e6b2198ef9f4a8594c82522f684970ce6c05473174547ceaac5b253' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1c456c6f3a39add83ed5ddc0f31d91f542b0e29fbfaa8717cbfed7976cc5be1e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1c456c6f3a39add83ed5ddc0f31d91f542b0e29fbfaa8717cbfed7976cc5be1e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/89a906ff811044b28af948e0c436fa8f8e2cf277cfa4576f17d6ddfad24f7324' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/89a906ff811044b28af948e0c436fa8f8e2cf277cfa4576f17d6ddfad24f7324' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3681a7d0ca2507feeb6e61128e3d15dd2a3c95621cee8d3940df6732e0d09761' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/3681a7d0ca2507feeb6e61128e3d15dd2a3c95621cee8d3940df6732e0d09761' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9ab2dcf017c830f2e8b5a8cbec056759338263483f8b5271d3c151fe158a7e6f' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9ab2dcf017c830f2e8b5a8cbec056759338263483f8b5271d3c151fe158a7e6f' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/46c6cc1e70e42cabe4d6539a83694f3c6166a45e123549fed1b2b6f2f39a9aaf' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/46c6cc1e70e42cabe4d6539a83694f3c6166a45e123549fed1b2b6f2f39a9aaf' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b467b575d1439292a2cdb55362acd47fa3d135df8be86e66b1f01fb0248007f3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/b467b575d1439292a2cdb55362acd47fa3d135df8be86e66b1f01fb0248007f3' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7cdc5491fd2f77c2ff87c38b82db290861107c48c46a5f60085050b6c5da022e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/7cdc5491fd2f77c2ff87c38b82db290861107c48c46a5f60085050b6c5da022e' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/89bfc1b6027d1deacf97ff4fc3cb2af98a94818466ff58a0af808618f166a543' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/89bfc1b6027d1deacf97ff4fc3cb2af98a94818466ff58a0af808618f166a543' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/13560b32a1f7f8c9573561258a7fdbb13f9da0f5066b02702136ee83c7410398' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/13560b32a1f7f8c9573561258a7fdbb13f9da0f5066b02702136ee83c7410398' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f417e8c88ce8d32dd4bb5f4214bc888c23c78ba77f0dbb15ed16c75c616cd544' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/f417e8c88ce8d32dd4bb5f4214bc888c23c78ba77f0dbb15ed16c75c616cd544' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6854f6fb6f678e3675dbaa857dad920f342dcea1e16ef1db6e37fdd96cce52bc' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6854f6fb6f678e3675dbaa857dad920f342dcea1e16ef1db6e37fdd96cce52bc' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c520c3ff043ef6d972a2ed8ac8e4679bcdbacc98cb4ab91da87a1f453ed31783' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/c520c3ff043ef6d972a2ed8ac8e4679bcdbacc98cb4ab91da87a1f453ed31783' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/70911b6b1d39cd5a4fdbf7c85752bbd3425171de969a081cda68008a578e46f5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/70911b6b1d39cd5a4fdbf7c85752bbd3425171de969a081cda68008a578e46f5' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9f882a734f77b5b68b156a4fd0cb90a526f10e2fa2bdc2b609e2badf6f187eb0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/9f882a734f77b5b68b156a4fd0cb90a526f10e2fa2bdc2b609e2badf6f187eb0' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1a567f126d257867932f20b79fdc0d43a5acf66c26d261ab1bcb004419a0cf0b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/1a567f126d257867932f20b79fdc0d43a5acf66c26d261ab1bcb004419a0cf0b' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/96f786e377e4004f3e509b55345cd9fde8ee23dd66fa76f012d4c275fae6b8af' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/96f786e377e4004f3e509b55345cd9fde8ee23dd66fa76f012d4c275fae6b8af' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e123ca1a8fedb60d7c51bd15ba400e9450ff3b13f9de8407d9d19f1741c948c9' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/e123ca1a8fedb60d7c51bd15ba400e9450ff3b13f9de8407d9d19f1741c948c9' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a75131c8c986f96ef1bcd50b29ba78c7fdee0fed84cac0e61ea83e09d3320911' has the wrong checksum
+WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/a75131c8c986f96ef1bcd50b29ba78c7fdee0fed84cac0e61ea83e09d3320911' has the wrong checksum
+Traceback (most recent call last):
+  File "map-speed-test.py", line 71, in <module>
+    t=run(count)
+  File "map-speed-test.py", line 62, in run
+    print(len(ctx.result.data.keys()))
+AttributeError: 'NoneType' object has no attribute 'keys'
