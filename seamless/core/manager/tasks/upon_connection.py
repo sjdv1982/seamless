@@ -210,7 +210,10 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
         source = self.source
         target = self.target
 
-        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
+        # Uncommenting the following line will make the connection order deterministic
+        # This is certainly easier for debugging.
+        # Commenting it out doesn't seem to affect the results.
+        #await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
         accessor = None
 
         if isinstance(source, Cell):

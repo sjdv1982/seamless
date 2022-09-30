@@ -17,6 +17,7 @@ def map_dict_chunk(ctx, chunksize, graph, inp, keyorder, has_uniform, elision, l
         buffer=ctx.sc_buffer,
         inchannels=[(n+1,) for n in range(nchunks)],
         outchannels=[()],
+        validate_inchannels=False
     )
 
     if has_uniform:

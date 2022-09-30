@@ -237,6 +237,7 @@ class Context(Base, HelpMixin):
     _traitlets: dict[tuple[str, ...], SeamlessTraitlet]
     _observers: set
     _unbound_context: Any = None  # Optional[core.Context]
+    _runtime_indices = {}
 
     @classmethod
     def from_graph(
@@ -1190,7 +1191,22 @@ These modifications have been CANCELED.""" % (
         # TODO: renaming
         raise NotImplementedError
 
-    def _destroy_path(self, path, runtime=False):
+    def _add_runtime_index(self, path, nodepathlist, connections):
+        ind = self._runtime_indices
+        for pp in path[:-1]:
+            ind2 = ind.get(pp)
+            if ind2 is None:
+                ind2 = {}, None, None
+                ind[pp] = ind2
+            ind = ind2[0]
+        pp = path[-1]
+        if pp in ind:
+            d = ind[pp][0]
+        else:
+            d = {}
+        ind[pp] = d, nodepathlist, connections
+
+    def _destroy_path(self, path, runtime=False, fast=False):
         """Destroy the child listed under "path".
 
         "path" can also refer to a subcontext.
@@ -1202,39 +1218,68 @@ These modifications have been CANCELED.""" % (
 
         Transformers in debug mode cannot be destroyed.
         """
-
+        if fast:
+            assert runtime
         graph = self._graph
         if runtime:
             if self._runtime_graph is None:
                 return
             graph = self._runtime_graph
         nodes = graph.nodes
-        for p in list(nodes.keys()):
-            if p[: len(path)] == path:
-                child = self._children.get(p)
-                if isinstance(child, Transformer):
-                    if child.debug.mode is not None:
-                        msg = "Cannot destroy {} in debug mode"
-                        raise Exception(msg.format(child))
-        for p in list(nodes.keys()):
-            if p[: len(path)] == path:
-                child = self._children.get(p)
-                nodes.pop(p)
-                self._children.pop(p, None)
-                self._traitlets.pop(p, None)
-                if not runtime:
-                    self._translate()
+        lp = len(path)
+        if fast:
+            nodes_to_remove = []
+            connections_to_remove = []
 
-        nodes = graph.nodes
-        l = len(nodes)
-        newnodes = {k: v for k, v in nodes.items() if k[: len(path)] != path}
-        if len(newnodes) < l:
-            nodes.clear()
-            nodes.update(newnodes)
-            if not runtime:
-                self._translate()
+            def walk(ind):
+                for sub, nodes_to_remove0, connections_to_remove0 in ind.values():
+                    nodes_to_remove.extend(nodes_to_remove0)
+                    connections_to_remove.extend(connections_to_remove0)
+                    walk(sub)
 
-        removed = self.remove_connections(path, runtime=runtime)
+            ind = self._runtime_indices
+            for pp in path[:-1]:
+                #print(pp, ind.keys())
+                ind2 = ind.get(pp)
+                if ind2 is None:
+                    ind = None
+                    break
+                ind = ind2[0]
+            pp = path[-1]
+            if ind is not None:
+                ind2 = ind.pop(pp, None)
+                if ind2 is not None:
+                    sub, nodes_to_remove0, connections_to_remove0 = ind2
+                    nodes_to_remove.extend(nodes_to_remove0)
+                    connections_to_remove.extend(connections_to_remove0)
+                    walk(sub)
+        else:            
+            # The following line takes an enormous amount for complex graphs!
+            nodes_to_remove = [p for p in nodes.keys() if p[:lp] == path]
+        for p in nodes_to_remove:
+            child = self._children.get(p)
+            if isinstance(child, Transformer):
+                if child.debug.mode is not None:
+                    msg = "Cannot destroy {} in debug mode"
+                    raise Exception(msg.format(child))
+
+            nodes.pop(p, None)
+            self._children.pop(p, None)
+            self._traitlets.pop(p, None)
+        
+        if not runtime and nodes_to_remove:
+            self._translate()
+
+        if fast:
+            removed = len(connections_to_remove)
+            connections = self._runtime_graph[1]
+            for con in connections_to_remove:
+                try:
+                    connections.remove(con)
+                except ValueError:
+                    pass
+        else:
+            removed = self.remove_connections(path, runtime=runtime)
         if removed and not runtime:
             self._translate()
 

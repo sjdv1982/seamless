@@ -361,46 +361,53 @@ and assign the Cell to this intermediate Cell.
     }
     ctx._graph[1].append(connection)
 
-def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
+def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
     from .Context import Context
     from .Cell import Cell
     from .Transformer import Transformer
     assert isinstance(ctx, Context)
-    nodes, connections, _, _ = ctx._graph
+    if fast:
+        assert runtime    
     if runtime:
         nodes, connections, _, _ = ctx._runtime_graph
-    for p in list(nodes.keys()):
-        if p[:len(path)] == path:
-            nodes.pop(p)
-    for con in list(connections):
-        if con["type"] == "connection":
-            source, target = con["source"], con["target"]
-            if source[:len(path)] != path:
-                continue
-            if target[:len(path)] != path:
-                continue
-            connections.remove(con)
+    else:
+        nodes, connections, _, _ = ctx._graph
+    if not fast:
+        for p in list(nodes.keys()):
+            if p[:len(path)] == path:
+                nodes.pop(p)
+        for con in list(connections):
+            if con["type"] == "connection":
+                source, target = con["source"], con["target"]
+                if source[:len(path)] != path:
+                    continue
+                if target[:len(path)] != path:
+                    continue
+                connections.remove(con)
     nodes[path] = {
         "path": path,
         "type": "context"
-    }
+    }    
     new_nodes = deepcopy(new_nodes)
     new_connections = deepcopy(new_connections)
     targets = set()
     for con in new_connections:
         targets.add(con["target"])
+    indexed_nodepaths = []
     for node in new_nodes:
         old_path = node["path"]
         pp = path + old_path
         node["path"] = pp
         nodetype = node["type"]
+        indexed_nodepaths.append(pp)
         nodes[pp] = node
         if not runtime and nodetype not in ("context", "libinstance"):
             node["UNTRANSLATED"] = True
         remove_checksum = []
         if nodetype == "cell":
-            Cell(parent=ctx, path=pp)
-            ###remove_checksum.append("temp")
+            if not fast:
+                Cell(parent=ctx, path=pp)
+            remove_checksum.append("temp")
             if node["celltype"] == "structured":
                 remove_checksum.append("value")
                 remove_checksum.append("buffer")
@@ -408,7 +415,8 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
                 if old_path in targets:
                     remove_checksum.append("value")
         elif nodetype == "transformer":
-            Transformer(parent=ctx, path=pp)
+            if not fast:
+                Transformer(parent=ctx, path=pp)
             remove_checksum += ["input_temp", "input", "input_buffer", "result"]
             potential = ("code", "schema", "result_schema", "main_module")
             for pot in potential:
@@ -417,7 +425,8 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
             if runtime:
                 node.pop("UNTRANSLATED", None)
         elif nodetype == "macro":
-            Macro(parent=ctx, path=pp)
+            if not fast:
+                Macro(parent=ctx, path=pp)
             remove_checksum += ["param_temp", "param", "param_buffer"]
             potential = ("code", "schema")
             for pot in potential:
@@ -426,7 +435,8 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
             if runtime:
                 node.pop("UNTRANSLATED", None)
         elif nodetype == "module":
-            Module(parent=ctx, path=pp)
+            if not fast:
+                Module(parent=ctx, path=pp)
             if old_path in targets:
                 node.pop("checksum")
         elif nodetype == "context":
@@ -455,22 +465,28 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
             cs = node["checksum"]
             for item in remove_checksum:
                 cs.pop(item, None)
+    indexed_connections = []
     for con in new_connections:
         con["source"] = path + con["source"]
         con["target"] = path + con["target"]
+        indexed_connections.append(con)
         connections.append(con)
+    if fast:
+        ctx._add_runtime_index(path, indexed_nodepaths, indexed_connections)
 
-def _assign_context(ctx, new_nodes, new_connections, path, runtime):
-    if runtime:
+def _assign_context(ctx, new_nodes, new_connections, path, runtime, *, fast=False):
+    if runtime and not fast:
         old_graph = deepcopy(ctx._graph)
-    ctx._destroy_path(path, runtime=runtime)
-    _assign_context2(ctx, new_nodes, new_connections, path, runtime)
-    graph = ctx._runtime_graph if runtime else ctx._graph
-    subctx = graph.nodes[path]
-    assert subctx["type"] == "context", path
+    ctx._destroy_path(path, runtime=runtime, fast=fast)
+    _assign_context2(ctx, new_nodes, new_connections, path, runtime, fast=fast)
+    if not fast:
+        graph = ctx._runtime_graph if runtime else ctx._graph
+        subctx = graph.nodes[path]
+        assert subctx["type"] == "context", path
     if runtime:
-        graph2 = deepcopy(ctx._graph)
-        assert old_graph == graph2
+        if not fast:
+            graph2 = deepcopy(ctx._graph)
+            assert old_graph == graph2
     else:
         ctx._translate()
 

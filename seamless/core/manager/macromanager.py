@@ -131,7 +131,7 @@ async def _prepare(macro, manager, max_running_tasks):
 
 
 class MacroManager:
-    MAX_RUNNING_TASKS = 100
+    MAX_RUNNING_TASKS = 50
     WAIT_FOR_SIBLING = 3  # how many seconds to wait for a sibling macro that has a higher path priority
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
@@ -175,7 +175,6 @@ class MacroManager:
         macrokeys = sorted(build_macrokeys(self.macros_prepared))
         macrokey = macrokeys[0]
         _, _, _, _, parent_macro, macro = macrokey
-        #print("UPDATE MACRO?", macrokey)
         proceed = False
         sibling_macros = [m for m in self.macros \
             if m is macro or \
@@ -203,6 +202,7 @@ class MacroManager:
             macro._gen_context.destroy()
             macro._gen_context = None
         macro._execute(code, values, module_workspace)
+        #print("/UPDATE MACRO", macro, len(macrokeys))
 
     async def run(self):
         while not self._destroyed:

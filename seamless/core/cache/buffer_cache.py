@@ -152,6 +152,7 @@ class BufferCache:
         return self._incref([checksum], self._is_persistent(authoritative), [buffer])
 
     def _incref(self, checksums, persistent, buffers):
+        local = (not database_sink.active) or (not database_cache.active)
         for n, checksum in enumerate(checksums):
             if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
                 continue
@@ -173,7 +174,6 @@ class BufferCache:
                     assert isinstance(buffer, bytes)
                     print_debug("Found missing buffer (2): {}".format(checksum.hex()))
                     self.missing.discard(checksum)
-                    local = (not database_sink.active) or (not database_cache.active)
                     if persistent and local:
                         if checksum not in self.buffer_cache:
                             self.buffer_cache[checksum] = buffer
@@ -182,7 +182,6 @@ class BufferCache:
                             database_sink.set_buffer(checksum, buffer, persistent)
             else:
                 self.buffer_refcount[checksum] = 1
-                local = (not database_sink.active) or (not database_cache.active)
                 if not persistent:
                     self.non_persistent.add(checksum)
                 if buffer is None:

@@ -17,7 +17,8 @@ def map_dict(ctx, graph, inp, has_uniform, elision):
         buffer=ctx.sc_buffer,
         inchannels=[(k,) for k in inpkeys],
         outchannels=[()],
-        hash_pattern = {"*": "#"}
+        hash_pattern = {"*": "#"},
+        validate_inchannels=False
     )
 
     if has_uniform:

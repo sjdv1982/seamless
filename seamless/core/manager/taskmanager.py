@@ -52,10 +52,12 @@ class TaskManager:
         self.manager = weakref.ref(manager)
         self.loop = asyncio.get_event_loop()
         self.tasks = []
+        self.upon_connection_tasks = []
         self.barriers = set()  # list of taskids. Only the tasks with an id up to the barrier taskid may execute.
                                # Once all of them have been executed, the barrier is lifted
         self.launching_tasks = set()
         self.task_ids = []
+        self.upon_connection_task_ids = []
         self.synctasks = []
         self.cell_to_task = {} # tasks that depend on cells
         self.accessor_to_task = {}  # ...
@@ -86,6 +88,7 @@ class TaskManager:
             self._last_task = taskid
 
     async def await_barrier(self, taskid):
+        # must not be an UponConnectionTask
         while 1:
             for barrier in self.barriers:
                 if taskid > barrier:
@@ -175,10 +178,17 @@ class TaskManager:
         assert task.manager() is manager
         assert task.future is not None
 
-        assert task not in self.tasks
+        if isinstance(task, UponConnectionTask):
+            tasks = self.upon_connection_tasks 
+        else:
+            tasks = self.tasks
+        assert task not in tasks
         self.launching_tasks.discard(task)
-        self.tasks.append(task)
-        self.task_ids.append(task.taskid)
+        tasks.append(task)
+        if isinstance(task, UponConnectionTask):
+            self.upon_connection_task_ids.append(task.taskid)
+        else:
+            self.task_ids.append(task.taskid)
         task.future.add_done_callback(
             partial(self._clean_task, task)
         )
@@ -210,27 +220,36 @@ class TaskManager:
         dd.append(task)
 
 
+    # a lot of time is spent in the function below
     async def await_upon_connection_tasks(self,taskid,root):
         while 1:
-            pos = bisect_left(self.task_ids, taskid)
-            """
-            for n in range(pos): assert self.tasks[n].taskid < taskid, (pos, n)
-            for n in range(pos, len(self.tasks)): assert self.tasks[n].taskid >= taskid, (pos, n)
-            """
-            for task in reversed(self.tasks[:pos]):
-                if isinstance(task, UponConnectionTask):
-                    if task.future is None or task.future.done():
-                        continue
-                    """
-                    # can't happen. Every root context has its own taskmanager
-                    if task._root() is not root:
-                        continue
-                    """
-                    fut = asyncio.shield(task.future)
-                    await fut
-                    break
+            pos = bisect_left(self.upon_connection_task_ids, taskid)
+            for task in reversed(self.upon_connection_tasks[:pos]):
+                if task.future is None or task.future.done():
+                    continue
+                """
+                # can't happen. Every root context has its own taskmanager
+                if task._root() is not root:
+                    continue
+                """
+                fut = asyncio.shield(task.future)
+                await fut                
+                break
             else:
                 break
+
+
+    """
+    # slower!
+    async def await_upon_connection_tasks(self,taskid,root):
+        while 1:
+            pos = bisect_left(self.upon_connection_task_ids, taskid)
+            futs = [t.future for t in self.upon_connection_tasks[:pos]]
+            futs = [fut for fut in futs if fut is not None]
+            if not len(futs):
+                return
+            await asyncio.wait(futs, return_when=asyncio.ALL_COMPLETED)
+    """
 
     async def await_cell(self,cell,taskid,root):
         while 1:
@@ -411,7 +430,7 @@ class TaskManager:
                 if remaining < 0:
                     break
             if get_tasks_func is None:
-                if not (len(self.tasks) or len(self.launching_tasks) or len(self.synctasks) or \
+                if not (len(self.tasks) or len(self.upon_connection_tasks) or len(self.launching_tasks) or len(self.synctasks) or \
                   manager.macromanager.queued or deeprefmanager.busy):
                     if not debugmountmanager.taskmanager_has_mounts(self):
                         cyclic_scells = manager.livegraph.get_cyclic()
@@ -525,7 +544,7 @@ class TaskManager:
                 if remaining < 0:
                     break
             if get_tasks_func is None:
-                if not (len(self.tasks) or len(self.launching_tasks) or len(self.synctasks) or \
+                if not (len(self.tasks) or len(self.upon_connection_tasks) or len(self.launching_tasks) or len(self.synctasks) or \
                   manager.macromanager.queued or deeprefmanager.busy):
                     if not debugmountmanager.taskmanager_has_mounts(self):
                         cyclic_scells = manager.livegraph.get_cyclic()
@@ -564,8 +583,12 @@ class TaskManager:
             return
         cleaned = task._cleaned
         if not cleaned:
-            self.tasks.remove(task)
-            self.task_ids.remove(task.taskid)
+            if isinstance(task, UponConnectionTask):
+                self.upon_connection_tasks.remove(task)
+                self.upon_connection_task_ids.remove(task.taskid)
+            else:
+                self.tasks.remove(task)
+                self.task_ids.remove(task.taskid)
             task._cleaned = True
 
             print_debug("FINISHED", task.__class__.__name__, task.taskid, task.dependencies)
