@@ -69,6 +69,8 @@ class SynthContext:
             result = Transformer()
         elif node["type"] == "macro":
             result = Macro()
+        elif node["type"] == "module":
+            result = Module()
         elif node["type"] == "context":
             return SynthContext(parent, path)
         else:
@@ -86,3 +88,4 @@ from .Base import Base
 from .Cell import Cell
 from .Transformer import Transformer
 from .Macro import Macro
+from .Module import Module
