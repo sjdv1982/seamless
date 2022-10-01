@@ -75,6 +75,7 @@ import logging
 logger = logging.getLogger("seamless")
 
 def get_subkey(buffer, subkey):
+    from seamless.core.protocol.json import json_dumps
     value = json.loads(buffer)
     path = subkey.split("/")
     try:
@@ -86,7 +87,7 @@ def get_subkey(buffer, subkey):
                 value = value[subpath]
     except:
         return None
-    return json.dumps(value, indent=2, sort_keys=True) + "\n"
+    return json_dumps(value) + "\n"
 
 def is_bound_port_error(exc):
     args = exc.args
@@ -307,6 +308,7 @@ class ShareNamespace:
             self._send_sharelist_task = None
 
     async def _get(self, key, mode, subkey=None):
+        from seamless.core.protocol.json import json_dumps
         assert mode in ("checksum", "buffer", "value", "marker")
         if subkey is not None:
             assert mode in ("buffer", "value")
@@ -360,7 +362,7 @@ class ShareNamespace:
             "marker": marker,
             "content_type": content_type,
         }
-        result = json.dumps(result, indent=2, sort_keys=True)
+        result = json_dumps(result)
         return result, 'application/json'
 
     async def get(self, key, mode, subkey=None):

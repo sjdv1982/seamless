@@ -4,7 +4,6 @@ from silk.mixed import MixedScalar
 from silk.validation import _integer_types, _float_types
 
 def seamless_encoder(obj):
-    from ..structured_cell import StructuredCellState
     retry = False
     if isinstance(obj, MixedScalar):
         obj = obj.value
@@ -53,3 +52,9 @@ def json_encode(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
       sort_keys=sort_keys,
       **kw
     )
+
+def json_dumps(obj, as_bytes=False):
+    dump = json.dumps(obj, indent=2, sort_keys=True)
+    if as_bytes:
+        dump = dump.encode()
+    return dump

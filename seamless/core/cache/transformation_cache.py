@@ -99,6 +99,7 @@ class DummyTransformer:
         self.prelim = None
 
 def tf_get_buffer(transformation):
+    from seamless.core.protocol.json import json_dumps
     assert isinstance(transformation, dict)
     d = {}
     for k in transformation:
@@ -114,8 +115,7 @@ def tf_get_buffer(transformation):
             continue
         celltype, subcelltype, checksum = v
         d[k] = celltype, subcelltype, checksum
-    content = json.dumps(d, sort_keys=True, indent=2) + "\n"
-    buffer = content.encode()
+    buffer = json_dumps(d, as_bytes=True) + b"\n"
     return buffer
 
 

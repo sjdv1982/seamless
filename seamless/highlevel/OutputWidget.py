@@ -43,7 +43,8 @@ def json_widget(data, **kwargs):
     return IPython.display.JSON(data, **kwargs)
     """
     import IPython.display
-    txt = json.dumps(data, sort_keys=True, indent=2)
+    from seamless.core.protocol.json import json_dumps
+    txt = json_dumps(data)
     return IPython.display.Pretty(txt, **kwargs)
 
 def select_DOC(celltype, mimetype):

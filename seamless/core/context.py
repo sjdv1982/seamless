@@ -277,11 +277,12 @@ languages: dict or None
         Returns a dictionary containing the status of all children that are not OK.
         If all children are OK, returns OK
         """
+        from seamless.core.protocol.json import json_dumps
         from .status import format_context_status
         status = self._get_status()
         statustxt = format_context_status(status)
         if isinstance(statustxt, dict):
-            statustxt = json.dumps(statustxt, indent=2, sort_keys=True)
+            statustxt = json_dumps(statustxt)
         return "Status: " + statustxt
 
     def __dir__(self):
