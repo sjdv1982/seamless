@@ -20,6 +20,8 @@ def print_warning(*args):
     logger.warning(msg)
 
 def print_debug(*args):
+    if logger.level < logging.DEBUG:
+        return
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
@@ -179,10 +181,10 @@ class TaskManager:
         assert task.future is not None
 
         if isinstance(task, UponConnectionTask):
-            tasks = self.upon_connection_tasks 
+            tasks = self.upon_connection_tasks
         else:
             tasks = self.tasks
-        assert task not in tasks
+        ###assert task not in tasks
         self.launching_tasks.discard(task)
         tasks.append(task)
         if isinstance(task, UponConnectionTask):

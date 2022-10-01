@@ -223,7 +223,7 @@ languages: dict or None
             child._cached_path = child.path
             if isinstance(child, Context):
                 child._cache_paths()
-            if isinstance(child, Macro):
+            elif isinstance(child, Macro):
                 cctx = child._gen_context
                 if cctx is not None:
                     cctx._cache_paths()

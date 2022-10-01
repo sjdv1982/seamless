@@ -126,7 +126,8 @@ class BufferCache:
         assert len(checksum) == 32
         assert isinstance(buffer, bytes)
         #print("LOCAL CACHE", checksum.hex())
-        self._update_time(checksum, len(buffer))
+        if checksum not in self.buffer_refcount:
+            self._update_time(checksum, len(buffer))
         self.update_buffer_info(checksum, "length", len(buffer), sync_remote=False)
         local = (not database_sink.active) or (not database_cache.active)
         if local or checksum not in self.buffer_refcount:

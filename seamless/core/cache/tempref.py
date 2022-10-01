@@ -1,20 +1,22 @@
 import time, copy
 import asyncio
+import bisect
+from collections import deque
 
 class TempRefManager:
     def __init__(self):
-        self.refs = []
+        self.refs = deque()
         self.running = False
 
     def add_ref(self, ref, lifetime, on_shutdown):
         expiry_time = time.time() + lifetime
-        self.refs.append((ref, expiry_time, on_shutdown))
+        self.refs.append((expiry_time, ref, on_shutdown))
 
     def purge_all(self):
         """Purges all refs, regardless of expiry time
         Only call this when Seamless is shutting down"""
         while len(self.refs):
-            ref, _, on_shutdown = self.refs.pop(0)
+            _, ref, on_shutdown = self.refs.pop()
             if not on_shutdown:
                 continue
             try:
@@ -25,11 +27,11 @@ class TempRefManager:
     def purge(self):
         """Purges expired refs"""
         t = time.time()
-        for item in copy.copy(self.refs):
-            ref, expiry_time, _ = item
-            if expiry_time < t:
-                self.refs.remove(item)
-                ref()
+        pos = bisect.bisect(self.refs, (t, None, None))
+        for n in range(pos):
+            item = self.refs.popleft()
+            _, ref, _ = item
+            ref()
 
     async def loop(self):
         if self.running:

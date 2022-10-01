@@ -91,12 +91,16 @@ async def _prepare(macro, manager, max_running_tasks):
     values = {}
     modules_to_build = {}
     for pinname, accessor in sorted(upstreams.items(),key=lambda item: item[0]):
+        if accessor._checksum is None: #pending, a legitimate use case, but we can't proceed
+            print_debug("ABORT", macro, " <= pinname", pinname)
+            manager.cancel_macro(macro, False)
+            return
+        if accessor.expression.hash_pattern is not None:
+            raise NotImplementedError
         expression_checksum = await EvaluateExpressionTask(
             manager,
             accessor.expression
         ).run()
-        if accessor.expression.hash_pattern is not None:
-            raise NotImplementedError
         celltype = accessor.write_accessor.celltype
         subcelltype = accessor.write_accessor.subcelltype
         buffer = await cachemanager.fingertip(expression_checksum)
