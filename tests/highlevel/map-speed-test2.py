@@ -71,6 +71,7 @@ ctx.mapped_ctx = mapped_ctx
 ctx.translate()
 for ELISION_CHUNKSIZE in (10, 1000):
     ctx.mapping.elision_chunksize = ELISION_CHUNKSIZE
+    ctx.translate()
     for pcount in range(3,20):
         count = 2**pcount
         t=run(count)        

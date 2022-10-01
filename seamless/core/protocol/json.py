@@ -1,3 +1,4 @@
+'''
 import json
 import numpy as np
 from silk.mixed import MixedScalar
@@ -57,4 +58,17 @@ def json_dumps(obj, as_bytes=False):
     dump = json.dumps(obj, indent=2, sort_keys=True)
     if as_bytes:
         dump = dump.encode()
+    return dump
+'''
+
+import orjson
+
+def json_encode(obj):
+    dump = orjson.dumps(obj, option=orjson.OPT_SERIALIZE_NUMPY)
+    return dump.decode()
+
+def json_dumps(obj, as_bytes=False):
+    dump = orjson.dumps(obj, option=orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS)
+    if not as_bytes:
+        dump = dump.decode()
     return dump

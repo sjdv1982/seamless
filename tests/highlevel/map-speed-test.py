@@ -71,5 +71,5 @@ for mapped_ctx in ctx1, ctx2:
         count = 2**pcount
         t=run(count)
         print("TIME", count, t)
-        if t > 20:
+        if t > 100:
             break
