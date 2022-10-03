@@ -399,7 +399,6 @@ class TaskManager:
                 print_wait_for(result)
             return result, True
 
-        deeprefmanager = manager.cachemanager.deeprefmanager
         while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or \
           manager.macromanager.queued or deeprefmanager.busy or must_run_mount:
             mm = manager.mountmanager
@@ -509,7 +508,6 @@ class TaskManager:
                 print_wait_for(result)
             return result, True
 
-        deeprefmanager = manager.cachemanager.deeprefmanager
         while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or \
           manager.macromanager.queued or deeprefmanager.busy or must_run_mount:
             mm = manager.mountmanager
@@ -780,3 +778,4 @@ from .tasks.upon_connection import UponConnectionTask
 from .tasks.structured_cell import StructuredCellAuthTask, StructuredCellJoinTask
 from .tasks import BackgroundTask
 from ..transformer import Transformer
+from ..cache.deeprefmanager import deeprefmanager

@@ -438,7 +438,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
             if not fast:
                 Module(parent=ctx, path=pp)
             if old_path in targets:
-                node.pop("checksum")
+                node.pop("checksum", None)
         elif nodetype == "context":
             pass
         elif nodetype == "libinstance":
