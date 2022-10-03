@@ -108,9 +108,11 @@ class ShareItem:
         if self.share is not None:
             manager = cell._get_manager()
             cell_pending = manager.taskmanager.is_pending(cell)
-            if not cell_pending:
+            if cell_pending:
                 # If the cell is pending, a running task will later call manager._set_cell_checksum,
                 #   which will call sharemanager.add_cell_update, which will call us again
+                pass
+            else:
                 self.share.set_checksum(get_fallback_checksum(cell))
 
     def update(self, checksum):
@@ -185,105 +187,106 @@ class ShareManager:
 
     async def run_once(self):
 
-        for cell in self.share_updates:
-            if cell._destroyed:
-                continue
-            share_params = cell._share
-            share_item = self.shares.get(cell)
-            if share_params is None and share_item is None:
-                continue
-            if share_params is not None:
-                path = share_params["path"]
-                if path is None:
-                    path = "/".join(cell.path)
-                readonly = share_params["readonly"]
+        while len(self.share_updates) or len(self.cell_updates) or len(self.share_value_updates):
+            for cell in self.share_updates:
+                if cell._destroyed:
+                    continue
+                share_params = cell._share
+                share_item = self.shares.get(cell)
+                if share_params is None and share_item is None:
+                    continue
+                if share_params is not None:
+                    path = share_params["path"]
+                    if path is None:
+                        path = "/".join(cell.path)
+                    readonly = share_params["readonly"]
+                    if share_item is not None:
+                        if share_item.path == path and \
+                        share_item.readonly == readonly:
+                            continue
                 if share_item is not None:
-                    if share_item.path == path and \
-                      share_item.readonly == readonly:
-                        continue
-            if share_item is not None:
-                self.shares.pop(cell)
-                share_item.destroy()
-            if share_params is not None:
-                mimetype = share_params.get("mimetype")
-                toplevel = share_params.get("toplevel", False)
-                cellname = share_params.get("cellname")
-                new_share_item = ShareItem(
-                    cell, path, readonly, mimetype=mimetype,
-                    toplevel=toplevel,
-                    cellname=cellname
-                )
-                self.shares[cell] = new_share_item
-                checksum = get_fallback_checksum(cell)
-                if checksum is not None:
-                    self.cell_updates[cell] = checksum
-        self.share_updates.clear()
-
-        for share_item in self.shares.values():
-            try:
-                share_item.init()
-            except:
-                traceback.print_exc()
-
-        cell_updates = {cell: checksum \
-            for cell, checksum in self.cell_updates.items()}
-        self.cell_updates.clear()
-
-        value_updates = list(self.share_value_updates.items())
-        self.share_value_updates.clear()
-        for share_item, checksum in value_updates:
-            cell = share_item.cell()
-            if cell is None:
-                continue
-            if cell._destroyed:
-                continue
-            if cell in cell_updates:
-                continue
-            from_buffer = False
-            if checksum is not None and cell._celltype in ("plain", "mixed"):
-                buffer = get_buffer(checksum, remote=True)
-                if buffer is None:
-                    buffer = await get_buffer_remote(
-                        checksum,
-                        None
+                    self.shares.pop(cell)
+                    share_item.destroy()
+                if share_params is not None:
+                    mimetype = share_params.get("mimetype")
+                    toplevel = share_params.get("toplevel", False)
+                    cellname = share_params.get("cellname")
+                    new_share_item = ShareItem(
+                        cell, path, readonly, mimetype=mimetype,
+                        toplevel=toplevel,
+                        cellname=cellname
                     )
-                if buffer is not None:
-                    try:
-                        checksum = await conversion(
-                            checksum, "cson", "plain", 
-                            buffer=buffer, fingertip_mode=False
-                        )
-                    except ValueError:
-                        from_buffer = True
-            if from_buffer:
-                cell.set_buffer(buffer, checksum)
-            else:
-                if checksum is not None:
-                    checksum = checksum.hex()
-                cell.set_checksum(checksum)
-        self.share_value_updates.clear()
+                    self.shares[cell] = new_share_item
+                    checksum = get_fallback_checksum(cell)
+                    if checksum is not None:
+                        self.cell_updates[cell] = checksum
+            self.share_updates.clear()
 
-        for cell, checksum in cell_updates.items():
-            if cell._destroyed:
-                continue
-            try:
-                share_item = self.shares[cell]
-                if not share_item._initialized:
+            for share_item in self.shares.values():
+                try:
                     share_item.init()
-                else:
-                    await share_item.write()
-            except:
-                traceback.print_exc()
+                except Exception:
+                    traceback.print_exc()
 
-        now = time.time()
-        to_destroy = []
-        for npath, value in self.cached_shares.items():
-            mod_time, share = value
-            if now > mod_time + self.GARBAGE_DELAY:
-                to_destroy.append(npath)
-        for npath in to_destroy:
-            mod_time, share = self.cached_shares.pop(npath)
-            share.destroy()
+            cell_updates = {cell: checksum \
+                for cell, checksum in self.cell_updates.items()}
+            self.cell_updates.clear()
+
+            value_updates = list(self.share_value_updates.items())
+            self.share_value_updates.clear()
+            for share_item, checksum in value_updates:
+                cell = share_item.cell()
+                if cell is None:
+                    continue
+                if cell._destroyed:
+                    continue
+                if cell in cell_updates:
+                    continue
+                from_buffer = False
+                if checksum is not None and cell._celltype in ("plain", "mixed"):
+                    buffer = get_buffer(checksum, remote=True)
+                    if buffer is None:
+                        buffer = await get_buffer_remote(
+                            checksum,
+                            None
+                        )
+                    if buffer is not None:
+                        try:
+                            checksum = await conversion(
+                                checksum, "cson", "plain", 
+                                buffer=buffer, fingertip_mode=False
+                            )
+                        except ValueError:
+                            from_buffer = True
+                if from_buffer:
+                    cell.set_buffer(buffer, checksum)
+                else:
+                    if checksum is not None:
+                        checksum = checksum.hex()
+                    cell.set_checksum(checksum)
+            self.share_value_updates.clear()
+
+            for cell, checksum in cell_updates.items():
+                if cell._destroyed:
+                    continue
+                try:
+                    share_item = self.shares[cell]
+                    if not share_item._initialized:
+                        share_item.init()
+                    else:
+                        await share_item.write()
+                except:
+                    traceback.print_exc()
+
+            now = time.time()
+            to_destroy = []
+            for npath, value in self.cached_shares.items():
+                mod_time, share = value
+                if now > mod_time + self.GARBAGE_DELAY:
+                    to_destroy.append(npath)
+            for npath in to_destroy:
+                mod_time, share = self.cached_shares.pop(npath)
+                share.destroy()
 
     async def _run(self):
         try:
