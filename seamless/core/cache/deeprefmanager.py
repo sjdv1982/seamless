@@ -76,18 +76,27 @@ class DeepRefManager:
             if key in self.coros:
                 continue
             checksum, _ = key
+            """
+            # TODO: "get_buffer_database" where the database buffer request is done async
+    
             deep_buffer = get_buffer(checksum, remote=False)
             if deep_buffer is None:
-                coro = asyncio.ensure_future(get_buffer_remote(checksum, None))
+                coro = asyncio.ensure_future(get_buffer_database(checksum, None))
                 coro_entry = 1, key, coro
                 self.coros[key] = coro_entry
             else:
                 new_coro_2(key, deep_buffer)
 
+            # instead:
+            """
+            deep_buffer = get_buffer(checksum, remote=True)
+            if deep_buffer is None:
+                raise CacheMissError(checksum.hex())
+            new_coro_2(key, deep_buffer)
+            
         def invalidate(checksum, exc):
             for key in list(self.buffers_to_incref.keys()):
                 if key[0] == checksum:
-                    buffers_todo.pop(key)
                     hash_pattern = _rev_cs_hashpattern[key[1]]
                     self._invalidate(checksum, hash_pattern, exc)
 
@@ -107,12 +116,13 @@ class DeepRefManager:
                         raise exc from None
                     checksum, _ = key
                     if mode == 1:
+                        # mode == 1 is not being useed at the time
                         if exc is not None:
                             invalidate(checksum, exc)
                         else:
                             deep_buffer = coro.result()
                             if deep_buffer is None:
-                                raise CacheMissError(checksum)
+                                raise CacheMissError(checksum.hex())
                             new_coro_2(key, deep_buffer)
                     else: # mode == 2
                         if exc is not None:
