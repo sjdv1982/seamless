@@ -507,6 +507,8 @@ class Context(Base, HelpMixin):
         return self._environment
 
     def _translate(self):
+        if self._untranslatable:
+            return
         self._needs_translation = True
 
     def translate(self, force: bool = False):
@@ -525,6 +527,8 @@ class Context(Base, HelpMixin):
 
         if self._untranslatable:
             raise Exception("Context is untranslatable")
+        if not force and not self._needs_translation:
+            return
         verify_sync_translate()
         self._wait_for_auth_tasks("the graph is re-translated")
         return self._do_translate(force=force)
@@ -538,6 +542,8 @@ class Context(Base, HelpMixin):
         If force=True, translation will happen even though no
         change in topology or celltype was detected.
         """
+        if self._untranslatable:
+            raise Exception("Context is untranslatable")
         await self._wait_for_auth_tasks_async("the graph is re-translated")
         return await self._do_translate_async(force=force)
 
@@ -853,7 +859,7 @@ class Context(Base, HelpMixin):
         It is assumed (and printed out) that any auth tasks that have not
         completed after 10 seconds will be canceled.
         """
-        if self._gen_context is not None and not asyncio.get_event_loop().is_running():
+        if self._gen_context is not None and not self._libroot and not asyncio.get_event_loop().is_running():
             taskmanager = self._gen_context._get_manager().taskmanager
             taskmanager.compute(timeout=10, report=2, get_tasks_func=_get_auth_tasks)
             auth_lost_cells = set()
@@ -877,7 +883,7 @@ These modifications have been CANCELED.""" % (
 
     async def _wait_for_auth_tasks_async(self, what_happens_text):
         """Async version of _wait_for_auth_tasks."""
-        if self._gen_context is not None:
+        if self._gen_context is not None and not self._libroot:
             taskmanager = self._gen_context._get_manager().taskmanager
             await taskmanager.computation(
                 timeout=10, report=2, get_tasks_func=_get_auth_tasks

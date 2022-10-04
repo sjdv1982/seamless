@@ -179,7 +179,9 @@ class LibInstance:
         constructor_schema = lib.get("constructor_schema")
         params = lib["params"]
 
-        overlay_context = Context(manager=parent._manager)
+        # gives trouble with wait for auth tasks...
+        #overlay_context = Context(manager=parent._manager)
+        overlay_context = Context()
         overlay_context._libroot = parent
         overlay_context._untranslatable = True
         self._overlay_context = overlay_context
@@ -268,7 +270,9 @@ class LibInstance:
             else:
                 raise NotImplementedError(par["type"])
             namespace[argname] = value
-        libctx = StaticContext.from_graph(graph, manager=parent._manager)
+        # gives trouble with wait for auth tasks...
+        #libctx = StaticContext.from_graph(graph, manager=parent._manager)
+        libctx = StaticContext.from_graph(graph)
         namespace["libctx"] = libctx
         argnames = list(namespace.keys())
         for name in highlevel_names:
