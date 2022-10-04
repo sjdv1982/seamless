@@ -27,10 +27,7 @@ class SetCellValueTask(Task):
             value = self.value
             hash_pattern = cell._hash_pattern
             if hash_pattern is not None:
-                old_deep_checksum = cell._checksum
-                old_deep_value = await GetBufferTask(
-                    manager, old_deep_checksum
-                ).run()
+                
                 new_deep_value, _ = await value_to_deep_structure(
                     value, hash_pattern
                 )

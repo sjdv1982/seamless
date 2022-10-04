@@ -4,7 +4,6 @@ from asyncio import CancelledError
 from functools import partial
 import threading
 import time
-from collections import deque
 import traceback
 from bisect import bisect_left
 
@@ -385,7 +384,7 @@ class TaskManager:
                     else:
                         print_debug("WAIT FOR", task.__class__.__name__, hex(id(task)), task.dependencies)
                     for dep in task.dependencies:
-                        if isinstance(dep, SeamlessBase):
+                        if isinstance(dep, SeamlessBase) and not isinstance(dep, Macro):
                             running.add(dep)
                             #print("TASK",task)
             if not len(running):
@@ -494,7 +493,7 @@ class TaskManager:
                     else:
                         print_debug("WAIT FOR", task.__class__.__name__, hex(id(task)), task.dependencies)
                     for dep in task.dependencies:
-                        if isinstance(dep, SeamlessBase):
+                        if isinstance(dep, SeamlessBase) and not isinstance(dep, Macro):
                             running.add(dep)
                             #print("TASK",task)
             if not len(running):
