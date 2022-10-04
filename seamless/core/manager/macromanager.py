@@ -36,6 +36,9 @@ async def _prepare(macro, manager, max_running_tasks):
     while len(tasks) >= max_running_tasks:
         await asyncio.sleep(0.001)
 
+    if macro._destroyed:
+        return
+
     if macro._void:
         print("WARNING: macro %s is void, shouldn't happen during macro update" % macro)
         manager.cancel_macro(macro, True, StatusReasonEnum.ERROR)
@@ -152,6 +155,14 @@ class MacroManager:
 
     async def _prepare_macro(self, macro):
         try:
+            while 1:
+                try:
+                    pos = list(self.preparing_tasks.keys()).index(macro)
+                except ValueError:
+                    return
+                if len(self.macros_prepared) + pos <= 10:
+                    break
+                await asyncio.sleep(0.01)
             result = await _prepare(macro, self.manager(), self.MAX_RUNNING_TASKS)
             if result is not None:
                 self.macros_prepared[macro] = result
@@ -164,7 +175,7 @@ class MacroManager:
         manager = self.manager()
         if manager is None or manager._destroyed:
             return
-        if len(manager.taskmanager.tasks) > self.MAX_RUNNING_TASKS:
+        if len(manager.taskmanager.tasks) + len(manager.taskmanager.upon_connection_tasks) > self.MAX_RUNNING_TASKS:
             return
         if not self.macros_prepared:
             return
