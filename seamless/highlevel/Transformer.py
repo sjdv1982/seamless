@@ -566,7 +566,9 @@ class Transformer(Base, HelpMixin):
             result.handle_no_inference.set(value)
         else:
             pin0 = {}
-            if isinstance(value, DeepCell):
+            if isinstance(value, DeepCell) or (
+                isinstance(value, Cell) and value.hash_pattern == {"*": "#"}
+            ):
                 pin0 = {
                     "celltype": "deepcell",
                 }

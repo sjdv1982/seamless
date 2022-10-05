@@ -289,30 +289,30 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
                 elif isinstance(t, (Cell, DeepCellBase)):
                     if t.hash_pattern is None and t.celltype != "checksum":
                         if isinstance(s, DeepFolderCell):
-                            msg = """ERROR: assigning a Cell to a DeepFolderCell
+                            msg = """ERROR: assigning a DeepFolderCell to a Cell
 
 When accessed, Cells have their complete content loaded into memory.
 This is not the case for DeepFolderCells, whose content can be very large in size.
 
-Therefore, the direct assignment of a Cell to a DeepFolderCell is not allowed.
+Therefore, the direct assignment of a DeepFolderCell to a Cell is not allowed.
 
-You can instead assign a FolderCell to a DeepFolderCell.
+You can instead assign a DeepFolderCell to a FolderCell.
 FolderCells have the same internal memory-efficient representation as DeepFolderCells,
 but they are assumed to be small enough to be mounted to disk.
 
-If you really want to do so, assigning a Cell to a FolderCell is allowed.
+If you really want to do so, assigning a FolderCell to a Cell is allowed.
 """
 
                         else:
-                            msg = """ERROR: assigning a Cell to a DeepCell
+                            msg = """ERROR: assigning a DeepCell to a Cell
 
 When accessed, Cells have their complete content loaded into memory.
 This is not the case for DeepCells, whose content can be very large in size.
 
-Therefore, the direct assignment of a Cell to a DeepCell is by default not allowed.
+Therefore, the direct assignment of a DeepCell to a Cell is by default not allowed.
 
-If you really want to do this, create an intermediate Cell with hash pattern {"*": "#"},
-and assign the Cell to this intermediate Cell.
+If you really want to do this, create an intermediate SimpleDeepCell,
+assign the DeepCell to the SimpleDeepCell, and the SimpleDeepCell to the Cell.
 """
                         raise Exception(msg)
                 elif isinstance(t, Base):

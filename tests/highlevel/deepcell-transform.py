@@ -1,8 +1,10 @@
-from seamless.highlevel import Context, Cell, DeepCell
+from seamless.highlevel import Context, Cell, SimpleDeepCell, DeepCell
 from seamless.core.protocol.json import json_dumps
 ctx = Context()
-ctx.d = DeepCell()
-ctx.translate()
+#ctx.d = DeepCell()
+#ctx.translate()
+#or:
+ctx.d = SimpleDeepCell()
 ctx.d.set({"a":102, "b": 103})
 ctx.compute()
 def func(d):

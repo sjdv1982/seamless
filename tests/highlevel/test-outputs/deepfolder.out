@@ -19,18 +19,18 @@ Seamless DeepFolderCell: .a2
 ['test3', 'test2', 'test1']
 ['test1', 'test2', 'test3']
 b'somebuffer'
-Exception: ERROR: assigning a Cell to a DeepFolderCell
+Exception: ERROR: assigning a DeepFolderCell to a Cell
 
 When accessed, Cells have their complete content loaded into memory.
 This is not the case for DeepFolderCells, whose content can be very large in size.
 
-Therefore, the direct assignment of a Cell to a DeepFolderCell is not allowed.
+Therefore, the direct assignment of a DeepFolderCell to a Cell is not allowed.
 
-You can instead assign a FolderCell to a DeepFolderCell.
+You can instead assign a DeepFolderCell to a FolderCell.
 FolderCells have the same internal memory-efficient representation as DeepFolderCells,
 but they are assumed to be small enough to be mounted to disk.
 
-If you really want to do so, assigning a Cell to a FolderCell is allowed.
+If you really want to do so, assigning a FolderCell to a Cell is allowed.
 
 
 b'somebuffer'
