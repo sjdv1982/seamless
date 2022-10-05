@@ -1335,8 +1335,6 @@ class Transformer(Base, HelpMixin):
         if attr == "value":
             return resultcell.value
         elif attr == "data":
-            if self.result.celltype != "structured":
-                raise AttributeError(attr)
             return resultcell.data
         elif attr == "buffered":
             if self.result.celltype != "structured":

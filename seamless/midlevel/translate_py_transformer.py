@@ -347,7 +347,8 @@ def translate_py_transformer(
         set_structured_cell_from_checksum(result, result_checksum)
     else:
         result_pin = ctx.tf.get_pin(result_name)
-        result_cell = cell(result_celltype)
+        result_cell = cell(result_celltype2)
+        result_cell._hash_pattern = result_hash_pattern
         cell_setattr(node, ctx, result_name, result_cell)
         result_pin.connect(result_cell)
         result = result_cell
