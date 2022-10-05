@@ -35,6 +35,7 @@ simplest.py
 simple-missing.py
 simpler-listpin.py
 simpler-result.py
+simpler-result-celltype.py
 tf-byte-dict.py
 simpler.py
 simpler-deepcell.py

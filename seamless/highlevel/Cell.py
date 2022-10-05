@@ -443,6 +443,18 @@ This cell is not fully independent, i.e. it has incoming connections"""
 
         For structured cells, the value is also None if the
         schema is violated."""
+        if self.hash_pattern:
+            msg = """It is too costly to construct the full value of a deep cell
+    Use cell.data instead.
+    
+    If you are really sure that the value of the deep cell fits in memory,
+    you can assign this cell to a normal cell, e.g:
+    
+    ctx.othercell = Cell()
+    ctx.othercell = ctx.thiscell
+    """
+            raise AttributeError(msg)
+
         self._parent()
         hcell = self._get_hcell()
         if hcell.get("UNTRANSLATED"):

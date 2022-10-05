@@ -1,9 +1,6 @@
 from seamless.highlevel import Context, Cell, SimpleDeepCell, DeepCell
 from seamless.core.protocol.json import json_dumps
 ctx = Context()
-#ctx.d = DeepCell()
-#ctx.translate()
-#or:
 ctx.d = SimpleDeepCell()
 ctx.d.set({"a":102, "b": 103})
 ctx.compute()
@@ -16,6 +13,7 @@ ctx.func = func
 print(ctx.func.pins.d.value)
 ctx.func.d = ctx.d
 print(ctx.func.pins.d.value)
+ctx.func.result.celltype = "deepcell"
 ctx.result = DeepCell()
 ctx.result = ctx.func.result
 ctx.compute()

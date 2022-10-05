@@ -140,12 +140,40 @@ def translate_bash_transformer(
             namespace[path, "target"] = inp.inchannels[inchannel], node
 
     assert result_name not in pins #should have been checked by highlevel
+    result_celltype = node.get("result_celltype", "structured")
+    result_celltype2 = result_celltype
+    if result_celltype in ("structured", "folder", "deepcell"):
+        result_celltype2 = "mixed"
     all_pins = {}
     for pinname, pin in pins.items():
         p = {"io": "input"}
         p.update(pin)
+        celltype = pin.get("celltype")
+        if celltype is None or celltype == "default":
+            if pinname.endswith("_SCHEMA"):
+                celltype = "plain"
+            else:
+                celltype = "mixed"
+        if celltype == "silk":
+            celltype = "mixed"
+        if celltype == "checksum":
+            celltype = "plain"
+        if celltype == "code":
+            celltype = "text"
+        p["celltype"] = celltype
         all_pins[pinname] = p
-    all_pins[result_name] = {"io": "output"}
+    result_pin = {
+        "io": "output", 
+        "celltype": result_celltype2
+    }
+    result_hash_pattern = None
+    if result_celltype == "deepcell":
+        result_hash_pattern = {"*": "#"}
+    elif result_celltype == "folder":
+        result_hash_pattern = {"*": "##"}
+    if result_hash_pattern is not None:
+        result_pin["hash_pattern"] = result_hash_pattern
+    all_pins[result_name] = result_pin 
     if node["SCHEMA"]:
         raise NotImplementedError
         all_pins[node["SCHEMA"]] = {
@@ -222,34 +250,43 @@ def translate_bash_transformer(
         ctx.meta.connect(ctx.tf.META)
         namespace[node["path"] + ("meta",), "target"] = ctx.meta, node    
 
-    result, result_ctx = build_structured_cell(
-        ctx, result_name, [()],
-        outchannels,
-        fingertip_no_remote=node.get("fingertip_no_remote", False),
-        fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-        return_context=True
-    )
-    namespace[node["path"] + ("RESULTSCHEMA",), "source"] = result.schema, node
-    if "result_schema" in mount:
-        result_ctx.schema.mount(**mount["result_schema"])
+    if result_celltype == "structured":
+        result, result_ctx = build_structured_cell(
+            ctx, result_name, [()],
+            outchannels,
+            fingertip_no_remote=node.get("fingertip_no_remote", False),
+            fingertip_no_recompute=node.get("fingertip_no_recompute", False),
+            return_context=True
+        )
+        namespace[node["path"] + ("RESULTSCHEMA",), "source"] = result.schema, node
+        if "result_schema" in mount:
+            result_ctx.schema.mount(**mount["result_schema"])
 
-    setattr(ctx, result_name, result)
+        setattr(ctx, result_name, result)
 
-    result_pin = ctx.tf.get_pin(result_name)
-    result_cell = cell("mixed")
-    cell_setattr(node, ctx, result_cell_name, result_cell)
-    result_pin.connect(result_cell)
-    result_cell.connect(result.inchannels[()])
-    if node["SCHEMA"]:
-        schema_pin = ctx.tf.get_pin(node["SCHEMA"])
-        result.schema.connect(schema_pin)
-    result_checksum = {}
-    for k in checksum:
-        if not k.startswith("result"):
-            continue
-        k2 = "value" if k == "result" else k[len("result_"):]
-        result_checksum[k2] = checksum[k]
-    set_structured_cell_from_checksum(result, result_checksum)
+        result_pin = ctx.tf.get_pin(result_name)
+        result_cell = cell("mixed")
+        cell_setattr(node, ctx, result_cell_name, result_cell)
+        result_pin.connect(result_cell)
+        result_cell.connect(result.inchannels[()])
+        if node["SCHEMA"]:
+            schema_pin = ctx.tf.get_pin(node["SCHEMA"])
+            result.schema.connect(schema_pin)
+        result_checksum = {}
+        for k in checksum:
+            if not k.startswith("result"):
+                continue
+            k2 = "value" if k == "result" else k[len("result_"):]
+            result_checksum[k2] = checksum[k]
+        set_structured_cell_from_checksum(result, result_checksum)
+    else:
+        result_pin = ctx.tf.get_pin(result_name)
+        result_cell = cell(result_celltype)
+        cell_setattr(node, ctx, result_name, result_cell)
+        result_pin.connect(result_cell)
+        result = result_cell
+        if checksum.get("result") is not None:
+            result._set_checksum(checksum["result"], initial=True)
 
     if env is not None:
         ctx.tf.env = env

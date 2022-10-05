@@ -1083,7 +1083,7 @@ class Transformer(Base, HelpMixin):
             dirs = [
                 "value",
                 "buffered",
-                "_data",
+                "data",
                 "checksum",
                 "schema",
                 "example",
@@ -1108,13 +1108,16 @@ class Transformer(Base, HelpMixin):
             dirs = [
                 "value",
                 "buffered",
-                "_data",
+                "data",
                 "checksum",
                 "schema",
                 "example",
                 "exception",
                 "add_validator",
+                "celltype",
+                "hash_pattern",
             ]
+            setter = self._resultsetter
             pull_source = None
             proxycls = Proxy
         elif attr == "main_module":
@@ -1241,7 +1244,7 @@ class Transformer(Base, HelpMixin):
             tf = self._get_tf(force=True)
             inputcell = getattr(tf, htf["INPUT"])
             return inputcell.value
-        elif attr == "_data":
+        elif attr == "data":
             return inputcell.data
         elif attr == "buffered":
             return inputcell.buffer.value
@@ -1277,7 +1280,7 @@ class Transformer(Base, HelpMixin):
     def _inputsetter(self, attr, value):
         if attr in (
             "value",
-            "_data",
+            "data",
             "buffered",
             "checksum",
             "handle",
@@ -1319,6 +1322,8 @@ class Transformer(Base, HelpMixin):
             if attr in ("schema", "example", "exception"):
                 raise Exception("Transformer has not yet been translated")
             return None
+        if attr == "celltype":
+            return htf.get("result_celltype", "structured")
         if attr == "value" and self.debug.enabled and self.debug.mode == "sandbox":
             mount = self._get_debugmount()
             mount_ctx = mount.mount_ctx
@@ -1329,24 +1334,50 @@ class Transformer(Base, HelpMixin):
             raise Exception("Result cells cannot be mounted")
         if attr == "value":
             return resultcell.value
-        elif attr == "_data":
+        elif attr == "data":
+            if self.result.celltype != "structured":
+                raise AttributeError(attr)
             return resultcell.data
         elif attr == "buffered":
+            if self.result.celltype != "structured":
+                raise AttributeError(attr)
             return resultcell.buffer.value
         elif attr == "checksum":
             return resultcell.checksum
         elif attr == "schema":
+            if self.result.celltype != "structured":
+                raise AttributeError(attr)
             schema = self._result_example().schema
             return SchemaWrapper(self, schema, "RESULTSCHEMA")
         elif attr == "example":
+            if self.result.celltype != "structured":
+                raise AttributeError(attr)            
             return self._result_example()
         elif attr == "exception":
             return resultcell.exception
         elif attr == "add_validator":
+            if self.result.celltype != "structured":
+                raise AttributeError(attr)
             result_ctx = resultcell._data._context()
             handle = result_ctx.example.handle
             return handle.add_validator
         return getattr(resultcell, attr)
+
+    def _resultsetter(self, attr, value):
+        from .Cell import celltypes
+        if attr != "celltype":
+            raise AttributeError(attr)
+        htf = self._get_htf()
+        if htf["compiled"] and attr != "structured":
+            raise Exception("Compiled transformers must have structured result cells")
+        if value == "deepfolder":
+            raise TypeError('"deepfolder" not allowed. Use "folder" instead')
+        if value not in celltypes and value not in ("deepcell", "folder"):
+            raise TypeError(value)
+        htf["result_celltype"] = value
+        parent = self._parent()
+        if parent is not None:
+            parent._translate()
 
     def _valuegetter(self, attr, attr2):
         if attr2 == "celltype":
@@ -1545,9 +1576,12 @@ class Transformer(Base, HelpMixin):
         schemacell._set_observer(self._observe_schema)
         result = htf["RESULT"]
         resultcell = getattr(tf, result)
-        resultcell._data._set_observer(self._observe_result)
-        schemacell = resultcell.schema
-        schemacell._set_observer(self._observe_result_schema)
+        if self.result.celltype == "structured":
+            resultcell._data._set_observer(self._observe_result)
+            schemacell = resultcell.schema
+            schemacell._set_observer(self._observe_result_schema)
+        else:
+            resultcell._set_observer(self._observe_result)
         if htf["compiled"]:
             tf.main_module.auth._set_observer(self._observe_main_module)
 

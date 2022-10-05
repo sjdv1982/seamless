@@ -1113,7 +1113,7 @@ These modifications have been CANCELED.""" % (
     def _get_shares(self):
         shares = {}
         for path, node in self._graph.nodes.items():
-            if node["type"] not in ("cell", "deepcell", "deepfolder"):
+            if node["type"] not in ("cell", "deepcell", "deepfoldercell"):
                 continue
             share = node.get("share")
             if share is not None:
