@@ -3,7 +3,11 @@ import weakref, json
 import functools
 from copy import deepcopy
 
-highlevel_names = ("Context", "Cell", "Transformer", "Macro", "Module")
+highlevel_names = (
+    "Context", "Cell", 
+    "SimpleDeepCell", "DeepCell", "DeepFolderCell", "FolderCell",
+    "Transformer", "Macro", "Module"
+)
 
 def interpret_arguments(arguments, params, parent, extra_nodes):
     from .argument import Cell_like

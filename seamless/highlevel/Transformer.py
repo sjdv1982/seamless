@@ -50,7 +50,9 @@ from .compiled import CompiledObjectDict
 from .Environment import Environment
 from .HelpMixin import HelpMixin
 
-default_pin = {}
+default_pin = {
+    "celltype": "default",
+}
 
 
 def new_transformer(
@@ -1571,6 +1573,7 @@ class Transformer(Base, HelpMixin):
 class TransformerCopy:
     """Wrapper around a Transformer.
     To facilitate copying."""
+
     def __init__(self, transformer):
         self.transformer = weakref.ref(transformer)
 

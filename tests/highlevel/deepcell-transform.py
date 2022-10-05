@@ -11,8 +11,9 @@ def func(d):
         result[k] = v + 1000
     return result
 ctx.func = func
+print(ctx.func.pins.d.value)
 ctx.func.d = ctx.d
-ctx.func.pins.d.celltype = "deepcell"
+print(ctx.func.pins.d.value)
 ctx.result = DeepCell()
 ctx.result = ctx.func.result
 ctx.compute()

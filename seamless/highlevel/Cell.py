@@ -1118,7 +1118,15 @@ def Constant(*args, **kwargs):
     """Construct a cell marked as "constant"."""
     cell = Cell(*args, **kwargs)
     cell._get_hcell2()["constant"] = True
+    return cell
 
+def SimpleDeepCell():
+    """Construct a mixed cell with a deep hash pattern."""
+    cell = Cell()
+    node = cell._get_hcell2()
+    node["celltype"] = "mixed"
+    node["hash_pattern"] = {"*": "#"}
+    return cell
 
 for _ in binary_special_method_names:
     if _ in Cell.__dict__:

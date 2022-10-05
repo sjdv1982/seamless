@@ -184,7 +184,7 @@ def translate_bash_transformer(
             hash_pattern = deep_pins[pin]["hash_pattern"]
         else:
             celltype = node_pins[pin].get("celltype")
-            if celltype is None:
+            if celltype is None or celltype == "default":
                 if pin.endswith("_SCHEMA"):
                     celltype = "plain"
                 else:

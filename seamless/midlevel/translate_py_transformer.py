@@ -75,7 +75,7 @@ def translate_py_transformer(
             hash_pattern = deep_pins[pin]["hash_pattern"]
         else:
             celltype = node_pins[pin].get("celltype")
-            if celltype is None:
+            if celltype is None or celltype == "default":
                 if pin.endswith("_SCHEMA"):
                     celltype = "plain"
                 else:
@@ -134,7 +134,9 @@ def translate_py_transformer(
     for pinname, pin in node_pins.items():
         p = {"io": "input"}
         p.update(pin)
-        if p.get("celltype") == "checksum":
+        if p.get("celltype") == "default":
+            p["celltype"] = "mixed"
+        elif p.get("celltype") == "checksum":
             p["celltype"] = "plain"
         all_pins[pinname] = p
     all_pins[result_name] = {"io": "output", "celltype": "mixed"}

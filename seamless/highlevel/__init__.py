@@ -68,7 +68,7 @@ def parse_function_code(code_or_func, identifier="<None>"):
 from .Context import Context
 from .Transformer import Transformer
 from .Macro import Macro
-from .Cell import Cell, FolderCell
+from .Cell import Cell, SimpleDeepCell, FolderCell
 from .DeepCell import DeepCell, DeepFolderCell
 from .Module import Module
 from .Link import Link
@@ -135,7 +135,7 @@ nodeclasses = {
 
 __all__ = [
     "Context", "Transformer", "Macro",
-    "Cell", "FolderCell", "DeepCell", "DeepFolderCell",
+    "Cell", "SimpleDeepCell", "FolderCell", "DeepCell", "DeepFolderCell",
     "Link", "Graph", "StaticContext", "Module",
     "Resource", "load_graph", "copy"
 ]
