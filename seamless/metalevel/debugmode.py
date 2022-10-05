@@ -599,7 +599,7 @@ To create a directory where you can manually execute bash code, do Transformer.d
         if transformation is None:
             print("Cannot create shell for '{}': transformation does not exist", file=sys.stderr)
         io = get_transformation_inputs_output(transformation)
-        inputs, outputname, _, _ = io
+        inputs, outputname, _, _, _ = io
         if self._shellname is None: # No shells exist
             shellname0 = str(tf.path[1:])
             if tf.language == "bash":

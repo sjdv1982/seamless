@@ -83,6 +83,7 @@ structured_cell/channels-deepcell.py
 structured_cell/schema.py
 structured_cell/schema-deepcell.py
 structured_cell/channels-morph.py
+deepcell-transform.py
 collatz.py: the output is approximate, depends on exact timings
 structured_cell/preliminary.py: the output is approximate, depends on exact timings
 

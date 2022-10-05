@@ -209,7 +209,7 @@ class TransformationCache:
     async def build_transformation(self, transformer, celltypes, inputpin_checksums, outputpin):
         assert isinstance(transformer, Transformer)
         cachemanager = transformer._get_manager().cachemanager
-        outputname, celltype, subcelltype = outputpin
+        assert isinstance(outputpin, tuple) and len(outputpin) in (3, 4)
         transformation = {"__output__": outputpin}
         as_ = {}
         FORMAT = {}

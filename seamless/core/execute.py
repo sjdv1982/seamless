@@ -8,7 +8,7 @@ import time
 import sys
 import os
 import signal
-from numpy import multiply
+
 try:
     import debugpy
 except ModuleNotFoundError:
@@ -16,6 +16,8 @@ except ModuleNotFoundError:
 
 from .cached_compile import exec_code, check_function_like
 from .protocol.serialize import _serialize as serialize
+from ..calculate_checksum import calculate_checksum
+from .cache.buffer_cache import buffer_cache
 
 DIRECT_PRINT = False
 
@@ -37,7 +39,13 @@ def unsilk(value):
 def return_preliminary(result_queue, celltype, value):
     #print("return_preliminary", value)
     prelim_buffer = serialize(value, celltype)
-    result_queue.put((2, prelim_buffer))
+    if database_sink.active and database_cache.active:
+        prelim_checksum = calculate_checksum(prelim_buffer, hex=True)
+        buffer_cache.guarantee_buffer_info(bytes.fromhex(prelim_checksum), celltype, sync_to_remote=True)
+        database_sink.set_buffer(prelim_checksum, prelim_buffer, False)
+        result_queue.put((2, "checksum"), prelim_checksum)
+    else:
+        result_queue.put((2, prelim_buffer))
 
 def set_progress(result_queue, value):
     assert value >= 0 and value <= 100
@@ -47,12 +55,13 @@ def _execute(name, code,
       with_ipython_kernel,
       injector, module_workspace,
       identifier, namespace,
-      inputs, output_name, celltype, result_queue
-    ):
+      inputs, output_name, output_celltype, output_hash_pattern,
+      result_queue
+    ):        
         from .transformation import SeamlessTransformationError, SeamlessStreamTransformationError
         assert identifier is not None
         namespace["return_preliminary"] = functools.partial(
-            return_preliminary, result_queue, celltype
+            return_preliminary, result_queue, output_celltype
         )
         namespace["set_progress"] = functools.partial(
             set_progress, result_queue
@@ -107,8 +116,28 @@ or
                 else:
                     try:
                         result = unsilk(result)
-                        result_buffer = serialize(result, celltype)
-                        return (0, result_buffer)
+                        db = (database_sink.active and database_cache.active)
+                        if output_hash_pattern is not None:
+                            deep_structure, deep_checksums = value_to_deep_structure(
+                                result, output_hash_pattern,
+                                cache_buffers=db,
+                                sync_remote_buffer_info=True
+                            )
+                            if db:
+                                for cs in deep_checksums:
+                                    # can't fail, buffers have been cached
+                                    buf = buffer_cache.get_buffer(cs, remote=False)
+                                    database_sink.set_buffer(cs, buf, False)        
+                            result = deep_structure
+                            output_celltype = "mixed"
+                        result_buffer = serialize(result, output_celltype)
+                        if db:
+                            result_checksum = calculate_checksum(result_buffer, hex=True)
+                            buffer_cache.guarantee_buffer_info(bytes.fromhex(result_checksum), output_celltype, sync_to_remote=True)
+                            database_sink.set_buffer(result_checksum, result_buffer, False)
+                            return ((0, "checksum"), result_checksum)
+                        else:
+                            return (0, result_buffer)
                     except Exception as exc:
                         exc = traceback.format_exc()
                         return (1, exc)
@@ -155,7 +184,8 @@ def execute(name, code,
       with_ipython_kernel,
       injector, module_workspace,
       identifier, namespace,
-      inputs, output_name, celltype, result_queue,
+      inputs, output_name, output_celltype, output_hash_pattern,
+      result_queue,
       debug = None,
     ):
     if multiprocessing.current_process().name != "MainProcess":
@@ -239,7 +269,8 @@ def execute(name, code,
                 with_ipython_kernel,
                 injector, module_workspace,
                 identifier, namespace,
-                inputs, output_name, celltype, result_queue
+                inputs, output_name, output_celltype, output_hash_pattern, 
+                result_queue
             )
         else:
             direct_print_filehandle = None
@@ -257,7 +288,8 @@ def execute(name, code,
                 with_ipython_kernel,
                 injector, module_workspace,
                 identifier, namespace,
-                inputs, output_name, celltype, result_queue
+                inputs, output_name, output_celltype, output_hash_pattern,
+                result_queue
             )
 
         msg_code, msg = result
@@ -324,3 +356,5 @@ def execute(name, code,
 
 
 from silk import Silk
+from .cache.database_client import database_cache, database_sink
+from .protocol.deep_structure import value_to_deep_structure_sync as value_to_deep_structure

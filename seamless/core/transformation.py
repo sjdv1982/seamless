@@ -123,8 +123,12 @@ def get_transformation_inputs_output(transformation):
             pinname_as = as_.get(pinname, pinname)
             inputs.append(pinname_as)
     outputpin = transformation["__output__"]
-    outputname, output_celltype, output_subcelltype = outputpin
-    return inputs, outputname, output_celltype, output_subcelltype
+    if len(outputpin) == 3:
+        outputname, output_celltype, output_subcelltype = outputpin
+        output_hash_pattern = None
+    else:
+        outputname, output_celltype, output_subcelltype, output_hash_pattern = outputpin
+    return inputs, outputname, output_celltype, output_subcelltype, output_hash_pattern
 
 async def build_transformation_namespace(transformation, semantic_cache, codename):    
     from .cache.database_client import database_cache
@@ -543,7 +547,7 @@ class TransformationJob:
         lock = await acquire_lock(self.checksum)
 
         io = get_transformation_inputs_output(self.transformation) 
-        inputs, outputname, output_celltype, output_subcelltype = io
+        inputs, outputname, output_celltype, output_subcelltype, output_hash_pattern = io
         tf_namespace = await build_transformation_namespace(
             self.transformation, self.semantic_cache, self.codename
         )
@@ -577,9 +581,10 @@ class TransformationJob:
                     result_checksum, output_celltype,
                     sync_to_remote=True
                 )
+                output_celltype2 = "plain" if output_hash_pattern is not None else output_celltype
                 validate_evaluation_subcelltype(
-                    result_checksum, result_buffer, 
-                    output_celltype, output_subcelltype,
+                    result_checksum, result_buffer,
+                    output_celltype2, output_subcelltype,
                     self.codename
                 )
             except Exception:
@@ -602,7 +607,8 @@ class TransformationJob:
                 with_ipython_kernel,
                 injector, module_workspace,
                 self.codename,
-                namespace, inputs, outputname, output_celltype, queue,                
+                namespace, inputs, outputname, output_celltype, output_hash_pattern,
+                queue,
             )
             if debug is not None:
                 if debug.get("python_attach"):
@@ -619,39 +625,54 @@ class TransformationJob:
             running = True
             result = None
             done = False
+            result_checksum = None
             while 1:
                 prelim = None
                 while not queue.empty():
                     status, msg = queue.get()
                     queue.task_done()
-                    if status == 0:
-                        result_buffer = msg
-                        done = True
-                        break
-                    elif status == 1:
-                        raise SeamlessTransformationError(msg)
-                    elif status == 2:
-                        prelim_buffer = msg
-                        prelim_checksum = await get_result_checksum(prelim_buffer)
-                        buffer_cache.cache_buffer(prelim_checksum, prelim_buffer)
-                        prelim_callback(self, prelim_checksum)
-                    elif status == 3:
-                        progress = msg
-                        progress_callback(self, progress)
-                    elif status == 4:
-                        is_stderr, content = msg
-                        try:
-                            content = str(content)
-                        except:
-                            pass
+                    if isinstance(status, int):
+                        if status == 0:
+                            result_buffer = msg
+                            done = True
+                            break
+                        elif status == 1:
+                            raise SeamlessTransformationError(msg)
+                        elif status == 2:
+                            prelim_buffer = msg
+                            prelim_checksum = await get_result_checksum(prelim_buffer)
+                            buffer_cache.cache_buffer(prelim_checksum, prelim_buffer)
+                            prelim_callback(self, prelim_checksum)
+                        elif status == 3:
+                            progress = msg
+                            progress_callback(self, progress)
+                        elif status == 4:
+                            is_stderr, content = msg
+                            try:
+                                content = str(content)
+                            except:
+                                pass
+                            else:
+                                if len(content) > 10000:
+                                    skipped = len(content)-5000-4960
+                                    content2 = content[:4960]
+                                    content2 += "\n...(skipped %d characters)...\n" % skipped
+                                    content2 += content[-5000:]
+                                    content = content2
+                                logs[is_stderr] = content
                         else:
-                            if len(content) > 10000:
-                                skipped = len(content)-5000-4960
-                                content2 = content[:4960]
-                                content2 += "\n...(skipped %d characters)...\n" % skipped
-                                content2 += content[-5000:]
-                                content = content2
-                            logs[is_stderr] = content
+                            raise Exception("Unknown return status {}".format(status))
+                    elif isinstance(status, tuple) and len(status) == 2 and status[1] == "checksum":
+                        status = status[0]
+                        if status == 0:
+                            result_checksum = bytes.fromhex(msg)
+                            done = True
+                            break
+                        elif status == 2:
+                            prelim_checksum = bytes.fromhex(msg)
+                            prelim_callback(self, prelim_checksum)
+                        else:
+                            raise Exception("Unknown return status ({}, 'checksum')".format(status))
                     else:
                         raise Exception("Unknown return status {}".format(status))
                 if not self.executor.is_alive():
@@ -675,27 +696,30 @@ class TransformationJob:
             if python_attach_port is not None:
                 free_python_attach_port(python_attach_port)
             release_lock(lock)
-        assert result_buffer is not None
-        result_checksum = await get_result_checksum(result_buffer)
-        assert result_checksum is not None
-        buffer_cache.cache_buffer(result_checksum, result_buffer)
-        try:
-            result_str = result_buffer.decode()
+        if result_checksum is None:
+            assert result_buffer is not None
+            result_checksum = await get_result_checksum(result_buffer)
+            assert result_checksum is not None
+            buffer_cache.cache_buffer(result_checksum, result_buffer)
             try:
-                result_str = str(json.loads(result_str))
-            except:
-                pass
-            if len(result_str) > 10000:
-                skipped = len(result_str)-5000-4960
-                result_str2 = result_str[:4960]
-                result_str2 += "\n...(skipped %d characters)...\n" % skipped
-                result_str2 += result_str[-5000:]
-                result_str = result_str2
+                result_str = result_buffer.decode()
+                try:
+                    result_str = str(json.loads(result_str))
+                except:
+                    pass
+                if len(result_str) > 10000:
+                    skipped = len(result_str)-5000-4960
+                    result_str2 = result_str[:4960]
+                    result_str2 += "\n...(skipped %d characters)...\n" % skipped
+                    result_str2 += result_str[-5000:]
+                    result_str = result_str2
 
-        except UnicodeDecodeError:
-            result_str = "<binary buffer of length {}, checksum {}>".format(
-                len(result_buffer), result_checksum.hex()
-            )
+            except UnicodeDecodeError:
+                result_str = "<binary buffer of length {}, checksum {}>".format(
+                    len(result_buffer), result_checksum.hex()
+                )
+        else:
+            result_str = "<checksum {}>".format(result_checksum.hex())
         logstr = """*************************************************
 * Result
 *************************************************

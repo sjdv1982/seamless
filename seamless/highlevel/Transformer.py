@@ -941,6 +941,7 @@ class Transformer(Base, HelpMixin):
 
         In addition, it may contain the following special keys:
         - __output__: the name (usually "result") and (sub)celltype of the output pin
+          If it has a hash pattern, this is appended as the fourth element. 
         - __env__: the checksum of the environment description
         - __as__: a dictionary of pin-to-variable renames (pins.pinname.as_ attribute)
         - __format__: a dictionary that contains deepcell and filesystem attributes

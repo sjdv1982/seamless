@@ -517,6 +517,8 @@ class DebugMountManager:
             return
         result_cell = getattr(mount_ctx, mount.result_pinname)
         outputpin = mount.result_pinname, result_cell.celltype, result_cell._subcelltype
+        if result_cell._hash_pattern is not None:
+            outputpin += (result_cell._hash_pattern,)
         manager = transformer._get_manager()
         transformation_cache = manager.cachemanager.transformation_cache
         try:
