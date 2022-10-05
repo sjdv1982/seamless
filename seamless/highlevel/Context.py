@@ -861,6 +861,7 @@ class Context(Base, HelpMixin):
         """
         if self._gen_context is not None and not self._libroot and not asyncio.get_event_loop().is_running():
             taskmanager = self._gen_context._get_manager().taskmanager
+            import traceback; traceback.print_stack(limit=7)
             taskmanager.compute(timeout=10, report=2, get_tasks_func=_get_auth_tasks)
             auth_lost_cells = set()
             for task in taskmanager.tasks:
