@@ -458,7 +458,8 @@ class LibInstance:
 
 from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper, EditCellWrapper
 from ..synth_context import SynthContext
-from ..Cell import Cell
+from ..Cell import Cell, FolderCell, SimpleDeepCell
+from ..DeepCell import DeepCell, DeepFolderCell
 from ..SubCell import SubCell
 from ..Context import Context
 from ..SubContext import SubContext

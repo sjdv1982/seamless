@@ -443,6 +443,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
 
         For structured cells, the value is also None if the
         schema is violated."""
+        '''
         if self.hash_pattern:
             msg = """It is too costly to construct the full value of a deep cell
     Use cell.data instead.
@@ -454,7 +455,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
     ctx.othercell = ctx.thiscell
     """
             raise AttributeError(msg)
-
+        '''
         self._parent()
         hcell = self._get_hcell()
         if hcell.get("UNTRANSLATED"):

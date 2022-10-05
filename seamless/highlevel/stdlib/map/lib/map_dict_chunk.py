@@ -8,10 +8,11 @@ def map_dict_chunk(ctx, chunksize, graph, inp, keyorder, has_uniform, elision, l
     import math
 
     pseudo_connections = []
-    ctx.sc_data = cell("mixed")
-    ctx.sc_buffer = cell("mixed")
     inpkeys = keyorder
     nchunks = math.ceil(len(inpkeys)/chunksize)
+    # sc: a cell that holds literal checksums
+    ctx.sc_data = cell("mixed")
+    ctx.sc_buffer = cell("mixed")
     ctx.sc = StructuredCell(
         data=ctx.sc_data,
         buffer=ctx.sc_buffer,
@@ -53,8 +54,8 @@ def map_dict_chunk(ctx, chunksize, graph, inp, keyorder, has_uniform, elision, l
                 raise TypeError("map_dict_chunk context has a cell called 'inp', but its celltype must be mixed, not structured")
             if not isinstance(hci, CoreCell):
                 raise TypeError("map_dict_chunk context must have an attribute 'inp' that is a cell, not a {}".format(type(hci)))
-            if hci.celltype != "mixed":
-                raise TypeError("map_dict_chunk context has a cell called 'inp', but its celltype must be mixed, not {}".format(hci.celltype))
+            if hci.celltype not in ("mixed", "deepcell"):
+                raise TypeError("map_dict_chunk context has a cell called 'inp', but its celltype must be mixed or deepcell, not {}".format(hci.celltype))
 
         con = ["..inp"], ["ctx", subctx, "inp"]
         pseudo_connections.append(con)
