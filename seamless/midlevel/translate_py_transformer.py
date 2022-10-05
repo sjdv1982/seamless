@@ -26,7 +26,7 @@ def translate_py_transformer(
                     "hash_pattern": {"*": "#"},
                     "filesystem": {
                         "mode": "file",
-                        "optional": False
+                        "optional": True
                     },
                 }
             elif pin["celltype"] == "deepfolder":
