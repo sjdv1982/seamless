@@ -679,6 +679,10 @@ class Context(Base, HelpMixin):
         }
         return graph
 
+    async def _get_graph_async(self, *args, **kwargs):
+        # Legacy method
+        return self.get_graph()
+        
     def save_graph(self, filename: str):
         """Save the graph in JSON format."""
         graph = self.get_graph()
