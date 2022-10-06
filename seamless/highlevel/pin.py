@@ -1,15 +1,22 @@
-# TODO: add validation for io, celltype, must_be_defined; both as attributes (double PinWrapper) and as dict
+# TODO: add validation for io,  must_be_defined; both as attributes (double PinWrapper) and as dict
 
+from copy import deepcopy
 from weakref import ref
+
 
 class PinWrapper:
     def __init__(self, parent, pinname):
         self._parent = ref(parent)
         self._pinname = pinname
 
+    @property
+    def value(self):
+        return deepcopy(self._get_hpin())
+
     def _get_hpin(self):
         from .Transformer import Transformer
         from .Macro import Macro
+
         parent = self._parent()
         if isinstance(parent, Transformer):
             h = parent._get_htf()
@@ -19,18 +26,26 @@ class PinWrapper:
             raise TypeError(parent)
         return h["pins"][self._pinname]
 
-
     @property
     def celltype(self):
         if self._pinname == "code":
             return "code"
         hpin = self._get_hpin()
         return hpin["celltype"]
+
     @celltype.setter
     def celltype(self, value):
+        from .Cell import celltypes
+        from .Transformer import Transformer
         if self._pinname == "code":
             raise AttributeError
-        #TODO: validation. Also allow "deepfolder", "folder", "deepcell"
+        if value not in celltypes and (
+            (
+                not isinstance(self._parent(), Transformer)
+                or (value not in ("default", "deepfolder", "folder", "deepcell"))
+            )
+        ):
+            raise TypeError(value)
         hpin = self._get_hpin()
         hpin["celltype"] = value
         self._parent()._parent()._translate()
@@ -41,11 +56,12 @@ class PinWrapper:
             return "code"
         hpin = self._get_hpin()
         return hpin.get("subcelltype")
+
     @subcelltype.setter
     def subcelltype(self, value):
         if self._pinname == "code":
             raise AttributeError
-        #TODO: validation
+        # TODO: validation
         hpin = self._get_hpin()
         hpin["subcelltype"] = value
         self._parent()._parent()._translate()
@@ -56,6 +72,7 @@ class PinWrapper:
             return "input"
         from .Transformer import Transformer
         from .Macro import Macro
+
         parent = self._parent()
         if isinstance(parent, Transformer):
             return "input"
@@ -68,6 +85,7 @@ class PinWrapper:
             raise AttributeError
         from .Transformer import Transformer
         from .Macro import Macro
+
         parent = self._parent()
         if isinstance(parent, Transformer):
             assert value == "input", value
@@ -75,7 +93,7 @@ class PinWrapper:
             assert value in ("input", "output", "parameter"), value
         else:
             raise TypeError(parent)
-        #TODO: more validation
+        # TODO: more validation
         hpin = self._get_hpin()
         hpin["io"] = value
         self._parent()._parent()._translate()
@@ -91,6 +109,7 @@ class PinWrapper:
             raise TypeError(as_)
         hpin = self._get_hpin()
         hpin["as"] = as_
+        self._parent()._parent()._translate()
 
     def __getitem__(self, pinname):
         return getattr(self, pinname)
@@ -98,13 +117,19 @@ class PinWrapper:
     def __setitem__(self, pinname, value):
         return setattr(self, pinname, value)
 
+
 class PinsWrapper:
     def __init__(self, parent):
         self._parent = ref(parent)
 
+    @property
+    def value(self):
+        return deepcopy(self._get_hpins())
+
     def _get_hpins(self):
         from .Transformer import Transformer
         from .Macro import Macro
+
         parent = self._parent()
         if isinstance(parent, Transformer):
             h = parent._get_htf()
@@ -124,9 +149,9 @@ class PinsWrapper:
             raise AttributeError(pinname)
         return PinWrapper(self._parent(), pinname)
 
-
     def __setattr__(self, pinname, value):
         from .Transformer import default_pin
+
         if pinname.startswith("_"):
             return super().__setattr__(pinname, value)
         if pinname == "code":

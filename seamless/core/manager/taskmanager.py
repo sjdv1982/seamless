@@ -4,7 +4,6 @@ from asyncio import CancelledError
 from functools import partial
 import threading
 import time
-from collections import deque
 import traceback
 from bisect import bisect_left
 
@@ -20,6 +19,8 @@ def print_warning(*args):
     logger.warning(msg)
 
 def print_debug(*args):
+    if logger.level < logging.DEBUG:
+        return
     msg = " ".join([str(arg) for arg in args])
     logger.debug(msg)
 
@@ -52,18 +53,18 @@ class TaskManager:
         self.manager = weakref.ref(manager)
         self.loop = asyncio.get_event_loop()
         self.tasks = []
+        self.upon_connection_tasks = []
         self.barriers = set()  # list of taskids. Only the tasks with an id up to the barrier taskid may execute.
                                # Once all of them have been executed, the barrier is lifted
         self.launching_tasks = set()
         self.task_ids = []
-        self.macro_task_ids = []
+        self.upon_connection_task_ids = []
         self.synctasks = []
         self.cell_to_task = {} # tasks that depend on cells
         self.accessor_to_task = {}  # ...
         self.expression_to_task = {}
         self.transformer_to_task = {}
         self.reactor_to_task = {}
-        self.macro_to_task = {}
         self.macropath_to_task = {}
         self.structured_cell_to_task = {}
         self.reftasks = {} # tasks that hold a reference to (are a link to) another task
@@ -88,6 +89,7 @@ class TaskManager:
             self._last_task = taskid
 
     async def await_barrier(self, taskid):
+        # must not be an UponConnectionTask
         while 1:
             for barrier in self.barriers:
                 if taskid > barrier:
@@ -133,10 +135,6 @@ class TaskManager:
         assert macropath not in self.macropath_to_task
         self.macropath_to_task[macropath] = []
 
-    def register_macro(self, macro):
-        assert macro not in self.macro_to_task
-        self.macro_to_task[macro] = []
-
     def _run_synctasks(self):
         synctasks = self.synctasks
         if not len(synctasks):
@@ -181,12 +179,17 @@ class TaskManager:
         assert task.manager() is manager
         assert task.future is not None
 
-        assert task not in self.tasks
+        if isinstance(task, UponConnectionTask):
+            tasks = self.upon_connection_tasks
+        else:
+            tasks = self.tasks
+        ###assert task not in tasks
         self.launching_tasks.discard(task)
-        self.tasks.append(task)
-        self.task_ids.append(task.taskid)
-        if isinstance(task, MacroUpdateTask):
-            self.macro_task_ids.append(task.taskid)
+        tasks.append(task)
+        if isinstance(task, UponConnectionTask):
+            self.upon_connection_task_ids.append(task.taskid)
+        else:
+            self.task_ids.append(task.taskid)
         task.future.add_done_callback(
             partial(self._clean_task, task)
         )
@@ -208,7 +211,7 @@ class TaskManager:
         elif isinstance(dep, Reactor):
             d = self.reactor_to_task
         elif isinstance(dep, Macro):
-            d = self.macro_to_task
+            return  # Don't maintain macro dependencies.
         elif isinstance(dep, MacroPath):
             d = self.macropath_to_task
         else:
@@ -218,27 +221,36 @@ class TaskManager:
         dd.append(task)
 
 
+    # a lot of time is spent in the function below
     async def await_upon_connection_tasks(self,taskid,root):
         while 1:
-            pos = bisect_left(self.task_ids, taskid)
-            """
-            for n in range(pos): assert self.tasks[n].taskid < taskid, (pos, n)
-            for n in range(pos, len(self.tasks)): assert self.tasks[n].taskid >= taskid, (pos, n)
-            """
-            for task in reversed(self.tasks[:pos]):
-                if isinstance(task, UponConnectionTask):
-                    if task.future is None or task.future.done():
-                        continue
-                    """
-                    # can't happen. Every root context has its own taskmanager
-                    if task._root() is not root:
-                        continue
-                    """
-                    fut = asyncio.shield(task.future)
-                    await fut
-                    break
+            pos = bisect_left(self.upon_connection_task_ids, taskid)
+            for task in reversed(self.upon_connection_tasks[:pos]):
+                if task.future is None or task.future.done():
+                    continue
+                """
+                # can't happen. Every root context has its own taskmanager
+                if task._root() is not root:
+                    continue
+                """
+                fut = asyncio.shield(task.future)
+                await fut                
+                break
             else:
                 break
+
+
+    """
+    # slower!
+    async def await_upon_connection_tasks(self,taskid,root):
+        while 1:
+            pos = bisect_left(self.upon_connection_task_ids, taskid)
+            futs = [t.future for t in self.upon_connection_tasks[:pos]]
+            futs = [fut for fut in futs if fut is not None]
+            if not len(futs):
+                return
+            await asyncio.wait(futs, return_when=asyncio.ALL_COMPLETED)
+    """
 
     async def await_cell(self,cell,taskid,root):
         while 1:
@@ -315,9 +327,7 @@ class TaskManager:
                 return
             d = self.reactor_to_task
         elif isinstance(dep, Macro):
-            if dep._destroyed:
-                return
-            d = self.macro_to_task
+            return  # Don't maintain macro dependencies.
         elif isinstance(dep, MacroPath):
             if dep._destroyed:
                 return
@@ -374,7 +384,7 @@ class TaskManager:
                     else:
                         print_debug("WAIT FOR", task.__class__.__name__, hex(id(task)), task.dependencies)
                     for dep in task.dependencies:
-                        if isinstance(dep, SeamlessBase):
+                        if isinstance(dep, SeamlessBase) and not isinstance(dep, Macro):
                             running.add(dep)
                             #print("TASK",task)
             if not len(running):
@@ -388,7 +398,8 @@ class TaskManager:
                 print_wait_for(result)
             return result, True
 
-        while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or must_run_mount:
+        while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or \
+          manager.macromanager.queued or deeprefmanager.busy or must_run_mount:
             mm = manager.mountmanager
             if must_run_mount:
                 if not len(mm.cell_updates) and mm.last_run != last_mount_run:
@@ -419,7 +430,8 @@ class TaskManager:
                 if remaining < 0:
                     break
             if get_tasks_func is None:
-                if not (len(self.tasks) or len(self.launching_tasks) or len(self.synctasks)):
+                if not (len(self.tasks) or len(self.upon_connection_tasks) or len(self.launching_tasks) or len(self.synctasks) or \
+                  manager.macromanager.queued or deeprefmanager.busy):
                     if not debugmountmanager.taskmanager_has_mounts(self):
                         cyclic_scells = manager.livegraph.get_cyclic()
                         if len(cyclic_scells):
@@ -481,7 +493,7 @@ class TaskManager:
                     else:
                         print_debug("WAIT FOR", task.__class__.__name__, hex(id(task)), task.dependencies)
                     for dep in task.dependencies:
-                        if isinstance(dep, SeamlessBase):
+                        if isinstance(dep, SeamlessBase) and not isinstance(dep, Macro):
                             running.add(dep)
                             #print("TASK",task)
             if not len(running):
@@ -495,7 +507,8 @@ class TaskManager:
                 print_wait_for(result)
             return result, True
 
-        while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or must_run_mount:
+        while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or \
+          manager.macromanager.queued or deeprefmanager.busy or must_run_mount:
             mm = manager.mountmanager
             if must_run_mount:
                 if not len(mm.cell_updates) and mm.last_run != last_mount_run:
@@ -530,7 +543,8 @@ class TaskManager:
                 if remaining < 0:
                     break
             if get_tasks_func is None:
-                if not (len(self.tasks) or len(self.launching_tasks) or len(self.synctasks)):
+                if not (len(self.tasks) or len(self.upon_connection_tasks) or len(self.launching_tasks) or len(self.synctasks) or \
+                  manager.macromanager.queued or deeprefmanager.busy):
                     if not debugmountmanager.taskmanager_has_mounts(self):
                         cyclic_scells = manager.livegraph.get_cyclic()
                         if len(cyclic_scells):
@@ -568,10 +582,12 @@ class TaskManager:
             return
         cleaned = task._cleaned
         if not cleaned:
-            self.tasks.remove(task)
-            self.task_ids.remove(task.taskid)
-            if isinstance(task, MacroUpdateTask):
-                self.macro_task_ids.remove(task.taskid)
+            if isinstance(task, UponConnectionTask):
+                self.upon_connection_tasks.remove(task)
+                self.upon_connection_task_ids.remove(task.taskid)
+            else:
+                self.tasks.remove(task)
+                self.task_ids.remove(task.taskid)
             task._cleaned = True
 
             print_debug("FINISHED", task.__class__.__name__, task.taskid, task.dependencies)
@@ -643,13 +659,6 @@ If origin_task is provided, that task is not cancelled."""
                 continue
             task.cancel()
 
-    def cancel_macro(self, macro, full=False):
-        """Cancels all tasks depending on macro."""
-        for task in list(self.macro_to_task[macro]):
-            if (not full) and isinstance(task, UponConnectionTask):
-                continue
-            task.cancel()
-
     def cancel_macropath(self, macropath, full=False):
         """Cancels all tasks depending on macropath.
         If full = True, cancels all UponConnectionTasks as well"""
@@ -708,10 +717,6 @@ If origin_task is provided, that task is not cancelled."""
         self.cancel_reactor(reactor, full=full)
         self.reactor_to_task.pop(reactor)
 
-    def destroy_macro(self, macro, *, full=False):
-        self.cancel_macro(macro, full=full)
-        self.macro_to_task.pop(macro)
-
     def destroy_macropath(self, macropath, *, full=False):
         if macropath not in self.macropath_to_task:
             return
@@ -727,7 +732,6 @@ If origin_task is provided, that task is not cancelled."""
             "expression_to_task",
             "transformer_to_task",
             "reactor_to_task",
-            "macro_to_task",
             "macropath_to_task",
             "reftasks",
             "rev_reftasks",
@@ -772,5 +776,5 @@ from .expression import Expression
 from .tasks.upon_connection import UponConnectionTask
 from .tasks.structured_cell import StructuredCellAuthTask, StructuredCellJoinTask
 from .tasks import BackgroundTask
-from ..manager.tasks.macro_update import MacroUpdateTask
 from ..transformer import Transformer
+from ..cache.deeprefmanager import deeprefmanager

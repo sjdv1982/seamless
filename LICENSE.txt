@@ -1,7 +1,7 @@
 The MIT License (MIT)
 
 Author: Sjoerd de Vries
-Copyright (c) 2016-2022 INSERM. 
+Copyright (c) 2016-2022 INSERM, 2022 CNRS. 
 Contributions are copyrighted by their respective authors.
 List of contributors:
 - Angus Hollands

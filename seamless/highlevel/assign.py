@@ -123,7 +123,7 @@ def assign_constant(ctx, path, value, help_context=False):
     ctx._translate()
 
 def assign_resource(ctx, path, value):
-    result = assign_constant(value.data)
+    assign_constant(ctx, path, value.data)
     child = ctx._children[path]
     child.mount(value.filename)
 
@@ -169,6 +169,7 @@ def assign_transformer(ctx, path, func):
 
 
 def assign_transformer_copy(ctx, path, tf):
+    assert tf._parent() is ctx
     if path in ctx._children:
         ctx._destroy_path(path)
 
@@ -288,30 +289,30 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
                 elif isinstance(t, (Cell, DeepCellBase)):
                     if t.hash_pattern is None and t.celltype != "checksum":
                         if isinstance(s, DeepFolderCell):
-                            msg = """ERROR: assigning a Cell to a DeepFolderCell
+                            msg = """ERROR: assigning a DeepFolderCell to a Cell
 
 When accessed, Cells have their complete content loaded into memory.
 This is not the case for DeepFolderCells, whose content can be very large in size.
 
-Therefore, the direct assignment of a Cell to a DeepFolderCell is not allowed.
+Therefore, the direct assignment of a DeepFolderCell to a Cell is not allowed.
 
-You can instead assign a FolderCell to a DeepFolderCell.
+You can instead assign a DeepFolderCell to a FolderCell.
 FolderCells have the same internal memory-efficient representation as DeepFolderCells,
 but they are assumed to be small enough to be mounted to disk.
 
-If you really want to do so, assigning a Cell to a FolderCell is allowed.
+If you really want to do so, assigning a FolderCell to a Cell is allowed.
 """
 
                         else:
-                            msg = """ERROR: assigning a Cell to a DeepCell
+                            msg = """ERROR: assigning a DeepCell to a Cell
 
 When accessed, Cells have their complete content loaded into memory.
 This is not the case for DeepCells, whose content can be very large in size.
 
-Therefore, the direct assignment of a Cell to a DeepCell is by default not allowed.
+Therefore, the direct assignment of a DeepCell to a Cell is by default not allowed.
 
-If you really want to do this, create an intermediate Cell with hash pattern {"*": "#"},
-and assign the Cell to this intermediate Cell.
+If you really want to do this, create an intermediate SimpleDeepCell,
+assign the DeepCell to the SimpleDeepCell, and the SimpleDeepCell to the Cell.
 """
                         raise Exception(msg)
                 elif isinstance(t, Base):
@@ -360,46 +361,53 @@ and assign the Cell to this intermediate Cell.
     }
     ctx._graph[1].append(connection)
 
-def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
+def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
     from .Context import Context
     from .Cell import Cell
     from .Transformer import Transformer
     assert isinstance(ctx, Context)
-    nodes, connections, _, _ = ctx._graph
+    if fast:
+        assert runtime    
     if runtime:
         nodes, connections, _, _ = ctx._runtime_graph
-    for p in list(nodes.keys()):
-        if p[:len(path)] == path:
-            nodes.pop(p)
-    for con in list(connections):
-        if con["type"] == "connection":
-            source, target = con["source"], con["target"]
-            if source[:len(path)] != path:
-                continue
-            if target[:len(path)] != path:
-                continue
-            connections.remove(con)
+    else:
+        nodes, connections, _, _ = ctx._graph
+    if not fast:
+        for p in list(nodes.keys()):
+            if p[:len(path)] == path:
+                nodes.pop(p)
+        for con in list(connections):
+            if con["type"] == "connection":
+                source, target = con["source"], con["target"]
+                if source[:len(path)] != path:
+                    continue
+                if target[:len(path)] != path:
+                    continue
+                connections.remove(con)
     nodes[path] = {
         "path": path,
         "type": "context"
-    }
+    }    
     new_nodes = deepcopy(new_nodes)
     new_connections = deepcopy(new_connections)
     targets = set()
     for con in new_connections:
         targets.add(con["target"])
+    indexed_nodepaths = []
     for node in new_nodes:
         old_path = node["path"]
         pp = path + old_path
         node["path"] = pp
         nodetype = node["type"]
+        indexed_nodepaths.append(pp)
         nodes[pp] = node
         if not runtime and nodetype not in ("context", "libinstance"):
             node["UNTRANSLATED"] = True
         remove_checksum = []
         if nodetype == "cell":
-            Cell(parent=ctx, path=pp)
-            ###remove_checksum.append("temp")
+            if not fast:
+                Cell(parent=ctx, path=pp)
+            remove_checksum.append("temp")
             if node["celltype"] == "structured":
                 remove_checksum.append("value")
                 remove_checksum.append("buffer")
@@ -407,7 +415,8 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
                 if old_path in targets:
                     remove_checksum.append("value")
         elif nodetype == "transformer":
-            Transformer(parent=ctx, path=pp)
+            if not fast:
+                Transformer(parent=ctx, path=pp)
             remove_checksum += ["input_temp", "input", "input_buffer", "result"]
             potential = ("code", "schema", "result_schema", "main_module")
             for pot in potential:
@@ -416,7 +425,8 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
             if runtime:
                 node.pop("UNTRANSLATED", None)
         elif nodetype == "macro":
-            Macro(parent=ctx, path=pp)
+            if not fast:
+                Macro(parent=ctx, path=pp)
             remove_checksum += ["param_temp", "param", "param_buffer"]
             potential = ("code", "schema")
             for pot in potential:
@@ -425,9 +435,10 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
             if runtime:
                 node.pop("UNTRANSLATED", None)
         elif nodetype == "module":
-            Module(parent=ctx, path=pp)
+            if not fast:
+                Module(parent=ctx, path=pp)
             if old_path in targets:
-                node.pop("checksum")
+                node.pop("checksum", None)
         elif nodetype == "context":
             pass
         elif nodetype == "libinstance":
@@ -454,22 +465,28 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime):
             cs = node["checksum"]
             for item in remove_checksum:
                 cs.pop(item, None)
+    indexed_connections = []
     for con in new_connections:
         con["source"] = path + con["source"]
         con["target"] = path + con["target"]
+        indexed_connections.append(con)
         connections.append(con)
+    if fast:
+        ctx._add_runtime_index(path, indexed_nodepaths, indexed_connections)
 
-def _assign_context(ctx, new_nodes, new_connections, path, runtime):
-    if runtime:
+def _assign_context(ctx, new_nodes, new_connections, path, runtime, *, fast=False):
+    if runtime and not fast:
         old_graph = deepcopy(ctx._graph)
-    ctx._destroy_path(path, runtime=runtime)
-    _assign_context2(ctx, new_nodes, new_connections, path, runtime)
-    graph = ctx._runtime_graph if runtime else ctx._graph
-    subctx = graph.nodes[path]
-    assert subctx["type"] == "context", path
+    ctx._destroy_path(path, runtime=runtime, fast=fast)
+    _assign_context2(ctx, new_nodes, new_connections, path, runtime, fast=fast)
+    if not fast:
+        graph = ctx._runtime_graph if runtime else ctx._graph
+        subctx = graph.nodes[path]
+        assert subctx["type"] == "context", path
     if runtime:
-        graph2 = deepcopy(ctx._graph)
-        assert old_graph == graph2
+        if not fast:
+            graph2 = deepcopy(ctx._graph)
+            assert old_graph == graph2
     else:
         ctx._translate()
 
@@ -581,7 +598,8 @@ Run 'ctx.translate()' or 'await ctx.translation()'
 
 
 def assign(ctx, path, value, *, help_context=False):
-    from .Context import Context, SubContext
+    from .Context import Context
+    from .SubContext import SubContext
     from .library.libinstance import LibInstance
     from .library import Library, LibraryContainer
     from .library.include import IncludedLibrary, IncludedLibraryContainer
@@ -608,8 +626,8 @@ def assign(ctx, path, value, *, help_context=False):
         value._init(ctx, path)
     elif isinstance(value, (Cell, DeepCellBase)):
         if value._parent() is None:
-            value._init(ctx, path)
             cellnode = deepcopy(value._node)
+            value._init(ctx, path)
             if isinstance(value, Cell):
                 if cellnode is None:
                     if isinstance(value, FolderCell):
@@ -651,8 +669,8 @@ def assign(ctx, path, value, *, help_context=False):
         v = value
         if isinstance(value, Resource):
             v = value.data
-        new_cell = assign_constant(ctx, path, v, help_context=help_context)
-        if new_cell:
+        creates_new_cell = assign_constant(ctx, path, v, help_context=help_context)
+        if creates_new_cell:
             ctx._translate()
         else:
             check_libinstance_subcontext_binding(ctx, path)
@@ -673,8 +691,8 @@ def assign(ctx, path, value, *, help_context=False):
         if help_context:
             raise TypeError(type(value))
         if value._parent() is None:
-            value._init(ctx, path)
             node = deepcopy(value._node)
+            value._init(ctx, path)
             if node is None:
                 node = get_new_module(path)
             else:

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seamless: a cell-based interactive workflow framework &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="Welcome to Seamless’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Seamless
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Seamless: a cell-based interactive workflow framework</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#documentation-http-sjdv1982-github-io-seamless">Documentation: http://sjdv1982.github.io/seamless</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#try-out-seamless">Try out Seamless</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-installation">Quick installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-example">Basic example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#import-seamless-in-ipython-or-jupyter">1. Import Seamless in IPython or Jupyter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#set-up-a-simple-seamless-context">2. Set up a simple Seamless context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#define-schemas-and-validation-rules">3. Define schemas and validation rules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#create-an-api-for-a-seamless-cell">4. Create an API for a Seamless cell</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mount-cells-to-the-file-system">5. Mount cells to the file system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#share-a-cell-over-http">6. Share a cell over HTTP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#control-cells-from-jupyter">7. Control cells from Jupyter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#save-the-entire-state-of-the-context">8. Save the entire state of the context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#in-a-new-notebook-ipython-console">9. In a new notebook / IPython console:</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#documentation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new-project.html">Seamless projects</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Data storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Seamless: a cell-based interactive workflow framework</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/whatis.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="seamless-a-cell-based-interactive-workflow-framework">
+<h1>Seamless: a cell-based interactive workflow framework<a class="headerlink" href="#seamless-a-cell-based-interactive-workflow-framework" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb"><img alt="Binder" src="https://mybinder.org/badge_logo.svg" /></a></p>
+<p>Seamless is a framework to set up workflows and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations. All cells and computations can be created, edited and connected interactively.</p>
+<p>The main application domains are data science, scientific computing, software prototyping, and interactive web services.</p>
+<p>Workflows, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible.</p>
+<div class="section" id="documentation-http-sjdv1982-github-io-seamless">
+<h2>Documentation: <a class="reference external" href="http://sjdv1982.github.io/seamless">http://sjdv1982.github.io/seamless</a><a class="headerlink" href="#documentation-http-sjdv1982-github-io-seamless" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="try-out-seamless">
+<h2>Try out Seamless<a class="headerlink" href="#try-out-seamless" title="Permalink to this headline">¶</a></h2>
+<p>You can try out Seamless in your browser, without any installation, thanks to the Binder project. Click on the badge below:</p>
+<p><a class="reference external" href="https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb"><img alt="Binder" src="https://mybinder.org/badge_logo.svg" /></a></p>
+</div>
+<div class="section" id="quick-installation">
+<h2>Quick installation<a class="headerlink" href="#quick-installation" title="Permalink to this headline">¶</a></h2>
+<p>First, <a class="reference external" href="https://docs.docker.com/get-docker/">install Docker</a>
+and <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">miniconda</a>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker pull rpbs/seamless
+conda create -n seamless -c rpbs -c conda-forge seamless-cli -y
+conda activate seamless
+</pre></div>
+</div>
+<p>For more details, see <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/master/installation.md">Installation</a></p>
+</div>
+<div class="section" id="basic-example">
+<h2>Basic example<a class="headerlink" href="#basic-example" title="Permalink to this headline">¶</a></h2>
+<p>First, start <strong>IPython</strong> (<code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code>) or <strong>Jupyter</strong> (<code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code> =&gt; create a new Python Notebook).</p>
+<div class="section" id="import-seamless-in-ipython-or-jupyter">
+<h3>1. Import Seamless in IPython or Jupyter<a class="headerlink" href="#import-seamless-in-ipython-or-jupyter" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">seamless.highlevel</span> <span class="kn">import</span> <span class="n">Context</span>
+<span class="n">ctx</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="set-up-a-simple-seamless-context">
+<h3>2. Set up a simple Seamless context<a class="headerlink" href="#set-up-a-simple-seamless-context" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+
+<span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">10</span>              <span class="c1"># ctx.a =&gt; Seamless cell</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mi">20</span>              <span class="c1"># ctx.b =&gt; Seamless cell</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">add</span> <span class="o">=</span> <span class="n">add</span>           <span class="c1"># ctx.add =&gt; Seamless transformer</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">a</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">b</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">result</span>  <span class="c1"># ctx.c =&gt; Seamless cell</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span> <span class="c1"># in a .py file, use &quot;ctx.compute()&quot; instead</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Out[1]:</span> <span class="pre">&lt;Silk:</span> <span class="pre">30</span> <span class="pre">&gt;</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">+=</span> <span class="mi">5</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Out[2]:</span> <span class="pre">&lt;Silk:</span> <span class="pre">35</span> <span class="pre">&gt;</span></code></p>
+</div>
+<div class="section" id="define-schemas-and-validation-rules">
+<h3>3. Define schemas and validation rules<a class="headerlink" href="#define-schemas-and-validation-rules" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># declares that add.a must be a number</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+<span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span>
+
+<span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">add_validator</span><span class="p">(</span><span class="n">validate</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;validate&quot;</span><span class="p">)</span>
+
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">exception</span><span class="p">)</span>
+<span class="c1"># Validation passes =&gt; exception is None</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="create-an-api-for-a-seamless-cell">
+<h3>4. Create an API for a Seamless cell<a class="headerlink" href="#create-an-api-for-a-seamless-cell" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unsilk</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sorry, there is no result&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The result is: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">report</span> <span class="o">=</span> <span class="n">report</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">report</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Out[3]:</span> <span class="pre">The</span> <span class="pre">result</span> <span class="pre">is</span> <span class="pre">35</span></code></p>
+</div>
+<div class="section" id="mount-cells-to-the-file-system">
+<h3>5. Mount cells to the file system<a class="headerlink" href="#mount-cells-to-the-file-system" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">celltype</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;a.json&quot;</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">celltype</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;b.json&quot;</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">celltype</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;c.json&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">code</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;code.py&quot;</span><span class="p">)</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="share-a-cell-over-http">
+<h3>6. Share a cell over HTTP<a class="headerlink" href="#share-a-cell-over-http" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">mimetype</span> <span class="o">=</span> <span class="s2">&quot;text&quot;</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">share</span><span class="p">()</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; curl http://localhost:5813/ctx/c
+<span class="m">35</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="control-cells-from-jupyter">
+<h3>7. Control cells from Jupyter<a class="headerlink" href="#control-cells-from-jupyter" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ipywidgets</span> <span class="kn">import</span> <span class="n">IntSlider</span><span class="p">,</span> <span class="n">IntText</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">IntSlider</span><span class="p">(</span><span class="nb">min</span><span class="o">=-</span><span class="mi">10</span><span class="p">,</span><span class="nb">max</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">IntSlider</span><span class="p">(</span><span class="nb">min</span><span class="o">=-</span><span class="mi">10</span><span class="p">,</span><span class="nb">max</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">output</span><span class="p">()</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">traitlet</span><span class="p">()</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">traitlet</span><span class="p">()</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Out[4]</span></code></p>
+<details><summary>Jupyter widgets (shown only on github.io, not on github.com)</summary>
+<!-- Load require.js. Delete this if your page already loads require.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js" crossorigin="anonymous"></script>
+<script type="application/vnd.jupyter.widget-state+json">
+{
+    "version_major": 2,
+    "version_minor": 0,
+    "state": {
+        "9a30009f9d044d0184b9ae4611b41440": {
+            "model_name": "LayoutModel",
+            "model_module": "@jupyter-widgets/base",
+            "model_module_version": "1.2.0",
+            "state": {}
+        },
+        "7a3a04d1e170466086ce2f1cc7ff8206": {
+            "model_name": "SliderStyleModel",
+            "model_module": "@jupyter-widgets/controls",
+            "model_module_version": "1.5.0",
+            "state": {
+                "description_width": ""
+            }
+        },
+        "b71e9f617e4c4447962aa02e83fff9b3": {
+            "model_name": "IntSliderModel",
+            "model_module": "@jupyter-widgets/controls",
+            "model_module_version": "1.5.0",
+            "state": {
+                "layout": "IPY_MODEL_9a30009f9d044d0184b9ae4611b41440",
+                "max": 30,
+                "min": -10,
+                "style": "IPY_MODEL_7a3a04d1e170466086ce2f1cc7ff8206",
+                "value": 15
+            }
+        },
+        "9df6e150ff994aa8b67c891d4db6e638": {
+            "model_name": "LayoutModel",
+            "model_module": "@jupyter-widgets/base",
+            "model_module_version": "1.2.0",
+            "state": {}
+        },
+        "d5ad72717ba74f13884773a12b3d504e": {
+            "model_name": "SliderStyleModel",
+            "model_module": "@jupyter-widgets/controls",
+            "model_module_version": "1.5.0",
+            "state": {
+                "description_width": ""
+            }
+        },
+        "510c3503bf774d09a065c977fb395bd0": {
+            "model_name": "IntSliderModel",
+            "model_module": "@jupyter-widgets/controls",
+            "model_module_version": "1.5.0",
+            "state": {
+                "layout": "IPY_MODEL_9df6e150ff994aa8b67c891d4db6e638",
+                "max": 30,
+                "min": -10,
+                "style": "IPY_MODEL_d5ad72717ba74f13884773a12b3d504e",
+                "value": 20
+            }
+        },
+        "a16e33985975424f8471454796384dc7": {
+            "model_name": "LayoutModel",
+            "model_module": "@jupyter-widgets/base",
+            "model_module_version": "1.2.0",
+            "state": {}
+        },
+        "9ac3e0bde75e42ef885d3beb5852d878": {
+            "model_name": "OutputModel",
+            "model_module": "@jupyter-widgets/output",
+            "model_module_version": "1.0.0",
+            "state": {
+                "layout": "IPY_MODEL_a16e33985975424f8471454796384dc7",
+                "outputs": [
+                    {
+                        "output_type": "display_data",
+                        "data": {
+                            "text/plain": "35"
+                        },
+                        "metadata": {}
+                    }
+                ]
+            }
+        },
+        "29241e1f7b1a49ffabfd90b27805f7bf": {
+            "model_name": "LayoutModel",
+            "model_module": "@jupyter-widgets/base",
+            "model_module_version": "1.2.0",
+            "state": {}
+        },
+        "7e22056badc243caa0bb61361d96025b": {
+            "model_name": "SliderStyleModel",
+            "model_module": "@jupyter-widgets/controls",
+            "model_module_version": "1.5.0",
+            "state": {
+                "description_width": ""
+            }
+        },
+        "f4ac183f4141492c8004ffee95e19b9a": {
+            "model_name": "IntSliderModel",
+            "model_module": "@jupyter-widgets/controls",
+            "model_module_version": "1.5.0",
+            "state": {
+                "layout": "IPY_MODEL_29241e1f7b1a49ffabfd90b27805f7bf",
+                "max": 30,
+                "min": -10,
+                "style": "IPY_MODEL_7e22056badc243caa0bb61361d96025b",
+                "value": 15
+            }
+        },
+        "ecb30d47382442dc8d8d494d6ce7a799": {
+            "model_name": "LayoutModel",
+            "model_module": "@jupyter-widgets/base",
+            "model_module_version": "1.2.0",
+            "state": {}
+        },
+        "584cda9e4c6046358fadb8a24dc2e94d": {
+            "model_name": "SliderStyleModel",
+            "model_module": "@jupyter-widgets/controls",
+            "model_module_version": "1.5.0",
+            "state": {
+                "description_width": ""
+            }
+        },
+        "f876716b1ad643d48baefadc4a669afa": {
+            "model_name": "IntSliderModel",
+            "model_module": "@jupyter-widgets/controls",
+            "model_module_version": "1.5.0",
+            "state": {
+                "layout": "IPY_MODEL_ecb30d47382442dc8d8d494d6ce7a799",
+                "max": 30,
+                "min": -10,
+                "style": "IPY_MODEL_584cda9e4c6046358fadb8a24dc2e94d",
+                "value": 20
+            }
+        },
+        "c5f3f3ba20054786a97cfb016dc64016": {
+            "model_name": "LayoutModel",
+            "model_module": "@jupyter-widgets/base",
+            "model_module_version": "1.2.0",
+            "state": {}
+        },
+        "dc3ebd64e9fb40bc9fd964e7292ed326": {
+            "model_name": "OutputModel",
+            "model_module": "@jupyter-widgets/output",
+            "model_module_version": "1.0.0",
+            "state": {
+                "layout": "IPY_MODEL_c5f3f3ba20054786a97cfb016dc64016",
+                "outputs": [
+                    {
+                        "output_type": "display_data",
+                        "data": {
+                            "text/plain": "35"
+                        },
+                        "metadata": {}
+                    }
+                ]
+            }
+        }
+    }
+}
+</script><script type="application/vnd.jupyter.widget-view+json">
+{
+    "version_major": 2,
+    "version_minor": 0,
+    "model_id": "f4ac183f4141492c8004ffee95e19b9a"
+}
+</script><script type="application/vnd.jupyter.widget-view+json">
+{
+    "version_major": 2,
+    "version_minor": 0,
+    "model_id": "f876716b1ad643d48baefadc4a669afa"
+}
+</script><script type="application/vnd.jupyter.widget-view+json">
+{
+    "version_major": 2,
+    "version_minor": 0,
+    "model_id": "dc3ebd64e9fb40bc9fd964e7292ed326"
+}
+</script></details></div>
+<div class="section" id="save-the-entire-state-of-the-context">
+<h3>8. Save the entire state of the context<a class="headerlink" href="#save-the-entire-state-of-the-context" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Graph and checksums, as JSON</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">save_graph</span><span class="p">(</span><span class="s2">&quot;basic-example.seamless&quot;</span><span class="p">)</span>
+<span class="c1"># Checksum-to-buffer cache, as ZIP file</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">save_zip</span><span class="p">(</span><span class="s2">&quot;basic-example.zip&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="in-a-new-notebook-ipython-console">
+<h3>9. In a new notebook / IPython console:<a class="headerlink" href="#in-a-new-notebook-ipython-console" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">seamless.highlevel</span> <span class="kn">import</span> <span class="n">load_graph</span>
+<span class="n">ctx</span> <span class="o">=</span> <span class="n">load_graph</span><span class="p">(</span>
+    <span class="s2">&quot;basic-example.seamless&quot;</span><span class="p">,</span>
+    <span class="nb">zip</span><span class="o">=</span><span class="s2">&quot;basic-example.zip&quot;</span>
+<span class="p">)</span>
+<span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">computation</span><span class="p">()</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Out[1]:</span> <span class="pre">&lt;Silk:</span> <span class="pre">35</span> <span class="pre">&gt;</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">code</span><span class="o">.</span><span class="n">value</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Out[2]:</span> <span class="pre">'def</span> <span class="pre">add(a,</span> <span class="pre">b):\n</span>&#160;&#160;&#160; <span class="pre">return</span> <span class="pre">a</span> <span class="pre">+</span> <span class="pre">b'</span></code></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; curl http://localhost:5813/ctx/c
+<span class="m">35</span>
+</pre></div>
+</div>
+<div class="section" id="documentation">
+<h4>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference external" href="http://sjdv1982.github.io/seamless">http://sjdv1982.github.io/seamless</a></p>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to Seamless’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

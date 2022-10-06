@@ -12,7 +12,7 @@
                           # - "package", that compiles *all* source files into a single .a file
       "compile_flag": "-c"
       "output_flag": "-o"
-      "options": ["-O3", "-ffast-math", "-march=native", "-fPIC"],
+      "options": ["-O3", "-ffast-math", "-march=native", "-fPIC", "-fopenmp"],
       "public_options": ["-fPIC"],
       "debug_options": ["-fPIC", "-g", "-O0", "-fno-inline" , "-Wall"],
       "profile_options": ["-p", "-g"],
@@ -21,7 +21,7 @@
       "mode": "object",   
       "compile_flag": "-c"
       "output_flag": "-o"
-      "options": ["-O3", "-ffast-math", "-march=native", "-fPIC"],
+      "options": ["-O3", "-ffast-math", "-march=native", "-fPIC", "-fopenmp"],
       "public_options": ["-fPIC"],
       "debug_options": ["-fPIC", "-g", "-O0", "-fno-inline" , "-Wall"],
       "profile_options": ["-p", "-g"],

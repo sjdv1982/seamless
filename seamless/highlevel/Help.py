@@ -4,7 +4,7 @@ from functools import wraps
 from seamless.core.macro import Path
 
 from .Cell import Cell
-from .Context import SubContext
+from .SubContext import SubContext
 
 class HelpWrapper:
     def __init__(self, wrapped, sub_path=None):
@@ -245,7 +245,7 @@ class HelpContext(HelpWrapper):
         if ctx is None:
             raise AttributeError
         path = self._context_path + (attr,)
-        result = ctx._get_path(path)
+        result = ctx._get_from_path(path)
         sub_path2 = self._sub_path + (attr,)
         if isinstance(result, Cell):
             return result

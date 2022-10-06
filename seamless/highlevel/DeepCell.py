@@ -30,7 +30,7 @@ from .HelpMixin import HelpMixin
 
 class DeepCellBase(Base, HelpMixin):
     _node = None
-    _virtual_path = None
+    _virtual_path = None  # always None for deep cells
     celltype = "structured"
     _components = (
         "origin", "keyorder", "blacklist", "whitelist", "apply_blackwhite", 
@@ -225,7 +225,12 @@ This is after blacklist/whitelist filtering has been applied
         return handle
 
     def set(self, value):
-        """Sets the deep cell to a particular in-memory value"""
+        """Sets the deep cell to a particular in-memory value
+        Deep cell must have been translated first. 
+        """
+        hcell = self._get_hcell()
+        if hcell.get("UNTRANSLATED"):
+            raise AttributeError("Can set value only after translation")
         handle = self._handle
         handle.set(value)
 

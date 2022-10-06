@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data storage &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Job management" href="job_management.html" />
+    <link rel="prev" title="Environments" href="environments.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Seamless
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new-project.html">Seamless projects</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data storage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#data-storage-explained">Data storage explained</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#exporting-to-zips-or-vaults">Exporting to zips or vaults</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#the-seamless-database">The Seamless database</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-the-database">Using the database</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#database-cleanup">Database cleanup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multiple-database-directories">Multiple database directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#file-zones">File zones</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Data storage</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/data_storage.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="data-storage">
+<h1>Data storage<a class="headerlink" href="#data-storage" title="Permalink to this headline">¶</a></h1>
+<p>In Seamless, everything revolves around checksums. The primary purpose of data storage is to retrieve the underlying buffer of each checksum. In addition, there is “buffer info”, the keeping of statistics that help in converting buffers from one celltype to another. Third, there is the storage of transformation results, in the form of a mapping of transformation checksum to result checksum. Finally, there is also compilation, the checksum-to-checksum mapping of source code in e.g. C/C++ to its compiled binary.</p>
+<div class="section" id="data-storage-explained">
+<h2>Data storage explained<a class="headerlink" href="#data-storage-explained" title="Permalink to this headline">¶</a></h2>
+<p><em><strong>IMPORTANT: This documentation section is an outline. The outline is shown below</strong></em></p>
+<ul class="simple">
+<li><p>Purpose: checksum to buffer caching</p></li>
+<li><p>dependent vs independent checksums, version control</p></li>
+<li><p>scratch cells</p></li>
+</ul>
+<!--
+**Deployment role: checksum-to-buffer service**
+
+**Deployment role: buffer info service**
+
+**Deployment role: transformation result service**
+
+**Deployment role: compilation service**
+
+These roles are normally taken by the ***Seamless database***.
+--><div class="section" id="exporting-to-zips-or-vaults">
+<h3>Exporting to zips or vaults<a class="headerlink" href="#exporting-to-zips-or-vaults" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em>
+(Only checksum-to-buffer cache! Transformations will be recomputed!)</p>
+</div>
+</div>
+<div class="section" id="the-seamless-database">
+<h2>The Seamless database<a class="headerlink" href="#the-seamless-database" title="Permalink to this headline">¶</a></h2>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em>
+(checksum-to-buffer cache, buffer info, etc. over the network, “serving a vault”)</p>
+<div class="section" id="using-the-database">
+<h3>Using the database<a class="headerlink" href="#using-the-database" title="Permalink to this headline">¶</a></h3>
+<p><em><strong>IMPORTANT: This documentation section is a draft. The preliminary text is shown below</strong></em></p>
+<p>A Seamless instance connected to the database does not maintain its own checksum-to-buffer cache, and therefore uses a lot less memory.</p>
+<p>You can start the database with the command <code class="docutils literal notranslate"><span class="pre">seamless-database</span></code>. By default, it loads  /seamless-tools/tools/default-database.yaml, which maintains the database dir in  $HOME/.seamless/database, but you can supply your own configuration file. Primarily, the database dir contains /buffers, containing one file per buffer (the filename is the checksum, e.g. /buffers/93237a60bf6417104795ed085c074d52f7ae99b5ec773004311ce665eddb4880).The other stores (buffer info, transformation result, compilation, and a few specialized others) map a checksum to either another checksum or something other that is very small. Therefore, each of those stores is organized as JSON files that are split in buckets as they grow larger.</p>
+<p>Seamless reads the database IP from the SEAMLESS_DATABASE_IP environment variable, which defaults your Docker host IP. The default Seamless database port (SEAMLESS_DATABASE_PORT) is 5522.</p>
+</div>
+<div class="section" id="database-cleanup">
+<h3>Database cleanup<a class="headerlink" href="#database-cleanup" title="Permalink to this headline">¶</a></h3>
+<p>The buckets do not take up much space, there is little reason to delete them.  In contrast, buffers/ can get very large. You can freely delete the contents of /buffers while the database is running, this will not cause any crash. The database has a memory cache that may continue to hold the buffer for a while. To cleanly remove any kind of database entry, create a file with a format like
+<code class="docutils literal notranslate"><span class="pre">/seamless-tools/tools/jobless/tests/jobless-test-dblog-ORIGINAL.txt</span></code> and then run <code class="docutils literal notranslate"><span class="pre">seamless-delete-database-from-log</span> <span class="pre">&lt;filename&gt;</span></code>.</p>
+<p>Note that any workflow or transformation job slave that needs the buffer but can’t find it will report a CacheMissError. This will happen for sure if the buffer is <em>independent</em>, i.e. is not the result of some kind of computation (transformation, conversion, cell expression etc.). If it <em>is</em> the result of a computation, and the computation is part of the workflow that is loaded by the Seamless instance, Seamless may try to repeat the computation in order to regenerate the buffer (this is called “fingertipping”). So you can be a bit more aggressive in deleting buffers of intermediate results (or even final results), especially if they are large and/or quick to compute.</p>
+</div>
+<div class="section" id="multiple-database-directories">
+<h3>Multiple database directories<a class="headerlink" href="#multiple-database-directories" title="Permalink to this headline">¶</a></h3>
+<p>It is possible to set up multiple database directories with Seamless database. Only one will be written to, the other ones are read-only. The purpose can be: setting up specialized databases (e.g. the Protein Data Bank), backup, or having them in different file zones.</p>
+</div>
+<div class="section" id="file-zones">
+<h3>File zones<a class="headerlink" href="#file-zones" title="Permalink to this headline">¶</a></h3>
+<p>The Seamless database has a special request where you can ask directly for the filename that corresponds to the buffer. With the request, you can specify a file zone (or multiple file zones). If the Seamless database directory is in the same file zone (or in one of the file zones), the file name (i.e. <code class="docutils literal notranslate"><span class="pre">/buffers/&lt;checksum&gt;</span></code>) is assumed to be accessible by the requesting instance, and is returned. In other words, “same file zone” means “same file system”. This is very efficient in case of bash transformers,leading to a hard link instead of load-buffer-from-database + write-buffer-to-file-in-temp-directory. In case of a deep folder, the special request is for a folder. Seamless has a tool called <code class="docutils literal notranslate"><span class="pre">database-share-deepfolder-directory</span></code>. It takes a deep folder checksum (or its collection name, see below), reads the deep folder dict, creates a folder <code class="docutils literal notranslate"><span class="pre">/shared-directories/&lt;deep</span> <span class="pre">checksum&gt;/</span></code>, and creates a hard link <code class="docutils literal notranslate"><span class="pre">/shared-directories/&lt;deep</span> <span class="pre">checksum&gt;/key</span></code> to <code class="docutils literal notranslate"><span class="pre">/buffers/&lt;checksum&gt;</span></code> for every key:checksum pair in the dict. Therefore, <code class="docutils literal notranslate"><span class="pre">/shared-directories/&lt;deep</span> <span class="pre">checksum&gt;</span></code> is an exact mirror of the deep folder mounted to disk, without taking any disk space whatsoever. Therefore, bash transformers that take a deep folder as input (e.g. a database search tool) get a soft link to <code class="docutils literal notranslate"><span class="pre">/shared-directories/&lt;deep</span> <span class="pre">checksum&gt;</span></code> instead of copying the entire database every time. Of course, this does require that the file zone is the same.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="environments.html" class="btn btn-neutral float-left" title="Environments" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="job_management.html" class="btn btn-neutral float-right" title="Job management" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

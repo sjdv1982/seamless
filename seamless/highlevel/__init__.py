@@ -1,3 +1,15 @@
+"""Seamless high-level API.
+
+Has a two-fold function:
+
+1. Maintain a workflow graph containing nodes (cells, transformers etc.),
+checksums, and connections. This workflow graph is pure data that can be
+serialized any time to JSON (.seamless file).
+
+2. Maintain a translation of the workflow graph to a low-level representation
+that is constantly being evaluated. Interrogate the low-level representation
+(asking for its status, checksums, etc.).
+"""
 import inspect
 from types import LambdaType
 from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda
@@ -56,7 +68,7 @@ def parse_function_code(code_or_func, identifier="<None>"):
 from .Context import Context
 from .Transformer import Transformer
 from .Macro import Macro
-from .Cell import Cell, FolderCell
+from .Cell import Cell, SimpleDeepCell, FolderCell
 from .DeepCell import DeepCell, DeepFolderCell
 from .Module import Module
 from .Link import Link
@@ -109,9 +121,21 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
             zip=zip
         )
 
+from .SubContext import SubContext
+nodeclasses = {
+    "cell": Cell,
+    "transformer": Transformer,
+    "context": SubContext,
+    "macro": Macro,
+    "module": Module,
+    "foldercell": FolderCell,
+    "deepcell": DeepCell,
+    "deepfoldercell": DeepFolderCell,
+}
+
 __all__ = [
     "Context", "Transformer", "Macro",
-    "Cell", "FolderCell", "DeepCell", "DeepFolderCell",
+    "Cell", "SimpleDeepCell", "FolderCell", "DeepCell", "DeepFolderCell",
     "Link", "Graph", "StaticContext", "Module",
-    "Resource", "load_graph", "copy",
+    "Resource", "load_graph", "copy"
 ]

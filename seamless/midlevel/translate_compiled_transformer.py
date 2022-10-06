@@ -18,6 +18,8 @@ def _init_from_graph(ctf, sctx):
     ctf.executor = transformer(sctx.executor_params.value)
     ctf.executor_code.connect(ctf.executor.code)
 
+    ctf.executor.direct_print_.cell().set(False)
+
 def _finalize(
         ctx, ctf, inp, c_inp, result, c_result,
         input_name, result_name, inchannels, node):
@@ -71,7 +73,7 @@ def _finalize(
     #2: among library cells
     ctx.header = cell("text")
     ctf.gen_header.result.connect(ctx.header)
-    ctx.header.connect(ctf.integrator.header)
+    ctx.header.connect(ctf.integrator.header_)
 
     ctx.language.connect(ctf.integrator.lang)
     ctx.code.connect(ctf.integrator.compiled_code)
@@ -95,8 +97,8 @@ def translate_compiled_transformer(
     env = env0._to_lowlevel()
 
     for pinname,pin in list(node["pins"].items()):
-        if pin.get("celltype") in ("folder", "deepfolder", "deepcell"):
-            raise ValueError("Compiled transformer does not support celltype '{}' (pin '{}')".format(pin["celltype"], pin))
+        if pin.get("celltype", "default") != "default":
+            raise ValueError("Compiled transformer celltype must be 'default', not celltype '{}' (pin '{}')".format(pin["celltype"], pin))
 
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 

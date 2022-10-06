@@ -29,9 +29,9 @@ class DeserializeBufferTask(BackgroundTask):
     async def _run(self):
         result = await deserialize(self.buffer, self.checksum, self.celltype, self.copy)        
         if isinstance(result, np.ndarray):
-            buffer_cache.update_buffer_info(self.checksum, "shape", result.shape, update_remote=False)
-            buffer_cache.update_buffer_info(self.checksum, "dtype", str(result.dtype))
-        buffer_cache.guarantee_buffer_info(self.checksum, self.celltype)
+            buffer_cache.update_buffer_info(self.checksum, "shape", result.shape, sync_remote=False)
+            buffer_cache.update_buffer_info(self.checksum, "dtype", str(result.dtype), sync_remote=False)
+        buffer_cache.guarantee_buffer_info(self.checksum, self.celltype, sync_to_remote=True)
         return result
 
 from ...cache.buffer_cache import buffer_cache

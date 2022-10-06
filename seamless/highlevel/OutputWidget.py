@@ -2,6 +2,9 @@
 
 # TODO: add more mimetypes, see module-IPython.display documentation
 
+from __future__ import annotations
+from typing import *
+
 import json
 
 mimetype_to_DOC = {
@@ -40,7 +43,8 @@ def json_widget(data, **kwargs):
     return IPython.display.JSON(data, **kwargs)
     """
     import IPython.display
-    txt = json.dumps(data, sort_keys=True, indent=2)
+    from seamless.core.protocol.json import json_dumps
+    txt = json_dumps(data)
     return IPython.display.Pretty(txt, **kwargs)
 
 def select_DOC(celltype, mimetype):
@@ -87,7 +91,7 @@ def get_doc_kwargs(cell, params):
 
 class OutputWidget:
     value = None
-    def __init__(self, cell, layout=None):
+    def __init__(self, cell, layout:Optional[dict]=None):
         from ipywidgets import Output
         if layout is None:
             self.output_instance = Output()

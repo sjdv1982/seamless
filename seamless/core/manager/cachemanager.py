@@ -1,17 +1,15 @@
 import weakref
 import copy
-import functools
-
-from ..cache import CacheMissError
-from ...download_buffer import download_buffer_from_servers
-from ..status import StatusReasonEnum
-from ..cache.buffer_cache import buffer_cache
-from ... import calculate_dict_checksum
-
 import json
 import asyncio
 
 import logging
+
+from ...download_buffer import download_buffer_from_servers
+from ..cache.buffer_cache import buffer_cache
+from ... import calculate_dict_checksum
+
+
 logger = logging.getLogger("seamless")
 
 def print_info(*args):
@@ -34,59 +32,6 @@ RECOMPUTE_OVER_REMOTE = int(100e6) # after this threshold, better to recompute t
                                 # TODO: have some dynamic component based on:
                                 # - stored recomputation time from provenance server
                                 # - internet connection speed
-
-_deep_buffer_coro_count = 0
-def new_deep_buffer_coro_id():
-    global _deep_buffer_coro_count
-    _deep_buffer_coro_count += 1
-    return _deep_buffer_coro_count
-
-deep_buffer_coros = []
-
-invalid_deep_buffers = set()
-
-async def decref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
-    while deep_buffer_coros[0] != deep_buffer_coro_id:
-        await asyncio.sleep(0.01)
-    if (checksum, calculate_dict_checksum(hash_pattern)) in invalid_deep_buffers:
-        return
-    try:
-        deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
-        sub_checksums = deep_structure_to_checksums(
-            deep_structure, hash_pattern
-        )
-        """
-        # too slow...
-        for sub_checksum in sub_checksums:
-            buffer_cache.decref(bytes.fromhex(sub_checksum))
-        """
-        # instead
-        sub_checksums2 = [bytes.fromhex(cs) for cs in sub_checksums]
-        buffer_cache._decref(sub_checksums2)
-    finally:
-        deep_buffer_coros.pop(0)
-
-async def incref_deep_buffer(deep_buffer, checksum, hash_pattern, authoritative, deep_buffer_coro_id):
-    while deep_buffer_coros[0] != deep_buffer_coro_id:
-        await asyncio.sleep(0.01)    
-    try:
-        deep_structure = await deserialize(deep_buffer, checksum, "mixed", False)
-        sub_checksums = deep_structure_to_checksums(
-            deep_structure, hash_pattern
-        )
-        """
-        # too slow...
-        for sub_checksum in sub_checksums:
-            buffer_cache.incref(bytes.fromhex(sub_checksum), authoritative)
-        """
-        # instead:
-        sub_checksums2 = [bytes.fromhex(cs) for cs in sub_checksums]
-        persistent = buffer_cache._is_persistent(authoritative)
-        buffer_cache._incref(sub_checksums2, persistent, None)
-        
-        #invalid_deep_buffers.add((checksum, hash_pattern))
-    finally:
-        deep_buffer_coros.pop(0)
 
 class CacheManager:
     def __init__(self, manager):
@@ -223,19 +168,9 @@ class CacheManager:
             self.checksum_refs[checksum].add(item)
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if incref_hash_pattern:
-            try:
-                deep_buffer = get_buffer(checksum, remote=True, deep=True)
-                if deep_buffer is None:
-                    raise CacheMissError(checksum)
-                deep_buffer_coro_id = new_deep_buffer_coro_id()
-                deep_buffer_coros.append(deep_buffer_coro_id)
-                coro = incref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
-                future = asyncio.ensure_future(coro)
-                done_callback = functools.partial(incref_deep_buffer_done, self, checksum, refholder, authoritative, result)
-                future.add_done_callback(done_callback)
-            except Exception as exc:
-                print("ERROR in incref'ing deep buffer '{}'".format(checksum.hex()))
-                incref_deep_buffer_done(self, checksum, refholder, authoritative, result, exc)
+            cell = refholder
+            deeprefmanager.incref_deep_buffer(checksum, cell._hash_pattern, authoritative, cell=cell)
+    
     async def fingertip(self, checksum, *, must_have_cell=False):
         """Tries to put the checksum's corresponding buffer 'at your fingertips'
         Normally, first reverse provenance (recompute) is tried,
@@ -276,11 +211,13 @@ class CacheManager:
             coros = []
             for pinname in transformation:
                 if pinname == "__env__":
-                    coros.append(self._fingertip(transformation[pinname], must_have_cell=False, done=done))
+                    cs = bytes.fromhex(transformation[pinname])
+                    coros.append(self._fingertip(cs, must_have_cell=False, done=done))
                     continue
                 if pinname.startswith("__"):
                     continue
-                celltype, subcelltype, sem_checksum = transformation[pinname]
+                celltype, subcelltype, sem_checksum0 = transformation[pinname]
+                sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
                 sem2syn = tf_cache.semantic_to_syntactic_checksums
                 semkey = (sem_checksum, celltype, subcelltype)
                 checksum2 = sem2syn.get(semkey, [sem_checksum])[0]
@@ -358,10 +295,9 @@ class CacheManager:
             raise CacheMissError(checksum.hex())
 
         if recompute - remote in (0, 1) and remote > 0:
-            buffer_info = buffer_cache.get_buffer_info(checksum)
-            if buffer_info is not None:
-                if buffer_info.get("length", 0) <= RECOMPUTE_OVER_REMOTE:
-                    remote = recompute + 1
+            buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=False, force_length=False)
+            if buffer_info.get("length", 0) <= RECOMPUTE_OVER_REMOTE:
+                remote = recompute + 1
 
         if remote > recompute:
             try:
@@ -456,9 +392,10 @@ class CacheManager:
             except CacheMissError:
                 pass
 
-        buffer = download_buffer_from_servers(checksum)
-        if buffer is not None:
-            return buffer
+        if remote:
+            buffer = download_buffer_from_servers(checksum)
+            if buffer is not None:
+                return buffer
         raise CacheMissError(checksum.hex())
 
 
@@ -482,12 +419,7 @@ class CacheManager:
             self.cell_to_ref[refholder] = None
             cell = refholder
             if cell._hash_pattern is not None:
-                if (checksum, calculate_dict_checksum(cell._hash_pattern)) not in invalid_deep_buffers:
-                    deep_buffer = get_buffer(checksum,remote=True)
-                    deep_buffer_coro_id = new_deep_buffer_coro_id()
-                    deep_buffer_coros.append(deep_buffer_coro_id)
-                    coro = decref_deep_buffer(deep_buffer, checksum, cell._hash_pattern, authoritative, deep_buffer_coro_id)
-                    asyncio.ensure_future(coro)
+                deeprefmanager.decref_deep_buffer(checksum, cell._hash_pattern, authoritative)
 
         elif isinstance(refholder, Expression):
             # Special case, since we never actually clear expression caches,
@@ -605,31 +537,12 @@ is result checksum: {}
         self.join_cache[checksum] = result_checksum
         self.rev_join_cache[result_checksum] = join_dict
 
-def incref_deep_buffer_done(cachemanager:CacheManager, checksum, cell, authoritative, result, future_or_exc):
-    if isinstance(future_or_exc, Exception):
-        exc = future_or_exc
-    else:
-        exc = future_or_exc.exception()
-    if exc is not None:        
-        #import traceback; print("".join(traceback.TracebackException.from_exception(exc).format()))
-        invalid_deep_buffers.add((checksum, calculate_dict_checksum(cell._hash_pattern)))
-        if not isinstance(exc, KeyboardInterrupt):
-            # crude, but hard to do otherwise. If this happens, we have encountered a Seamless bug anyway
-            manager = cachemanager.manager()
-            if cell._structured_cell is None or cell._structured_cell.schema is cell:
-                manager.cancel_cell(cell, void=True)
-            else:
-                sc = cell._structured_cell
-                sc._exception = exc
-                manager._set_cell_checksum(sc._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
-                manager.structured_cell_trigger(sc, void=True)
 
 from ..cell import Cell
 from ..transformer import Transformer
 from ..structured_cell import Inchannel
 from .expression import Expression
-from ..protocol.deep_structure import deep_structure_to_checksums
-from ..protocol.deserialize import deserialize
 from ..protocol.get_buffer import get_buffer, get_buffer_remote
 from ..cache.transformation_cache import syntactic_to_semantic
 from ..protocol.expression import set_subpath_checksum, access_hash_pattern
+from ..cache.deeprefmanager import deeprefmanager

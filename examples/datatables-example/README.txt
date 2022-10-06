@@ -24,9 +24,10 @@ The Seamless web interface generator also has a datatable web component
 Building the workflow
 =====================
 
-First the build-workflow-graph.py script must be run with `seamless-run python`.
-(This has already been done.)
-The script is documented, describing step-by-step how the workflow is built.
+The workflow has already been built. This has been done by running 
+the build-workflow-graph.py script with `seamless-run python`.
+
+This script is documented, describing step-by-step how the workflow is built.
 
 The script will compute an initial datatable, and generate the following files:
 
@@ -46,7 +47,7 @@ after loading the workflow graph.
 Visualization using Jupyter 
 ===========================
 
-Then, run the datatables.ipynb notebook. The notebook will build a little dashboard 
+Run the datatables.ipynb notebook. The notebook will build a little dashboard 
 using Jupyter widgets. 
 With this dashboard, you can see the generated datatable and control its parameters.
 Note that the Jupyter notebook doesn't define the workflow itself, but simply loads it 

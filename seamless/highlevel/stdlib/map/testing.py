@@ -3,21 +3,22 @@ seamless.core.execute.DIRECT_PRINT = True
 
 def test(mylib):
     print("test map_list")
-    test_map_list(mylib)
+    ctx = test_map_list(mylib)
     print("test map_list uniform")
-    test_map_list_uniform(mylib)
+    ctx = test_map_list_uniform(mylib)
     print("test map_list_N")
-    test_map_list_N(mylib)
+    ctx = test_map_list_N(mylib)
     print("test map_list_N uniform")
-    test_map_list_N_uniform(mylib)
+    ctx = test_map_list_N_uniform(mylib)
     print("test map_dict")
-    test_map_dict(mylib)
+    ctx = test_map_dict(mylib)
     print("test map_dict uniform")
-    test_map_dict_uniform(mylib)
+    ctx = test_map_dict_uniform(mylib)
     print("test map_dict_chunk")
-    test_map_dict_chunk(mylib)
+    ctx = test_map_dict_chunk(mylib)
     print("test map_dict_chunk uniform")
-    test_map_dict_chunk_uniform(mylib)
+    ctx = test_map_dict_chunk_uniform(mylib)
+    return ctx
 
 def test_map_list_N(mylib):
     from seamless.highlevel import Context, Cell
@@ -70,7 +71,7 @@ def test_map_list_N(mylib):
     ctx.add.tf.code = add2
     ctx.compute()
     print(ctx.result.value)
-
+    return ctx
 
 def test_map_list_N_uniform(mylib):
     from seamless.highlevel import Context, Cell
@@ -116,6 +117,7 @@ def test_map_list_N_uniform(mylib):
     ctx.c = 8000
     ctx.compute()
     print(ctx.result.value)
+    return ctx
 
 def test_map_list(mylib):
     from seamless.highlevel import Context, Cell
@@ -152,7 +154,7 @@ def test_map_list(mylib):
     ctx.inp = ctx.inp.value + [80, 12, 1, 1, 10,20,30,40]
     ctx.compute()
     print(ctx.result.value)
-
+    return ctx
 
 def test_map_list_uniform(mylib):
     from seamless.highlevel import Context, Cell
@@ -195,6 +197,7 @@ def test_map_list_uniform(mylib):
     ctx.b = 1000
     ctx.compute()
     print(ctx.result.value)
+    return ctx
 
 def test_map_dict(mylib):
     from seamless.highlevel import Context, Cell
@@ -245,6 +248,7 @@ def test_map_dict(mylib):
     ctx.compute()
     print(ctx.result.value)
     print(ctx.keyorder.value)
+    return ctx
 
 def test_map_dict_uniform(mylib):
     from seamless.highlevel import Context, Cell
@@ -288,6 +292,7 @@ def test_map_dict_uniform(mylib):
     ctx.b = 6000
     ctx.compute()
     print(ctx.result.value)
+    return ctx
 
 def test_map_dict_chunk(mylib):
     from seamless.highlevel import Context, Cell
@@ -309,7 +314,12 @@ def test_map_dict_chunk(mylib):
     ctx.mul.result.celltype = "mixed"
     ctx.compute()
 
-    ctx.inp = {"key1": 10, "key2": 220, "key3": 30, "key4": 40}
+    ctx.inp = {
+        "key01": 10, "key02": 220, "key03": 30,
+        "key04": 40, "key05": 250, "key06": 60,
+        "key07": 70, "key08": 280, "key09": 90,
+        "key10": 100, "key11": 2110, "key12": 120,
+    }
     ctx.inp.hash_pattern = {"*": "#"}
     ctx.result = Cell()
     ctx.keyorder = Cell("plain")
@@ -317,30 +327,30 @@ def test_map_dict_chunk(mylib):
     ctx.mapping = ctx.lib.map_dict_chunk(
         context_graph=ctx.mul,
         inp = ctx.inp,
-        chunksize = 2,
+        chunksize = 3,
         keyorder0 = [],
         keyorder = ctx.keyorder,
         result = ctx.result,
         elision = True,
-        elision_chunksize = 3
+        elision_chunksize = 2
     )
     ctx.compute()
     print(ctx.mapping.ctx.status)
     print(ctx.result.value)
-    ctx.mapping.keyorder0 = ctx.keyorder.value
-    ctx.compute()
-    print(ctx.result.value)    
-    inp = ctx.inp.value
-    inp.update({
+    print(ctx.result.value)
+    keyorder = ctx.keyorder.value
+    ctx.inp.handle.update({
         "a": 80,
         "b": 30,
         "c": 999,
         "d": -1,
-    })
-    ctx.inp = inp
+    })    
+    keyorder.extend(["a", "b", "c", "d"])
+    ctx.mapping.keyorder0 = keyorder
     ctx.compute()
     print(ctx.result.value)
     print(ctx.keyorder.value)
+    return ctx 
 
 def test_map_dict_chunk_uniform(mylib):
     from seamless.highlevel import Context, Cell
@@ -387,3 +397,4 @@ def test_map_dict_chunk_uniform(mylib):
     ctx.factor = 13
     ctx.compute()
     print(ctx.result.value)
+    return ctx

@@ -13,7 +13,7 @@ def get_new_module(path):
     }
 
 class Module(Base):
-    _virtual_path = None
+    _virtual_path = None  # always None for modules
     _node = None
     _subpath = ()
 

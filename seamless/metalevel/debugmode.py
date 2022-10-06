@@ -71,7 +71,7 @@ def get_code_mount(transformer):
         if tuple(con["target"]) == codepath:
             codecellpath = tuple(con["source"])
             try:
-                codecell = parent._get_path(codecellpath)            
+                codecell = parent._get_from_path(codecellpath)            
             except AttributeError:
                 continue
             if not isinstance(codecell, Cell):
@@ -100,7 +100,7 @@ def get_compiled_mounted_module_objects(transformer):
             objectname = con["target"][-2]
             codecellpath = tuple(con["source"])
             try:
-                codecell = parent._get_path(codecellpath)            
+                codecell = parent._get_from_path(codecellpath)            
             except AttributeError:
                 continue
             if not isinstance(codecell, Cell):
@@ -133,7 +133,7 @@ def find_transformer_modules(tf):
             if tuple(con["target"]) == modulepinpath:
                 modulepath = tuple(con["source"])
                 try:
-                    module = parent._get_path(modulepath)            
+                    module = parent._get_from_path(modulepath)            
                 except AttributeError:
                     continue
                 if not isinstance(module, Module):
@@ -216,6 +216,14 @@ class DebugMode:
                 if debug == {"direct_print": False}:
                     debug = None
                 tf._debug = debug
+        
+        tf = self._tf()
+        node = tf._get_htf()        
+        if node.get("compiled") and self._direct_print:
+            tf = tf._get_tf()
+            if tf is not None:
+                tf.tf.executor.direct_print_.set(True)
+
 
     def enable(self, mode, sandbox_name=None):
         if self._mode is not None:
@@ -231,7 +239,7 @@ class DebugMode:
             if tf.language == "bash":
                 special = "bash"
             elif node.get("compiled"):
-                special = "compiled"        
+                special = "compiled"
             core_transformer = self._get_core_transformer(force=True)
             self._mount = debugmountmanager.add_mount(
                 core_transformer, special=special, prefix=sandbox_name
@@ -269,7 +277,7 @@ Only sandbox debug mode is possible."""
 
     @property
     def attach(self):
-        """Debugger attach. 
+        """Debugger attach.
 If True, the transformer will wait for a debugger to attach"""
         return self._attach
 
@@ -292,6 +300,7 @@ If True, the transformer will wait for a debugger to attach"""
                 print("Debugger attach has changed: no effect on current debug mode")
 
     @property
+
     def mode(self):
         return self._mode
     
@@ -307,7 +316,13 @@ If this value is None, direct print is True if debugging is enabled."""
         if not isinstance(value, bool) and value is not None:
             raise TypeError(type(value))
         self._direct_print = value
-        self._tf()._parent()._translate()
+        tf = self._tf()
+        tf._parent()._translate()
+        node = tf._get_htf()   
+        if node.get("compiled"):
+            tf = tf._get_tf()
+            if tf is not None:
+                tf.tf.executor.direct_print_.set(value)
 
     @property
     def direct_print_file(self):
@@ -584,7 +599,7 @@ To create a directory where you can manually execute bash code, do Transformer.d
         if transformation is None:
             print("Cannot create shell for '{}': transformation does not exist", file=sys.stderr)
         io = get_transformation_inputs_output(transformation)
-        inputs, outputname, _, _ = io
+        inputs, outputname, _, _, _ = io
         if self._shellname is None: # No shells exist
             shellname0 = str(tf.path[1:])
             if tf.language == "bash":

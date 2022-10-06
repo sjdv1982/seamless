@@ -32,6 +32,7 @@ class UponConnectionTask(Task):
 
         taskmanager = manager.taskmanager
         cancel_tasks = []
+        is_macro = False
         if isinstance(target, Cell):
             for task in taskmanager.cell_to_task[target]:
                 if isinstance(task, SetCellValueTask):
@@ -45,15 +46,18 @@ class UponConnectionTask(Task):
             elif isinstance(worker, Reactor):
                 cancel_tasks = taskmanager.reactor_to_task[worker]
             elif isinstance(worker, Macro):
-                cancel_tasks = taskmanager.macro_to_task[worker]
+                is_macro = True
             else:
                 raise TypeError(type(worker))
         else:
             raise TypeError(type(target))
-        for task in cancel_tasks:
-            if isinstance(task, UponConnectionTask):
-                continue
-            task.cancel()
+        if is_macro:
+            manager.macromanager.cancel_macro(worker)
+        else:
+            for task in cancel_tasks:
+                if isinstance(task, UponConnectionTask):
+                    continue
+                task.cancel()
 
         source = self.source
         target = self.target
@@ -206,7 +210,10 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
         source = self.source
         target = self.target
 
-        await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
+        # Uncommenting the following line will make the connection order deterministic
+        # This is certainly easier for debugging.
+        # Commenting it out doesn't seem to affect the results.
+        #await taskmanager.await_upon_connection_tasks(self.taskid, self._root())
         accessor = None
 
         if isinstance(source, Cell):

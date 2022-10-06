@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.7",
+  "__seamless__": "0.8",
   "connections": [
     {
       "source": [
@@ -66,7 +66,7 @@
       ],
       "target": [
         "integrator",
-        "header"
+        "header_"
       ],
       "type": "connection"
     },
@@ -146,8 +146,10 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "60ff54b1f271c9ac55ab1b9e44ad72cc9bc8f879412036778b2f45d9380568b7",
-        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "code": "bdb4c43be3cbfab25525ce05f726406be52871c2044c7e04597a094037515008",
+        "input": "8a7ca6177c0ac30222dc5af00cf0bad446ea689e7c3f820aea083322df3ecfba",
+        "input_auth": "8a7ca6177c0ac30222dc5af00cf0bad446ea689e7c3f820aea083322df3ecfba",
+        "input_buffer": "8a7ca6177c0ac30222dc5af00cf0bad446ea689e7c3f820aea083322df3ecfba",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -168,6 +170,7 @@
         "executor"
       ],
       "pins": {
+        "direct_print_": {},
         "input_name": {
           "celltype": "text"
         },
@@ -192,7 +195,7 @@
     {
       "celltype": "plain",
       "checksum": {
-        "value": "ce81e055d491eb62162187e0e307116e52ba1945c10e48fa3800ee655958add0"
+        "value": "36c5cd1aa65f99b26a72cb14a7d8025e82607a6ef3b831dae38699685d3ebcd0"
       },
       "datatype": "mixed",
       "path": [
@@ -205,7 +208,7 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "6010e88f08969a596aabd984532850904fb43af31fdd817b81bee1189e166fa2",
+        "code": "8e5c60f331ad52a518ca011500ac5a856e2e3b7f4fe551eb93c49284a8d44ab7",
         "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
@@ -319,7 +322,8 @@
         "debug_": {
           "celltype": "bool"
         },
-        "header": {
+        "header_": {
+          "as": "header",
           "celltype": "text"
         },
         "lang": {
@@ -334,7 +338,7 @@
     {
       "celltype": "plain",
       "checksum": {
-        "value": "161265600dca8c07dde5d0f77f51f298fded0a0592c9c970be1a58f5baff7783"
+        "value": "3b49a53f7a604ee99cfd6eb68cc3f93e315954e9163c0a936e790b1d1df827c6"
       },
       "datatype": "mixed",
       "path": [

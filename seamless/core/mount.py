@@ -23,7 +23,6 @@ import time
 import traceback
 import json
 import functools
-import shutil
 
 from ..calculate_checksum import calculate_checksum as calculate_checksum_func
 

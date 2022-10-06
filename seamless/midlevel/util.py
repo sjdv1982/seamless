@@ -98,7 +98,8 @@ def build_structured_cell(
   inchannels, outchannels,
   *, fingertip_no_remote, fingertip_no_recompute,
   return_context=False,
-  hash_pattern=None
+  hash_pattern=None,
+  validate_inchannels=True
 ):
     #print("build_structured_cell", name)
     name2 = name + STRUC_ID
@@ -119,7 +120,8 @@ def build_structured_cell(
         buffer=c.buffer,
         inchannels=inchannels,
         outchannels=outchannels,
-        hash_pattern=hash_pattern
+        hash_pattern=hash_pattern,
+        validate_inchannels=validate_inchannels
     )
     c.example_data = core_cell("mixed")
     c.example_buffer = core_cell("mixed")

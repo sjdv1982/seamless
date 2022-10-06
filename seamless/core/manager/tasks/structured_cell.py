@@ -434,7 +434,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                 if (not from_cache) and (has_auth or has_inchannel):
                     assert checksum is not None
                 cs = bytes.fromhex(checksum)
-                buffer_cache.guarantee_buffer_info(cs, "mixed")
+                buffer_cache.guarantee_buffer_info(cs, "mixed", sync_to_remote=False)
                 _update_structured_cell(sc, cs, manager,
                     check_canceled=lambda: self._canceled, 
                     prelim=prelim, from_fallback=False

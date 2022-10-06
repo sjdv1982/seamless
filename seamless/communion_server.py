@@ -59,6 +59,8 @@ Likewise, the job status API never return an exception value or checksum.
 
 import time
 
+from seamless.core.cache import CacheMissError
+
 MAX_STARTUP = 5
 
 class CommunionError(Exception):
@@ -360,7 +362,8 @@ class CommunionServer:
             for pinname in transformation:
                 if pinname.startswith("__"):
                     continue
-                celltype, subcelltype, sem_checksum = transformation[pinname]
+                celltype, subcelltype, sem_checksum0 = transformation[pinname]
+                sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
                 checksum2 = await tcache.serve_semantic_to_syntactic(
                     sem_checksum, celltype, subcelltype,
                     peer
@@ -424,7 +427,13 @@ class CommunionServer:
                 async def func():
                     has_buffer = buffer_cache.buffer_check(checksum)
                     status = self.config_servant["buffer_status"]
-                    buffer_info = buffer_cache.get_buffer_info(checksum, force_length=True)
+                    try:
+                        buffer_info = buffer_cache.get_buffer_info(
+                            checksum, force_length=True, 
+                            sync_remote=True, buffer_from_remote=True
+                        )
+                    except CacheMissError:
+                        buffer_info = None
                     length = None
                     if buffer_info is not None:
                         length = buffer_info.length                        
@@ -468,8 +477,8 @@ class CommunionServer:
             elif type == "buffer_info":
                 assert self.config_servant[type]
                 checksum = bytes.fromhex(content)
-                result = buffer_cache.get_buffer_info(checksum)
-                if result is None:
+                result = buffer_cache.get_buffer_info(checksum, force_length=False, buffer_from_remote=False, sync_remote=False)
+                if result is None or not len(result.as_dict()):
                     peer_id = self.peers[peer]["id"]
                     result = await get_buffer_info_remote(
                         checksum,

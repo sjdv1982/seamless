@@ -55,10 +55,11 @@ def exec_code(code, identifier, namespace, inputs, output, *, with_ipython_kerne
     elif mode == "expression":
         assert output is not None
         code2 = "%s = " % output + code
+    code2 = "from __future__ import annotations\n" + code2
     if with_ipython_kernel:
         ipython_execute(code2, namespace)
     else:
-        code_obj = cached_compile(code2, identifier)
+        code_obj = cached_compile(code2, identifier)        
         exec(code_obj, namespace)
 
 def check_function_like(code, identifier):

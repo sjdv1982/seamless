@@ -114,9 +114,9 @@ class AccessorUpdateTask(Task):
                         manager.taskmanager.cancel_reactor(worker)
                         ReactorUpdateTask(manager, worker).launch()
                 elif isinstance(worker, Macro):
-                    manager.taskmanager.cancel_macro(worker)
+                    manager.macromanager.cancel_macro(worker)
                     if not worker._void:
-                        MacroUpdateTask(manager, worker).launch()
+                        manager.macromanager.update_macro(worker)
                 else:
                     raise TypeError(type(worker))
             elif isinstance(target, Cell): # If a cell:
@@ -152,7 +152,6 @@ from ..accessor import ReadAccessor
 from .evaluate_expression import EvaluateExpressionTask
 from .transformer_update import TransformerUpdateTask
 from .reactor_update import ReactorUpdateTask
-from .macro_update import MacroUpdateTask
 from .cell_update import CellUpdateTask
 from .get_buffer import GetBufferTask
 from .serialize_buffer import SerializeToBufferTask

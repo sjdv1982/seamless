@@ -46,7 +46,7 @@ class BufferInfo:
         "is_json_numeric_array", "is_json_numeric_scalar",
         "is_numpy", "dtype", "shape", "is_seamless_mixed", 
         "str2text", "text2str", "binary2bytes", "bytes2binary",
-        "binary2json", "json2binary"
+        "binary2json", "json2binary", "members"
     )
     def __init__(self, checksum, params:dict={}):
         for slot in self.__slots__:            

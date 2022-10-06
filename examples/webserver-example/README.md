@@ -2,7 +2,7 @@
 
 To run this example, open the project notebook (`webserver-example.ipynb`).
 
-For this example, an empty Seamless project was generated using `seamless-new-project webserver-example`. 
+For this example, an empty Seamless project was generated using `seamless-new-project webserver-example`.
 
 To the empty project notebook, a simple workflow has been added. First, a version that does not use Seamless, in three parts. Then, the Seamless version, with the same three parts.
 

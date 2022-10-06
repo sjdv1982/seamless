@@ -20,16 +20,17 @@ pins["result_name"]["celltype"] = "str"
 
 ctx.gen_header.code = set_resource(gen_header_file)
 
-ctx.integrator = lambda lang, header, compiled_code, main_module, debug_: None
+ctx.integrator = lambda lang, header_, compiled_code, main_module, debug_: None
 ctx.integrator.code = set_resource(integrator_file)
 pins = ctx.integrator.pins
 pins["debug_"]["celltype"] = "bool"
 pins["lang"]["celltype"] = "str"
 pins["compiled_code"]["celltype"] = "text"
-pins["header"]["celltype"] = "text"
+pins["header_"]["celltype"] = "text"
+pins["header_"]["as_"] = "header"
 pins["main_module"]["celltype"] = "plain"
 
-def func(module, pins, input_schema, result_schema, input_name, result_name, kwargs):
+def func(module, pins, input_schema, result_schema, input_name, result_name, direct_print_, kwargs):
     None
 
 ctx.executor = func
@@ -81,7 +82,7 @@ ctx.gen_header.input_name = ctx.input_name
 ctx.gen_header.result_name = ctx.result_name
 
 ctf = ctx.integrator
-ctf.header = ctx.header
+ctf.header_ = ctx.header
 ctx.module = ctx.integrator
 
 ctf = ctx.executor
@@ -89,6 +90,7 @@ ctf.input_schema = ctx.input_schema
 ctf.result_schema = ctx.result_schema
 ctf.input_name = ctx.input_name
 ctf.result_name = ctx.result_name
+ctf.direct_print_ = False
 ctx.result = ctx.executor
 ctx.result.celltype = "float"
 
@@ -142,9 +144,13 @@ if ctx.result.value is None:
     print("ERROR")
     print(ctx.gen_header.status)
     print(ctx.gen_header.exception)
+    print(ctx.integrator.status)
+    print(ctx.integrator.exception)
     print(ctx.executor.status)
     print(ctx.executor.exception)
     sys.exit()
+
+print(ctx.executor.logs)
 
 # 4: Save graph and zip
 

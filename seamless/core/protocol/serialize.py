@@ -18,10 +18,10 @@ import logging
 logger = logging.getLogger("seamless")
 
 def _serialize(value, celltype):
+    from seamless.core.protocol.json import json_dumps
     if celltype == "str":
         value = str(value)
-        txt = json.dumps(value)
-        buffer = (txt + "\n").encode()
+        buffer = json_dumps(value, as_bytes=True) + b"\n"
     elif celltype in text_types:
         if isinstance(value, bytes):
             value = value.decode()
@@ -32,13 +32,11 @@ def _serialize(value, celltype):
                 value = float(value)
             elif celltype == "bool":
                 value = bool(value)
-            txt = json.dumps(value, sort_keys=True, indent=2)
-            buffer = (txt + "\n").encode()
+            buffer = json_dumps(value, as_bytes=True) + b"\n"
         else:
             buffer = (str(value).rstrip("\n")+"\n").encode()
     elif celltype == "plain":
-        txt = json.dumps(value, sort_keys=True, indent=2)
-        buffer = (txt + "\n").encode()
+        buffer = json_dumps(value, as_bytes=True) + b"\n"
     elif celltype == "mixed":
         if isinstance(value, Silk):
             value = value.unsilk
@@ -61,8 +59,7 @@ def _serialize(value, celltype):
         if buffer is None:
             buffer = (str(value).rstrip("\n")).encode()
     elif celltype == "checksum":
-        txt = json.dumps(value, sort_keys=True, indent=2)
-        buffer = (txt + "\n").encode()
+        buffer = json_dumps(value, as_bytes=True) + b"\n"
     else:
         raise TypeError(celltype)
     logger.debug("SERIALIZE: buffer of length {}".format(len(buffer)))

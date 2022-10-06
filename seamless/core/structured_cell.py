@@ -62,7 +62,8 @@ class StructuredCell(SeamlessBase):
         inchannels=[],
         outchannels=[],
         buffer=None,
-        hash_pattern=None
+        hash_pattern=None,
+        validate_inchannels=True
     ):
         from .unbound_context import UnboundManager
         self.no_auth = False
@@ -115,7 +116,15 @@ class StructuredCell(SeamlessBase):
         if not self.no_auth:
             assert auth._hash_pattern == data._hash_pattern
 
-        self._validate_channels(inchannels, outchannels)
+        self.inchannels = PathDict()
+        for inchannel in inchannels:
+            self.inchannels[inchannel] = Inchannel(self, inchannel)
+        self.outchannels = PathDict()
+        for outchannel in outchannels:
+            self.outchannels[outchannel] = Outchannel(self, outchannel)
+        if validate_inchannels:
+            self._validate_inchannels()
+
         self._modified_auth = False
         self._auth_joining = False  #  an auth task is ongoing
         self._joining = False  #  a join task is ongoing
@@ -148,14 +157,7 @@ class StructuredCell(SeamlessBase):
             toplevel=toplevel, cellname=cellname
         )
 
-    def _validate_channels(self, inchannels, outchannels):
-        self.inchannels = PathDict()
-        for inchannel in inchannels:
-            self.inchannels[inchannel] = Inchannel(self, inchannel)
-        self.outchannels = PathDict()
-        for outchannel in outchannels:
-            self.outchannels[outchannel] = Outchannel(self, outchannel)
-
+    def _validate_inchannels(self):
         inchannels = list(self.inchannels.keys())
 
         for path1 in inchannels:
@@ -296,7 +298,7 @@ class StructuredCell(SeamlessBase):
         buf = serialize(self._schema_value, "plain")
         checksum = calculate_checksum(buf)
         buffer_cache.cache_buffer(checksum, buf)
-        buffer_cache.guarantee_buffer_info(checksum, "plain")
+        buffer_cache.guarantee_buffer_info(checksum, "plain", sync_to_remote=False)
         if checksum is not None:
             checksum = checksum.hex()
         self.schema._set_checksum(checksum, from_structured_cell=True)

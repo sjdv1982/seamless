@@ -8,15 +8,17 @@ def map_dict_chunk(ctx, chunksize, graph, inp, keyorder, has_uniform, elision, l
     import math
 
     pseudo_connections = []
-    ctx.sc_data = cell("mixed")
-    ctx.sc_buffer = cell("mixed")
     inpkeys = keyorder
     nchunks = math.ceil(len(inpkeys)/chunksize)
+    # sc: a cell that holds literal checksums
+    ctx.sc_data = cell("mixed")
+    ctx.sc_buffer = cell("mixed")
     ctx.sc = StructuredCell(
         data=ctx.sc_data,
         buffer=ctx.sc_buffer,
         inchannels=[(n+1,) for n in range(nchunks)],
         outchannels=[()],
+        validate_inchannels=False
     )
 
     if has_uniform:
@@ -52,8 +54,8 @@ def map_dict_chunk(ctx, chunksize, graph, inp, keyorder, has_uniform, elision, l
                 raise TypeError("map_dict_chunk context has a cell called 'inp', but its celltype must be mixed, not structured")
             if not isinstance(hci, CoreCell):
                 raise TypeError("map_dict_chunk context must have an attribute 'inp' that is a cell, not a {}".format(type(hci)))
-            if hci.celltype != "mixed":
-                raise TypeError("map_dict_chunk context has a cell called 'inp', but its celltype must be mixed, not {}".format(hci.celltype))
+            if hci.celltype not in ("mixed", "deepcell"):
+                raise TypeError("map_dict_chunk context has a cell called 'inp', but its celltype must be mixed or deepcell, not {}".format(hci.celltype))
 
         con = ["..inp"], ["ctx", subctx, "inp"]
         pseudo_connections.append(con)
@@ -116,7 +118,7 @@ def map_dict_chunk_nested(
     length = len(inp)
     #print("NEST", length, keyorder[0])
 
-    if elision and elision_chunksize > 1 and length > elision_chunksize:
+    if elision and elision_chunksize > 1 and length > elision_chunksize * chunksize:
         merge_subresults = lib_module_dict["helper"]["merge_subresults_dict"]
         ctx.lib_module_dict = cell("plain").set(lib_module_dict)
         ctx.lib_codeblock = cell("plain").set(lib_codeblock)
@@ -149,11 +151,11 @@ def map_dict_chunk_nested(
         if has_uniform:
             ctx.uniform = cell("mixed")
         subresults = {}
-        chunksize = elision_chunksize
-        while chunksize * elision_chunksize < length:
-            chunksize *= elision_chunksize
-        for n in range(0, length, chunksize):
-            chunk_keyorder = keyorder[n:n+chunksize]
+        chunksize2 = chunksize
+        while chunksize2 * elision_chunksize < length:
+            chunksize2 *= elision_chunksize
+        for n in range(0, length, chunksize2):
+            chunk_keyorder = keyorder[n:n+chunksize2]
             chunk_inp = {k: inp[k] for k in chunk_keyorder}
             chunk_index += 1
             subresult = cell("checksum")

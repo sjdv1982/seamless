@@ -61,7 +61,7 @@ def with_cancel_cycle(func):
     functools.update_wrapper(func2, func)
     return func2
 
-def run_in_mainthread(func):
+def _run_in_mainthread(func):
     def func2(*args, **kwargs):
         manager = args[0]
         if threading.current_thread() != threading.main_thread():
@@ -84,11 +84,13 @@ class Manager:
         from .livegraph import LiveGraph
         from .cachemanager import CacheManager
         from .taskmanager import TaskManager
+        from .macromanager import MacroManager
         from .cancel import CancellationCycle
         self.contexts = weakref.WeakSet()
         self.livegraph = LiveGraph(self)
         self.cachemanager = CacheManager(self)
         self.taskmanager = TaskManager(self)
+        self.macromanager = MacroManager(self)
         self.cancel_cycle = CancellationCycle(self)
         self._destroyed = False
         loop_run_synctasks = self.taskmanager.loop_run_synctasks()
@@ -165,7 +167,7 @@ class Manager:
     def register_macro(self, macro):
         self.cachemanager.register_macro(macro)
         self.livegraph.register_macro(macro)
-        self.taskmanager.register_macro(macro)
+        self.macromanager.register_macro(macro)
 
     @mainthread
     def register_macropath(self, macropath):
@@ -209,7 +211,7 @@ class Manager:
                     elision.update()
 
 
-    @run_in_mainthread
+    @_run_in_mainthread
     def set_cell_checksum(self,
         cell, checksum, *,
         initial, from_structured_cell, trigger_bilinks
@@ -351,7 +353,7 @@ class Manager:
         
         print_debug("SET CHECKSUM", cell, "None:", checksum is None, checksum == old_checksum)
         if checksum is not None:
-            buffer_cache.guarantee_buffer_info(checksum, cell.celltype)
+            buffer_cache.guarantee_buffer_info(checksum, cell.celltype, sync_to_remote=False)
         cell._checksum = checksum
         cell._void = void
         cell._status_reason = status_reason
@@ -446,7 +448,7 @@ class Manager:
         self.cancel_macro(macro, True, reason=StatusReasonEnum.ERROR)
         self.cachemanager.macro_exceptions[macro] = exc
 
-    @run_in_mainthread
+    @_run_in_mainthread
     def set_cell(self, cell, value, origin_reactor=None):
         if self._destroyed or cell._destroyed:
             return
@@ -470,7 +472,7 @@ class Manager:
             sc._schema_value = deepcopy(value)
             self.structured_cell_trigger(sc, update_schema=True)
 
-    @run_in_mainthread
+    @_run_in_mainthread
     def set_cell_buffer(self, cell, buffer, checksum):
         if self._destroyed or cell._destroyed:
             return
@@ -513,9 +515,10 @@ class Manager:
             return buffer
         if checksum is None:
             return None
-        empty_dict_checksum = 'd0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c'
         if checksum.hex() == empty_dict_checksum:
             return b"{}\n"
+        if checksum.hex() == empty_list_checksum:
+            return b"[]\n"
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
             assert isinstance(buffer, bytes)
@@ -579,7 +582,7 @@ class Manager:
     # API section III: Cancellation
     ##########################################################################
 
-    @run_in_mainthread
+    @_run_in_mainthread
     def _set_reactor_exception(self, reactor, codename, exception):
         if exception is None:
             self.cachemanager.reactor_exceptions[reactor] = None
@@ -845,7 +848,7 @@ If origin_task is provided, that task is not cancelled."""
     def _destroy_macro(self, macro):
         self.cachemanager.destroy_macro(macro)
         self.livegraph.destroy_macro(self, macro)
-        self.taskmanager.destroy_macro(macro, full=True)
+        self.macromanager.destroy_macro(macro)
         if len(macro._paths):
             for path in macro._paths.values():
                 path.destroy()
@@ -889,7 +892,7 @@ from .tasks import (
 from ..protocol.calculate_checksum import checksum_cache
 from ..protocol.deserialize import deserialize_cache, deserialize_sync
 from ..protocol.get_buffer import get_buffer
-from ..cache.buffer_cache import buffer_cache
+from ..cache.buffer_cache import buffer_cache, empty_dict_checksum, empty_list_checksum
 from .unvoid import unvoid_cell
 from ..cell import Cell
 from ..worker import Worker

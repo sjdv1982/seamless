@@ -85,8 +85,9 @@ def set_structured_cell_from_checksum(cell, checksum, is_deepcell=False):
     k = "origin" if is_deepcell else "auth"
     if k in checksum:
         if cell.auth is None:
-            msg = "Warning: {} has no independence, but an {} checksum is present"
-            print(msg.format(cell, k))
+            if not is_deepcell:                
+                msg = "Warning: {} has no independence, but an {} checksum is present"
+                print(msg.format(cell, k))
         else:
             cell.auth._set_checksum(
                 checksum[k],

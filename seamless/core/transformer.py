@@ -59,6 +59,10 @@ class Transformer(Worker):
             elif io == "output":
                 pin = OutputPin(self, p, celltype, subcelltype, as_=as_)
                 assert self._output_name is None  # can have only one output
+                if isinstance(param, dict):
+                    hash_pattern = param.get("hash_pattern")
+                    if hash_pattern is not None:
+                        pin._hash_pattern = hash_pattern
                 self._output_name = p
             else:
                 raise ValueError(io)
@@ -153,7 +157,7 @@ class Transformer(Worker):
         tcache = manager.cachemanager.transformation_cache
         tcache.clear_exception(self)
 
-    def cancel(self):
+    def hard_cancel(self):
         manager = self._get_manager()
         tcache = manager.cachemanager.transformation_cache
         tcache.hard_cancel(self)

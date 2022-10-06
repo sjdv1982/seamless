@@ -1,8 +1,40 @@
+# Author: Sjoerd de Vries
+# Copyright (c) 2016-2022 INSERM, 2022 CNRS
+
+# The MIT License (MIT)
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+"""Transformer class for transforming input values to a result value,
+and its helper functions."""
+
+# pylint: disable=too-many-lines
+
+from __future__ import annotations
+from typing import *
+
 import weakref
 import functools
 import json
 from copy import deepcopy
 
+from silk.mixed.get_form import get_form
 from .Base import Base
 from .Cell import Cell, FolderCell
 from .Module import Module
@@ -10,33 +42,41 @@ from .Resource import Resource
 from .SelfWrapper import SelfWrapper
 from .proxy import Proxy, CodeProxy, HeaderProxy
 from .pin import PinsWrapper
-from .Base import Base
 from ..mime import language_to_mime
 from ..core.context import Context as CoreContext
 from . import parse_function_code
 from .SchemaWrapper import SchemaWrapper
-from silk import Silk
 from .compiled import CompiledObjectDict
-from silk.mixed.get_form import get_form
 from .Environment import Environment
 from .HelpMixin import HelpMixin
 
-# removed celltype="mixed" as of Seamless 0.7
 default_pin = {
-  
+    "celltype": "default",
 }
 
-def new_transformer(ctx, path, code, pins, hash_pattern={"*": "#"}):
+
+def new_transformer(
+    # pylint: disable=dangerous-default-value
+    ctx,
+    path,
+    code,
+    pins,
+    hash_pattern={"*": "#"},
+) -> dict[str, Any]:
+    """Return a workflow graph node for a new transformer cell"""
     if pins is None:
         pins = []
     if isinstance(pins, (list, tuple)):
-        pins = {pin:default_pin.copy() for pin in pins}
+        pins = {pin: default_pin.copy() for pin in pins}
     else:
         pins = deepcopy(pins)
     for pin in pins:
         if pin == "inp":
-            print("WARNING: pin 'inp' for a transformer is NOT recommended (shadows the .inp attribute)")
-    transformer =    {
+            print(
+                # pylint: disable=line-too-long
+                "WARNING: pin 'inp' for a transformer is NOT recommended (shadows the .inp attribute)"
+            )
+    transformer = {
         "path": path,
         "type": "transformer",
         "compiled": False,
@@ -45,7 +85,8 @@ def new_transformer(ctx, path, code, pins, hash_pattern={"*": "#"}):
         "hash_pattern": hash_pattern,
         "RESULT": "result",
         "INPUT": "inp",
-        "SCHEMA": None, #the result schema can be exposed as an input pin to the transformer under this name
+        # the result schema can be exposed as an input pin to the transformer under this name
+        "SCHEMA": None,
         "UNTRANSLATED": True,
     }
     if code is not None:
@@ -54,15 +95,20 @@ def new_transformer(ctx, path, code, pins, hash_pattern={"*": "#"}):
     ctx._graph[0][path] = transformer
     return transformer
 
+
 class Transformer(Base, HelpMixin):
     """Transforms input values to a result value
 
-See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for documentation
-"""
+    See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for documentation"""
+
     _temp_code = None
     _temp_pins = None
-    def __init__(self, *, parent=None, path=None, code=None, pins=None, hash_pattern={"*": "#"}):
+
+    def __init__(
+        self, *, parent=None, path=None, code=None, pins=None, hash_pattern={"*": "#"}
+    ):  # pylint: disable=dangerous-default-value,super-init-not-called
         from ..metalevel.debugmode import DebugMode
+
         pins = deepcopy(pins)
         assert (parent is None) == (path is None)
         if parent is not None:
@@ -72,7 +118,9 @@ See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for document
             self._temp_pins = pins
         self._debug = DebugMode(self)
 
-    def _init(self, parent, path, code=None, pins=None, hash_pattern={"*": "#"}):
+    def _init(
+        self, parent, path, code=None, pins=None, hash_pattern={"*": "#"}
+    ):  # pylint: disable=dangerous-default-value
         super().__init__(parent, path)
         if self._temp_code is not None:
             assert code is None
@@ -97,26 +145,29 @@ See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for document
         self._temp_pins = None
 
     @property
-    def environment(self):
+    def environment(self) -> Optional[Environment]:
+        """Computing environment to execute transformations in"""
         return self._environment
 
     @property
-    def debug(self):
+    def debug(self) -> bool:
+        """If debug mode is enabled."""
         return self._debug
 
     @property
-    def meta(self):
+    def meta(self) -> Optional[dict[str, Any]]:
         """Dictionary of meta-parameters.
-These don't affect the computation result, but may affect job managers
-Example of meta-parameters: expected computation time, service name
+        These don't affect the computation result, but may affect job managers
+        Example of meta-parameters: expected computation time, service name
 
-You can set this dictionary directly, or you may assign .meta to a cell
+        You can set this dictionary directly, or you may assign .meta to a cell
         """
         return deepcopy(self._get_htf().get("meta"))
 
     @meta.setter
-    def meta(self, value):
+    def meta(self, value: dict[str, Any] | Cell):
         from .assign import assign_connection
+
         parent = self._parent()
         assert parent is not None
         htf = self._get_htf()
@@ -131,18 +182,20 @@ You can set this dictionary directly, or you may assign .meta to a cell
             if not isinstance(value, dict):
                 raise TypeError(value)
             json.dumps(value)
-            parent.remove_connections(target_path,endpoint="target")
+            parent.remove_connections(target_path, endpoint="target")
             htf["meta"] = value
         self._get_htf()["UNTRANSLATED"] = True
         parent._translate()
 
     @property
-    def RESULT(self):
+    def RESULT(self) -> str:
         """The name of the result variable. Default is "result".
 
         This is also the attribute under which the result object is available
         (i.e. Transformer.result by default). The result object is similar
         to a (structured) Cell.
+
+        NOTE: changing this attribute is currently not implemented
         """
         htf = self._get_htf()
         return htf["RESULT"]
@@ -157,12 +210,14 @@ You can set this dictionary directly, or you may assign .meta to a cell
         htf["RESULT"] = value
 
     @property
-    def INPUT(self):
+    def INPUT(self) -> str:
         """The name of the input attribute. Default is "inp".
 
         This is the attribute under which the input object is available
         (i.e. Transformer.inp by default). The input object is similar
         to a (structured) Cell.
+
+        NOTE: changing this attribute is currently not implemented
         """
         htf = self._get_htf()
         return htf["INPUT"]
@@ -172,52 +227,82 @@ You can set this dictionary directly, or you may assign .meta to a cell
         raise NotImplementedError
 
     @property
-    def fingertip_no_remote(self):
+    def fingertip_no_remote(self) -> bool:
+        """If True, remote calls are disabled for fingertipping.
+
+        Remote calls can be for a database or a buffer server.
+        """
         htf = self._get_htf()
         return htf.get("fingertip_no_remote", False)
 
     @fingertip_no_remote.setter
-    def fingertip_no_remote(self, value):
+    def fingertip_no_remote(self, value: bool):
         if value not in (True, False):
             raise TypeError(value)
         htf = self._get_htf()
-        if value == True:
+        if value:
             htf["fingertip_no_remote"] = True
         else:
             htf.pop("fingertip_no_remote", None)
 
     @property
-    def fingertip_no_recompute(self):
+    def fingertip_no_recompute(self) -> bool:
+        """If True, recomputation is disabled for fingertipping.
+
+        This means recomputation via transformation, which can be intensive.
+        Recomputation via conversion or subcell expression (which are quick)
+        is always enabled.
+        """
         htf = self._get_htf()
         return htf.get("fingertip_no_recompute", False)
 
     @fingertip_no_recompute.setter
-    def fingertip_no_recompute(self, value):
+    def fingertip_no_recompute(self, value: bool):
         if value not in (True, False):
             raise TypeError(value)
         htf = self._get_htf()
-        if value == True:
+        if value:
             htf["fingertip_no_recompute"] = True
         else:
             htf.pop("fingertip_no_recompute", None)
 
     @property
-    def scratch(self):
-        """TODO: document"""
+    def scratch(self) -> bool:
+        """Is this transformer's result attribute a scratch cell.
+
+        Scratch cells are fully dependent cells that are big and/or easy to
+        recompute.
+
+        Scratch cell buffers are:
+        - Not added to saved zip archives and vaults.
+        - TODO: Annotated as "scratch" in databases
+        - TODO: cleared automatically from databases a short while after computation
+        """
         htf = self._get_htf()
-        return ("scratch" in htf)
+        return "scratch" in htf
 
     @scratch.setter
     def scratch(self, value):
         if value not in (True, False):
             raise TypeError(value)
         htf = self._get_htf()
-        if value == True:
+        if value:
             htf["scratch"] = True
         else:
             htf.pop("scratch", None)
 
-    def clear_exception(self):
+    def clear_exception(self) -> None:
+        """Clear any exception associated with this transformer.
+
+        Re-execute of the associated transformation.
+        Both local and remote (via communion) execution are affected.
+
+        If this transformer has no transformation (missing or pending inputs),
+        this will set a flag, causing clear_exception to take effect
+        as soon as a transformation is present.
+        Re-translation will clear this flag.
+        """
+
         tf = self._get_tf(force=True)
         htf = self._get_htf()
         if htf["compiled"]:
@@ -226,7 +311,7 @@ You can set this dictionary directly, or you may assign .meta to a cell
             tf.tf.clear_exception()
 
     @property
-    def language(self):
+    def language(self) -> str:
         """Defines the programming language of the transformer's source code.
 
         Allowed values are: python, ipython, bash,
@@ -235,26 +320,28 @@ You can set this dictionary directly, or you may assign .meta to a cell
         See seamless.compiler.languages and seamless.compile.compilers for a list
         """
         return self._get_htf()["language"]
+
     @language.setter
     def language(self, value):
         if value == "docker":
             import warnings
+
             warnings.warn(
+                # pylint: disable=line-too-long
                 'Transformer.language="docker" is deprecated. Use language="bash" and set docker_image.',
                 FutureWarning,
             )
             value = "bash"
         parent = self._parent()
         lang, language, extension = parent.environment.find_language(value)
-        compiled = (language["mode"] == "compiled")
+        compiled = language["mode"] == "compiled"
         htf = self._get_htf()
         old_language = htf.get("language")
         htf["language"] = lang
         old_compiled = htf.get("compiled", False)
-        untranslate = False
         if old_compiled != compiled:
             htf["UNTRANSLATED"] = True
-        elif (old_language == "bash") != (lang  == "bash"):
+        elif (old_language == "bash") != (lang == "bash"):
             htf["UNTRANSLATED"] = True
         htf["compiled"] = compiled
         htf["file_extension"] = extension
@@ -263,17 +350,16 @@ You can set this dictionary directly, or you may assign .meta to a cell
             self._parent()._translate()
 
     @property
-    def docker_image(self):
+    def docker_image(self) -> str:
         """Defines the Docker image in which a transformer should run
-Getting this property is syntactic sugar for:
+        Getting this property is syntactic sugar for:
 
-`Transformer.environment.get_docker()["name"]`
+        `Transformer.environment.get_docker()["name"]`
 
-Setting this property is more-or-less syntactic sugar for:
+        Setting this property is more-or-less syntactic sugar for:
 
-`Transformer.environment.set_docker({"name": ...})`
-
-"""
+        `Transformer.environment.set_docker({"name": ...})`
+        """
         im = self.environment.get_docker()
         if im is None:
             return None
@@ -291,18 +377,14 @@ Setting this property is more-or-less syntactic sugar for:
         self.environment.set_docker(im)
 
     @property
-    def header(self):
+    def header(self) -> Optional[str]:
         """For a compiled transformer, the generated C header"""
         htf = self._get_htf()
         assert htf["compiled"]
         dirs = ["value", "mount", "mimetype", "celltype"]
-        return HeaderProxy(self, ("header",), "w", getter=self._header_getter, dirs=dirs)
-
-    @header.setter
-    def header(self, value):
-        htf = self._get_htf()
-        assert not htf["compiled"]
-        return self._setattr("header", value)
+        return HeaderProxy(
+            self, ("header",), "w", getter=self._header_getter, dirs=dirs
+        )
 
     def _header_getter(self, attr):
         htf = self._get_htf()
@@ -328,7 +410,7 @@ Setting this property is more-or-less syntactic sugar for:
         See Cell.schema for more details"""
         htf = self._get_htf()
         inp = htf["INPUT"]
-        #TODO: self.self
+        # TODO: self.self
         return getattr(self, inp).schema
 
     @property
@@ -360,11 +442,12 @@ Setting this property is more-or-less syntactic sugar for:
         """Adds a validator to the input, analogous to Cell.add_validator"""
         htf = self._get_htf()
         inp = htf["INPUT"]
-        #TODO: self.self
+        # TODO: self.self
         return getattr(self, inp).add_validator(validator, name=name)
 
     def _assign_to(self, hctx, path):
         from .assign import assign_connection
+
         htf = self._get_htf()
         parent = self._parent()
         result_path = self._path + (htf["RESULT"],)
@@ -383,20 +466,27 @@ Setting this property is more-or-less syntactic sugar for:
         return self._setattr(item, value)
 
     def _setattr(self, attr, value):
-        from .assign import assign_connection        
+        from .assign import assign_connection
+
         translate = False
         parent = self._parent()
         htf = self._get_htf()
         new_pin = False
 
         if isinstance(value, Resource):
-            assert attr ==  "code"
+            assert attr == "code"
             self._sub_mount(attr, value.filename, "r", "file", True)
 
         if attr == "main_module" and htf["compiled"] and attr not in htf["pins"]:
-            raise TypeError("Cannot assign directly all module objects; assign individual elements")
+            raise TypeError(
+                "Cannot assign directly all module objects; assign individual elements"
+            )
 
-        if not self._has_tf() and not isinstance(value, (Cell, Module, DeepCellBase)) and attr != htf["RESULT"]:
+        if (
+            not self._has_tf()
+            and not isinstance(value, (Cell, Module, DeepCellBase))
+            and attr != htf["RESULT"]
+        ):
             if isinstance(value, Resource):
                 value = value.data
             if "TEMP" not in htf or htf["TEMP"] is None:
@@ -436,7 +526,9 @@ Setting this property is more-or-less syntactic sugar for:
                 if callable(value):
                     value, _, _ = parse_function_code(value)
                 check_libinstance_subcontext_binding(parent, self._path)
-                removed = parent.remove_connections(self._path + (attr,), endpoint="target")
+                removed = parent.remove_connections(
+                    self._path + (attr,), endpoint="target"
+                )
                 if removed:
                     htf = self._get_htf()
                     htf["UNTRANSLATED"] = True
@@ -453,12 +545,16 @@ Setting this property is more-or-less syntactic sugar for:
             if isinstance(value, (Cell, DeepCellBase)):
                 assert value._parent() is parent
                 exempt = self._exempt()
-                assign_connection(parent, value._path, target_path, False, exempt=exempt)
+                assign_connection(
+                    parent, value._path, target_path, False, exempt=exempt
+                )
                 translate = True
             else:
                 tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
-                removed = parent.remove_connections(self._path + (attr,), endpoint="target")
+                removed = parent.remove_connections(
+                    self._path + (attr,), endpoint="target"
+                )
                 if removed:
                     translate = True
                 inp.handle_no_inference.set(value)
@@ -470,7 +566,9 @@ Setting this property is more-or-less syntactic sugar for:
             result.handle_no_inference.set(value)
         else:
             pin0 = {}
-            if isinstance(value, DeepCell):
+            if isinstance(value, DeepCell) or (
+                isinstance(value, Cell) and value.hash_pattern == {"*": "#"}
+            ):
                 pin0 = {
                     "celltype": "deepcell",
                 }
@@ -516,7 +614,9 @@ Setting this property is more-or-less syntactic sugar for:
                         return getattr(mount_ctx, attr).set(value)
                 tf = self._get_tf(force=True)
                 inp = getattr(tf, htf["INPUT"])
-                removed = parent.remove_connections(self._path + (attr,), endpoint="target")
+                removed = parent.remove_connections(
+                    self._path + (attr,), endpoint="target"
+                )
                 if removed:
                     translate = True
                 setattr(inp.handle_no_inference, attr, value)
@@ -586,8 +686,8 @@ Setting this property is more-or-less syntactic sugar for:
         else:
             tf2 = tf.tf.executor
         from ..metalevel.debugmode import debugmountmanager
-        return debugmountmanager._mounts[tf2]
 
+        return debugmountmanager._mounts[tf2]
 
     def _get_value(self, attr):
         htf = self._get_htf()
@@ -612,15 +712,13 @@ Setting this property is more-or-less syntactic sugar for:
             p = inp.value[attr]
             return p
 
-
     def observe(self, attr, callback, polling_interval, observe_none=False):
         """Observes attributes of the result, analogous to Cell.observe"""
         if isinstance(attr, str):
             attr = (attr,)
         path = self._path + attr
         return self._get_top_parent().observe(
-            path, callback, polling_interval,
-            observe_none=observe_none
+            path, callback, polling_interval, observe_none=observe_none
         )
 
     def unobserve(self, attr):
@@ -639,7 +737,7 @@ Setting this property is more-or-less syntactic sugar for:
         1. The construction of the input object (Transformer.inp).
            The input object is cell-like, see Cell.exception for more details.
 
-        2. The construction of the individual input values 
+        2. The construction of the individual input values
            that are inserted into the transformer namespace before execution.
 
         3. The execution of the transformer. For Python/IPython cells, this
@@ -653,23 +751,36 @@ Setting this property is more-or-less syntactic sugar for:
            The result object is cell-like, see Cell.exception for more details.
 
         """
-        class PlaceHolder: pass
+
+        class PlaceHolder:
+            """Placeholder class"""
+
         htf = self._get_htf()
         if htf.get("UNTRANSLATED"):
+            # pylint: disable=line-too-long
             return "This transformer is untranslated; run 'ctx.translate()' or 'await ctx.translation()'"
         tf0 = self._get_tf(force=True)
         tf = tf0.tf
         if htf["compiled"]:
             attrs = (
-                htf["INPUT"], "code", PlaceHolder,
-                "gen_header", "integrator", "executor",
-                htf["RESULT"]
+                htf["INPUT"],
+                "code",
+                PlaceHolder,
+                "gen_header",
+                "integrator",
+                "executor",
+                htf["RESULT"],
             )
         else:
             attrs = (
-                htf["INPUT"], "code", PlaceHolder,
-                "ipy_template_code", "apply_ipy_template", "ipy_code", "tf",
-                htf["RESULT"]
+                htf["INPUT"],
+                "code",
+                PlaceHolder,
+                "ipy_template_code",
+                "apply_ipy_template",
+                "ipy_code",
+                "tf",
+                htf["RESULT"],
             )
 
         exc = ""
@@ -704,24 +815,26 @@ Setting this property is more-or-less syntactic sugar for:
                 tf2 = self._get_tf(force=True)
                 try:
                     item = getattr(tf2, k)
-                except AttributeError:                    
+                except AttributeError:
                     continue
                 curr_exc = item.exception
             else:
                 curr_exc = getattr(tf, k).exception
             if curr_exc is not None:
                 if k == "executor":
-                    if isinstance(curr_exc, dict) and list(curr_exc.keys()) == ["module"]:
-                        curr_exc = curr_exc["module"]    
+                    if isinstance(curr_exc, dict) and list(curr_exc.keys()) == [
+                        "module"
+                    ]:
+                        curr_exc = curr_exc["module"]
                 if isinstance(curr_exc, dict):
                     curr_exc2 = ""
                     for kk in curr_exc:
-                        curr_exc2 += "  +++ " + kk + " +++\n"        
-                        curr_exc2 += str(curr_exc[kk]).strip("\n") + "\n" 
+                        curr_exc2 += "  +++ " + kk + " +++\n"
+                        curr_exc2 += str(curr_exc[kk]).strip("\n") + "\n"
                         curr_exc2 += "  +++ /" + kk + " +++\n"
                     curr_exc = curr_exc2
                 exc += "*** " + k + " ***\n"
-                exc += str(curr_exc).strip("\n") + "\n" 
+                exc += str(curr_exc).strip("\n") + "\n"
                 exc += "*** /" + k + " ***\n"
             curr_exc = None
         if not len(exc):
@@ -743,10 +856,10 @@ Setting this property is more-or-less syntactic sugar for:
                 if sublogs is not None and len(sublogs.strip()):
                     logs += "*** " + k + " ***\n"
                     logs += sublogs.strip() + "\n"
-                    logs += "*** /" + k + " ***\n"    
+                    logs += "*** /" + k + " ***\n"
             if not len(logs):
                 return None
-            return logs                
+            return logs
         else:
             return tf.logs
 
@@ -763,15 +876,22 @@ Setting this property is more-or-less syntactic sugar for:
         tf = self._get_tf(force=True).tf
         if htf["compiled"]:
             attrs = (
-                htf["INPUT"], "code",
-                "gen_header", "integrator", "executor",
-                htf["RESULT"]
+                htf["INPUT"],
+                "code",
+                "gen_header",
+                "integrator",
+                "executor",
+                htf["RESULT"],
             )
         else:
             attrs = (
-                htf["INPUT"], "code", 
-                "ipy_template_code", "apply_ipy_template", "ipy_code", "tf",
-                htf["RESULT"]
+                htf["INPUT"],
+                "code",
+                "ipy_template_code",
+                "apply_ipy_template",
+                "ipy_code",
+                "tf",
+                htf["RESULT"],
             )
         for k in attrs:
             pending = False
@@ -779,7 +899,11 @@ Setting this property is more-or-less syntactic sugar for:
             if k in (htf["INPUT"], htf["RESULT"]):
                 if k == htf["INPUT"] and not len(htf["pins"]):
                     continue
-                if k == htf["RESULT"] and self.debug.enabled and self.debug.mode == "sandbox":
+                if (
+                    k == htf["RESULT"]
+                    and self.debug.enabled
+                    and self.debug.mode == "sandbox"
+                ):
                     continue
                 cell = getattr(self, k)
                 status = cell.status
@@ -791,7 +915,7 @@ Setting this property is more-or-less syntactic sugar for:
                 tf2 = self._get_tf(force=True)
                 try:
                     item = getattr(tf2, k)
-                except AttributeError:                    
+                except AttributeError:
                     continue
                 status = item.status
             else:
@@ -810,7 +934,40 @@ Setting this property is more-or-less syntactic sugar for:
             return "Status: pending"
         return "Status: OK"
 
-    def get_transformation(self):
+    def get_transformation(self) -> Optional[str]:
+        """Return the checksum of the transformation dict.
+        The transformation dict contains the checksums of all input pins,
+        including the code.
+
+        In addition, it may contain the following special keys:
+        - __output__: the name (usually "result") and (sub)celltype of the output pin
+          If it has a hash pattern, this is appended as the fourth element. 
+        - __env__: the checksum of the environment description
+        - __as__: a dictionary of pin-to-variable renames (pins.pinname.as_ attribute)
+        - __format__: a dictionary that contains deepcell and filesystem attributes
+
+        Finally, it may contain additional information that is not reflected
+        in this checksum:
+
+        - __meta__: meta information (Transformer.meta).
+        - __compilers__: context-wide compiler definitions.
+        - __languages__: context-wide language definition.
+
+        You can run a transformation with:
+        `seamless.run_transformation(checksum)`.
+
+        `ctx.resolve(checksum, "plain")` will return the transformation dict,
+        minus __meta__, __compilers__ and __languages__. The checksum is
+        treated like any other buffer, i.e. including database, communion etc.
+
+        With the following code, you can obtain the full transformation dict,
+        including __meta__, __compilers__ and __languages__.
+
+        ```
+        from seamless.core.cache.transformation_cache import transformation_cache
+        transformation_cache.get_transformation_dict(checksum)
+        ```
+        """
         htf = self._get_htf()
         tf = self._get_tf()
         if htf["compiled"]:
@@ -818,27 +975,45 @@ Setting this property is more-or-less syntactic sugar for:
         else:
             return tf.tf.get_transformation()
 
+    def cancel(self) -> None:
+        """Hard-cancels the transformer.
 
-    def cancel(self):
-        """Hard-cancels the transformer"""
+        This will send a cancel signal that will kill the transformation if
+        it is running.
+
+        The transformation is killed with a HardCancelError exception.
+        Clearing the exception using Transformer.clear_exception
+        will restart the transformation.
+
+        This affects both local and remote execution.
+        """
 
         tf = self._get_tf(force=True)
         htf = self._get_htf()
         if htf["compiled"]:
             for attr in "gen_header", "integrator", "executor":
                 tf2 = getattr(tf, attr)
-                tf2.cancel()
+                tf2.hard_cancel()
         else:
-            tf.tf.cancel()            
-
+            tf.tf.hard_cancel()
 
     @property
     def self(self):
+        """Returns a wrapper where the pins are not directly accessible.
+
+        By default, a pin called "compute" will cause "transformer.status"
+        to return the pin, and not the actual transformer status.
+
+        To be sure to get the transformer status, you can invoke transformer.self.status.
+
+        NOTE: experimental, requires more testing
+        """
+
         attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
         return SelfWrapper(self, attributelist)
 
     @property
-    def link_options(self):
+    def link_options(self) -> list[str]:
         """Linker options for compiled modules
         They are a list of strings, for example:
         ["-lm", "-lgfortran", "-lcudart"]
@@ -847,9 +1022,6 @@ Setting this property is more-or-less syntactic sugar for:
         if not htf["compiled"]:
             raise AttributeError("Only for compiled transformers")
         return deepcopy(htf.get("link_options", []))
-
-    def copy(self):
-        return TransformerCopy(self)
 
     @link_options.setter
     def link_options(self, link_options):
@@ -867,6 +1039,13 @@ Setting this property is more-or-less syntactic sugar for:
             raise TypeError("link_options must be a list of strings")
         htf["link_options"] = deepcopy(link_options)
         self._parent()._translate()
+
+    def copy(self):
+        """Returns a copy wrapper.
+        This wrapper can be assigned to a new Context attribute,
+        creating a copy of the current Transformer.
+        Input parameters and connections to input pins are all copied."""
+        return TransformerCopy(self)
 
     def __getattribute__(self, attr):
         if attr.startswith("_"):
@@ -902,24 +1081,43 @@ Setting this property is more-or-less syntactic sugar for:
         elif attr == htf["INPUT"]:
             getter = self._inputgetter
             dirs = [
-              "value", "buffered", "_data", "checksum",
-              "schema", "example", "status", "exception",
-              "add_validator", "handle"
+                "value",
+                "buffered",
+                "data",
+                "checksum",
+                "schema",
+                "example",
+                "status",
+                "exception",
+                "add_validator",
+                "handle",
             ] + list(htf["pins"].keys())
             setter = self._inputsetter
             return Proxy(
-              self, (attr,), "w",
-              pull_source=None, getter=getter, dirs=dirs,
-              setter=setter,
-              deleter=deleter
+                self,
+                (attr,),
+                "w",
+                pull_source=None,
+                getter=getter,
+                dirs=dirs,
+                setter=setter,
+                deleter=deleter,
             )
         elif attr == htf["RESULT"]:
             getter = self._resultgetter
             dirs = [
-              "value", "buffered", "_data", "checksum",
-              "schema", "example", "exception",
-              "add_validator"
+                "value",
+                "buffered",
+                "data",
+                "checksum",
+                "schema",
+                "example",
+                "exception",
+                "add_validator",
+                "celltype",
+                "hash_pattern",
             ]
+            setter = self._resultsetter
             pull_source = None
             proxycls = Proxy
         elif attr == "main_module":
@@ -931,21 +1129,20 @@ Setting this property is more-or-less syntactic sugar for:
             raise AttributeError(attr)
         mode = "w" if setter is not None else "r"
         return proxycls(
-            self, 
-            (attr,), mode, 
-            pull_source=pull_source, 
-            getter=getter, setter=setter, dirs=dirs
+            self,
+            (attr,),
+            mode,
+            pull_source=pull_source,
+            getter=getter,
+            setter=setter,
+            dirs=dirs,
         )
 
     def _sub_mount_header(self, path=None, mode="w", authority="cell", persistent=True):
         assert mode == "w"
         assert authority == "cell"
         return self._sub_mount(
-          "header",
-          path=path,
-          mode=mode,
-          authority=authority,
-          persistent=persistent
+            "header", path=path, mode=mode, authority=authority, persistent=persistent
         )
 
     def _sub_mount(self, attr, path=None, mode="rw", authority="file", persistent=True):
@@ -966,7 +1163,7 @@ Setting this property is more-or-less syntactic sugar for:
             "path": path,
             "mode": mode,
             "authority": authority,
-            "persistent": persistent
+            "persistent": persistent,
         }
         if not "mount" in htf:
             htf["mount"] = {}
@@ -1037,7 +1234,7 @@ Setting this property is more-or-less syntactic sugar for:
                     c = getattr(mount_ctx, k)
                     result[k] = c.value
             return result
-            
+
         if attr not in ("value", "status", "exception"):
             tf = self._get_tf(force=True)
             inputcell = getattr(tf, htf["INPUT"])
@@ -1047,7 +1244,7 @@ Setting this property is more-or-less syntactic sugar for:
             tf = self._get_tf(force=True)
             inputcell = getattr(tf, htf["INPUT"])
             return inputcell.value
-        elif attr == "_data":
+        elif attr == "data":
             return inputcell.data
         elif attr == "buffered":
             return inputcell.buffer.value
@@ -1062,10 +1259,13 @@ Setting this property is more-or-less syntactic sugar for:
             return self.example
         elif attr == "status":
             if htf.get("UNTRANSLATED"):
+                # pylint: disable=line-too-long
                 return "This transformer is untranslated; run 'ctx.translate()' or 'await ctx.translation()'"
             tf = self._get_tf(force=True)
             inputcell = getattr(tf, htf["INPUT"])
-            return inputcell._data.status # TODO; take into account validation, inchannel status
+            return (
+                inputcell._data.status
+            )  # TODO; take into account validation, inchannel status
         elif attr == "exception":
             if htf.get("UNTRANSLATED"):
                 return "Status: error (ctx needs translation)"
@@ -1079,10 +1279,16 @@ Setting this property is more-or-less syntactic sugar for:
 
     def _inputsetter(self, attr, value):
         if attr in (
-          "value", "_data", "buffered",
-          "checksum", "handle", "schema",
-          "example", "status", "exception",
-          "add_validator"
+            "value",
+            "data",
+            "buffered",
+            "checksum",
+            "handle",
+            "schema",
+            "example",
+            "status",
+            "exception",
+            "add_validator",
         ):
             raise AttributeError(attr)
         if isinstance(value, Cell):
@@ -1116,6 +1322,8 @@ Setting this property is more-or-less syntactic sugar for:
             if attr in ("schema", "example", "exception"):
                 raise Exception("Transformer has not yet been translated")
             return None
+        if attr == "celltype":
+            return htf.get("result_celltype", "structured")
         if attr == "value" and self.debug.enabled and self.debug.mode == "sandbox":
             mount = self._get_debugmount()
             mount_ctx = mount.mount_ctx
@@ -1126,24 +1334,48 @@ Setting this property is more-or-less syntactic sugar for:
             raise Exception("Result cells cannot be mounted")
         if attr == "value":
             return resultcell.value
-        elif attr == "_data":
+        elif attr == "data":
             return resultcell.data
         elif attr == "buffered":
+            if self.result.celltype != "structured":
+                raise AttributeError(attr)
             return resultcell.buffer.value
         elif attr == "checksum":
             return resultcell.checksum
         elif attr == "schema":
+            if self.result.celltype != "structured":
+                raise AttributeError(attr)
             schema = self._result_example().schema
             return SchemaWrapper(self, schema, "RESULTSCHEMA")
         elif attr == "example":
+            if self.result.celltype != "structured":
+                raise AttributeError(attr)            
             return self._result_example()
         elif attr == "exception":
             return resultcell.exception
         elif attr == "add_validator":
+            if self.result.celltype != "structured":
+                raise AttributeError(attr)
             result_ctx = resultcell._data._context()
             handle = result_ctx.example.handle
             return handle.add_validator
         return getattr(resultcell, attr)
+
+    def _resultsetter(self, attr, value):
+        from .Cell import celltypes
+        if attr != "celltype":
+            raise AttributeError(attr)
+        htf = self._get_htf()
+        if htf["compiled"] and attr != "structured":
+            raise Exception("Compiled transformers must have structured result cells")
+        if value == "deepfolder":
+            raise TypeError('"deepfolder" not allowed. Use "folder" instead')
+        if value not in celltypes and value not in ("deepcell", "folder"):
+            raise TypeError(value)
+        htf["result_celltype"] = value
+        parent = self._parent()
+        if parent is not None:
+            parent._translate()
 
     def _valuegetter(self, attr, attr2):
         if attr2 == "celltype":
@@ -1158,15 +1390,18 @@ Setting this property is more-or-less syntactic sugar for:
 
     def _pull_source(self, attr, path):
         from .assign import assign_connection
+
         tf = self._get_tf()
         htf = self._get_htf()
         parent = self._parent()
+
         def set_mount(node):
             if "mount" not in htf:
                 return
             if htf["mount"].get("code") is None:
                 return
             node["mount"] = htf["mount"].pop("code")
+
         language = htf["language"]
         value = None
         if attr == "code":
@@ -1201,7 +1436,7 @@ Setting this property is more-or-less syntactic sugar for:
                 "celltype": "structured",
                 "datatype": "mixed",
             }
-        child = Cell(parent=parent, path=path) #inserts itself as child
+        child = Cell(parent=parent, path=path)  # inserts itself as child
         parent._graph[0][path] = cell
         if "file_extension" in htf:
             child.mimetype = htf["file_extension"]
@@ -1315,15 +1550,19 @@ Setting this property is more-or-less syntactic sugar for:
 
     def _set_observers(self):
         htf = self._get_htf()
-        '''
-        # for now, assume that the internal structure of foreign transformers is not too different...
+        """
+        # Disable the code below.
+        # for now, assume that the internal structure of foreign transformers
+        # is not too different...
 
         if htf["compiled"] or htf["language"] not in ("python", "ipython", "bash", "docker"):
             if htf["compiled"]:
                 pass
             else:
-                raise NotImplementedError # NOTE: observers depend on the implementation of translate_XXX_transformer (midlevel)
-        '''
+                raise NotImplementedError
+                # NOTE: observers depend on the implementation of
+                # translate_XXX_transformer (midlevel)
+        """
         tf = self._get_tf(force=True)
         tf.code._set_observer(self._observe_code)
         inp = htf["INPUT"]
@@ -1335,12 +1574,14 @@ Setting this property is more-or-less syntactic sugar for:
         schemacell._set_observer(self._observe_schema)
         result = htf["RESULT"]
         resultcell = getattr(tf, result)
-        resultcell._data._set_observer(self._observe_result)
-        schemacell = resultcell.schema
-        schemacell._set_observer(self._observe_result_schema)
+        if self.result.celltype == "structured":
+            resultcell._data._set_observer(self._observe_result)
+            schemacell = resultcell.schema
+            schemacell._set_observer(self._observe_result_schema)
+        else:
+            resultcell._set_observer(self._observe_result)
         if htf["compiled"]:
             tf.main_module.auth._set_observer(self._observe_main_module)
-
 
     def __delattr__(self, attr):
         if attr.startswith("_"):
@@ -1351,7 +1592,7 @@ Setting this property is more-or-less syntactic sugar for:
     def __dir__(self):
         htf = self._get_htf()
         d = super().__dir__()
-        std = ["code", "pins", htf["RESULT"] , htf["INPUT"], "exception", "status"]
+        std = ["code", "pins", htf["RESULT"], htf["INPUT"], "exception", "status"]
         if htf["compiled"]:
             std += list(("main_module", "header"))
         pins = list(htf["pins"].keys())
@@ -1363,9 +1604,14 @@ Setting this property is more-or-less syntactic sugar for:
     def __repr__(self):
         return str(self)
 
+
 class TransformerCopy:
+    """Wrapper around a Transformer.
+    To facilitate copying."""
+
     def __init__(self, transformer):
         self.transformer = weakref.ref(transformer)
+
 
 from .synth_context import SynthContext
 from .assign import check_libinstance_subcontext_binding

@@ -96,8 +96,9 @@ class Expression:
         return d
 
     def __str__(self):
+        from seamless.core.protocol.json import json_dumps
         d = self._hash_dict()
-        return json.dumps(d, indent=2, sort_keys=True)
+        return json_dumps(d)
 
     def __repr__(self):
         return str(self)

@@ -76,6 +76,15 @@ class Macro(Base):
 
     @property
     def self(self):
+        """Returns a wrapper where the pins are not directly accessible.
+
+        By default, a pin called "compute" will cause "macro.status" 
+        to return the pin, and not the actual macro status.
+        
+        To be sure to get the macro status, you can invoke macro.self.status.
+        
+        NOTE: experimental, requires more testing
+        """
         attributelist = [k for k in type(self).__dict__ if not k.startswith("_")]
         return SelfWrapper(self, attributelist)
 

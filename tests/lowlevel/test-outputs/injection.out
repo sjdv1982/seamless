@@ -1,29 +1,29 @@
 START
-macro2 execute
-<module 'macro.testmodule2'>
-10
-10
-['macro.testmodule2', 'seamless_module_c27b4cefe87469bcb994e91676dcc97dc8491af94e8a65ea3b1e45a063f016db_testmodule2']
-/macro2 execute
 macro execute
 <module 'macro.testmodule'>
 10
 10
 ['macro.testmodule', 'seamless_module_c27b4cefe87469bcb994e91676dcc97dc8491af94e8a65ea3b1e45a063f016db_testmodule']
 /macro execute
-stage 1
 macro2 execute
 <module 'macro.testmodule2'>
-20
-20
-['macro.testmodule2', 'seamless_module_dd8be0ce47f012b4e07f75204b62758faee17624096b016298273485264cc60b_testmodule2']
+10
+10
+['macro.testmodule2', 'seamless_module_c27b4cefe87469bcb994e91676dcc97dc8491af94e8a65ea3b1e45a063f016db_testmodule2']
 /macro2 execute
+stage 1
 macro execute
 <module 'macro.testmodule'>
 20
 20
 ['macro.testmodule', 'seamless_module_dd8be0ce47f012b4e07f75204b62758faee17624096b016298273485264cc60b_testmodule']
 /macro execute
+macro2 execute
+<module 'macro.testmodule2'>
+20
+20
+['macro.testmodule2', 'seamless_module_dd8be0ce47f012b4e07f75204b62758faee17624096b016298273485264cc60b_testmodule2']
+/macro2 execute
 stage 2
 macro execute
 <module 'macro.testmodule'>

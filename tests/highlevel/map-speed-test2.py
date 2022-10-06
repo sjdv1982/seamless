@@ -1,8 +1,7 @@
 from seamless.highlevel import Context, Cell, DeepCell
 from seamless.highlevel.stdlib import map
 
-DICT_CHUNKSIZE = 100
-ELISION_CHUNKSIZE = 10000
+DICT_CHUNKSIZE = 10
 
 mapped_ctx = Context()
 mapped_ctx.inp = Cell("mixed")
@@ -27,10 +26,12 @@ mapped_ctx.compute()
 ctx = Context()
 ctx.include(map.map_dict_chunk)
 
-ctx.inp0 = DeepCell()
+ctx.inp0 = Cell("mixed")
 ctx.inp = DeepCell()
+ctx.inp = ctx.inp0
 ctx.uniform = 1000
 ctx.result = DeepCell()
+
 ctx.mapped_ctx = Context()
 ctx.keyorder = Cell("plain")
 ctx.mapping = ctx.lib.map_dict_chunk(
@@ -41,7 +42,7 @@ ctx.mapping = ctx.lib.map_dict_chunk(
     keyorder=ctx.keyorder,
     chunksize=DICT_CHUNKSIZE,
     elision=True,
-    elision_chunksize=ELISION_CHUNKSIZE,
+    elision_chunksize=1,
 )
 ctx.result2 = Cell()
 ctx.result2.hash_pattern = {"*": "#"}
@@ -52,16 +53,12 @@ import time
 globcount = 0
 def run(count):
     global globcount
-    ctx.inp.checksum = None
-    ctx.inp0.set({})
     old = globcount
     inp = {}
     for n in range(count):
         globcount += 1
         inp["k" + str(n+1)] = {"a": globcount, "b": globcount + 0.1}
     ctx.inp0.set(inp)
-    ctx.compute(report=False)
-    ctx.inp.checksum = ctx.inp0.checksum
     t = time.time()
     ctx.compute(report=False)
     t2 = time.time() - t
@@ -72,14 +69,22 @@ def run(count):
 
 ctx.mapped_ctx = mapped_ctx
 ctx.translate()
-for pcount in range(20):
-    count = 2**pcount
-    t=run(count)        
-    print("TIME", count, t)
-    if count < ELISION_CHUNKSIZE:
-        print(str(ctx.mapping.ctx.m.ctx.top.ctx.subctx_1.add.logs)[-200:])
-    else:
-        print(str(ctx.mapping.ctx.m.ctx.top.ctx.m1.ctx.subctx_1.add.logs)[-200:])
-    if t > 100:
-        break
+for ELISION_CHUNKSIZE in (10, 1000):
+    ctx.mapping.elision_chunksize = ELISION_CHUNKSIZE
+    ctx.translate()
+    for pcount in range(3,20):
+        count = 2**pcount
+        t=run(count)        
+        print("TIME", count, t)
+        if count < ELISION_CHUNKSIZE * DICT_CHUNKSIZE:
+            print(str(ctx.mapping.ctx.m.ctx.top.ctx.subctx_1.add.logs)[-200:])
+        elif count < ELISION_CHUNKSIZE**2 * DICT_CHUNKSIZE:
+            print(str(ctx.mapping.ctx.m.ctx.top.ctx.m1.ctx.subctx_1.add.logs)[-200:])
+        elif count < ELISION_CHUNKSIZE**3 * DICT_CHUNKSIZE:
+            print(str(ctx.mapping.ctx.m.ctx.top.ctx.m1.ctx.m1.ctx.subctx_1.add.logs)[-200:])
+        else:
+            print(str(ctx.mapping.ctx.m.ctx.top.ctx.m1.ctx.m1.ctx.m1.ctx.subctx_1.add.logs)[-200:])
+
+        if t > 100:
+            break
 

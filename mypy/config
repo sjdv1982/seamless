@@ -1,0 +1,11 @@
+[mypy]
+python_version = 3.8
+
+[mypy-silk.*,traitlets.*,IPython.*,cffi.*,conda.*,ruamel.*,traitlets.*,rpy2.*]
+ignore_missing_imports = True
+
+[mypy-cson.*,psutil.*,speg.*,ipywidgets.*,ipykernel.*,debugpy.*,aiohttp_cors.*]
+ignore_missing_imports = True
+
+[mypy-commentjson.*]
+ignore_missing_imports = True

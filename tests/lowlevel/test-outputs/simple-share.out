@@ -21,7 +21,8 @@ WS ECHO ["binary", ["macro/ctx/a", "macro/ctx/a0", "param_a"]]
 WS ECHO ["update", ["macro/ctx/a0", "a4654c74202cb987505719dc98609c3c46582d384f45f54659736280c66223f4", 1]]
 WS ECHO ["update", ["param_a", "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3", 1]]
 WS ECHO ["update", ["macro/ctx/a", "0d5d541db3b11b331a8752b7e3c743ce43f0df6143589e4298f51027011a5937", 1]]
-[]
+99
+
 42
 1042
 1042

@@ -14,5 +14,6 @@ def calculate_checksum(content, hex=False):
 
 def calculate_dict_checksum(d, hex=False):
     """This function is compatible with the checksum of a "plain" cell"""
-    content = json.dumps(d, sort_keys=True, indent=2) + "\n"
+    from seamless.core.protocol.json import json_dumps
+    content = json_dumps(d, as_bytes=True) + b"\n"
     return calculate_checksum(content,hex=hex)

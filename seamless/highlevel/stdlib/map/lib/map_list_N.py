@@ -23,7 +23,8 @@ def map_list_N(ctx, graph, inp, has_uniform, elision):
         buffer=ctx.sc_buffer,
         inchannels=[(n,) for n in range(length)],
         outchannels=[()],
-        hash_pattern = {"!": "#"}
+        hash_pattern = {"!": "#"},
+        validate_inchannels=False
     )
 
     if has_uniform:

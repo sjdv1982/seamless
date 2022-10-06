@@ -232,7 +232,7 @@ def fill_checksum(manager, node, temp_path, composite=True):
     if checksum is None:
         return
     buffer_cache.cache_buffer(checksum, buf)
-    buffer_cache.guarantee_buffer_info(checksum, datatype)
+    buffer_cache.guarantee_buffer_info(checksum, datatype, sync_to_remote=False)
     if hash_pattern is not None:
         try:
             checksum = apply_hash_pattern_sync(
@@ -279,7 +279,7 @@ def get_graph_checksums(graph, with_libraries, *, with_annotations):
     return checksums
 
 def fill_checksums(mgr, nodes, *, path=None):
-    """Fills checksums in the nodes from TEMP, if untranslated
+    """Fills checksums in the nodes from TEMP values, if untranslated
     """
     from ..core.structured_cell import StructuredCell
     first_exc = None

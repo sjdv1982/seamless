@@ -6,8 +6,6 @@ ctx.a.share() =>
 - http://localhost:5813/ctx/a gives the value of the cell (HTTP GET)
 - At the same address, the value of the cell can be changed with a HTTP PUT request
 - An update to ctx.a sends a notification to ws://localhost:5138/ctx
-- http://localhost:5813/ctx/compute with an HTTP PATCH request does 'await ctx.computation()' .
-  A timeout can be specified.
 
 Long version:
 There is a singleton ShareServer instance at localhost
@@ -77,6 +75,7 @@ import logging
 logger = logging.getLogger("seamless")
 
 def get_subkey(buffer, subkey):
+    from seamless.core.protocol.json import json_dumps
     value = json.loads(buffer)
     path = subkey.split("/")
     try:
@@ -88,7 +87,7 @@ def get_subkey(buffer, subkey):
                 value = value[subpath]
     except:
         return None
-    return json.dumps(value, indent=2, sort_keys=True) + "\n"
+    return json_dumps(value) + "\n"
 
 def is_bound_port_error(exc):
     args = exc.args
@@ -183,6 +182,7 @@ class Share:
         return marker
 
     async def set_buffer(self, buffer, marker=None, *, binary_buffer):
+        from .core.share import sharemanager
         if marker is not None and marker <= self._marker:
             if marker == self._marker:
                 return
@@ -217,6 +217,7 @@ class Share:
 
         checksum = task.result()
         buffer_cache.cache_buffer(checksum, new_buffer)
+        await sharemanager.run_once()
         return self.set_checksum(checksum, marker)
 
     async def _calc_checksum(self, buffer):
@@ -307,6 +308,7 @@ class ShareNamespace:
             self._send_sharelist_task = None
 
     async def _get(self, key, mode, subkey=None):
+        from seamless.core.protocol.json import json_dumps
         assert mode in ("checksum", "buffer", "value", "marker")
         if subkey is not None:
             assert mode in ("buffer", "value")
@@ -360,7 +362,7 @@ class ShareNamespace:
             "marker": marker,
             "content_type": content_type,
         }
-        result = json.dumps(result, indent=2, sort_keys=True)
+        result = json_dumps(result)
         return result, 'application/json'
 
     async def get(self, key, mode, subkey=None):
@@ -376,7 +378,7 @@ class ShareNamespace:
             checksum = value
             if checksum is not None:
                 checksum = bytes.fromhex(checksum)
-            return await share.set_checksum(checksum, marker)
+            return share.set_checksum(checksum, marker)
         else:            
             if share.binary:
                 try:
@@ -857,51 +859,6 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
                 text="Unknown error"
             )
 
-
-    async def _handle_evaluate(self, request):
-        try:
-            tail = request.match_info.get('tail')
-            ns, key = tailsplit(tail)
-            text = await request.text()
-            data = json.loads(text)
-            timeout = data.get("timeout")
-            if timeout is not None:
-                timeout = float(timeout)
-        except:
-            logger.debug(traceback.format_exc())
-            return web.Response(
-                status=400,
-                text="Invalid request",
-            )
-
-        if ns not in self.namespaces or key != "compute":
-            return web.Response(
-                status=404,
-                body=json.dumps({'not found': 404}),
-                content_type='application/json'
-            )
-        namespace = self.namespaces[ns]
-        if not namespace._share_evaluate:
-            return web.Response(
-                status=404,
-                body=json.dumps({'compute is not shared': 404}),
-                content_type='application/json'
-            )
-
-        try:
-            result = await namespace.computation(timeout)
-            return web.Response(
-                status=200,
-                body=json.dumps(result),
-                content_type='application/json'
-            )
-        except:
-            logger.debug(traceback.format_exc())
-            return web.Response(
-                status=500,
-                text="Unknown error"
-            )
-
     async def serve_rest(self):
         global web
         from aiohttp import web
@@ -912,8 +869,7 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
         )
         app.add_routes([
             web.get('/{tail:.*}', self._handle_get),
-            web.put('/{tail:.*}', self._handle_put),
-            web.patch('/{tail:.*}', self._handle_evaluate),
+            web.put('/{tail:.*}', self._handle_put)
         ])
 
         # Configure default CORS settings.
@@ -922,7 +878,7 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
                     allow_credentials=True,
                     expose_headers="*",
                     allow_headers="*",
-                    allow_methods=["GET", "PATCH", "PUT"]
+                    allow_methods=["GET", "PUT"]
                 )
         })
 

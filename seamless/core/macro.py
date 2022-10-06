@@ -100,7 +100,6 @@ class Macro(Worker):
                 self.namespace.update(keep)
                 self.namespace.update( self.default_namespace.copy())
                 self.namespace["HighLevelContext"] = HighLevelContext
-                self.namespace["HighlevelContext"] = HighLevelContext
                 self.namespace["ctx"] = unbound_ctx
                 self.namespace.update(values)
                 inputs = ["ctx"] +  list(values.keys())

@@ -1,7 +1,20 @@
-The Seamless shareserver
-========================
+# The Seamless shareserver
 
-(This documentation is a stub)
+The purpose of the shareserver is that you can share cell values over HTTP. That means that you can see the cell value when you type its URL in your browser. In addition, if you use a Seamless project, a web interface is automatically generated from all shared cells. By default, shared cells are readonly, and can only be visualized. Shared cells with readonly disabled can also be edited via a web interface.
+
+***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
+
+**Relevant examples:**
+
+- [basic example](https://github.com/sjdv1982/seamless/tree/stable/examples)
+
+- [webserver demo](https://github.com/sjdv1982/seamless/tree/stable/examples/webserver-demo)
+
+- [webserver example](https://github.com/sjdv1982/seamless/tree/stable/examples/webserver-example)
+
+- [datatables](https://github.com/sjdv1982/seamless/tree/stable/examples/datatables-example)
+
+- [grid editor](https://github.com/sjdv1982/seamless/tree/stable/examples/grid-editor-example)
 
 The shareserver is to share Seamless cells via its REST API.
 By default, the REST port is 5813
@@ -14,3 +27,14 @@ The primary ways to interact with the share server are:
 - The seamless-http-put command, for PUT requests.
 
 - The seamless client (seamless-client.js)
+
+<!--
+## HTTP sharing
+
+Intro:
+
+- share
+- cell.mimetype
+- REST
+- Your own web page, Seamless as file server (link to beginner gotchas)
+-->

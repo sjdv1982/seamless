@@ -1,3 +1,27 @@
+This document describes the internal architecture of Seamless, focusing
+on how the different components work together.
+
+The high-level design choices, and how Seamless interacts with the external
+world, are described in design.md.
+
+NOTE: June 2022: This document needs update and expansion. 
+No longer discuss Qt, Observable, etc.
+
+List of features to discuss/expand:
+
+- Cells that support attribute access (both set and get) (structured cells).
+- Exceptions (error messages) and validation (schemas).
+- Dynamic graphs that build and connect cells and transformers from cell data (macros).
+- Self-editing graphs (reactors). Note that a cell only has a single value. Seamless has no concept of cell history, modification events, or streaming. 
+- The async task mechanism, structural cell joins, and the unvoid/cancel mechanism.
+- Deep cells.
+- Libraries
+- "batteries included". Refer to the seamless-cli / seamless-tools, especially serve-graph.
+  Also discuss the bundled status graph and web interface generator, together with 
+  seamless-new-project.
+
+/NOTE
+
 Seamless consists of a high-level API, a graph format, and a low-level translator-evaluator (core).
 Only the graph formal, being universal, will have a formal specification. 
 The other two are informal APIs tied to (for now) the Python language. Future alternative implementations

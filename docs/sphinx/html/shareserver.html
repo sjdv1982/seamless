@@ -1,50 +1,112 @@
-
 <!DOCTYPE html>
-
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Seamless shareserver &#8212; Seamless 0.8 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/nature.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Seamless shareserver &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Reference" href="reference.html" />
-    <link rel="prev" title="Guide for creating a new Seamless project" href="new-project.html" /> 
-  </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="reference.html" title="Reference"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="new-project.html" title="Guide for creating a new Seamless project"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.8 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">The Seamless shareserver</a></li> 
-      </ul>
-    </div>  
+    <link rel="next" title="The help system" href="help.html" />
+    <link rel="prev" title="Mounting to the file system" href="mounting.html" /> 
+</head>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Seamless
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new-project.html">Seamless projects</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Data storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>The Seamless shareserver</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/shareserver.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <div class="section" id="the-seamless-shareserver">
 <h1>The Seamless shareserver<a class="headerlink" href="#the-seamless-shareserver" title="Permalink to this headline">¶</a></h1>
-<p>(This documentation is a stub)</p>
+<p>The purpose of the shareserver is that you can share cell values over HTTP. That means that you can see the cell value when you type its URL in your browser. In addition, if you use a Seamless project, a web interface is automatically generated from all shared cells. By default, shared cells are readonly, and can only be visualized. Shared cells with readonly disabled can also be edited via a web interface.</p>
+<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
+<p><strong>Relevant examples:</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples">basic example</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/webserver-demo">webserver demo</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/webserver-example">webserver example</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/datatables-example">datatables</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/grid-editor-example">grid editor</a></p></li>
+</ul>
 <p>The shareserver is to share Seamless cells via its REST API.
 By default, the REST port is 5813
 In addition, the shareserver sends notifications via Websocket connections, served at port 5138
@@ -55,68 +117,46 @@ http://localhost:5813/ctx/a will get the value of cell “a”, if it has been s
 <li><p>The seamless-http-put command, for PUT requests.</p></li>
 <li><p>The seamless client (seamless-client.js)</p></li>
 </ul>
-</div>
+<!--
+## HTTP sharing
+
+Intro:
+
+- share
+- cell.mimetype
+- REST
+- Your own web page, Seamless as file server (link to beginner gotchas)
+--></div>
 
 
-            <div class="clearer"></div>
+           </div>
           </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mounting.html" class="btn btn-neutral float-left" title="Mounting to the file system" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="help.html" class="btn btn-neutral float-right" title="The help system" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="new-project.html"
-                          title="previous chapter">Guide for creating a new Seamless project</a></p>
+    </section>
   </div>
-  <div>
-    <h4>Next topic</h4>
-    <p class="topless"><a href="reference.html"
-                          title="next chapter">Reference</a></p>
-  </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/shareserver.md.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="reference.html" title="Reference"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="new-project.html" title="Guide for creating a new Seamless project"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.8 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">The Seamless shareserver</a></li> 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-        &#169; Copyright 2016-2022, INSERM and code contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
-    </div>
-  </body>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
 </html>

@@ -91,7 +91,7 @@ class CellUpdateTask(Task):
                 for elision in livegraph.cell_to_macro_elision[cell]:
                     macro = elision.macro
                     if macro._in_elision:
-                        MacroUpdateTask(manager, macro).launch()
+                        manager.macromanager.update_macro(macro)
 
             manager.trigger_all_fallbacks(cell)
             return None
@@ -100,9 +100,6 @@ class CellUpdateTask(Task):
 
 from .accessor_update import AccessorUpdateTask
 from .reactor_update import ReactorUpdateTask
-from .get_buffer import GetBufferTask
-from .deserialize_buffer import DeserializeBufferTask
-from .macro_update import MacroUpdateTask
 from . import acquire_evaluation_lock, release_evaluation_lock
 from ...macro import Path as MacroPath
 from ...cell import Cell

@@ -96,7 +96,10 @@ def build_array_struct(name, arr, with_strides):
         arr = arr.data
     ptr = ffi.from_buffer(arr)
     array_struct = ffi.new(array_struct_name + " *")
-    array_struct.shape[0:len(arr.shape)] = arr.shape[:]
+    if not len(arr.shape):
+        array_struct.shape[0] = arr.nbytes
+    else:    
+        array_struct.shape[0:len(arr.shape)] = arr.shape[:]
     if with_strides:
         array_struct.strides[0:len(arr.strides)] = arr.strides[:]
     array_struct.data = ffi.cast(ffi.typeof(array_struct.data), ptr)
@@ -264,10 +267,13 @@ def run():
         result = args[-1][0]
     return 0, result
 
-with wurlitzer.pipes() as (stdout, stderr):
+if direct_print_:
     error_code, result = run()
-sys.stderr.write(stderr.read())
-sys.stdout.write(stdout.read())
+else:
+    with wurlitzer.pipes() as (stdout, stderr):
+        error_code, result = run()
+    sys.stderr.write(stderr.read())
+    sys.stdout.write(stdout.read())
 ARRAYS.clear()
 if error_code != 0:
     raise SeamlessStreamTransformationError("Compiled transformer returned non-zero value: {}".format(error_code))

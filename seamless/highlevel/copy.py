@@ -1,5 +1,6 @@
 import weakref
-from .Context import Context, SubContext
+from .Context import Context
+from .SubContext import SubContext
 from .Transformer import Transformer
 from .Macro import Macro
 from .Cell import Cell

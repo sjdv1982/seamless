@@ -23,7 +23,7 @@ More than two floating numbers don't add up, nor do they multiply
 
 Execution takes as long as it has to.
 
-Importing libraries is good, as long as they are external.
+Unchanging libraries can be imported. Changing libraries must be included.
 
 Structures hold, schemas validate, classes manipulate.
 

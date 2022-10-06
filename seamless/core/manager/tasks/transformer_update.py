@@ -98,10 +98,13 @@ class TransformerUpdateTask(Task):
         outputpin0 = transformer._pins[outputname]
         output_celltype = outputpin0.celltype
         output_subcelltype = outputpin0.subcelltype
+        output_hash_pattern = outputpin0._hash_pattern
         if output_celltype is None:
             output_celltype = first_output._celltype
             output_subcelltype = first_output._subcelltype
         outputpin = outputname, output_celltype, output_subcelltype
+        if output_hash_pattern is not None:
+            outputpin += (output_hash_pattern,)
         self.waiting_for_job = True
         await transformation_cache.update_transformer(
             transformer, celltypes, inputpins, outputpin

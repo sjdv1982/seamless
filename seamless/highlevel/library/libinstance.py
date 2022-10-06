@@ -3,7 +3,11 @@ import weakref, json
 import functools
 from copy import deepcopy
 
-highlevel_names = ("Context", "Cell", "Transformer", "Macro", "Module")
+highlevel_names = (
+    "Context", "Cell", 
+    "SimpleDeepCell", "DeepCell", "DeepFolderCell", "FolderCell",
+    "Transformer", "Macro", "Module"
+)
 
 def interpret_arguments(arguments, params, parent, extra_nodes):
     from .argument import Cell_like
@@ -179,7 +183,9 @@ class LibInstance:
         constructor_schema = lib.get("constructor_schema")
         params = lib["params"]
 
-        overlay_context = Context(manager=parent._manager)
+        # gives trouble with wait for auth tasks...
+        #overlay_context = Context(manager=parent._manager)
+        overlay_context = Context()
         overlay_context._libroot = parent
         overlay_context._untranslatable = True
         self._overlay_context = overlay_context
@@ -268,7 +274,9 @@ class LibInstance:
             else:
                 raise NotImplementedError(par["type"])
             namespace[argname] = value
-        libctx = StaticContext.from_graph(graph, manager=parent._manager)
+        # gives trouble with wait for auth tasks...
+        #libctx = StaticContext.from_graph(graph, manager=parent._manager)
+        libctx = StaticContext.from_graph(graph)
         namespace["libctx"] = libctx
         argnames = list(namespace.keys())
         for name in highlevel_names:
@@ -450,9 +458,11 @@ class LibInstance:
 
 from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper, EditCellWrapper
 from ..synth_context import SynthContext
-from ..Cell import Cell
+from ..Cell import Cell, FolderCell, SimpleDeepCell
+from ..DeepCell import DeepCell, DeepFolderCell
 from ..SubCell import SubCell
-from ..Context import Context, SubContext
+from ..Context import Context
+from ..SubContext import SubContext
 from ...midlevel.StaticContext import StaticContext
 from ..Transformer import Transformer
 from ..Macro import Macro

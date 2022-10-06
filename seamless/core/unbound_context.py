@@ -226,10 +226,11 @@ class UnboundContext(SeamlessBase):
             for subchildname, subchild in child._children.items():
                 subchild._set_context(child, subchildname)
             if isinstance(child, HighLevelContext):
-                highlevel_context = None
+                root_highlevel_context = None
                 if self._root_ is not None:
-                    highlevel_context = self._root_._root_highlevel_context()
-                child._translate(highlevel_context)
+                    root_highlevel_context = self._root_._root_highlevel_context()
+                    assert root_highlevel_context is not None
+                child._translate(root_highlevel_context)
         else:
             self._children[childname] = child
             if self._realmanager is not None:

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting started with Seamless &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Beginner’s guide" href="beginner.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Seamless
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting started with Seamless</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#getting-started">Getting started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#for-beginners">For beginners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#for-experienced-developers">For experienced developers</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#further-documentation">Further documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#examples-and-tests">Examples and tests</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#running-examples-on-mybinder-org">Running examples on mybinder.org</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-examples-locally">Running examples locally</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-tests-locally">Running tests locally</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new-project.html">Seamless projects</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Data storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Getting started with Seamless</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/getting-started.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="getting-started-with-seamless">
+<h1>Getting started with Seamless<a class="headerlink" href="#getting-started-with-seamless" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>Seamless is about reproducible, interactive workflows. This means that any user can re-execute a workflow (reproducing its results) and then modify it easily: by editing workflow parameters in a web interface, or by changing the source code, or by extending the workflow with additional steps, interoperating with new code. Modification of the workflow takes place while it is running. At all times, the status of all of the workflow is being reported. Thus, web interfaces are interactive for the user, and the process of workflow creation is interactive for the programmer. In fact, there is no sharp distinction between user and programmer. Each step of the workflow (which can be in Python, C/C++, or several other languages) can be mounted to a file, so that you can use Git, diff, and text editors. If you use an IDE, live debugging with code breakpoints is supported. As a programmer, you decide at all times what is the most urgent part of the workflow to work on, getting instant feedback, writing provisional code and parameters that can be improved and expanded later. If you choose, you can shift your focus to a web interface, visualization and validation, and then back to the main calculations, as you see fit. Or you can work collaboratively, creating a live shared session where a team of developers can work on different parts of the workflow in parallel. Seamless does impose some requirements on how you organize your code. Most of these requirements are common sense, and if you are experienced in writing code, you are probably following them already.</p>
+</div>
+<div class="section" id="getting-started">
+<h2>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="for-beginners">
+<h3>For beginners<a class="headerlink" href="#for-beginners" title="Permalink to this headline">¶</a></h3>
+<p>If the above overview makes you feel overwhelmed, please read the next chapter, the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/beginner.html">beginner’s guide</a>. It explains basic concepts related to workflows and organizing your code in a clean and reproducible way. It also contains a series of Seamless guidelines for beginners in programming.</p>
+</div>
+<div class="section" id="for-experienced-developers">
+<h3>For experienced developers<a class="headerlink" href="#for-experienced-developers" title="Permalink to this headline">¶</a></h3>
+<p>If you are an experienced developer, you are strongly advised to read <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/explained.html">Seamless explained</a>. It is easy to be confused when Seamless seems to work like something else that you already know, until it doesn’t. Sometimes, Seamless can give the illusion of being like Jupyter, but with non-linear execution and the ability to mount cells to the file system. At other times, Seamless can give the illusion of being like NextFlow or Snakemake, but based on values in memory instead of files, together with a reactive web interface. These illusions are on purpose, to make Seamless easier to learn, but under certain circumstances they break down. This is mostly because of checksums, which are used everywhere in Seamless to provide reproducibility.</p>
+</div>
+</div>
+<div class="section" id="further-documentation">
+<h2>Further documentation<a class="headerlink" href="#further-documentation" title="Permalink to this headline">¶</a></h2>
+<p>In the rest of this documentation, the features of Seamless are discussed. A decent knowledge of programming is assumed.</p>
+<p>At the end, there is the documentation generated from the source code docstrings.</p>
+</div>
+<div class="section" id="examples-and-tests">
+<h2>Examples and tests<a class="headerlink" href="#examples-and-tests" title="Permalink to this headline">¶</a></h2>
+<p>A final source of information are the examples and the tests. The feature documentation often refers to them.</p>
+<div class="section" id="running-examples-on-mybinder-org">
+<h3>Running examples on mybinder.org<a class="headerlink" href="#running-examples-on-mybinder-org" title="Permalink to this headline">¶</a></h3>
+<p>Two of the examples can be run as notebooks on mybinder.org, which means that no installation is necessary. The first is the <a class="reference external" href="https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb">basic example</a>. The second is the <a class="reference external" href="https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=webserver.ipynb">webserver demo</a>. This example shows how to port a simple data science notebook to a Seamless workflow with an interactive web interface.</p>
+</div>
+<div class="section" id="running-examples-locally">
+<h3>Running examples locally<a class="headerlink" href="#running-examples-locally" title="Permalink to this headline">¶</a></h3>
+<p>Seamless has a series of examples. They have a README and one or more notebooks that you can run.</p>
+<p>First you need to install Seamless (installation with Docker is assumed, followed by <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code>).</p>
+<p>Then, run <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>.</p>
+<p>Inside the Jupyter file tree, browse <code class="docutils literal notranslate"><span class="pre">seamless-examples</span></code>.
+<a class="reference external" href="https://github.com/sjdv1982/seamless/tree/master/examples">https://github.com/sjdv1982/seamless/tree/master/examples</a>
+and select the example you want to run. Then you can select the notebook that you want.</p>
+<p>Two examples (the Snakemake example and the grid editor example) do not contain notebooks, see their README for instructions.</p>
+</div>
+<div class="section" id="running-tests-locally">
+<h3>Running tests locally<a class="headerlink" href="#running-tests-locally" title="Permalink to this headline">¶</a></h3>
+<p>Seamless comes with many tests, that also serve as a demonstration of a particular feature. You can see them in <a class="reference external" href="https://github.com/sjdv1982/seamless/tree/master/tests/highlevel">https://github.com/sjdv1982/seamless/tree/master/tests/highlevel</a> . The “test-outputs” folder contains the expected output of the test.</p>
+<p>To run tests yourself, run <code class="docutils literal notranslate"><span class="pre">seamless-jupyter-trusted</span></code> or <code class="docutils literal notranslate"><span class="pre">seamless-bash-trusted</span></code>. Inside the notebook file tree, browse <code class="docutils literal notranslate"><span class="pre">seamless-tests/highlevel</span></code>, or inside a command-line shell, go to <code class="docutils literal notranslate"><span class="pre">~/seamless-tests/highlevel</span></code>. Tests are typically executed with Python, but some are interactive. “test-list.txt” contains a list of tests, and extra instructions for the interactive tests.</p>
+<p>Finally, there are also low-level tests (<code class="docutils literal notranslate"><span class="pre">seamless-tests/lowlevel</span></code>), but these are not recommended for study.</p>
+<!--
+## Additional features
+- Transformers can be written in Python, IPython, bash, or any compiled language (C, C++, Rust, Go, ...).
+- Bash transformers can be executed inside Docker images.
+- IPython transformers can use IPython magics, allowing the use of languages such as Cython (tested), Matlab/Octave (untested), Julia (untested), or R (tested).
+- The use of a database as a checksum-to-buffer cache
+- Seamless instances can communicate, serving as job slaves or result caches for transformations.
+- Interactive monitoring of status and exception messages.
+--><!-- TODO: document the Seamless tools (man pages)></div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="beginner.html" class="btn btn-neutral float-right" title="Beginner’s guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from .unbound_context import UnboundContext
 import weakref
 
@@ -10,6 +11,8 @@ class HighLevelContext(UnboundContext):
         from ..midlevel.StaticContext import StaticContext
         if isinstance(graph, StaticContext):
             graph = graph.get_graph()
+        else:
+            graph = deepcopy(graph)
         for node in graph["nodes"]:
             node["path"] = tuple(node["path"])
         for con in graph["connections"]:
@@ -22,28 +25,29 @@ class HighLevelContext(UnboundContext):
         self._graph = graph
         super().__init__()
 
-    def _translate(self, highlevel_ctx):
+    def _translate(self, root_highlevel_ctx):
         from .macro_mode import curr_macro
         from ..midlevel.translate import translate
         from ..highlevel.assign import _assign_context
         from ..highlevel.Context import Context
-        if highlevel_ctx is None:
+        if root_highlevel_ctx is None:
             raise TypeError("HighLevelContext cannot be part of a dissociated low-level context; there must be high-level root")
-        if not isinstance(highlevel_ctx, Context):
-            raise TypeError(type(highlevel_ctx))
+        if not isinstance(root_highlevel_ctx, Context):
+            raise TypeError(type(root_highlevel_ctx))
         graph = self._graph
         translate(
-            graph, self, highlevel_ctx.environment
+            graph, self, root_highlevel_ctx.environment
         )
         path = curr_macro().path + ("ctx",) + self.path
         _assign_context(
-            highlevel_ctx,
+            root_highlevel_ctx,
             graph["nodes"],
             graph["connections"],
             path,
-            runtime=True
+            runtime=True,
+            fast=True
         )
-        self._synth_highlevel_context = weakref.ref(highlevel_ctx)
+        self._synth_highlevel_context = weakref.ref(root_highlevel_ctx)
 
     def __getitem__(self, attr):
         if not isinstance(attr, str):

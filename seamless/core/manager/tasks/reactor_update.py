@@ -215,7 +215,7 @@ class ReactorResultTask(Task):
                 raise exc from None
 
         if checksum is not None:
-            buffer_cache.guarantee_buffer_info(checksum, celltype)
+            buffer_cache.guarantee_buffer_info(checksum, celltype, sync_to_remote=True)
             validate_evaluation_subcelltype(
                 checksum, buffer, celltype, subcelltype,
                 str(reactor) + ":" + pinname

@@ -67,10 +67,16 @@ except Exception:
 del ctx.somecell
 ctx.translate()
 
+# HEISENBUG: SOMETIMES DOESN'T DELETE "test3" and "test4"
+# => ctx.v.value => <Silk: {'test': 1, 'test2': 2, 'test3': 20, 'test4': 55} >
 ctx.a.set({"test": 1, "test2": 2})
 ctx.atest = ctx.a.test
 ctx.atest4 = ctx.a.test4
+# for debugging Heisenbug: DOES WORK
+#import asyncio; asyncio.get_event_loop().run_until_complete(asyncio.sleep(1))
 ctx.compute()
+# for debugging Heisenbug: DOES NOT WORK
+#import asyncio; asyncio.get_event_loop().run_until_complete(asyncio.sleep(1))
 print(ctx.a.checksum)
 print(ctx.a.keyorder)
 print(ctx.a.keyorder_checksum)

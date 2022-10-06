@@ -8,18 +8,46 @@ Welcome to Seamless's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Introduction
 
-   introduction
+   whatis
+   installation
+   getting-started
+   beginner
+   explained
+   new-project
 
-   tutorial/tutorial.md
+.. toctree::
+   :maxdepth: 2
+   :caption: Seamless features
 
    context
    cell
    transformer
-   new-project
+   mounting   
    shareserver
+   help
+   visualization
+   validation
+   libraries
+   modules
+   debugging
+   environments
+   data_storage
+   job_management
+   deployment
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Advanced features
+   
+   deepcell
+   low_level
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Reference
+   
    reference
 
 Indices and tables
@@ -28,3 +56,9 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+
+
+
+

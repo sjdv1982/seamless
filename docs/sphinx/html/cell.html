@@ -1,53 +1,110 @@
-
 <!DOCTYPE html>
-
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cells &#8212; Seamless 0.8 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/nature.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cells &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Transformers" href="transformer.html" />
     <link rel="prev" title="Contexts" href="context.html" /> 
-  </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="transformer.html" title="Transformers"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="context.html" title="Contexts"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.8 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Cells</a></li> 
-      </ul>
-    </div>  
+</head>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Seamless
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with Seamless</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beginner.html">Beginner’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new-project.html">Seamless projects</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Seamless features</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Cells</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#alternative-subcell-syntax">Alternative subcell syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cell-types-and-conversion">Cell types and conversion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="transformer.html">Transformers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mounting.html">Mounting to the file system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="shareserver.html">The Seamless shareserver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">The help system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="libraries.html">Libraries and libinstances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_storage.html">Data storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Advanced features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Seamless</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Cells</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/cell.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <div class="section" id="cells">
 <h1>Cells<a class="headerlink" href="#cells" title="Permalink to this headline">¶</a></h1>
 <p>A cell (seamless.highlevel.Cell) contains a piece of data in the dependency graph that is contained by a Seamless Context.
 Thus, cells are always part of a Context (called <code class="docutils literal notranslate"><span class="pre">ctx</span></code> by convention).</p>
 <p>Within this context graph, cell values are constant.</p>
-<p>When you modify a cell, you essentially create a new context graph where all dependencies of this cell are set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, until they have been recomputed.</p>
+<p>When you modify a cell, you essentially create a new context graph where all dependencies on this cell are set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, until they have been recomputed.</p>
 <p>Assigning a cell to another cell creates a connection from the second cell to the first cell.</p>
 <p>Changing cell values is asynchronous:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">()</span>
@@ -81,15 +138,15 @@ Thus, cells are always part of a Context (called <code class="docutils literal n
 <span class="nb">print</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">Silk</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;sub1&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span> <span class="s1">&#39;sub2&#39;</span><span class="p">:</span> <span class="mi">99</span><span class="p">}</span> <span class="o">&gt;</span>
-<span class="o">&lt;</span><span class="n">Silk</span><span class="p">:</span> <span class="mi">12</span> <span class="o">&gt;</span>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&lt;Silk: {&#39;sub1&#39;: {&#39;x&#39;: 12}, &#39;sub2&#39;: 99} &gt;
+&lt;Silk: 12 &gt;
 </pre></div>
 </div>
 <p>Using the <code class="docutils literal notranslate"><span class="pre">celltype</span></code> property, a cell can be changed to a non-structured cell (see the documentation of the Cell class for more details).</p>
 <p>Cells are <em>dependent</em> if (part of) the cell’s value is computed from a dependency, i.e from a transformer or from another cell.
 Cells are <em>independent</em> if they have their own value, with no dependencies.</p>
-<p>Cells can be <em>mounted</em> to a file using <code class="docutils literal notranslate"><span class="pre">Cell.mount</span></code>. By default, mounts are both read (the cell changes its value when the file changes its value) and write (vice versa) . Only independent cells can have a read mount. Structured cells cannot be mounted.</p>
-<p>Cells can be <em>shared</em> over HTTP (via the Seamless REST API), using <code class="docutils literal notranslate"><span class="pre">Cell.share</span></code>. By default, shares are read-only (only HTTP GET requests are supported). Independent cells can also be shared as read/write (their value can be changed using HTTP PUT requests).</p>
+<p>Cells can be <em>mounted</em> to a file using <code class="docutils literal notranslate"><span class="pre">Cell.mount</span></code>. By default, mounts are both read (the cell changes its value when the file changes its value) and write (vice versa) . Only independent cells can have a read mount. <em>Structured cells cannot be mounted.</em></p>
+<p>Cells can be <em>shared</em> over HTTP (via the Seamless REST API), using <code class="docutils literal notranslate"><span class="pre">Cell.share</span></code>. By default, shares are read-only (only HTTP GET requests are supported). Independent cells can also be shared as read/write (their value can be changed using HTTP PUT requests). If a cell is to be accessed as a URL from the browser, you are recommended to set <code class="docutils literal notranslate"><span class="pre">Cell.mimetype</span></code>.</p>
 <p>Newly created/connected/mounted/shared cells require a re-translation of the context to take effect. This is also the case for a change in celltype.</p>
 <div class="section" id="alternative-subcell-syntax">
 <h2>Alternative subcell syntax<a class="headerlink" href="#alternative-subcell-syntax" title="Permalink to this headline">¶</a></h2>
@@ -109,78 +166,53 @@ You can also access individual elements from a list:</p>
 </pre></div>
 </div>
 </div>
+<div class="section" id="cell-types-and-conversion">
+<h2>Cell types and conversion<a class="headerlink" href="#cell-types-and-conversion" title="Permalink to this headline">¶</a></h2>
+<p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
+<!--
+Cell types:
+
+- Text cells
+- Plain cells: str, float, int, bool
+- Binary cells: numpy
+- Mixed cells
+- Conversion
+- Code cells, cson, yaml
+- Subcelltypes
+- Semantic checksums: code, cson, yaml
+- Checksum cells
+--></div>
 </div>
 
 
-            <div class="clearer"></div>
+           </div>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <div>
-    <h3><a href="index.html">Table of Contents</a></h3>
-    <ul>
-<li><a class="reference internal" href="#">Cells</a><ul>
-<li><a class="reference internal" href="#alternative-subcell-syntax">Alternative subcell syntax</a></li>
-</ul>
-</li>
-</ul>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="context.html" class="btn btn-neutral float-left" title="Contexts" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="transformer.html" class="btn btn-neutral float-right" title="Transformers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
   </div>
-  <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="context.html"
-                          title="previous chapter">Contexts</a></p>
-  </div>
-  <div>
-    <h4>Next topic</h4>
-    <p class="topless"><a href="transformer.html"
-                          title="next chapter">Transformers</a></p>
-  </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/cell.md.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="transformer.html" title="Transformers"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="context.html" title="Contexts"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Seamless 0.8 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Cells</a></li> 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-        &#169; Copyright 2016-2022, INSERM and code contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
-    </div>
-  </body>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
 </html>
