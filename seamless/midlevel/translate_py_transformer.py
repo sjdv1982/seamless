@@ -24,10 +24,6 @@ def translate_py_transformer(
                 pin = {
                     "celltype": "mixed",
                     "hash_pattern": {"*": "#"},
-                    "filesystem": {
-                        "mode": "file",
-                        "optional": True
-                    },
                 }
             elif pin["celltype"] == "deepfolder":
                 pin = {
