@@ -8,6 +8,7 @@ import time
 import sys
 import os
 import signal
+import requests
 
 try:
     import debugpy
@@ -189,6 +190,7 @@ def execute(name, code,
       debug = None,
     ):
     if multiprocessing.current_process().name != "MainProcess":
+        database_client.session = requests.Session()
         signal.signal(signal.SIGINT, signal.SIG_IGN)
     direct_print = False
     if debug is None:
@@ -356,5 +358,6 @@ def execute(name, code,
 
 
 from silk import Silk
+from .cache import database_client
 from .cache.database_client import database_cache, database_sink
 from .protocol.deep_structure import value_to_deep_structure_sync as value_to_deep_structure

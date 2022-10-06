@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+import sys
 
 from ..buffer_info import BufferInfo
 
@@ -280,7 +281,12 @@ class DatabaseCache(DatabaseBase):
         }
         response = self.send_request(request)
         if response is not None:
-            return BufferInfo(checksum, response.json())
+            try:
+                rj = response.json()
+            except requests.exceptions.JSONDecodeError as exc:
+                print(str(response.text())[:1000], file=sys.stderr)
+                raise exc from None
+            return BufferInfo(checksum, rj)
 
     def get_compile_result(self, checksum):
         request = {
