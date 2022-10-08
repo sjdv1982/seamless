@@ -1318,12 +1318,12 @@ class Transformer(Base, HelpMixin):
 
     def _resultgetter(self, attr):
         htf = self._get_htf()
+        if attr == "celltype":
+            return htf.get("result_celltype", "structured")
         if htf.get("UNTRANSLATED"):
             if attr in ("schema", "example", "exception"):
                 raise Exception("Transformer has not yet been translated")
             return None
-        if attr == "celltype":
-            return htf.get("result_celltype", "structured")
         if attr == "value" and self.debug.enabled and self.debug.mode == "sandbox":
             mount = self._get_debugmount()
             mount_ctx = mount.mount_ctx
