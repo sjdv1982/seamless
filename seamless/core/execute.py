@@ -125,9 +125,10 @@ or
                                 sync_remote_buffer_info=True
                             )
                             if db:
-                                for cs in deep_checksums:
-                                    # can't fail, buffers have been cached
+                                for cs in deep_checksums:          
+                                    assert cs is not None                          
                                     buf = buffer_cache.get_buffer(cs, remote=False)
+                                    assert buf is not None, cs.hex() # can't fail, buffers have been cached
                                     database_sink.set_buffer(cs, buf, False)        
                             result = deep_structure
                             output_celltype = "mixed"
