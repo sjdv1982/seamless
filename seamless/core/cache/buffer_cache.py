@@ -303,7 +303,7 @@ class BufferCache:
     def _sync_buffer_info_from_remote(self, checksum): 
         local_buffer_info = self.buffer_info[checksum]       
         if checksum in self.synced_buffer_info:
-            return        
+            return
         buffer_info_remote = database_cache.get_buffer_info(checksum)
         if buffer_info_remote is None:
             return
@@ -390,7 +390,7 @@ class BufferCache:
         if sync_remote:
             self._sync_buffer_info_to_remote(checksum)
 
-    def guarantee_buffer_info(self, checksum:bytes, celltype:str, *, sync_to_remote:bool):
+    def guarantee_buffer_info(self, checksum:bytes, celltype:str, *, buffer:bytes=None, sync_to_remote:bool):
         """Modify buffer_info to reflect that checksum is surely deserializable into celltype
         """
         # for mixed: if possible, retrieve the buffer locally to check for things like is_numpy etc.
@@ -406,7 +406,8 @@ class BufferCache:
             celltype = "text"
 
         if celltype == "mixed":
-            buffer = self.get_buffer(checksum, remote=False)
+            if buffer is None:
+                buffer = self.get_buffer(checksum, remote=False)
             if buffer is not None:
                 if buffer.startswith(MAGIC_NUMPY):
                     self.update_buffer_info(checksum, "is_numpy", True, sync_remote=False)
