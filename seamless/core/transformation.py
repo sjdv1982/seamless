@@ -12,11 +12,6 @@ import json
 
 from multiprocessing import Process, JoinableQueue as Queue
 
-from .execute import execute
-from .injector import transformer_injector as injector
-from .build_module import build_all_modules
-from ..compiler import compilers as default_compilers, languages as default_languages
-
 import logging
 
 logger = logging.getLogger("seamless")
@@ -138,6 +133,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
         "__package__": "transformer",
     }
     code = None
+    deep_structures_to_unpack = {}
     inputs = []
     namespace["PINS"] = {}
     modules_to_build = {}
@@ -194,8 +190,14 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
             try:
                 if hash_pattern is not None:
                     deep_value = await deserialize(buffer, checksum, "plain", False)
+                    """
                     mode, value = await get_subpath(deep_value, hash_pattern, ())
                     assert mode == "value"
+                    """
+                    pinname_as = as_.get(pinname, pinname)
+                    inputs.append(pinname_as)
+                    deep_structures_to_unpack[pinname_as] = deep_value, hash_pattern
+                    continue
                 else:
                     value = await deserialize(buffer, checksum, celltype, False)
             except Exception as exc:
@@ -240,8 +242,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
         namespace["PINS"][pinname_as] = v
         namespace[pinname_as] = v
     namespace["FILESYSTEM"] = FILESYSTEM
-    return code, namespace, modules_to_build
-
+    return code, namespace, modules_to_build, deep_structures_to_unpack
 
 ###############################################################################
 # Remote jobs
@@ -551,7 +552,7 @@ class TransformationJob:
         tf_namespace = await build_transformation_namespace(
             self.transformation, self.semantic_cache, self.codename
         )
-        code, namespace, modules_to_build = tf_namespace
+        code, namespace, modules_to_build, deep_structures_to_unpack = tf_namespace
 
         debug = None
         if self.debug is not None:
@@ -607,7 +608,8 @@ class TransformationJob:
                 with_ipython_kernel,
                 injector, module_workspace,
                 self.codename,
-                namespace, inputs, outputname, output_celltype, output_hash_pattern,
+                namespace, deep_structures_to_unpack,
+                inputs, outputname, output_celltype, output_hash_pattern,
                 queue,
             )
             if debug is not None:
@@ -660,6 +662,12 @@ class TransformationJob:
                                     content2 += content[-5000:]
                                     content = content2
                                 logs[is_stderr] = content
+                        elif status == 5:
+                            if msg == "release lock":
+                                release_lock(lock)
+                                lock = None
+                            else:
+                                raise Exception("Unknown return message '{}'".format(msg))
                         else:
                             raise Exception("Unknown return status {}".format(status))
                     elif isinstance(status, tuple) and len(status) == 2 and status[1] == "checksum":
@@ -695,7 +703,8 @@ class TransformationJob:
         finally:
             if python_attach_port is not None:
                 free_python_attach_port(python_attach_port)
-            release_lock(lock)
+            if lock is not None:
+                release_lock(lock)
         if result_checksum is None:
             assert result_buffer is not None
             result_checksum = await get_result_checksum(result_buffer)
@@ -742,7 +751,11 @@ class TransformationJob:
         return result_checksum, logstr
 
 
-
+from silk import Silk, Scalar
+from .execute import execute
+from .injector import transformer_injector as injector
+from .build_module import build_all_modules
+from ..compiler import compilers as default_compilers, languages as default_languages
 from .protocol.get_buffer import get_buffer
 from .protocol.deserialize import deserialize
 from .protocol.calculate_checksum import calculate_checksum
@@ -751,6 +764,5 @@ from .cache import CacheMissError
 from .cache.buffer_cache import buffer_cache
 from .cache.transformation_cache import transformation_cache, syntactic_is_semantic
 from .status import SeamlessInvalidValueError
-from silk import Silk, Scalar
 from ..communion_client import communion_client_manager
 from .environment import validate_environment

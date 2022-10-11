@@ -19,8 +19,130 @@ from .cached_compile import exec_code, check_function_like
 from .protocol.serialize import _serialize as serialize
 from ..calculate_checksum import calculate_checksum
 from .cache.buffer_cache import buffer_cache
+from multiprocessing.pool import ThreadPool, AsyncResult
 
 DIRECT_PRINT = False
+NTHREADS_AFTER_FORK = 5
+
+###############################################################################
+# Fast unpacking / packing of deep structures
+# WARNING: uses threads. Use these functions only *after* forking!
+###############################################################################
+
+def fast_unpack(deep_structure, hash_pattern):
+    if hash_pattern == {"*": "#"}:
+        deep_checksums = list(deep_structure.values())
+        celltype = "mixed"
+    elif hash_pattern == {"*": "##"}:
+        deep_checksums = list(deep_structure.values())
+        celltype = None
+    elif hash_pattern == {"!": "#"}:
+        deep_checksums = deep_structure
+        celltype = "mixed"
+    else:
+        raise NotImplementedError(hash_pattern)
+    db_cache = database_client.database_cache
+    unpacked_buffers = []
+    with ThreadPool(NTHREADS_AFTER_FORK) as pool:
+        for n, deep_checksum in enumerate(deep_checksums):
+            deep_checksum2 = bytes.fromhex(deep_checksum)
+            unpacked_buffer = buffer_cache.buffer_cache.get(deep_checksum2)
+            if unpacked_buffer is not None:
+                unpacked_buffers.append(unpacked_buffer)
+            else:
+                if not db_cache.active:
+                    raise CacheMissError(deep_checksum)
+                unpacked_buffer = pool.apply_async(func=db_cache.get_buffer, args = (deep_checksum2,))
+                unpacked_buffers.append(unpacked_buffer)
+        unpacked_values = []
+        for n, (deep_checksum, unpacked_buffer0) in enumerate(zip(deep_checksums, unpacked_buffers)):
+            deep_checksum2 = bytes.fromhex(deep_checksum)
+            if isinstance(unpacked_buffer0, AsyncResult):
+                unpacked_buffer = unpacked_buffer0.get()
+                if unpacked_buffer is None:
+                    raise CacheMissError(deep_checksum)
+            else:
+                unpacked_buffer = unpacked_buffer0
+            if celltype is None:
+                value = unpacked_buffer
+            else:
+                value = deserialize_sync(unpacked_buffer, deep_checksum2, celltype, copy=False)
+                assert value is not None, deep_checksum
+            unpacked_values.append(value)
+
+    if hash_pattern == {"!": "#"}:
+        return unpacked_values
+    else:
+        return {k:v for k,v in zip(deep_structure.keys(), unpacked_values)}
+
+
+def _fast_pack(value, buffer, celltype, db_sink):
+    if celltype is None:
+        buffer = value
+    if buffer is None:        
+        buffer = serialize_sync(value, celltype, use_cache=False)        
+        if buffer is None:
+            return None
+    checksum = calculate_checksum_func(buffer)
+    if checksum is None:
+        # shouldn't ever happen
+        return None
+    if db_sink.active:
+        buffer_cache.guarantee_buffer_info(checksum, celltype, buffer=buffer, sync_to_remote=True)
+        db_sink.set_buffer(checksum, buffer, False)
+    return checksum
+
+def fast_pack(unpacked_values, hash_pattern):
+    from .protocol.serialize import serialize_cache
+    if hash_pattern == {"*": "#"}:
+        values = unpacked_values.values()  
+        celltype = "mixed"
+    elif hash_pattern == {"*": "##"}:
+        values = unpacked_values.values()
+        celltype = None
+    elif hash_pattern == {"!": "#"}:
+        values = unpacked_values
+        celltype = "mixed"
+    else:
+        raise NotImplementedError(hash_pattern)
+    
+    db_sink = database_client.database_sink
+    packing_checksums = []
+    with ThreadPool(NTHREADS_AFTER_FORK) as pool:
+        for n, value in enumerate(values):
+            if value is None:
+                packing_checksums.append(None)
+                continue
+            if celltype is None:
+                buffer = value
+            else:
+                buffer, _ = serialize_cache.get((id(value), celltype), (None, None))
+            if buffer is not None:
+                checksum, _ = calculate_checksum_cache(id(buffer))
+                if checksum is not None:
+                    packing_checksums.append(checksum)
+                    continue
+            packing_checksum = pool.apply_async(func=_fast_pack, args = (value, buffer, celltype, db_sink))
+            packing_checksums.append(packing_checksum)
+        if hash_pattern in ({"*": "#"}, {"*": "##"}):
+            keys = unpacked_values.keys()
+            result = {}
+        elif hash_pattern == {"!": "*"}:
+            keys = range(len(unpacked_values))
+            result = [None] * len(unpacked_values)
+        else:
+            raise AssertionError(hash_pattern)    
+        for n, (key, packing_checksum) in enumerate(zip(keys, packing_checksums)):
+            if packing_checksum is None:
+                result_checksum = None
+            elif isinstance(packing_checksum, bytes):
+                result_checksum = packing_checksum
+            elif isinstance(packing_checksum, AsyncResult):
+                result_checksum = packing_checksum.get()
+                if result_checksum is None:                
+                    raise Exception(key)
+            result[key] = result_checksum.hex()
+    return result
 
 def unsilk(value):
     if isinstance(value, Silk):
@@ -41,10 +163,11 @@ def return_preliminary(result_queue, celltype, value):
     #print("return_preliminary", value)
     prelim_buffer = serialize(value, celltype)
     if database_sink.active and database_cache.active:
-        prelim_checksum = calculate_checksum(prelim_buffer, hex=True)
-        buffer_cache.guarantee_buffer_info(bytes.fromhex(prelim_checksum), celltype, sync_to_remote=True)
+        prelim_checksum = calculate_checksum(prelim_buffer)
+        prelim_checksum2 = prelim_checksum.hex()
+        buffer_cache.guarantee_buffer_info(prelim_checksum, celltype, sync_to_remote=True)
         database_sink.set_buffer(prelim_checksum, prelim_buffer, False)
-        result_queue.put((2, "checksum"), prelim_checksum)
+        result_queue.put((2, "checksum"), prelim_checksum2)
     else:
         result_queue.put((2, prelim_buffer))
 
@@ -55,7 +178,7 @@ def set_progress(result_queue, value):
 def _execute(name, code,
       with_ipython_kernel,
       injector, module_workspace,
-      identifier, namespace,
+      identifier, namespace, deep_structures_to_unpack,
       inputs, output_name, output_celltype, output_hash_pattern,
       result_queue
     ):        
@@ -69,6 +192,11 @@ def _execute(name, code,
         )
         try:
             namespace.pop(output_name, None)
+            for pinname, value in deep_structures_to_unpack.items():
+                deep_structure, hash_pattern = value 
+                unpacked_value = fast_unpack(deep_structure, hash_pattern)
+                namespace[pinname] = unpacked_value
+                namespace["PINS"][pinname] = unpacked_value
             if len(module_workspace):
                 with injector.active_workspace(module_workspace, namespace):
                     exec_code(
@@ -118,7 +246,10 @@ or
                     try:
                         result = unsilk(result)
                         db = (database_sink.active and database_cache.active)
+                        if db:
+                            result_queue.put((5, "release lock"))
                         if output_hash_pattern is not None:
+                            """
                             deep_structure, deep_checksums = value_to_deep_structure(
                                 result, output_hash_pattern,
                                 cache_buffers=db,
@@ -130,14 +261,17 @@ or
                                     buf = buffer_cache.get_buffer(cs, remote=False)
                                     assert buf is not None, cs.hex() # can't fail, buffers have been cached
                                     database_sink.set_buffer(cs, buf, False)        
+                            """
+                            deep_structure = fast_pack(result, output_hash_pattern)
                             result = deep_structure
                             output_celltype = "mixed"
                         result_buffer = serialize(result, output_celltype)
-                        if db:
-                            result_checksum = calculate_checksum(result_buffer, hex=True)
-                            buffer_cache.guarantee_buffer_info(bytes.fromhex(result_checksum), output_celltype, sync_to_remote=True)
+                        if db:                            
+                            result_checksum = calculate_checksum(result_buffer)
+                            result_checksum2 = result_checksum.hex()
+                            buffer_cache.guarantee_buffer_info(result_checksum, output_celltype, sync_to_remote=True)
                             database_sink.set_buffer(result_checksum, result_buffer, False)
-                            return ((0, "checksum"), result_checksum)
+                            return ((0, "checksum"), result_checksum2)
                         else:
                             return (0, result_buffer)
                     except Exception as exc:
@@ -186,7 +320,8 @@ def execute(name, code,
       with_ipython_kernel,
       injector, module_workspace,
       identifier, namespace,
-      inputs, output_name, output_celltype, output_hash_pattern,
+      inputs, deep_structures_to_unpack,
+      output_name, output_celltype, output_hash_pattern,
       result_queue,
       debug = None,
     ):
@@ -291,7 +426,8 @@ def execute(name, code,
                 with_ipython_kernel,
                 injector, module_workspace,
                 identifier, namespace,
-                inputs, output_name, output_celltype, output_hash_pattern,
+                inputs, deep_structures_to_unpack, 
+                output_name, output_celltype, output_hash_pattern,
                 result_queue
             )
 
@@ -359,6 +495,9 @@ def execute(name, code,
 
 
 from silk import Silk
-from .cache import database_client
+from .cache import database_client, CacheMissError
 from .cache.database_client import database_cache, database_sink
-from .protocol.deep_structure import value_to_deep_structure_sync as value_to_deep_structure
+from .protocol.deep_structure import deep_structure_to_value, value_to_deep_structure_sync as value_to_deep_structure
+from .protocol.serialize import serialize_sync
+from .protocol.deserialize import deserialize_sync
+from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum, calculate_checksum_func, calculate_checksum_cache
