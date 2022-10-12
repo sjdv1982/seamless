@@ -441,6 +441,12 @@ class TaskManager:
                                 ptasks = [None]  # just to prevent the loop from breaking
             if len(mm.cell_updates):
                 must_run_mount = True
+        
+        if timeout is None and not manager.macromanager.queued:
+            manager.macromanager._kludge()
+            if manager.macromanager.queued:
+                return self.compute(None, report=report, get_tasks_func=get_tasks_func)
+
         waitfor, background = print_report(verbose=False)
         manager.livegraph._flush_observations()
         if not len(waitfor) and get_tasks_func is None:
@@ -554,6 +560,11 @@ class TaskManager:
                                 ptasks = [None]  # just to prevent the loop from breaking
             if len(mm.cell_updates):
                 must_run_mount = True
+
+        if timeout is None and not manager.macromanager.queued:
+            manager.macromanager._kludge()
+            if manager.macromanager.queued:
+                return await self.computation(None, report=report, get_tasks_func=get_tasks_func)
 
         waitfor, background = print_report(verbose=False)
         manager.livegraph._flush_observations()
