@@ -6,7 +6,6 @@ dependencies:
   - pip
   - rpbs::seamless-framework
   - conda=4.12
-  - mamba
   - pip:
     - nglview
     - snakemake
