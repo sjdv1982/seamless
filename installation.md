@@ -1,8 +1,19 @@
 # Installation
 
-There are three methods to run Seamless. Below, each of the three methods is briefly explained. The section after provides installation instructions for each of the methods.
+## Quick installation
+
+First, [install Docker](https://docs.docker.com/get-docker/)
+and [miniconda](https://docs.conda.io/en/latest/miniconda.html).
+
+```bash
+docker pull rpbs/seamless
+conda create -n seamless -c rpbs -c conda-forge seamless-cli -y
+conda activate seamless
+```
 
 ## Comparison between installation methods
+
+There are three methods to run Seamless. Below, each of the three methods is briefly explained. The section after provides installation instructions for each of the methods.
 
 1. The easiest method is to run Seamless inside Docker containers. With command-line tools such as `seamless-jupyter`, `seamless-bash` and `seamless-ipython` you can create new Docker containers where you can import Seamless into Jupyter, IPython, etc.
 
@@ -12,7 +23,7 @@ There are three methods to run Seamless. Below, each of the three methods is bri
 
     This method has been tested under macOS and Linux. As it relies on `os.fork()`, it will not work under Windows.
 
-    Note that Seamless is tested only with the Python version inside its Docker image (For Seamless 0.8, this is Python 3.8). Currently, Seamless uses Python syntax that requires at least Python 3.7.
+    Note that Seamless is tested only with the Python version inside its Docker image (For Seamless 0.9, this is Python 3.8). Currently, Seamless uses Python syntax that requires at least Python 3.7.
 
 3. Finally, there is also the seamless-minimal installation method. This is not a full Seamless installation, since Jupyter and IPython are missing. Instead, the aim of seamless-minimal is to run Seamless computations inside arbitrary conda environments.
 
