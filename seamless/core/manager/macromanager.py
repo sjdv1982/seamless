@@ -219,6 +219,13 @@ class MacroManager:
         macro._execute(code, values, module_workspace)
         #print("/UPDATE MACRO", macro, len(macrokeys))
 
+
+    def _kludge(self):
+        # Temporary band-aid for https://github.com/sjdv1982/seamless/issues/142
+        stale = [m for m in self.macros if m.status == "Status: pending"]
+        for m in stale:
+            self.update_macro(m)
+
     async def run(self):
         while not self._destroyed:
             try:
