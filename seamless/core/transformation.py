@@ -9,6 +9,7 @@ import functools
 import time
 import atexit
 import json
+import orjson
 
 from multiprocessing import Process, JoinableQueue as Queue
 
@@ -713,7 +714,7 @@ class TransformationJob:
             try:
                 result_str = result_buffer.decode()
                 try:
-                    result_str = str(json.loads(result_str))
+                    result_str = str(orjson.loads(result_str))
                 except:
                     pass
                 if len(result_str) > 10000:

@@ -6,6 +6,7 @@ Conversions involving paths or hash patterns are also out-of-scope
 
 import ast
 import json
+import orjson
 import numpy as np
 import builtins
 
@@ -211,7 +212,7 @@ def _convert_reinterpret(checksum, buffer, target_celltype, *, source_celltype):
         if ok:
             if target_celltype == "plain":
                 try:
-                    json.loads(text)
+                    orjson.loads(text)
                     ok = True
                 except Exception as exc0:
                     exc = exc0
@@ -369,7 +370,6 @@ import ruamel.yaml
 yaml = ruamel.yaml.YAML(typ='safe')
 
 from .protocol.cson import cson2json
-from silk.mixed import MAGIC_NUMPY
 
 from ..ipython import ipython2python
 

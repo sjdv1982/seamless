@@ -1,9 +1,11 @@
 import asyncio
 from copy import deepcopy
 import json
+import orjson
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from silk.mixed.io import deserialize as mixed_deserialize
 import builtins
+from silk.mixed import MAGIC_NUMPY
 
 from .calculate_checksum import lrucache2
 
@@ -12,7 +14,24 @@ logger = logging.getLogger("seamless")
 
 deserialize_cache = lrucache2(10)
 
-def _deserialize(buffer, checksum, celltype):
+def _deserialize_plain(buffer):
+    """
+    value, storage = mixed_deserialize(buffer)
+    if storage != "pure-plain":
+        raise TypeError
+    """
+    s = buffer.decode()
+    s = s.rstrip("\n")
+    try:
+        value = orjson.loads(s)
+    except json.JSONDecodeError:
+        msg = s
+        if len(msg) > 1000:
+            msg = s[:920] + "..." + s[-50:] 
+        raise ValueError(msg) from None
+    return value
+
+def _deserialize(buffer, checksum, celltype):    
     if celltype == "silk":
         celltype = "mixed"
     if checksum is not None:
@@ -26,27 +45,17 @@ def _deserialize(buffer, checksum, celltype):
         value = s.rstrip("\n")
         validate_text_celltype(value, checksum, celltype)
     elif celltype == "plain":
-        value, storage = mixed_deserialize(buffer)
-        if storage != "pure-plain":
-            raise TypeError
+        value = _deserialize_plain(buffer)
     elif celltype == "binary":
-        value, storage = mixed_deserialize(buffer)
-        if storage != "pure-binary":
+        if not buffer.startswith(MAGIC_NUMPY):
             raise TypeError
+        value, _ = mixed_deserialize(buffer)  # fast enough for pure binary
     elif celltype == "mixed":
         value, _ = mixed_deserialize(buffer)
     elif celltype == "bytes":
         value = buffer
     elif celltype in ("str", "int", "float", "bool"):
-        s = buffer.decode()
-        s = s.rstrip("\n")
-        try:
-            value = json.loads(s)
-        except json.JSONDecodeError:
-            msg = s
-            if len(msg) > 1000:
-                msg = s[:920] + "..." + s[-50:] 
-            raise ValueError(msg) from None
+        value = _deserialize_plain(buffer)
         if not isinstance(value, getattr(builtins, celltype)):
             value = getattr(builtins, celltype)(value)
     elif celltype == "checksum":
@@ -72,16 +81,19 @@ async def deserialize(buffer, checksum, celltype, copy):
      (and copy is irrelevant)."""
     if buffer is None:
         return None
+    if celltype == "mixed":
+        buffer_info:BufferInfo = buffer_cache.buffer_info.get(checksum)
+        if buffer_info is not None:
+            if buffer_info.is_json:
+                celltype = "plain"
+            elif buffer_info.is_numpy:
+                celltype = "binary"
     value = deserialize_cache.get((checksum, celltype))
     ###
     copy = True # Apparently, sometimes the promise of not modifying the value is violated... for now, enforce a copy
     ###
-    if value is not None:
-        if copy:
-            newvalue = deepcopy(value)
-            return newvalue
-        else:
-            return value
+    if value is not None and not copy:
+        return value
 
 
     # ProcessPool is too slow, but ThreadPool works... do experiment with later
@@ -95,10 +107,9 @@ async def deserialize(buffer, checksum, celltype, copy):
             )
     else:
         value = _deserialize(buffer, checksum, celltype)
-    if celltype not in text_types2:
+    if celltype not in text_types2 and not copy:
         deserialize_cache[checksum, celltype] = value
-        if copy:
-            value = deepcopy(value)
+
     if not copy:
         id_value = id(value)
         serialize_cache[id_value, celltype] = buffer, value
@@ -115,6 +126,13 @@ def deserialize_sync(buffer, checksum, celltype, copy):
     This function can be executed if the asyncio event loop is already running"""
     if buffer is None:
         return None
+    if celltype == "mixed":
+        buffer_info:BufferInfo = buffer_cache.buffer_info.get(checksum)
+        if buffer_info is not None:
+            if buffer_info.is_json:
+                celltype = "plain"
+            elif buffer_info.is_numpy:
+                celltype = "binary"
     ###
     copy = True # Apparently, sometimes the promise of not modifying the value is violated... for now, enforce a copy
     ###
@@ -129,10 +147,8 @@ def deserialize_sync(buffer, checksum, celltype, copy):
             return value
 
     value = _deserialize(buffer, checksum, celltype)
-    if celltype not in text_types2:
+    if celltype not in text_types2 and not copy:
         deserialize_cache[checksum, celltype] = value
-        if copy:
-            value = deepcopy(value)
     if not copy:
         id_value = id(value)
         serialize_cache[id_value, celltype] = buffer, value
@@ -143,3 +159,4 @@ from .serialize import serialize_cache
 from ..cell import text_types2
 from .evaluate import validate_text_celltype
 from ..convert import validate_checksum
+from ..cache.buffer_cache import buffer_cache, BufferInfo

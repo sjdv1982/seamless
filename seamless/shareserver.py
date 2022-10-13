@@ -57,6 +57,7 @@ import asyncio
 import weakref
 import traceback
 import json
+import orjson
 import base64
 
 from asyncio import CancelledError
@@ -76,7 +77,7 @@ logger = logging.getLogger("seamless")
 
 def get_subkey(buffer, subkey):
     from seamless.core.protocol.json import json_dumps
-    value = json.loads(buffer)
+    value = orjson.loads(buffer)
     path = subkey.split("/")
     try:
         for subpath in path:
@@ -349,7 +350,7 @@ class ShareNamespace:
                     return None, None
                 if share.celltype == "mixed" and content_type.startswith("text"):
                     try:
-                        value0 = json.loads(buffer)
+                        value0 = orjson.loads(buffer)
                         if isinstance(value0, str):
                             value = value0
                     except:
@@ -751,7 +752,7 @@ class ShareServer(object):
             tail = request.match_info.get('tail')
             ns, key = tailsplit(tail)
             text = await request.text()
-            data = json.loads(text)
+            data = orjson.loads(text)
             assert isinstance(data, dict)
         except aiohttp.web_exceptions.HTTPClientError as exc:
             logger.debug(traceback.format_exc())
