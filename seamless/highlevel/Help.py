@@ -218,7 +218,7 @@ class HelpContext(HelpWrapper):
         ctx = self._get_ctx()
         if ctx is None:
             raise AttributeError
-        path = self._help_path
+        path = self._context_path
         nodes = ctx._graph[0]
         if path not in nodes:
             raise AttributeError
