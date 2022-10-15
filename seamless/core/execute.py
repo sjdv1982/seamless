@@ -357,7 +357,7 @@ def execute(name, code,
     try:
         old_stdio = sys.stdout, sys.stderr
 
-        ok = False        
+        ok = False
 
         if debug.get("python_attach"):
             port = int(debug["python_attach_port"])  # MUST be set right before forking
@@ -400,8 +400,8 @@ def execute(name, code,
                 stdout = FakeStdStream(direct_print_filehandle, direct_print)
                 stderr = FakeStdStream(direct_print_filehandle, direct_print)
             else:
-                stdout = FakeStdStream(sys.stdout, direct_print)
-                stderr = FakeStdStream(sys.stderr, direct_print)
+                stdout = FakeStdStream(sys.__stdout__, direct_print)
+                stderr = FakeStdStream(sys.__stderr__, direct_print)
             sys.stdout, sys.stderr = stdout, stderr
             result = _execute(name, code,
                 with_ipython_kernel,
@@ -419,8 +419,8 @@ def execute(name, code,
                 stdout = FakeStdStream(direct_print_filehandle, direct_print)
                 stderr = FakeStdStream(direct_print_filehandle, direct_print)
             else:
-                stdout = FakeStdStream(sys.stdout, direct_print)
-                stderr = FakeStdStream(sys.stderr, direct_print)
+                stdout = FakeStdStream(sys.__stdout__, direct_print)
+                stderr = FakeStdStream(sys.__stderr__, direct_print)
             sys.stdout, sys.stderr = stdout, stderr
             result = _execute(name, code,
                 with_ipython_kernel,
