@@ -971,7 +971,7 @@ class Transformer(Base, HelpMixin):
         htf = self._get_htf()
         tf = self._get_tf()
         if htf["compiled"]:
-            return tf.executor.get_transformation()
+            return tf.tf.executor.get_transformation()
         else:
             return tf.tf.get_transformation()
 
