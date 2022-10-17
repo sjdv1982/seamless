@@ -1,3 +1,4 @@
+Waiting for: Seamless transformer: .tf.tf
 
 Docker transformer exception
 ============================
@@ -9,19 +10,21 @@ Error: Result file/folder RESULT does not exist
 *************************************************
 nvidia-smi && df /dev/shm
 *************************************************
+
+
 *************************************************
 * Standard output
 *************************************************
-Fri Jul 23 20:36:52 2021       
+Mon Oct 17 21:54:31 2022       
 +-----------------------------------------------------------------------------+
-| NVIDIA-SMI 470.57.02    Driver Version: 470.57.02    CUDA Version: 11.4     |
+| NVIDIA-SMI 515.76       Driver Version: 515.76       CUDA Version: 11.7     |
 |-------------------------------+----------------------+----------------------+
 | GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
 | Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
 |                               |                      |               MIG M. |
 |===============================+======================+======================|
-|   0  Quadro P2200        Off  | 00000000:9E:00.0 Off |                  N/A |
-| 45%   32C    P8     5W /  75W |    112MiB /  5049MiB |      0%      Default |
+|   0  Quadro M4000        Off  | 00000000:03:00.0 Off |                  N/A |
+| 46%   40C    P8    11W / 120W |     56MiB /  8192MiB |      0%      Default |
 |                               |                      |                  N/A |
 +-------------------------------+----------------------+----------------------+
                                                                                
@@ -35,5 +38,4 @@ Filesystem     1K-blocks  Used Available Use% Mounted on
 shm              1048576     0   1048576   0% /dev/shm
 
 *************************************************
-
 

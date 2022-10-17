@@ -1,6 +1,6 @@
 from seamless.highlevel import Context, Transformer
 
-#docker run --rm --gpus all --shm-size 1gb nvidia/cuda:11.0-base \
+#docker run --rm --gpus all --shm-size 1gb nvidia/cuda:11.8.0-base-ubuntu22.04 \
 # bash -c 'nvidia-smi && df /dev/shm'
 
 ctx = Context()
@@ -16,7 +16,7 @@ tf = ctx.tf = Transformer()
 tf.language = "bash"
 tf.environment.set_docker(
     {
-        "name": "nvidia/cuda:11.0-base",
+        "name": "nvidia/cuda:11.7.0-base-ubuntu22.04",
         "options": docker_options,
     }
 )
