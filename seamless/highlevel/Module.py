@@ -1,4 +1,6 @@
 import os
+import weakref
+from xml.dom import NotFoundErr
 from numpy import isin
 from .Base import Base
 
@@ -451,6 +453,27 @@ Or, it could use an internal package name like "spamalot" and do
         if self._parent() is not None:
             self._parent()._translate()
 
+    @property
+    def module(self):
+        """Returns the current Python module object"""
+        from ..core.build_module import build_module
+        hnode = self._get_hnode()
+        if hnode.get("UNTRANSLATED"):
+            return None
+        module_cell = self._get_ctx().module_cell
+        module_definition = module_cell.value
+        if module_definition is None:
+            return None
+        root = module_cell._root()
+        module = build_module(
+            module_definition,
+            compilers=root._compilers,
+            languages=root._languages,
+            module_debug_mounts=[],
+            module_error_name=str(self)
+        )
+        return module[1]
+
     def _set_observers(self):
         from ..core.cell import Cell as CoreCell
         codecell = self._get_codecell()
@@ -469,7 +492,6 @@ Or, it could use an internal package name like "spamalot" and do
                     self._parent()._translate()
         else:
             raise AttributeError(attr)
-
 
     def __str__(self):
         path = ".".join(self._path) if self._path is not None else None
