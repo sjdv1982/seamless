@@ -99,7 +99,8 @@ def translate_compiled_transformer(
     for pinname,pin in list(node["pins"].items()):
         if pin.get("celltype", "default") != "default":
             raise ValueError("Compiled transformer celltype must be 'default', not celltype '{}' (pin '{}')".format(pin["celltype"], pin))
-
+    if node.get("result_celltype", "structured") != "structured":
+        raise ValueError("Compiled transformer result celltype must be 'structured', not celltype '{}'".format(node["result_celltype"]))
     inchannels = [ic for ic in inchannels if ic[0] != "code"]
 
     main_module_inchannels = [("link_options",), ("headers",)]

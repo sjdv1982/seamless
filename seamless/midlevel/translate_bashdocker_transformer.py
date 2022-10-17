@@ -72,10 +72,41 @@ def translate_bashdocker_transformer(
             namespace[path, "target"] = inp.inchannels[inchannel], node
 
     assert result_name not in pins #should have been checked by highlevel
+
+
+    pin_cells = {}
+    pin_celltypes = {}
+    for pin in list(node_pins.keys()) + list(deep_pins.keys()):
+        hash_pattern = None
+        if pin in deep_pins:
+            celltype = deep_pins[pin]["celltype"]
+            hash_pattern = deep_pins[pin]["hash_pattern"]
+        else:
+            celltype = node_pins[pin].get("celltype")
+            if celltype is None or celltype == "default":
+                if pin.endswith("_SCHEMA"):
+                    celltype = "plain"
+                else:
+                    celltype = "mixed"
+            if celltype == "silk":
+                celltype = "mixed"
+            if celltype == "checksum":
+                celltype = "plain"
+            if celltype == "code":
+                celltype = "text"
+        pin_celltypes[pin] = celltype
+        pin_cell = cell(celltype)
+        pin_cell._hash_pattern = hash_pattern
+        cell_setattr(node, ctx, pin_intermediate[pin], pin_cell)
+        pin_cells[pin] = pin_cell
+
     all_pins = {}
     for pinname, pin in pins.items():
         p = {"io": "input"}
         p.update(pin)
+        celltype = pin_celltypes.get(pinname)
+        if celltype is not None:
+            p["celltype"] = celltype
         all_pins[pinname] = p
     all_pins[result_name] = {"io": "output"}
     if node["SCHEMA"]:
@@ -107,30 +138,6 @@ def translate_bashdocker_transformer(
 
     namespace[node["path"] + ("code",), "target"] = ctx.code, node
     namespace[node["path"] + ("code",), "source"] = ctx.code, node
-
-    pin_cells = {}
-    for pin in list(node_pins.keys()) + list(deep_pins.keys()):        
-        hash_pattern = None
-        if pin in deep_pins:
-            celltype = deep_pins[pin]["celltype"]
-            hash_pattern = deep_pins[pin]["hash_pattern"]
-        else:
-            celltype = node_pins[pin].get("celltype")
-            if celltype is None:
-                if pin.endswith("_SCHEMA"):
-                    celltype = "plain"
-                else:
-                    celltype = "mixed"
-            if celltype == "silk":
-                celltype = "mixed"
-            if celltype == "checksum":
-                celltype = "plain"
-            if celltype == "code":
-                celltype = "text"
-        pin_cell = cell(celltype)
-        pin_cell._hash_pattern = hash_pattern
-        cell_setattr(node, ctx, pin_intermediate[pin], pin_cell)
-        pin_cells[pin] = pin_cell
 
     for pin in list(node_pins.keys()):
         target = ctx.tf.get_pin(pin)
