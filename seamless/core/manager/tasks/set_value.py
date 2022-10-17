@@ -35,6 +35,7 @@ class SetCellValueTask(Task):
 
             checksum = None
             if value is not None:
+                validate_text(value, cell._celltype, "".join(cell.path))
                 task = SerializeToBufferTask(
                     manager, value, cell._celltype,
                     use_cache=False
@@ -47,7 +48,7 @@ class SetCellValueTask(Task):
                     raise exc from None
                 except Exception as exc:
                     raise exc from None
-                assert buffer is None or isinstance(buffer, bytes)
+                assert buffer is None or isinstance(buffer, bytes)                
                 checksum = await CalculateChecksumTask(manager, buffer).run()
             if checksum is not None:
                 if isinstance(value, np.ndarray):
@@ -81,7 +82,7 @@ class SetCellValueTask(Task):
             taskmanager.cell_to_value.pop(cell, None)
         return None
 
-from ...protocol.evaluate import validate_evaluation_subcelltype
+from ...protocol.evaluate import validate_evaluation_subcelltype, validate_text
 from ...protocol.calculate_checksum import checksum_cache
 from ...status import StatusReasonEnum
 from ...protocol.deep_structure import value_to_deep_structure

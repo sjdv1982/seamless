@@ -34,10 +34,11 @@ class SetCellBufferTask(Task):
                 manager.cancel_cell(cell, True, StatusReasonEnum.UNDEFINED, origin_task=self)
             else:
                 if not has_validated_evaluation(checksum, cell._celltype):
-                    await DeserializeBufferTask(
+                    value = await DeserializeBufferTask(
                         manager, buffer,
                         checksum, cell._celltype, copy=False
                     ).run()
+                    validate_text(value, cell._celltype, "".join(cell.path))
                 manager.cancel_cell(cell, void=False, origin_task=self)
                 checksum_cache[checksum] = buffer
                 buffer_cache.cache_buffer(checksum, buffer)
@@ -60,7 +61,7 @@ class SetCellBufferTask(Task):
         return None
 
 from ...protocol.calculate_checksum import checksum_cache
-from ...protocol.evaluate import has_validated_evaluation
+from ...protocol.evaluate import has_validated_evaluation, validate_text
 from ...status import StatusReasonEnum
 from ...cache.buffer_cache import buffer_cache
 from ...protocol.get_buffer import get_buffer

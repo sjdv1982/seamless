@@ -227,7 +227,8 @@ class Cell(SeamlessBase):
     def set_buffer(self, buffer, checksum=None):
         """Update cell buffer from authority.
         If the checksum is known, it can be provided as well."""
-        assert buffer is None or isinstance(buffer, bytes)
+        if not (buffer is None or isinstance(buffer, bytes)):
+            raise TypeError(type(buffer))
         if self._context is None:
             self._initial_checksum = None
             self._initial_val = buffer, True

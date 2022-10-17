@@ -6,6 +6,7 @@
 #   - under seamless-framework (bare-metal conda)
 #   Docker tests require continuumio/anaconda3 to be pulled
 bytes-conversion.py
+set-python-invalid.py: can also be run in non-interactive mode (mount /tmp/code.py)
 mime.py
 test-html.py
 auth-checksum.py

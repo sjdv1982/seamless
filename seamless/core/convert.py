@@ -12,7 +12,7 @@ import builtins
 
 def validate_text(text, celltype, code_filename):
     try:
-        if celltype == "text":
+        if text is None:
             return
         if celltype == "python":
             ast.parse(text, filename=code_filename)

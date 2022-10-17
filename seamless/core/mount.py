@@ -64,6 +64,7 @@ class MountItem:
     parent = None
     _destroyed = False
     _initialized = False
+    _renounce = False  # checksum at the time of the last read or write. Refuse to write a checksum that is equal to this
     def __init__(self, parent, cell, path, mode, authority, persistent, *,
       dummy=False, as_directory=False, directory_text_only=False, **kwargs
     ):
@@ -167,20 +168,20 @@ class MountItem:
                         if file_checksum == cell_checksum:
                             update_file = False
                         else:
-                            print("Warning: File path '%s' has a different value, overwriting cell" % self.path) #TODO: log warning
+                            print("Warning: File path '%s' has a different value, overwriting cell" % self.path) #TODO: log warning                        
                     self._after_read(file_checksum)
                 if update_file:
                     self.set(file_buffer, checksum=file_checksum)
             elif self.authority == "file-strict":
                 raise Exception("File path '%s' does not exist, but authority is 'file-strict'" % self.path)
             else:
-                if "w" in self.mode and not cell_empty:
+                if "w" in self.mode and not cell_empty and cell_checksum != self._renounce:
                     with self.lock:
                         self._write(cell_buffer)
                         self._after_write(cell_checksum)
                         has_written = True
         else: #self.authority == "cell"
-            if not cell_empty :
+            if not cell_empty and cell_checksum != self._renounce:
                 if not from_garbage or not exists:
                     if "w" in self.mode:
                         with self.lock:
@@ -210,9 +211,12 @@ class MountItem:
                 self._write_as_directory(cell_buffer, with_none=False)
         self._initialized = True
 
-    def set(self, file_buffer, checksum):
+    def set(self, file_buffer, checksum, *, no_renounce=False):
+        if checksum is not None and checksum == self._renounce:
+            if not no_renounce:
+                return
         if self._destroyed:
-            return
+            return        
         cell = self.cell()
         if cell is None:
             return
@@ -232,12 +236,18 @@ class MountItem:
                             self._write(file_buffer)
                 except (ValueError, ParseError):
                     pass
+        renounce = cell._checksum
+        self.cell_checksum = None
         if cell._hash_pattern is not None:
             if checksum is None:
                 checksum = calculate_checksum(file_buffer)
             cell.set_checksum(checksum)
         else:
             cell.set_buffer(file_buffer, checksum)
+
+        if renounce is None:
+            renounce = checksum
+        self._renounce = renounce
 
     @property
     def lock(self):
@@ -331,8 +341,6 @@ class MountItem:
             return
         if self._destroyed:
             return
-        if not "w" in self.mode:
-            return
         cell = self.cell()
         if cell is None:
             return
@@ -340,11 +348,17 @@ class MountItem:
             if not with_none:
                 return
         self.cell_checksum = checksum
+        if not "w" in self.mode:
+            return
+        if self._renounce:
+            if checksum == self._renounce:
+                return
         self.cell_buffer = buffer
         if checksum is None or self.last_checksum != checksum:
             if not (buffer is None and checksum is not None): # local cache miss
                 with self.lock:
                     self._write(buffer, with_none=with_none)
+                    self._renounce = None
                     self._after_write(checksum)
 
     def _after_read(self, checksum, *, mtime=None):
@@ -389,16 +403,16 @@ class MountItem:
                 if file_buffer0 is not None:
                     file_buffer = adjust_buffer(file_buffer0, cell._celltype)
                     file_checksum = calculate_checksum(file_buffer)
-                self._after_read(file_checksum, mtime=mtime)        
+                self._after_read(file_checksum, mtime=mtime)                
         if "r" in self.mode:
-            if file_checksum is None and self.cell()._checksum is None and cell_checksum is not None:
+            if file_checksum is None and self.cell()._checksum is None and cell_checksum is not None and cell_checksum != self._renounce:
                 file_buffer = buffer_cache.get_buffer(cell_checksum)
                 if file_buffer is not None:
                     file_checksum = cell_checksum
                     cell_checksum = None
         if file_checksum is not None and file_checksum != cell_checksum:
-            if "r" in self.mode:
-                self.set(file_buffer, checksum=file_checksum)
+            if "r" in self.mode:                
+                self.set(file_buffer, checksum=file_checksum, no_renounce=True)
             else:
                 print("Warning: write-only file %s (%s) has changed on disk, overruling" % (self.path, self.cell()))
                 cell_buffer = self.cell_buffer
