@@ -379,8 +379,12 @@
         "op1"
       ],
       "pins": {
-        "a": {},
-        "b": {}
+        "a": {
+          "celltype": "default"
+        },
+        "b": {
+          "celltype": "default"
+        }
       },
       "type": "transformer"
     },
@@ -405,8 +409,12 @@
         "op2"
       ],
       "pins": {
-        "a": {},
-        "b": {}
+        "a": {
+          "celltype": "default"
+        },
+        "b": {
+          "celltype": "default"
+        }
       },
       "type": "transformer"
     },
@@ -431,8 +439,12 @@
         "op3"
       ],
       "pins": {
-        "a": {},
-        "b": {}
+        "a": {
+          "celltype": "default"
+        },
+        "b": {
+          "celltype": "default"
+        }
       },
       "type": "transformer"
     },

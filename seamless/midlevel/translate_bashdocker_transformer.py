@@ -75,7 +75,6 @@ def translate_bashdocker_transformer(
 
 
     pin_cells = {}
-    pin_celltypes = {}
     for pin in list(node_pins.keys()) + list(deep_pins.keys()):
         hash_pattern = None
         if pin in deep_pins:
@@ -94,7 +93,6 @@ def translate_bashdocker_transformer(
                 celltype = "plain"
             if celltype == "code":
                 celltype = "text"
-        pin_celltypes[pin] = celltype
         pin_cell = cell(celltype)
         pin_cell._hash_pattern = hash_pattern
         cell_setattr(node, ctx, pin_intermediate[pin], pin_cell)
@@ -104,9 +102,14 @@ def translate_bashdocker_transformer(
     for pinname, pin in pins.items():
         p = {"io": "input"}
         p.update(pin)
-        celltype = pin_celltypes.get(pinname)
-        if celltype is not None:
-            p["celltype"] = celltype
+        if celltype is None or celltype == "default":
+            if pinname.endswith("_SCHEMA"):
+                celltype = "plain"
+            else:
+                celltype = "mixed"
+        if celltype == "code":
+            celltype = "text"
+        p["celltype"] = celltype
         all_pins[pinname] = p
     all_pins[result_name] = {"io": "output"}
     if node["SCHEMA"]:

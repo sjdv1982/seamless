@@ -3,10 +3,6 @@
 {
   "__format__": {
     "d": {
-      "filesystem": {
-        "mode": "file",
-        "optional": true
-      },
       "hash_pattern": {
         "*": "#"
       }

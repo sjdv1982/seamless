@@ -41,7 +41,9 @@
         "doubleit"
       ],
       "pins": {
-        "a": {}
+        "a": {
+          "celltype": "default"
+        }
       },
       "type": "transformer"
     },
@@ -81,6 +83,6 @@
 
 <Silk: 3.141592653589793 >
 <Silk: 6.283185307179586 >
-7916576ad7f9a29fe458dfc70e50bf09  twopi-deepcell.seamless
-5b70f64824937946d97ab3603beb8c53  twopi-deepcell-result.seamless
-f52ebcf56bc009698617d96c2bdd7189  twopi-deepcell-result.zip
+e69dc7dd7d45f79064720e83f72e6fff  twopi-deepcell.seamless
+0e8275259c5350ab63b704bf3777a726  twopi-deepcell-result.seamless
+4eb0d46dae8b725af7c63316e39ced9e  twopi-deepcell-result.zip

@@ -154,10 +154,6 @@ def translate_bash_transformer(
                 celltype = "plain"
             else:
                 celltype = "mixed"
-        if celltype == "silk":
-            celltype = "mixed"
-        if celltype == "checksum":
-            celltype = "plain"
         if celltype == "code":
             celltype = "text"
         p["celltype"] = celltype

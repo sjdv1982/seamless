@@ -134,10 +134,15 @@ def translate_py_transformer(
     for pinname, pin in node_pins.items():
         p = {"io": "input"}
         p.update(pin)
-        if p.get("celltype") == "default":
-            p["celltype"] = "mixed"
-        elif p.get("celltype") == "checksum":
-            p["celltype"] = "plain"
+        celltype = pin.get("celltype")
+        if celltype is None or celltype == "default":
+            if pinname.endswith("_SCHEMA"):
+                celltype = "plain"
+            else:
+                celltype = "mixed"
+        if celltype == "code":
+            celltype = "text"
+        p["celltype"] = celltype
         all_pins[pinname] = p
     result_pin = {
         "io": "output", 

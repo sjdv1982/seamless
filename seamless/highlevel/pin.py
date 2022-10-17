@@ -42,7 +42,7 @@ class PinWrapper:
         if value not in celltypes and (
             (
                 not isinstance(self._parent(), Transformer)
-                or (value not in ("default", "deepfolder", "folder", "deepcell"))
+                or (value not in ("default", "silk", "deepfolder", "folder", "deepcell"))
             )
         ):
             raise TypeError(value)

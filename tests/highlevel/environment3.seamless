@@ -46,7 +46,9 @@
         "tf"
       ],
       "pins": {
-        "a": {}
+        "a": {
+          "celltype": "default"
+        }
       },
       "type": "transformer"
     }
