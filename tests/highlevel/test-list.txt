@@ -157,6 +157,7 @@ mount.py:         Run with ipython -i, then continue in interactive mode.
 cython_.py        Run with ipython -i                 
 observe-graph.ipynb: Run "seamless-jupyter" and then open /cwd in the browser
 traitlets.ipynb: same as above
+share-subcontext.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/sub/b
 share-pdb.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/index.html
 share-pdb-docker.seamless/.zip: to test using:
       seamless-serve-graph share-pdb-docker.seamless share-pdb-docker.zip

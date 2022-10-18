@@ -151,7 +151,7 @@ class StructuredCell(SeamlessBase):
     def share(self, path, readonly=True, mimetype=None, *, toplevel=False, cellname=None):
         assert readonly
         if path is None:
-            path = ".".join(self.path)
+            path = "/".join(self.path)
         self._data.share(
             path, readonly=True, mimetype=mimetype,
             toplevel=toplevel, cellname=cellname
