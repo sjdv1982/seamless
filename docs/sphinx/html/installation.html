@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Installation &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <title>Installation &mdash; Seamless 0.9 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
@@ -38,6 +38,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#quick-installation">Quick installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#comparison-between-installation-methods">Comparison between installation methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#installation-instructions">Installation instructions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#installation-of-seamless-running-inside-docker-containers">1. Installation of Seamless running inside Docker containers</a></li>
@@ -109,16 +110,26 @@
              
   <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<p>There are three methods to run Seamless. Below, each of the three methods is briefly explained. The section after provides installation instructions for each of the methods.</p>
+<div class="section" id="quick-installation">
+<h2>Quick installation<a class="headerlink" href="#quick-installation" title="Permalink to this headline">¶</a></h2>
+<p>First, <a class="reference external" href="https://docs.docker.com/get-docker/">install Docker</a>
+and <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">miniconda</a>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker pull rpbs/seamless
+conda create -n seamless -c rpbs -c conda-forge seamless-cli -y
+conda activate seamless
+</pre></div>
+</div>
+</div>
 <div class="section" id="comparison-between-installation-methods">
 <h2>Comparison between installation methods<a class="headerlink" href="#comparison-between-installation-methods" title="Permalink to this headline">¶</a></h2>
+<p>There are three methods to run Seamless. Below, each of the three methods is briefly explained. The section after provides installation instructions for each of the methods.</p>
 <ol>
 <li><p>The easiest method is to run Seamless inside Docker containers. With command-line tools such as <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>, <code class="docutils literal notranslate"><span class="pre">seamless-bash</span></code> and <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code> you can create new Docker containers where you can import Seamless into Jupyter, IPython, etc.</p>
 <p>This method will work under any platform where you can install Docker, conda and bash. It has been tested under macOS and Linux. It should also work under Windows with MSYS2.</p>
 </li>
 <li><p>Alternatively, you can create a conda environment to install Seamless directly, without using Docker. Then, instead of <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code> or <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code>, you activate the conda environment and launch Jupyter or IPython yourself. This will work out-of-the-box for many use cases, but sometimes you will have to define some environment variables, especially to connect to a Seamless database or a job servant. Features like live debugging are also harder to set up. Therefore, this is recommended only for advanced users.</p>
 <p>This method has been tested under macOS and Linux. As it relies on <code class="docutils literal notranslate"><span class="pre">os.fork()</span></code>, it will not work under Windows.</p>
-<p>Note that Seamless is tested only with the Python version inside its Docker image (For Seamless 0.8, this is Python 3.8). Currently, Seamless uses Python syntax that requires at least Python 3.7.</p>
+<p>Note that Seamless is tested only with the Python version inside its Docker image (For Seamless 0.9, this is Python 3.8). Currently, Seamless uses Python syntax that requires at least Python 3.7.</p>
 </li>
 <li><p>Finally, there is also the seamless-minimal installation method. This is not a full Seamless installation, since Jupyter and IPython are missing. Instead, the aim of seamless-minimal is to run Seamless computations inside arbitrary conda environments.</p></li>
 </ol>

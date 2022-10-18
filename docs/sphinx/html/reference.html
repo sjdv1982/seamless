@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reference &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <title>Reference &mdash; Seamless 0.9 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
@@ -974,10 +974,15 @@ is always enabled.</p>
 The transformation dict contains the checksums of all input pins,
 including the code.</p>
 <p>In addition, it may contain the following special keys:
-- __output__: the name (usually “result”) and (sub)celltype of the output pin
-- __env__: the checksum of the environment description
-- __as__: a dictionary of pin-to-variable renames (<a href="#id17"><span class="problematic" id="id18">pins.pinname.as_</span></a> attribute)
-- __format__: a dictionary that contains deepcell and filesystem attributes</p>
+- __output__: the name (usually “result”) and (sub)celltype of the output pin</p>
+<blockquote>
+<div><p>If it has a hash pattern, this is appended as the fourth element.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>__env__: the checksum of the environment description</p></li>
+<li><p>__as__: a dictionary of pin-to-variable renames (<a href="#id17"><span class="problematic" id="id18">pins.pinname.as_</span></a> attribute)</p></li>
+<li><p>__format__: a dictionary that contains deepcell and filesystem attributes</p></li>
+</ul>
 <p>Finally, it may contain additional information that is not reflected
 in this checksum:</p>
 <ul class="simple">

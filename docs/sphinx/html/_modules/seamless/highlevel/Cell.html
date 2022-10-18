@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seamless.highlevel.Cell &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>seamless.highlevel.Cell &mdash; Seamless 0.9 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -39,7 +39,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../getting-started.html">Getting started with Seamless</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../beginner.html">Beginner’s guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../explained.html">Seamless explained</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../new-project.html">Recipe for a new Seamless project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../new-project.html">Seamless projects</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Seamless features</span></p>
 <ul>
@@ -53,6 +53,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_storage.html">Data storage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../deployment.html">Deployment</a></li>
 </ul>
@@ -537,6 +540,19 @@
 
 <span class="sd">        For structured cells, the value is also None if the</span>
 <span class="sd">        schema is violated.&quot;&quot;&quot;</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        if self.hash_pattern:</span>
+<span class="sd">            msg = &quot;&quot;&quot;It is too costly to construct the full value of a deep cell</span>
+<span class="sd">    Use cell.data instead.</span>
+<span class="sd">    </span>
+<span class="sd">    If you are really sure that the value of the deep cell fits in memory,</span>
+<span class="sd">    you can assign this cell to a normal cell, e.g:</span>
+<span class="sd">    </span>
+<span class="sd">    ctx.othercell = Cell()</span>
+<span class="sd">    ctx.othercell = ctx.thiscell</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">            raise AttributeError(msg)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
         <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
@@ -1212,7 +1228,15 @@
     <span class="sd">&quot;&quot;&quot;Construct a cell marked as &quot;constant&quot;.&quot;&quot;&quot;</span>
     <span class="n">cell</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="n">cell</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()[</span><span class="s2">&quot;constant&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">cell</span>
 
+<span class="k">def</span> <span class="nf">SimpleDeepCell</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Construct a mixed cell with a deep hash pattern.&quot;&quot;&quot;</span>
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">()</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+    <span class="n">node</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mixed&quot;</span>
+    <span class="n">node</span><span class="p">[</span><span class="s2">&quot;hash_pattern&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;*&quot;</span><span class="p">:</span> <span class="s2">&quot;#&quot;</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">cell</span>
 
 <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">binary_special_method_names</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">Cell</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>

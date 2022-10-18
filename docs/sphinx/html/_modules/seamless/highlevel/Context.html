@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seamless.highlevel.Context &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>seamless.highlevel.Context &mdash; Seamless 0.9 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -39,7 +39,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../getting-started.html">Getting started with Seamless</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../beginner.html">Beginner’s guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../explained.html">Seamless explained</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../new-project.html">Recipe for a new Seamless project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../new-project.html">Seamless projects</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Seamless features</span></p>
 <ul>
@@ -53,6 +53,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../libraries.html">Libraries and libinstances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../debugging.html">Debugging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_storage.html">Data storage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../deployment.html">Deployment</a></li>
 </ul>
@@ -331,6 +334,7 @@
     <span class="n">_traitlets</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">SeamlessTraitlet</span><span class="p">]</span>
     <span class="n">_observers</span><span class="p">:</span> <span class="nb">set</span>
     <span class="n">_unbound_context</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Optional[core.Context]</span>
+    <span class="n">_runtime_indices</span> <span class="o">=</span> <span class="p">{}</span>
 
 <div class="viewcode-block" id="Context.from_graph"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.from_graph">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_graph</span><span class="p">(</span>
@@ -600,6 +604,8 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_environment</span>
 
     <span class="k">def</span> <span class="nf">_translate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_untranslatable</span><span class="p">:</span>
+            <span class="k">return</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_needs_translation</span> <span class="o">=</span> <span class="kc">True</span>
 
 <div class="viewcode-block" id="Context.translate"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.translate">[docs]</a>    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
@@ -618,6 +624,8 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_untranslatable</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Context is untranslatable&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_needs_translation</span><span class="p">:</span>
+            <span class="k">return</span>
         <span class="n">verify_sync_translate</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_auth_tasks</span><span class="p">(</span><span class="s2">&quot;the graph is re-translated&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span></div>
@@ -631,6 +639,8 @@
 <span class="sd">        If force=True, translation will happen even though no</span>
 <span class="sd">        change in topology or celltype was detected.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_untranslatable</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Context is untranslatable&quot;</span><span class="p">)</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_auth_tasks_async</span><span class="p">(</span><span class="s2">&quot;the graph is re-translated&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate_async</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span></div>
 
@@ -766,6 +776,10 @@
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">graph</span></div>
 
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_get_graph_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># Legacy method</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_graph</span><span class="p">()</span>
+        
 <div class="viewcode-block" id="Context.save_graph"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_graph">[docs]</a>    <span class="k">def</span> <span class="nf">save_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Save the graph in JSON format.&quot;&quot;&quot;</span>
         <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_graph</span><span class="p">()</span>
@@ -946,7 +960,7 @@
 <span class="sd">        It is assumed (and printed out) that any auth tasks that have not</span>
 <span class="sd">        completed after 10 seconds will be canceled.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span><span class="o">.</span><span class="n">is_running</span><span class="p">():</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_libroot</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span><span class="o">.</span><span class="n">is_running</span><span class="p">():</span>
             <span class="n">taskmanager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">_get_manager</span><span class="p">()</span><span class="o">.</span><span class="n">taskmanager</span>
             <span class="n">taskmanager</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">report</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">get_tasks_func</span><span class="o">=</span><span class="n">_get_auth_tasks</span><span class="p">)</span>
             <span class="n">auth_lost_cells</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -970,7 +984,7 @@
 
     <span class="k">async</span> <span class="k">def</span> <span class="nf">_wait_for_auth_tasks_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">what_happens_text</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Async version of _wait_for_auth_tasks.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_libroot</span><span class="p">:</span>
             <span class="n">taskmanager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">_get_manager</span><span class="p">()</span><span class="o">.</span><span class="n">taskmanager</span>
             <span class="k">await</span> <span class="n">taskmanager</span><span class="o">.</span><span class="n">computation</span><span class="p">(</span>
                 <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">report</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">get_tasks_func</span><span class="o">=</span><span class="n">_get_auth_tasks</span>
@@ -1200,7 +1214,7 @@
     <span class="k">def</span> <span class="nf">_get_shares</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">shares</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">node</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="s2">&quot;deepcell&quot;</span><span class="p">,</span> <span class="s2">&quot;deepfolder&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">node</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="s2">&quot;deepcell&quot;</span><span class="p">,</span> <span class="s2">&quot;deepfoldercell&quot;</span><span class="p">):</span>
                 <span class="k">continue</span>
             <span class="n">share</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;share&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">share</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1284,7 +1298,22 @@
         <span class="c1"># TODO: renaming</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-    <span class="k">def</span> <span class="nf">_destroy_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">runtime</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_add_runtime_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">nodepathlist</span><span class="p">,</span> <span class="n">connections</span><span class="p">):</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runtime_indices</span>
+        <span class="k">for</span> <span class="n">pp</span> <span class="ow">in</span> <span class="n">path</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">ind2</span> <span class="o">=</span> <span class="n">ind</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pp</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ind2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">ind2</span> <span class="o">=</span> <span class="p">{},</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+                <span class="n">ind</span><span class="p">[</span><span class="n">pp</span><span class="p">]</span> <span class="o">=</span> <span class="n">ind2</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="n">ind2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">pp</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">pp</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">ind</span><span class="p">[</span><span class="n">pp</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">ind</span><span class="p">[</span><span class="n">pp</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">,</span> <span class="n">nodepathlist</span><span class="p">,</span> <span class="n">connections</span>
+
+    <span class="k">def</span> <span class="nf">_destroy_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">runtime</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Destroy the child listed under &quot;path&quot;.</span>
 
 <span class="sd">        &quot;path&quot; can also refer to a subcontext.</span>
@@ -1296,39 +1325,68 @@
 
 <span class="sd">        Transformers in debug mode cannot be destroyed.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
+        <span class="k">if</span> <span class="n">fast</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">runtime</span>
         <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span>
         <span class="k">if</span> <span class="n">runtime</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runtime_graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">return</span>
             <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runtime_graph</span>
         <span class="n">nodes</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span>
-        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-            <span class="k">if</span> <span class="n">p</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)]</span> <span class="o">==</span> <span class="n">path</span><span class="p">:</span>
-                <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">Transformer</span><span class="p">):</span>
-                    <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">debug</span><span class="o">.</span><span class="n">mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Cannot destroy </span><span class="si">{}</span><span class="s2"> in debug mode&quot;</span>
-                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
-        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodes</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-            <span class="k">if</span> <span class="n">p</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)]</span> <span class="o">==</span> <span class="n">path</span><span class="p">:</span>
-                <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
-                <span class="n">nodes</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_traitlets</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">runtime</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
+        <span class="n">lp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fast</span><span class="p">:</span>
+            <span class="n">nodes_to_remove</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">connections_to_remove</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="n">nodes</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span>
-        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
-        <span class="n">newnodes</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)]</span> <span class="o">!=</span> <span class="n">path</span><span class="p">}</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">newnodes</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">l</span><span class="p">:</span>
-            <span class="n">nodes</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-            <span class="n">nodes</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">newnodes</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">runtime</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
+            <span class="k">def</span> <span class="nf">walk</span><span class="p">(</span><span class="n">ind</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">sub</span><span class="p">,</span> <span class="n">nodes_to_remove0</span><span class="p">,</span> <span class="n">connections_to_remove0</span> <span class="ow">in</span> <span class="n">ind</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                    <span class="n">nodes_to_remove</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">nodes_to_remove0</span><span class="p">)</span>
+                    <span class="n">connections_to_remove</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">connections_to_remove0</span><span class="p">)</span>
+                    <span class="n">walk</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
 
-        <span class="n">removed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_connections</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">runtime</span><span class="o">=</span><span class="n">runtime</span><span class="p">)</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runtime_indices</span>
+            <span class="k">for</span> <span class="n">pp</span> <span class="ow">in</span> <span class="n">path</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="c1">#print(pp, ind.keys())</span>
+                <span class="n">ind2</span> <span class="o">=</span> <span class="n">ind</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pp</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ind2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">ind</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">break</span>
+                <span class="n">ind</span> <span class="o">=</span> <span class="n">ind2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">pp</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">ind</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">ind2</span> <span class="o">=</span> <span class="n">ind</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ind2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">sub</span><span class="p">,</span> <span class="n">nodes_to_remove0</span><span class="p">,</span> <span class="n">connections_to_remove0</span> <span class="o">=</span> <span class="n">ind2</span>
+                    <span class="n">nodes_to_remove</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">nodes_to_remove0</span><span class="p">)</span>
+                    <span class="n">connections_to_remove</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">connections_to_remove0</span><span class="p">)</span>
+                    <span class="n">walk</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>            
+            <span class="c1"># The following line takes an enormous amount for complex graphs!</span>
+            <span class="n">nodes_to_remove</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">nodes</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span><span class="p">[:</span><span class="n">lp</span><span class="p">]</span> <span class="o">==</span> <span class="n">path</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">nodes_to_remove</span><span class="p">:</span>
+            <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">Transformer</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">debug</span><span class="o">.</span><span class="n">mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Cannot destroy </span><span class="si">{}</span><span class="s2"> in debug mode&quot;</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
+
+            <span class="n">nodes</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_traitlets</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">runtime</span> <span class="ow">and</span> <span class="n">nodes_to_remove</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">fast</span><span class="p">:</span>
+            <span class="n">removed</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">connections_to_remove</span><span class="p">)</span>
+            <span class="n">connections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runtime_graph</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">con</span> <span class="ow">in</span> <span class="n">connections_to_remove</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">connections</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">con</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">removed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_connections</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">runtime</span><span class="o">=</span><span class="n">runtime</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">removed</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">runtime</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
 

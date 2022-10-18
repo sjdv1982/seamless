@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Deep cells &mdash; Seamless 0.8 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <title>Deep cells &mdash; Seamless 0.9 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
@@ -63,7 +63,11 @@
 </ul>
 <p class="caption"><span class="caption-text">Advanced features</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Deep cells</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Deep cells</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mapping-contexts">Mapping contexts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-considerations">Performance considerations</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Reference</span></p>
@@ -106,7 +110,33 @@ Intro:
 - DeepCell, DeepFolderCell, FolderCell
 
 TODO: move/clone from "Deep structures" in "Seamless explained"
---></div>
+--><div class="section" id="mapping-contexts">
+<h2>Mapping contexts<a class="headerlink" href="#mapping-contexts" title="Permalink to this headline">¶</a></h2>
+<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
+<p>Mapping libs are in stdlib.map. Currently, there is no reduce (to be done).</p>
+<p>You have the choice between <code class="docutils literal notranslate"><span class="pre">map_dict</span></code> and <code class="docutils literal notranslate"><span class="pre">map_dict_chunk</span></code> (support for lists is working, but untested/undocumented). In either case, you must prepare a <code class="docutils literal notranslate"><span class="pre">mapping</span> <span class="pre">context</span></code> that will be applied to each element (<code class="docutils literal notranslate"><span class="pre">map_dict</span></code>) or each chunk (<code class="docutils literal notranslate"><span class="pre">map_dict_chunk</span></code>) or an input dict.</p>
+<p>Mapping contexts must contain at least two cells: <code class="docutils literal notranslate"><span class="pre">inp</span></code> and <code class="docutils literal notranslate"><span class="pre">result</span></code>. The workflow will generate many clones of the mapping context, and each clone’s <code class="docutils literal notranslate"><span class="pre">inp</span></code> will contain its input: a single value (no key) for <code class="docutils literal notranslate"><span class="pre">map_dict</span></code>, and a chunk (a dict containing keys and values) for <code class="docutils literal notranslate"><span class="pre">map_dict_chunk</span></code>.  Typically, the mapping context contains at least one transformer that transforms <code class="docutils literal notranslate"><span class="pre">inp</span></code> to <code class="docutils literal notranslate"><span class="pre">result</span></code>.</p>
+<p>There may also be a cell <code class="docutils literal notranslate"><span class="pre">uniform</span></code> that contains parameters that are external to the mapping context, but constant to each clone.</p>
+<p>If provided, <code class="docutils literal notranslate"><span class="pre">uniform</span></code> must be a mixed Cell. For <code class="docutils literal notranslate"><span class="pre">map_dict</span></code>, <code class="docutils literal notranslate"><span class="pre">inp</span></code> and <code class="docutils literal notranslate"><span class="pre">result</span></code> must also be mixed Cells. For <code class="docutils literal notranslate"><span class="pre">map_dict_chunk</span></code>, <code class="docutils literal notranslate"><span class="pre">inp</span></code> and <code class="docutils literal notranslate"><span class="pre">result</span></code> can be either a mixed Cell or a SimpleDeepCell.</p>
+<p>You are strongly recommended to test the mapping context yourself by connecting <code class="docutils literal notranslate"><span class="pre">inp</span></code> to a simple input, before applying it to thousands of inputs.</p>
+</div>
+<div class="section" id="performance-considerations">
+<h2>Performance considerations<a class="headerlink" href="#performance-considerations" title="Permalink to this headline">¶</a></h2>
+<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
+<p>First, it is important to consider the size of the workflow. Seamless workflows can comfortably consist of hundreds of thousands of elements (cells, workers and connections), with a overhead of (at most) a few milliseconds per element. However, once the number of elements approaches millions, the per-element overhead increases and the total overhead explodes, which essentially freezes Seamless.</p>
+<p>Note that this applies to low-level elements. High-level elements are translated into one or more low-level elements. A simple Cell is a single element, but a structured Cell is three cells plus connections, and a Transformer is at least seven cells plus one cell per input pin, plus connections. Therefore, you should count at least 20 elements even for a minimal mapping context. That means that you shouldn’t create more than ~10 000 mapping context clones.</p>
+<p>Second, as always, it is important to make transformation jobs of the appropriate duration (transformation overhead is in the order of 0.1 second). If a mapping of an individual element is too quick, use <code class="docutils literal notranslate"><span class="pre">map_dict_chunk</span></code> and increase the chunk size until you are in the range of 10 seconds to 10 minutes per transformation.</p>
+<p>Third, it is important not to create too many running tasks at the same time. To some extent, this is automatically managed by Seamless, but you still should add a manual safeguard using <em>elision</em>. The dynamic cloning of mapping contexts is done using a low-level element called a <em>macro</em>. With elision, individual macros with well-defined input and output cells can be cached just like transformers can. With an elision cache hit, the macro is not run at all (i.e. the mapping context is not constructed at all), only the result cell is constructed and its checksum is set. In addition, with elision enabled, <code class="docutils literal notranslate"><span class="pre">map_dict</span></code> and <code class="docutils literal notranslate"><span class="pre">map_dict_chunk</span></code> organize the mapping contexts in a hierarchical manner: the top macro spawns submacros that spawn submacros (that spawn submacros, etc.) that finally spawn a chunk of mapping context clones. The maximum number of submacros or mapping contexts that is spawned is controlled by the <code class="docutils literal notranslate"><span class="pre">elision_chunksize</span></code> parameter.</p>
+<p>Elision has the additional benefit that re-running a mapping (or resuming it after it was aborted) happens at much reduced overhead, since the workflow graph is not built at all for the parts that have already been done.</p>
+<p>Fourth, it is important to consider the size of the data. Obviously, if the dataset that is to be mapped is very large, or its mapped result is very large, then it must be stored as deep cells, with the underlying buffers in a database. However, the underlying data must still be accessed by transformers. If you do <code class="docutils literal notranslate"><span class="pre">map_dict</span></code>, there shouldn’t be much of a problem. But with <code class="docutils literal notranslate"><span class="pre">map_dict_chunk</span></code> and large chunk sizes, the main Seamless process will by default convert every chunk to a normal mixed format while preparing the transformation. This will cause it to fetch a lot of data from the database, and then write the aggregate data back. If the number of simultaneous transformations is large, this will cause memory issues. Not that this is at the transformation <em>preparation</em> stage, i.e. using a job manager won’t help. The solution is to declare the input pin celltype of the transformer as “deepcell”. This will cause the <em>transformation</em> (wherever it runs) to become responsible to unpack the deep structure into a normal value. Not only could this be much closer to the data, transformations can use fast multi-thread unpacking that minimizes the bookkeeping and database requests. In the other direction, you may also consider to declare the celltype of the transformation result to be “deepcell”. In that case, the transformation will (after execution) pack its result into a deep structure (again, using a multi-thread packing function that is much more efficient than the main process) and push it to the database. Moreover, in case of local or jobslave execution, the transformation lock is released (since packing is I/O bound), so another transformation may start.</p>
+<p>Finally, for deep cells with a very large number of elements (hundreds of thousands) with small <code class="docutils literal notranslate"><span class="pre">map_dict_chunk</span></code> chunks, it may take time for Seamless to increase and decrease references to the individual buffers (contacting the database each time). Seamless has a heuristic to avoid this for many elements, but it will still do it on every chunk if the chunk is smaller than 1000 or so. To avoid this, do:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">seamless.core.cache.deeprefmanager</span> <span class="kn">import</span> <span class="n">deeprefmanager</span>
+<span class="n">deeprefmanager</span><span class="o">.</span><span class="n">MAX_DEEP_BUFFER_MEMBERS</span> <span class="o">=</span> <span class="n">X</span> 
+</pre></div>
+</div>
+<p>where X is smaller than your chunk size, but no smaller than 50 or so.</p>
+</div>
+</div>
 
 
            </div>
