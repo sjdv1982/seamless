@@ -5,16 +5,10 @@ Translates mid-level into low-level
 The mid-level is assumed to be correct; any errors should be caught there
 """
 
-from warnings import warn
 from collections import OrderedDict
-from functools import partial
 
-from attr import has
+from seamless.core import cell as core_cell, context, StructuredCell
 
-from seamless.core import (cell as core_cell,
- transformer, reactor, context, macro, StructuredCell)
-
-from . import copying
 from .util import get_path, get_path_link, find_channels, build_structured_cell
 
 import logging
@@ -198,7 +192,6 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         if node.get("fingertip_no_remote"):
             child._fingertip_remote = False
     setattr(parent, name, child)
-    pathstr = "." + ".".join(path)
     checksum = node.get("checksum")
     if checksum is not None:
         if ct == "structured":
@@ -452,5 +445,4 @@ from .translate_deep import translate_deepcell, translate_deepfoldercell
 from .translate_bash_transformer import translate_bash_transformer
 from .translate_compiled_transformer import translate_compiled_transformer
 '''
-from ..core.protocol.deep_structure import apply_hash_pattern_sync, access_hash_pattern
-from ..util import as_tuple
+from ..core.protocol.deep_structure import access_hash_pattern
