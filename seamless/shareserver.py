@@ -73,7 +73,7 @@ class UnboundShareError(AttributeError):
 
 DEBUG = False
 import logging
-logger = logging.getLogger("seamless")
+logger = logging.getLogger("seamless.shareserver")
 
 def get_subkey(buffer, subkey):
     from seamless.core.protocol.json import json_dumps
@@ -164,18 +164,22 @@ class Share:
     def set_checksum(self, checksum, marker=None):
         if marker is not None and marker <= self._marker:
             if marker == self._marker:
-                return
+                return None
             raise CancelledError
-        if checksum == self._checksum:
-            return
         if marker is None:
             marker = self._marker + 1
+        if checksum == self._checksum:
+            if checksum is not None:
+                return self._marker
+            else:
+                return None
         self._cancel()
         self._checksum = checksum
         if self.bound is None:
             raise AttributeError
         self.bound.update(checksum)
-        self._marker = marker
+        if checksum is not None:
+            self._marker = marker
         send_checksum_task = self._send_checksum()
         send_checksum_task = asyncio.ensure_future(send_checksum_task)
         self._send_checksum_task = send_checksum_task
@@ -186,7 +190,7 @@ class Share:
         from .core.share import sharemanager
         if marker is not None and marker <= self._marker:
             if marker == self._marker:
-                return
+                return marker
             raise CancelledError
         if marker is None:
             marker = self._marker + 1
@@ -776,6 +780,12 @@ class ShareServer(object):
                 )
             value = data["buffer"]
             mode = "buffer"
+            if value is None or value == "null":
+                marker = data.get("marker")
+                return web.Response(
+                    status=200,
+                    text=str(marker),
+                )
         elif "checksum" in data:
             value = data["checksum"]
             mode = "checksum"

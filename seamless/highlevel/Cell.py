@@ -513,7 +513,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
         return struc_ctx.example.handle
 
     def add_validator(self, validator: Callable, name: str) -> None:
-        """Adds a validator function (in Python) to the schema.
+        """Adds a validator function (in Python)def add to the schema.
 
         The validator must take a single argument, the (buffered) value of the cell
         It is expected to raise an exception (e.g. an AssertionError)
@@ -521,6 +521,10 @@ This cell is not fully independent, i.e. it has incoming connections"""
 
         If a previous validator with the same name exists,
         that validator is overwritten."""
+        if self._get_hcell().get("UNTRANSLATED"):
+            raise AttributeError(
+                "Cannot invoke Cell.add_validator: cell must be translated first"
+            )
         return self.handle.add_validator(validator, name=name)
 
     @property
@@ -631,7 +635,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
     def _data(self):
         """Return the data of the cell
 
-        This is normally the same as the value.
+        This is normally the same as the value.def _set(
         """
         cell = self._get_cell()
         return deepcopy(cell.data)
@@ -648,6 +652,17 @@ This cell is not fully independent, i.e. it has incoming connections"""
             cell.set_no_inference(value)
         else:
             cell.set(value)
+
+    def set_buffer(self, value):
+        from ..core.structured_cell import StructuredCell
+
+        hcell = self._get_hcell2()
+        if hcell.get("UNTRANSLATED"):
+            hcell["TEMP"] = value
+            return
+        cell = self._get_cell()
+        cell.set_buffer(value)
+        return self
 
     def set_checksum(self, checksum:str):
         """Set the cell's checksum from a SHA256 checksum"""
@@ -763,6 +778,8 @@ This cell is not fully independent, i.e. it has incoming connections"""
             datatype = hcell["datatype"]
             if datatype in ("mixed", "binary", "plain"):
                 mimetype = get_mime(datatype)
+            elif datatype in ("float", "int", "str", "bool"):
+                mimetype = get_mime("plain")
             else:
                 mimetype = ext_to_mime(datatype)
         else:
@@ -792,6 +809,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
         Use cases:
         - "plain" or "binary" cells with subcell access and a schema
         - "str" or "bytes" cell with a validator schema that parses the content
+        - sharing a structured cell over HTTP using the Seamless web interface generator
         """
         hcell = self._get_hcell2()
         celltype = hcell["celltype"]
@@ -803,6 +821,15 @@ This cell is not fully independent, i.e. it has incoming connections"""
         hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         assert celltype == "structured"
+        if value == "bytes":
+            raise TypeError("Byte cells and structured cells are stored differently.")
+        elif value == "text":
+            raise TypeError("""
+Text cells and structured cells are stored differently.
+
+For use in web forms, instead use "str".
+For other use in HTTP requests, instead set mimetype to "text/plain".
+""")
         hcell["datatype"] = value
 
     @property
@@ -955,19 +982,12 @@ This cell is not fully independent, i.e. it has incoming connections"""
 
         To remove a share, do `del cell.share`"""
         if not readonly:
-            if self.celltype == "structured":
-                raise Exception(
-                    "{}: Non-readonly HTTP share is only supported for non-structured cells".format(
-                        self
-                    )
-                )
             if not self.independent:
                 msg = """{}: Non-readonly HTTP share is not possible.
 This cell is not fully independent, i.e. it has incoming connections"""
                 raise Exception(msg.format(self))
 
         assert readonly or self.independent
-        assert readonly or self.celltype != "structured"
         hcell = self._get_hcell2()
         hcell["share"] = {
             "path": path,

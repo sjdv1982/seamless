@@ -428,7 +428,10 @@ class Cell(SeamlessBase):
 
     def share(self, path=None, readonly=True, mimetype=None, *, toplevel=False, cellname=None):
         if not readonly:
-            assert self.has_independence()
+            if self._structured_cell is not None and self._structured_cell._data is self:
+                pass
+            else:
+                assert self.has_independence()
         oldshare = self._share
         self._share = {
             "readonly": readonly,

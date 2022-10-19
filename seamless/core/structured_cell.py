@@ -149,11 +149,10 @@ class StructuredCell(SeamlessBase):
         return self._data.status
 
     def share(self, path, readonly=True, mimetype=None, *, toplevel=False, cellname=None):
-        assert readonly
         if path is None:
             path = "/".join(self.path)
         self._data.share(
-            path, readonly=True, mimetype=mimetype,
+            path, readonly=readonly, mimetype=mimetype,
             toplevel=toplevel, cellname=cellname
         )
 
@@ -191,6 +190,10 @@ class StructuredCell(SeamlessBase):
         if manager._destroyed:
             return
         return get_subpath(self._auth_value, self.hash_pattern, path)
+
+    def set_buffer(self, buffer, checksum=None):
+        value = deserialize(buffer, checksum, "mixed")
+        self.set_no_inference(value)
 
     def set(self, value):
         self.handle.set(value)
@@ -445,6 +448,7 @@ class PathDict(dict):
 from .cell import Cell
 from .unbound_context import UnboundManager
 from .protocol.serialize import _serialize as serialize
+from .protocol.deserialize import _deserialize as deserialize
 from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from .protocol.deep_structure import validate_hash_pattern
 from .protocol.expression import get_subpath_sync as get_subpath, set_subpath_sync as set_subpath

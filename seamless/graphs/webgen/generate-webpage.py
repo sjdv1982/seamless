@@ -45,6 +45,21 @@ defaults = {
     "bytes": None,
 }
 
+# Rewrite the webform, modifying the names of cells/transformers
+#  by replacing "/" with "__".
+# This is necessary to avoid problems with Vue.
+
+for dic in (webform["cells"], webform["transformers"]):
+    for name in list(dic.keys()):
+        if name.find("/") > -1:
+            v = dic.pop(name)
+            name2 = name.replace("/", "__")
+            dic[name2] = v
+for comp in webform["extra_components"]:
+    comp["cell"] = comp["cell"].replace("/", "__")
+    
+# / rewrite
+
 result = {}
 
 random.seed(seed)

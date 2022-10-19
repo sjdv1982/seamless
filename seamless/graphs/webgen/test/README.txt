@@ -14,4 +14,4 @@ ipython3 -i gen-initial-graph.py
 
 Cleanup:
 rm -f initial-graph.zip initial-webform.json initial-graph.seamless webform.json webform-BASE.txt webform-CONFLICT.txt
-rm -f index.html index.js index-BASE.js index-CONFLICT.js index-BASE.html index-CONFLICT.html
+rm -f index.html index.js index-BASE.js index-CONFLICT.js index-BASE.html index-CONFLICT.html seamless-client.js

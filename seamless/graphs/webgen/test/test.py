@@ -97,6 +97,7 @@ seamless_client = open(seamless_dir + "/js/seamless-client.js").read()
 ctx.seamless_js = Cell("text").set(seamless_client).share("seamless-client.js")
 ctx.seamless_js.mimetype="text/javascript"
 ctx.seamless_js.share("seamless-client.js", toplevel=True)
+ctx.seamless_js.mount("seamless-client.js")
 
 ctx.compute()
 

@@ -7,6 +7,8 @@ from silk.mixed.io import deserialize as mixed_deserialize
 import builtins
 from silk.mixed import MAGIC_NUMPY
 
+from typing import Optional
+
 from .calculate_checksum import lrucache2
 
 import logging
@@ -31,7 +33,7 @@ def _deserialize_plain(buffer):
         raise ValueError(msg) from None
     return value
 
-def _deserialize(buffer, checksum, celltype):    
+def _deserialize(buffer:bytes, checksum:Optional[bytes], celltype:str):    
     if celltype == "silk":
         celltype = "mixed"
     if checksum is not None:
@@ -43,7 +45,8 @@ def _deserialize(buffer, checksum, celltype):
     if celltype in text_types2:
         s = buffer.decode()
         value = s.rstrip("\n")
-        validate_text_celltype(value, checksum, celltype)
+        if checksum is not None:
+            validate_text_celltype(value, checksum, celltype)
     elif celltype == "plain":
         value = _deserialize_plain(buffer)
     elif celltype == "binary":

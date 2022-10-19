@@ -58,7 +58,10 @@ class ShareItem:
         if cell._destroyed:
             return
         if not self.readonly:
-            assert cell.has_independence(), cell # mount read mode only for authoritative cells
+            if cell._structured_cell is not None and cell._structured_cell._data is cell:
+                pass
+            else:
+                assert cell.has_independence(), cell # mount read mode only for authoritative cells
         self._initializing = True
         try:
             manager = cell._get_manager()
@@ -242,8 +245,20 @@ class ShareManager:
                     continue
                 if cell in cell_updates:
                     continue
+                if cell._checksum == checksum:
+                    continue
                 from_buffer = False
-                if checksum is not None and cell._celltype in ("plain", "mixed"):
+                if cell._structured_cell is not None and cell._structured_cell._data is cell:
+                    if checksum is None:
+                        cell._structured_cell.set(None)
+                        continue
+                    buffer = get_buffer(checksum, True)
+                    if buffer is None:
+                        # fail silently
+                        continue
+                    from_buffer = True
+                    cell = cell._structured_cell
+                elif checksum is not None and cell._celltype in ("plain", "mixed"):
                     buffer = get_buffer(checksum, remote=True)
                     if buffer is None:
                         buffer = await get_buffer_remote(

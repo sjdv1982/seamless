@@ -1,4 +1,5 @@
-"""Generates a webform dict from
+"""Generates a webform dict from a Seamless workflow graph.
+
 The webform dict is used by generate-webpage.py to create an index.html + index.js
 
 It creates a default entry in the webform for each shared celltype
@@ -30,6 +31,7 @@ for node in graph["nodes"]:
         continue
     if "UNSHARE" in node:
         continue
+    path0 = "." + ".".join(node["path"])
     key = "/".join(node["path"])
     if node["type"] == "transformer":
         tf = deepcopy(default_transformer)
@@ -112,7 +114,14 @@ for node in graph["nodes"]:
             params["editable"] = True
         share["encoding"] = "json"
     else:
-        raise NotImplementedError(celltype)
+        if node["celltype"] == "structured" and node["datatype"] == "mixed":
+            raise TypeError("""Need a datatype for structured cell {} .
+The web interface generator only supports structured cells if their
+datatype attribute is set to a supported celltype.
+Supported celltypes: text, int, float, bool, str, plain, or bytes.""".format(path0))
+        else:
+            raise TypeError("""Unsupported celltype "{}" for cell {} .
+Supported celltypes: text, int, float, bool, str, plain, or bytes.""".format(celltype, path0))
     cell.update({
         "params": params,
         "share": share,
