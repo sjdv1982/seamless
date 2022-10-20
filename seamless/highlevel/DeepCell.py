@@ -58,10 +58,10 @@ class DeepCellBase(Base, HelpMixin):
                 continue
             exception = getattr(ctx, k).exception
             if exception is not None:
-                    if k == "origin":
-                        return exception
-                    else:
-                        return "*" + k + "*: " + exception
+                if k == "origin":
+                    return exception
+                else:
+                    return "*" + k + "*: " + exception
     
     @property
     def checksum(self):

@@ -40,8 +40,8 @@ class DeepRefManager:
                 manager.cancel_cell(cell, void=True)
             else:
                 sc = cell._structured_cell
-                sc._exception = exc
-                manager._set_cell_checkum(sc._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
+                sc._exception = str(exc)
+                manager._set_cell_checksum(sc._data, None, void=True, status_reason=StatusReasonEnum.INVALID)
                 manager.structured_cell_trigger(sc, void=True)
 
 
