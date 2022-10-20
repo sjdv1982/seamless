@@ -109,6 +109,8 @@ def translate_bashdocker_transformer(
                 celltype = "mixed"
         if celltype == "code":
             celltype = "text"
+        if celltype == "checksum":
+            celltype = "plain"
         p["celltype"] = celltype
         all_pins[pinname] = p
     all_pins[result_name] = {"io": "output"}
