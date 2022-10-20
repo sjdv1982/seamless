@@ -545,7 +545,7 @@ class TransformationJob:
             if "powers" in env and "ipython" in env["powers"]:
                 with_ipython_kernel = True
 
-        logs = [None, None]
+        logs = [None, None, None]
         lock = await acquire_lock(self.checksum)
 
         io = get_transformation_inputs_output(self.transformation) 
@@ -650,19 +650,21 @@ class TransformationJob:
                             progress = msg
                             progress_callback(self, progress)
                         elif status == 4:
-                            is_stderr, content = msg
+                            # 1: stdout, 2: stderr, 3: execution time
+                            code, content = msg
                             try:
-                                content = str(content)
+                                if code in (0, 1):
+                                    content = str(content)
                             except:
                                 pass
                             else:
-                                if len(content) > 10000:
+                                if isinstance(content, (bytes, str)) and len(content) > 10000:
                                     skipped = len(content)-5000-4960
                                     content2 = content[:4960]
                                     content2 += "\n...(skipped %d characters)...\n" % skipped
                                     content2 += content[-5000:]
                                     content = content2
-                                logs[is_stderr] = content
+                                logs[code] = content
                         elif status == 5:
                             if msg == "release lock":
                                 release_lock(lock)
@@ -747,6 +749,16 @@ class TransformationJob:
 *************************************************
 {}
 """.format(logs[1])
+
+        if logs[2] is not None:
+            execution_time = logs[2]
+            try:
+                execution_time = "{:.1f}".format(execution_time)
+            except Exception:
+                execution_time = str(execution_time)
+            logstr += """*************************************************
+Execution time: {} seconds
+""".format(execution_time)
 
         logstr += "*************************************************"
         return result_checksum, logstr

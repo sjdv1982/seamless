@@ -422,6 +422,7 @@ def execute(name, code,
                 stdout = FakeStdStream(sys.__stdout__, direct_print)
                 stderr = FakeStdStream(sys.__stderr__, direct_print)
             sys.stdout, sys.stderr = stdout, stderr
+            start_time = time.time()
             result = _execute(name, code,
                 with_ipython_kernel,
                 injector, module_workspace,
@@ -430,6 +431,7 @@ def execute(name, code,
                 output_name, output_celltype, output_hash_pattern,
                 result_queue
             )
+            execution_time = time.time() - start_time
 
         msg_code, msg = result
         if msg_code == 2: # SeamlessTransformationError, propagate
@@ -459,6 +461,9 @@ def execute(name, code,
 """.format(serr)
             if len(std):
                 msg = msg + std
+            msg +="""*************************************************
+Execution time: {:.1f} seconds
+""".format(execution_time)
             result_queue.put((1, msg))
         else:
             content = stdout.read()
@@ -467,6 +472,7 @@ def execute(name, code,
             content = stderr.read()
             if len(content):
                 result_queue.put((4, (1, content)))
+            result_queue.put((4, (2, execution_time)))
             result_queue.put(result)
         ok = True
     except SystemExit:
