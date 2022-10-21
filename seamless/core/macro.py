@@ -211,11 +211,13 @@ class Macro(Worker):
         if not has_ctx:
             self._get_manager().register_macro(self)
 
-    def destroy(self, *, from_del, manager):
+    def destroy(self, *, from_del, manager=None):
         if self._destroyed:
             return
         super().destroy(from_del=from_del)
-        self._get_manager()._destroy_macro(self)
+        manager2 = self._get_manager()
+        if not isinstance(manager2, UnboundManager):
+            manager2._destroy_macro(self)
         if self._gen_context is not None:
             result = self._gen_context.destroy(from_del=from_del, manager=manager)
             self._gen_context = None
