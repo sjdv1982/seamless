@@ -1,14 +1,28 @@
 def constructor(
-  ctx, libctx, chunksize, context_graph, 
-  inp, keyorder0, uniform,
-  result, elision, elision_chunksize, keyorder
+    ctx,
+    libctx,
+    chunksize,
+    context_graph,
+    inp,
+    keyorder0,
+    uniform,
+    result,
+    elision,
+    elision_chunksize,
+    keyorder,
+    merge_method,
 ):
+    if merge_method not in ("deepcell", "dict"):
+        raise ValueError((merge_method, ("deepcell", "dict")))
     m = ctx.m = Macro()
     m.elision = elision
     m.graph = context_graph
     m.pins.graph.celltype = "plain"
 
-    m.pins.result = {"io": "output", "celltype": "mixed", "hash_pattern": {"*": "#"}}
+    if merge_method == "deepcell":
+        m.pins.result = {"io": "output", "celltype": "mixed", "hash_pattern": {"*": "#"}}
+    elif merge_method == "dict":
+        m.pins.result = {"io": "output", "celltype": "mixed"}
 
     m.chunksize = chunksize
     m.pins.chunksize.celltype = "int"
@@ -17,6 +31,9 @@ def constructor(
     m.pins.elision_.celltype = "bool"
     m.elision_chunksize = elision_chunksize
     m.pins.elision_chunksize.celltype = "int"
+
+    m.merge_method = merge_method
+    m.pins.merge_method.celltype = "str"
 
     c = Cell()
     ctx.inp1 = c
@@ -37,7 +54,9 @@ def constructor(
         m.has_uniform = False
 
     lib_module_dict = libctx.lib_module_dict.value
-    ctx.lib_module_dict = Cell("plain").set(lib_module_dict)  # not strictly necessary to create a cell
+    ctx.lib_module_dict = Cell("plain").set(
+        lib_module_dict
+    )  # not strictly necessary to create a cell
     m.lib_module_dict = ctx.lib_module_dict
     m.pins.lib_module_dict.celltype = "plain"
 
@@ -55,16 +74,16 @@ def constructor(
     m.pins.keyorder.celltype = "plain"
 
     lib_codeblock = libctx.lib_codeblock.value
-    ctx.lib_codeblock = Cell("plain").set(lib_codeblock)  # not strictly necessary to create a cell
+    ctx.lib_codeblock = Cell("plain").set(
+        lib_codeblock
+    )  # not strictly necessary to create a cell
     m.lib_codeblock = ctx.lib_codeblock
     m.pins.lib_codeblock.celltype = "plain"
 
-    lib_code = {
-        "type": "interpreted",
-        "language": "python",
-        "code": lib_codeblock
-    }
-    ctx.lib_code = Cell("plain").set(lib_code)  # not strictly necessary to create a cell
+    lib_code = {"type": "interpreted", "language": "python", "code": lib_codeblock}
+    ctx.lib_code = Cell("plain").set(
+        lib_code
+    )  # not strictly necessary to create a cell
     m.lib = ctx.lib_code
     m.pins.lib.celltype = "plain"
     m.pins.lib.subcelltype = "module"
@@ -74,45 +93,25 @@ def constructor(
     else:
         m.code = lib_module_dict["map_dict_chunk"]["main"]
     ctx.result = Cell()
-    ctx.result.hash_pattern = {"*": "#"}
+    if merge_method == "deepcell":
+        ctx.result.hash_pattern = {"*": "#"}
     ctx.result = m.result
     result.connect_from(ctx.result)
 
+
 constructor_params = {
     "context_graph": "context",
-    "inp": {
-        "type": "cell",
-        "io": "input"
-    },
-    "chunksize": {
-        "type": "value",
-        "default": 10
-    },
-    "keyorder0": {
-        "type": "value",
-        "io": "input",
-        "default": []
-    },
+    "inp": {"type": "cell", "io": "input"},
+    "chunksize": {"type": "value", "default": 10},
+    "keyorder0": {"type": "value", "io": "input", "default": []},
     "uniform": {
         "type": "cell",
         "io": "input",
         "must_be_defined": False,
     },
-    "result": {
-        "type": "cell",
-        "io": "output"
-    },
-    "keyorder": {
-        "type": "cell",
-        "celltype": "plain",
-        "io": "output"
-    },
-    "elision": {
-        "type": "value",
-        "default": False
-    },
-    "elision_chunksize": {
-        "type": "value",
-        "default": 100
-    },
+    "result": {"type": "cell", "io": "output"},
+    "keyorder": {"type": "cell", "celltype": "plain", "io": "output"},
+    "elision": {"type": "value", "default": False},
+    "elision_chunksize": {"type": "value", "default": 100},
+    "merge_method": {"type": "value", "default": "deepcell"},
 }

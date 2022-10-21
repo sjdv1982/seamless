@@ -14,8 +14,14 @@ def test(mylib):
     ctx = test_map_dict(mylib)
     print("test map_dict uniform")
     ctx = test_map_dict_uniform(mylib)
-    print("test map_dict_chunk")
-    ctx = test_map_dict_chunk(mylib)
+    print("test map_dict_chunk, without elision, deepcell merge method")
+    ctx = test_map_dict_chunk(mylib, elision=False, merge_method="deepcell")
+    print("test map_dict_chunk, with elision, deepcell merge method")
+    ctx = test_map_dict_chunk(mylib, elision=True, merge_method="deepcell")
+    print("test map_dict_chunk, without elision, dict merge method")
+    ctx = test_map_dict_chunk(mylib, elision=False, merge_method="dict")
+    print("test map_dict_chunk, with elision, dict merge method")
+    ctx = test_map_dict_chunk(mylib, elision=True, merge_method="dict")
     print("test map_dict_chunk uniform")
     ctx = test_map_dict_chunk_uniform(mylib)
     return ctx
@@ -294,7 +300,7 @@ def test_map_dict_uniform(mylib):
     print(ctx.result.value)
     return ctx
 
-def test_map_dict_chunk(mylib):
+def test_map_dict_chunk(mylib, elision, merge_method):
     from seamless.highlevel import Context, Cell
     ctx = Context()
     ctx.include(mylib.map_dict_chunk)
@@ -309,7 +315,7 @@ def test_map_dict_chunk(mylib):
         return result
     ctx.mul.tf = mul
     ctx.mul.tf.a = ctx.mul.inp
-    ctx.mul.tf.factor = 3
+    ctx.mul.tf.factor = 3 + int(elision) # to avoid transformer cache hits
     ctx.mul.result = ctx.mul.tf
     ctx.mul.result.celltype = "mixed"
     ctx.compute()
@@ -331,8 +337,9 @@ def test_map_dict_chunk(mylib):
         keyorder0 = [],
         keyorder = ctx.keyorder,
         result = ctx.result,
-        elision = True,
-        elision_chunksize = 2
+        elision = elision,
+        elision_chunksize = 2,
+        merge_method = merge_method,
     )
     ctx.compute()
     print(ctx.mapping.ctx.status)
