@@ -38,7 +38,7 @@ def map_dict_chunk(
         pos = chunksize * n
         hc = HighLevelContext(graph)
 
-        subctx = "subctx_" + str(n + 1)
+        subctx = "subctx_{:05d}".format(n + 1)
         setattr(ctx, subctx, hc)
 
         if first:
@@ -91,7 +91,7 @@ def map_dict_chunk(
         # print("CHUNK", list(inputchunk.keys()))
 
         chunk_ctx = context()
-        setattr(ctx, "chunk_%d" % (n + 1), chunk_ctx)
+        setattr(ctx, "chunk_{:05d}".format(n + 1), chunk_ctx)
         chunk_ctx.inputchunk_checksum = cell("checksum")
         chunk_ctx.inputchunk_checksum.set(inputchunk)
         chunk_ctx.inputchunk = cell("mixed", hash_pattern={"*": "#"})
@@ -134,7 +134,7 @@ def map_dict_chunk(
             chunk_ctx.result.connect(chunk_ctx.result_checksum)
             chunk_ctx.result_checksum.connect(chunk_ctx.result_deep)
             chunk_ctx.result_deep.connect(ctx.sc.inchannels[(n + 1,)])
-        elif merge_method == "dict":
+        elif merge_method == "dict" or merge_method == "list":
             chunk_ctx.result.connect(ctx.sc.inchannels[(n + 1,)])
         else:
             raise ValueError(merge_method)
@@ -144,7 +144,7 @@ def map_dict_chunk(
 
     if merge_method == "deepcell":
         ctx.subresults = cell("plain")
-    elif merge_method == "dict":
+    elif merge_method == "dict" or merge_method == "list":
         ctx.subresults = cell("mixed")
     else:
         raise ValueError(merge_method)
@@ -165,8 +165,11 @@ def map_dict_chunk(
         ctx.result = cell("mixed", hash_pattern={"*": "#"})
         ctx.result_checksum.connect(ctx.result)
 
-    elif merge_method == "dict":
-        merge_subresults = lib_module_dict["helper"]["merge_subresults_chunk"]
+    elif merge_method == "dict" or merge_method == "list":
+        if merge_method == "dict":
+            merge_subresults = lib_module_dict["helper"]["merge_subresults_chunk"]
+        else:
+            merge_subresults = lib_module_dict["helper"]["merge_subresults_chunk_list"]
         ctx.merge_subresults = transformer(
             {
                 "subresults": {"io": "input", "celltype": "mixed"},
@@ -207,7 +210,12 @@ def map_dict_chunk_nested(
     # print("NEST", length, keyorder[0])
 
     if elision and elision_chunksize > 1 and length > elision_chunksize * chunksize:
-        merge_subresults = lib_module_dict["helper"]["merge_subresults_dict"]
+        if merge_method in ("deepcell", "dict"):
+            merge_subresults = lib_module_dict["helper"]["merge_subresults_dict"]
+        elif merge_method == "list":
+            merge_subresults = lib_module_dict["helper"]["merge_subresults_list"]
+        else:
+            raise ValueError(merge_method)
         ctx.lib_module_dict = cell("plain").set(lib_module_dict)
         ctx.lib_codeblock = cell("plain").set(lib_codeblock)
         ctx.main_code = cell("python").set(lib_module_dict["map_dict_chunk"]["main"])
@@ -286,7 +294,7 @@ def map_dict_chunk_nested(
         transformer_params = {}
         if merge_method == "deepcell":
             merge_celltype = "checksum"
-        elif merge_method == "dict":
+        elif merge_method == "dict" or merge_method == "list":
             merge_celltype = "mixed"
         else:
             raise ValueError(merge_method)
@@ -301,7 +309,7 @@ def map_dict_chunk_nested(
 
         if merge_method == "deepcell":
             ctx.result = cell("mixed", hash_pattern={"*": "#"})
-        elif merge_method == "dict":
+        elif merge_method == "dict" or merge_method == "list":
             ctx.result = cell("mixed")
         tf.result.connect(ctx.result)
 

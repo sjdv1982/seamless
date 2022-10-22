@@ -12,8 +12,8 @@ def constructor(
     keyorder,
     merge_method,
 ):
-    if merge_method not in ("deepcell", "dict"):
-        raise ValueError((merge_method, ("deepcell", "dict")))
+    if merge_method not in ("deepcell", "dict", "list"):
+        raise ValueError((merge_method, ("deepcell", "dict", "list")))
     m = ctx.m = Macro()
     m.elision = elision
     m.graph = context_graph
@@ -21,7 +21,7 @@ def constructor(
 
     if merge_method == "deepcell":
         m.pins.result = {"io": "output", "celltype": "mixed", "hash_pattern": {"*": "#"}}
-    elif merge_method == "dict":
+    elif merge_method == "dict" or merge_method == "list":
         m.pins.result = {"io": "output", "celltype": "mixed"}
 
     m.chunksize = chunksize

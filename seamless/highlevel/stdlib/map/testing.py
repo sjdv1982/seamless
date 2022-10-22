@@ -24,6 +24,10 @@ def test(mylib):
     ctx = test_map_dict_chunk(mylib, elision=True, merge_method="dict")
     print("test map_dict_chunk uniform")
     ctx = test_map_dict_chunk_uniform(mylib)
+    print("test map_dict_chunk_list, without elision")
+    ctx = test_map_dict_chunk_list(mylib, elision=False)
+    print("test map_dict_chunk_list, with elision")
+    ctx = test_map_dict_chunk_list(mylib, elision=True)
     return ctx
 
 def test_map_list_N(mylib):
@@ -405,3 +409,63 @@ def test_map_dict_chunk_uniform(mylib):
     ctx.compute()
     print(ctx.result.value)
     return ctx
+
+
+def test_map_dict_chunk_list(mylib, elision):
+    from seamless.highlevel import Context, Cell
+    ctx = Context()
+    ctx.include(mylib.map_dict_chunk)
+
+    ctx.mul = Context()
+    ctx.mul.inp = Cell("mixed")
+    def mul(a, factor):
+        print("MUL-LIST", a)
+        result = []
+        for key in sorted(a.keys()):
+            result.append(a[key] * factor)
+        return result
+    ctx.mul.tf = mul
+    ctx.mul.tf.a = ctx.mul.inp
+    ctx.mul.tf.factor = 3 + int(elision) # to avoid transformer cache hits
+    ctx.mul.result = ctx.mul.tf
+    ctx.mul.result.celltype = "mixed"
+    ctx.compute()
+
+    ctx.inp = {
+        "key01": 10, "key02": 220, "key03": 30,
+        "key04": 40, "key05": 250, "key06": 60,
+        "key07": 70, "key08": 280, "key09": 90,
+        "key10": 100, "key11": 2110, "key12": 120,
+    }
+    ctx.inp.hash_pattern = {"*": "#"}
+    ctx.result = Cell()
+    ctx.keyorder = Cell("plain")
+
+    ctx.mapping = ctx.lib.map_dict_chunk(
+        context_graph=ctx.mul,
+        inp = ctx.inp,
+        chunksize = 3,
+        keyorder0 = [],
+        keyorder = ctx.keyorder,
+        result = ctx.result,
+        elision = elision,
+        elision_chunksize = 2,
+        merge_method = "list",
+    )
+    ctx.compute()
+    print(ctx.mapping.ctx.status)
+    print(ctx.result.value)
+    print(ctx.result.value)
+    keyorder = ctx.keyorder.value
+    ctx.inp.handle.update({
+        "a": 80,
+        "b": 30,
+        "c": 999,
+        "d": -1,
+    })    
+    keyorder.extend(["a", "b", "c", "d"])
+    ctx.mapping.keyorder0 = keyorder
+    ctx.compute()
+    print(ctx.result.value)
+    print(ctx.keyorder.value)
+    return ctx 
