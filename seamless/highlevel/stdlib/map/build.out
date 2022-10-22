@@ -1,13 +1,13 @@
 test map_list
-ADD 10 1000
-ADD 20 1000
 ADD 30 1000
 ADD 40 1000
+ADD 10 1000
+ADD 20 1000
 None
 <Silk: [1010, 1020, 1030, 1040] >
+ADD 1 1000
 ADD 80 1000
 ADD 12 1000
-ADD 1 1000
 <Silk: [1010, 1020, 1030, 1040, 1080, 1012, 1001, 1001, 1010, 1020, 1030, 1040] >
 test map_list uniform
 ADD 210 -1000
@@ -22,22 +22,22 @@ ADD 230 1000
 ADD 240 1000
 <Silk: [1210, 1220, 1230, 1240] >
 test map_list_N
+ADD 40 12
+ADD 30 8
 ADD 10 2
 ADD 20 4
-ADD 30 8
-ADD 40 12
 <Silk: [12, 24, 38, 52] >
+ADD 1 3
 ADD 80 100
 ADD 12 16
-ADD 1 3
 <Silk: [12, 24, 38, 52, 180, 28, 4, 4, 12, 24, 38, 52] >
-ADD2 10 2
 ADD2 20 4
+ADD2 10 2
 ADD2 30 8
 ADD2 40 12
-ADD2 1 3
 ADD2 80 100
 ADD2 12 16
+ADD2 1 3
 <Silk: [13, 25, 39, 53, 181, 29, 5, 5, 13, 25, 39, 53] >
 test map_list_N uniform
 ADD 110 2 7000
@@ -63,10 +63,10 @@ test map_dict uniform
 Status: OK
 None
 <Silk: {'key1': 1010, 'key2': 1220, 'key3': 1030, 'key4': 1040} >
-ADD 10 6000
-ADD 220 6000
 ADD 30 6000
 ADD 40 6000
+ADD 10 6000
+ADD 220 6000
 <Silk: {'key1': 6010, 'key2': 6220, 'key3': 6030, 'key4': 6040} >
 test map_dict_chunk, without elision, deepcell merge method
 MUL {'key01': 10, 'key02': 220, 'key03': 30}
@@ -112,3 +112,37 @@ Status: OK
 MUL {'key1': 10, 'key2': 220} 13
 MUL {'key3': 30, 'key4': 40} 13
 <Silk: {'key1': 130, 'key2': 2860, 'key3': 390, 'key4': 520} >
+test map_dict_chunk_list, without elision
+MUL-LIST {'key01': 10, 'key02': 220, 'key03': 30}
+MUL-LIST {'key04': 40, 'key05': 250, 'key06': 60}
+MUL-LIST {'key07': 70, 'key08': 280, 'key09': 90}
+MUL-LIST {'key10': 100, 'key11': 2110, 'key12': 120}
+Status: OK
+<Silk: [30, 660, 90, 120, 750, 180, 210, 840, 270, 300, 6330, 360] >
+<Silk: [30, 660, 90, 120, 750, 180, 210, 840, 270, 300, 6330, 360] >
+MUL-LIST {'a': 80, 'b': 30, 'c': 999}
+MUL-LIST {'d': -1, 'key01': 10, 'key02': 220}
+MUL-LIST {'key03': 30, 'key04': 40, 'key05': 250}
+MUL-LIST {'key06': 60, 'key07': 70, 'key08': 280}
+MUL-LIST {'key09': 90, 'key10': 100, 'key11': 2110}
+MUL-LIST {'key12': 120}
+MUL-LIST {'d': -1}
+<Silk: [30, 660, 90, 120, 750, 180, 210, 840, 270, 300, 6330, 360, 240, 90, 2997, -3] >
+['key01', 'key02', 'key03', 'key04', 'key05', 'key06', 'key07', 'key08', 'key09', 'key10', 'key11', 'key12', 'a', 'b', 'c', 'd']
+test map_dict_chunk_list, with elision
+MUL-LIST {'key01': 10, 'key02': 220, 'key03': 30}
+MUL-LIST {'key04': 40, 'key05': 250, 'key06': 60}
+MUL-LIST {'key07': 70, 'key08': 280, 'key09': 90}
+MUL-LIST {'key10': 100, 'key11': 2110, 'key12': 120}
+Status: OK
+<Silk: [40, 880, 120, 160, 1000, 240, 280, 1120, 360, 400, 8440, 480] >
+<Silk: [40, 880, 120, 160, 1000, 240, 280, 1120, 360, 400, 8440, 480] >
+MUL-LIST {'key09': 90, 'key10': 100, 'key11': 2110}
+MUL-LIST {'key12': 120}
+MUL-LIST {'a': 80, 'b': 30, 'c': 999}
+MUL-LIST {'d': -1, 'key01': 10, 'key02': 220}
+MUL-LIST {'key03': 30, 'key04': 40, 'key05': 250}
+MUL-LIST {'key06': 60, 'key07': 70, 'key08': 280}
+MUL-LIST {'d': -1}
+<Silk: [40, 880, 120, 160, 1000, 240, 280, 1120, 360, 400, 8440, 480, 320, 120, 3996, -4] >
+['key01', 'key02', 'key03', 'key04', 'key05', 'key06', 'key07', 'key08', 'key09', 'key10', 'key11', 'key12', 'a', 'b', 'c', 'd']
