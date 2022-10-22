@@ -215,7 +215,7 @@ def _execute(name, code,
             exc = str(exc) + "\n"
             return (10, exc)
         except Exception as exc:
-            exc = traceback.format_exc()
+            exc = traceback.format_exc(limit=-2)
             return (1, exc)
         except SystemExit:
             raise SystemExit() from None
