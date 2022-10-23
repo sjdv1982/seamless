@@ -1,8 +1,30 @@
 def merge_subresults_list(**subresults):
-    result = []
+    import numpy as np
+    import itertools
+    result0 = []
     for k in sorted(subresults.keys()):
         v = subresults[k]
-        result += v
+        if (v == []) is True:
+            continue
+        result0.append(v)
+    if not len(result0):
+        return []
+    
+    first = result0[0]
+    if isinstance(first, np.ndarray):
+        totlen = sum([len(v) for v in result0])
+        result = np.empty(totlen, first.dtype)
+        currlen = 0
+        for v in result0:
+            if not len(v):
+                continue
+            newlen = currlen + len(v)
+            result[currlen:newlen] = v
+            currlen = newlen
+    else:
+        result = list(itertools.chain(*result0))
+    return result
+
     return result
 
 def merge_subresults_dict(**subresults):

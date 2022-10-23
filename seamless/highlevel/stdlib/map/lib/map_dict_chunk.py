@@ -260,7 +260,7 @@ def map_dict_chunk_nested(
             m.allow_elision = True
             ctx.merge_method.connect(m.merge_method)
 
-            setattr(ctx, "m{}".format(chunk_index), m)
+            setattr(ctx, "m{:05d}".format(chunk_index), m)
             ctx.main_code.connect(m.code)
             ctx.chunksize.connect(m.chunksize)
             ctx.elision.connect(m.elision_)

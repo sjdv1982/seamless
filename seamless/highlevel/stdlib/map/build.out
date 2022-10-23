@@ -1,6 +1,6 @@
 test map_list
-ADD 30 1000
 ADD 40 1000
+ADD 30 1000
 ADD 10 1000
 ADD 20 1000
 None
@@ -16,14 +16,14 @@ ADD 230 -1000
 ADD 240 -1000
 None
 <Silk: [-790, -780, -770, -760] >
-ADD 210 1000
 ADD 220 1000
 ADD 230 1000
 ADD 240 1000
+ADD 210 1000
 <Silk: [1210, 1220, 1230, 1240] >
 test map_list_N
-ADD 40 12
 ADD 30 8
+ADD 40 12
 ADD 10 2
 ADD 20 4
 <Silk: [12, 24, 38, 52] >
@@ -31,8 +31,8 @@ ADD 1 3
 ADD 80 100
 ADD 12 16
 <Silk: [12, 24, 38, 52, 180, 28, 4, 4, 12, 24, 38, 52] >
-ADD2 20 4
 ADD2 10 2
+ADD2 20 4
 ADD2 30 8
 ADD2 40 12
 ADD2 80 100
@@ -45,10 +45,10 @@ ADD 120 4 7000
 ADD 130 8 7000
 ADD 140 12 7000
 <Silk: [7112, 7124, 7138, 7152] >
-ADD 110 2 8000
-ADD 120 4 8000
 ADD 130 8 8000
 ADD 140 12 8000
+ADD 110 2 8000
+ADD 120 4 8000
 <Silk: [8112, 8124, 8138, 8152] >
 test map_dict
 Status: OK
@@ -63,10 +63,10 @@ test map_dict uniform
 Status: OK
 None
 <Silk: {'key1': 1010, 'key2': 1220, 'key3': 1030, 'key4': 1040} >
+ADD 220 6000
 ADD 30 6000
 ADD 40 6000
 ADD 10 6000
-ADD 220 6000
 <Silk: {'key1': 6010, 'key2': 6220, 'key3': 6030, 'key4': 6040} >
 test map_dict_chunk, without elision, deepcell merge method
 MUL {'key01': 10, 'key02': 220, 'key03': 30}
@@ -102,47 +102,33 @@ test map_dict_chunk, with elision, dict merge method
 Status: OK
 <Silk: {'key01': 40, 'key02': 880, 'key03': 120, 'key04': 160, 'key05': 1000, 'key06': 240, 'key07': 280, 'key08': 1120, 'key09': 360, 'key10': 400, 'key11': 8440, 'key12': 480} >
 <Silk: {'key01': 40, 'key02': 880, 'key03': 120, 'key04': 160, 'key05': 1000, 'key06': 240, 'key07': 280, 'key08': 1120, 'key09': 360, 'key10': 400, 'key11': 8440, 'key12': 480} >
-<Silk: {'a': 320, 'b': 120, 'c': 3996, 'd': -4, 'key01': 40, 'key02': 880, 'key03': 120, 'key04': 160, 'key05': 1000, 'key06': 240, 'key07': 280, 'key08': 1120, 'key09': 360, 'key10': 400, 'key11': 8440, 'key12': 480} >
-['key01', 'key02', 'key03', 'key04', 'key05', 'key06', 'key07', 'key08', 'key09', 'key10', 'key11', 'key12', 'a', 'b', 'c', 'd']
-test map_dict_chunk uniform
-MUL {'key1': 10, 'key2': 220} 7
-MUL {'key3': 30, 'key4': 40} 7
-Status: OK
-<Silk: {'key1': 70, 'key2': 1540, 'key3': 210, 'key4': 280} >
-MUL {'key1': 10, 'key2': 220} 13
-MUL {'key3': 30, 'key4': 40} 13
-<Silk: {'key1': 130, 'key2': 2860, 'key3': 390, 'key4': 520} >
-test map_dict_chunk_list, without elision
-MUL-LIST {'key01': 10, 'key02': 220, 'key03': 30}
-MUL-LIST {'key04': 40, 'key05': 250, 'key06': 60}
-MUL-LIST {'key07': 70, 'key08': 280, 'key09': 90}
-MUL-LIST {'key10': 100, 'key11': 2110, 'key12': 120}
-Status: OK
-<Silk: [30, 660, 90, 120, 750, 180, 210, 840, 270, 300, 6330, 360] >
-<Silk: [30, 660, 90, 120, 750, 180, 210, 840, 270, 300, 6330, 360] >
-MUL-LIST {'a': 80, 'b': 30, 'c': 999}
-MUL-LIST {'d': -1, 'key01': 10, 'key02': 220}
-MUL-LIST {'key03': 30, 'key04': 40, 'key05': 250}
-MUL-LIST {'key06': 60, 'key07': 70, 'key08': 280}
-MUL-LIST {'key09': 90, 'key10': 100, 'key11': 2110}
-MUL-LIST {'key12': 120}
-MUL-LIST {'d': -1}
-<Silk: [30, 660, 90, 120, 750, 180, 210, 840, 270, 300, 6330, 360, 240, 90, 2997, -3] >
-['key01', 'key02', 'key03', 'key04', 'key05', 'key06', 'key07', 'key08', 'key09', 'key10', 'key11', 'key12', 'a', 'b', 'c', 'd']
-test map_dict_chunk_list, with elision
-MUL-LIST {'key01': 10, 'key02': 220, 'key03': 30}
-MUL-LIST {'key04': 40, 'key05': 250, 'key06': 60}
-MUL-LIST {'key07': 70, 'key08': 280, 'key09': 90}
-MUL-LIST {'key10': 100, 'key11': 2110, 'key12': 120}
-Status: OK
-<Silk: [40, 880, 120, 160, 1000, 240, 280, 1120, 360, 400, 8440, 480] >
-<Silk: [40, 880, 120, 160, 1000, 240, 280, 1120, 360, 400, 8440, 480] >
-MUL-LIST {'key09': 90, 'key10': 100, 'key11': 2110}
-MUL-LIST {'key12': 120}
-MUL-LIST {'a': 80, 'b': 30, 'c': 999}
-MUL-LIST {'d': -1, 'key01': 10, 'key02': 220}
-MUL-LIST {'key03': 30, 'key04': 40, 'key05': 250}
-MUL-LIST {'key06': 60, 'key07': 70, 'key08': 280}
-MUL-LIST {'d': -1}
-<Silk: [40, 880, 120, 160, 1000, 240, 280, 1120, 360, 400, 8440, 480, 320, 120, 3996, -4] >
-['key01', 'key02', 'key03', 'key04', 'key05', 'key06', 'key07', 'key08', 'key09', 'key10', 'key11', 'key12', 'a', 'b', 'c', 'd']
+TaskManager, tasks: 1 undestroyed
+******************************
+Task: StructuredCellJoinTask 926
+Depends on: Seamless structured cell: .inp
+******************************
+
+Traceback (most recent call last):
+  File "build.py", line 80, in <module>
+    ctx = test(mylib)
+  File "/cwd/seamless/highlevel/stdlib/map/testing.py", line 24, in test
+    ctx = test_map_dict_chunk(mylib, elision=True, merge_method="dict")
+  File "/cwd/seamless/highlevel/stdlib/map/testing.py", line 361, in test_map_dict_chunk
+    ctx.compute()
+  File "/seamless/seamless/highlevel/Context.py", line 476, in compute
+    self.translate()
+  File "/seamless/seamless/highlevel/Context.py", line 534, in translate
+    return self._do_translate(force=force)
+  File "/seamless/seamless/highlevel/Context.py", line 103, in func2
+    func(*args, **kwargs)
+  File "/seamless/seamless/highlevel/Context.py", line 917, in _do_translate
+    return self._do_translate2(graph0, force=force)
+  File "/seamless/seamless/highlevel/Context.py", line 1027, in _do_translate2
+    raise Exception(
+Exception: Cannot re-translate, since clean-up of old context was incomplete
+TaskManager, tasks: 1 undestroyed
+******************************
+Task: StructuredCellJoinTask 926
+Depends on: Seamless structured cell: .inp
+******************************
+
