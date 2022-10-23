@@ -287,7 +287,7 @@ class LibInstance:
         try:
             exec_code(constructor, identifier, namespace, argnames, None)
         except (TypeError, ValueError):
-            self._exc(1, libctx)
+            self._exc(-1, libctx)
         except Exception:
             self._exc(None, libctx)
         else:
