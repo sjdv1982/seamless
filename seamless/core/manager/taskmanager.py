@@ -621,7 +621,10 @@ class TaskManager:
                     try:
                         assert task.future is fut
                         assert not task.future._log_traceback
-                        task.future.result() # to raise Exception; TODO: log it instead
+                        task.future.result() # to raise Exception. 
+                        # Normally, only CancelledErrors are propagated until here.
+                        # All other errors should have been caught and logged
+                        # (as expression exception, macro exception, etc.) earlier.
                     except CancelledError:
                         try:
                             task.future._exception = None ### KLUDGE

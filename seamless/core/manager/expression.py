@@ -1,7 +1,4 @@
-import weakref
-import json
 from ...calculate_checksum import calculate_checksum
-import numpy as np
 from weakref import WeakValueDictionary
 
 _expressions = WeakValueDictionary()

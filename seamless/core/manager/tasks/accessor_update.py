@@ -59,7 +59,12 @@ class AccessorUpdateTask(Task):
                         import traceback; traceback.print_exc()
                         return
         #
-        expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()
+
+        try:
+            expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()
+        except Exception as exc:
+            expression_result_checksum = None
+            expression.exception = exc
 
         if expression_result_checksum is None:
             if expression.exception is None:
@@ -153,10 +158,6 @@ from .evaluate_expression import EvaluateExpressionTask
 from .transformer_update import TransformerUpdateTask
 from .reactor_update import ReactorUpdateTask
 from .cell_update import CellUpdateTask
-from .get_buffer import GetBufferTask
-from .serialize_buffer import SerializeToBufferTask
-from .deserialize_buffer import DeserializeBufferTask
-from .checksum import CalculateChecksumTask
 from ...worker import Worker
 from ...transformer import Transformer
 from ...reactor import Reactor

@@ -1,4 +1,3 @@
-from numpy.lib.arraysetops import isin
 from silk.mixed import _array_types
 
 def _set_subpath(value, path, subvalue):

@@ -166,8 +166,8 @@ class MacroManager:
             result = await _prepare(macro, self.manager(), self.MAX_RUNNING_TASKS)
             if result is not None:
                 self.macros_prepared[macro] = result
-        except Exception:
-            traceback.print_exc()
+        except Exception as exception:
+            self.manager()._set_macro_exception(macro, exception)
         finally:
             self.preparing_tasks.pop(macro, None)
 
