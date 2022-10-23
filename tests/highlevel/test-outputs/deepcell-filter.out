@@ -1,4 +1,3 @@
-ERROR in incref'ing deep buffer '0000000000000000000000000000000000000000000000000000000000000000'
 Status: exception
 seamless.core.cache.CacheMissError: 0000000000000000000000000000000000000000000000000000000000000000
 
@@ -6,15 +5,13 @@ Status: OK
 Status: OK
 *apply_blackwhite*: Status: error
 *apply_blackwhite*: Traceback (most recent call last):
-  File "/home/jovyan/software/seamless/core/execute.py", line 69, in _execute
-    exec_code(
-  File "/home/jovyan/software/seamless/core/cached_compile.py", line 62, in exec_code
-    exec(code_obj, namespace)
-  File "Seamless transformer: .a.apply_blackwhite", line 16, in <module>
+  File "Seamless transformer: .a.apply_blackwhite", line 17, in <module>
     result = apply_blackwhitelist(blackwhitelist=blackwhitelist,keyorder=keyorder,origin=origin)
-  File "Seamless transformer: .a.apply_blackwhite", line 2, in apply_blackwhitelist
+  File "Seamless transformer: .a.apply_blackwhite", line 3, in apply_blackwhitelist
     assert keyorder is None or isinstance(keyorder, list), keyorder  # TODO: schema instead
 AssertionError: nonsense
+*************************************************
+Execution time: 0.0 seconds
 
 Status: OK
 

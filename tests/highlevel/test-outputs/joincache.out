@@ -11,5 +11,4 @@ RE-TRANSLATE 3
 DONE
 SERIALIZE TO BUFFER {'a': 2}
 <Silk: {'a': 2} >
-WARNING: 'https://buffer.rpbs.univ-paris-diderot.fr/6f34e46a2c2bb3cda2b14ff240c71eb5e290049cf92f53ac816038095d1b9440' has the wrong checksum
 CacheMissError 6f34e46a2c2bb3cda2b14ff240c71eb5e290049cf92f53ac816038095d1b9440

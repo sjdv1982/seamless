@@ -331,17 +331,27 @@ def download_buffer_from_servers(checksum):
     else:
         buffer_servers = []
     for buffer_server in buffer_servers:
-        url = buffer_server + "/" + checksum
-        response = session.get(url, stream=True, timeout=3)
-        result = []
-        for chunk in response.iter_content(100000):
-            result.append(chunk)
-        buf = b"".join(result)
-        from seamless import calculate_checksum
-        buf_checksum = calculate_checksum(buf, hex=True)
-        if buf_checksum != checksum:
-            print("WARNING: '{}' has the wrong checksum".format(url))
+        try:
+            url = buffer_server + "/" + checksum
+            response = session.get(url, stream=True, timeout=3)
+            if int(response.status_code/100) in (4,5):
+                raise ConnectionError()
+            result = []
+            for chunk in response.iter_content(100000):
+                result.append(chunk)
+            buf = b"".join(result)
+            from seamless import calculate_checksum
+            buf_checksum = calculate_checksum(buf, hex=True)
+            if buf_checksum != checksum:
+                print("WARNING: '{}' has the wrong checksum".format(url))
+                continue
+        except (ConnectionError, ReadTimeout):
+            #import traceback; traceback.print_exc()
             continue
+        except Exception:
+            import traceback; traceback.print_exc()
+            continue
+
         return buf
 
 if __name__ == "__main__":
