@@ -136,6 +136,6 @@ nodeclasses = {
 __all__ = [
     "Context", "Transformer", "Macro",
     "Cell", "SimpleDeepCell", "FolderCell", "DeepCell", "DeepFolderCell",
-    "Link", "Graph", "StaticContext", "Module",
+    "Link", "StaticContext", "Module",
     "Resource", "load_graph", "copy"
 ]
