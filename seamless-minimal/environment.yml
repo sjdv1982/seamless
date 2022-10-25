@@ -6,7 +6,7 @@ dependencies:
   - python=3.8.8
   - conda=4.10.*
   - mamba=0.12.*
-  - silk
+  - silk>=0.1.8
   - pip
   - numpy==1.20.*
   - ruamel.yaml=0.16.*
