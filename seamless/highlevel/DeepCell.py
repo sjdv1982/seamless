@@ -363,12 +363,11 @@ Use cell.data instead."""
 
     def _set_observers(self):
         ctx = self._get_context()
-        if len(ctx.origin.inchannels):
-            origin = ctx.origin.auth
-        else:
-            origin = ctx.origin_integrated
+        origin = ctx.origin.auth
         if origin is not None:
             origin._set_observer(partial(self._observe, "origin"))
+        else:
+            self._observe("origin", None)
         ctx.keyorder._set_observer(partial(self._observe, "keyorder"))
         ctx.filtered0._set_observer(partial(self._observe, "filtered"))
         ctx.blacklist._set_observer(partial(self._observe, "blacklist"))

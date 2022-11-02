@@ -245,7 +245,7 @@ class StructuredCell(SeamlessBase):
                 set_subpath(self._auth_value, self.hash_pattern, path, value)
             else:
                 self._auth_value = deepcopy(value)
-                self._join_auth()
+            self._join_auth()
 
 
     def _join_auth(self):
@@ -259,6 +259,8 @@ class StructuredCell(SeamlessBase):
         self.auth._void = False
         self.auth._status_reason = None
         self._modified_auth = True
+        if self.auth._observer is not None:
+            self.auth._observer(None)
         if get_scell_state(self) == "void" and self._data is not self.auth:
             manager._set_cell_checksum(self._data, None, void=True, status_reason=StatusReasonEnum.UNDEFINED)
         manager.structured_cell_trigger(self)

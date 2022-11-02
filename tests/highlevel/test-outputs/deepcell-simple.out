@@ -36,12 +36,12 @@ If you really want to do this, create an intermediate SimpleDeepCell,
 assign the DeepCell to the SimpleDeepCell, and the SimpleDeepCell to the Cell.
 
 
-76a0a1b41ec3c27e4d17038e73331bc4e6c330d2ec0e409a443d1fde3c8b357f
+f5b2dd71bca6eff59c341ab4271b42a86c5dcf55984987959035f34d28e86680
 ['test1', 'test2', 'test3']
 7c00da18c6703c0f634716296df19875b54a19d19a37e307aed0f5732a744a99
-<Silk: {'test': 1, 'test2': 2, 'test3': 20, 'test4': 55} >
+<Silk: {'test': 1, 'test2': 2} >
 test <Silk: 1 >
-test4 <Silk: 55 >
+test4 <Silk: None >
 
 6029a94bf18edba94b275d0452290719d94aae26972fc3f81757349b47ce85e3
 ['test1', 'test2', 'test3']
