@@ -2,38 +2,40 @@ Status: OK
 
 STEP 1
 
-*gen_header*: Status: upstream => result_schema undefined
+*gen_header*: Status: error
 None
 
 STEP 2
 
-*gen_header*: Status: upstream => result_schema undefined
-None
+*gen_header*: Status: error
+*** gen_header ***
+Result schema (transformer.result.schema) needs to be defined in JSON schema format, containing at least 'type'
+*** /gen_header ***
+
 
 STEP 3
 
 *executor*: Status: error
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 204, in _execute
-    prelim_callback, progress_callback
-  File "/seamless/seamless/core/transformation.py", line 358, in _execute_local
-    mod = await build_module_async(value)
-  File "/seamless/seamless/core/build_module.py", line 174, in build_module_async
-    full_module_name, mod = build_module(module_definition)
-  File "/seamless/seamless/core/build_module.py", line 157, in build_module
-    full_module_name, completed_checksum, completed_module_definition
-  File "/seamless/seamless/core/build_module.py", line 117, in build_compiled_module
+  File "/seamless/seamless/core/transformation.py", line 403, in _execute
+    result, logs = await self._execute_local(
+  File "/seamless/seamless/core/transformation.py", line 569, in _execute_local
+    full_module_names = build_all_modules(
+  File "/seamless/seamless/core/build_module.py", line 366, in build_all_modules
+    mod = build_module(
+  File "/seamless/seamless/core/build_module.py", line 326, in build_module
+    mod = build_compiled_module(
+  File "/seamless/seamless/core/build_module.py", line 254, in build_compiled_module
     raise BuildModuleError(stderr)
 seamless.core.build_module.BuildModuleError: 
-g++ -c main.cpp -O3 -ffast-math -march=native -fPIC -p -g -o main.o
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_b433eda63d0f8fb218a058a2c31ecb39082b4b528ddffd5da901c3a8ee2a5c95_module/main.o /tmp/seamless-extensions/seamless_module_b433eda63d0f8fb218a058a2c31ecb39082b4b528ddffd5da901c3a8ee2a5c95_module/main.cpp
 ******************** ERROR ********************
-main.cpp:1:1: error: ‘lambda’ does not name a type
- lambda arr, fac, offset: 42
- ^~~~~~
+/tmp/seamless-extensions/seamless_module_b433eda63d0f8fb218a058a2c31ecb39082b4b528ddffd5da901c3a8ee2a5c95_module/main.cpp:1:1: error: ‘lambda’ does not name a type
+    1 | lambda arr, fac, offset: 42
+      | ^~~~~~
 
 ******************** /ERROR ********************
-
 *** /executor ***
 
 
@@ -50,7 +52,6 @@ If your transform() function is written in C++, don't forget to add 'extern "C" 
 typedef struct ArrStruct {
   const double *data;
   unsigned int shape[1];
-  unsigned int strides[1];
 } ArrStruct;
 
 int transform(const ArrStruct* arr, int fac, int offset, int *result);

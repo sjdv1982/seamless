@@ -24,7 +24,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.7.egg/silk/validation/validators.py", line 231, in validator_validators
+  File "/silk/silk/validation/validators.py", line 237, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in validator
     assert self.f > self.d
@@ -54,7 +54,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.7.egg/silk/validation/validators.py", line 231, in validator_validators
+  File "/silk/silk/validation/validators.py", line 237, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in validator
     assert self.f > self.d

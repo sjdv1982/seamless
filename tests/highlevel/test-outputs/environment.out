@@ -1,4 +1,4 @@
-ValueError: Conda package 'python': 3.8.8 installed, but >=10 required
+ValueError: Conda package 'python': 3.8.10 installed, but >=10 required
 
 {'properties': {'a': {'type': 'integer'}, 'b': {'type': 'integer'}}, 'type': 'object'}
 {'type': 'integer'}
@@ -31,15 +31,15 @@ int transform(int a, int b, int *result);
 
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 358, in _execute
+  File "/seamless/seamless/core/transformation.py", line 403, in _execute
     result, logs = await self._execute_local(
-  File "/seamless/seamless/core/transformation.py", line 524, in _execute_local
+  File "/seamless/seamless/core/transformation.py", line 569, in _execute_local
     full_module_names = build_all_modules(
-  File "/seamless/seamless/core/build_module.py", line 340, in build_all_modules
+  File "/seamless/seamless/core/build_module.py", line 366, in build_all_modules
     mod = build_module(
-  File "/seamless/seamless/core/build_module.py", line 302, in build_module
+  File "/seamless/seamless/core/build_module.py", line 324, in build_module
     completed_module_definition = complete(module_definition, compilers, languages)
-  File "/seamless/seamless/compiler/compile.py", line 141, in complete
+  File "/seamless/seamless/compiler/compile.py", line 140, in complete
     raise ValueError("No compiler defined for compiled language '{}'".format(lang))
 ValueError: No compiler defined for compiled language 'rust'
 *** /executor ***
@@ -59,7 +59,7 @@ ValueError: No compiler defined for compiled language 'rust'
                           # - "package", that compiles *all* source files into a single .a file
       "compile_flag": "-c"
       "output_flag": "-o"
-      "options": ["-O3", "-ffast-math", "-march=native", "-fPIC"],
+      "options": ["-O3", "-ffast-math", "-march=native", "-fPIC", "-fopenmp"],
       "public_options": ["-fPIC"],
       "debug_options": ["-fPIC", "-g", "-O0", "-fno-inline" , "-Wall"],
       "profile_options": ["-p", "-g"],
@@ -68,15 +68,15 @@ ValueError: No compiler defined for compiled language 'rust'
 
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 358, in _execute
+  File "/seamless/seamless/core/transformation.py", line 403, in _execute
     result, logs = await self._execute_local(
-  File "/seamless/seamless/core/transformation.py", line 524, in _execute_local
+  File "/seamless/seamless/core/transformation.py", line 569, in _execute_local
     full_module_names = build_all_modules(
-  File "/seamless/seamless/core/build_module.py", line 340, in build_all_modules
+  File "/seamless/seamless/core/build_module.py", line 366, in build_all_modules
     mod = build_module(
-  File "/seamless/seamless/core/build_module.py", line 304, in build_module
+  File "/seamless/seamless/core/build_module.py", line 326, in build_module
     mod = build_compiled_module(
-  File "/seamless/seamless/core/build_module.py", line 238, in build_compiled_module
+  File "/seamless/seamless/core/build_module.py", line 254, in build_compiled_module
     raise BuildModuleError(stderr)
 seamless.core.build_module.BuildModuleError: 
 rustc  --crate-type=staticlib -o /tmp/seamless-extensions/seamless_module_55febdea3c57b90c15ee62606a0b5b3ad3b05c3fd5d7fe0b35d4ab6779111536_module/main.a /tmp/seamless-extensions/seamless_module_55febdea3c57b90c15ee62606a0b5b3ad3b05c3fd5d7fe0b35d4ab6779111536_module/main.rs

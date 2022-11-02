@@ -59,7 +59,7 @@ def exec_code(code, identifier, namespace, inputs, output, *, with_ipython_kerne
     if with_ipython_kernel:
         ipython_execute(code2, namespace)
     else:
-        code_obj = cached_compile(code2, identifier)        
+        code_obj = cached_compile(code2, identifier)
         exec(code_obj, namespace)
 
 def check_function_like(code, identifier):

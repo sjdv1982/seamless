@@ -2,12 +2,14 @@
 Traceback (most recent call last):
   File "independence-error-message.py", line 11, in <module>
     ctx.b.mount("/tmp/x")
-  File "/home/jovyan/software/seamless/highlevel/Cell.py", line 265, in mount
+  File "/seamless/seamless/highlevel/Cell.py", line 345, in mount
     raise Exception(msg.format(self))
-Exception: Cannot mount Seamless Cell: .b in read mode: this cell is not fully independent, i.e. it has incoming connections
+Exception: Cannot mount Seamless Cell: .b in read mode.
+This cell is not fully independent, i.e. it has incoming connections
 Traceback (most recent call last):
   File "independence-error-message.py", line 15, in <module>
     ctx.b.share(readonly=False)
-  File "/home/jovyan/software/seamless/highlevel/Cell.py", line 839, in share
+  File "/seamless/seamless/highlevel/Cell.py", line 988, in share
     raise Exception(msg.format(self))
-Exception: Seamless Cell: .b: Non-readonly HTTP share is not possible. This cell is not fully independent, i.e. it has incoming connections
+Exception: Seamless Cell: .b: Non-readonly HTTP share is not possible.
+This cell is not fully independent, i.e. it has incoming connections

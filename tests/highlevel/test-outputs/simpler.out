@@ -10,13 +10,11 @@ START
 <Silk: {'a': 12} >
 NO RESULT <Silk: None > <Silk: None >
 TRANSFORMER EXCEPTION Traceback (most recent call last):
-  File "/home/jovyan/software/seamless/core/execute.py", line 69, in _execute
-    exec_code(
-  File "/home/jovyan/software/seamless/core/cached_compile.py", line 62, in exec_code
-    exec(code_obj, namespace)
-  File "Seamless transformer: .transform.tf", line 5, in <module>
+  File "Seamless transformer: .transform.tf", line 6, in <module>
     result = triple_it_b(a=a)
 TypeError: triple_it_b() missing 1 required positional argument: 'b'
+*************************************************
+Execution time: 0.0 seconds
 
 RUN!
 <Silk: {'a': 12, 'b': 100} >
@@ -47,13 +45,9 @@ RUN!
 TRANSFORMER INPUT EXCEPTION None
 TRANSFORMER STATUS *tf*: Status: error
 TRANSFORMER EXCEPTION Traceback (most recent call last):
-  File "/home/jovyan/software/seamless/core/execute.py", line 69, in _execute
-    exec_code(
-  File "/home/jovyan/software/seamless/core/cached_compile.py", line 62, in exec_code
-    exec(code_obj, namespace)
-  File "Seamless transformer: .transform.tf", line 5, in <module>
+  File "Seamless transformer: .transform.tf", line 6, in <module>
     result = triple_it_b(a=a,b=b)
-  File "Seamless transformer: .transform.tf", line 3, in triple_it_b
+  File "Seamless transformer: .transform.tf", line 4, in triple_it_b
     return 3 * a + b
 TypeError: unsupported operand type(s) for +: 'int' and 'str'
 
@@ -63,6 +57,8 @@ TypeError: unsupported operand type(s) for +: 'int' and 'str'
 RUN!
 
 *************************************************
+*************************************************
+Execution time: 0.0 seconds
 
 START2
 RUN!
@@ -70,13 +66,9 @@ RUN!
 TRANSFORMER INPUT EXCEPTION None
 TRANSFORMER STATUS *tf*: Status: error
 TRANSFORMER EXCEPTION Traceback (most recent call last):
-  File "/home/jovyan/software/seamless/core/execute.py", line 69, in _execute
-    exec_code(
-  File "/home/jovyan/software/seamless/core/cached_compile.py", line 62, in exec_code
-    exec(code_obj, namespace)
-  File "Seamless transformer: .transform.tf", line 5, in <module>
+  File "Seamless transformer: .transform.tf", line 6, in <module>
     result = triple_it_b(a=a,b=b)
-  File "Seamless transformer: .transform.tf", line 3, in triple_it_b
+  File "Seamless transformer: .transform.tf", line 4, in triple_it_b
     return 3 * a + b
 TypeError: unsupported operand type(s) for +: 'int' and 'str'
 
@@ -86,6 +78,8 @@ TypeError: unsupported operand type(s) for +: 'int' and 'str'
 RUN!
 
 *************************************************
+*************************************************
+Execution time: 0.0 seconds
 
 START3
 <Silk: 39 >
