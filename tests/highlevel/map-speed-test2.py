@@ -76,14 +76,14 @@ for ELISION_CHUNKSIZE in (10, 1000):
         count = 2**pcount
         t=run(count)        
         print("TIME", count, t)
-        if count < ELISION_CHUNKSIZE * DICT_CHUNKSIZE:
-            print(str(ctx.mapping.ctx.m.ctx.top.ctx.subctx_1.add.logs)[-200:])
-        elif count < ELISION_CHUNKSIZE**2 * DICT_CHUNKSIZE:
-            print(str(ctx.mapping.ctx.m.ctx.top.ctx.m1.ctx.subctx_1.add.logs)[-200:])
-        elif count < ELISION_CHUNKSIZE**3 * DICT_CHUNKSIZE:
-            print(str(ctx.mapping.ctx.m.ctx.top.ctx.m1.ctx.m1.ctx.subctx_1.add.logs)[-200:])
+        if count <= ELISION_CHUNKSIZE * DICT_CHUNKSIZE:
+            print(str(ctx.mapping.ctx.m.ctx.top.ctx.subctx_00001.add.logs)[-300:])
+        elif count <= ELISION_CHUNKSIZE**2 * DICT_CHUNKSIZE:
+            print(str(ctx.mapping.ctx.m.ctx.top.ctx.m00001.ctx.subctx_00001.add.logs)[-300:])
+        elif count <= ELISION_CHUNKSIZE**3 * DICT_CHUNKSIZE:
+            print(str(ctx.mapping.ctx.m.ctx.top.ctx.m00001.ctx.m00001.ctx.subctx_00001.add.logs)[-300:])
         else:
-            print(str(ctx.mapping.ctx.m.ctx.top.ctx.m1.ctx.m1.ctx.m1.ctx.subctx_1.add.logs)[-200:])
+            print(str(ctx.mapping.ctx.m.ctx.top.ctx.m00001.ctx.m00001.ctx.m00001.ctx.subctx_00001.add.logs)[-300:])
 
         if t > 100:
             break

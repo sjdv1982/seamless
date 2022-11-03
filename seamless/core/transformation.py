@@ -310,7 +310,7 @@ class TransformationJob:
                 if fut.exception() is not None:
                     try:
                         fut.result()
-                    except:
+                    except Exception:
                         exc = traceback.format_exc()
                         print_debug("Transformation {}: {}".format(self.checksum.hex(), exc))
                     continue

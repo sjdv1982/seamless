@@ -760,8 +760,8 @@ If origin_task is provided, that task is not cancelled."""
                 a = [aa for aa in a.values() if not isinstance(aa, BackgroundTask)]
             if attrib == "rev_reftasks":
                 a = [aa for aa in a.keys() if not isinstance(aa, BackgroundTask)]
-            a = [aa for aa in a if not aa._canceled]
-            a = [aa for aa in a if aa.future is None or not aa.future.done()]
+            a = [aa for aa in a if not hasattr(aa, "_canceled") or not aa._canceled]
+            a = [aa for aa in a if not hasattr(aa, "future") or aa.future is None or not aa.future.done()]
             if len(a):
                 print_error(name + ", " + attrib + ": %d undestroyed"  % len(a))
                 if attrib.endswith("tasks") and len(a) <= 5:
