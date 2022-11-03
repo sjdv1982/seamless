@@ -188,9 +188,13 @@ class ShareManager:
         assert cell in self.shares, (cell, hex(id(cell)))
         self.cell_updates[cell] = checksum
 
+    @property
+    def busy(self):
+        return len(self.share_updates) or len(self.cell_updates) or len(self.share_value_updates)
+
     async def run_once(self):
 
-        while len(self.share_updates) or len(self.cell_updates) or len(self.share_value_updates):
+        while self.busy:
             for cell in self.share_updates:
                 if cell._destroyed:
                     continue

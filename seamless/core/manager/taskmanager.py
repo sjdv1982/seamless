@@ -399,7 +399,7 @@ class TaskManager:
             return result, True
 
         while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or \
-          manager.macromanager.queued or deeprefmanager.busy or must_run_mount:
+          manager.macromanager.queued or deeprefmanager.busy or sharemanager.busy or must_run_mount:
             mm = manager.mountmanager
             if must_run_mount:
                 if not len(mm.cell_updates) and mm.last_run != last_mount_run:
@@ -431,7 +431,7 @@ class TaskManager:
                     break
             if get_tasks_func is None:
                 if not (len(self.tasks) or len(self.upon_connection_tasks) or len(self.launching_tasks) or len(self.synctasks) or \
-                  manager.macromanager.queued or deeprefmanager.busy):
+                  manager.macromanager.queued or deeprefmanager.busy or sharemanager.busy):
                     if not debugmountmanager.taskmanager_has_mounts(self):
                         cyclic_scells = manager.livegraph.get_cyclic()
                         if len(cyclic_scells):
@@ -514,7 +514,7 @@ class TaskManager:
             return result, True
 
         while len(ptasks) or len(self.launching_tasks) or len(self.synctasks) or \
-          manager.macromanager.queued or deeprefmanager.busy or must_run_mount:
+          manager.macromanager.queued or deeprefmanager.busy or sharemanager.busy or must_run_mount:
             mm = manager.mountmanager
             if must_run_mount:
                 if not len(mm.cell_updates) and mm.last_run != last_mount_run:
@@ -550,7 +550,7 @@ class TaskManager:
                     break
             if get_tasks_func is None:
                 if not (len(self.tasks) or len(self.upon_connection_tasks) or len(self.launching_tasks) or len(self.synctasks) or \
-                  manager.macromanager.queued or deeprefmanager.busy):
+                  manager.macromanager.queued or deeprefmanager.busy or sharemanager.busy):
                     if not debugmountmanager.taskmanager_has_mounts(self):
                         cyclic_scells = manager.livegraph.get_cyclic()
                         if len(cyclic_scells):
@@ -788,7 +788,8 @@ from .. import SeamlessBase
 from .accessor import ReadAccessor
 from .expression import Expression
 from .tasks.upon_connection import UponConnectionTask
-from .tasks.structured_cell import StructuredCellAuthTask, StructuredCellJoinTask
+from .tasks.structured_cell import StructuredCellAuthTask
 from .tasks import BackgroundTask
 from ..transformer import Transformer
 from ..cache.deeprefmanager import deeprefmanager
+from ..share import sharemanager
