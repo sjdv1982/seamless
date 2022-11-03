@@ -15,7 +15,7 @@ print(ctx.result.value)
 
 print(1)
 fallback_ctx.result2 = 42
-fallback_ctx.translate()
+fallback_ctx.compute()
 ctx.result.fallback(fallback_ctx.result2)
 ctx.compute()
 print(ctx.result.value, ctx.reresult.value)
