@@ -1,8 +1,8 @@
 test map_list
 ADD 30 1000
 ADD 40 1000
-ADD 10 1000
 ADD 20 1000
+ADD 10 1000
 None
 <Silk: [1010, 1020, 1030, 1040] >
 ADD 1 1000
@@ -16,10 +16,10 @@ ADD 230 -1000
 ADD 240 -1000
 None
 <Silk: [-790, -780, -770, -760] >
+ADD 210 1000
 ADD 220 1000
 ADD 230 1000
 ADD 240 1000
-ADD 210 1000
 <Silk: [1210, 1220, 1230, 1240] >
 test map_list_N
 ADD 30 8
@@ -31,20 +31,19 @@ ADD 1 3
 ADD 80 100
 ADD 12 16
 <Silk: [12, 24, 38, 52, 180, 28, 4, 4, 12, 24, 38, 52] >
-ADD2 40 12
-ADD2 30 8
 ADD2 10 2
 ADD2 20 4
-ADD2 12 16
+ADD2 30 8
+ADD2 40 12
 ADD2 80 100
+ADD2 12 16
 ADD2 1 3
-Waiting for: Seamless structured cell: .mapping.ctx.result
 <Silk: [13, 25, 39, 53, 181, 29, 5, 5, 13, 25, 39, 53] >
 test map_list_N uniform
-ADD 130 8 7000
 ADD 140 12 7000
 ADD 110 2 7000
 ADD 120 4 7000
+ADD 130 8 7000
 <Silk: [7112, 7124, 7138, 7152] >
 ADD 110 2 8000
 ADD 120 4 8000
@@ -70,15 +69,15 @@ ADD 30 6000
 ADD 40 6000
 <Silk: {'key1': 6010, 'key2': 6220, 'key3': 6030, 'key4': 6040} >
 test map_dict_chunk, without elision, deepcell merge method
-MUL {'key01': 10, 'key02': 220, 'key03': 30}
-MUL {'key04': 40, 'key05': 250, 'key06': 60}
 MUL {'key07': 70, 'key08': 280, 'key09': 90}
 MUL {'key10': 100, 'key11': 2110, 'key12': 120}
+MUL {'key01': 10, 'key02': 220, 'key03': 30}
+MUL {'key04': 40, 'key05': 250, 'key06': 60}
 Status: OK
 <Silk: {'key01': 30, 'key02': 660, 'key03': 90, 'key04': 120, 'key05': 750, 'key06': 180, 'key07': 210, 'key08': 840, 'key09': 270, 'key10': 300, 'key11': 6330, 'key12': 360} >
 <Silk: {'key01': 30, 'key02': 660, 'key03': 90, 'key04': 120, 'key05': 750, 'key06': 180, 'key07': 210, 'key08': 840, 'key09': 270, 'key10': 300, 'key11': 6330, 'key12': 360} >
-MUL {'d': -1}
 MUL {'a': 80, 'b': 30, 'c': 999}
+MUL {'d': -1}
 <Silk: {'a': 240, 'b': 90, 'c': 2997, 'd': -3, 'key01': 30, 'key02': 660, 'key03': 90, 'key04': 120, 'key05': 750, 'key06': 180, 'key07': 210, 'key08': 840, 'key09': 270, 'key10': 300, 'key11': 6330, 'key12': 360} >
 ['key01', 'key02', 'key03', 'key04', 'key05', 'key06', 'key07', 'key08', 'key09', 'key10', 'key11', 'key12', 'a', 'b', 'c', 'd']
 test map_dict_chunk, with elision, deepcell merge method
@@ -122,11 +121,6 @@ Status: OK
 <Silk: [30, 660, 90, 120, 750, 180, 210, 840, 270, 300, 6330, 360] >
 <Silk: [30, 660, 90, 120, 750, 180, 210, 840, 270, 300, 6330, 360] >
 MUL-LIST {'a': 80, 'b': 30, 'c': 999}
-MUL-LIST {'d': -1, 'key01': 10, 'key02': 220}
-MUL-LIST {'key03': 30, 'key04': 40, 'key05': 250}
-MUL-LIST {'key06': 60, 'key07': 70, 'key08': 280}
-MUL-LIST {'key09': 90, 'key10': 100, 'key11': 2110}
-MUL-LIST {'key12': 120}
 MUL-LIST {'d': -1}
 <Silk: [30, 660, 90, 120, 750, 180, 210, 840, 270, 300, 6330, 360, 240, 90, 2997, -3] >
 ['key01', 'key02', 'key03', 'key04', 'key05', 'key06', 'key07', 'key08', 'key09', 'key10', 'key11', 'key12', 'a', 'b', 'c', 'd']
@@ -138,13 +132,7 @@ MUL-LIST {'key10': 100, 'key11': 2110, 'key12': 120}
 Status: OK
 <Silk: [40, 880, 120, 160, 1000, 240, 280, 1120, 360, 400, 8440, 480] >
 <Silk: [40, 880, 120, 160, 1000, 240, 280, 1120, 360, 400, 8440, 480] >
-MUL-LIST {'key09': 90, 'key10': 100, 'key11': 2110}
-MUL-LIST {'key12': 120}
 MUL-LIST {'a': 80, 'b': 30, 'c': 999}
-MUL-LIST {'d': -1, 'key01': 10, 'key02': 220}
-MUL-LIST {'key06': 60, 'key07': 70, 'key08': 280}
-MUL-LIST {'key03': 30, 'key04': 40, 'key05': 250}
 MUL-LIST {'d': -1}
-Waiting for background tasks
 <Silk: [40, 880, 120, 160, 1000, 240, 280, 1120, 360, 400, 8440, 480, 320, 120, 3996, -4] >
 ['key01', 'key02', 'key03', 'key04', 'key05', 'key06', 'key07', 'key08', 'key09', 'key10', 'key11', 'key12', 'a', 'b', 'c', 'd']

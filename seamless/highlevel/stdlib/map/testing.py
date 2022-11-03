@@ -465,8 +465,6 @@ def test_map_dict_chunk_list(mylib, elision):
     })
     keyorder.extend(["a", "b", "c", "d"])
     ctx.mapping.keyorder0 = keyorder
-    import asyncio
-    asyncio.get_event_loop().run_until_complete(asyncio.sleep(5)) # cleanup bug otherwise
     ctx.compute()
     print(ctx.result.value)
     print(ctx.keyorder.value)

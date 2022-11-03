@@ -807,18 +807,22 @@ class LiveGraph:
 
     @destroyer
     def destroy_cell(self, manager, cell):
-        structured_cells = []
+        structured_cells = set()
         structured_cell = cell._structured_cell
+        if structured_cell is not None:
+            structured_cells.add(structured_cell)
         buf_struc_cell = self.buffercells.pop(cell, None)
         if buf_struc_cell:
-            structured_cells.append(buf_struc_cell)
+            structured_cells.add(buf_struc_cell)
         data_struc_cell = self.datacells.pop(cell, None)
         if data_struc_cell:
-            structured_cells.append(data_struc_cell)
+            structured_cells.add(data_struc_cell)
 
         for structured_cell in structured_cells:
             assert cell._structured_cell is not None
-        structured_cells += self.schemacells.pop(cell, [])
+        for structured_cell in self.schemacells.pop(cell, []):
+            structured_cells.add(structured_cell)
+            
         for structured_cell in structured_cells:
             structured_cell.destroy()
 

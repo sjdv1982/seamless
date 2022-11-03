@@ -74,6 +74,7 @@ class Task:
         if isinstance(manager, weakref.ref):
             manager = manager()
         assert isinstance(manager, Manager)
+        assert not manager._destroyed
         self._dependencies = []
         taskmanager = manager.taskmanager
         reftask = None

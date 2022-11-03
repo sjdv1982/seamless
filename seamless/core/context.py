@@ -326,7 +326,7 @@ languages: dict or None
             manager.remove_context(self)
             manager.mountmanager.destroy_toplevel_context(self)
             if debugmountmanager is not None:
-                debugmountmanager.remove_mounts(self)            
+                debugmountmanager.remove_mounts(self)
 
     @property
     def exception(self):

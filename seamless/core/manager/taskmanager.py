@@ -688,7 +688,6 @@ If origin_task is provided, that task is not cancelled."""
         canceled = set()
         while change:
             change = False
-            not_started_auth, not_started_join = False, False
             tasks = self.structured_cell_to_task.get(structured_cell, [])
             for task in tasks:
                 if task is origin_task:
@@ -761,6 +760,8 @@ If origin_task is provided, that task is not cancelled."""
                 a = [aa for aa in a.values() if not isinstance(aa, BackgroundTask)]
             if attrib == "rev_reftasks":
                 a = [aa for aa in a.keys() if not isinstance(aa, BackgroundTask)]
+            a = [aa for aa in a if not aa._canceled]
+            a = [aa for aa in a if aa.future is None or not aa.future.done()]
             if len(a):
                 print_error(name + ", " + attrib + ": %d undestroyed"  % len(a))
                 if attrib.endswith("tasks") and len(a) <= 5:
@@ -768,7 +769,11 @@ If origin_task is provided, that task is not cancelled."""
                     for task in a:
                         print_error("Task:", task)
                         for dep in task.dependencies:
-                            print_error("Depends on:", dep)
+                            if hasattr(dep, "_destroyed"):
+                                tag = "" if dep._destroyed else "not "
+                                print_error("Depends on:", dep, "({}destroyed)".format(tag))
+                            else:
+                                print_error("Depends on:", dep)
                         print_error("*" * 30)
                     print_error()
                 ok = False

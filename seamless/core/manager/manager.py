@@ -51,6 +51,8 @@ def with_cancel_cycle(func):
             print("ERROR: manager cancel cycle was not cleared")
         try:
             taskmanager.run_all_synctasks()
+            if manager._destroyed:
+                return
             manager.cancel_cycle.cleared = False
             result = func(*args, **kwargs)
             manager.cancel_cycle.resolve()
@@ -615,12 +617,16 @@ If origin_task is provided, that task is not cancelled."""
 
     @with_cancel_cycle
     def cancel_scell_inpath(self, sc, path, void, reason=None):
+        if sc._destroyed:
+            return
         if void and reason is None:
             reason = StatusReasonEnum.UPSTREAM
         self.cancel_cycle.cancel_scell_inpath(sc, path, void=void, reason=reason)
 
     @with_cancel_cycle
     def structured_cell_trigger(self, scell, *, update_schema=False, void=False):
+        if scell._destroyed:
+            return
         self.cancel_cycle.trigger_scell(scell, update_schema=update_schema, void=void)
 
 
@@ -660,6 +666,8 @@ If origin_task is provided, that task is not cancelled."""
     @with_cancel_cycle
     def cancel_transformer(self, transformer, void, reason=None):
         assert isinstance(transformer, Transformer)
+        if transformer._destroyed:
+            return
         if void and reason is None:
             reason = None
         self.cancel_cycle.cancel_transformer(transformer, void=void, reason=reason)
@@ -668,6 +676,8 @@ If origin_task is provided, that task is not cancelled."""
     @with_cancel_cycle
     def cancel_reactor(self, reactor, void, reason=None):
         assert isinstance(reactor, Reactor)
+        if reactor._destroyed:
+            return
         if void and reason is None:
             reason = StatusReasonEnum.UPSTREAM
         self.cancel_cycle.cancel_reactor(reactor, void=void, reason=reason)
@@ -675,6 +685,8 @@ If origin_task is provided, that task is not cancelled."""
     @with_cancel_cycle
     def cancel_macro(self, macro, void, reason=None):
         assert isinstance(macro, Macro)
+        if macro._destroyed:
+            return
         if void and reason is None:
             reason = StatusReasonEnum.UPSTREAM
         self.cancel_cycle.cancel_macro(macro, void=void, reason=reason)
@@ -895,13 +907,9 @@ from ..protocol.get_buffer import get_buffer
 from ..cache.buffer_cache import buffer_cache, empty_dict_checksum, empty_list_checksum
 from .unvoid import unvoid_cell
 from ..cell import Cell
-from ..worker import Worker
 from ..transformer import Transformer
-from ..macro import Macro, Path, _global_paths
+from ..macro import Macro
 from ..reactor import Reactor
 from .accessor import ReadAccessor
 from ..structured_cell import StructuredCell
-from .tasks.structured_cell import StructuredCellJoinTask, StructuredCellAuthTask
-from ..utils import overlap_path
-from ..protocol.deep_structure import DeepStructureError
 from .cancel import get_scell_state

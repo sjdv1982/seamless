@@ -222,11 +222,7 @@ def unvoid_accessor(accessor, livegraph):
 
 
 from ..cell import Cell
-from ..structured_cell import Inchannel
-from ..worker import PinBase, EditPin
 from ..transformer import Transformer
 from ..reactor import Reactor
 from ..macro import Macro, Path as MacroPath
 from ..status import StatusReasonEnum
-from ..manager.cancel import get_scell_state
-from ..manager.tasks.structured_cell import StructuredCellJoinTask

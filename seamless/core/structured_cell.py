@@ -250,6 +250,8 @@ class StructuredCell(SeamlessBase):
 
     def _join_auth(self):
         from .manager.cancel import get_scell_state
+        if self._destroyed:
+            return
         if self.buffer._destroyed:
             return
         manager = self._get_manager()
