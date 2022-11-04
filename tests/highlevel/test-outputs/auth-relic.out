@@ -1,0 +1,8 @@
+<Silk: {'x': 'testvalue', 'y': {'a': 10, 'b': 20}, 'z': 'constant'} >
+<Silk: {'x': 'override', 'y': {'a': 10, 'b': 20}, 'z': 'constant'} >
+<Silk: {'y': {'a': 10, 'b': 20}, 'z': 'constant'} >
+<Silk: {'y': {'a': 999, 'b': 20}, 'z': 'constant'} >
+<Silk: {'y': {'b': 20}, 'z': 'constant'} >
+<Silk: {'x': 1, 'y': 2, 'z': 3} >
+<Silk: None >
+<Silk: {'q': 20} >

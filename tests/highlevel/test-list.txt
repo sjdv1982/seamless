@@ -76,6 +76,7 @@ simple-pi-remote-database.py: run with jobslave --database; makes no assumptions
 subcontext.py
 joincache.py
 reassign-transformer.py
+auth-relic.py
 cascade.py
 environment0.py
 mount-write.py

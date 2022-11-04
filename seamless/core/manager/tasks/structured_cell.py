@@ -5,6 +5,7 @@ import copy
 import asyncio
 import json
 from asyncio import CancelledError
+import numpy as np
 
 from ...utils import overlap_path
 
@@ -184,6 +185,38 @@ class StructuredCellAuthTask(StructuredCellTask):
                     func , (), {}, False
                 )
 
+def path_cleanup(value, path):
+    head = path[0]
+    if len(path) == 1:
+        if isinstance(value, list) and isinstance(head, int):
+            if head < len(value):
+                value.pop(head)
+                return True
+            else:
+                return False
+        elif isinstance(value, dict):
+            if head in value:
+                value.pop(head)
+                return True
+            else:
+                return False
+        else:
+            return True
+
+    if isinstance(value, dict):
+        in_value = (head in value)
+    elif isinstance(value, list):
+        if not isinstance(head, int):
+            return True
+        in_value = (len(value) > head)
+    else:
+        return True
+
+    if not in_value:
+        return False
+    subvalue = value[head]
+    return path_cleanup(subvalue, path[1:])
+
 class StructuredCellJoinTask(StructuredCellTask):
 
     async def _run(self):        
@@ -259,6 +292,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                 if len(sc.inchannels):
                     paths = sorted(list(sc.inchannels))
                     if paths == [()] and not sc.hash_pattern:
+                        # No need for auth relic cleanup, the high level handles this case already
                         checksum = sc.inchannels[()]._checksum
                         assert checksum is None or isinstance(checksum, bytes), checksum
                         if checksum is None:
@@ -279,6 +313,30 @@ class StructuredCellJoinTask(StructuredCellTask):
                                         ).run()
                                         if data_value is not None:
                                             has_auth = True
+                                        
+                                        # auth relic cleanup
+                                        auth_relic_cleanup = False
+                                        for path in paths:
+                                            if not len(path):
+                                                auth_relic_cleanup = True
+                                                data_value = None
+                                                break
+                                            elif path_cleanup(data_value, path):
+                                                auth_relic_cleanup = True
+                                        if auth_relic_cleanup:
+                                            if data_value is None:
+                                                auth_checksum = None
+                                            else:
+                                                auth_buf = await SerializeToBufferTask(
+                                                    manager, data_value, "mixed",
+                                                    use_cache=False  # the data_value object changes all the time...
+                                                ).run()
+                                                auth_checksum = await CalculateChecksumTask(manager, auth_buf).run()
+                                                assert auth_checksum is not None
+                                                buffer_cache.cache_buffer(auth_checksum, auth_buf)
+                                            manager._set_cell_checksum(sc.auth, auth_checksum, False)
+                                        # /auth relic cleanup
+                                        
                                     checksum = None  # needs to be re-computed after updating with inchannels
                         except CacheMissError: # shouldn't happen; we keep refs-to-auth!
                             sc._exception = traceback.format_exc(limit=0)
