@@ -635,7 +635,12 @@ class ShareServer(object):
             namespace = self._find_toplevel(key)
             if namespace is None:
                 if key == "index.html" and "ctx" in self.namespaces:
-                    raise web.HTTPFound('/ctx/index.html')
+                    await asyncio.sleep(2)
+                    namespace = self._find_toplevel(key)
+                    if namespace is None:
+                        raise web.HTTPFound('/ctx/index.html')
+                    else:
+                        return await self._handle_get(request)
                 else:
                     return web.Response(
                         status=404,
