@@ -610,7 +610,7 @@
         <span class="k">return</span> <span class="n">struc_ctx</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">handle</span>
 
 <div class="viewcode-block" id="Cell.add_validator"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.add_validator">[docs]</a>    <span class="k">def</span> <span class="nf">add_validator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">validator</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Adds a validator function (in Python) to the schema.</span>
+        <span class="sd">&quot;&quot;&quot;Adds a validator function (in Python)def add to the schema.</span>
 
 <span class="sd">        The validator must take a single argument, the (buffered) value of the cell</span>
 <span class="sd">        It is expected to raise an exception (e.g. an AssertionError)</span>
@@ -618,6 +618,10 @@
 
 <span class="sd">        If a previous validator with the same name exists,</span>
 <span class="sd">        that validator is overwritten.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot invoke Cell.add_validator: cell must be translated first&quot;</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle</span><span class="o">.</span><span class="n">add_validator</span><span class="p">(</span><span class="n">validator</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
@@ -728,7 +732,7 @@
     <span class="k">def</span> <span class="nf">_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the data of the cell</span>
 
-<span class="sd">        This is normally the same as the value.</span>
+<span class="sd">        This is normally the same as the value.def _set(</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
@@ -745,6 +749,17 @@
             <span class="n">cell</span><span class="o">.</span><span class="n">set_no_inference</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">cell</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">..core.structured_cell</span> <span class="kn">import</span> <span class="n">StructuredCell</span>
+
+        <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
+            <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;TEMP&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">return</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">set_buffer</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
 
 <div class="viewcode-block" id="Cell.set_checksum"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Cell.set_checksum">[docs]</a>    <span class="k">def</span> <span class="nf">set_checksum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checksum</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Set the cell&#39;s checksum from a SHA256 checksum&quot;&quot;&quot;</span>
@@ -860,6 +875,8 @@
             <span class="n">datatype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;datatype&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">datatype</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;mixed&quot;</span><span class="p">,</span> <span class="s2">&quot;binary&quot;</span><span class="p">,</span> <span class="s2">&quot;plain&quot;</span><span class="p">):</span>
                 <span class="n">mimetype</span> <span class="o">=</span> <span class="n">get_mime</span><span class="p">(</span><span class="n">datatype</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">datatype</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">):</span>
+                <span class="n">mimetype</span> <span class="o">=</span> <span class="n">get_mime</span><span class="p">(</span><span class="s2">&quot;plain&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">mimetype</span> <span class="o">=</span> <span class="n">ext_to_mime</span><span class="p">(</span><span class="n">datatype</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -889,6 +906,7 @@
 <span class="sd">        Use cases:</span>
 <span class="sd">        - &quot;plain&quot; or &quot;binary&quot; cells with subcell access and a schema</span>
 <span class="sd">        - &quot;str&quot; or &quot;bytes&quot; cell with a validator schema that parses the content</span>
+<span class="sd">        - sharing a structured cell over HTTP using the Seamless web interface generator</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
         <span class="n">celltype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
@@ -900,6 +918,15 @@
         <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
         <span class="n">celltype</span> <span class="o">=</span> <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span>
         <span class="k">assert</span> <span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="s2">&quot;bytes&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Byte cells and structured cells are stored differently.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">value</span> <span class="o">==</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Text cells and structured cells are stored differently.</span>
+
+<span class="s2">For use in web forms, instead use &quot;str&quot;.</span>
+<span class="s2">For other use in HTTP requests, instead set mimetype to &quot;text/plain&quot;.</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
         <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;datatype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
@@ -1052,19 +1079,12 @@
 
 <span class="sd">        To remove a share, do `del cell.share`&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">readonly</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;structured&quot;</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-                    <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: Non-readonly HTTP share is only supported for non-structured cells&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                        <span class="bp">self</span>
-                    <span class="p">)</span>
-                <span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">independent</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span><span class="si">{}</span><span class="s2">: Non-readonly HTTP share is not possible.</span>
 <span class="s2">This cell is not fully independent, i.e. it has incoming connections&quot;&quot;&quot;</span>
                 <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
 
         <span class="k">assert</span> <span class="n">readonly</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">independent</span>
-        <span class="k">assert</span> <span class="n">readonly</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">celltype</span> <span class="o">!=</span> <span class="s2">&quot;structured&quot;</span>
         <span class="n">hcell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hcell2</span><span class="p">()</span>
         <span class="n">hcell</span><span class="p">[</span><span class="s2">&quot;share&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>

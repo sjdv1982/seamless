@@ -471,7 +471,7 @@ ctx.a.celltype = “int”
 <dl class="py method">
 <dt id="seamless.highlevel.Cell.add_validator">
 <code class="sig-name descname"><span class="pre">add_validator</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validator</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">None</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.add_validator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.add_validator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds a validator function (in Python) to the schema.</p>
+<dd><p>Adds a validator function (in Python)def add to the schema.</p>
 <p>The validator must take a single argument, the (buffered) value of the cell
 It is expected to raise an exception (e.g. an AssertionError)
 if the value is invalid.</p>
@@ -526,7 +526,8 @@ This makes it possible to indicate that a structural cell conforms
 to another Seamless celltype and can be trivially converted to it.
 Use cases:
 - “plain” or “binary” cells with subcell access and a schema
-- “str” or “bytes” cell with a validator schema that parses the content</p>
+- “str” or “bytes” cell with a validator schema that parses the content
+- sharing a structured cell over HTTP using the Seamless web interface generator</p>
 </dd></dl>
 
 <dl class="py method">

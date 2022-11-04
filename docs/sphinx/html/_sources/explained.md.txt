@@ -1,6 +1,6 @@
 # Seamless explained
 
-This document is for experienced developers. If you are a beginner in programming, 
+This document is for experienced developers. If you are a beginner in programming, you are recommended to read [the beginner's guide](http://sjdv1982.github.io/seamless/sphinx/html/beginner.html) instead.
 
 ## Core concepts
 
