@@ -1,7 +1,7 @@
 FROM continuumio/miniconda3
 LABEL author="Sjoerd de Vries <sjoerd.de-vries@inserm.fr>"
 LABEL maintainer="Sjoerd de Vries <sjoerd.de-vries@inserm.fr>"
-LABEL version="0.9.4"
+LABEL version="0.9.5"
 USER root
 RUN apt update && apt install -y gcc g++ gfortran && export RPY2_CFFI_MODE=ABI
 COPY seamless-minimal/environment.yml /seamless-minimal/environment.yml
