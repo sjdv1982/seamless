@@ -5,13 +5,21 @@ async def main():
     # In[1]:
 
 
+    #get_ipython().run_line_magic('pip', 'install biopython')
+    import os
+    os.system("pip install biopython")
+
+
+    # In[2]:
+
+
     from seamless.highlevel import Context, Transformer, Cell
     import numpy as np
 
     ctx = Context()
 
 
-    # In[2]:
+    # In[3]:
 
 
     ctx.pdb1 = open("1AKE-flanks.pdb").read()
@@ -26,6 +34,23 @@ async def main():
     ctx.load_pdb2.pdb = ctx.pdb2
     ctx.load_pdb2.code = ctx.load_pdb_code
     ctx.dbca = ctx.load_pdb2
+
+    environment_yml = """
+    channels:
+    - bioconda
+    - conda-forge
+    dependencies:
+    - biopython
+    """
+    ctx.load_pdb1.environment.set_conda(environment_yml, "yaml")
+    ctx.load_pdb2.environment.set_conda(environment_yml, "yaml")
+    await ctx.computation()
+    print(ctx.load_pdb1.logs)
+    print(ctx.load_pdb2.logs)
+
+
+    # In[4]:
+
 
     ctx.get_flank1 = lambda flanks: flanks[:4]
     ctx.get_flank1.flanks = ctx.flanks
@@ -55,7 +80,7 @@ async def main():
     # {
     # ```
 
-    # In[3]:
+    # In[5]:
 
 
     ctx.bcloopsearch = Transformer()
@@ -68,10 +93,9 @@ async def main():
 
     ctx.bc_hits = ctx.bcloopsearch
     await ctx.translation()
-    await ctx.computation()
-    print(1, ctx.status, "\n")
 
-    # In[4]:
+
+    # In[6]:
 
 
     def set_example(bc):
@@ -107,31 +131,27 @@ async def main():
     bcrx.hits = np.zeros((MAXHITS,3), dtype=np.uint32)
     bcrx.hitstats = np.zeros((MAXHITS,2), dtype=np.float32)
     await ctx.computation()
-    print(2, ctx.status, "\n")
-    #print(ctx.bcloopsearch.exception); print()
-
     rschema = ctx.bcloopsearch.result.schema
     rschema.properties.hits["form"].shape = (MAXHITS, 3)
     rschema.properties.hitstats["form"].shape = (MAXHITS, 2)
     await ctx.computation()
-    print(3, ctx.status, "\n")
-    #print(ctx.bcloopsearch.exception); print()
 
-    # In[5]:
-    
+
+    # In[7]:
+
+
     set_example(ctx.bcloopsearch)
     ctx.bcloopsearch.atoms1 = ctx.flank1
     ctx.bcloopsearch.atoms2 = ctx.flank2
     ctx.bcloopsearch.dbca = ctx.dbca
-    await ctx.computation()
     ctx.bcloopsearch.seg_index = np.array([[0,1,len(ctx.dbca.value)]],dtype=np.uint32)
     ctx.bcloopsearch.pdb_index = np.array([[0,1]],dtype=np.uint32)
     ctx.bcloopsearch.looplength = 7
     ctx.bcloopsearch.minBC = 0
-    await ctx.computation()    
+    await ctx.computation()
 
 
-    # In[6]:
+    # In[8]:
 
 
     print(ctx.bcloopsearch.schema)
@@ -141,14 +161,16 @@ async def main():
     print(ctx.bcloopsearch.status)
     print(ctx.bcloopsearch.exception)
 
-    # In[7]:
+
+    # In[9]:
 
 
     ctx.header = ctx.bcloopsearch.header
     ctx.header.mimetype = "h"
-    ctx.header.output
+    ctx.header.output()
 
-    # In[8]:
+
+    # In[10]:
 
 
     ctx.bcloopsearch_schema = Cell()
@@ -158,26 +180,26 @@ async def main():
     await ctx.computation()
 
 
-    # In[9]:
+    # In[11]:
 
 
     ctx.bc_hits.value
 
 
-    # In[10]:
+    # In[16]:
 
 
     nhits = ctx.bc_hits.value.nhits
     print(nhits)
 
 
-    # In[ ]:
+    # In[17]:
 
 
     ctx.bc_hits.value.unsilk["hitstats"][:nhits]
 
 
-    # In[ ]:
+    # In[18]:
 
 
     ctx.pdb2.set(open("1AKE-B.pdb").read())
@@ -188,19 +210,20 @@ async def main():
     await ctx.computation()
 
 
-    # In[ ]:
+    # In[19]:
 
 
     nhits = ctx.bc_hits.value.nhits
     print(nhits)
 
 
-    # In[ ]:
+    # In[20]:
 
 
     ctx.bc_hits.value.unsilk["hitstats"][:nhits]
 
-    # In[ ]:
+
+    # In[21]:
 
 
     dbca = np.load("db/scop-g.npy")[:, 1].astype(np.float64)
@@ -218,14 +241,14 @@ async def main():
     await ctx.computation()
 
 
-    # In[ ]:
+    # In[22]:
 
 
     nhits = ctx.bc_hits.value.nhits
     print(nhits)
 
 
-    # In[ ]:
+    # In[23]:
 
 
     pdbs = ctx.bc_hits.value.unsilk["hits"][:nhits,0]
@@ -233,6 +256,13 @@ async def main():
     print(ctx.bc_hits.value.unsilk["hits"][:nhits,1])
     print(ctx.bc_hits.value.unsilk["hits"][:nhits,2])
     print(ctx.bc_hits.value.unsilk["hitstats"][:nhits])
+
+
+    # In[ ]:
+
+    return ctx
+
+
 
 import asyncio
 asyncio.run(main())
