@@ -1049,11 +1049,26 @@ This cell is not fully independent, i.e. it has incoming connections"""
 
 
 def _cell_binary_method(self, other, name):
-    h = self.handle
-    method = getattr(h, name)
+    hcell = self._get_hcell()
+    is_simple = False
+    if hcell.get("UNTRANSLATED") and "TEMP" in hcell:
+        obj = hcell["TEMP"]    
+    elif self.celltype == "structured":
+        obj = self.handle
+    else:
+        is_simple = True
+        obj = self.value
+
+    try:
+        method = getattr(obj, name)
+    except AttributeError:
+        return NotImplemented
     if method is NotImplemented:
         return NotImplemented
-    return method(other)
+    result = method(other)
+    if is_simple:
+        self.set(result)
+    return result
 
 
 def get_new_foldercell(path):

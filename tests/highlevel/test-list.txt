@@ -77,6 +77,7 @@ subcontext.py
 joincache.py
 reassign-transformer.py
 auth-relic.py
+special-methods.py
 cascade.py
 environment0.py
 mount-write.py
