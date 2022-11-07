@@ -123,13 +123,11 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
           r = await response.text()
         }
         //$("#error_message").text("RESP:" + r)
-        /*
-        console.log("RESP:" + r)
+        //console.log("RESP:" + r)
         if (r != null && r != "null") {
           ctx[key].value = r
           ctx[key].content_type = response.headers.get('Content-Type')
         }
-        */
       }
     })
     .catch(function(err) {
