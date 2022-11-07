@@ -8,7 +8,8 @@ COPY seamless-minimal/environment.yml /seamless-minimal/environment.yml
 COPY seamless /usr/local/software/seamless
 RUN git clone https://github.com/sjdv1982/seamless-tools && \
   mv seamless-tools/scripts /usr/local/seamless-scripts
+RUN conda install -c conda-forge mamba
 ENV PYTHONPATH /usr/local/software:$PYTHONPATH
 RUN cp /root/.bashrc /.bashrc && chmod 777 /.bashrc \
-&& mkdir /.conda && chmod 777 /.conda && chmod -R 777 /seamless-minimal \
+&& mkdir /.conda && chmod 777 /.conda && chmod -R 777 /opt/conda && chmod -R 777 /seamless-minimal \
 && chmod -R 777 /usr/local/software && chmod -R 777 /usr/local/seamless-scripts
