@@ -390,7 +390,7 @@ class MountItem:
                 # Write a non-existing folder to disk, even if it was in read mode
                 cell_buffer = get_buffer(cell_checksum, remote=True)
                 if cell_buffer is not None:
-                    self._write_as_directory(cell_buffer)
+                    self._write_as_directory(cell_buffer, with_none=True)
             return
         with self.lock:
             if self._destroyed:

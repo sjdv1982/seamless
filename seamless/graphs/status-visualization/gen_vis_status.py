@@ -33,6 +33,8 @@ for node in graph["nodes"]:
         paths = [path]
     elif node["type"] == "context":
         continue
+    elif node["type"] == "module":
+        continue
     else: 
         raise Exception(node["type"])
 
