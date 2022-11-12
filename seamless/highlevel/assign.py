@@ -34,7 +34,7 @@ def _remove_independent_mountshares(hcell):
             hcell.pop("mount")
     if "share" in hcell:
         if hcell["share"]["readonly"]:
-            hcell.pop("mount")
+            hcell.pop("mount", None)
 
 def under_libinstance_control(nodedict, path):
     lp = len(path)
