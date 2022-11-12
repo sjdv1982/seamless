@@ -12,6 +12,7 @@ auto_read: the web page will download the value of the cell whenever it changes
 from copy import deepcopy
 
 cells = {}
+extra_cells = {}
 extra_components = []
 transformers = {}
 webform = {
@@ -43,74 +44,79 @@ for node in graph["nodes"]:
     if "share" not in node:
         continue
     path = node["share"].get("path")
-    if path is not None and len(path.split(".")[1:]) and path.split(".")[-1] in ("js", "html"):
-        continue
     celltype = node["celltype"]
     if celltype == "structured":
         celltype = node["datatype"]
-    params = {}
-    share = {}
+    share = {"read": True}
     cell = {
         "celltype": celltype,
     }
     cellname = node["path"][-1]
     if cellname.find(".") > -1:
-        params["auto_read"] = False
+        share["auto_read"] = False
     else:
-        params["auto_read"] = True
+        share["auto_read"] = True
+    if not node["share"].get("readonly", True):
+        share["write"] = True
+
+    if path is not None and path != key:
+        if celltype in ("plain", "float", "int", "bool", "str"):
+            share["encoding"] = "json"
+        elif celltype == "text":
+            share["encoding"] = "text"
+        elif celltype == "bytes":
+            pass
+        else:
+            continue
+        cell["share"] = share
+        cell["path"] = path
+        extra_cells[key] = cell
+
+        continue
+
+    params = {}
     if celltype in ("float", "int"):
-        share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
         if not node["share"].get("readonly", True):
             cell["component"] = "slider"
             params["min"] = 0
             params["max"] = 100
-            share["write"] = True
         else:
             cell["component"] = "numberinput"
             params["editable"] = False
         share["encoding"] = "json"  # also for "str", "plain", "bool"
     elif celltype == "text":
-        share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
         if not node["share"].get("readonly", True):
             cell["component"] = "fileupload"
-            share["write"] = True
         else:
             cell["component"] = "card"
         share["encoding"] = "text"
     elif celltype == "str":
-        share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
         cell["component"] = "input"
         if node["share"].get("readonly", True):
             params["editable"] = False
         else:
-            share["write"] = True
             params["editable"] = True
         share["encoding"] = "json"
     elif celltype == "plain":
-        share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
         cell["component"] = "card"
         share["encoding"] = "json"
     elif celltype == "bytes":
-        share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()        
         if node["share"].get("readonly", True):
             cell["component"] = ""
         else:
             cell["component"] = "fileupload"
-            share["write"] = True
         share["encoding"] = "text"
     elif celltype == "bool":
-        share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
         cell["component"] = "checkbox"
         if node["share"].get("readonly", True):
             params["editable"] = False
         else:
-            share["write"] = True
             params["editable"] = True
         share["encoding"] = "json"
     else:
@@ -136,5 +142,17 @@ Supported celltypes: text, int, float, bool, str, plain, or bytes.""".format(cel
                 "params": {},
             }
         )
+for webunit_name, webunits in graph["params"].get("webunits", {}).items():
+    for webunit in webunits:
+        extra_components.append(
+            {
+                "id": webunit["id"],
+                "cells": webunit["cells"],
+                "component": webunit_name,
+                "params": webunit["parameters"],
+            }
+        )
+if len(extra_cells):
+    webform["extra_cells"] = extra_cells
 
 result = webform

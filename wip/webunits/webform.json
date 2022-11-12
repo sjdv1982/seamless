@@ -1,0 +1,69 @@
+{
+  "cells": {
+    "sub/mycell": {
+      "celltype": "int",
+      "component": "numberinput",
+      "params": {
+        "editable": false,
+        "title": "Cell Mycell"
+      },
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true
+      }
+    }
+  },
+  "extra_cells": {
+    "blah": {
+      "celltype": "plain",
+      "path": "BLAH",
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true
+      }
+    },
+    "representation": {
+      "celltype": "plain",
+      "path": "nglviewer_1/representation.json",
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true
+      }
+    },
+    "structures": {
+      "celltype": "plain",
+      "path": "struc",
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true
+      }
+    }
+  },
+  "extra_components": [
+    {
+      "cell": "sub/mycell",
+      "component": "",
+      "id": "EXAMPLE_ID",
+      "params": {}
+    },
+    {
+      "cells": {
+        "representation": "representation",
+        "structures": "structures"
+      },
+      "component": "nglviewer",
+      "id": "nglviewer_1",
+      "params": {
+        "format": "pdb"
+      }
+    }
+  ],
+  "index": {
+    "title": "Seamless webform"
+  },
+  "transformers": {}
+}

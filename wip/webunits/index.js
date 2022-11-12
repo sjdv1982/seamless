@@ -1,11 +1,46 @@
 app_globals = {}
 
-{{ COMPONENT_JS }}
+function load_ngl(stage, pdbs, representations){
+    stage.removeAllComponents()
+    Object.keys(pdbs).forEach(function(item){
+        let pdb = new Blob([pdbs[item]], {type : 'text/plain'})
+        stage.loadFile(pdb, { ext: "pdb" } ).then(function (o) {            
+            let curr_representations = representations[item]
+            if (curr_representations === null || curr_representations === undefined) curr_representations = representations["DEFAULT"]
+            if (curr_representations === null || curr_representations === undefined) return
+            if (!Array.isArray(curr_representations)) curr_representations = [curr_representations]
+            Object.keys(curr_representations).forEach(function(repnr){
+                let rep = curr_representations[repnr]
+                o.addRepresentation(rep["type"], {...rep["params"]})
+            })
+            o.autoView();
+        })        
+    })
+}
 
-seamless_read_paths = {{ SEAMLESS_READ_PATHS }}
-seamless_write_paths = {{ SEAMLESS_WRITE_PATHS }}
-seamless_auto_read_paths = {{ SEAMLESS_AUTO_READ_PATHS }}
-seamless_path_to_cell = {{ SEAMLESS_PATH_TO_CELL }}
+
+
+seamless_read_paths = {
+  "text": [],
+  "json": [
+    "sub__mycell",
+    "struc",
+    "nglviewer_1__representation.json"
+  ]
+}
+seamless_write_paths = {
+  "text": [],
+  "json": []
+}
+seamless_auto_read_paths = [
+  "sub__mycell",
+  "struc",
+  "nglviewer_1__representation.json"
+]
+seamless_path_to_cell = {
+  "struc": "structures",
+  "nglviewer_1__representation.json": "representation"
+}
 
 ctx = connect_seamless()
 ctx.self.onsharelist = function (sharelist) {
@@ -91,7 +126,20 @@ const app = new Vue({
   vuetify: new Vuetify(),
   data() {
     return {
-      ...{{ VUE_DATA }}, 
+      ...{
+        "sub__mycell": {
+          "checksum": null,
+          "value": 0
+        },
+        "structures": {
+          "checksum": null,
+          "value": {}
+        },
+        "representation": {
+          "checksum": null,
+          "value": {}
+        }
+      }, 
       ...{
         "STATUS": {
           "checksum": null,
@@ -114,12 +162,16 @@ const app = new Vue({
     
   },
   watch: {
-    {{WATCHERS}}
+    "structures.value": function(){ load_ngl(nglviewer_1_stage,this.structures.value,this.representation.value) },
+    "representation.value": function(){ load_ngl(nglviewer_1_stage,this.structures.value,this.representation.value) },
   },
   updated() {
-{{INIT_CODE}}
+if (typeof nglviewer_1_stage === 'undefined'){
+    nglviewer_1_stage = new NGL.Stage("nglviewer_1")
+}
+    
+
   }
 })
 
 vm = app.$mount('#app')
-
