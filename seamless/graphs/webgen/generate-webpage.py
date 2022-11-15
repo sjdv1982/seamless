@@ -170,6 +170,8 @@ for cell_or_tf_or_id in order:
                     for wvar in wvars:
                         if wvar.startswith("@"):
                             wvars2.append(wvar[1:])
+                        elif wvar.startswith('"'):
+                            wvars2.append(wvar)
                         else:
                             wvars2.append("this." + wvar)
                             wvars3.append(wvar)
