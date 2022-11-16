@@ -1,6 +1,6 @@
 ngl_stages = {}
 
-function load_ngl(stage_id, pdbs, representations){
+function load_ngl(stage_id, pdbs, representations, format){
     if (Object.keys(pdbs).length === 0) return;
 
     var stage = ngl_stages[stage_id]
@@ -15,7 +15,9 @@ function load_ngl(stage_id, pdbs, representations){
     }
     Object.keys(pdbs2).forEach(function(item){
         let pdb = new Blob([pdbs2[item]], {type : 'text/plain'})
-        stage.loadFile(pdb, { ext: "pdb" } ).then(function (o) {            
+        let ext = item.slice((item.lastIndexOf(".") - 1 >>> 0) + 2);
+        if (ext == "") ext = format;
+        stage.loadFile(pdb, { ext: ext } ).then(function (o) {            
             let curr_representations = representations[item]
             if (curr_representations === null || curr_representations === undefined) curr_representations = representations["DEFAULT"]
             if (curr_representations === null || curr_representations === undefined) return
