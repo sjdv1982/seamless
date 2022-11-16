@@ -5,6 +5,7 @@ yaml = ruamel.yaml.YAML(typ='safe')
 import os
 import glob
 import json
+import sys
 from copy import deepcopy
 from inspect import Signature, Parameter    
 
@@ -68,15 +69,24 @@ def _add_webunit(ctx, webunit_dict, **params):
         type_ = conf.get("type")        
         if type_ == "cell":
             cell = params[param]
+            allowed_celltypes = ("plain", "float", "int", "bool", "str", "binary", "text")
+            if cell.celltype not in allowed_celltypes:
+                msg = "Webunit cells must have celltype in {}. {} has celltype '{}'"
+                raise TypeError(msg.format(allowed_celltypes, cell, cell.celltype))
             value = cell.value
             if value is None:
                 default = webunit_dict[param].get("default")
                 if default is not None:
-                    cell.set(default)
+                    if not cell.independent:
+                        print("WARNING: webunit: skipping default value for empty {}, because it is not independent".format(cell), 
+                        file=sys.stderr)
+                    else:
+                        cell.set(default)
             share = cell._get_hcell().get("share")
             if share is None:
                 readonly = webunit_dict[param].get("readonly", True)
                 sharepath = id_ + "/" + webunit_dict[param]["share"]
+                print("webunit: non-shared {}, sharing as '{}'".format(cell, sharepath), file=sys.stderr)
                 cell.share(sharepath, readonly=readonly)
             else:
                 sharepath = share["path"]
@@ -204,5 +214,8 @@ def _init():
         globals()[name] = func
         result.append(name)
     return result
+
 __all__ = _init()
 
+def __dir__():
+    return sorted(__all__)
