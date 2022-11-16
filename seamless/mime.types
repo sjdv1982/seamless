@@ -144,6 +144,8 @@ application/xml-dtd
 application/xml-external-parsed-entity
 application/xslt+xml				xsl xslt
 application/xspf+xml				xspf
+#added: yaml
+application/x-yaml              yaml
 application/zip					zip
 application/vnd.3M.Post-it-Notes
 application/vnd.accpac.simply.aso
