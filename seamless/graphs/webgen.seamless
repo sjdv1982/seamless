@@ -342,8 +342,12 @@
         "gen_vis_status"
       ],
       "pins": {
-        "graph": {},
-        "status_": {}
+        "graph": {
+          "celltype": "default"
+        },
+        "status_": {
+          "celltype": "default"
+        }
       },
       "type": "transformer"
     },
@@ -732,7 +736,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "886c745003101649af2d4061e1fde45bc9104761fe46ce1a5c43e0a458434d71"
+        "value": "3db1ab53b139b852acfb0e90029e0418858e3edd45c0ac1aafe7bd098f49a03a"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
