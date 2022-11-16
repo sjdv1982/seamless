@@ -1,0 +1,107 @@
+help: 'Creates an NGL viewer for molecular structures.
+  See https://nglviewer.org/ for more info on NGL.
+
+
+  Arguments:
+
+
+  - structures: a cell that contains either a single molecular structure or a dict of structures.
+
+
+  - representation. A cell containing a dict of NGL representations in JSON format. 
+  If the cell is empty, it is filled with a default representation value.
+  The representation dict contains keys that correspond to the keys in the "structures"
+  dict. If the key is absent, the representation under key "DEFAULT" is used.
+
+
+  A representation contains the following keys:
+
+  * type: an NGL molecular representation type, such as "cartoon". 
+    See http://nglviewer.org/ngldev/api/manual/molecular-representations.html for an overview.
+
+
+  * params: the parameters of the representation. Most common options are:
+
+
+      + "sele": containing an NGL selection (https://nglviewer.org/ngl/api/manual/usage/selection-language.html)
+
+
+      + "color": which contain a color name such as "red", or 
+         various color schemes, see https://nglviewer.org/ngl/api/manual/usage/coloring.html
+  
+
+  See http://nglviewer.org/ngl/gallery/ for examples of representations.
+
+
+  - format: describes the format of the molecular structure. This must be a file extension
+  understood by NGL (https://nglviewer.org/ngl/api/manual/file-formats.html). In addition,
+  it must be a text format (i.e. no MMTF or trajectory files).
+
+
+  If there are multiple structures, the format is extracted from the dictionary key of the
+  "structures" dict. For dictionary key that contain no ".", the value of the "format"
+  parameter is used.
+
+
+  Example:
+
+  "format" parameter: "pdb"
+
+
+  "structures" dict: 
+  
+  {
+
+    "struc": ....       => pdb
+
+    "receptor": ....    => pdb
+
+    "1cvj.cif": ...     => cif
+
+    "ethanol.mol2": ... => mol2
+
+  }
+
+
+  - title: the title of the component instance. Default: "NGL viewer"
+
+
+  - viewer_height: the height of the viewer, with a unit specifier ("px" or "%"). Default: "500px".
+
+
+  - viewer_width: the width of the viewer, with a unit specifier ("px" or "%"). Default: "500px".
+
+
+  In the final HTML, a div element called "nglviewer_X" is created, which will
+  contain the viewer with the width and height as specified.
+  '
+
+structures:
+  type: "cell"
+  share: "structures.json"
+  readonly: true
+
+representation:
+  type: "cell"
+  share: "representation.json"
+  readonly: true
+  default:
+    DEFAULT:
+      type: "cartoon"
+      params: {}
+
+format:
+  type: "value"
+  default: "pdb"
+
+title:
+  type: "value"
+  default: "NGL viewer"
+
+viewer_height:
+  type: "value"
+  default: "500px"
+
+viewer_width:
+  type: "value"
+  default: "100%"
