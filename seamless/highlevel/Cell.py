@@ -656,6 +656,9 @@ This cell is not fully independent, i.e. it has incoming connections"""
     def set_buffer(self, value):
         from ..core.structured_cell import StructuredCell
 
+        if not self.independent:
+            raise TypeError("Cannot set the buffer of a cell that is not independent")
+
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             hcell["TEMP"] = value
@@ -675,6 +678,8 @@ This cell is not fully independent, i.e. it has incoming connections"""
         if isinstance(cell, StructuredCell):
             cell.set_auth_checksum(checksum)
         else:
+            if not self.independent:
+                raise TypeError("Cannot set the checksum of a cell that is not independent")
             cell.set_checksum(checksum)
 
     @property
@@ -690,6 +695,8 @@ This cell is not fully independent, i.e. it has incoming connections"""
 
     def set(self, value):
         """Set the value of the cell"""
+        if not self.independent:
+            raise TypeError("Cannot set the value of a cell that is not independent")
         self._set(value)
         return self
 
