@@ -1430,6 +1430,11 @@ These modifications have been CANCELED.""" % (
         connections[:] = new_connections
         return any_removed
 
+    @property
+    def webunits(self):
+        from .WebunitWrapper import WebunitWrapper
+        return WebunitWrapper(self)
+
     def link(self, first, second):
         """Create a bidirectional link between the first and second cell.
 
