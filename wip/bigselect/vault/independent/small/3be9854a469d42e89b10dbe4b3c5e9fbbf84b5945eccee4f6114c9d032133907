@@ -1,0 +1,3 @@
+            <b-field label="{{title}}">
+                <div v-html="{{CELL}}.value"></div>
+            </b-field>

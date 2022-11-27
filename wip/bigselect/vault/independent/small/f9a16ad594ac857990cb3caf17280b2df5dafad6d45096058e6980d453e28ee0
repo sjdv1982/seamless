@@ -1,0 +1,7 @@
+            <b-field label="{{title}}">
+                <b-numberinput
+                    v-bind:value="{{CELL}}.value"
+                    v-model="{{CELL}}.value"
+                    :editable="{% if editable %}true{% else %}false{% endif %}"
+                />
+            </b-field>

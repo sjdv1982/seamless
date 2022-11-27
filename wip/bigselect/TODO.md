@@ -1,0 +1,7 @@
+- Rename autocomplete component to bigselect
+- Add support for multi select (selected as list)
+- Finalize parameters
+- seamless2webform.py:
+    - Set Vue default value (especially [] for plain cells)
+    - browser cells (no Seamless representation)
+- Convert to webunit

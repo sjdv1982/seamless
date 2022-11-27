@@ -1,0 +1,6 @@
+Checkbox
+
+Parameters:
+- title (string).
+- editable (bool). If true, the checkbox is editable
+
