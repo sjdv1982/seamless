@@ -98,6 +98,8 @@ def tf_get_buffer(transformation):
     assert isinstance(transformation, dict)
     d = {}
     for k in transformation:
+        if k.isupper():
+            continue
         if k in ("__compilers__", "__languages__", "__meta__"):
             continue
         v = transformation[k]

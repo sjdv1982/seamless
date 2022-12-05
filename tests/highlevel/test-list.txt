@@ -52,6 +52,7 @@ delay.py
 delay-logs-file.py
 module-simplified.py
 module.py
+special-pins.py
 multi-module.py: can also be run in non-interactive mode (mount /tmp/testmodule, perhaps enter light debug mode)
 module-pyaccess.py: can also be run in non-interactive mode (mount /tmp/module.py)
 bash.py

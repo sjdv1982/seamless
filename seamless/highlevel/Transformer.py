@@ -445,6 +445,22 @@ class Transformer(Base, HelpMixin):
         # TODO: self.self
         return getattr(self, inp).add_validator(validator, name=name)
 
+    def add_special_pin(self, pinname, celltype):
+        from .Cell import celltypes
+        if not pinname.isupper():
+            raise ValueError("Special pinname must be all uppercase")
+        if celltype not in celltypes and celltype not in ("deepcell", "folder"):
+            raise TypeError(celltype)
+        htf = self._get_htf()
+        if pinname in htf["pins"]:
+            raise TypeError("Pin already exists")
+        pin = default_pin.copy()
+        pin["celltype"] = celltype
+        htf["pins"][pinname] = pin
+        htf["UNTRANSLATED"] = True
+        parent = self._parent()
+        parent._translate()
+
     def _assign_to(self, hctx, path):
         from .assign import assign_connection
 
@@ -458,14 +474,14 @@ class Transformer(Base, HelpMixin):
         if attr.startswith("_") or hasattr(type(self), attr):
             return object.__setattr__(self, attr, value)
         else:
-            return self._setattr(attr, value)
+            return self._setattr(attr, value, from_setitem=False)
 
     def __setitem__(self, item, value):
         if not isinstance(item, str):
             raise TypeError("item must be 'str', not '{}'".format(type(item)))
-        return self._setattr(item, value)
+        return self._setattr(item, value, from_setitem=True)
 
-    def _setattr(self, attr, value):
+    def _setattr(self, attr, value, *, from_setitem):
         from .assign import assign_connection
 
         translate = False
@@ -487,6 +503,9 @@ class Transformer(Base, HelpMixin):
             and not isinstance(value, (Cell, Module, DeepCellBase))
             and attr != htf["RESULT"]
         ):
+            if attr.isupper():
+                if attr not in htf["pins"]:
+                    raise AttributeError("Cannot define new special pins before translation")
             if isinstance(value, Resource):
                 value = value.data
             if "TEMP" not in htf or htf["TEMP"] is None:
@@ -565,6 +584,11 @@ class Transformer(Base, HelpMixin):
             # TODO: suppress inchannel warning
             result.handle_no_inference.set(value)
         else:
+            if attr.isupper():
+                if attr not in htf["pins"]:
+                    raise AttributeError("Cannot define new special pins like this, use add_special_pin")
+                if not from_setitem:
+                    raise AttributeError("Special pins must be set using bracket syntax")
             pin0 = {}
             if isinstance(value, DeepCell) or (
                 isinstance(value, Cell) and value.hash_pattern == {"*": "#"}
