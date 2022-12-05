@@ -42,6 +42,7 @@ async def build_transformation():
         "code": ("python", func_buf),
     }
     transformation = {
+        "__language__": "python",
         "__output__": ("result", "int", None)
     }
     for k,v in inp.items():
@@ -63,6 +64,3 @@ async def build_transformation():
 
 import asyncio
 asyncio.get_event_loop().run_until_complete(build_transformation())
-
-# from conda.models.version import VersionSpec
-# VersionSpec(">=3").match("3.1")

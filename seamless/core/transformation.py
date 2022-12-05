@@ -3,6 +3,7 @@ from copy import deepcopy
 import weakref
 import asyncio
 import multiprocessing
+from multiprocessing import Process, JoinableQueue as Queue
 import sys
 import traceback
 import functools
@@ -10,9 +11,6 @@ import time
 import atexit
 import json
 import orjson
-
-from multiprocessing import Process, JoinableQueue as Queue
-
 import logging
 
 logger = logging.getLogger("seamless")
@@ -108,7 +106,7 @@ def get_transformation_inputs_output(transformation):
     for pinname in sorted(transformation.keys()):
         if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__", "__format__"):
             continue
-        if pinname == "__output__":
+        if pinname in ("__language__", "__output__"):
             continue
         if pinname == "code":
             continue
@@ -126,9 +124,8 @@ def get_transformation_inputs_output(transformation):
         outputname, output_celltype, output_subcelltype, output_hash_pattern = outputpin
     return inputs, outputname, output_celltype, output_subcelltype, output_hash_pattern
 
-async def build_transformation_namespace(transformation, semantic_cache, codename):    
+async def build_transformation_namespace(transformation, semantic_cache, codename):
     from .cache.database_client import database_cache
-    from .protocol.expression import get_subpath
     namespace = {
         "__name__": "transformer",
         "__package__": "transformer",
@@ -139,11 +136,11 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
     namespace["PINS"] = {}
     modules_to_build = {}
     as_ = transformation.get("__as__", {})
-    FILESYSTEM = {}    
+    FILESYSTEM = {}
     for pinname in sorted(transformation.keys()):
         if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__", "__format__"):
             continue
-        if pinname == "__output__":
+        if pinname in ("__language__", "__output__"):
             continue
         celltype, subcelltype, sem_checksum0 = transformation[pinname]
         sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
@@ -166,7 +163,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
                 mode = fs["mode"]
                 if mode == "file":
                     fs_result = database_cache.get_filename(checksum)
-                else: # mode == "directory"                    
+                else: # mode == "directory"
                     fs_result = database_cache.get_directory(checksum)
                 fs_entry = deepcopy(fs)
                 if fs_result is None:
@@ -179,7 +176,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
                     value = fs_result
                     from_filesystem = True
                 FILESYSTEM[pinname] = fs_entry
-            
+
             if fs_result is None:
                 hash_pattern = fmt.get("hash_pattern")
 
@@ -187,21 +184,17 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
             # fingertipping must have happened before, but database could be there
             buffer = get_buffer(checksum, remote=True)
             if buffer is None:
-                raise CacheMissError(checksum.hex())            
+                raise CacheMissError(checksum.hex())
             try:
                 if hash_pattern is not None:
                     deep_value = await deserialize(buffer, checksum, "plain", False)
-                    """
-                    mode, value = await get_subpath(deep_value, hash_pattern, ())
-                    assert mode == "value"
-                    """
                     pinname_as = as_.get(pinname, pinname)
                     inputs.append(pinname_as)
                     deep_structures_to_unpack[pinname_as] = deep_value, hash_pattern
                     continue
                 else:
                     value = await deserialize(buffer, checksum, celltype, False)
-            except Exception as exc:
+            except Exception:
                 e = traceback.format_exc()
                 raise Exception(pinname, e) from None
             if value is None:
@@ -217,7 +210,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
             inputs.append(pinname_as)
     for pinname in transformation:
         if pinname in (
-            "__output__", "__env__", "__compilers__",
+            "__language__", "__output__", "__env__", "__compilers__",
             "__languages__", "__as__", "__meta__", "__format__"
         ):
             continue
@@ -261,6 +254,9 @@ class TransformationJob:
     _cancelled = False
     _hard_cancelled = False
     remote_futures = None
+    remote_status = None
+    remote_clients = None
+    remote_result = None
     start = None
     def __init__(self,
         checksum, codename,
@@ -270,6 +266,7 @@ class TransformationJob:
         self.checksum = checksum
         assert codename is not None
         self.codename = codename
+        assert transformation.get("__language__") == "python", transformation.get("__language__")
         assert "code" in transformation, transformation.keys()
         for pinname in transformation:
             if pinname in ("__compilers__", "__languages__", "__as__", "__meta__", "__format__"):
@@ -324,7 +321,7 @@ class TransformationJob:
                         status, response = result
                         if status == 0:
                             exception = response
-                except:
+                except Exception:
                     print_debug("STATUS RESULT", result)
                     print_debug(traceback.format_exc())
                     continue
@@ -363,7 +360,7 @@ class TransformationJob:
                         continue
                     try:
                         status = fut.result()[0]
-                    except:
+                    except Exception:
                         continue
                     if status == best_status:
                         best_clients.append(clients[n])
@@ -475,14 +472,14 @@ class TransformationJob:
                 if future.exception() is not None:
                     try:
                         future.result()
-                    except:
+                    except Exception:
                         exc = traceback.format_exc()
                         print_debug("Transformation {}: {}".format(self.checksum.hex(), exc))
                     continue
                 try:
                     result = future.result()
                     status = result[0]
-                except:
+                except Exception:
                     exc = traceback.format_exc()
                     print_debug("Transformation {}: {}".format(self.checksum.hex(), exc))
                     continue
@@ -548,7 +545,7 @@ class TransformationJob:
         logs = [None, None, None]
         lock = await acquire_lock(self.checksum)
 
-        io = get_transformation_inputs_output(self.transformation) 
+        io = get_transformation_inputs_output(self.transformation)
         inputs, outputname, output_celltype, output_subcelltype, output_hash_pattern = io
         tf_namespace = await build_transformation_namespace(
             self.transformation, self.semantic_cache, self.codename
@@ -557,7 +554,7 @@ class TransformationJob:
 
         debug = None
         if self.debug is not None:
-            debug = deepcopy(self.debug) 
+            debug = deepcopy(self.debug)
 
         module_workspace = {}
         compilers = self.transformation.get("__compilers__", default_compilers)
@@ -565,7 +562,7 @@ class TransformationJob:
         module_debug_mounts = None
         if debug is not None:
             module_debug_mounts = debug.get("module_mounts")
-            
+
         full_module_names = build_all_modules(
             modules_to_build, module_workspace,
             compilers=compilers, languages=languages,
@@ -576,7 +573,7 @@ class TransformationJob:
         async def get_result_checksum(result_buffer):
             if result_buffer is None:
                 return None
-            try:                
+            try:
                 result_checksum = await calculate_checksum(result_buffer)
                 # execute.py will have done a successful serialization for output_celltype
                 buffer_cache.guarantee_buffer_info(
@@ -590,7 +587,7 @@ class TransformationJob:
                     self.codename
                 )
             except Exception:
-                raise SeamlessInvalidValueError(result)
+                raise SeamlessInvalidValueError(result) from None
             return result_checksum
 
         self.start = time.time()
@@ -603,7 +600,7 @@ class TransformationJob:
             assert multiprocessing.get_start_method(allow_none=False) == "fork"
 
             queue = Queue()
-            
+
             args = (
                 self.codename, code,
                 with_ipython_kernel,
@@ -630,7 +627,6 @@ class TransformationJob:
             done = False
             result_checksum = None
             while 1:
-                prelim = None
                 while not queue.empty():
                     status, msg = queue.get()
                     queue.task_done()
@@ -655,7 +651,7 @@ class TransformationJob:
                             try:
                                 if code in (0, 1):
                                     content = str(content)
-                            except:
+                            except Exception:
                                 pass
                             else:
                                 if isinstance(content, (bytes, str)) and len(content) > 10000:
@@ -717,7 +713,7 @@ class TransformationJob:
                 result_str = result_buffer.decode()
                 try:
                     result_str = str(orjson.loads(result_str))
-                except:
+                except Exception:
                     pass
                 if len(result_str) > 10000:
                     skipped = len(result_str)-5000-4960

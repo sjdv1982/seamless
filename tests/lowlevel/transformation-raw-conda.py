@@ -44,6 +44,7 @@ async def build_transformation():
         "code": ("python", func_buf),
     }
     transformation = {
+        "__language__": "python",
         "__output__": ("result", "int", None)
     }
     environment = {

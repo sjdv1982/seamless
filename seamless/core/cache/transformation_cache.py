@@ -21,11 +21,6 @@ import traceback
 from copy import deepcopy
 
 from ...calculate_checksum import calculate_checksum as calculate_checksum_func
-"""
-TODO: offload exceptions (as text) to database (also allow them to be cleared in database?)
-TODO: do the same with stdout, stderr
-TODO: add some metadata to the above? (when and where it was executed)
-"""
 
 # Keep transformations alive for 20 secs after the last ref has expired,
 #  but only if they have been running locally for at least 20 secs,
@@ -106,7 +101,7 @@ def tf_get_buffer(transformation):
         if k in ("__compilers__", "__languages__", "__meta__"):
             continue
         v = transformation[k]
-        if k in ("__output__", "__as__", "__format__"):
+        if k in ("__language__", "__output__", "__as__", "__format__"):
             d[k] = v
             continue
         elif k == "__env__":
@@ -210,7 +205,10 @@ class TransformationCache:
         assert isinstance(transformer, Transformer)
         cachemanager = transformer._get_manager().cachemanager
         assert isinstance(outputpin, tuple) and len(outputpin) in (3, 4)
-        transformation = {"__output__": outputpin}
+        transformation = {
+            "__language__": "python"
+        }
+        transformation["__output__"] = outputpin
         as_ = {}
         FORMAT = {}
         root = transformer._root()
@@ -352,7 +350,7 @@ class TransformationCache:
             for pinname in transformation:
                 if pinname in ("__compilers__", "__languages__", "__as__",  "__format__", "__meta__"):
                     continue
-                if pinname == "__output__":
+                if pinname in ("__language__", "__output__"):
                     continue
                 if pinname == "__env__":
                     sem_checksum = bytes.fromhex(transformation[pinname])
@@ -469,7 +467,7 @@ class TransformationCache:
             self.transformation_logs.pop(tf_checksum, None)
             # TODO: clear transformation_exceptions also at some moment??
         for pinname in transformation:
-            if pinname in ("__output__", "__languages__", "__compilers__", "__as__", "__format__", "__meta__"):
+            if pinname in ("__language__", "__output__", "__languages__", "__compilers__", "__as__", "__format__", "__meta__"):
                 continue
             if pinname == "__env__":
                 checksum = bytes.fromhex(transformation[pinname])
@@ -499,7 +497,7 @@ class TransformationCache:
         for k,v in transformation.items():
             if k in ("__compilers__", "__languages__", "__meta__", "__format__"):
                 continue
-            if k in ("__output__", "__as__"):
+            if k in ("__language__", "__output__", "__as__"):
                 continue
             if k == "__env__":
                 continue
@@ -617,8 +615,7 @@ class TransformationCache:
                 logs = exc.args[0]
             else:
                 s = traceback.format_exception(
-                    value=exc,
-                    etype=type(exc),
+                    exc,
                     tb=exc.__traceback__
                 )
                 logs = "".join(s)
@@ -839,8 +836,7 @@ class TransformationCache:
         exc = self.transformation_exceptions.get(tf_checksum)
         if exc is not None:
             exc_list = traceback.format_exception(
-                value=exc,
-                etype=type(exc),
+                exc,
                 tb=exc.__traceback__
             )
             exc_str = "".join(exc_list)
@@ -948,7 +944,7 @@ class TransformationCache:
         if transformation is None:
             raise CacheMissError(tf_checksum.hex())
         for k,v in transformation.items():
-            if k in ("__output__", "__as__"):
+            if k in ("__language__", "__output__", "__as__"):
                 continue
             if k == "__env__":
                 continue
