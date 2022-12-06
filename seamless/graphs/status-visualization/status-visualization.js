@@ -262,8 +262,8 @@ ctx = connect_seamless(
   SEAMLESS_SHARE_NAMESPACE
 );
 ctx.self.onsharelist = function(sharelist) {
-  ctx.vis_status.onchange = function() {
-    data = ctx.vis_status.value
+  ctx.visual_status.onchange = function() {
+    data = ctx.visual_status.value
     graph = JSON.parse(data)
     //$("#model").text(data)
     newNodes = []

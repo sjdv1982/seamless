@@ -15,7 +15,7 @@
         "graph_rt"
       ],
       "target": [
-        "gen_vis_status",
+        "get_visual_status",
         "graph"
       ],
       "type": "connection"
@@ -25,17 +25,17 @@
         "status_"
       ],
       "target": [
-        "gen_vis_status",
+        "get_visual_status",
         "status_"
       ],
       "type": "connection"
     },
     {
       "source": [
-        "gen_vis_status"
+        "get_visual_status"
       ],
       "target": [
-        "vis_status"
+        "visual_status"
       ],
       "type": "connection"
     }
@@ -43,19 +43,64 @@
   "lib": [],
   "nodes": [
     {
+      "path": [
+        "HELP"
+      ],
+      "type": "context"
+    },
+    {
       "celltype": "text",
       "checksum": {
-        "value": "723de2584398eb788f1559de478531fc49fe23323460cafb6f4976700c23afa0"
+        "value": "401b99f23e04d63dae70624339780904566f8f6cf52492485bed98b3cf6a1a01"
       },
       "datatype": "mixed",
-      "mimetype": "text/css",
+      "hash_pattern": null,
       "path": [
-        "css"
+        "HELP",
+        "INDEX"
       ],
-      "share": {
-        "path": "status-visualization.css",
-        "readonly": true
+      "type": "cell"
+    },
+    {
+      "path": [
+        "HELP",
+        "get_visual_status"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "9d39e1a91169bc538b6bbf4d96af45e06762c37573f6c59b8632e43a135e3a83"
       },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "HELP",
+        "get_visual_status",
+        "INDEX"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "HELP",
+        "status-visualization.js"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "ded0c7313ae033f440f7f58c43d7dc57f0b86cb8fe77ff8f4af7d152e0252d0b"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "HELP",
+        "status-visualization.js",
+        "INDEX"
+      ],
       "type": "cell"
     },
     {
@@ -78,12 +123,12 @@
         "code": {
           "authority": "file",
           "mode": "rw",
-          "path": "gen_vis_status.py",
+          "path": "get_visual_status.py",
           "persistent": true
         }
       },
       "path": [
-        "gen_vis_status"
+        "get_visual_status"
       ],
       "pins": {
         "graph": {
@@ -124,12 +169,44 @@
     {
       "celltype": "text",
       "checksum": {
+        "value": "3db1ab53b139b852acfb0e90029e0418858e3edd45c0ac1aafe7bd098f49a03a"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/javascript",
+      "path": [
+        "seamless-client.js"
+      ],
+      "share": {
+        "path": "seamless-client.js",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "723de2584398eb788f1559de478531fc49fe23323460cafb6f4976700c23afa0"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/css",
+      "path": [
+        "status-visualization.css"
+      ],
+      "share": {
+        "path": "status-visualization.css",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
         "value": "0593c63ebea295cbce6daece5c48ea0ae46f663b7e521e913bf2aa9da1634cb8"
       },
       "datatype": "mixed",
       "mimetype": "text/html",
       "path": [
-        "html"
+        "status-visualization.html"
       ],
       "share": {
         "path": "index.html",
@@ -140,15 +217,15 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "3db1ab53b139b852acfb0e90029e0418858e3edd45c0ac1aafe7bd098f49a03a"
+        "value": "513b48df01db4aa47933e19cff8883f3f9eb54981dcafa1cb200ea2c3e9c1b01"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
       "path": [
-        "seamless_client_js"
+        "status-visualization.js"
       ],
       "share": {
-        "path": "seamless-client.js",
+        "path": "status-visualization.js",
         "readonly": true
       },
       "type": "cell"
@@ -180,26 +257,10 @@
       "type": "cell"
     },
     {
-      "celltype": "text",
-      "checksum": {
-        "value": "a27cf42d8ef1e4aa7da45fdd33449727d2e69d1492d2683a1f4da4ffa022928b"
-      },
-      "datatype": "mixed",
-      "mimetype": "text/javascript",
-      "path": [
-        "status_visualization_js"
-      ],
-      "share": {
-        "path": "status-visualization.js",
-        "readonly": true
-      },
-      "type": "cell"
-    },
-    {
       "celltype": "plain",
       "datatype": "mixed",
       "path": [
-        "vis_status"
+        "visual_status"
       ],
       "share": {
         "path": null,

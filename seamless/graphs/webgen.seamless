@@ -15,7 +15,7 @@
         "graph_rt"
       ],
       "target": [
-        "gen_vis_status",
+        "get_visual_status",
         "graph"
       ],
       "type": "connection"
@@ -25,17 +25,17 @@
         "status_"
       ],
       "target": [
-        "gen_vis_status",
+        "get_visual_status",
         "status_"
       ],
       "type": "connection"
     },
     {
       "source": [
-        "gen_vis_status"
+        "get_visual_status"
       ],
       "target": [
-        "vis_status"
+        "visual_status"
       ],
       "type": "connection"
     },
@@ -46,16 +46,6 @@
       "target": [
         "generate_webform",
         "graph"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "seamless2webform"
-      ],
-      "target": [
-        "generate_webform",
-        "code"
       ],
       "type": "connection"
     },
@@ -277,6 +267,109 @@
   ],
   "nodes": [
     {
+      "path": [
+        "HELP"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "401b99f23e04d63dae70624339780904566f8f6cf52492485bed98b3cf6a1a01"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "HELP",
+        "INDEX"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "HELP",
+        "generate_webform"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "a28690fb743ebcb9af7a87acbbc3e5a5a4391cf7afe5e158528b4a58b30e3044"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "HELP",
+        "generate_webform",
+        "INDEX"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "HELP",
+        "generate_webpage"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "e167d6d0dadc2bee502d1ec7f062d452fac4e4e3ea684b86a5c0c455d67e991e"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "HELP",
+        "generate_webpage",
+        "INDEX"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "HELP",
+        "get_visual_status"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "9d39e1a91169bc538b6bbf4d96af45e06762c37573f6c59b8632e43a135e3a83"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "HELP",
+        "get_visual_status",
+        "INDEX"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "HELP",
+        "status-visualization.js"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "ded0c7313ae033f440f7f58c43d7dc57f0b86cb8fe77ff8f4af7d152e0252d0b"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "HELP",
+        "status-visualization.js",
+        "INDEX"
+      ],
+      "type": "cell"
+    },
+    {
       "celltype": "plain",
       "datatype": "mixed",
       "mount": {
@@ -299,29 +392,14 @@
       "type": "cell"
     },
     {
-      "celltype": "text",
-      "checksum": {
-        "value": "723de2584398eb788f1559de478531fc49fe23323460cafb6f4976700c23afa0"
-      },
-      "datatype": "mixed",
-      "mimetype": "text/css",
-      "path": [
-        "css"
-      ],
-      "share": {
-        "path": "status-visualization.css",
-        "readonly": true
-      },
-      "type": "cell"
-    },
-    {
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "c46036f2b4bedb3189c51bec953fdb96d99d748ab3fa17f0e433ff0d4cf4efab",
-        "input": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
-        "input_buffer": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
+        "code": "2000df11238da6b397ee5a9f260706f8f934bcbcf82858cce299ef542d157244",
+        "input": "2a87d93425220f1a1088b84abf05651ea3142467118f938ebd15f636226ee146",
+        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "input_buffer": "2a87d93425220f1a1088b84abf05651ea3142467118f938ebd15f636226ee146",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -334,39 +412,10 @@
         "code": {
           "authority": "file",
           "mode": "rw",
-          "path": "web/gen_vis_status.py",
+          "path": "web/generate-webform.py",
           "persistent": true
         }
       },
-      "path": [
-        "gen_vis_status"
-      ],
-      "pins": {
-        "graph": {
-          "celltype": "default"
-        },
-        "status_": {
-          "celltype": "default"
-        }
-      },
-      "type": "transformer"
-    },
-    {
-      "INPUT": "inp",
-      "RESULT": "result",
-      "SCHEMA": null,
-      "checksum": {
-        "code": "df2b5e584738f0220ce748c36dc05e8c4304ffa22106bf015b2f5f7dc36ed865",
-        "input": "2a87d93425220f1a1088b84abf05651ea3142467118f938ebd15f636226ee146",
-        "input_buffer": "2a87d93425220f1a1088b84abf05651ea3142467118f938ebd15f636226ee146",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
-      "compiled": false,
-      "hash_pattern": {
-        "*": "#"
-      },
-      "language": "python",
       "path": [
         "generate_webform"
       ],
@@ -419,6 +468,43 @@
       "type": "transformer"
     },
     {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "c46036f2b4bedb3189c51bec953fdb96d99d748ab3fa17f0e433ff0d4cf4efab",
+        "input": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
+        "input_buffer": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+      },
+      "compiled": false,
+      "hash_pattern": {
+        "*": "#"
+      },
+      "language": "python",
+      "mount": {
+        "code": {
+          "authority": "file",
+          "mode": "rw",
+          "path": "web/get_visual_status.py",
+          "persistent": true
+        }
+      },
+      "path": [
+        "get_visual_status"
+      ],
+      "pins": {
+        "graph": {
+          "celltype": "default"
+        },
+        "status_": {
+          "celltype": "default"
+        }
+      },
+      "type": "transformer"
+    },
+    {
       "celltype": "plain",
       "checksum": {
         "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
@@ -442,22 +528,6 @@
       "path": [
         "graph_rt"
       ],
-      "type": "cell"
-    },
-    {
-      "celltype": "text",
-      "checksum": {
-        "value": "0593c63ebea295cbce6daece5c48ea0ae46f663b7e521e913bf2aa9da1634cb8"
-      },
-      "datatype": "mixed",
-      "mimetype": "text/html",
-      "path": [
-        "html"
-      ],
-      "share": {
-        "path": "status.html",
-        "readonly": true
-      },
       "type": "cell"
     },
     {
@@ -716,24 +786,6 @@
       "type": "libinstance"
     },
     {
-      "celltype": "code",
-      "checksum": {
-        "value": "df2b5e584738f0220ce748c36dc05e8c4304ffa22106bf015b2f5f7dc36ed865"
-      },
-      "datatype": "mixed",
-      "language": "python",
-      "mount": {
-        "authority": "file",
-        "mode": "rw",
-        "path": "web/seamless2webform.py",
-        "persistent": true
-      },
-      "path": [
-        "seamless2webform"
-      ],
-      "type": "cell"
-    },
-    {
       "celltype": "text",
       "checksum": {
         "value": "3db1ab53b139b852acfb0e90029e0418858e3edd45c0ac1aafe7bd098f49a03a"
@@ -741,12 +793,60 @@
       "datatype": "mixed",
       "mimetype": "text/javascript",
       "path": [
-        "seamless_client_js"
+        "seamless-client.js"
       ],
       "share": {
         "path": "seamless-client.js",
         "readonly": true,
         "toplevel": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "723de2584398eb788f1559de478531fc49fe23323460cafb6f4976700c23afa0"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/css",
+      "path": [
+        "status-visualization.css"
+      ],
+      "share": {
+        "path": "status-visualization.css",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "0593c63ebea295cbce6daece5c48ea0ae46f663b7e521e913bf2aa9da1634cb8"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/html",
+      "path": [
+        "status-visualization.html"
+      ],
+      "share": {
+        "path": "status.html",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "513b48df01db4aa47933e19cff8883f3f9eb54981dcafa1cb200ea2c3e9c1b01"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/javascript",
+      "path": [
+        "status-visualization.js"
+      ],
+      "share": {
+        "path": "status-visualization.js",
+        "readonly": true
       },
       "type": "cell"
     },
@@ -777,26 +877,10 @@
       "type": "cell"
     },
     {
-      "celltype": "text",
-      "checksum": {
-        "value": "a27cf42d8ef1e4aa7da45fdd33449727d2e69d1492d2683a1f4da4ffa022928b"
-      },
-      "datatype": "mixed",
-      "mimetype": "text/javascript",
-      "path": [
-        "status_visualization_js"
-      ],
-      "share": {
-        "path": "status-visualization.js",
-        "readonly": true
-      },
-      "type": "cell"
-    },
-    {
       "celltype": "plain",
       "datatype": "mixed",
       "path": [
-        "vis_status"
+        "visual_status"
       ],
       "share": {
         "path": null,
@@ -807,7 +891,6 @@
     {
       "celltype": "structured",
       "checksum": {
-        "buffer": "79c9809c494a30ba671b1fcaf67306602e5a832644760eff15a916522bac21b9",
         "value": "79c9809c494a30ba671b1fcaf67306602e5a832644760eff15a916522bac21b9"
       },
       "mount": {

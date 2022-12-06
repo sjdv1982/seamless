@@ -5,11 +5,10 @@ import os
 ctx = Context()
 ctx.include(stdlib.merge)
 ctx.initial_graph = Cell("plain").mount("initial-graph.seamless", "r")
-ctx.seamless2webform = Cell("code").mount("../seamless2webform.py", "r")
 ctx.gen_webform = Transformer()
+ctx.gen_webform.code.mount("../generate-webform.py", "r")
 ctx.gen_webform.graph = ctx.initial_graph
 ctx.gen_webform.pins.graph.celltype = "plain"
-ctx.gen_webform.code = ctx.seamless2webform
 ctx.initial_webform = ctx.gen_webform
 ctx.initial_webform.celltype = "plain"
 ctx.initial_webform.mount("initial-webform.json", "w")

@@ -1,12 +1,5 @@
-"""Generates a webform dict from a Seamless workflow graph.
+# For the docstring, do `webctx.generate_webform?` in IPython
 
-The webform dict is used by generate-webpage.py to create an index.html + index.js
-
-It creates a default entry in the webform for each shared celltype
-You can modify this script to change the defaults
-
-auto_read: the web page will download the value of the cell whenever it changes
-"""
 # input: graph
 
 from copy import deepcopy
