@@ -30,10 +30,11 @@ pins["header_"]["celltype"] = "text"
 pins["header_"]["as_"] = "header"
 pins["main_module"]["celltype"] = "plain"
 
-def func(module, pins, input_schema, result_schema, input_name, result_name, direct_print_, kwargs):
+def func(module, pins, input_schema, result_schema, input_name, result_name, kwargs):
     None
 
 ctx.executor = func
+ctx.executor.add_special_pin("DIRECT_PRINT", "bool")
 ctx.executor.code = set_resource(executor_file)
 pins = ctx.executor._get_htf()["pins"] ### need to access like this; TODO: implement .self.pins
 pins["module"]["celltype"] =  "plain"
@@ -90,7 +91,7 @@ ctf.input_schema = ctx.input_schema
 ctf.result_schema = ctx.result_schema
 ctf.input_name = ctx.input_name
 ctf.result_name = ctx.result_name
-ctf.direct_print_ = False
+ctf["DIRECT_PRINT"] = False
 ctx.result = ctx.executor
 ctx.result.celltype = "float"
 

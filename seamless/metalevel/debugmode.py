@@ -222,7 +222,7 @@ class DebugMode:
         if node.get("compiled") and self._direct_print:
             tf = tf._get_tf()
             if tf is not None:
-                tf.tf.executor.direct_print_.set(True)
+                tf.tf.executor.DIRECT_PRINT.set(True)
 
 
     def enable(self, mode, sandbox_name=None):
@@ -322,7 +322,7 @@ If this value is None, direct print is True if debugging is enabled."""
         if node.get("compiled"):
             tf = tf._get_tf()
             if tf is not None:
-                tf.tf.executor.direct_print_.set(value)
+                tf.tf.executor.DIRECT_PRINT.set(value)
 
     @property
     def direct_print_file(self):

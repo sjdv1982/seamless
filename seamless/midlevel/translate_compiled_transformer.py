@@ -18,7 +18,7 @@ def _init_from_graph(ctf, sctx):
     ctf.executor = transformer(sctx.executor_params.value)
     ctf.executor_code.connect(ctf.executor.code)
 
-    ctf.executor.direct_print_.cell().set(False)
+    ctf.executor.DIRECT_PRINT.cell().set(False)
 
 def _finalize(
         ctx, ctf, inp, c_inp, result, c_result,
