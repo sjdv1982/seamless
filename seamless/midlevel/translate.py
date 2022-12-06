@@ -192,13 +192,16 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         if node.get("fingertip_no_remote"):
             child._fingertip_remote = False
     setattr(parent, name, child)
-    checksum = node.get("checksum")
+    checksum = node.get("checksum")    
     if checksum is not None:
         if ct == "structured":
-            if node["type"] == "foldercell" and mount is not None and mount.get("mode") == "r":                
+            if node["type"] == "foldercell":
                 cs = checksum.get("value")
                 if cs is not None:
-                    child_ctx.mountcell._set_checksum(cs, initial=True)
+                    if mount is not None and mount.get("mode") == "r":
+                        child_ctx.mountcell._set_checksum(cs, initial=True)
+                    else:
+                        set_structured_cell_from_checksum(child, {"auth": cs})
             else:
                 set_structured_cell_from_checksum(child, checksum)
         else:

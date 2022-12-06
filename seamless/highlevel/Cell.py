@@ -1030,7 +1030,8 @@ This cell is not fully independent, i.e. it has incoming connections"""
             if cell.auth is not None:
                 cell.auth._set_observer(self._observe_auth)
             cell._data._set_observer(self._observe_cell)
-            cell.buffer._set_observer(self._observe_buffer)
+            if not isinstance(self, FolderCell):
+                cell.buffer._set_observer(self._observe_buffer)
             if cell.schema is not None:
                 cell.schema._set_observer(self._observe_schema)
         else:
