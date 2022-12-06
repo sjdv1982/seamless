@@ -47,6 +47,15 @@ When you share a cell (and retranslate the graph), an entry is automatically add
 TODO. Integrate/merge with "visualization and monitoring" in "Seamless explained".
 <!--
 
+TODO:
+
+- Webunits
+
+- ctx.path.x (Seamless Python) vs /ctx/path/x (HTTP) vs ctx.path__x (Javascript client). This is all for cells shared with .share() (no arguments), which become "cells" in the webform.
+
+- "extra cells" are the ones with .share(path), where the sharepath ( HTTP+Javascript) is different from the Python path. They can be referred to in the ["cell" attribute / "cells" list attribute] of extra components.
+In case of "cells", ctx.attr is guaranteed to work in Javascript. For extra cells, it may not..
+
 ### C4. Web status and web interface generation
 
 Intro:
