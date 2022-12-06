@@ -162,7 +162,6 @@ def fill_checksum(manager, node, temp_path, composite=True):
             datatype = "code"
             if node["language"] == "python":
                 celltype = "python"
-                subcelltype = "transformer"
             else:
                 celltype = "text"
         elif temp_path == "_main_module":
@@ -259,7 +258,7 @@ def get_graph_checksums(graph, with_libraries, *, with_annotations):
         with_annotations=with_annotations
     )
     if with_libraries:
-        for lib in graph["lib"]:
+        for lib in graph.get("lib", []):
             lib_checksums = get_graph_checksums(
                 lib["graph"],
                 with_libraries=True,

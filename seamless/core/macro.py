@@ -1,6 +1,5 @@
 from collections import OrderedDict
 import traceback
-import weakref
 
 class ExecError(Exception): pass
 
@@ -61,8 +60,11 @@ class Macro(Worker):
     def status(self):
         """The computation status of the macro"""
         from .status import format_worker_status
-        status = self._get_status()
-        statustxt = format_worker_status(status)
+        try:
+            status = self._get_status()
+            statustxt = format_worker_status(status)
+        except Exception:
+            statustxt = traceback.format_exc()
         return "Status: " + str(statustxt)
 
     @property
