@@ -1,0 +1,7 @@
+def gen_wave_v2(period):
+    import numpy as np
+    points = np.arange(1000)
+    phase = points/period*np.pi*2
+    y = np.sin(phase)
+    x = np.arange(len(y))
+    return x, y

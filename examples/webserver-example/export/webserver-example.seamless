@@ -173,13 +173,13 @@
       ],
       "pins": {
         "limit": {
-          "celltype": "mixed"
+          "celltype": "default"
         },
         "mirror": {
-          "celltype": "mixed"
+          "celltype": "default"
         },
         "plot.txt": {
-          "celltype": "mixed"
+          "celltype": "default"
         }
       },
       "type": "transformer"
@@ -243,7 +243,7 @@
       ],
       "pins": {
         "period": {
-          "celltype": "mixed"
+          "celltype": "default"
         }
       },
       "type": "transformer"
@@ -331,7 +331,7 @@
         "input": "490043d1d9961d100d1935e043d01b621f1c81ddc7e0815d51ab1a9fbbe7a5b2",
         "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "input_buffer": "490043d1d9961d100d1935e043d01b621f1c81ddc7e0815d51ab1a9fbbe7a5b2",
-        "result": "59caa4091ec32cbca35295c4dfb79fab35692e293416ad4f20343347c0b30d26",
+        "result": "44380706eea8640a04cf8b41ee4007a97b696e6425e96a4f3be1548b738235e0",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -345,13 +345,13 @@
       ],
       "pins": {
         "markerline": {
-          "celltype": "mixed"
+          "celltype": "default"
         },
         "x": {
-          "celltype": "mixed"
+          "celltype": "default"
         },
         "y": {
-          "celltype": "mixed"
+          "celltype": "default"
         }
       },
       "type": "transformer"
@@ -379,7 +379,7 @@
       ],
       "pins": {
         "xy": {
-          "celltype": "mixed"
+          "celltype": "default"
         }
       },
       "type": "transformer"
@@ -387,7 +387,7 @@
     {
       "celltype": "bytes",
       "checksum": {
-        "value": "d3eb8ed02d0aaa35f6f9525460e7093c3dada0c4e3fd45be326c54fc29bde4bb"
+        "value": "ad19c82cd47162f460c12a95a55ab2f74df1aa2bb636086212229a10197d0372"
       },
       "datatype": "mixed",
       "file_extension": "png",
@@ -424,7 +424,7 @@
       ],
       "pins": {
         "plot": {
-          "celltype": "mixed"
+          "celltype": "default"
         }
       },
       "type": "transformer"

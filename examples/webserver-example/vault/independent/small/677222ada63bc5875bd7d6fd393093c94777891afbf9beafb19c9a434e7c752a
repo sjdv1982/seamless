@@ -1,0 +1,6 @@
+def plot2txt(xy):
+    import pandas as pd
+    x, y = xy
+    df = pd.DataFrame({"x":x,"y":y})
+    plot = df.to_csv(sep=" ", header=False, index=False)
+    return plot

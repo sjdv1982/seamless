@@ -80,7 +80,8 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
       onsharelist: function(value) {},
       get_value: function(){
         let result = {}
-        for (const key of sharelist) {
+        for (const key0 of sharelist) {
+          const key = key0.replaceAll("/", "__")
           result[key] = ctx[key].value
         }
         return result
@@ -93,7 +94,8 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
   let sharelist = null    
   
   function get_value(key) {
-    var rq = ctx.self.rest_server + "/" + ctx.self.share_namespace + "/" + key + "?mode=marker"
+    const key2 = key.replaceAll("__", "/")
+    var rq = ctx.self.rest_server + "/" + ctx.self.share_namespace + "/" + key2 + "?mode=marker"
     //$("#request").text("GET:" + rq)
     //$("#error_message").text("GET:" + rq)
     fetch(rq)
@@ -110,7 +112,7 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
     .then(async function(result){
       if (result === undefined) return    
       if (ctx[key].auto_read && result["checksum"] != null) {
-        var rq2 = ctx.self.rest_server + "/" + ctx.self.share_namespace + "/" + key + "?mode=buffer"
+        var rq2 = ctx.self.rest_server + "/" + ctx.self.share_namespace + "/" + key2 + "?mode=buffer"
         //$("#error_message").text("GET:" + rq2)
         //$("#error_message").text(result)
         const response = await fetch(rq2)
@@ -121,8 +123,11 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
           r = await response.text()
         }
         //$("#error_message").text("RESP:" + r)
-        ctx[key].value = r
-        ctx[key].content_type = response.headers.get('Content-Type')
+        //console.log("RESP:" + r)
+        if (r != null && r != "null") {
+          ctx[key].value = r
+          ctx[key].content_type = response.headers.get('Content-Type')
+        }
       }
     })
     .catch(function(err) {
@@ -143,8 +148,6 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
   }
   function put_value(key, value) {     
     if (ctx[key]._marker == null) ctx[key]._marker = 0
-    oldmarker = ctx[key]._marker 
-    newmarker = oldmarker + 1
     if (ctx[key].binary) {
       if (!(value instanceof Blob)) {
         console.log(`Cannot set value for ctx['${key}'], as it is binary and the value isn't a Blob`)
@@ -152,6 +155,8 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
       }
       blobToBase64(value)      
       .then(function(text){
+        oldmarker = ctx[key]._marker 
+        newmarker = oldmarker + 1    
         _put_value(key, text, newmarker)
       })    
     }
@@ -159,21 +164,27 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
       if (value instanceof Blob) {
         value.text()
         .then(function(text){
+          oldmarker = ctx[key]._marker 
+          newmarker = oldmarker + 1      
           _put_value(key, text, newmarker)
         })
       }
       else {
         buffer = value
+        oldmarker = ctx[key]._marker 
+        newmarker = oldmarker + 1            
         return _put_value(key, buffer, newmarker)
       }
     }
   }
   function _put_value(key, buffer, newmarker) {
-    var rq = ctx.self.rest_server + "/" + ctx.self.share_namespace + "/" + key
+    const key2 = key.replaceAll("__", "/")
+    var rq = ctx.self.rest_server + "/" + ctx.self.share_namespace + "/" + key2
     const payload = JSON.stringify({
       "buffer":buffer,
       "marker":newmarker
     })
+    ctx[key]._marker = newmarker
     //$("#request").text(JSON.stringify({"rq": "PUT:" + rq, "buffer": value}))
     let options = {
       method: "PUT", 
@@ -184,14 +195,15 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
     }
     fetch(rq, options)
     .then(function(response) {
+      if (response.status == 409) {
+        return "superseded"
+      }
       return response.text()
     })
     .then(function(result) {
       if (parseInt(result)) {
-        if (ctx[key]._marker == oldmarker) {
-          ctx[key]._marker = newmarker
-        }
-        else {
+        if (parseInt(result) != newmarker && ctx[key]._marker == newmarker) {
+          ctx[key]._marker = 0
           get_value(key)
         }
       }
@@ -217,7 +229,8 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
         }
       }
       ctx.self.sharelist = sharelist
-      for (const key of sharelist) {
+      for (const key0 of sharelist) {
+        const key = key0.replaceAll("/", "__")
         if (key == "self") continue
         auto_read = (key.indexOf('.') == -1)
         ctx[key] = {
@@ -235,7 +248,8 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
       if (protocol == "0.01") {
         ctx.self.onsharelist(sharelist)
       }
-      for (const key of sharelist) {
+      for (const key0 of sharelist) {
+        const key = key0.replaceAll("/", "__")
         if (key == "self") continue
         if (protocol == "0.01") {
           get_value(key)
@@ -244,18 +258,21 @@ function connect_seamless(update_server=null, rest_server=null, share_namespace=
     }
     else if (message[0] == "binary") {
       binary_list = message[1];
-      for (const key of binary_list) {
+      for (const key0 of binary_list) {
+        const key = key0.replaceAll("/", "__")          
         cell = ctx[key]
         if (cell === undefined)  continue
         cell.binary = true
       }
       ctx.self.onsharelist(ctx.self.sharelist)
-      for (const key of ctx.self.sharelist) {
+      for (const key0 of ctx.self.sharelist) {
+        const key = key0.replaceAll("/", "__")  
         get_value(key)
       }      
     }
     else if (message[0] == "update") {
-      let key = message[1][0]     
+      let key0 = message[1][0]     
+      const key = key0.replaceAll("/", "__")
       let checksum = message[1][1] 
       let marker = message[1][2]
       //$("#error_message").text(JSON.stringify(message))

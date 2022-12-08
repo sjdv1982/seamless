@@ -1,0 +1,4 @@
+Visual status generator.
+Integrates the workflow graph and the status graph 
+ into a single directed graph JSON structure with concrete colors that reflect the status.
+This JSON graph can be directly visualized in the browser using status-visualization.js

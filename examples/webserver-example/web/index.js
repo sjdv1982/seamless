@@ -4,42 +4,53 @@ app_globals.createObjectURL = URL.createObjectURL
 
 
 
-seamless_read_cells = {
+seamless_read_paths = {
   "text": [
     "png"
   ],
   "json": [
-    "period",
-    "mirror",
     "limit",
-    "markerline"
+    "markerline",
+    "mirror",
+    "period"
   ]
 }
-seamless_write_cells = {
+seamless_write_paths = {
   "text": [],
   "json": [
-    "period",
-    "mirror",
     "limit",
-    "markerline"
+    "markerline",
+    "mirror",
+    "period"
   ]
 }
-seamless_auto_read_cells = []
+seamless_auto_read_paths = [
+  "limit",
+  "markerline",
+  "mirror",
+  "period",
+  "png"
+]
+seamless_path_to_cell = {}
 
 ctx = connect_seamless()
 ctx.self.onsharelist = function (sharelist) {
-  sharelist.forEach(cell => {
-    if (ctx[cell].binary) {
-      ctx[cell].onchange = function () {
-        content_type = ctx[cell].content_type
+  sharelist.forEach(path0 => {
+    let path = path0.replaceAll("/", "__")
+    cell0 = seamless_path_to_cell[path]
+    if (cell0 === undefined) cell0 = path0
+    let cell = cell0.replaceAll("/", "__")
+    if (ctx[path].binary) {
+      ctx[path].onchange = function () {
+        content_type = ctx[path].content_type
         if (content_type === null) content_type = ""
         const v = new Blob([this.value], {type: content_type})
         vm[cell].value = v
         vm[cell].checksum = this.checksum
       }
     }
-    else if (seamless_read_cells["json"].indexOf(cell) >= 0) {
-      ctx[cell].onchange = function () {
+    else if (seamless_read_paths["json"].indexOf(path) >= 0) {
+      ctx[path].onchange = function () {
         try {
           const v = JSON.parse(this.value)
           vm[cell].value = v
@@ -50,15 +61,15 @@ ctx.self.onsharelist = function (sharelist) {
         }
       }
     }
-    else if (seamless_read_cells["text"].indexOf(cell) >= 0) {
-      ctx[cell].onchange = function () {
+    else if (seamless_read_paths["text"].indexOf(path) >= 0) {
+      ctx[path].onchange = function () {
         vm[cell].value = this.value
         vm[cell].checksum = this.checksum
       }
     }
 
-    if (seamless_auto_read_cells.indexOf(cell) >= 0) {
-      ctx[cell].auto_read = true
+    if (seamless_auto_read_paths.indexOf(path) >= 0) {
+      ctx[path].auto_read = true
     }
   })
 }
@@ -86,18 +97,18 @@ webctx.self.onsharelist = function (sharelist) {
   }
 }  
 
-function seamless_update(cell, value, encoding) {
+function seamless_update(path, value, encoding) {
   if (!ctx) return
   if (!ctx.self.sharelist) return
-  if (ctx.self.sharelist.indexOf(cell) < 0) return
-  if (ctx[cell].binary) {
-    ctx[cell].set(value)
+  if (ctx.self.sharelist.indexOf(path) < 0) return
+  if (ctx[path].binary) {
+    ctx[path].set(value)
   }
   else if (encoding == "json") {
-    ctx[cell].set(JSON.stringify(value))
+    ctx[path].set(JSON.stringify(value))
   }
   else if (encoding == "text") {
-    ctx[cell].set(value)
+    ctx[path].set(value)
   }
 }
 
@@ -107,14 +118,6 @@ const app = new Vue({
   data() {
     return {
       ...{
-        "period": {
-          "checksum": null,
-          "value": 0.0
-        },
-        "mirror": {
-          "checksum": null,
-          "value": 0.0
-        },
         "limit": {
           "checksum": null,
           "value": 0.0
@@ -122,6 +125,14 @@ const app = new Vue({
         "markerline": {
           "checksum": null,
           "value": ""
+        },
+        "mirror": {
+          "checksum": null,
+          "value": 0.0
+        },
+        "period": {
+          "checksum": null,
+          "value": 0.0
         },
         "png": {
           "checksum": null,
@@ -150,19 +161,22 @@ const app = new Vue({
     
   },
   watch: {
-    "period.value": function (value) {
-      seamless_update("period", value, "json")
-    },
-    "mirror.value": function (value) {
-      seamless_update("mirror", value, "json")
-    },
     "limit.value": function (value) {
       seamless_update("limit", value, "json")
     },
     "markerline.value": function (value) {
       seamless_update("markerline", value, "json")
     },
+    "mirror.value": function (value) {
+      seamless_update("mirror", value, "json")
+    },
+    "period.value": function (value) {
+      seamless_update("period", value, "json")
+    },
   },
+  updated() {
+
+  }
 })
 
 vm = app.$mount('#app')

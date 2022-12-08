@@ -10,9 +10,11 @@
     <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Material+Icons'>
     <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/vuetify@2.3.20/dist/vuetify.min.css'>
     <link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.0.6/css/all.css'>
+    
 </head>
 
 <body>
+    
     <div id="app">
         <v-app id="vuetify-app">
             <section>
@@ -23,66 +25,6 @@
                         class="card-header"
                         role="button"
                         aria-controls="id-6312">
-                        <p class="card-header-title">
-                            Period of the wave
-                        </p>
-                        <a class="card-header-icon">
-                            <b-icon
-                                :icon="props.open ? 'menu-down' : 'menu-up'">
-                            </b-icon>
-                        </a>
-                    </div>
-                    <div class="card-content">
-                        <div class="content">
-                            <b-field grouped>
-                                <b-input :value="period.value" v-model.number="period.value" type="number"></b-input>
-                            </b-field>
-                            <b-field>
-                                <b-slider :value="period.value" v-model="period.value" :min="0" :max="100" lazy></b-slider>
-                            </b-field>
-                        </div>
-                    </div>
-                </b-collapse>
-
-            </section>
-            <section>
-                <b-collapse class="card" animation="slide" aria-id="id-9559">
-                    <div
-                        slot="trigger"
-                        slot-scope="props"
-                        class="card-header"
-                        role="button"
-                        aria-controls="id-9559">
-                        <p class="card-header-title">
-                            Value where the plot is mirrored
-                        </p>
-                        <a class="card-header-icon">
-                            <b-icon
-                                :icon="props.open ? 'menu-down' : 'menu-up'">
-                            </b-icon>
-                        </a>
-                    </div>
-                    <div class="card-content">
-                        <div class="content">
-                            <b-field grouped>
-                                <b-input :value="mirror.value" v-model.number="mirror.value" type="number"></b-input>
-                            </b-field>
-                            <b-field>
-                                <b-slider :value="mirror.value" v-model="mirror.value" :min="0" :max="100" lazy></b-slider>
-                            </b-field>
-                        </div>
-                    </div>
-                </b-collapse>
-
-            </section>
-            <section>
-                <b-collapse class="card" animation="slide" aria-id="id-2408">
-                    <div
-                        slot="trigger"
-                        slot-scope="props"
-                        class="card-header"
-                        role="button"
-                        aria-controls="id-2408">
                         <p class="card-header-title">
                             Lower limit of the plot
                         </p>
@@ -112,6 +54,66 @@
                     :editable="true"
                 />
             </b-field>
+            <section>
+                <b-collapse class="card" animation="slide" aria-id="id-2408">
+                    <div
+                        slot="trigger"
+                        slot-scope="props"
+                        class="card-header"
+                        role="button"
+                        aria-controls="id-2408">
+                        <p class="card-header-title">
+                            Value where the plot is mirrored
+                        </p>
+                        <a class="card-header-icon">
+                            <b-icon
+                                :icon="props.open ? 'menu-down' : 'menu-up'">
+                            </b-icon>
+                        </a>
+                    </div>
+                    <div class="card-content">
+                        <div class="content">
+                            <b-field grouped>
+                                <b-input :value="mirror.value" v-model.number="mirror.value" type="number"></b-input>
+                            </b-field>
+                            <b-field>
+                                <b-slider :value="mirror.value" v-model="mirror.value" :min="0" :max="100" lazy></b-slider>
+                            </b-field>
+                        </div>
+                    </div>
+                </b-collapse>
+
+            </section>
+            <section>
+                <b-collapse class="card" animation="slide" aria-id="id-5181">
+                    <div
+                        slot="trigger"
+                        slot-scope="props"
+                        class="card-header"
+                        role="button"
+                        aria-controls="id-5181">
+                        <p class="card-header-title">
+                            Period of the wave
+                        </p>
+                        <a class="card-header-icon">
+                            <b-icon
+                                :icon="props.open ? 'menu-down' : 'menu-up'">
+                            </b-icon>
+                        </a>
+                    </div>
+                    <div class="card-content">
+                        <div class="content">
+                            <b-field grouped>
+                                <b-input :value="period.value" v-model.number="period.value" type="number"></b-input>
+                            </b-field>
+                            <b-field>
+                                <b-slider :value="period.value" v-model="period.value" :min="0" :max="100" lazy></b-slider>
+                            </b-field>
+                        </div>
+                    </div>
+                </b-collapse>
+
+            </section>
             <b-field label="Plot">                
                 <img :src="png.value ? METHOD_get_app_globals().createObjectURL(png.value) : ''" width= height=></img>
             </b-field>

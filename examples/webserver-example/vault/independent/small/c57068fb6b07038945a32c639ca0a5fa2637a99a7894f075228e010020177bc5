@@ -10,9 +10,11 @@
     <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Material+Icons'>
     <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/vuetify@2.3.20/dist/vuetify.min.css'>
     <link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.0.6/css/all.css'>
+    {{HEAD}}
 </head>
 
 <body>
+    {{BODY}}
     <div id="app">
         <v-app id="vuetify-app">
 {{COMPONENTS}}

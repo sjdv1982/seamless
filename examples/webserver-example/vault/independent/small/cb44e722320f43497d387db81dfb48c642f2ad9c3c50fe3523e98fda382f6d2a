@@ -1,16 +1,21 @@
-"""Generates a webform dict from
-The webform dict is used by generate-webpage.py to create an index.html + index.js
+# For the docstring, do `webctx.generate_webform?` in IPython
 
-It creates a default entry in the webform for each shared celltype
-You can modify this script to change the defaults
-
-auto_read: the web page will download the value of the cell whenever it changes
-"""
 # input: graph
 
 from copy import deepcopy
 
+webdefaults = {
+    "int": 0,
+    "float": 0.0,
+    "str": "",
+    "plain": {},
+    "text": "",
+    "bool": False,
+    "bytes": None,
+}
+
 cells = {}
+extra_cells = {}
 extra_components = []
 transformers = {}
 webform = {
@@ -30,6 +35,7 @@ for node in graph["nodes"]:
         continue
     if "UNSHARE" in node:
         continue
+    path0 = "." + ".".join(node["path"])
     key = "/".join(node["path"])
     if node["type"] == "transformer":
         tf = deepcopy(default_transformer)
@@ -41,82 +47,96 @@ for node in graph["nodes"]:
     if "share" not in node:
         continue
     path = node["share"].get("path")
-    if path is not None and len(path.split(".")[1:]) and path.split(".")[-1] in ("js", "html"):
-        continue
     celltype = node["celltype"]
     if celltype == "structured":
         celltype = node["datatype"]
-    params = {}
-    share = {}
+    share = {"read": True}
     cell = {
         "celltype": celltype,
     }
     cellname = node["path"][-1]
     if cellname.find(".") > -1:
-        params["auto_read"] = False
+        share["auto_read"] = False
     else:
-        params["auto_read"] = True
+        share["auto_read"] = True
+    if not node["share"].get("readonly", True):
+        share["write"] = True
+
+    if path is not None and path != key:
+        if celltype in ("plain", "float", "int", "bool", "str"):
+            share["encoding"] = "json"
+        elif celltype == "text":
+            share["encoding"] = "text"
+        elif celltype == "bytes":
+            pass
+        else:
+            continue
+        cell["share"] = share
+        cell["path"] = path
+        cell["webdefault"] = webdefaults[cell["celltype"]]
+        extra_cells[key] = cell
+
+        continue
+
+    params = {}
     if celltype in ("float", "int"):
-        share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
         if not node["share"].get("readonly", True):
             cell["component"] = "slider"
             params["min"] = 0
             params["max"] = 100
-            share["write"] = True
         else:
             cell["component"] = "numberinput"
             params["editable"] = False
         share["encoding"] = "json"  # also for "str", "plain", "bool"
     elif celltype == "text":
-        share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
         if not node["share"].get("readonly", True):
             cell["component"] = "fileupload"
-            share["write"] = True
         else:
             cell["component"] = "card"
         share["encoding"] = "text"
     elif celltype == "str":
-        share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
         cell["component"] = "input"
         if node["share"].get("readonly", True):
             params["editable"] = False
         else:
-            share["write"] = True
             params["editable"] = True
         share["encoding"] = "json"
     elif celltype == "plain":
-        share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
         cell["component"] = "card"
         share["encoding"] = "json"
     elif celltype == "bytes":
-        share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()        
         if node["share"].get("readonly", True):
             cell["component"] = ""
         else:
             cell["component"] = "fileupload"
-            share["write"] = True
         share["encoding"] = "text"
     elif celltype == "bool":
-        share["read"] = True
         params["title"] = "Cell " + cellname.capitalize()
         cell["component"] = "checkbox"
         if node["share"].get("readonly", True):
             params["editable"] = False
         else:
-            share["write"] = True
             params["editable"] = True
         share["encoding"] = "json"
     else:
-        raise NotImplementedError(celltype)
+        if node["celltype"] == "structured" and node["datatype"] == "mixed":
+            raise TypeError("""Need a datatype for structured cell {} .
+The web interface generator only supports structured cells if their
+datatype attribute is set to a supported celltype.
+Supported celltypes: text, int, float, bool, str, plain, or bytes.""".format(path0))
+        else:
+            raise TypeError("""Unsupported celltype "{}" for cell {} .
+Supported celltypes: text, int, float, bool, str, plain, or bytes.""".format(celltype, path0))
     cell.update({
         "params": params,
         "share": share,
     })
+    cell["webdefault"] = webdefaults[cell["celltype"]]
     cells[key] = cell
     if not len(extra_components):
         extra_components.append(
@@ -127,5 +147,23 @@ for node in graph["nodes"]:
                 "params": {},
             }
         )
+webcells = {}
+for webunit_name, webunits in graph["params"].get("webunits", {}).items():
+    for webunit in webunits:
+        extra_components.append(
+            {
+                "id": webunit["id"],
+                "cells": webunit["cells"],
+                "component": webunit_name,
+                "params": webunit["parameters"],
+            }
+        )
+        webcells.update(webunit.get("webcells", {}))
+
+if len(extra_cells):
+    webform["extra_cells"] = extra_cells
+    
+if len(webcells):
+    webform["webcells"] = webcells
 
 result = webform

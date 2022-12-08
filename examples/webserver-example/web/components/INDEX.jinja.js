@@ -2,24 +2,29 @@ app_globals = {}
 
 {{ COMPONENT_JS }}
 
-seamless_read_cells = {{ SEAMLESS_READ_CELLS }}
-seamless_write_cells = {{ SEAMLESS_WRITE_CELLS }}
-seamless_auto_read_cells = {{ SEAMLESS_AUTO_READ_CELLS }}
+seamless_read_paths = {{ SEAMLESS_READ_PATHS }}
+seamless_write_paths = {{ SEAMLESS_WRITE_PATHS }}
+seamless_auto_read_paths = {{ SEAMLESS_AUTO_READ_PATHS }}
+seamless_path_to_cell = {{ SEAMLESS_PATH_TO_CELL }}
 
 ctx = connect_seamless()
 ctx.self.onsharelist = function (sharelist) {
-  sharelist.forEach(cell => {
-    if (ctx[cell].binary) {
-      ctx[cell].onchange = function () {
-        content_type = ctx[cell].content_type
+  sharelist.forEach(path0 => {
+    let path = path0.replaceAll("/", "__")
+    cell0 = seamless_path_to_cell[path]
+    if (cell0 === undefined) cell0 = path0
+    let cell = cell0.replaceAll("/", "__")
+    if (ctx[path].binary) {
+      ctx[path].onchange = function () {
+        content_type = ctx[path].content_type
         if (content_type === null) content_type = ""
         const v = new Blob([this.value], {type: content_type})
         vm[cell].value = v
         vm[cell].checksum = this.checksum
       }
     }
-    else if (seamless_read_cells["json"].indexOf(cell) >= 0) {
-      ctx[cell].onchange = function () {
+    else if (seamless_read_paths["json"].indexOf(path) >= 0) {
+      ctx[path].onchange = function () {
         try {
           const v = JSON.parse(this.value)
           vm[cell].value = v
@@ -30,15 +35,15 @@ ctx.self.onsharelist = function (sharelist) {
         }
       }
     }
-    else if (seamless_read_cells["text"].indexOf(cell) >= 0) {
-      ctx[cell].onchange = function () {
+    else if (seamless_read_paths["text"].indexOf(path) >= 0) {
+      ctx[path].onchange = function () {
         vm[cell].value = this.value
         vm[cell].checksum = this.checksum
       }
     }
 
-    if (seamless_auto_read_cells.indexOf(cell) >= 0) {
-      ctx[cell].auto_read = true
+    if (seamless_auto_read_paths.indexOf(path) >= 0) {
+      ctx[path].auto_read = true
     }
   })
 }
@@ -66,18 +71,18 @@ webctx.self.onsharelist = function (sharelist) {
   }
 }  
 
-function seamless_update(cell, value, encoding) {
+function seamless_update(path, value, encoding) {
   if (!ctx) return
   if (!ctx.self.sharelist) return
-  if (ctx.self.sharelist.indexOf(cell) < 0) return
-  if (ctx[cell].binary) {
-    ctx[cell].set(value)
+  if (ctx.self.sharelist.indexOf(path) < 0) return
+  if (ctx[path].binary) {
+    ctx[path].set(value)
   }
   else if (encoding == "json") {
-    ctx[cell].set(JSON.stringify(value))
+    ctx[path].set(JSON.stringify(value))
   }
   else if (encoding == "text") {
-    ctx[cell].set(value)
+    ctx[path].set(value)
   }
 }
 
@@ -111,6 +116,9 @@ const app = new Vue({
   watch: {
     {{WATCHERS}}
   },
+  updated() {
+{{INIT_CODE}}
+  }
 })
 
 vm = app.$mount('#app')

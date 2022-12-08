@@ -50,11 +50,20 @@ async def load_communion():
     #
     # These are passed into the Seamless Docker container when you run 
     #  seamless-load-project, seamless-jupyter, etc.
-    # Seamless provides default values for these environment variables
-    # These defaults will try to connect to jobless.
+    # If these environment variables are not defined, 
+    # Seamless provides default values for them.
+    # These default values will try to connect to jobless.
     # 
     # Then, uncomment the following lines:
     #
+    # seamless.communion_server.configure_master({
+    #     "buffer": True,
+    #     "buffer_status": True,
+    #     "buffer_info": True,
+    #     "transformation_job": True,
+    #     "transformation_status": True,
+    #     "semantic_to_syntactic": True,
+    # })
     # await seamless.communion_server.start_async()
     # npeers = len(seamless.communion_server.peers)
     # COMMUNION_MSG="\n\n{} communion peer(s) found.".format(npeers)
@@ -91,7 +100,7 @@ async def load():
             pr("Existing '{}' found, moving to '{}'".format(f, dest))
             shutil.move(f, dest)
     ctx = Context()
-    empty_graph = await ctx._get_graph_async(copy=True)
+    empty_graph = ctx.get_graph()
     try:
         seamless._defining_graph = True
         await define_graph(ctx)
@@ -100,7 +109,7 @@ async def load():
             del seamless._defining_graph
         except AttributeError:
             pass
-    new_graph = await ctx._get_graph_async(copy=True)
+    new_graph = ctx.get_graph()
     graph_file = "graph/" + PROJNAME + ".seamless"
     ctx.load_vault("vault")
     if new_graph != empty_graph:
