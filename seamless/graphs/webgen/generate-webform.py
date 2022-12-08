@@ -4,6 +4,16 @@
 
 from copy import deepcopy
 
+webdefaults = {
+    "int": 0,
+    "float": 0.0,
+    "str": "",
+    "plain": {},
+    "text": "",
+    "bool": False,
+    "bytes": None,
+}
+
 cells = {}
 extra_cells = {}
 extra_components = []
@@ -63,6 +73,7 @@ for node in graph["nodes"]:
             continue
         cell["share"] = share
         cell["path"] = path
+        cell["webdefault"] = webdefaults[cell["celltype"]]
         extra_cells[key] = cell
 
         continue
@@ -125,6 +136,7 @@ Supported celltypes: text, int, float, bool, str, plain, or bytes.""".format(cel
         "params": params,
         "share": share,
     })
+    cell["webdefault"] = webdefaults[cell["celltype"]]
     cells[key] = cell
     if not len(extra_components):
         extra_components.append(
@@ -135,6 +147,7 @@ Supported celltypes: text, int, float, bool, str, plain, or bytes.""".format(cel
                 "params": {},
             }
         )
+webcells = {}
 for webunit_name, webunits in graph["params"].get("webunits", {}).items():
     for webunit in webunits:
         extra_components.append(
@@ -145,7 +158,12 @@ for webunit_name, webunits in graph["params"].get("webunits", {}).items():
                 "params": webunit["parameters"],
             }
         )
+        webcells.update(webunit.get("webcells", {}))
+
 if len(extra_cells):
     webform["extra_cells"] = extra_cells
+    
+if len(webcells):
+    webform["webcells"] = webcells
 
 result = webform

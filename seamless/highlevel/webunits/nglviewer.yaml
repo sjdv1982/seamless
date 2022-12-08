@@ -39,7 +39,7 @@ help: 'Creates an NGL viewer for molecular structures.
 
 
   If there are multiple structures, the format is extracted from the dictionary key of the
-  "structures" dict. For dictionary key that contain no ".", the value of the "format"
+  "structures" dict. For a dictionary key that contains no ".", the value of the "format"
   parameter is used.
 
 

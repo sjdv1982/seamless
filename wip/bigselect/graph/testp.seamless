@@ -1,9 +1,0 @@
-{
-  "__seamless__": "0.8",
-  "connections": [],
-  "lib": [],
-  "nodes": [],
-  "params": {
-    "share_namespace": "ctx"
-  }
-}

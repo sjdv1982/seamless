@@ -1,6 +1,0 @@
-Creates an NGL viewer for molecular structures.
-See https://nglviewer.org/ for more info on NGL.
-
-This web component is meant to be created using the nglviewer webunit API 
-(seamless.highlevel.webunits.nglviewer). See the help of that function to learn
-the various arguments and their meanings. 

@@ -1,5 +1,0 @@
-Input for strings
-
-Parameters:
-- title (string).
-- editable (bool). If true, the number input is editable

@@ -1,0 +1,5 @@
+Creates an autocomplete selector that selects an item from a big list of options.
+
+This web component is meant to be created using the bigselect webunit API 
+(seamless.highlevel.webunits.bigselect). See the help of that function to learn
+the various arguments and their meanings. 

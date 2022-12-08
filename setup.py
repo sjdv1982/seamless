@@ -17,6 +17,7 @@ setup(
             "graphs/*.zip",
             "highlevel/stdlib/*.seamless",
             "highlevel/stdlib/*.zip",
+            "highlevel/webunits/*.yaml",
         ],
     },
     zip_safe=False,

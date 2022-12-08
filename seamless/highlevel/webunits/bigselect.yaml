@@ -1,0 +1,45 @@
+help: 'Creates an autocomplete selector that selects an item from a big list of options.
+  
+  Arguments:
+
+
+  - options: A cell that contains the options to select from. A (big) list of strings.
+
+
+  - selection. The output cell that will contain the selected string.
+
+
+  - title: the title of the component instance. Default: "Selector"
+
+
+  - selected_title: the title of the selected string item. Default: "Selected:"
+
+
+  - placeholder: initial text in the selector field. Default: "Select an item"
+  '
+
+options:
+  type: "cell"
+  share: "options.json"
+  readonly: true
+
+selected:
+  type: "cell"
+  share: "selected.json"
+  readonly: false
+
+input:
+  type: "webcell"
+  default: ""
+
+title:
+  type: "value"
+  default: "Selector"
+
+selected_title:
+  type: "value"
+  default: "Selected:"
+
+placeholder:
+  type: "value"
+  default: "Select an item"
