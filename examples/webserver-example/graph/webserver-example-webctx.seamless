@@ -15,7 +15,7 @@
         "graph_rt"
       ],
       "target": [
-        "get_visual_status",
+        "gen_vis_status",
         "graph"
       ],
       "type": "connection"
@@ -25,17 +25,17 @@
         "status_"
       ],
       "target": [
-        "get_visual_status",
+        "gen_vis_status",
         "status_"
       ],
       "type": "connection"
     },
     {
       "source": [
-        "get_visual_status"
+        "gen_vis_status"
       ],
       "target": [
-        "visual_status"
+        "vis_status"
       ],
       "type": "connection"
     },
@@ -46,6 +46,16 @@
       "target": [
         "generate_webform",
         "graph"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "seamless2webform"
+      ],
+      "target": [
+        "generate_webform",
+        "code"
       ],
       "type": "connection"
     },
@@ -267,113 +277,7 @@
   ],
   "nodes": [
     {
-      "path": [
-        "HELP"
-      ],
-      "type": "context"
-    },
-    {
-      "celltype": "text",
-      "checksum": {
-        "value": "401b99f23e04d63dae70624339780904566f8f6cf52492485bed98b3cf6a1a01"
-      },
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "HELP",
-        "INDEX"
-      ],
-      "type": "cell"
-    },
-    {
-      "path": [
-        "HELP",
-        "generate_webform"
-      ],
-      "type": "context"
-    },
-    {
-      "celltype": "text",
-      "checksum": {
-        "value": "a28690fb743ebcb9af7a87acbbc3e5a5a4391cf7afe5e158528b4a58b30e3044"
-      },
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "HELP",
-        "generate_webform",
-        "INDEX"
-      ],
-      "type": "cell"
-    },
-    {
-      "path": [
-        "HELP",
-        "generate_webpage"
-      ],
-      "type": "context"
-    },
-    {
-      "celltype": "text",
-      "checksum": {
-        "value": "e167d6d0dadc2bee502d1ec7f062d452fac4e4e3ea684b86a5c0c455d67e991e"
-      },
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "HELP",
-        "generate_webpage",
-        "INDEX"
-      ],
-      "type": "cell"
-    },
-    {
-      "path": [
-        "HELP",
-        "get_visual_status"
-      ],
-      "type": "context"
-    },
-    {
-      "celltype": "text",
-      "checksum": {
-        "value": "9d39e1a91169bc538b6bbf4d96af45e06762c37573f6c59b8632e43a135e3a83"
-      },
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "HELP",
-        "get_visual_status",
-        "INDEX"
-      ],
-      "type": "cell"
-    },
-    {
-      "path": [
-        "HELP",
-        "status-visualization.js"
-      ],
-      "type": "context"
-    },
-    {
-      "celltype": "text",
-      "checksum": {
-        "value": "ded0c7313ae033f440f7f58c43d7dc57f0b86cb8fe77ff8f4af7d152e0252d0b"
-      },
-      "datatype": "mixed",
-      "hash_pattern": null,
-      "path": [
-        "HELP",
-        "status-visualization.js",
-        "INDEX"
-      ],
-      "type": "cell"
-    },
-    {
       "celltype": "plain",
-      "checksum": {
-        "value": "2447a2e51dda5130cf290dac08d1f2d4b37bf7798fa4b9858a53ad792e4168ed"
-      },
       "datatype": "mixed",
       "mount": {
         "authority": "file",
@@ -388,9 +292,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "2447a2e51dda5130cf290dac08d1f2d4b37bf7798fa4b9858a53ad792e4168ed"
-      },
       "datatype": "mixed",
       "path": [
         "autogen_webform0"
@@ -398,15 +299,29 @@
       "type": "cell"
     },
     {
+      "celltype": "text",
+      "checksum": {
+        "value": "723de2584398eb788f1559de478531fc49fe23323460cafb6f4976700c23afa0"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/css",
+      "path": [
+        "css"
+      ],
+      "share": {
+        "path": "status-visualization.css",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "cb44e722320f43497d387db81dfb48c642f2ad9c3c50fe3523e98fda382f6d2a",
-        "input": "7a4f9a8338015dceb3e3751686da62d930b23a21fe21553080498ec44f03e8ed",
-        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "input_buffer": "7a4f9a8338015dceb3e3751686da62d930b23a21fe21553080498ec44f03e8ed",
-        "result": "2447a2e51dda5130cf290dac08d1f2d4b37bf7798fa4b9858a53ad792e4168ed",
+        "code": "c46036f2b4bedb3189c51bec953fdb96d99d748ab3fa17f0e433ff0d4cf4efab",
+        "input": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
+        "input_buffer": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -419,10 +334,35 @@
         "code": {
           "authority": "file",
           "mode": "rw",
-          "path": "web/generate-webform.py",
+          "path": "web/gen_vis_status.py",
           "persistent": true
         }
       },
+      "path": [
+        "gen_vis_status"
+      ],
+      "pins": {
+        "graph": {},
+        "status_": {}
+      },
+      "type": "transformer"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "6b65606ba5fb31a22cec2c18bbb3dc7017c358955c71980f658c9b5c44b111f6",
+        "input": "2a87d93425220f1a1088b84abf05651ea3142467118f938ebd15f636226ee146",
+        "input_buffer": "2a87d93425220f1a1088b84abf05651ea3142467118f938ebd15f636226ee146",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+      },
+      "compiled": false,
+      "hash_pattern": {
+        "*": "#"
+      },
+      "language": "python",
       "path": [
         "generate_webform"
       ],
@@ -438,11 +378,10 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "9143423241dbe1b2b29d554dbc08e958f354ecc7617e0592e741dabbdba44951",
-        "input": "7e6b1a739c04205e39959d6df3c4194e0d8c1e00ded534f56825cdd1cb21c968",
+        "code": "83dd7514e7b02740a237df5651288768933f987b9dd8fd493df9ba448a032bb5",
+        "input": "48e215e2124d3e3f4f3720d189162b57d78c360cec4216ea6a8a29e962f4f646",
         "input_auth": "81ca3960f4a23c56f7b259a4287b97a8490b035d7ced72175210faac51f51618",
-        "input_buffer": "7e6b1a739c04205e39959d6df3c4194e0d8c1e00ded534f56825cdd1cb21c968",
-        "result": "df2b571c3517c3c3aba926d35ad4012b2972a7cb251e290b93958ff6d7b818bb",
+        "input_buffer": "48e215e2124d3e3f4f3720d189162b57d78c360cec4216ea6a8a29e962f4f646",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -476,47 +415,9 @@
       "type": "transformer"
     },
     {
-      "INPUT": "inp",
-      "RESULT": "result",
-      "SCHEMA": null,
-      "checksum": {
-        "code": "c46036f2b4bedb3189c51bec953fdb96d99d748ab3fa17f0e433ff0d4cf4efab",
-        "input": "5e144c1224aa72a48aff70d404e2b8f763c88eba0ad493353e326ccdfcca95c1",
-        "input_buffer": "5e144c1224aa72a48aff70d404e2b8f763c88eba0ad493353e326ccdfcca95c1",
-        "result": "1ea5fb6dae7badc764b643d2fe0aa7d9be4077e680ab8a4bced1bbf52e7b4b2b",
-        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
-      },
-      "compiled": false,
-      "hash_pattern": {
-        "*": "#"
-      },
-      "language": "python",
-      "mount": {
-        "code": {
-          "authority": "file",
-          "mode": "rw",
-          "path": "web/get_visual_status.py",
-          "persistent": true
-        }
-      },
-      "path": [
-        "get_visual_status"
-      ],
-      "pins": {
-        "graph": {
-          "celltype": "default"
-        },
-        "status_": {
-          "celltype": "default"
-        }
-      },
-      "type": "transformer"
-    },
-    {
       "celltype": "plain",
       "checksum": {
-        "value": "0adca798252c69872b8479fc2c4fc403b1a0e21066d37df9e8c25e5c97142f24"
+        "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "datatype": "mixed",
       "path": [
@@ -531,7 +432,7 @@
     {
       "celltype": "plain",
       "checksum": {
-        "value": "1eb2c37ef295146d324831fcf3dec7333de9a3ac90d38632b9c5c9c1c06e8599"
+        "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "datatype": "mixed",
       "path": [
@@ -542,7 +443,23 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "62051d663d41ac3063eb59d67f5c52ed0423c8547cb365a2657c79d4885c6a17"
+        "value": "0593c63ebea295cbce6daece5c48ea0ae46f663b7e521e913bf2aa9da1634cb8"
+      },
+      "datatype": "mixed",
+      "mimetype": "text/html",
+      "path": [
+        "html"
+      ],
+      "share": {
+        "path": "status.html",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "a78f2c566b2439463a2e7ca515bbfa3f92948506583cbadaebdd507f277542bd"
       },
       "datatype": "mixed",
       "mimetype": "text/html",
@@ -564,9 +481,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "62051d663d41ac3063eb59d67f5c52ed0423c8547cb365a2657c79d4885c6a17"
-      },
       "datatype": "mixed",
       "mount": {
         "authority": "file",
@@ -581,9 +495,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "62051d663d41ac3063eb59d67f5c52ed0423c8547cb365a2657c79d4885c6a17"
-      },
       "datatype": "mixed",
       "mount": {
         "authority": "file",
@@ -599,7 +510,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "f2f5c336d142025cd95a2001e2f3181a2aa04c307b37ffb901e5963b1fa1c641"
+        "value": "a78f2c566b2439463a2e7ca515bbfa3f92948506583cbadaebdd507f277542bd"
       },
       "datatype": "mixed",
       "mount": {
@@ -615,9 +526,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "62051d663d41ac3063eb59d67f5c52ed0423c8547cb365a2657c79d4885c6a17"
-      },
       "datatype": "mixed",
       "path": [
         "index_html_DUMMY"
@@ -626,9 +534,6 @@
     },
     {
       "celltype": "str",
-      "checksum": {
-        "value": "0ce9449d6a376407d21e2dcdb8c89522609bf155baefa60ca262c8f7531c07c0"
-      },
       "datatype": "mixed",
       "path": [
         "index_html_STATE"
@@ -638,7 +543,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "edd2f8fb699989b8f13a4ba4caa7e0cc60798e39309b7bb9c59f3fadb159c873"
+        "value": "a78f2c566b2439463a2e7ca515bbfa3f92948506583cbadaebdd507f277542bd"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
@@ -660,9 +565,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "edd2f8fb699989b8f13a4ba4caa7e0cc60798e39309b7bb9c59f3fadb159c873"
-      },
       "datatype": "mixed",
       "mount": {
         "authority": "file",
@@ -677,9 +579,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "edd2f8fb699989b8f13a4ba4caa7e0cc60798e39309b7bb9c59f3fadb159c873"
-      },
       "datatype": "mixed",
       "mount": {
         "authority": "file",
@@ -694,9 +593,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "f2f5c336d142025cd95a2001e2f3181a2aa04c307b37ffb901e5963b1fa1c641"
-      },
       "datatype": "mixed",
       "mount": {
         "authority": "cell",
@@ -711,9 +607,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "edd2f8fb699989b8f13a4ba4caa7e0cc60798e39309b7bb9c59f3fadb159c873"
-      },
       "datatype": "mixed",
       "path": [
         "index_js_DUMMY"
@@ -722,9 +615,6 @@
     },
     {
       "celltype": "str",
-      "checksum": {
-        "value": "8b27ec8712ccce6ad8c8d09cfe6485568f3bf82b2d752c6b6a74a6deaa019682"
-      },
       "datatype": "mixed",
       "path": [
         "index_js_STATE"
@@ -822,14 +712,32 @@
       "type": "libinstance"
     },
     {
+      "celltype": "code",
+      "checksum": {
+        "value": "6b65606ba5fb31a22cec2c18bbb3dc7017c358955c71980f658c9b5c44b111f6"
+      },
+      "datatype": "mixed",
+      "language": "python",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "web/seamless2webform.py",
+        "persistent": true
+      },
+      "path": [
+        "seamless2webform"
+      ],
+      "type": "cell"
+    },
+    {
       "celltype": "text",
       "checksum": {
-        "value": "3db1ab53b139b852acfb0e90029e0418858e3edd45c0ac1aafe7bd098f49a03a"
+        "value": "886c745003101649af2d4061e1fde45bc9104761fe46ce1a5c43e0a458434d71"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
       "path": [
-        "seamless-client.js"
+        "seamless_client_js"
       ],
       "share": {
         "path": "seamless-client.js",
@@ -839,60 +747,12 @@
       "type": "cell"
     },
     {
-      "celltype": "text",
-      "checksum": {
-        "value": "723de2584398eb788f1559de478531fc49fe23323460cafb6f4976700c23afa0"
-      },
-      "datatype": "mixed",
-      "mimetype": "text/css",
-      "path": [
-        "status-visualization.css"
-      ],
-      "share": {
-        "path": "status-visualization.css",
-        "readonly": true
-      },
-      "type": "cell"
-    },
-    {
-      "celltype": "text",
-      "checksum": {
-        "value": "0593c63ebea295cbce6daece5c48ea0ae46f663b7e521e913bf2aa9da1634cb8"
-      },
-      "datatype": "mixed",
-      "mimetype": "text/html",
-      "path": [
-        "status-visualization.html"
-      ],
-      "share": {
-        "path": "status.html",
-        "readonly": true
-      },
-      "type": "cell"
-    },
-    {
-      "celltype": "text",
-      "checksum": {
-        "value": "513b48df01db4aa47933e19cff8883f3f9eb54981dcafa1cb200ea2c3e9c1b01"
-      },
-      "datatype": "mixed",
-      "mimetype": "text/javascript",
-      "path": [
-        "status-visualization.js"
-      ],
-      "share": {
-        "path": "status-visualization.js",
-        "readonly": true
-      },
-      "type": "cell"
-    },
-    {
       "celltype": "structured",
       "checksum": {
-        "auth": "ef4e2d4d3eba5b96d602d2e16d1cbcd8c5e1b7f5dd4b3af403a1eb8a958401df",
-        "buffer": "ef4e2d4d3eba5b96d602d2e16d1cbcd8c5e1b7f5dd4b3af403a1eb8a958401df",
+        "auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "buffer": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "value": "ef4e2d4d3eba5b96d602d2e16d1cbcd8c5e1b7f5dd4b3af403a1eb8a958401df"
+        "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "datatype": "mixed",
       "hash_pattern": null,
@@ -904,7 +764,7 @@
     {
       "celltype": "plain",
       "checksum": {
-        "value": "ef4e2d4d3eba5b96d602d2e16d1cbcd8c5e1b7f5dd4b3af403a1eb8a958401df"
+        "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "datatype": "mixed",
       "path": [
@@ -913,13 +773,26 @@
       "type": "cell"
     },
     {
-      "celltype": "plain",
+      "celltype": "text",
       "checksum": {
-        "value": "1ea5fb6dae7badc764b643d2fe0aa7d9be4077e680ab8a4bced1bbf52e7b4b2b"
+        "value": "a27cf42d8ef1e4aa7da45fdd33449727d2e69d1492d2683a1f4da4ffa022928b"
       },
       "datatype": "mixed",
+      "mimetype": "text/javascript",
       "path": [
-        "visual_status"
+        "status_visualization_js"
+      ],
+      "share": {
+        "path": "status-visualization.js",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "datatype": "mixed",
+      "path": [
+        "vis_status"
       ],
       "share": {
         "path": null,
@@ -930,8 +803,8 @@
     {
       "celltype": "structured",
       "checksum": {
-        "buffer": "5cba3cdce0bfdb6a84d01eb7d0b09421fb8f64246e01bc76032cafdb711e1dd5",
-        "value": "5cba3cdce0bfdb6a84d01eb7d0b09421fb8f64246e01bc76032cafdb711e1dd5"
+        "buffer": "e515f12d2dda37e95436f7c0d64fdda0c0368117720987999c7f8352f7fe7c90",
+        "value": "e515f12d2dda37e95436f7c0d64fdda0c0368117720987999c7f8352f7fe7c90"
       },
       "mount": {
         "authority": "cell",
@@ -946,9 +819,6 @@
     },
     {
       "celltype": "plain",
-      "checksum": {
-        "value": "b05f4130896e99c8a3ebc55a38c045d1501a3e3a972a53c7b9461751a7453f75"
-      },
       "datatype": "mixed",
       "mount": {
         "authority": "file",
@@ -963,9 +833,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "b05f4130896e99c8a3ebc55a38c045d1501a3e3a972a53c7b9461751a7453f75"
-      },
       "datatype": "mixed",
       "path": [
         "webform0"
@@ -974,9 +841,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "f1cc450696089d41cca4cc14389f44b70739fc8b0e2838c8f67171a34a94be82"
-      },
       "datatype": "mixed",
       "mount": {
         "authority": "file",
@@ -991,9 +855,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "f2f5c336d142025cd95a2001e2f3181a2aa04c307b37ffb901e5963b1fa1c641"
-      },
       "datatype": "mixed",
       "mount": {
         "authority": "file",
@@ -1008,9 +869,6 @@
     },
     {
       "celltype": "text",
-      "checksum": {
-        "value": "b05f4130896e99c8a3ebc55a38c045d1501a3e3a972a53c7b9461751a7453f75"
-      },
       "datatype": "mixed",
       "path": [
         "webform_DUMMY"
@@ -1019,9 +877,6 @@
     },
     {
       "celltype": "str",
-      "checksum": {
-        "value": "0ce9449d6a376407d21e2dcdb8c89522609bf155baefa60ca262c8f7531c07c0"
-      },
       "datatype": "mixed",
       "path": [
         "webform_STATE"
@@ -1030,10 +885,6 @@
     },
     {
       "celltype": "structured",
-      "checksum": {
-        "buffer": "df2b571c3517c3c3aba926d35ad4012b2972a7cb251e290b93958ff6d7b818bb",
-        "value": "df2b571c3517c3c3aba926d35ad4012b2972a7cb251e290b93958ff6d7b818bb"
-      },
       "datatype": "mixed",
       "hash_pattern": null,
       "path": [
