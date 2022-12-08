@@ -1,4 +1,3 @@
-from importlib_metadata import distribution
 from seamless.highlevel import Context, Cell, DeepCell
 ctx = Context()
 

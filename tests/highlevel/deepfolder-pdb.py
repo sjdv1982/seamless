@@ -1,4 +1,3 @@
-from importlib_metadata import distribution
 from seamless.highlevel import Context, Cell, DeepFolderCell, FolderCell
 import shutil
 shutil.rmtree("/tmp/pdb_folder", ignore_errors=True)
