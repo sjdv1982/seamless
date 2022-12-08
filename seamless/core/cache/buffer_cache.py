@@ -271,9 +271,9 @@ class BufferCache:
         assert isinstance(checksum, bytes)
         assert len(checksum) == 32
         if checksum.hex() == empty_dict_checksum:
-            return b'{}'
+            return b'{}\n'
         elif checksum.hex() == empty_list_checksum:
-            return b'[]'
+            return b'[]\n'
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
             assert isinstance(buffer, bytes)
