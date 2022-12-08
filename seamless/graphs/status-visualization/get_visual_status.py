@@ -33,6 +33,10 @@ for node in graph["nodes"]:
         paths = [path]
     elif node["type"] == "context":
         continue
+    elif node["type"] == "deepcell":
+        continue
+    elif node["type"] == "deepfoldercell":
+        continue
     else: 
         raise Exception(node["type"])
 

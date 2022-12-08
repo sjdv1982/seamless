@@ -1054,6 +1054,7 @@ These modifications have been CANCELED.""" % (
                     node0 = nodedict0.get(path)
                     if node0 is not None and node is not node0:
                         node0.pop("UNTRANSLATED", None)
+                        node0.pop("UNSHARE", None)
             self._gen_context = ub_ctx._bound
             self._gen_context._root_highlevel_context = weakref.ref(self)
             assert self._gen_context._get_manager() is self._manager

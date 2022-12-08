@@ -1,0 +1,56 @@
+{
+  "cells": {
+    "representation": {
+      "celltype": "text",
+      "component": "fileupload",
+      "params": {
+        "title": "Cell Representation"
+      },
+      "share": {
+        "auto_read": true,
+        "encoding": "text",
+        "read": true,
+        "write": true
+      },
+      "webdefault": ""
+    }
+  },
+  "extra_cells": {
+    "representation3": {
+      "celltype": "plain",
+      "path": "nglviewer_1/representation.json",
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true
+      },
+      "webdefault": {}
+    }
+  },
+  "extra_components": [
+    {
+      "cell": "representation",
+      "component": "",
+      "id": "EXAMPLE_ID",
+      "params": {}
+    },
+    {
+      "cells": {
+        "representation": "representation3",
+        "structures": "pdb_structure"
+      },
+      "component": "nglviewer",
+      "id": "nglviewer_1",
+      "params": {
+        "format": "pdb",
+        "title": "NGL viewer",
+        "viewer_height": "500px",
+        "viewer_width": "100%"
+      }
+    }
+  ],
+  "index": {
+    "title": "Seamless webform"
+  },
+  "transformers": {}
+}

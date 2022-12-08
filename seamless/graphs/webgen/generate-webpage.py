@@ -195,7 +195,7 @@ for cell_or_tf_or_id in order:
     cell = cell_or_tf_or_id 
     if cell in used_extra_cells and cell not in webform["cells"]:
         config = webform["extra_cells"][cell]
-    elif cell in webform.get("webcells"):
+    elif cell in webform.get("webcells", {}):
         continue
     else:
         config = webform["cells"][cell]

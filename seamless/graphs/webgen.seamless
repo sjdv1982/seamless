@@ -431,7 +431,7 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "645f5eff18745080fc07f1a0d5b035fbb2ce6fdd59b297b1e332ee7ddf1d7618",
+        "code": "9143423241dbe1b2b29d554dbc08e958f354ecc7617e0592e741dabbdba44951",
         "input": "fd0a7998d520ad01a2537e16b5701dc32e9daf1669959b86aba6498c8adb6234",
         "input_auth": "81ca3960f4a23c56f7b259a4287b97a8490b035d7ced72175210faac51f51618",
         "input_buffer": "fd0a7998d520ad01a2537e16b5701dc32e9daf1669959b86aba6498c8adb6234",
@@ -472,7 +472,7 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "c46036f2b4bedb3189c51bec953fdb96d99d748ab3fa17f0e433ff0d4cf4efab",
+        "code": "675724b4d0010e616c8f55ed2a061583e10a62ce1bd951f6003143bf1e9a0184",
         "input": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
         "input_buffer": "8949eedee204737be9fdaba4c02a3c61c6b2833eec238d647eb97cc7b90e4bbf",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
@@ -891,7 +891,6 @@
     {
       "celltype": "structured",
       "checksum": {
-        "buffer": "5cba3cdce0bfdb6a84d01eb7d0b09421fb8f64246e01bc76032cafdb711e1dd5",
         "value": "5cba3cdce0bfdb6a84d01eb7d0b09421fb8f64246e01bc76032cafdb711e1dd5"
       },
       "mount": {
