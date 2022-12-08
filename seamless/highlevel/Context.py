@@ -164,9 +164,12 @@ atexit.register(_destroy_contexts)
 
 
 def _get_zip(buffer_dict):
+    from ..core.cache.buffer_cache import empty_dict_checksum, empty_list_checksum
     archive = BytesIO()
     with ZipFile(archive, mode="w", compression=ZIP_DEFLATED) as zipf:
         for checksum in sorted(list(buffer_dict.keys())):
+            if checksum in (empty_dict_checksum, empty_list_checksum):
+                continue
             buffer = buffer_dict[checksum]
             info = ZipInfo(checksum, date_time=(1980, 1, 1, 0, 0, 0))
             zipf.writestr(info, buffer)

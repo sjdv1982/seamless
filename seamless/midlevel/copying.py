@@ -83,7 +83,6 @@ def get_checksums(nodes, connections, *, with_annotations):
     return checksums
 
 async def get_buffer_dict(manager, checksums):
-    from ..core.protocol.get_buffer import get_buffer
     result = {}
     cachemanager = manager.cachemanager
     coros = []
@@ -128,10 +127,16 @@ def add_zip(manager, zipfile, incref=False):
      if no element (cell, expression, or high-level library) holds their checksum
     This can be overridden with "incref=True" (not recommended for long-living contexts)
     """
+    from ..core.cache.buffer_cache import empty_dict_checksum, empty_list_checksum
     result = []
     for checksum in zipfile.namelist():
+        if checksum in (empty_dict_checksum, empty_list_checksum):
+            continue
         checksum2 = bytes.fromhex(checksum)
         buffer = zipfile.read(checksum)
+        checksum3 = calculate_checksum(buffer)
+        if checksum3 != checksum2:
+            raise ValueError("Incorrect checksum for zipped file '{}'".format(checksum))
         buffer_cache.cache_buffer(checksum2, buffer)
         if incref:
             buffer_cache.incref(checksum2, authoritative=False)
