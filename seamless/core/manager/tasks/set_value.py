@@ -54,7 +54,7 @@ class SetCellValueTask(Task):
                 if isinstance(value, np.ndarray):
                     buffer_cache.update_buffer_info(checksum, "shape", value.shape, sync_remote=False)
                     buffer_cache.update_buffer_info(checksum, "dtype", str(value.dtype), sync_remote=False)
-                buffer_cache.guarantee_buffer_info(checksum, cell._celltype, sync_to_remote=True)
+                buffer_cache.guarantee_buffer_info(checksum, cell._celltype, buffer=buffer, sync_to_remote=True)
                 validate_evaluation_subcelltype(
                     checksum, buffer,
                     cell._celltype, cell._subcelltype,
