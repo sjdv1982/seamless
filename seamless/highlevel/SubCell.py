@@ -74,12 +74,15 @@ class SubCell(Cell):
     def _set_observers(self):
         pass
 
+    @property
+    def celltype(self):
+        raise AttributeError("celltype")
+
     def __str__(self):
         return "Seamless SubCell: %s" % ".".join(self._path)
 
-
 class DeepSubCell(SubCell):
-
+    
     def __init__(self, parent, cell, attr, readonly):
         assert isinstance(cell, (DeepCell, DeepFolderCell))
         assert not isinstance(cell, SubCell)
@@ -95,7 +98,7 @@ class DeepSubCell(SubCell):
             return super().__getattribute__(attr)
         if attr in type(self).__dict__ or attr in self.__dict__:
             return super().__getattribute__(attr)
-        raise AttributeError
+        raise AttributeError(attr)
 
     @property
     def value(self):

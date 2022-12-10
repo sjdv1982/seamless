@@ -6,9 +6,7 @@ there is no such thing as NextFlow queue channels
 Work in progress!
 """
 
-from cffi import api
 from seamless.core.transformer import Transformer
-from attr import has
 from seamless.highlevel import Context, Cell
 from seamless.highlevel.library import LibraryContainer
 from silk.Silk import Silk

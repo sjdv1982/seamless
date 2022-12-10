@@ -167,22 +167,53 @@ is stored as well, if available.
         self.set_checksum(distribution["checksum"])
         self.set_keyorder_checksum(distribution["keyorder"])
         meta_keys = ["content_size", "index_size", "nkeys", "access_index"]
-        if not all([key in distribution for key in meta_keys]):
+        try:
+            distribution2 = None
+            result = find(distribution["checksum"])
+            if result is not None:
+                dataset, distribution2 = result["dataset"], result["distribution"]
+            else:
+                distribution2 = distribution
+            if distribution2 is not None:
+                metadata = {"dataset": dataset}
+                for key in meta_keys:
+                    if key in distribution2:
+                        metadata[key] = distribution2[key]
+                self._get_hcell()["metadata"] = metadata
+        except Exception:
+            pass
+
+    @property
+    def content_size(self):
+        """The total size of all underlying buffers"""
+        return self._get_hcell().get("metadata", {}).get("content_size")
+
+    @property
+    def index_size(self):
+        """The size of the index, i.e. the buffer keys and their checksums"""
+        index_size = self._get_hcell().get("metadata", {}).get("index_size")
+        if index_size is None:
             try:
-                distribution2 = None
-                result = find(distribution["checksum"])
-                if result is not None:
-                    dataset, distribution2 = result["dataset"], result["distribution"]
-                else:
-                    distribution2 = distribution
-                if distribution2 is not None:
-                    metadata = {"dataset": dataset}
-                    for key in meta_keys:
-                        if key in distribution2:
-                            metadata[key] = distribution2[key]
-                    self._get_hcell()["metadata"] = metadata
+                ctx = self._get_context()
+                cell = ctx.origin
+                return len(cell._data.buffer)
             except Exception:
-                pass
+                return None
+        return index_size
+
+    @property
+    def nkeys(self):
+        """The number of buffer keys in the deepcell"""
+        nkeys = self._get_hcell().get("metadata", {}).get("nkeys")
+        if nkeys is None:
+            try:
+                ctx = self._get_context()
+                cell = ctx.origin
+                return len(cell.data)
+            except Exception:
+                return None
+        return nkeys
+        
     @property
     def filtered_checksum(self):
         """Contains the filtered checksum of the cell, as SHA3-256 hash.
@@ -386,7 +417,6 @@ Use cell.data instead."""
             return super().__getattribute__(attr)
         if hasattr(type(self), attr) or attr in self.__dict__ or attr == "path":
             return super().__getattribute__(attr)
-        hcell = self._get_hcell()
         return self._get_subcell(attr)
 
     def __dir__(self):
@@ -453,38 +483,6 @@ Use cell.data instead."""
 
     def __repr__(self):
         return str(self)
-
-class DeepCell(DeepCellBase):
-    _new_func = get_new_deepcell
-    hash_pattern = {"*": "#"}
-
-    def __str__(self):
-        return "Seamless DeepCell: " + self.path
-
-    @staticmethod
-    def find_distribution(dataset:str, *, version:str=None, date:str=None, format:str=None, compression:str=None):
-        from seamless.fair import find_distribution
-        distribution = find_distribution(
-            dataset, type="deepcell",
-            version=version, date=date, format=format, compression=compression
-        )
-        print("""WARNING: finding a FAIR data distribution for a DeepCell
-is only weakly reproducible.
-To guarantee strong reproducibility:
-- Use "DeepCell().define(DeepCell.find_distribution(...))" only in IPython 
-  and then use ctx.save().
-OR: 
-- If you prefer to use load_project.py:define_graph, enter the following code:
-
-    distribution = {{
-        "checksum": "{}",
-        "keyorder": "{}",
-    }}
-    DeepCell().define(distribution)
-    
-""".format(distribution["checksum"], distribution["keyorder"]))
-
-        return distribution
     
 class DeepFolderCell(DeepCellBase):
     _new_func = get_new_deepfoldercell
@@ -500,6 +498,7 @@ class DeepFolderCell(DeepCellBase):
             dataset, type="deepfolder",
             version=version, date=date, format=format, compression=compression
         )
+        ''' # disable for now, as it also gives access data
         print("""WARNING: finding a FAIR data distribution for a DeepFolderCell
 is only weakly reproducible.
 To guarantee strong reproducibility:
@@ -515,7 +514,7 @@ OR:
     DeepFolderCell().define(distribution)
     
 """.format(distribution["checksum"], distribution["keyorder"]))
-
+        '''
         return distribution
 
 
@@ -557,6 +556,7 @@ class DeepCell(DeepCellBase):
             dataset, type="deepcell",
             version=version, date=date, format=format, compression=compression
         )
+        ''' # disable for now, as it also gives access data
         print("""WARNING: finding a FAIR data distribution for a DeepCell
 is only weakly reproducible.
 To guarantee strong reproducibility:
@@ -572,7 +572,7 @@ OR:
     DeepCell().define(distribution)
     
 """.format(distribution["checksum"], distribution["keyorder"]))
-
+        '''
         return distribution
 
 
