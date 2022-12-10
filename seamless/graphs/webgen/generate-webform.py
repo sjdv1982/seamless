@@ -89,16 +89,20 @@ for node in graph["nodes"]:
             cell["component"] = "numberinput"
             params["editable"] = False
         share["encoding"] = "json"  # also for "str", "plain", "bool"
-    elif celltype == "text":
+    elif celltype in ("text", "cson", "yaml"):
         params["title"] = "Cell " + cellname.capitalize()
         if not node["share"].get("readonly", True):
-            cell["component"] = "fileupload"
+            cell["component"] = "input"
+            params["type"] = "textarea"
+            params["maxlength"] = 1000
         else:
             cell["component"] = "card"
         share["encoding"] = "text"
     elif celltype == "str":
         params["title"] = "Cell " + cellname.capitalize()
         cell["component"] = "input"
+        params["type"] = "input"
+        params["maxlength"] = 100
         if node["share"].get("readonly", True):
             params["editable"] = False
         else:

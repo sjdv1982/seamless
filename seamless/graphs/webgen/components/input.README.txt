@@ -3,3 +3,6 @@ Input for strings
 Parameters:
 - title (string).
 - editable (bool). If true, the number input is editable
+- type: can be "input", "textarea", and many others
+  (see https://buefy.org/documentation/input/)
+- maxlength: maximum text length
