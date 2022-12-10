@@ -1,10 +1,11 @@
 <section>
-    <p class="content"><b>{{selected_title}}</b> {{ selected }}</p>
+    <p class="content"><b>{{selected_title}}</b> {{ '{{' }} {{CELLS.selected}}.value {{ '}}' }}</p>
     <b-field label="{{title}}">
         <b-autocomplete
             rounded
+            keep-first
             v-model="{{CELLS.input}}.value"
-            :data="{{CELLS.input}}.value ? {{CELLS.options}}.value.filter(option => option.toString().toLowerCase().indexOf({{CELLS.input}}.value.toString().toLowerCase()) == 0) : {{CELLS.options}}.value"
+            :data="{{CELLS.input}}.value ? {{CELLS.options}}.value.filter(option => option.toString().toLowerCase().indexOf({{CELLS.input}}.value.toString().toLowerCase()) == 0) : []"
             placeholder="{{placeholder}}"
             icon="magnify"
             clearable
