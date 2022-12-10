@@ -34,7 +34,7 @@ def _classify(checksum:str, classification: str):
         raise ValueError(checksum)
     _classification[classification].add(checksum)
 
-def _download(checksum:str, template, *, checksum_content:bool):
+def _download(checksum:str, template, *, checksum_content:bool, verbose:bool=False):
     if checksum is None:
         return None
     if isinstance(checksum, bytes):
@@ -48,7 +48,7 @@ def _download(checksum:str, template, *, checksum_content:bool):
     request = template + checksum
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
     checksum2 = checksum if checksum_content else None
-    return download_buffer_sync(checksum2, urls)
+    return download_buffer_sync(checksum2, urls, verbose=verbose)
 
 def get_dataset(dataset:str):
     request = "/machine/dataset/{}".format(dataset)
@@ -88,12 +88,12 @@ def deepbuffer(checksum:str):
 def keyorder(checksum:str):
     return _download(checksum, "machine/keyorder/", checksum_content=False)
 
-def access(checksum:str, celltype):
-    url_infos_buf = _download(checksum, "machine/access/", checksum_content=False)
+def access(checksum:str, celltype:str, *, verbose:bool=False):
+    url_infos_buf = _download(checksum, "machine/access/", checksum_content=False, verbose=verbose)
     if url_infos_buf is None:
         return None
     url_infos = json.loads(url_infos_buf.decode())
-    return download_buffer_sync(checksum, url_infos, celltype)
+    return download_buffer_sync(checksum, url_infos, celltype, verbose=verbose)
 
 def get_buffer(checksum:str, deep=False):
     if checksum is None:

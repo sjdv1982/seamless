@@ -4,6 +4,7 @@ import requests
 import time
 import gzip
 import bz2
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from requests.exceptions import ConnectionError, ReadTimeout
 from seamless.core.cache import CacheMissError
@@ -170,11 +171,11 @@ def _get_url(url_info):
         url = url_info["url"]
     return url
 
-def download_buffer_sync(checksum, url_infos, celltype="bytes"):
+def download_buffer_sync(checksum, url_infos, celltype="bytes", *, verbose=False):
     mirrorlist = []
     for url_info in url_infos:
         url = _get_url(url_info)
-        host = get_host(url)        
+        host = get_host(url)
         if host not in mirrors:
             mirror = Mirror(host)
             mirrors[host] = mirror
@@ -247,7 +248,8 @@ def download_buffer_sync(checksum, url_infos, celltype="bytes"):
                     raise ValueError(compression)
 
             url = _get_url(url_info)
-            #print("Download", url)
+            if verbose:
+                print("Download", url, file=sys.stderr)
             buf = None
             """
             #DEBUG

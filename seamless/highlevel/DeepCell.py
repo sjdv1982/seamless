@@ -213,7 +213,7 @@ is stored as well, if available.
             except Exception:
                 return None
         return nkeys
-        
+
     @property
     def filtered_checksum(self):
         """Contains the filtered checksum of the cell, as SHA3-256 hash.
@@ -298,6 +298,21 @@ If it is error, cell.exception will be non-empty.
         elif pending:
             return "Status: pending"
         return "Status: OK"
+
+    def access(self, key):
+        from ..fair import access
+        from ..core.protocol.deserialize import deserialize_sync as deserialize
+        ctx = self._get_context()
+        cell = ctx.origin
+        data = cell.data
+        checksum = data[key]
+        if self.hash_pattern == {"*": "##"}:
+            celltype = "bytes"
+        else:
+            celltype = "mixed"
+        cs = bytes.fromhex(checksum)
+        buf = access(checksum, celltype, verbose=True)
+        return deserialize(buf, cs, celltype, copy=False)
 
     @property
     def value(self):
