@@ -38,7 +38,8 @@ for node in graph["nodes"]:
     elif node["type"] == "deepfoldercell":
         continue
     else: 
-        raise Exception(node["type"])
+        #raise Exception(node["type"])
+        continue
 
     color = 5
     cstate = ""
