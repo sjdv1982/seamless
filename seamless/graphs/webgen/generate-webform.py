@@ -10,6 +10,8 @@ webdefaults = {
     "str": "",
     "plain": {},
     "text": "",
+    "cson": "",
+    "yaml": "",
     "bool": False,
     "bytes": None,
 }
