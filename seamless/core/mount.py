@@ -115,13 +115,14 @@ class MountItem:
             if cell._checksum is None and cell._void is not None and cell.has_independence():
                 # cell is being calculated. High risk for a conflict
                 # All we can do is wait a bit, if the event loop is not running...
-                count = 0
-                while cell._checksum is None and count < 100:
-                    try:
-                        asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.01))
-                    except Exception:
-                        pass                    
-                    count += 1
+                if not get_macro_mode():
+                    count = 0
+                    while cell._checksum is None and count < 100:
+                        try:
+                            asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.01))
+                        except Exception:
+                            pass                    
+                        count += 1
         cell_checksum = cell._checksum
         cell_empty = (cell_checksum is None)
         if not cell_empty:
@@ -834,3 +835,4 @@ from .mount_directory import get_directory_mtime, deep_read_from_directory, read
 from .protocol.deserialize import deserialize_sync
 from .protocol.serialize import serialize_sync
 from .protocol.get_buffer import get_buffer
+from .macro_mode import get_macro_mode
