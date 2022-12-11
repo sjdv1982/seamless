@@ -669,6 +669,8 @@ class Context(Base, HelpMixin):
             pass
 
         graph0 = deepcopy(self._runtime_graph)
+        if graph0 is None:
+            return None
 
         connections = deepcopy(graph0.connections)
         nodes = deepcopy(graph0.nodes)

@@ -66,13 +66,17 @@ class PollingObserver:
         else:
             self.errors = 0
 
-        if isinstance(value, Base):
+        if isinstance(value, (Base, Path)):
             return
         if value is None and not self.observe_none:
             return
         if value == self.value:
             return
-        self.value = deepcopy(value)
+        try:
+            self.value = deepcopy(value)
+        except Exception:
+            print("PollingObserver deepcopy error, value type {}:".format(type(value)))
+            traceback.print_exc()
 
         try:
             self.callback(value)
@@ -89,5 +93,6 @@ class PollingObserver:
             pass
 
 from .Context import Context, Base
+from ..core.macro import Path
 from silk.Silk import Silk
 from silk.mixed import MixedObject
