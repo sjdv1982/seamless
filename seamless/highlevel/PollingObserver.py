@@ -66,6 +66,8 @@ class PollingObserver:
         else:
             self.errors = 0
 
+        if isinstance(value, Base):
+            return
         if value is None and not self.observe_none:
             return
         if value == self.value:
