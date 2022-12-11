@@ -59,11 +59,14 @@ extra_components = {}
 
 order = webform.get("order", [])
 for cell in webform["cells"]:
-    if cell not in order:
-        order.append(cell)
+    cell2 = cell.replace("__", "/")
+    if cell2 not in order:
+        order.append(cell2)
 for tf in webform["transformers"]:
-    if tf not in order:
-        order.append(tf)
+    tf2 = tf.replace("__", "/")
+    if tf2 not in order:
+        order.append(tf2)
+print("ORDER", order)
 
 used_extra_cells = set()
 for extra_component in webform.get("extra_components", []):
@@ -192,7 +195,8 @@ for cell_or_tf_or_id in order:
         used_components.add(component)        
         continue
 
-    cell = cell_or_tf_or_id 
+    cell = cell_or_tf_or_id
+    cell = cell.replace("/", "__") 
     if cell in used_extra_cells and cell not in webform["cells"]:
         config = webform["extra_cells"][cell]
     elif cell in webform.get("webcells", {}):

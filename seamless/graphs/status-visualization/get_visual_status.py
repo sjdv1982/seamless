@@ -20,7 +20,7 @@ for node in graph["nodes"]:
     path = tuple(node["path"])
     path2 = ".".join(path)
     rnode = {"name": path2, "type": node["type"], "id": len(rnodes)}
-    if node["type"] == "cell":
+    if node["type"] in ("cell", "foldercell"):
         paths = [path]
     elif node["type"] == "transformer":
         paths = [
