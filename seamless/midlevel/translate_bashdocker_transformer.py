@@ -102,6 +102,7 @@ def translate_bashdocker_transformer(
     for pinname, pin in pins.items():
         p = {"io": "input"}
         p.update(pin)
+        celltype = pin.get("celltype")
         if celltype is None or celltype == "default":
             if pinname.endswith("_SCHEMA"):
                 celltype = "plain"
