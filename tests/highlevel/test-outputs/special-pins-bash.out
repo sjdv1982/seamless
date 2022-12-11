@@ -1,0 +1,76 @@
+Traceback (most recent call last):
+  File "special-pins-bash.py", line 25, in <module>
+    ctx.tf.WRONG = 12
+AttributeError: Cannot define new special pins before translation
+Traceback (most recent call last):
+  File "special-pins-bash.py", line 32, in <module>
+    ctx.tf["WRONG"] = 12
+AttributeError: Cannot define new special pins before translation
+Traceback (most recent call last):
+  File "special-pins-bash.py", line 40, in <module>
+    ctx.tf.WRONG = 12
+AttributeError: Cannot define new special pins like this, use add_special_pin
+Traceback (most recent call last):
+  File "special-pins-bash.py", line 47, in <module>
+    ctx.tf["WRONG"] = 12
+AttributeError: Cannot define new special pins like this, use add_special_pin
+Traceback (most recent call last):
+  File "special-pins-bash.py", line 54, in <module>
+    ctx.tf.add_special_pin("nonsense", "bool")
+ValueError: Special pinname must be all uppercase
+None
+Status: {'tf': '*tf*: Status: upstream => SPECIAL undefined'}
+Traceback (most recent call last):
+  File "special-pins-bash.py", line 75, in <module>
+    ctx.tf.SPECIAL = 12
+AttributeError: Special pins must be set using bracket syntax
+OK
+*************************************************
+* Result
+*************************************************
+42
+*************************************************
+* Standard output
+*************************************************
+3
+4
+SPECIAL This must be printed
+
+*************************************************
+Execution time: 0.0 seconds
+*************************************************
+d72013843c783d00a010bf3004d57600658591121ea049f0141b7ba7a8af7dcd
+*************************************************
+* Result
+*************************************************
+42
+*************************************************
+* Standard output
+*************************************************
+3
+4
+SPECIAL This must be printed
+
+*************************************************
+Execution time: 0.0 seconds
+*************************************************
+d72013843c783d00a010bf3004d57600658591121ea049f0141b7ba7a8af7dcd
+Nothing printed
+/Nothing printed
+3
+4
+SPECIAL This will be printed IN THE END
+*************************************************
+* Result
+*************************************************
+42
+*************************************************
+* Standard output
+*************************************************
+3
+4
+SPECIAL This will be printed IN THE END
+
+*************************************************
+Execution time: 0.0 seconds
+*************************************************
