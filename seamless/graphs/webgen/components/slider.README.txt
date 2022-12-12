@@ -4,3 +4,4 @@ Parameters:
 - title (string).
 - min (float). Minimum value.
 - max (float). Maximum value.
+- step (float). Minimum increment.

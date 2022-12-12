@@ -87,6 +87,7 @@ for node in graph["nodes"]:
             cell["component"] = "slider"
             params["min"] = 0
             params["max"] = 100
+            params["step"] = 1
         else:
             cell["component"] = "numberinput"
             params["editable"] = False
