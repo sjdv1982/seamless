@@ -617,6 +617,7 @@ class TransformationCache:
                 logs = exc.args[0]
             else:
                 s = traceback.format_exception(
+                    type(exc),
                     exc,
                     tb=exc.__traceback__
                 )
@@ -838,6 +839,7 @@ class TransformationCache:
         exc = self.transformation_exceptions.get(tf_checksum)
         if exc is not None:
             exc_list = traceback.format_exception(
+                type(exc),
                 exc,
                 tb=exc.__traceback__
             )
