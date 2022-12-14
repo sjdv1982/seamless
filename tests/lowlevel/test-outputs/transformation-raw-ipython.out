@@ -1,5 +1,6 @@
 {
   "__env__": "1dddb510da7795a4fb3de948526eef08dbeae63957d6aa2f70ef97d64f0a1b76",
+  "__language__": "python",
   "__output__": [
     "result",
     "int",
@@ -30,6 +31,8 @@ b'19\n'
 *************************************************
 * Standard output
 *************************************************
-75 ns +- 0.0533 ns per loop (mean +- std. dev. of 7 runs, 10,000,000 loops each)
+83.8 ns +- 2.89 ns per loop (mean +- std. dev. of 7 runs, 10000000 loops each)
 
+*************************************************
+Execution time: 6.9 seconds
 *************************************************

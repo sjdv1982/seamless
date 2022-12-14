@@ -50,10 +50,10 @@ Status: preliminary
 0.30000000000000004
 
 STEP 3
-Status: executing , exception: None
-0.30000000000000004
+Status: executing, 10.0 % , exception: None
+0.1
 Status: preliminary
-0.30000000000000004
+0.1
 
 STEP 4
 Status: executing, 10.0 % , exception: None

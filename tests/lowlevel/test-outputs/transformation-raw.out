@@ -1,4 +1,5 @@
 {
+  "__language__": "python",
   "__output__": [
     "result",
     "int",
