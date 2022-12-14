@@ -1,6 +1,6 @@
 ********************************************************************************
 Traceback (most recent call last):
-  File "/seamless/seamless/core/manager/tasks/set_value.py", line 46, in _run
+  File "/opt/conda/lib/python3.8/site-packages/seamless/core/manager/tasks/set_value.py", line 46, in _run
     raise ValueError(exc) from None
 ValueError: invalid literal for int() with base 10: 'test'
 

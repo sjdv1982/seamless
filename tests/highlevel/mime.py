@@ -3,8 +3,9 @@ ctx = Context()
 ctx.test = "<b>This is a test</b>"
 print("cell:")
 print(ctx.test.mimetype)
-ctx.test.datatype = "text"
+ctx.test.mimetype = "text/plain"
 print(ctx.test.mimetype)
+del ctx.test.mimetype
 ctx.test.datatype = "html"
 print(ctx.test.mimetype)
 ctx.test.mimetype = "text/xhtml"

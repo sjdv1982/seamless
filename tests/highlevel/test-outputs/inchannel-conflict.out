@@ -1,15 +1,31 @@
 <Silk: {'a': 10, 'c': 30} >
 {'a': 10, 'c': 30}
-<Silk: None >
+Traceback (most recent call last):
+  File "inchannel-conflict.py", line 16, in <module>
+    ctx.s.set("NOT TO BE PRINTED")
+  File "/opt/conda/lib/python3.8/site-packages/seamless/highlevel/Cell.py", line 699, in set
+    raise TypeError("Cannot set the value of a cell that is not independent")
+TypeError: Cannot set the value of a cell that is not independent
+<Silk: {'a': 10, 'c': 30} >
+{'a': 10, 'c': 30}
 None
-TypeError: 'str' object does not support item assignment
 
-
-<Silk: None >
+Traceback (most recent call last):
+  File "inchannel-conflict.py", line 25, in <module>
+    ctx.s.set("NOT TO BE PRINTED 2")
+  File "/opt/conda/lib/python3.8/site-packages/seamless/highlevel/Cell.py", line 699, in set
+    raise TypeError("Cannot set the value of a cell that is not independent")
+TypeError: Cannot set the value of a cell that is not independent
+<Silk: {'a': 10, 'c': 30} >
+{'a': 10, 'c': 30}
 None
-TypeError: 'str' object does not support item assignment
 
-
+Traceback (most recent call last):
+  File "inchannel-conflict.py", line 36, in <module>
+    ctx.s.set({})
+  File "/opt/conda/lib/python3.8/site-packages/seamless/highlevel/Cell.py", line 699, in set
+    raise TypeError("Cannot set the value of a cell that is not independent")
+TypeError: Cannot set the value of a cell that is not independent
 <Silk: {'a': 10, 'c': 30} >
 {'a': 10, 'c': 30}
 None

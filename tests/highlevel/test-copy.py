@@ -43,4 +43,4 @@ copy(ctx.tf, ctx2.ttf)
 ctx2.compute()
 ctx.a = 222
 ctx.compute()
-print(ctx.tf.result.value, ctx.a.value, ctx2.ttf.a.value, ctx2.ttf.result.value)
+print(ctx.tf.result.value, ctx.a.value, ctx2.ttf.inp.value, ctx2.ttf.result.value)

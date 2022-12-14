@@ -8,4 +8,6 @@ or
 2. Define the transformer code as a code block?
    In that case, you must define the output variable "result", e.g. add a statement
    "result = func(a=a,b=b)" at the end
-                        
+                        *************************************************
+Execution time: 0.0 seconds
+

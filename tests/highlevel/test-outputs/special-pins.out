@@ -1,30 +1,30 @@
 Traceback (most recent call last):
-  File "special-pins.py", line 12, in <module>
+  File "special-pins.py", line 14, in <module>
     ctx.tf = func
 TypeError: Pin name 'WRONG' must not be all uppercase
 Traceback (most recent call last):
-  File "special-pins.py", line 21, in <module>
+  File "special-pins.py", line 23, in <module>
     ctx.tf.WRONG = 12
 AttributeError: Cannot define new special pins before translation
 Traceback (most recent call last):
-  File "special-pins.py", line 28, in <module>
+  File "special-pins.py", line 30, in <module>
     ctx.tf["WRONG"] = 12
 AttributeError: Cannot define new special pins before translation
 Traceback (most recent call last):
-  File "special-pins.py", line 36, in <module>
+  File "special-pins.py", line 38, in <module>
     ctx.tf.WRONG = 12
 AttributeError: Cannot define new special pins like this, use add_special_pin
 Traceback (most recent call last):
-  File "special-pins.py", line 43, in <module>
+  File "special-pins.py", line 45, in <module>
     ctx.tf["WRONG"] = 12
 AttributeError: Cannot define new special pins like this, use add_special_pin
 Traceback (most recent call last):
-  File "special-pins.py", line 50, in <module>
+  File "special-pins.py", line 52, in <module>
     ctx.tf.add_special_pin("nonsense", "bool")
 ValueError: Special pinname must be all uppercase
 Status: {'tf': '*tf*: Status: upstream => SPECIAL undefined'}
 Traceback (most recent call last):
-  File "special-pins.py", line 65, in <module>
+  File "special-pins.py", line 67, in <module>
     ctx.tf.SPECIAL = 12
 AttributeError: Special pins must be set using bracket syntax
 OK

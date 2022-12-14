@@ -1,3 +1,4 @@
+import traceback
 from seamless.highlevel import Context, Cell
 ctx = Context()
 ctx.a = Cell("int").set(10)
@@ -11,13 +12,19 @@ ctx.ss.celltype = "plain"
 ctx.compute()
 print(ctx.s.value)
 print(ctx.ss.value)
-ctx.s.set("NOT TO BE PRINTED")
+try:
+    ctx.s.set("NOT TO BE PRINTED")
+except TypeError:
+    traceback.print_exc()
 ctx.compute()
 print(ctx.s.value)
 print(ctx.ss.value)
 print(ctx.s.exception)
 print("")
-ctx.s = "NOT TO BE PRINTED 2"
+try:
+    ctx.s.set("NOT TO BE PRINTED 2")
+except TypeError:
+    traceback.print_exc()
 ctx.s.a = ctx.a
 ctx.s.c = ctx.c
 ctx.compute()
@@ -25,7 +32,10 @@ print(ctx.s.value)
 print(ctx.ss.value)
 print(ctx.s.exception)
 print("")
-ctx.s.set({})
+try:
+    ctx.s.set({})
+except TypeError:
+    traceback.print_exc()
 ctx.compute()
 print(ctx.s.value)
 print(ctx.ss.value)

@@ -69,13 +69,13 @@ print("TRANSFORMER INPUT EXCEPTION", ctx.transform.inp.exception) # jsonschema.e
 print(ctx.transform.inp.schema)
 ###print("INPUT EXCEPTION", ctx.transform.inp.exception)
 print(ctx.transform.inp.value)    # None
-print(ctx.transform._get_tf().inp.auth.value)   #  As of Seamless 0.2, this gives {'a': 1, 'b': 100}
-                                                #  The a=1 is not cleared when the connection is broken!
+print(ctx.transform._get_tf().inp.auth.value)   #  As of Seamless 0.10, this gives {'b': 100}
+                                                #  The a=1 is cleared when the connection is broken.
 print("TRANSFORMER STATUS", ctx.transform.status)
 print("START!")
 ctx.transform.b = "testing"
 ctx.compute()
-print(ctx.transform._get_tf().inp.auth.value)    # {'a': 1, 'b': "testing"}
+print(ctx.transform._get_tf().inp.auth.value)    # {'b': "testing"}
 print(ctx.transform._get_tf().inp.buffer.value)    # {'a': 13, 'b': "testing"}
 print(ctx.transform.inp.value)    # {'a': 13, 'b': 'testing'}
 print(ctx.myresult.value) # None

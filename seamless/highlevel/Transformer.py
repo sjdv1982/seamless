@@ -619,7 +619,7 @@ class Transformer(Base, HelpMixin):
             else:
                 htf["pins"][attr].update(pin0)
             if isinstance(value, (Cell, Module, DeepCellBase)):
-                if new_pin and isinstance(value, Cell) and value.celltype == "checksum":
+                if new_pin and isinstance(value, Cell) and not isinstance(value, SubCell) and value.celltype == "checksum":
                     pin["celltype"] = "checksum"
                 target_path = self._path + (attr,)
                 assert value._parent() is parent
@@ -1641,3 +1641,4 @@ from .synth_context import SynthContext
 from .assign import check_libinstance_subcontext_binding
 from ..core.status import StatusReasonEnum
 from .DeepCell import DeepCellBase, DeepCell, DeepFolderCell
+from .SubCell import SubCell

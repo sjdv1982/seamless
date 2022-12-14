@@ -796,14 +796,18 @@ This cell is not fully independent, i.e. it has incoming connections"""
     @mimetype.setter
     def mimetype(self, value):
         hcell = self._get_hcell2()
-        if value.find("/") == -1:
-            try:
-                ext = value
-                value = ext_to_mime(ext)
-            except KeyError:
-                raise ValueError("Unknown extension %s" % ext) from None
-            hcell["file_extension"] = ext
-        hcell["mimetype"] = value
+        if value is None:
+            hcell.pop("mimetype", None)
+            hcell.pop("file_extension", None)
+        else:
+            if value.find("/") == -1:
+                try:
+                    ext = value
+                    value = ext_to_mime(ext)
+                except KeyError:
+                    raise ValueError("Unknown extension %s" % ext) from None
+                hcell["file_extension"] = ext
+            hcell["mimetype"] = value
         hcell["UNSHARE"] = True
         if self._parent() is not None:
             self._parent()._translate()
@@ -828,10 +832,13 @@ This cell is not fully independent, i.e. it has incoming connections"""
         hcell = self._get_hcell2()
         celltype = hcell["celltype"]
         assert celltype == "structured"
-        if value == "bytes":
-            raise TypeError("Byte cells and structured cells are stored differently.")
-        elif value == "text":
-            raise TypeError("""
+        if value is None:
+            hcell.pop("datatype", None)
+        else:
+            if value == "bytes":
+                raise TypeError("Byte cells and structured cells are stored differently.")
+            elif value == "text":
+                raise TypeError("""
 Text cells and structured cells are stored differently.
 
 For use in web forms, instead use "str".
@@ -930,11 +937,14 @@ For other use in HTTP requests, instead set mimetype to "text/plain".
     def hash_pattern(self, value):
         from ..core.protocol.deep_structure import validate_hash_pattern
 
-        validate_hash_pattern(value)
         hcell = self._get_hcell2()
-        celltype = hcell["celltype"]
-        assert celltype in ("structured", "mixed")
-        hcell["hash_pattern"] = value
+        if value is None:
+            hcell.pop("hash_pattern", None)
+        else:
+            validate_hash_pattern(value)
+            celltype = hcell["celltype"]
+            assert celltype in ("structured", "mixed")
+            hcell["hash_pattern"] = value
         hcell.pop("checksum", None)
         if self._parent() is not None:
             self._parent()._translate()
@@ -957,10 +967,14 @@ For other use in HTTP requests, instead set mimetype to "text/plain".
         if celltype != "code":
             return self._setattr("language", value)
         parent = self._parent()
-        lang, _, extension = parent.environment.find_language(value)
         old_language = hcell.get("language")
-        hcell["language"] = lang
-        hcell["file_extension"] = extension
+        if value is None:
+            hcell.pop("language", None)
+            hcell.pop("file_extension", None)
+        else:
+            lang, _, extension = parent.environment.find_language(value)
+            hcell["language"] = lang
+            hcell["file_extension"] = extension
         if lang != old_language:
             if self._parent() is not None:
                 self._parent()._translate()
@@ -1046,6 +1060,10 @@ This cell is not fully independent, i.e. it has incoming connections"""
                 hcell.pop(attr)
                 if self._parent() is not None:
                     self._parent()._translate()
+        elif attr in ("scratch", "fingertip_no_remote", "fingertip_no_recompute"):
+            setattr(self, attr, False)
+        elif attr in ("hash_pattern", "mimetype", "language", "checksum", "datatype"):
+            setattr(self, attr, None)
         else:
             raise AttributeError(attr)
 

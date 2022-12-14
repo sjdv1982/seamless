@@ -1,9 +1,9 @@
 Traceback (most recent call last):
-  File "/home/jovyan/software/seamless/core/transformation.py", line 398, in _execute
+  File "/seamless/seamless/core/transformation.py", line 400, in _execute
     result, logs = await self._execute_local(
-  File "/home/jovyan/software/seamless/core/transformation.py", line 541, in _execute_local
+  File "/seamless/seamless/core/transformation.py", line 541, in _execute_local
     validate_environment(env)
-  File "/home/jovyan/software/seamless/core/environment.py", line 159, in validate_environment
+  File "/seamless/seamless/core/environment.py", line 159, in validate_environment
     raise ValueError("Environment error:\n" + err)
 ValueError: Environment error:
 Docker:

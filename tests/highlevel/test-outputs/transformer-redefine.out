@@ -1,8 +1,8 @@
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 403, in _execute
+  File "/seamless/seamless/core/transformation.py", line 400, in _execute
     result, logs = await self._execute_local(
-  File "/seamless/seamless/core/transformation.py", line 569, in _execute_local
+  File "/seamless/seamless/core/transformation.py", line 566, in _execute_local
     full_module_names = build_all_modules(
   File "/seamless/seamless/core/build_module.py", line 366, in build_all_modules
     mod = build_module(
