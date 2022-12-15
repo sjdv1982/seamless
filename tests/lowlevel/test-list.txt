@@ -111,7 +111,9 @@ simple-communion:
      python3 -u simple-communion-master.py > test-outputs/simple-communion-master.out 2>&1
      then Ctrl-C simple-communion-slave.py
      The output is available in simple-communion-[master/slave].out
-simple-debug.py: Run in Visual Studio Code. Can't set breakpoints.
+simple-debug.py: Run in Visual Studio Code 
+  Will work only under bare metal (not in Docker).
+  Can't set breakpoints.
 mount.ipynb
 communion-peer[12].sh: 
      In one terminal, run:

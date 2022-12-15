@@ -1,4 +1,5 @@
 import seamless
+import asyncio
 from seamless.core import context, cell, transformer, unilink
 
 ctx = context(toplevel=True)
@@ -28,9 +29,11 @@ ctx.tf.c.connect(ctx.result_unilink)
 print(ctx.cell1.value)
 ctx.compute()
 print(ctx.result.value, ctx.status)
+asyncio.get_event_loop().run_until_complete(asyncio.sleep(2))
 ctx.cell1.set(10)
 ctx.compute()
 print(ctx.result.value, ctx.status)
+asyncio.get_event_loop().run_until_complete(asyncio.sleep(2))
 ctx.code.set("a + b + 1000")
 ctx.compute()
 print(ctx.result.value, ctx.status)
@@ -38,6 +41,7 @@ print(ctx.result.value, ctx.status)
 func="""def func(a,b):
     return a + b + 2000
 """
+asyncio.get_event_loop().run_until_complete(asyncio.sleep(2))
 ctx.code.set(func)
 ctx.compute(report=None)
 print(ctx.result.value, ctx.status)

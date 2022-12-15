@@ -322,7 +322,7 @@ def execute(name, code,
       with_ipython_kernel,
       injector, module_workspace,
       identifier, namespace,
-      inputs, deep_structures_to_unpack,
+      deep_structures_to_unpack, inputs,
       output_name, output_celltype, output_hash_pattern,
       result_queue,
       debug = None,
@@ -405,11 +405,13 @@ def execute(name, code,
                 stdout = FakeStdStream(sys.__stdout__, direct_print)
                 stderr = FakeStdStream(sys.__stderr__, direct_print)
             sys.stdout, sys.stderr = stdout, stderr
+            start_time = time.time()
             result = _execute(name, code,
                 with_ipython_kernel,
                 injector, module_workspace,
                 identifier, namespace,
-                inputs, output_name, output_celltype, output_hash_pattern, 
+                deep_structures_to_unpack,
+                inputs, output_name, output_celltype, output_hash_pattern,
                 result_queue
             )
         else:
@@ -429,11 +431,11 @@ def execute(name, code,
                 with_ipython_kernel,
                 injector, module_workspace,
                 identifier, namespace,
-                inputs, deep_structures_to_unpack, 
-                output_name, output_celltype, output_hash_pattern,
+                deep_structures_to_unpack,
+                inputs, output_name, output_celltype, output_hash_pattern,
                 result_queue
             )
-            execution_time = time.time() - start_time
+        execution_time = time.time() - start_time
 
         msg_code, msg = result
         if msg_code == 2: # SeamlessTransformationError, propagate

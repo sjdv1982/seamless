@@ -1,3 +1,4 @@
+import sys
 IPythonInputSplitter = None
 MyInProcessKernelManager = None
 def _imp():
