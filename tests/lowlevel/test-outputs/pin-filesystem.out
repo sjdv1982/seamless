@@ -4,11 +4,12 @@ A f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247 b'[\n  1,\n  
 B 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1 b'{\n  "file1.txt": "191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba"\n}\n'
 C a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e b'3\n'
 D 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2 b'{\n  "file2.txt": "a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e"\n}\n'
-None
 Status: error
 c: could not find file/directory for a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
 c: could not find file/directory for a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
-a05baafed55bf67251dcafb466b4cb5399dd59cb305f1eec9bdf069217fb8b01
+None
+None
+589a7fa584352c025e994c95ad1e1bb373704f9718be1ff6ca0d0449a02bf9ba
 Start database
 
 Run 2
@@ -17,11 +18,12 @@ A f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247 b'[\n  1,\n  
 B 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1 b'{\n  "file1.txt": "191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba"\n}\n'
 C a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e b'3\n'
 D 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2 b'{\n  "file2.txt": "a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e"\n}\n'
-None
 Status: error
 d: could not find file/directory for 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
 d: could not find file/directory for 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
-a05baafed55bf67251dcafb466b4cb5399dd59cb305f1eec9bdf069217fb8b01
+None
+None
+589a7fa584352c025e994c95ad1e1bb373704f9718be1ff6ca0d0449a02bf9ba
 
 Share folder 2 and restart database
 Computed deepfolder for testfolder2: deep buffer checksum 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
@@ -34,7 +36,6 @@ A f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247 b'[\n  1,\n  
 B 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1 b'{\n  "file1.txt": "191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba"\n}\n'
 C a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e b'3\n'
 D 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2 b'{\n  "file2.txt": "a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e"\n}\n'
-OK
 Status: OK
 None
 *************************************************
@@ -46,12 +47,16 @@ OK
 *************************************************
 {'a': {'mode': 'file', 'optional': True, 'filesystem': True}, 'b': {'mode': 'directory', 'optional': True, 'filesystem': False}, 'c': {'mode': 'file', 'optional': False, 'filesystem': True}, 'd': {'mode': 'directory', 'optional': False, 'filesystem': True}}
 pin A /tmp/PIN-FILESYSTEM-TEST-DB/buffers/f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247
-pin B {'file1.txt': '2\n'}
+pin B {'file1.txt': b'2\n'}
 pin C /tmp/PIN-FILESYSTEM-TEST-DB/buffers/a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
 pin D /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
 
 *************************************************
-a05baafed55bf67251dcafb466b4cb5399dd59cb305f1eec9bdf069217fb8b01
+Execution time: 0.0 seconds
+*************************************************
+946f8cf70c3251e6cb01e1be75dfe4769fe81e5f1aca4083aecefd4a12a392d5
+OK
+589a7fa584352c025e994c95ad1e1bb373704f9718be1ff6ca0d0449a02bf9ba
 
 Share folder 1 and restart database
 Computed deepfolder for testfolder1: deep buffer checksum 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1
@@ -64,7 +69,6 @@ A f549f48383e33954f7945f08a61729a0460bb5f24828e6fa89e99f2ddbc9b247 b'[\n  1,\n  
 B 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1 b'{\n  "file1.txt": "191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba"\n}\n'
 C a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e b'3\n'
 D 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2 b'{\n  "file2.txt": "a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e"\n}\n'
-OK
 Status: OK
 None
 *************************************************
@@ -81,7 +85,11 @@ pin C /tmp/PIN-FILESYSTEM-TEST-DB/buffers/a3b9a39c707177f10d440c071303df8beff535
 pin D /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
 
 *************************************************
-a05baafed55bf67251dcafb466b4cb5399dd59cb305f1eec9bdf069217fb8b01
+Execution time: 0.0 seconds
+*************************************************
+946f8cf70c3251e6cb01e1be75dfe4769fe81e5f1aca4083aecefd4a12a392d5
+OK
+589a7fa584352c025e994c95ad1e1bb373704f9718be1ff6ca0d0449a02bf9ba
 
 Server log
 Press Ctrl+C to end

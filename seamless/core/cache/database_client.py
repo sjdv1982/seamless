@@ -15,7 +15,7 @@ session = requests.Session()
 
 class DatabaseBase:
     active = False
-    PROTOCOL = ("seamless", "database", "0.1")    
+    PROTOCOLS = [("seamless", "database", "0.2"), ("seamless", "database", "0.1")]    
     _loghandle = None
 
     def set_log(self, log):
@@ -46,7 +46,7 @@ class DatabaseBase:
             raise TypeError("environment variable SEAMLESS_DATABASE_PORT must be integer") from None
         return host, port
 
-    def _connect(self, host, port):
+    def _connect(self, host, port, *, sink):
         self.host = host
         self.port = port
         url = "http://" + self.host + ":" + str(self.port)
@@ -57,10 +57,30 @@ class DatabaseBase:
             response = session.get(url, data=json.dumps(request))
         except requests.ConnectionError:
             raise requests.ConnectionError("Cannot connect to Seamless database: host {}, port {}".format(self.host, self.port))
+
         try:
-            assert response.json() == list(self.PROTOCOL)
+            protocol = response.json()
+            assert protocol in [list(p) for p in self.PROTOCOLS]                
         except (AssertionError, ValueError, json.JSONDecodeError):
             raise Exception("Incorrect Seamless database protocol") from None
+
+
+        if sink and float(protocol[-1]) > 0.1:
+            request = {
+                "type": "readonly",
+            }
+            try:
+                response = session.get(url, data=json.dumps(request))
+            except requests.ConnectionError:
+                raise requests.ConnectionError("Cannot connect to Seamless database: host {}, port {}".format(self.host, self.port))
+            try:
+                readonly = response.json()
+                assert readonly in (True, False)
+            except (AssertionError, ValueError, json.JSONDecodeError):
+                raise Exception("Incorrect Seamless database protocol") from None
+            if readonly:
+                return
+
         self.active = True
 
     def has_buffer(self, checksum):
@@ -105,7 +125,7 @@ class DatabaseSink(DatabaseBase):
     ):
         host, port = self._get_host_port()
         self.store_compile_result = store_compile_result
-        self._connect(host, port)
+        self._connect(host, port, sink=True)
 
     def send_request(self, request):
         if not self.active:
@@ -198,7 +218,7 @@ class DatabaseCache(DatabaseBase):
             
     def connect(self):
         host, port = self._get_host_port()
-        self._connect(host, port)
+        self._connect(host, port, sink=False)
 
     def send_request(self, request):
         if not self.active:
