@@ -167,7 +167,7 @@ def return_preliminary(result_queue, celltype, value):
         prelim_checksum2 = prelim_checksum.hex()
         buffer_cache.guarantee_buffer_info(prelim_checksum, celltype, sync_to_remote=True)
         database_sink.set_buffer(prelim_checksum, prelim_buffer, False)
-        result_queue.put((2, "checksum"), prelim_checksum2)
+        result_queue.put(((2, "checksum"), prelim_checksum2))
     else:
         result_queue.put((2, prelim_buffer))
 

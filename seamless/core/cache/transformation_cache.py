@@ -862,7 +862,7 @@ class TransformationCache:
 
         remote = communion_client_manager.remote_buffer_status
         for key, value in transformation.items():
-            if key in ("__output__", "__as__"):
+            if key in ("__output__", "__as__", "__language__"):
                 continue
             celltype, subcelltype, sem_checksum0 = value
             sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None

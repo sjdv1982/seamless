@@ -7,7 +7,7 @@ TF        Status: executing, 10.0 %
 RESULT        0.300 Status: preliminary
 
 TF        Status: executing, 10.0 %
-RESULT        0.300 Status: pending
+RESULT        0.300 Status: preliminary
 
 TF        Status: executing, 20.0 %
 RESULT        0.300 Status: preliminary
@@ -28,12 +28,12 @@ TF        Status: executing, 20.0 %
 RESULT        10.100 Status: preliminary
 
 TF        Status: executing, 20.0 %
-RESULT        10.100 Status: preliminary
+RESULT        30.300 Status: preliminary
 
 TF        Status: executing, 30.0 %
 RESULT        30.300 Status: preliminary
 
-TF        Status: executing, 30.0 %
+TF        Status: executing, 40.0 %
 RESULT        30.300 Status: preliminary
 
 TF        Status: executing, 40.0 %
