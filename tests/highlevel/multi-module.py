@@ -17,7 +17,10 @@ ctx.testmodule["__init__.py"] = """
 from .submodule import q
 from . import submodule
 """ 
-ctx.testmodule["submodule.py"] = "q = 10"
+ctx.testmodule["submodule.py"] = """q = 10
+def func():
+    return 42
+"""
 ctx.testmodule.mount("/tmp/testmodule", authority="cell")
 
 ctx.compute()
@@ -30,7 +33,10 @@ print(ctx.tf.status)
 print(ctx.tf.exception)
 print(ctx.tf.result.value)
 
-ctx.testmodule["submodule.py"] = "q = 9"
+ctx.testmodule["submodule.py"] = """q = 9
+def func():
+    return 42
+"""
 ctx.compute()
 print(ctx.tf.result.value)
 
@@ -42,16 +48,31 @@ ctx.compute()
 print(ctx.tf.result.value)
 
 ctx.testmodule["submodule2.py"] = """
-from mytestmodule.submodule import q
+from mytestmodule.submodule import q, func
 q2 = 2 * q
 """ 
 ctx.testmodule.internal_package_name = "mytestmodule"
 ctx.tf.code = """
-from .testmodule.submodule2 import q2
+from .testmodule.submodule2 import q2, func
+func()
 result = q2
 """
 ctx.compute()
 print(ctx.tf.exception)
 print(ctx.tf.result.value)
 
+# For interactive testing, paste the following code into IPython:
+'''
+import random
+ctx.tf.debug.direct_print = True
+ctx.tf.code.mount("/tmp/multi-module-script.py", authority="cell")
+ctx.compute()
+ctx.tf.debug.enable("light")
+ctx.compute()
+ctx.tf.code = """from .testmodule.submodule2 import q2, func
+func()
+result = q2 + """ + str(random.random())
 
+# open /tmp/multi-module-script.py and /tmp/testmodule/* in VSCode, and set breakpoints.
+# NOTE: in modules, since they are pre-imported, you can set breakpoints only inside functions!
+'''

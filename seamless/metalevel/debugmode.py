@@ -28,6 +28,7 @@ If not, make sure that {host_project_dir} is the primary directory of your VSCod
 If it isn't, please define the HOST_PROJECT_DIR environment variable.
 
 Transformer execution will now be halted until the VSCode debugger attaches itself.
+{docker_warning}
 
 If the transformer is restarted by Seamless while the debugger is active, both may fail. 
 In that case, do Transformer.clear_exception()"""
@@ -143,10 +144,13 @@ def find_transformer_modules(tf):
     return modules
 
 docker_container = None
+docker_warning = None
 docker_container_file = os.path.expanduser("~/DOCKER_CONTAINER")
 if os.path.exists(docker_container_file):
     with open(docker_container_file) as f:
-        docker_container = f.read().strip()
+        docker_warning = """
+WARNING: if you are running in a Docker container: 
+  attach will only work if you started the container with a seamless-XXX-trusted command"""      
     
 def validate_light_mode(transformer):
     if transformer.language == "bash":
@@ -258,8 +262,8 @@ Reason: {}"""
             code_mount = get_code_mount(tf)
             hostcwd = os.environ.get("HOSTCWD")
             code_path = os.path.abspath(code_mount["path"])
-            if hostcwd is not None and not code_path.startswith("/cwd"):
-                msg = """HOSTCWD is defined, but code path {} does not start with /cwd
+            if hostcwd is not None and not code_path.startswith("/cwd") and not code_path.startswith("/tmp"):
+                msg = """HOSTCWD is defined, but code path {} does not start with /cwd or /tmp
 Seamless cannot do source mapping. 
 Only sandbox debug mode is possible."""
                 raise ValidationError(msg.format(code_mount["path"]))
@@ -373,11 +377,14 @@ If this value is None, the default stdout and stderr are used."""
                 host_project_dir = os.environ.get("HOST_PROJECT_DIR")
                 hostcwd = os.environ.get("HOSTCWD")
                 if hostcwd is not None: # source mapping is needed
-                    host_path = os.path.relpath(code_path, "/cwd")
-                    host_path = os.path.join(hostcwd, host_path)
+                    if code_path.startswith("/tmp"):
+                        host_path = code_path
+                    else:
+                        host_path = os.path.relpath(code_path, "/cwd")
+                        host_path = os.path.join(hostcwd, host_path)
+                        debug["source_map"] = [("/cwd", hostcwd)]
                     if host_project_dir is None:
                         host_project_dir = hostcwd
-                    debug["source_map"] = [("/cwd", hostcwd)]
                 else:
                     if host_project_dir is None:
                         host_project_dir = os.getcwd()
@@ -403,15 +410,20 @@ If this value is None, the default stdout and stderr are used."""
                         if mount_path is None:
                             mmsg += "NOT MOUNTED"
                         else:
-                            ok = True                            
+                            ok = True
                             if hostcwd is not None: # source mapping is needed
-                                if not mount_path.startswith("/cwd"):
-                                    mmmsg = "code path {} does not start with /cwd, Seamless cannot do source mapping"
+                                if not mount_path.startswith("/cwd") and not mount_path.startswith("/tmp"):
+                                    mmmsg = "code path {} does not start with /cwd or /tmp, Seamless cannot do source mapping"
                                     mmsg += mmmsg.format(mount_path)
                                     ok = False
                                 else:
-                                    host_mount_path = os.path.relpath(mount_path, "/cwd")
-                                    host_mount_path = os.path.join(hostcwd, host_mount_path)
+                                    if mount_path.startswith("/tmp"):
+                                        host_mount_path = mount_path
+                                    else:
+                                        host_mount_path = os.path.relpath(mount_path, "/cwd")
+                                        host_mount_path = os.path.join(hostcwd, host_mount_path)
+                            else:
+                                host_mount_path = mount_path
                             if ok:
                                 if module.multi:                        
                                     pass  # No special actions for multi-modules in light mode
@@ -425,7 +437,8 @@ If this value is None, the default stdout and stderr are used."""
                     ) + "\n\n"
                 msg += python_attach_messages[self._ide].format(
                     host_project_dir=host_project_dir,
-                    name=name
+                    name=name,
+                    docker_warning=docker_warning
                 )
                 if module_mounts:
                     debug["module_mounts"] = module_mounts
@@ -503,7 +516,7 @@ To create a directory where you can manually execute bash code, do Transformer.d
                     print("Debugger attach is {}".format("ON" if self._attach else "OFF"))
                     debug["direct_print"] = True            
             name = str(tf.path) + " Seamless transformer"
-            debug["name"] = name            
+            debug["name"] = name    
             host_project_dir = os.environ.get("HOST_PROJECT_DIR")
             hostcwd = os.environ.get("HOSTCWD")
             if hostcwd is not None:
@@ -513,7 +526,7 @@ To create a directory where you can manually execute bash code, do Transformer.d
                 if host_project_dir is None:
                     host_project_dir = os.getcwd()
 
-            if node["language"] == "python":                
+            if node["language"] == "python":
                 debug["python_attach"] = True
                 msg = python_attach_headers[mode, self._ide].format(
                     main_directory=self._mount.path,
@@ -521,7 +534,8 @@ To create a directory where you can manually execute bash code, do Transformer.d
                 ) + "\n"
                 msg += python_attach_messages[self._ide].format(
                     host_project_dir=host_project_dir,
-                    name=name
+                    name=name,
+                    docker_warning=docker_warning
                 )
                 debug["python_attach_message"] = msg
                 code_cell = getattr(self._mount.mount_ctx, "code")

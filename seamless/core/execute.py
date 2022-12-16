@@ -370,7 +370,7 @@ def execute(name, code,
                 print(msg)
             print("*" * 80) 
             if debugpy is None:
-                raise ModuleNotFoundError("No module named 'debugpy'")      
+                raise ModuleNotFoundError("No module named 'debugpy'")
             debugpy.listen(("0.0.0.0", port))  # listen for incoming DAP client connections
             debugpy.wait_for_client()  # wait for a client to connect
 
