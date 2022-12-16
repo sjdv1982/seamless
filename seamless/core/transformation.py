@@ -12,6 +12,7 @@ import atexit
 import json
 import orjson
 import logging
+from prompt_toolkit.patch_stdout import StdoutProxy
 
 logger = logging.getLogger("seamless")
 
@@ -620,8 +621,18 @@ class TransformationJob:
             if debug is not None:
                 kwargs["debug"] = debug
 
-            self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=True)
-            self.executor.start()
+            stdout_orig = sys.stdout
+            stderr_orig = sys.stderr            
+            try:
+                if isinstance(stdout_orig, StdoutProxy):
+                    sys.stdout = sys.__stdout__
+                if isinstance(stderr_orig, StdoutProxy):
+                    sys.stderr = sys.__stderr__
+                self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=True)
+                self.executor.start()
+            finally:
+                sys.stdout = stdout_orig
+                sys.stderr = stderr_orig
             running = True
             result = None
             done = False
