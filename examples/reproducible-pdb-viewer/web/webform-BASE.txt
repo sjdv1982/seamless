@@ -1,7 +1,7 @@
 {
   "cells": {
     "representation": {
-      "celltype": "text",
+      "celltype": "yaml",
       "component": "input",
       "params": {
         "maxlength": 1000,
@@ -49,7 +49,7 @@
       },
       "webdefault": ""
     },
-    "representation3": {
+    "representation2": {
       "celltype": "plain",
       "path": "nglviewer_1/representation.json",
       "share": {
@@ -83,7 +83,7 @@
     },
     {
       "cells": {
-        "representation": "representation3",
+        "representation": "representation2",
         "structures": "pdb_structure"
       },
       "component": "nglviewer",

@@ -41,9 +41,9 @@ seamless_read_paths = {
     "nglviewer_1__structures.json"
   ],
   "json": [
-    "bigselect_1__selected.json",
     "bigselect_1__options.json",
-    "nglviewer_1__representation.json"
+    "nglviewer_1__representation.json",
+    "bigselect_1__selected.json"
   ]
 }
 seamless_write_paths = {
@@ -56,16 +56,16 @@ seamless_write_paths = {
 }
 seamless_auto_read_paths = [
   "representation",
-  "bigselect_1__selected.json",
   "bigselect_1__options.json",
-  "nglviewer_1__structures.json",
-  "nglviewer_1__representation.json"
+  "nglviewer_1__representation.json",
+  "bigselect_1__selected.json",
+  "nglviewer_1__structures.json"
 ]
 seamless_path_to_cell = {
-  "bigselect_1__selected.json": "pdb_code",
   "bigselect_1__options.json": "pdb_codes",
-  "nglviewer_1__structures.json": "pdb_structure",
-  "nglviewer_1__representation.json": "representation3"
+  "nglviewer_1__representation.json": "representation3",
+  "bigselect_1__selected.json": "pdb_code",
+  "nglviewer_1__structures.json": "pdb_structure"
 }
 
 ctx = connect_seamless()
@@ -110,7 +110,7 @@ ctx.self.onsharelist = function (sharelist) {
 }
 webctx = connect_seamless(null, null, share_namespace="status")
 webctx.self.onsharelist = function (sharelist) {
-  vis_status = webctx["vis_status"]
+  vis_status = webctx["visual_status"]
   if (!(vis_status === undefined)) {
     vis_status.onchange = function() {      
       let jstatus = JSON.parse(vis_status.value)
@@ -157,21 +157,21 @@ const app = new Vue({
           "checksum": null,
           "value": ""
         },
-        "pdb_code": {
-          "checksum": null,
-          "value": ""
-        },
         "pdb_codes": {
           "checksum": null,
           "value": []
         },
-        "pdb_structure": {
-          "checksum": null,
-          "value": ""
-        },
         "representation3": {
           "checksum": null,
           "value": {}
+        },
+        "pdb_code": {
+          "checksum": null,
+          "value": ""
+        },
+        "pdb_structure": {
+          "checksum": null,
+          "value": ""
         },
         "bigselect_1_input": {
           "value": ""
