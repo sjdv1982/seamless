@@ -280,11 +280,14 @@ class CacheManager:
 
         rmap = {True: 2, None: 1, False: 0}
         remote, recompute= 2, 2 # True, True
+        is_deep = False
         has_cell = False
         for refholder, result in self.checksum_refs.get(checksum, set()):
             if isinstance(refholder, Cell):
                 cell = refholder
                 has_cell = True
+                if cell._hash_pattern:
+                    is_deep = True
                 c_remote = rmap[cell._fingertip_remote]
                 remote = min(remote, c_remote)
                 c_recompute = rmap[cell._fingertip_recompute]
@@ -309,7 +312,7 @@ class CacheManager:
                     return buffer
             except CacheMissError:
                 pass
-            buffer = get_buffer(checksum, remote=True, deep=True)
+            buffer = get_buffer(checksum, remote=True, deep=is_deep)
             if buffer is not None:
                 return buffer
 

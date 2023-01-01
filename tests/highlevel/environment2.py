@@ -127,6 +127,7 @@ except ValueError:
 
 # If we get here, then there is a working compiler
 #   all we need to do is fix the function signature
+print("OK")
 ctx.tf.code = """
 package main
 

@@ -128,7 +128,7 @@ async def value_conversion(checksum, source_celltype, target_celltype):
         return target_checksum
 
     if source_celltype == "checksum":
-        buffer = get_buffer(checksum, remote=True, deep=True)
+        buffer = get_buffer(checksum, remote=True, deep=False)
         if buffer is None:
             raise CacheMissError(checksum)
         checksum_text = await deserialize(buffer, "checksum", copy=False)

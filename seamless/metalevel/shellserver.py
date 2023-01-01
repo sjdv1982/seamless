@@ -205,12 +205,14 @@ def init_io_patched(self):
 
         sys.stdout = outstream_factory(self.session, self.iopub_thread,
                                         'stdout',
-                                        echo=e_stdout)
+                                        echo=e_stdout,
+                                        watchfd=False)
         if sys.stderr is not None:
             sys.stderr.flush()
         sys.stderr = outstream_factory(self.session, self.iopub_thread,
                                         'stderr',
-                                        echo=e_stderr)
+                                        echo=e_stderr,
+                                        watchfd=False)
 
     if self.displayhook_class:
         displayhook_factory = import_item(str(self.displayhook_class))
@@ -613,6 +615,7 @@ class ShellServer:
         from ..core.cache.transformation_cache import transformation_cache
         from ..core.transformation import build_transformation_namespace
         from ..core.build_module import build_all_modules
+        from ..core.execute import fast_unpack
         from ..compiler import compilers as default_compilers, languages as default_languages
         if name not in self._shellhubs:
             raise KeyError(name)
@@ -622,7 +625,12 @@ class ShellServer:
             semantic_cache,
             name
         )
-        code, namespace, modules_to_build = tf_ns
+        code, namespace, modules_to_build, deep_structures_to_unpack = tf_ns
+        for pinname, value in deep_structures_to_unpack.items():
+            deep_structure, hash_pattern = value 
+            unpacked_value = fast_unpack(deep_structure, hash_pattern)
+            namespace[pinname] = unpacked_value
+            namespace["PINS"][pinname] = unpacked_value
         namespace["code"] = code
         compilers = transformation.get("__compilers__", default_compilers)
         languages = transformation.get("__languages__", default_languages)            

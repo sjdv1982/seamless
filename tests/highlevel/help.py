@@ -3,6 +3,7 @@ from seamless.highlevel import Context, Cell, Transformer
 import inspect
 def hhelp(obj):
     # Similar to doing obj? in IPython
+    # Standard Python help() does not work with Python 3.8. Fixed in Python 3.9
     print("*" * 80)
     print(inspect.getdoc(obj))
     print("*" * 80)

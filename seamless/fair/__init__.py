@@ -82,11 +82,11 @@ def find(checksum:str):
             continue
     raise ConnectionError("Cannot contact any FAIR server")
 
-def deepbuffer(checksum:str):
-    return _download(checksum, "machine/deepbuffer/", checksum_content=True)
+def deepbuffer(checksum:str, verbose:bool=False):
+    return _download(checksum, "machine/deepbuffer/", checksum_content=True, verbose=verbose)
 
-def keyorder(checksum:str):
-    return _download(checksum, "machine/keyorder/", checksum_content=False)
+def keyorder(checksum:str, verbose:bool=False):
+    return _download(checksum, "machine/keyorder/", checksum_content=False, verbose=verbose)
 
 def access(checksum:str, celltype:str, *, verbose:bool=False):
     url_infos_buf = _download(checksum, "machine/access/", checksum_content=False, verbose=verbose)
@@ -99,7 +99,7 @@ def get_buffer(checksum:str, deep=False):
     if checksum is None:
         return None
     if isinstance(checksum, bytes):
-        checksum = checksum.hex()    
+        checksum = checksum.hex()
     if len(checksum) != 64:
         raise ValueError(checksum)
     try:

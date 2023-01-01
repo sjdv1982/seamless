@@ -2,7 +2,7 @@
 rm -rf webinterface-files
 mkdir webinterface-files
 cd webinterface-files
-python3 /seamless/scripts/new-project.py testproject
+python3 ~/seamless-scripts/new-project.py testproject
 IPY='ipython3'  # change to 'ipython3 -i' for interactive test
 $IPY -c '%run -i load-project.py
 await load()

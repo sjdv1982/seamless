@@ -6,26 +6,24 @@ Creating hard links in /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2
 Run 1
 Sending build context to Docker daemon  2.048kB
 Step 1/2 : FROM ubuntu:latest
- ---> 597ce1600cf4
+ ---> a8780b506fa4
 Step 2/2 : RUN apt update && apt -y install openssl
  ---> Using cache
- ---> af9a51067f40
-Successfully built af9a51067f40
+ ---> d7e48b3d5595
+Successfully built d7e48b3d5595
 Successfully tagged openssl:latest
 Database not found
-ERROR in incref'ing deep buffer '11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047'
+Waiting for: Seamless structured cell: .deepfolder.blackwhitelist Seamless Python cell: .deepfolder.cell1 Seamless plain cell: .deepfolder.keyorder_integrated
 None
 seamless.core.cache.CacheMissError: 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 
 None
 
-ERROR in incref'ing deep buffer '11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047'
 *tf*: Status: upstream => deepfolderpin undefined
 None
 None
 
 Stage 2
-ERROR in incref'ing deep buffer '11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047'
 {'deepfolderpin': {'celltype': 'deepfolder'}, 'folder_sub_pin': {'celltype': 'deepfolder'}}
 *tf*: Status: upstream => deepfolderpin undefined, folder_sub_pin undefined
 None
@@ -36,7 +34,7 @@ None None
 ['sub/test2.txt', 'sub/test3.npy']
 
 Stage 3
-ERROR in incref'ing deep buffer '11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047'
+None
 None
 None
 {'deepfolderpin': {'celltype': 'deepfolder'}, 'folder_sub_pin': {'celltype': 'folder'}}
@@ -45,24 +43,20 @@ None
 None
 
 Stage 4
-ERROR in incref'ing deep buffer '11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047'
 None
 None
 *tf*: Status: upstream => deepfolderpin undefined, folder_sub_pin undefined
 None
 None
 Stage 4a
-ERROR in incref'ing deep buffer '11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047'
 *tf*: Status: upstream => deepfolderpin undefined, folder_sub_pin undefined
 None
 None
 Stage 5
-ERROR in incref'ing deep buffer '11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047'
 *tf*: Status: upstream => deepfolderpin undefined, folder_sub_pin undefined
 None
 None
 Stage 5a
-ERROR in incref'ing deep buffer '11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047'
 *tf*: Status: upstream => deepfolderpin undefined, folder_sub_pin undefined
 None
 None
@@ -73,11 +67,11 @@ Start database
 Run 2
 Sending build context to Docker daemon  2.048kB
 Step 1/2 : FROM ubuntu:latest
- ---> 597ce1600cf4
+ ---> a8780b506fa4
 Step 2/2 : RUN apt update && apt -y install openssl
  ---> Using cache
- ---> af9a51067f40
-Successfully built af9a51067f40
+ ---> d7e48b3d5595
+Successfully built d7e48b3d5595
 Successfully tagged openssl:latest
 Database found
 {'sub/test2.txt': '4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4', 'sub/test3.npy': 'ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862', 'test.dat': '7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea', 'test.json': '6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22', 'test.npy': 'cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3', 'test.txt': 'c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c', 'test2.dat': 'c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c'}
@@ -100,6 +94,8 @@ deepfolderpin
 
 
 *************************************************
+Execution time: 0.0 seconds
+*************************************************
 
 Stage 2
 {'deepfolderpin': {'celltype': 'deepfolder'}, 'folder_sub_pin': {'celltype': 'deepfolder'}}
@@ -113,6 +109,7 @@ folder_sub_pin: could not find file/directory for 0bc1f7e12a942d58124b0247ab307b
 
 Stage 3
 dict_keys(['sub/test2.txt', 'sub/test3.npy'])
+{'sub/test2.txt': 'And another\ntest\n', 'sub/test3.npy': array([10, 11, 12, 13, 14, 15, 16, 17, 18, 19])}
 0bc1f7e12a942d58124b0247ab307b4514e9ab583312c29e7c47413e831ee3d8
 {'deepfolderpin': {'celltype': 'deepfolder'}, 'folder_sub_pin': {'celltype': 'folder'}}
 Status: OK
@@ -131,12 +128,15 @@ deepfolderpin
 
 folder_sub_pin
 {'mode': 'directory', 'optional': True, 'filesystem': False}
-{'sub/test2.txt': 'And another\ntest\n', 'sub/test3.npy': array([10, 11, 12, 13, 14, 15, 16, 17, 18, 19])}
+{'sub/test2.txt': b'And another\ntest\n', 'sub/test3.npy': b"\x93NUMPY\x01\x00v\x00{'descr': '<i8', 'fortran_order': False, 'shape': (10,), }                                                           \n\n\x00\x00\x00\x00\x00\x00\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x0c\x00\x00\x00\x00\x00\x00\x00\r\x00\x00\x00\x00\x00\x00\x00\x0e\x00\x00\x00\x00\x00\x00\x00\x0f\x00\x00\x00\x00\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00\x00\x11\x00\x00\x00\x00\x00\x00\x00\x12\x00\x00\x00\x00\x00\x00\x00\x13\x00\x00\x00\x00\x00\x00\x00"}
 
 
 *************************************************
+Execution time: 0.0 seconds
+*************************************************
 
 Stage 4
+Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
 dict_keys(['sub/test2.txt', 'sub/test3.npy'])
 0bc1f7e12a942d58124b0247ab307b4514e9ab583312c29e7c47413e831ee3d8
 Status: OK
@@ -156,26 +156,29 @@ DEEPFOLDERPIN /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f
 FOLDER_SUB_PIN folder_sub_pin
 deepfolderpin/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
 deepfolderpin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
+deepfolderpin/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 deepfolderpin/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
 deepfolderpin/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
 deepfolderpin/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
 deepfolderpin/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
-deepfolderpin/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 
 folder_sub_pin/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
 folder_sub_pin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
 
 /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
 /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
+/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
 /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
 /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
 /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 
 
 *************************************************
+Execution time: 0.1 seconds
+*************************************************
 Stage 4a
+Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
 Status: OK
 None
 *************************************************
@@ -195,26 +198,29 @@ DEEPFOLDERPIN /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f
 FOLDER_SUB_PIN folder_sub_pin
 deepfolderpin/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
 deepfolderpin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
+deepfolderpin/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 deepfolderpin/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
 deepfolderpin/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
 deepfolderpin/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
 deepfolderpin/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
-deepfolderpin/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 
 folder_sub_pin/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
 folder_sub_pin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
 
 /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
 /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
+/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
 /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
 /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
 /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 
 
 *************************************************
+Execution time: 0.1 seconds
+*************************************************
 Stage 5
+Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
 Status: OK
 None
 *************************************************
@@ -238,7 +244,10 @@ folder_sub_pin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86b
 
 
 *************************************************
+Execution time: 0.5 seconds
+*************************************************
 Stage 5a
+Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
 Status: OK
 None
 *************************************************
@@ -263,6 +272,8 @@ folder_sub_pin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86b
 
 
 
+*************************************************
+Execution time: 0.6 seconds
 *************************************************
 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 

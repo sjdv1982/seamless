@@ -336,6 +336,7 @@ class DebugMount:
             upstreams = livegraph.transformer_to_upstream[transformer]
             
             for pinname, accessor in upstreams.items():
+                old_mod_cs = None
                 if pinname in self.skip_pins:
                     continue
                 if pinname in self.modules:
@@ -365,7 +366,7 @@ class DebugMount:
                     if old_mod_cs is not None:
                         buffer_cache.decref(old_mod_cs)
                     if mod_cs is not None:
-                        buffer_cache.incref(mod_cs)
+                        buffer_cache.incref(mod_cs, True)
                     self.modules[pinname] = mod_type, mod_lang, mod_rest, mod_cs
                     if mod_code is not None:
                         c = getattr(self.mount_ctx, pinname)

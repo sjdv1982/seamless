@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.7",
+  "__seamless__": "0.8",
   "connections": [
     {
       "source": [
@@ -65,13 +65,12 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "6f50cd3864e495284ac230b9ee999636cb8cd3c526ed3662d1137d10119d3791"
+        "value": "e91beb1380ed4297fa898748425a39290312421f0666497b377413d782e9e663"
       },
       "file_extension": "sh",
       "language": "bash",
       "mimetype": "application/x-sh",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "/tmp/code.bash",
@@ -96,7 +95,6 @@
       "language": "bash",
       "mimetype": "application/x-sh",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "/tmp/filter_code.bash",
@@ -140,7 +138,9 @@
         "filter_pdb"
       ],
       "pins": {
-        "pdb0": {}
+        "pdb0": {
+          "celltype": "default"
+        }
       },
       "type": "transformer"
     },
@@ -164,7 +164,7 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "6f50cd3864e495284ac230b9ee999636cb8cd3c526ed3662d1137d10119d3791",
+        "code": "e91beb1380ed4297fa898748425a39290312421f0666497b377413d782e9e663",
         "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "input_buffer": "899c31da5ee1a0e7094df98b6cc47d3baa70df02b9711a3fd3ce27515e9c5ef3",
         "result": null,
@@ -186,7 +186,9 @@
         "fix_pdb"
       ],
       "pins": {
-        "filtered_pdb": {}
+        "filtered_pdb": {
+          "celltype": "default"
+        }
       },
       "type": "transformer"
     },
@@ -198,7 +200,6 @@
       "datatype": "mixed",
       "mimetype": "text/html",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "share-pdb.html",
@@ -216,7 +217,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "886c745003101649af2d4061e1fde45bc9104761fe46ce1a5c43e0a458434d71"
+        "value": "3db1ab53b139b852acfb0e90029e0418858e3edd45c0ac1aafe7bd098f49a03a"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
@@ -232,7 +233,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "1df240195c402a07197389036df6e84805d049455514727f917d144036793908"
+        "value": "0abdae680fce2bd5d018783f68199e742a41e14032f75c26eb67df60048a91f1"
       },
       "datatype": "mixed",
       "path": [
@@ -267,7 +268,6 @@
       "datatype": "mixed",
       "mimetype": "text/javascript",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "pdb-representation.js",
@@ -290,7 +290,6 @@
       "datatype": "mixed",
       "mimetype": "text/javascript",
       "mount": {
-        "as_directory": false,
         "authority": "file",
         "mode": "rw",
         "path": "vismol.js",

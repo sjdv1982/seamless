@@ -12,7 +12,10 @@ import atexit
 import json
 import orjson
 import logging
-from prompt_toolkit.patch_stdout import StdoutProxy
+try:
+    from prompt_toolkit.patch_stdout import StdoutProxy
+except ImportError:
+    StdoutProxy = None
 
 logger = logging.getLogger("seamless")
 
@@ -624,10 +627,11 @@ class TransformationJob:
             stdout_orig = sys.stdout
             stderr_orig = sys.stderr            
             try:
-                if isinstance(stdout_orig, StdoutProxy):
-                    sys.stdout = sys.__stdout__
-                if isinstance(stderr_orig, StdoutProxy):
-                    sys.stderr = sys.__stderr__
+                if StdoutProxy is not None:
+                    if isinstance(stdout_orig, StdoutProxy):
+                        sys.stdout = sys.__stdout__
+                    if isinstance(stderr_orig, StdoutProxy):
+                        sys.stderr = sys.__stderr__
                 self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=True)
                 self.executor.start()
             finally:

@@ -45,7 +45,7 @@ If not, make sure that {host_project_dir} is the primary directory of your VSCod
 If it isn't, please define the HOST_PROJECT_DIR environment variable.
 
 Transformer execution will now be halted until a SIGUSR1 signal is received.
-Debugging is done in VSCore as follows:
+Debugging is done in VSCode as follows:
 
 - Press Ctrl+Shift+D, select the "{name}" debug entry and press F5.
 - Press F6, then press Esc to ignore the "Cannot find select.c" error message
@@ -148,6 +148,7 @@ docker_warning = None
 docker_container_file = os.path.expanduser("~/DOCKER_CONTAINER")
 if os.path.exists(docker_container_file):
     with open(docker_container_file) as f:
+        docker_container = f.read().strip()
         docker_warning = """
 WARNING: if you are running in a Docker container: 
   attach will only work if you started the container with a seamless-XXX-trusted command"""      

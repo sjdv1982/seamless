@@ -74,6 +74,7 @@ ctx.tf.folder_sub_pin = ctx.folder_sub
 ctx.compute()
 v = ctx.folder_sub.value.unsilk
 print(v.keys() if v is not None else None)
+print(v)
 print(ctx.folder_sub.checksum)
 print(ctx.tf._get_htf()["pins"])
 print(ctx.tf.status)

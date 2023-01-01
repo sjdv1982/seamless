@@ -83,6 +83,7 @@ special-methods.py
 cascade.py
 environment0.py
 mount-write.py
+foldercell-transformer.py
 transformer-compiled.py
 transformer-redefine.py
 transformer-compiled-error.py
@@ -118,7 +119,8 @@ webinterface.sh: open with bash inside the Seamless Docker container.
 deepcell-pdb.py: requires a FAIR server that knows the PDB dataset
                  Can also be run interactively, change ctx.pdb_code 
                   and observe /tmp/pdb_structure.mmcif
-deepfolder-pdb.py: See above . Also, /tmp/pdb_folder will contain 1brs.cif, 1wej.cif and 7cei.cif.
+deepfolder-pdb.py: See above . change ctx.pdb_code to "1wej.cif", "1brs.cif" or "7cei.cif" 
+                Also, /tmp/pdb_folder will contain 1brs.cif, 1wej.cif and 7cei.cif.
 high-in-low.py
 high-in-low2.py
 high-in-low3.py
@@ -142,7 +144,7 @@ map-speed-test2.py: long test, calculates the speed of stdlib.map_dict_chunk
 Non-automatic tests
 =========================
 share-binary-and-unicode.py
-    Run with ipython
+    Run with ipython -i
     Open http://localhost:5813/ctx/cow.jpg and http://localhost:5813/ctx/unicode.txt in a browser
     In a terminal, run seamless-http-put http://localhost:5813/ctx/cow.jpg --upload-file cow-rotate.jpg --binary
     The cow should be upside down
@@ -164,13 +166,14 @@ traitlets.ipynb: same as above
 share-subcontext.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/sub/b
 share-pdb.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/index.html
 share-pdb-docker.seamless/.zip: to test using:
-      seamless-serve-graph share-pdb-docker.seamless share-pdb-docker.zip
+      seamless-serve-graph-trusted share-pdb-docker.seamless share-pdb-docker.zip
     Open in http://localhost:5813/ctx/index.html
     Potentially, add:
       --status-graph /seamless/seamless/graphs/status-visualization.seamless \
       --add-zip /seamless/seamless/graphs/status-visualization.zip
     In that case, open also http://localhost:5813/status/index.html
-parse-pdb.py: will fail unless parse-pdb-environment.yml is installed
+parse-pdb.py: requires seamless database.
+              will fail unless parse-pdb-environment.yml is installed
               can be done when running the test, or afterwards using:
                cs=...  # parse from initial output
                seamless-conda-env-export SOMEDIR
@@ -182,17 +185,19 @@ environment.py
     and will exit at some point because Rust is not installed
     (see test-outputs/environment.out)
   Otherwise, install Rust in the container and then run the test.
+  (Rust can be installed with "mamba install rust")
   This will print 29, 34, 34 at the end (see code)
 environment2.py
    Can be run automatically in a standard container  (with python),
     and will exit at some point because Go is not installed
     (see test-outputs/environment2.out)
   Otherwise, install Go in the container and then run the test.
-  This will print 2029, 2096 at the end, and then wait for a debugger 
+  (Go can be installed with "mamba install go-cgo")
+  This will print "OK", 2029, 2096 at the end, and then wait for a debugger 
   (not implemented for Go yet)
 environment4.py
   This will fail. 
-  Install net-tools with apt and 'sympy==1.7.*' with conda to make it succeed.
+  Install net-tools with apt and 'sympy==1.7.*' with conda/mamba to make it succeed.
 environment5.py
   Loads and runs the graph for environment3 and then environment4.
   Should succeed for the former (result: 11.40)
