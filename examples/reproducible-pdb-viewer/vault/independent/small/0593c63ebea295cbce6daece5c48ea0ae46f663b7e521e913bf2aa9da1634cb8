@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="UTF-8">
+    <title>Seamless graph status visualization</title>
+    <link rel="stylesheet" href="status-visualization.css" type="text/css"></link>
+</head>
+<body>
+    <h3>Error message:<pre><div id="error_message">None</div></pre></h3>
+    <svg width="1800" height="1000" id="graph"></svg>      
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>    
+    <script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+    <script type="text/javascript" src="seamless-client.js"></script>
+    <script type="text/javascript" src="status-visualization.js"></script>
+
+</body>

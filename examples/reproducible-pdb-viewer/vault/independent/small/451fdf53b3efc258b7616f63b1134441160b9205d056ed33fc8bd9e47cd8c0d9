@@ -1,0 +1,30 @@
+            <section>
+                <b-collapse class="card" animation="slide" aria-id="{{ID1}}">
+                    <div
+                        slot="trigger"
+                        slot-scope="props"
+                        class="card-header"
+                        role="button"
+                        aria-controls="{{ID1}}">
+                        <p class="card-header-title">
+                            {{title}}
+                        </p>
+                        <a class="card-header-icon">
+                            <b-icon
+                                :icon="props.open ? 'menu-down' : 'menu-up'">
+                            </b-icon>
+                        </a>
+                    </div>
+                    <div class="card-content">
+                        <div class="content">
+                            <b-field grouped>
+                                <b-input :value="{{CELL}}.value" v-model.number="{{CELL}}.value" type="number"></b-input>
+                            </b-field>
+                            <b-field>
+                                <b-slider :value="{{CELL}}.value" v-model="{{CELL}}.value" :min="{{min}}" :max="{{max}}" lazy></b-slider>
+                            </b-field>
+                        </div>
+                    </div>
+                </b-collapse>
+
+            </section>

@@ -1,0 +1,35 @@
+def macro_code(ctx, fallback_mode, code_start, code_update):
+    reactor_params = {
+        "fallback_mode": {"io": "input", "celltype": "str"},
+        "upstream": {"io": "input", "celltype": "text"},
+        "merged":  {"io": "output", "celltype": "text"},
+        "state": {"io": "output", "celltype": "str"},
+    }
+    for k in "upstream_stage", "base", "modified", "conflict":
+        reactor_params[k] = {
+            "io": "edit",
+            "celltype": "text",
+            "must_be_defined": False,
+        }
+
+    merge = ctx.merge = reactor(reactor_params)
+    ctx.fallback_mode = cell("str").set(fallback_mode)
+    ctx.fallback_mode.connect(merge.fallback_mode)
+    ctx.upstream = cell("text")
+    ctx.upstream.connect(merge.upstream)
+    ctx.upstream_stage = cell("text")
+    ctx.upstream_stage.connect(merge.upstream_stage)
+    ctx.base = cell("text")
+    ctx.base.connect(merge.base)
+    ctx.modified = cell("text")
+    ctx.modified.connect(merge.modified)
+    ctx.conflict = cell("text")
+    ctx.conflict.connect(merge.conflict)
+    ctx.merged = cell("text")
+    merge.merged.connect(ctx.merged)
+    ctx.state = cell("str")
+    merge.state.connect(ctx.state)
+
+    merge.code_start.cell().set(code_start)
+    merge.code_update.cell().set(code_update)
+    merge.code_stop.cell().set("")

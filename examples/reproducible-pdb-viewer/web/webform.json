@@ -37,7 +37,7 @@
         "encoding": "json",
         "read": true
       },
-      "webdefault": {}
+      "webdefault": []
     },
     "pdb_structure": {
       "celltype": "text",
@@ -99,6 +99,11 @@
   "index": {
     "title": "Seamless webform"
   },
+  "order": [
+    "bigselect_1",
+    "nglviewer_1",
+    "representation"
+  ],
   "transformers": {
     "get_codes": {
       "component": "transformer-status",

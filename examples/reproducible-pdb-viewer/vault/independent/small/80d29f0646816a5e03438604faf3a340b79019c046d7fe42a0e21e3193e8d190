@@ -1,0 +1,16 @@
+Data table (Vuetify) to visualize a plain cell.
+
+The visualized cell must contain a dict with the following keys:
+
+"headers": a description of the data columns, as a list-of-dicts.
+See https://vuetifyjs.com/en/api/v-data-table/#headers
+ for a description of an individual dict (DataTableHeader)
+Example: [{"value": "a", "text": "Field A"}, {"value": "b", "text": "Field B"}]
+
+"items": the data to display, as a list-of-dicts.
+Each dict must contain a key corresponding to "value"
+ in one of the header dicts.
+Example: [{"a": 1, "b": "one"}, {"a": 2, "b": "two"}]
+
+Parameters:
+- title (string).

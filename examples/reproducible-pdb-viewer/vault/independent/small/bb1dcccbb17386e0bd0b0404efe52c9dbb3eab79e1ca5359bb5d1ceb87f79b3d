@@ -1,0 +1,3 @@
+            <b-field label="{{title}}">
+                <iframe src="../ctx/{{CELL}}" width=100% height={{height}} :key="'{{ID1}}' + {{CELL}}.checksum"></iframe>
+            </b-field>

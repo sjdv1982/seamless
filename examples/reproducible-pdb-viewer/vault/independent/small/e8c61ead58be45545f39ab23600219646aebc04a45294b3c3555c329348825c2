@@ -1,0 +1,58 @@
+                <section>
+                <p class="card-header-title"></p>
+                {{title}}
+                </p>
+                <div id="{{ID}}" style="width:{{viewer_width}}; height:{{viewer_height}};"></div>
+                </section>
+                <!--
+                <section>
+
+                <b-collapse class="card" animation="slide" aria-id="{{ID1}}">
+                    <div
+                        slot="trigger"
+                        slot-scope="props"
+                        class="card-header"
+                        role="button"
+                        aria-controls="{{ID1}}">
+                        <p class="card-header-title">
+                            Representation
+                        </p>
+                        <a class="card-header-icon">
+                            <b-icon
+                                :icon="props.open ? 'menu-down' : 'menu-up'">
+                            </b-icon>
+                        </a>
+                    </div>
+                    <div class="card-content">
+                        <div class="content" style="overflow: auto; height: 401px;">
+                            <pre>{{ '{{' }} {{CELLS.representation}}.value {{ '}}' }}</pre>
+                        </div>
+                    </div>
+                </b-collapse>
+                
+            </section>
+            <section v-for="(value, mol) in {{CELLS.structures}}.value">
+                <b-collapse class="card" animation="slide" aria-id="{{ID2}}">
+                    <div
+                        slot="trigger"
+                        slot-scope="props"
+                        class="card-header"
+                        role="button"
+                        aria-controls="{{ID1}}">
+                        <p class="card-header-title">
+                            {{ '{{ mol }}' }}
+                        </p>
+                        <a class="card-header-icon">
+                            <b-icon
+                                :icon="props.open ? 'menu-down' : 'menu-up'">
+                            </b-icon>
+                        </a>
+                    </div>
+                    <div class="card-content">
+                        <div class="content" style="overflow: auto; height: 400px;">
+                            <pre>{{ '{{ value }}' }}</pre>
+                        </div>
+                    </div>
+                </b-collapse>
+            </section>
+            -->

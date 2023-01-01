@@ -1,0 +1,35 @@
+# Seamless vault files and backups
+
+# 1. Independent, big buffers. Uncomment the following line to remove them from version control
+### vault/independent/big/*
+
+# 2. Dependent, big buffers. Comment out the following line to put them under version control
+vault/dependent/big/*
+
+# 3. Dependent, small buffers. Comment out the following line to put them under version control
+vault/dependent/small/*
+
+# 4. Backups of the Seamless graph. Comment out the following line to put them under version control
+graph/*.seamless.bak*
+
+# In all cases, at least keep an empty directory for the vaults
+!vault/*/*/.gitkeep
+
+
+# Seamless vault files and backups
+
+# 1. Independent, big buffers. Uncomment the following line to remove them from version control
+### vault/independent/big/*
+
+# 2. Dependent, big buffers. Comment out the following line to put them under version control
+vault/dependent/big/*
+
+# 3. Dependent, small buffers. Comment out the following line to put them under version control
+vault/dependent/small/*
+
+# 4. Backups of the Seamless graph. Comment out the following line to put them under version control
+graph/*.seamless.bak*
+
+# In all cases, at least keep an empty directory for the vaults
+!vault/*/*/.gitkeep
+

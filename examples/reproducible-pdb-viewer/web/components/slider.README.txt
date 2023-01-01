@@ -1,0 +1,6 @@
+Slider for integers and floats
+
+Parameters:
+- title (string).
+- min (float). Minimum value.
+- max (float). Maximum value.

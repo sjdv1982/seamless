@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Seamless webform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
+    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900'>
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css'>
+    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Material+Icons'>
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/vuetify@2.3.20/dist/vuetify.min.css'>
+    <link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.0.6/css/all.css'>
+    
+</head>
+
+<body>
+    <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"></script>
+    <div id="app">
+        <v-app id="vuetify-app">
+<section>
+    <p class="content"><b>Selected:</b> {{ pdb_code.value }}</p>
+    <b-field label="Selector">
+        <b-autocomplete
+            rounded
+            keep-first
+            v-model="bigselect_1_input.value"
+            :data="bigselect_1_input.value ? pdb_codes.value.filter(option => option.toString().toLowerCase().indexOf(bigselect_1_input.value.toString().toLowerCase()) == 0) : []"
+            placeholder="Select an item"
+            icon="magnify"
+            clearable
+            @select="option => {if (option) { pdb_code.value = option; bigselect_1_input.value = option } }">
+            <template #empty>No results found</template>
+        </b-autocomplete>
+    </b-field>
+</section>
+                <section>
+                <p class="card-header-title"></p>
+                NGL viewer
+                </p>
+                <div id="nglviewer_1" style="width:100%; height:500px;"></div>
+                </section>
+                <!--
+                <section>
+
+                <b-collapse class="card" animation="slide" aria-id="">
+                    <div
+                        slot="trigger"
+                        slot-scope="props"
+                        class="card-header"
+                        role="button"
+                        aria-controls="">
+                        <p class="card-header-title">
+                            Representation
+                        </p>
+                        <a class="card-header-icon">
+                            <b-icon
+                                :icon="props.open ? 'menu-down' : 'menu-up'">
+                            </b-icon>
+                        </a>
+                    </div>
+                    <div class="card-content">
+                        <div class="content" style="overflow: auto; height: 401px;">
+                            <pre>{{ representation3.value }}</pre>
+                        </div>
+                    </div>
+                </b-collapse>
+                
+            </section>
+            <section v-for="(value, mol) in pdb_structure.value">
+                <b-collapse class="card" animation="slide" aria-id="">
+                    <div
+                        slot="trigger"
+                        slot-scope="props"
+                        class="card-header"
+                        role="button"
+                        aria-controls="">
+                        <p class="card-header-title">
+                            {{ mol }}
+                        </p>
+                        <a class="card-header-icon">
+                            <b-icon
+                                :icon="props.open ? 'menu-down' : 'menu-up'">
+                            </b-icon>
+                        </a>
+                    </div>
+                    <div class="card-content">
+                        <div class="content" style="overflow: auto; height: 400px;">
+                            <pre>{{ value }}</pre>
+                        </div>
+                    </div>
+                </b-collapse>
+            </section>
+            -->
+            <b-field label="Cell Representation">
+                <b-input
+                    lazy
+                    type="textarea"
+                    maxlength="1000"
+                    v-bind:value="representation.value"
+                    v-model="representation.value"
+                    :editable="false"
+                />
+            </b-field>
+        <section v-if="STATUS.value.transformers">
+            <b-field label="Transformer get_codes">>                 
+            <b-icon
+                v-if="STATUS.value.transformers.get_codes.color == 'royalblue'"
+                pack="fa"
+                icon="circle"
+                size="is-large"
+                type="is-info">
+            </b-icon>
+            <b-icon
+                v-if="STATUS.value.transformers.get_codes.color == 'forestgreen'"
+                pack="fas"
+                icon="sync-alt"
+                size="is-large"
+                custom-class="fa-spin"
+                type="is-success">
+            </b-icon>
+            <b-icon
+                v-if="STATUS.value.transformers.get_codes.color == 'yellow'"
+                pack="fa"
+                icon="sync-alt"
+                size="is-large"
+                custom-class="fa-spin"
+                type="is-warning">
+            </b-icon>
+            <b-icon
+                v-if="STATUS.value.transformers.get_codes.color == 'orange'"
+                pack="fa"
+                icon="circle"
+                size="is-large"
+                type="is-danger">
+            </b-icon>
+            <b-icon
+                v-if="STATUS.value.transformers.get_codes.color == 'red'"
+                pack="fa"
+                icon="circle"
+                size="is-large"
+                type="is-danger">
+            </b-icon>
+            </b-field>
+            <b-collapse class="card" :open="false" animation="slide" aria-id="id-9559">
+                <div
+                    v-if="STATUS.value.transformers.get_codes.status"
+                    slot="trigger"
+                    slot-scope="props"
+                    class="card-header"
+                    role="button"
+                    aria-controls="id-9559">
+                    <p class="card-header-title">
+                        Error message
+                    </p>
+                    <a class="card-header-icon">
+                        <b-icon
+                            :icon="props.open ? 'menu-down' : 'menu-up'">
+                        </b-icon>
+                    </a>
+                </div>
+                <div class="card-content" v-if="STATUS.value.transformers.get_codes.status">
+                    <div class="content" style="overflow: auto; height: 400px;">
+                        <pre>{{ STATUS.value.transformers.get_codes.status }}</pre>
+                    </div>
+                </div>
+            </b-collapse>
+
+        </section>
+
+        </v-app>
+    </div>
+
+    <script src='https://cdn.jsdelivr.net/npm/babel-polyfill/dist/polyfill.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/vuetify@2.3.20/dist/vuetify.min.js'></script>
+    <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
+    <script type="text/javascript" src="./seamless-client.js"></script>
+    <script type="text/javascript" src="./index.js"></script>
+</body>
+</html>

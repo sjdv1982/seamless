@@ -1,9 +1,9 @@
 """
 TODO: 
 - Finalize web form params (ngl viewer dimension)
-- Commit webgen changes and regenerate
 - Deepcell keys: rip get_keys, use ctx.pdb.keyorder to set cell
-
+- Port to Jupyter notebook
+- Rebase with new load-project, also for webserver-example
 """
 PROJNAME = "reproducible-pdb-viewer"
 
@@ -74,13 +74,11 @@ async def define_graph(ctx):
         selected=ctx.pdb_code,
         output=ctx.pdb_structure,
     )
-    ctx.representation = Cell("text").share(readonly=False)
+    ctx.representation = Cell("yaml").share(readonly=False)
     ctx.representation.mount("representation.yaml")
-    ctx.representation2 = Cell("yaml")
+    ctx.representation2 = Cell("plain")
     ctx.representation2 = ctx.representation
-    ctx.representation3 = Cell("plain")
-    ctx.representation3 = ctx.representation2
-    webunits.nglviewer(ctx, ctx.pdb_structure, ctx.representation3, format="cif")
+    webunits.nglviewer(ctx, ctx.pdb_structure, ctx.representation2, format="cif")
     await ctx.translation()
 
 def load_database():

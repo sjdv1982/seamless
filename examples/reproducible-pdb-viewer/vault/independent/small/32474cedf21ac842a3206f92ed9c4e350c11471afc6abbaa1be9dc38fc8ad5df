@@ -1,0 +1,5 @@
+Number input for integers.
+
+Parameters:
+- title (string).
+- editable (bool). If true, the number input is editable

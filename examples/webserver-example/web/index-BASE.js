@@ -100,7 +100,7 @@ webctx.self.onsharelist = function (sharelist) {
 function seamless_update(path, value, encoding) {
   if (!ctx) return
   if (!ctx.self.sharelist) return
-  if (ctx.self.sharelist.indexOf(path) < 0) return
+  if (ctx.self.sharelist.indexOf(path.replaceAll("__", "/")) < 0) return
   if (ctx[path].binary) {
     ctx[path].set(value)
   }

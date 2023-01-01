@@ -1,37 +1,72 @@
 app_globals = {}
 
-app_globals.createObjectURL = URL.createObjectURL
+ngl_stages = {}
+
+function load_ngl(stage_id, pdbs, representations, format){
+    if (Object.keys(pdbs).length === 0) return;
+
+    var stage = ngl_stages[stage_id]
+    if (typeof stage === 'null' || typeof stage === 'undefined'){
+        var stage = new NGL.Stage(stage_id)
+        ngl_stages[stage_id] = stage
+    }
+    stage.removeAllComponents()
+    var pdbs2 = pdbs
+    if (typeof pdbs === "string") {
+        var pdbs2 = {"DEFAULT": pdbs}
+    }
+    Object.keys(pdbs2).forEach(function(item){
+        let pdb = new Blob([pdbs2[item]], {type : 'text/plain'})
+        let ext = item.slice((item.lastIndexOf(".") - 1 >>> 0) + 2);
+        if (ext == "") ext = format;
+        stage.loadFile(pdb, { ext: ext } ).then(function (o) {            
+            let curr_representations = representations[item]
+            if (curr_representations === null || curr_representations === undefined) curr_representations = representations["DEFAULT"]
+            if (curr_representations === null || curr_representations === undefined) return
+            if (!Array.isArray(curr_representations)) curr_representations = [curr_representations]
+            Object.keys(curr_representations).forEach(function(repnr){
+                let rep = curr_representations[repnr]
+                o.addRepresentation(rep["type"], {...rep["params"]})
+            })
+            o.autoView();
+        })        
+    })
+}
 
 
 
 seamless_read_paths = {
   "text": [
-    "png"
+    "representation",
+    "nglviewer_1__structures.json"
   ],
   "json": [
-    "limit",
-    "markerline",
-    "mirror",
-    "period"
+    "bigselect_1__selected.json",
+    "bigselect_1__options.json",
+    "nglviewer_1__representation.json"
   ]
 }
 seamless_write_paths = {
-  "text": [],
+  "text": [
+    "representation"
+  ],
   "json": [
-    "limit",
-    "markerline",
-    "mirror",
-    "period"
+    "bigselect_1__selected.json"
   ]
 }
 seamless_auto_read_paths = [
-  "limit",
-  "markerline",
-  "mirror",
-  "period",
-  "png"
+  "representation",
+  "bigselect_1__selected.json",
+  "bigselect_1__options.json",
+  "nglviewer_1__structures.json",
+  "nglviewer_1__representation.json"
 ]
-seamless_path_to_cell = {}
+seamless_path_to_cell = {
+  "bigselect_1__selected.json": "pdb_code",
+  "bigselect_1__options.json": "pdb_codes",
+  "nglviewer_1__structures.json": "pdb_structure",
+  "nglviewer_1__representation.json": "representation3"
+}
 
 ctx = connect_seamless()
 ctx.self.onsharelist = function (sharelist) {
@@ -118,25 +153,28 @@ const app = new Vue({
   data() {
     return {
       ...{
-        "limit": {
-          "checksum": null,
-          "value": 0.0
-        },
-        "markerline": {
+        "representation": {
           "checksum": null,
           "value": ""
         },
-        "mirror": {
+        "pdb_code": {
           "checksum": null,
-          "value": 0.0
+          "value": ""
         },
-        "period": {
+        "pdb_codes": {
           "checksum": null,
-          "value": 0.0
+          "value": []
         },
-        "png": {
+        "pdb_structure": {
           "checksum": null,
-          "value": null
+          "value": ""
+        },
+        "representation3": {
+          "checksum": null,
+          "value": {}
+        },
+        "bigselect_1_input": {
+          "value": ""
         }
       }, 
       ...{
@@ -161,17 +199,13 @@ const app = new Vue({
     
   },
   watch: {
-    "limit.value": function (value) {
-      seamless_update("limit", value, "json")
+    "pdb_structure.value": function(){ load_ngl("nglviewer_1",this.pdb_structure.value,this.representation3.value,"cif") },
+    "representation3.value": function(){ load_ngl("nglviewer_1",this.pdb_structure.value,this.representation3.value,"cif") },
+    "representation.value": function (value) {
+      seamless_update("representation", value, "text")
     },
-    "markerline.value": function (value) {
-      seamless_update("markerline", value, "json")
-    },
-    "mirror.value": function (value) {
-      seamless_update("mirror", value, "json")
-    },
-    "period.value": function (value) {
-      seamless_update("period", value, "json")
+    "pdb_code.value": function (value) {
+      seamless_update("bigselect_1__selected.json", value, "json")
     },
   },
   updated() {

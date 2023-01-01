@@ -1,0 +1,18 @@
+        <section>
+            <b-field label="{{title}}">                    
+            </b-field>
+            <b-field class="file is-primary" :class="{'has-name': !!{{CELL}}.file}">
+                <b-upload 
+                    v-model="{{CELL}}.file" 
+                    class="file-label"
+                >
+                    <span class="file-cta">
+                        <b-icon class="file-icon" icon="upload"></b-icon>
+                        <span class="file-label">Click to upload</span>
+                    </span>
+                    <span class="file-name" v-if="{{CELL}}.file">
+                        {{ '{{' }} {{CELL}}.file.name {{ '}}' }}
+                    </span>
+                </b-upload>
+            </b-field>
+        </section>
