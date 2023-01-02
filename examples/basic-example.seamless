@@ -79,8 +79,12 @@
         "add"
       ],
       "pins": {
-        "a": {},
-        "b": {}
+        "a": {
+          "celltype": "default"
+        },
+        "b": {
+          "celltype": "default"
+        }
       },
       "type": "transformer"
     },
