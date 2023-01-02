@@ -25,12 +25,12 @@ encodings = ["text", "json"]
 # This is necessary to avoid problems with Vue.
 
 for dic in (webform["cells"], webform.get("extra_cells", {}), webform["transformers"]):
-    for name in list(dic.keys()):
+    for name in sorted(list(dic.keys())):
         if name.find("/") > -1:
             v = dic.pop(name)
             name2 = name.replace("/", "__")
             dic[name2] = v
-for comp in webform["extra_components"]:
+for comp in sorted(list(webform["extra_components"]).keys()):
     if "cell" in comp:
         comp["cell"] = comp["cell"].replace("/", "__")
     if "cells" in comp:
@@ -58,15 +58,14 @@ VUE_DATA = {}
 extra_components = {}
 
 order = webform.get("order", [])
-for cell in webform["cells"]:
+for cell in sorted(list(webform["cells"].keys())):
     cell2 = cell.replace("__", "/")
     if cell2 not in order:
         order.append(cell2)
-for tf in webform["transformers"]:
+for tf in sorted(list(webform["transformers"].keys())):
     tf2 = tf.replace("__", "/")
     if tf2 not in order:
         order.append(tf2)
-print("ORDER", order)
 
 used_extra_cells = set()
 for extra_component in webform.get("extra_components", []):
