@@ -20,23 +20,30 @@ def get_checksums(nodes, connections, *, with_annotations):
         else:
             checksums.add(checksum)
         hash_pattern = None
+        get_deep_checksums = False
         if node["type"] == "cell" and subpath != "schema":
             hash_pattern = node.get("hash_pattern")
+            get_deep_checksums = True
         elif node["type"] == "foldercell" and subpath != "schema":
             hash_pattern = {"*": "##"}
+            get_deep_checksums = True
         elif node["type"] == "deepcell" and subpath == "origin":
             hash_pattern = {"*": "#"}
+            get_deep_checksums = False
         elif node["type"] == "deepfoldercell" and subpath == "origin":
             hash_pattern = {"*": "##"}
+            get_deep_checksums = False
         elif node["type"] == "transformer":
             if subpath is not None and subpath.startswith("input") and not subpath.endswith("schema"):
                 hash_pattern = node.get("hash_pattern")
+                get_deep_checksums = True
         elif node["type"] == "macro":
             if subpath is not None and subpath.startswith("param") and not subpath.endswith("schema"):
                 hash_pattern = {"*": "#"}
+                get_deep_checksums = True
         else:
             pass
-        if hash_pattern is not None:
+        if hash_pattern is not None and get_deep_checksums:
             buffer = get_buffer(bytes.fromhex(checksum), remote=True, deep=True)
             if buffer is None:
                 print("WARNING: could not get checksums for deep structures in {}".format(node["path"]))
