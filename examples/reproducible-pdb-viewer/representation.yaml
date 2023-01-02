@@ -1,0 +1,11 @@
+DEFAULT:
+-
+    type: cartoon
+    params:
+        sele: ":A"
+        color: "red"
+-
+    type: cartoon
+    params:
+        sele: ":B"
+        color: "blue"
