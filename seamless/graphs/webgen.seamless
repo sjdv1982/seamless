@@ -431,7 +431,7 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "e32c738801c6b8b4eeabf007d69ea0afd3aef6a83c6243d49ac799bca69a640f",
+        "code": "31b639f04a7b1d34a8bde9c62f1e3d471805c8c4bbb5073593907756da8d3232",
         "input": "0abc11cac224c340876d04068f27bd2633b15bc112643d1eb565e6b48c03bfb8",
         "input_auth": "81ca3960f4a23c56f7b259a4287b97a8490b035d7ced72175210faac51f51618",
         "input_buffer": "0abc11cac224c340876d04068f27bd2633b15bc112643d1eb565e6b48c03bfb8",
@@ -854,7 +854,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "buffer": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
