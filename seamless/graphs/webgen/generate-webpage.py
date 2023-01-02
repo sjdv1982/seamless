@@ -30,7 +30,7 @@ for dic in (webform["cells"], webform.get("extra_cells", {}), webform["transform
             v = dic.pop(name)
             name2 = name.replace("/", "__")
             dic[name2] = v
-for comp in sorted(list(webform["extra_components"]).keys()):
+for comp in webform["extra_components"]:
     if "cell" in comp:
         comp["cell"] = comp["cell"].replace("/", "__")
     if "cells" in comp:
