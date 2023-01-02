@@ -188,6 +188,7 @@ class Cell(Base, HelpMixin):
         hcell["checksum"].pop("value", None)
         if checksum is not None:
             hcell["checksum"]["value"] = checksum
+            hcell["checksum"]["buffer"] = checksum
 
     def _observe_auth(self, checksum):
         if self._parent() is None:
