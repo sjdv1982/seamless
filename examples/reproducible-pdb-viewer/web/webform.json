@@ -1,7 +1,7 @@
 {
   "cells": {
     "representation": {
-      "celltype": "text",
+      "celltype": "yaml",
       "component": "input",
       "params": {
         "maxlength": 1000,
@@ -37,7 +37,7 @@
         "encoding": "json",
         "read": true
       },
-      "webdefault": []
+      "webdefault": {}
     },
     "pdb_structure": {
       "celltype": "text",
@@ -49,7 +49,7 @@
       },
       "webdefault": ""
     },
-    "representation3": {
+    "representation2": {
       "celltype": "plain",
       "path": "nglviewer_1/representation.json",
       "share": {
@@ -83,7 +83,7 @@
     },
     {
       "cells": {
-        "representation": "representation3",
+        "representation": "representation2",
         "structures": "pdb_structure"
       },
       "component": "nglviewer",
@@ -99,11 +99,6 @@
   "index": {
     "title": "Seamless webform"
   },
-  "order": [
-    "bigselect_1",
-    "nglviewer_1",
-    "representation"
-  ],
   "transformers": {
     "get_codes": {
       "component": "transformer-status",
