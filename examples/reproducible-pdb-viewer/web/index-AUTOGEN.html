@@ -17,90 +17,15 @@
     <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.32/dist/ngl.js"></script>
     <div id="app">
         <v-app id="vuetify-app">
-            <b-field label="Cell Representation">
-                <b-input
-                    lazy
-                    type="textarea"
-                    maxlength="1000"
-                    v-bind:value="representation.value"
-                    v-model="representation.value"
-                    :editable="false"
-                />
-            </b-field>
-        <section v-if="STATUS.value.transformers">
-            <b-field label="Transformer get_codes">>                 
-            <b-icon
-                v-if="STATUS.value.transformers.get_codes.color == 'royalblue'"
-                pack="fa"
-                icon="circle"
-                size="is-large"
-                type="is-info">
-            </b-icon>
-            <b-icon
-                v-if="STATUS.value.transformers.get_codes.color == 'forestgreen'"
-                pack="fas"
-                icon="sync-alt"
-                size="is-large"
-                custom-class="fa-spin"
-                type="is-success">
-            </b-icon>
-            <b-icon
-                v-if="STATUS.value.transformers.get_codes.color == 'yellow'"
-                pack="fa"
-                icon="sync-alt"
-                size="is-large"
-                custom-class="fa-spin"
-                type="is-warning">
-            </b-icon>
-            <b-icon
-                v-if="STATUS.value.transformers.get_codes.color == 'orange'"
-                pack="fa"
-                icon="circle"
-                size="is-large"
-                type="is-danger">
-            </b-icon>
-            <b-icon
-                v-if="STATUS.value.transformers.get_codes.color == 'red'"
-                pack="fa"
-                icon="circle"
-                size="is-large"
-                type="is-danger">
-            </b-icon>
-            </b-field>
-            <b-collapse class="card" :open="false" animation="slide" aria-id="id-9559">
-                <div
-                    v-if="STATUS.value.transformers.get_codes.status"
-                    slot="trigger"
-                    slot-scope="props"
-                    class="card-header"
-                    role="button"
-                    aria-controls="id-9559">
-                    <p class="card-header-title">
-                        Error message
-                    </p>
-                    <a class="card-header-icon">
-                        <b-icon
-                            :icon="props.open ? 'menu-down' : 'menu-up'">
-                        </b-icon>
-                    </a>
-                </div>
-                <div class="card-content" v-if="STATUS.value.transformers.get_codes.status">
-                    <div class="content" style="overflow: auto; height: 400px;">
-                        <pre>{{ STATUS.value.transformers.get_codes.status }}</pre>
-                    </div>
-                </div>
-            </b-collapse>
-
-        </section>
 <section>
-    <p class="content"><b>Selected:</b> {{ pdb_code.value }}</p>
-    <b-field label="Selector">
+    <p class="content"><b>Selected PDB code:</b> {{ pdb_code.value }}</p>
+    <b-field label="PDB selector">
         <b-autocomplete
             rounded
             keep-first
             v-model="bigselect_1_input.value"
-            :data="bigselect_1_input.value ? pdb_codes.value.filter(option => option.toString().toLowerCase().indexOf(bigselect_1_input.value.toString().toLowerCase()) == 0) : []"
-            placeholder="Select an item"
+            :data="bigselect_1_input.value ? all_pdb_codes.value.filter(option => option.toString().toLowerCase().indexOf(bigselect_1_input.value.toString().toLowerCase()) == 0) : []"
+            placeholder="Select a PDB code"
             icon="magnify"
             clearable
             @select="option => {if (option) { pdb_code.value = option; bigselect_1_input.value = option } }">
@@ -110,9 +35,9 @@
 </section>
                 <section>
                 <p class="card-header-title"></p>
-                NGL viewer
+                PDB viewer
                 </p>
-                <div id="nglviewer_1" style="width:100%; height:500px;"></div>
+                <div id="nglviewer_1" style="width:40%; height:400px;"></div>
                 </section>
                 <!--
                 <section>
@@ -166,6 +91,16 @@
                 </b-collapse>
             </section>
             -->
+            <b-field label="Molecular representation">
+                <b-input
+                    lazy
+                    type="textarea"
+                    maxlength="1000"
+                    v-bind:value="representation.value"
+                    v-model="representation.value"
+                    :editable="false"
+                />
+            </b-field>
 
         </v-app>
     </div>

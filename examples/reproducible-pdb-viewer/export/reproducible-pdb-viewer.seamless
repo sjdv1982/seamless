@@ -1,0 +1,274 @@
+{
+  "__seamless__": "0.8",
+  "connections": [
+    {
+      "source": [
+        "representation"
+      ],
+      "target": [
+        "representation2"
+      ],
+      "type": "connection"
+    }
+  ],
+  "lib": [
+    {
+      "api": "pyseamless",
+      "constructor": "def constructor_select(ctx, libctx, celltype, input, inputs, selected, output):\n    if input is None and inputs is None:\n        raise TypeError(\"You must define 'input' or 'inputs'\")\n    if input is not None and inputs is not None:\n        raise TypeError(\"You must define 'input' or 'inputs', not both\")\n    ctx.output = Cell(celltype)\n    output.connect_from(ctx.output)\n    ctx.selected = Cell(\"str\")\n    selected.connect(ctx.selected)\n\n    # Version 1: a celldict of input cells\n    if inputs is not None: \n        \"\"\"\n        Create one macro input pin per cell in the inputs dict\n        This will populate the ctx passed to select_func with input cells\n        that can be connected to\n        \"\"\"\n        macro1_pins = {\n            \"celltype\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"str\",\n            },\n            \"output\": {\n                \"io\": \"output\", \n                \"celltype\": celltype,\n            },\n            \"selected\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"str\",\n            },\n            \"options\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"plain\",\n            }\n        }\n\n        options = []\n        for input_name in inputs:\n            assert isinstance(input_name, str), input_name\n            if input_name in macro1_pins or input_name == \"select_macro1\":\n                msg = \"You cannot select from a cell under the selector '{}'\"\n                raise Exception(msg.format(input_name))\n            options.append(input_name)\n            pin = {\n                \"io\": \"input\",\n                \"celltype\": celltype\n            }\n            macro1_pins[input_name] = pin\n        ctx.select_macro1 = Macro(pins=macro1_pins)\n        ctx.select_macro1.code = libctx.select_code1.value\n        ctx.select_macro1.celltype = celltype\n        ctx.select_macro1.selected = ctx.selected\n        ctx.select_macro1.options = options\n\n        for input_name in inputs:\n            input_cell = Cell(celltype)\n            setattr(ctx, input_name, input_cell)\n            setattr(ctx.select_macro1, input_name, input_cell)\n            inputs[input_name].connect(input_cell)\n\n        ctx.output = ctx.select_macro1.output\n    else:\n        # Version 2: a structured input cell\n        macro2_pins = {\n            \"celltype\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"str\",\n            },\n            \"output\": {\n                \"io\": \"output\", \n                \"celltype\": celltype,\n            },\n            \"input_hash_pattern\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"plain\",\n            },\n            \"input_value\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"plain\",\n            },\n            \"selected\": {\n                \"io\": \"parameter\", \n                \"celltype\": \"str\",\n            }\n        }\n\n        if input.celltype != \"structured\":\n            raise TypeError(\"'input' must be a structured cell\")\n\n        ctx.select_macro2 = Macro(pins=macro2_pins)\n        ctx.select_macro2.code = libctx.select_code2.value\n        ctx.select_macro2.celltype = celltype\n        ctx.input = Cell()        \n        input.connect(ctx.input)\n        if input.hash_pattern is None:\n            ctx.select_macro2.input_value = ctx.input\n            ctx.select_macro2.input_hash_pattern = \"\"  # macro params must be defined!\n        else:\n            ctx.input.hash_pattern = input.hash_pattern\n            ctx.input_checksum = Cell(\"checksum\")\n            ctx.input_checksum = ctx.input\n            ctx.input_deep = Cell(\"plain\")\n            ctx.input_deep = ctx.input_checksum\n            ctx.select_macro2.input_value = ctx.input_deep\n            ctx.select_macro2.input_hash_pattern = input.hash_pattern[\"*\"]\n        ctx.select_macro2.selected = ctx.selected\n\n        ctx.output = ctx.select_macro2.output",
+      "graph": {
+        "__seamless__": "0.8",
+        "connections": [],
+        "lib": [],
+        "nodes": [
+          {
+            "celltype": "code",
+            "checksum": {
+              "value": "218a46eb557c7b7a1568a4a0b4bd0413134fa93b5a08f2d3185dbccef2b35c0b"
+            },
+            "datatype": "mixed",
+            "language": "python",
+            "path": [
+              "constructor_code"
+            ],
+            "type": "cell"
+          },
+          {
+            "celltype": "structured",
+            "checksum": {
+              "auth": "d21c1e13d479e4510e33420fbb7fdf872afafb49f2890ef931f330898c33d4e2",
+              "buffer": "d21c1e13d479e4510e33420fbb7fdf872afafb49f2890ef931f330898c33d4e2",
+              "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+              "value": "d21c1e13d479e4510e33420fbb7fdf872afafb49f2890ef931f330898c33d4e2"
+            },
+            "datatype": "mixed",
+            "hash_pattern": null,
+            "path": [
+              "constructor_params"
+            ],
+            "type": "cell"
+          },
+          {
+            "celltype": "code",
+            "checksum": {
+              "value": "006a307ffa96fd14b48139d22eaaf19c4233b0f1667f82586c062024cbe0e730"
+            },
+            "datatype": "mixed",
+            "language": "python",
+            "path": [
+              "select_code1"
+            ],
+            "type": "cell"
+          },
+          {
+            "celltype": "code",
+            "checksum": {
+              "value": "b5d5368e7a41f086fcd85197ccfbc04b67ee53f0cd84304df8980720f542d724"
+            },
+            "datatype": "mixed",
+            "language": "python",
+            "path": [
+              "select_code2"
+            ],
+            "type": "cell"
+          }
+        ],
+        "params": {
+          "share_namespace": "ctx"
+        }
+      },
+      "language": "python",
+      "params": {
+        "celltype": {
+          "default": null,
+          "io": "input",
+          "type": "value"
+        },
+        "input": {
+          "default": null,
+          "io": "input",
+          "must_be_defined": false,
+          "type": "cell"
+        },
+        "inputs": {
+          "default": null,
+          "io": "input",
+          "must_be_defined": false,
+          "type": "celldict"
+        },
+        "output": {
+          "default": null,
+          "io": "output",
+          "type": "cell"
+        },
+        "selected": {
+          "default": null,
+          "io": "input",
+          "type": "cell"
+        }
+      },
+      "path": [
+        "select"
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "8fe126582cd6933150d79027927393a86d8426669e48fc39a911c9f895f00e2e"
+      },
+      "datatype": "mixed",
+      "path": [
+        "all_pdb_codes"
+      ],
+      "share": {
+        "path": "bigselect_1/options.json",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "checksum": {
+        "filtered": "57ce3e4487745320f68fa84e2e4cb4c431953b204812cf1f76bb011f032d6380",
+        "keyorder": "8fe126582cd6933150d79027927393a86d8426669e48fc39a911c9f895f00e2e",
+        "origin": "57ce3e4487745320f68fa84e2e4cb4c431953b204812cf1f76bb011f032d6380"
+      },
+      "metadata": {
+        "access_index": "3e9909e7c8d602ef0cb6a719ab3d43d8ca403224ff27eef5d45aaa9f1dcf290b",
+        "content_size": 258567165319,
+        "dataset": "pdb",
+        "index_size": 15485655,
+        "nkeys": 198534
+      },
+      "path": [
+        "pdb"
+      ],
+      "type": "deepcell"
+    },
+    {
+      "celltype": "str",
+      "checksum": {
+        "value": "f357302214bb501d3db3914b11d66d1517229a5271d6040e6e74071d9a2b9c12"
+      },
+      "datatype": "mixed",
+      "path": [
+        "pdb_code"
+      ],
+      "share": {
+        "path": "bigselect_1/selected.json",
+        "readonly": false
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "d4ee1515e0a746aa3b8531f1545753e6b2d4cf272632121f1827f21c64a29722"
+      },
+      "datatype": "mixed",
+      "path": [
+        "pdb_structure"
+      ],
+      "share": {
+        "path": "nglviewer_1/structures.json",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "yaml",
+      "checksum": {
+        "value": "50a7949d6709860b1167a87974f909cac159b4f153827390c24168873f3b345e"
+      },
+      "datatype": "mixed",
+      "mount": {
+        "authority": "file",
+        "mode": "rw",
+        "path": "representation.yaml",
+        "persistent": true
+      },
+      "path": [
+        "representation"
+      ],
+      "share": {
+        "path": null,
+        "readonly": false
+      },
+      "type": "cell"
+    },
+    {
+      "celltype": "plain",
+      "checksum": {
+        "value": "12174a788c11692ea7372ff2933b2517349368db21f6f7f7f9cde58b20da6798"
+      },
+      "datatype": "mixed",
+      "path": [
+        "representation2"
+      ],
+      "share": {
+        "path": "nglviewer_1/representation.json",
+        "readonly": true
+      },
+      "type": "cell"
+    },
+    {
+      "arguments": {
+        "celltype": "text",
+        "input": [
+          "pdb"
+        ],
+        "output": [
+          "pdb_structure"
+        ],
+        "selected": [
+          "pdb_code"
+        ]
+      },
+      "libpath": [
+        "select"
+      ],
+      "path": [
+        "select_pdb"
+      ],
+      "type": "libinstance"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx",
+    "webunits": {
+      "bigselect": [
+        {
+          "cells": {
+            "input": "bigselect_1_input",
+            "options": "all_pdb_codes",
+            "selected": "pdb_code"
+          },
+          "id": "bigselect_1",
+          "parameters": {
+            "placeholder": "Select an item",
+            "selected_title": "Selected:",
+            "title": "Selector"
+          },
+          "webcells": {
+            "bigselect_1_input": ""
+          }
+        }
+      ],
+      "nglviewer": [
+        {
+          "cells": {
+            "representation": "representation2",
+            "structures": "pdb_structure"
+          },
+          "id": "nglviewer_1",
+          "parameters": {
+            "format": "cif",
+            "title": "NGL viewer",
+            "viewer_height": "500px",
+            "viewer_width": "100%"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,9 +1,3 @@
-"""
-TODO: 
-- Finalize web form params (ngl viewer dimension)
-- Deepcell keys: rip get_keys, use ctx.pdb.keyorder to set cell
-- Port to Jupyter notebook
-"""
 PROJNAME = "reproducible-pdb-viewer"
 
 import os, sys, shutil
@@ -25,60 +19,7 @@ async def define_graph(ctx):
     """Code to define the graph
     Leave this function empty if you want load() to load the graph from graph/PROJNAME.seamless 
     """
-    ctx.pdb = DeepCell()
-    
-    # Weakly reproducible way (relies on FAIR server to get the checksum)
-    date = "2022-11-27"
-    distribution = DeepCell.find_distribution("pdb", date=date, format="mmcif")
-    ctx.pdb.define(distribution)
-    print()
-    print("*" * 50)
-    print("PDB date:", date)
-    print("Number of index keys (PDB entries): ", ctx.pdb.nkeys )
-    pdb_index_size = "{:d} MiB".format(int(ctx.pdb.index_size/10**6))
-    print("Size of the checksum index: ", pdb_index_size )
-    if ctx.pdb.content_size is None:
-        pdb_size = "<Unknown>"
-    else:
-        pdb_size = "{:d} GiB".format(int(ctx.pdb.content_size/10**9))
-    print("Total size of the Protein Data Bank (mmCIF format):", pdb_size )
-    print("*" * 50)
-    print()
-    print("Download index file")
-    await ctx.computation()
-    print("Access PDB entry 1avx")
-    pdb_data = ctx.pdb.access("1avx")
-    print(pdb_data[:1000])
-
-    # TODO: make a stdlib for this
-    ctx.pdb2 = Cell("checksum")
-    ctx.pdb2 = ctx.pdb
-    ctx.pdb3 = Cell("plain")
-    ctx.pdb3 = ctx.pdb2
-    def get_codes(pdb):
-        return list(pdb.keys())
-    ctx.get_codes = get_codes
-    ctx.get_codes.pdb = ctx.pdb3
-    ctx.pdb_codes = ctx.get_codes.result
-    ctx.pdb_codes.celltype = "plain"
-
-    ctx.pdb_code = Cell("str").set("1avx")
-    webunits.bigselect(ctx, options=ctx.pdb_codes, selected=ctx.pdb_code)
-
-    ctx.include(stdlib.select)
-    ctx.pdb_structure = Cell("text")
-    ctx.select_pdb = ctx.lib.select(
-        celltype="text",
-        input=ctx.pdb,
-        selected=ctx.pdb_code,
-        output=ctx.pdb_structure,
-    )
-    ctx.representation = Cell("yaml").share(readonly=False)
-    ctx.representation.mount("representation.yaml")
-    ctx.representation2 = Cell("plain")
-    ctx.representation2 = ctx.representation
-    webunits.nglviewer(ctx, ctx.pdb_structure, ctx.representation2, format="cif")
-    await ctx.translation()
+    pass
 
 def load_database():
     # To connect to a Seamless database, specify the following environment variables:

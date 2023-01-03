@@ -18,6 +18,16 @@
     }
   },
   "extra_cells": {
+    "all_pdb_codes": {
+      "celltype": "plain",
+      "path": "bigselect_1/options.json",
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true
+      },
+      "webdefault": {}
+    },
     "pdb_code": {
       "celltype": "str",
       "path": "bigselect_1/selected.json",
@@ -28,16 +38,6 @@
         "write": true
       },
       "webdefault": ""
-    },
-    "pdb_codes": {
-      "celltype": "plain",
-      "path": "bigselect_1/options.json",
-      "share": {
-        "auto_read": true,
-        "encoding": "json",
-        "read": true
-      },
-      "webdefault": {}
     },
     "pdb_structure": {
       "celltype": "text",
@@ -70,7 +70,7 @@
     {
       "cells": {
         "input": "bigselect_1_input",
-        "options": "pdb_codes",
+        "options": "all_pdb_codes",
         "selected": "pdb_code"
       },
       "component": "bigselect",
@@ -99,14 +99,7 @@
   "index": {
     "title": "Seamless webform"
   },
-  "transformers": {
-    "get_codes": {
-      "component": "transformer-status",
-      "params": {
-        "title": "Transformer get_codes"
-      }
-    }
-  },
+  "transformers": {},
   "webcells": {
     "bigselect_1_input": ""
   }

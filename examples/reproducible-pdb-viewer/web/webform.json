@@ -5,7 +5,7 @@
       "component": "input",
       "params": {
         "maxlength": 1000,
-        "title": "Cell Representation",
+        "title": "Molecular representation",
         "type": "textarea"
       },
       "share": {
@@ -18,6 +18,16 @@
     }
   },
   "extra_cells": {
+    "all_pdb_codes": {
+      "celltype": "plain",
+      "path": "bigselect_1/options.json",
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true
+      },
+      "webdefault": {}
+    },
     "pdb_code": {
       "celltype": "str",
       "path": "bigselect_1/selected.json",
@@ -28,16 +38,6 @@
         "write": true
       },
       "webdefault": ""
-    },
-    "pdb_codes": {
-      "celltype": "plain",
-      "path": "bigselect_1/options.json",
-      "share": {
-        "auto_read": true,
-        "encoding": "json",
-        "read": true
-      },
-      "webdefault": {}
     },
     "pdb_structure": {
       "celltype": "text",
@@ -70,15 +70,15 @@
     {
       "cells": {
         "input": "bigselect_1_input",
-        "options": "pdb_codes",
+        "options": "all_pdb_codes",
         "selected": "pdb_code"
       },
       "component": "bigselect",
       "id": "bigselect_1",
       "params": {
-        "placeholder": "Select an item",
-        "selected_title": "Selected:",
-        "title": "Selector"
+        "placeholder": "Select a PDB code",
+        "selected_title": "Selected PDB code:",
+        "title": "PDB selector"
       }
     },
     {
@@ -90,23 +90,21 @@
       "id": "nglviewer_1",
       "params": {
         "format": "cif",
-        "title": "NGL viewer",
-        "viewer_height": "500px",
-        "viewer_width": "100%"
+        "title": "PDB viewer",
+        "viewer_height": "400px",
+        "viewer_width": "40%"
       }
     }
   ],
   "index": {
     "title": "Seamless webform"
   },
-  "transformers": {
-    "get_codes": {
-      "component": "transformer-status",
-      "params": {
-        "title": "Transformer get_codes"
-      }
-    }
-  },
+  "order": [
+    "bigselect_1",
+    "nglviewer_1",
+    "representation"
+  ],
+  "transformers": {},
   "webcells": {
     "bigselect_1_input": ""
   }
