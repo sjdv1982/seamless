@@ -98,190 +98,6 @@
     {
       "source": [
         "rules",
-        "samtools_sort"
-      ],
-      "target": [
-        "jobs",
-        "samtools_sort_A",
-        "code"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "fs",
-        "mapped_reads/A.bam"
-      ],
-      "target": [
-        "jobs",
-        "samtools_sort_A",
-        "inputfile"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "jobs",
-        "samtools_sort_A"
-      ],
-      "target": [
-        "results",
-        "samtools_sort_A"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "results",
-        "samtools_sort_A"
-      ],
-      "target": [
-        "fs",
-        "sorted_reads/A.bam"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "rules",
-        "samtools_sort"
-      ],
-      "target": [
-        "jobs",
-        "samtools_sort_B",
-        "code"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "fs",
-        "mapped_reads/B.bam"
-      ],
-      "target": [
-        "jobs",
-        "samtools_sort_B",
-        "inputfile"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "jobs",
-        "samtools_sort_B"
-      ],
-      "target": [
-        "results",
-        "samtools_sort_B"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "results",
-        "samtools_sort_B"
-      ],
-      "target": [
-        "fs",
-        "sorted_reads/B.bam"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "rules",
-        "samtools_index"
-      ],
-      "target": [
-        "jobs",
-        "samtools_index_A",
-        "code"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "fs",
-        "sorted_reads/A.bam"
-      ],
-      "target": [
-        "jobs",
-        "samtools_index_A",
-        "inputfile"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "jobs",
-        "samtools_index_A"
-      ],
-      "target": [
-        "results",
-        "samtools_index_A"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "results",
-        "samtools_index_A"
-      ],
-      "target": [
-        "fs",
-        "sorted_reads/A.bam.bai"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "rules",
-        "samtools_index"
-      ],
-      "target": [
-        "jobs",
-        "samtools_index_B",
-        "code"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "fs",
-        "sorted_reads/B.bam"
-      ],
-      "target": [
-        "jobs",
-        "samtools_index_B",
-        "inputfile"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "jobs",
-        "samtools_index_B"
-      ],
-      "target": [
-        "results",
-        "samtools_index_B"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "results",
-        "samtools_index_B"
-      ],
-      "target": [
-        "fs",
-        "sorted_reads/B.bam.bai"
-      ],
-      "type": "connection"
-    },
-    {
-      "source": [
-        "rules",
         "bwa_map"
       ],
       "target": [
@@ -392,6 +208,190 @@
       "target": [
         "fs",
         "mapped_reads/B.bam"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "rules",
+        "samtools_index"
+      ],
+      "target": [
+        "jobs",
+        "samtools_index_A",
+        "code"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "fs",
+        "sorted_reads/A.bam"
+      ],
+      "target": [
+        "jobs",
+        "samtools_index_A",
+        "inputfile"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "jobs",
+        "samtools_index_A"
+      ],
+      "target": [
+        "results",
+        "samtools_index_A"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "results",
+        "samtools_index_A"
+      ],
+      "target": [
+        "fs",
+        "sorted_reads/A.bam.bai"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "rules",
+        "samtools_index"
+      ],
+      "target": [
+        "jobs",
+        "samtools_index_B",
+        "code"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "fs",
+        "sorted_reads/B.bam"
+      ],
+      "target": [
+        "jobs",
+        "samtools_index_B",
+        "inputfile"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "jobs",
+        "samtools_index_B"
+      ],
+      "target": [
+        "results",
+        "samtools_index_B"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "results",
+        "samtools_index_B"
+      ],
+      "target": [
+        "fs",
+        "sorted_reads/B.bam.bai"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "rules",
+        "samtools_sort"
+      ],
+      "target": [
+        "jobs",
+        "samtools_sort_A",
+        "code"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "fs",
+        "mapped_reads/A.bam"
+      ],
+      "target": [
+        "jobs",
+        "samtools_sort_A",
+        "inputfile"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "jobs",
+        "samtools_sort_A"
+      ],
+      "target": [
+        "results",
+        "samtools_sort_A"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "results",
+        "samtools_sort_A"
+      ],
+      "target": [
+        "fs",
+        "sorted_reads/A.bam"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "rules",
+        "samtools_sort"
+      ],
+      "target": [
+        "jobs",
+        "samtools_sort_B",
+        "code"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "fs",
+        "mapped_reads/B.bam"
+      ],
+      "target": [
+        "jobs",
+        "samtools_sort_B",
+        "inputfile"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "jobs",
+        "samtools_sort_B"
+      ],
+      "target": [
+        "results",
+        "samtools_sort_B"
+      ],
+      "type": "connection"
+    },
+    {
+      "source": [
+        "results",
+        "samtools_sort_B"
+      ],
+      "target": [
+        "fs",
+        "sorted_reads/B.bam"
       ],
       "type": "connection"
     }
@@ -817,7 +817,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "5f41374d6d2266f14b72f573f28df99cc3b9063d4b083a9382fad78c2b4dd629",
-        "buffer": "5f41374d6d2266f14b72f573f28df99cc3b9063d4b083a9382fad78c2b4dd629",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "5f41374d6d2266f14b72f573f28df99cc3b9063d4b083a9382fad78c2b4dd629"
       },
@@ -833,7 +832,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "e1f5e1ad8969c8de58c9f29173f4de3bf145826a48c55325943ca75ebb4d9a67",
-        "buffer": "e1f5e1ad8969c8de58c9f29173f4de3bf145826a48c55325943ca75ebb4d9a67",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "e1f5e1ad8969c8de58c9f29173f4de3bf145826a48c55325943ca75ebb4d9a67"
       },
@@ -849,7 +847,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "e3e0f016f8482ab71ab764d89dee647dba625a1bceb946671837c0105b994a4e",
-        "buffer": "e3e0f016f8482ab71ab764d89dee647dba625a1bceb946671837c0105b994a4e",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "e3e0f016f8482ab71ab764d89dee647dba625a1bceb946671837c0105b994a4e"
       },
@@ -865,7 +862,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "ffa092f1a1c285f2ea8edf019a26375214027f7d53964405e7b035432625604b",
-        "buffer": "ffa092f1a1c285f2ea8edf019a26375214027f7d53964405e7b035432625604b",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "ffa092f1a1c285f2ea8edf019a26375214027f7d53964405e7b035432625604b"
       },
