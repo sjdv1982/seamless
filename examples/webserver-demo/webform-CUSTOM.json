@@ -78,6 +78,12 @@
   "index": {
     "title": "Seamless webform"
   },
+  "order": [
+    "random_state",
+    "delay",
+    "k",
+    "plot"
+  ],
   "transformers": {
     "generate_dataset": {
       "component": "transformer-status",
