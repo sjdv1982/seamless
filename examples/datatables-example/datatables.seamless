@@ -135,7 +135,6 @@
     {
       "celltype": "structured",
       "checksum": {
-        "buffer": "3f90c3fef7d95b8c54216f6f5e63767619ee01220875f5cc03e3c3b767977eb6",
         "schema": "354b5a364faf479ee70bc5e1a82420f379173c3a0760a939fa7b2a88e92d1c72",
         "value": "3f90c3fef7d95b8c54216f6f5e63767619ee01220875f5cc03e3c3b767977eb6"
       },
@@ -194,7 +193,6 @@
     {
       "celltype": "structured",
       "checksum": {
-        "buffer": "f7a36a9a11a2c35e27b375f227e78e5c0f1f1901926576c810049c20643e90a9",
         "schema": "354b5a364faf479ee70bc5e1a82420f379173c3a0760a939fa7b2a88e92d1c72",
         "value": "f7a36a9a11a2c35e27b375f227e78e5c0f1f1901926576c810049c20643e90a9"
       },
@@ -294,7 +292,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "06c10a0434d15ac250e8042c3e62731aa1f9019b512a84094be4b61b0d462afd"
+        "value": "3fea06730b7d8bd1de03ea3844e04b47d27ebd5cae48bd038151ce3838b7e76b"
       },
       "datatype": "mixed",
       "file_extension": "html",
@@ -309,23 +307,6 @@
       "type": "cell"
     },
     {
-      "celltype": "text",
-      "checksum": {
-        "value": "6f8c002afc4c78a0fd5982fe702e12e4cdf91518afa46bb7791f0840ee563aae"
-      },
-      "datatype": "mixed",
-      "file_extension": "js",
-      "mimetype": "application/javascript",
-      "path": [
-        "eval_functions_js"
-      ],
-      "share": {
-        "path": "eval_functions.js",
-        "readonly": true
-      },
-      "type": "cell"
-    },
-    {
       "INPUT": "inp",
       "RESULT": "result",
       "SCHEMA": null,
@@ -333,7 +314,7 @@
         "code": "b8b868c9096209863699eae4612cb9cdcea975a6940c9a0f0585c266ac26f0c2",
         "input": "5c1192cabd1730d8c1d4f0e067b08daf890c1638c38b3057e5f2723a70e4922a",
         "input_buffer": "5c1192cabd1730d8c1d4f0e067b08daf890c1638c38b3057e5f2723a70e4922a",
-        "result": "18fcc85347d8855b4c44df0a141c46e916cfdec11bf8a701652f4c1c3467c076",
+        "result": "321840bb93082ef48e89a9df4484b8bc6870449d3d12f3407e0df240a5a91ef7",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -346,14 +327,16 @@
         "gen_datatable"
       ],
       "pins": {
-        "bits": {}
+        "bits": {
+          "celltype": "default"
+        }
       },
       "type": "transformer"
     },
     {
       "celltype": "text",
       "checksum": {
-        "value": "95dc5066439f167e66e00415ba9f2ab76864fd0d8a25101a75ab4b9ab34de1b8"
+        "value": "212b5535eee34d31225e57adae3781ca3079587188afa3d12cfc8c78a30292c7"
       },
       "datatype": "mixed",
       "file_extension": "html",
@@ -416,7 +399,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "886c745003101649af2d4061e1fde45bc9104761fe46ce1a5c43e0a458434d71"
+        "value": "3db1ab53b139b852acfb0e90029e0418858e3edd45c0ac1aafe7bd098f49a03a"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",

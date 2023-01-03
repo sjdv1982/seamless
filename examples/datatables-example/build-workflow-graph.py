@@ -175,19 +175,11 @@ ctx.datatable.mimetype = "html"
 ctx.datatable.share()
 ctx.compute()
 
-# We will need eval_functions.js from itables
-from itables.javascript import read_package_file
-eval_functions_js = read_package_file('javascript', 'eval_functions.js') # from itables itself
-eval_functions_js = """
-// From the itables project: Copyright (c) 2019 Marc Wouts, MIT License
-// https://github.com/mwouts/itables/blob/master/itables/javascript/eval_functions.js
-""" + eval_functions_js
-
 # Write the initial value of the datatable into static HTML
 from jinja2 import Template
 with open("datatables-static.jinja") as f:
     template = Template(f.read())
-static_html=template.render(eval_functions=eval_functions_js, datatable=datatable)
+static_html=template.render(datatable=datatable)
 with open("datatables-static.html", "w") as f:
     f.write(static_html)
 
@@ -224,11 +216,6 @@ ctx.html.mimetype="html"
 
 ctx.js = Cell("text").mount("datatables-dynamic.js", authority="file").share("index.js")
 ctx.js.mimetype="js"
-
-ctx.eval_functions_js = eval_functions_js
-ctx.eval_functions_js.share("eval_functions.js")
-ctx.eval_functions_js.celltype = "text"
-ctx.eval_functions_js.mimetype="js"
 
 ctx.compute()
 
