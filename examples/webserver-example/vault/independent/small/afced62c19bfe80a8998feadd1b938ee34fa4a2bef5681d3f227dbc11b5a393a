@@ -21,7 +21,7 @@
                                 <b-input :value="{{CELL}}.value" v-model.number="{{CELL}}.value" type="number"></b-input>
                             </b-field>
                             <b-field>
-                                <b-slider :value="{{CELL}}.value" v-model="{{CELL}}.value" :min="{{min}}" :max="{{max}}" lazy></b-slider>
+                                <b-slider :value="{{CELL}}.value" v-model="{{CELL}}.value" :min="{{min}}" :max="{{max}}" :step={{step}} lazy></b-slider>
                             </b-field>
                         </div>
                     </div>

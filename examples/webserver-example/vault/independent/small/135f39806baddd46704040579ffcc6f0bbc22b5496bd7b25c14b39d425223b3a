@@ -1,6 +1,0 @@
-
-# Mirror the signal above 0.8
-awk  -v mirror=$mirror '{y = $2}y > mirror{y=2*mirror - y}{print $1, y}' plot.txt > intermediate.txt
-
-# Eliminate all data points under -0.5 
-awk -v limit=$limit '$2 > limit' intermediate.txt > RESULT

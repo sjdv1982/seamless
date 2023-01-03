@@ -26,7 +26,7 @@
                         role="button"
                         aria-controls="id-6312">
                         <p class="card-header-title">
-                            Lower limit of the plot
+                            Period of the wave
                         </p>
                         <a class="card-header-icon">
                             <b-icon
@@ -37,31 +37,24 @@
                     <div class="card-content">
                         <div class="content">
                             <b-field grouped>
-                                <b-input :value="limit.value" v-model.number="limit.value" type="number"></b-input>
+                                <b-input :value="period.value" v-model.number="period.value" type="number"></b-input>
                             </b-field>
                             <b-field>
-                                <b-slider :value="limit.value" v-model="limit.value" :min="-1" :max="1" lazy></b-slider>
+                                <b-slider :value="period.value" v-model="period.value" :min="0" :max="1000" :step=1 lazy></b-slider>
                             </b-field>
                         </div>
                     </div>
                 </b-collapse>
 
             </section>
-            <b-field label="Marker and line for drawing the plot">
-                <b-input
-                    v-bind:value="markerline.value"
-                    v-model="markerline.value"
-                    :editable="true"
-                />
-            </b-field>
             <section>
-                <b-collapse class="card" animation="slide" aria-id="id-2408">
+                <b-collapse class="card" animation="slide" aria-id="id-9559">
                     <div
                         slot="trigger"
                         slot-scope="props"
                         class="card-header"
                         role="button"
-                        aria-controls="id-2408">
+                        aria-controls="id-9559">
                         <p class="card-header-title">
                             Value where the plot is mirrored
                         </p>
@@ -77,7 +70,7 @@
                                 <b-input :value="mirror.value" v-model.number="mirror.value" type="number"></b-input>
                             </b-field>
                             <b-field>
-                                <b-slider :value="mirror.value" v-model="mirror.value" :min="1" :max="-1" lazy></b-slider>
+                                <b-slider :value="mirror.value" v-model="mirror.value" :min="1" :max="-1" :step=0.01 lazy></b-slider>
                             </b-field>
                         </div>
                     </div>
@@ -85,15 +78,15 @@
 
             </section>
             <section>
-                <b-collapse class="card" animation="slide" aria-id="id-5181">
+                <b-collapse class="card" animation="slide" aria-id="id-2408">
                     <div
                         slot="trigger"
                         slot-scope="props"
                         class="card-header"
                         role="button"
-                        aria-controls="id-5181">
+                        aria-controls="id-2408">
                         <p class="card-header-title">
-                            Period of the wave
+                            Lower limit of the plot
                         </p>
                         <a class="card-header-icon">
                             <b-icon
@@ -104,16 +97,25 @@
                     <div class="card-content">
                         <div class="content">
                             <b-field grouped>
-                                <b-input :value="period.value" v-model.number="period.value" type="number"></b-input>
+                                <b-input :value="limit.value" v-model.number="limit.value" type="number"></b-input>
                             </b-field>
                             <b-field>
-                                <b-slider :value="period.value" v-model="period.value" :min="0" :max="1000" lazy></b-slider>
+                                <b-slider :value="limit.value" v-model="limit.value" :min="-1" :max="1" :step=0.01 lazy></b-slider>
                             </b-field>
                         </div>
                     </div>
                 </b-collapse>
 
             </section>
+            <b-field label="Marker and line for drawing the plot">
+                <b-input
+                    type="input"
+                    maxlength="100"
+                    v-bind:value="markerline.value"
+                    v-model="markerline.value"
+                    :editable="true"
+                />
+            </b-field>
             <b-field label="Plot">                
                 <img :src="png.value ? METHOD_get_app_globals().createObjectURL(png.value) : ''" width= height=></img>
             </b-field>

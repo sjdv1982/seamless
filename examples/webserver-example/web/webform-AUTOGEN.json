@@ -6,6 +6,7 @@
       "params": {
         "max": 100,
         "min": 0,
+        "step": 1,
         "title": "Cell Limit"
       },
       "share": {
@@ -21,7 +22,9 @@
       "component": "input",
       "params": {
         "editable": true,
-        "title": "Cell Markerline"
+        "maxlength": 100,
+        "title": "Cell Markerline",
+        "type": "input"
       },
       "share": {
         "auto_read": true,
@@ -37,6 +40,7 @@
       "params": {
         "max": 100,
         "min": 0,
+        "step": 1,
         "title": "Cell Mirror"
       },
       "share": {
@@ -53,6 +57,7 @@
       "params": {
         "max": 100,
         "min": 0,
+        "step": 1,
         "title": "Cell Period"
       },
       "share": {

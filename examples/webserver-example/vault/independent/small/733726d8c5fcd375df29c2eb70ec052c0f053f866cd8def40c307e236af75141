@@ -1,37 +1,11 @@
 app_globals = {}
 
-app_globals.createObjectURL = URL.createObjectURL
+{{ COMPONENT_JS }}
 
-
-
-seamless_read_paths = {
-  "text": [
-    "png"
-  ],
-  "json": [
-    "limit",
-    "markerline",
-    "mirror",
-    "period"
-  ]
-}
-seamless_write_paths = {
-  "text": [],
-  "json": [
-    "limit",
-    "markerline",
-    "mirror",
-    "period"
-  ]
-}
-seamless_auto_read_paths = [
-  "limit",
-  "markerline",
-  "mirror",
-  "period",
-  "png"
-]
-seamless_path_to_cell = {}
+seamless_read_paths = {{ SEAMLESS_READ_PATHS }}
+seamless_write_paths = {{ SEAMLESS_WRITE_PATHS }}
+seamless_auto_read_paths = {{ SEAMLESS_AUTO_READ_PATHS }}
+seamless_path_to_cell = {{ SEAMLESS_PATH_TO_CELL }}
 
 ctx = connect_seamless()
 ctx.self.onsharelist = function (sharelist) {
@@ -75,7 +49,7 @@ ctx.self.onsharelist = function (sharelist) {
 }
 webctx = connect_seamless(null, null, share_namespace="status")
 webctx.self.onsharelist = function (sharelist) {
-  vis_status = webctx["vis_status"]
+  vis_status = webctx["visual_status"]
   if (!(vis_status === undefined)) {
     vis_status.onchange = function() {      
       let jstatus = JSON.parse(vis_status.value)
@@ -100,7 +74,7 @@ webctx.self.onsharelist = function (sharelist) {
 function seamless_update(path, value, encoding) {
   if (!ctx) return
   if (!ctx.self.sharelist) return
-  if (ctx.self.sharelist.indexOf(path) < 0) return
+  if (ctx.self.sharelist.indexOf(path.replaceAll("__", "/")) < 0) return
   if (ctx[path].binary) {
     ctx[path].set(value)
   }
@@ -117,28 +91,7 @@ const app = new Vue({
   vuetify: new Vuetify(),
   data() {
     return {
-      ...{
-        "limit": {
-          "checksum": null,
-          "value": 0.0
-        },
-        "markerline": {
-          "checksum": null,
-          "value": ""
-        },
-        "mirror": {
-          "checksum": null,
-          "value": 0.0
-        },
-        "period": {
-          "checksum": null,
-          "value": 0.0
-        },
-        "png": {
-          "checksum": null,
-          "value": null
-        }
-      }, 
+      ...{{ VUE_DATA }}, 
       ...{
         "STATUS": {
           "checksum": null,
@@ -161,22 +114,12 @@ const app = new Vue({
     
   },
   watch: {
-    "limit.value": function (value) {
-      seamless_update("limit", value, "json")
-    },
-    "markerline.value": function (value) {
-      seamless_update("markerline", value, "json")
-    },
-    "mirror.value": function (value) {
-      seamless_update("mirror", value, "json")
-    },
-    "period.value": function (value) {
-      seamless_update("period", value, "json")
-    },
+    {{WATCHERS}}
   },
   updated() {
-
+{{INIT_CODE}}
   }
 })
 
 vm = app.$mount('#app')
+

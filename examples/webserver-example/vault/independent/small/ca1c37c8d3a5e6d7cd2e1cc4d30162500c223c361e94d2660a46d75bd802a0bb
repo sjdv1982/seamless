@@ -1,5 +1,8 @@
             <b-field label="{{title}}">
                 <b-input
+                    lazy
+                    type="{{type}}"
+                    maxlength="{{maxlength}}"
                     v-bind:value="{{CELL}}.value"
                     v-model="{{CELL}}.value"
                     :editable="{% if editable %}true{% else %}false{% endif %}"

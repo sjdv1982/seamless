@@ -49,7 +49,7 @@ ctx.self.onsharelist = function (sharelist) {
 }
 webctx = connect_seamless(null, null, share_namespace="status")
 webctx.self.onsharelist = function (sharelist) {
-  vis_status = webctx["vis_status"]
+  vis_status = webctx["visual_status"]
   if (!(vis_status === undefined)) {
     vis_status.onchange = function() {      
       let jstatus = JSON.parse(vis_status.value)

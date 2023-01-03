@@ -9,26 +9,26 @@ seamless_read_paths = {
     "png"
   ],
   "json": [
-    "limit",
-    "markerline",
+    "period",
     "mirror",
-    "period"
+    "limit",
+    "markerline"
   ]
 }
 seamless_write_paths = {
   "text": [],
   "json": [
-    "limit",
-    "markerline",
+    "period",
     "mirror",
-    "period"
+    "limit",
+    "markerline"
   ]
 }
 seamless_auto_read_paths = [
+  "period",
+  "mirror",
   "limit",
   "markerline",
-  "mirror",
-  "period",
   "png"
 ]
 seamless_path_to_cell = {}
@@ -75,7 +75,7 @@ ctx.self.onsharelist = function (sharelist) {
 }
 webctx = connect_seamless(null, null, share_namespace="status")
 webctx.self.onsharelist = function (sharelist) {
-  vis_status = webctx["vis_status"]
+  vis_status = webctx["visual_status"]
   if (!(vis_status === undefined)) {
     vis_status.onchange = function() {      
       let jstatus = JSON.parse(vis_status.value)
@@ -118,6 +118,14 @@ const app = new Vue({
   data() {
     return {
       ...{
+        "period": {
+          "checksum": null,
+          "value": 0.0
+        },
+        "mirror": {
+          "checksum": null,
+          "value": 0.0
+        },
         "limit": {
           "checksum": null,
           "value": 0.0
@@ -125,14 +133,6 @@ const app = new Vue({
         "markerline": {
           "checksum": null,
           "value": ""
-        },
-        "mirror": {
-          "checksum": null,
-          "value": 0.0
-        },
-        "period": {
-          "checksum": null,
-          "value": 0.0
         },
         "png": {
           "checksum": null,
@@ -161,17 +161,17 @@ const app = new Vue({
     
   },
   watch: {
+    "period.value": function (value) {
+      seamless_update("period", value, "json")
+    },
+    "mirror.value": function (value) {
+      seamless_update("mirror", value, "json")
+    },
     "limit.value": function (value) {
       seamless_update("limit", value, "json")
     },
     "markerline.value": function (value) {
       seamless_update("markerline", value, "json")
-    },
-    "mirror.value": function (value) {
-      seamless_update("mirror", value, "json")
-    },
-    "period.value": function (value) {
-      seamless_update("period", value, "json")
     },
   },
   updated() {

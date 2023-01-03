@@ -6,6 +6,7 @@
       "params": {
         "max": 1,
         "min": -1,
+        "step": 0.01,
         "title": "Lower limit of the plot"
       },
       "share": {
@@ -21,7 +22,9 @@
       "component": "input",
       "params": {
         "editable": true,
-        "title": "Marker and line for drawing the plot"
+        "maxlength": 100,
+        "title": "Marker and line for drawing the plot",
+        "type": "input"
       },
       "share": {
         "auto_read": true,
@@ -37,6 +40,7 @@
       "params": {
         "max": -1,
         "min": 1,
+        "step": 0.01,
         "title": "Value where the plot is mirrored"
       },
       "share": {
@@ -53,6 +57,7 @@
       "params": {
         "max": 1000,
         "min": 0,
+        "step": 1,
         "title": "Period of the wave"
       },
       "share": {
@@ -86,15 +91,15 @@
     }
   ],
   "index": {
-    "order": [
-      "period",
-      "mirror",
-      "limit",
-      "markerline",
-      "png"
-    ],
     "title": "Seamless webform"
   },
+  "order": [
+    "period",
+    "mirror",
+    "limit",
+    "markerline",
+    "png"
+  ],
   "transformers": {
     "filter_plot": {
       "component": "transformer-status",

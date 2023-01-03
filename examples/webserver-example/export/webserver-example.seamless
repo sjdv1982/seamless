@@ -187,7 +187,6 @@
     {
       "celltype": "structured",
       "checksum": {
-        "buffer": "7c8dafc332d11b4c82f6f2d10138a7cba68ed231abe9faee00f398a8f78cf6d3",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "7c8dafc332d11b4c82f6f2d10138a7cba68ed231abe9faee00f398a8f78cf6d3"
       },
@@ -201,7 +200,6 @@
     {
       "celltype": "structured",
       "checksum": {
-        "buffer": "e24b6bfbbca3ffe408a047b5a7a523dcae45f15f4f6817a01d8d2f66a78829d5",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "e24b6bfbbca3ffe408a047b5a7a523dcae45f15f4f6817a01d8d2f66a78829d5"
       },
@@ -311,7 +309,6 @@
     {
       "celltype": "structured",
       "checksum": {
-        "buffer": "b89d5221c4a25f8fb9761d3fa385bc96f0a6917173e23384cead5d88b6669be0",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "b89d5221c4a25f8fb9761d3fa385bc96f0a6917173e23384cead5d88b6669be0"
       },
@@ -432,7 +429,6 @@
     {
       "celltype": "structured",
       "checksum": {
-        "buffer": "f1db599567b99f80391412d1507a6757cce3c7b366a5674615f022955b90b3af",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "f1db599567b99f80391412d1507a6757cce3c7b366a5674615f022955b90b3af"
       },

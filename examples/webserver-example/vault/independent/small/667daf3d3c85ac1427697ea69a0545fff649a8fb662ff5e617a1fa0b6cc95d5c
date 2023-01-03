@@ -1,9 +1,0 @@
-def plot2png(x, y, markerline):
-    import matplotlib.pyplot as plt
-    import numpy as np
-    fig, ax = plt.subplots()
-    ax.plot(x, y, markerline)
-    from io import BytesIO
-    png = BytesIO()
-    plt.savefig(png)
-    return png.getvalue()
