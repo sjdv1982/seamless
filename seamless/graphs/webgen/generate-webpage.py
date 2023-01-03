@@ -10,6 +10,18 @@ from jinja2 import Template
 import random
 import json
 
+last_resort_webdefaults = {
+    "int": 0,
+    "float": 0.0,
+    "str": "",
+    "plain": {},
+    "text": "",
+    "cson": "",
+    "yaml": "",
+    "bool": False,
+    "bytes": None,
+}
+
 idents = set()
 def ident():
     while 1:
@@ -202,7 +214,11 @@ for cell_or_tf_or_id in order:
         continue
     else:
         config = webform["cells"][cell]
-    webdefault = config["webdefault"]
+    webdefault = config.get("webdefault")
+    
+    if webdefault is None:
+        webdefault = last_resort_webdefaults[config["celltype"]]
+
     path = config.get("path", cell).replace("/", "__")
     if path != cell:
         SEAMLESS_PATH_TO_CELL[path] = cell
