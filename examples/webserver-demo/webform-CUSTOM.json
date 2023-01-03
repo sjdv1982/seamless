@@ -4,60 +4,67 @@
       "celltype": "float",
       "component": "slider",
       "params": {
-        "auto_read": true,
         "max": 10,
         "min": 0,
+        "step": 0.1,
         "title": "Delay in dataset generation"
       },
       "share": {
+        "auto_read": true,
         "encoding": "json",
         "read": true,
         "write": true
-      }
+      },
+      "webdefault": 0.0
     },
     "k": {
       "celltype": "int",
       "component": "slider",
       "params": {
-        "auto_read": true,
         "max": 10,
-        "min": 0,
+        "min": 1,
+        "step": 1,
         "title": "Number of clusters for k-means clustering"
       },
       "share": {
+        "auto_read": true,
         "encoding": "json",
         "read": true,
         "write": true
-      }
+      },
+      "webdefault": 0
     },
     "plot": {
       "celltype": "bytes",
       "component": "image",
       "params": {
-        "auto_read": true,
         "height": "288px",
         "title": "Plot of the clustered dataset",
         "width": "432px"
       },
       "share": {
+        "auto_read": true,
         "encoding": "text",
         "read": true
-      }
+      },
+      "webdefault": null
     },
     "random_state": {
       "celltype": "int",
       "component": "slider",
       "params": {
-        "auto_read": true,
         "max": 100,
         "min": 0,
+        "step": 1,
         "title": "Random state for the dataset generator"
       },
       "share": {
+        "auto_read": true,
         "encoding": "json",
         "read": true,
         "write": true
-      }
+      },
+      "webdefault": 0
     }
   },
   "extra_components": [
@@ -71,12 +78,6 @@
   "index": {
     "title": "Seamless webform"
   },
-  "order": [
-    "random_state",
-    "delay",
-    "k",
-    "plot"
-  ],
   "transformers": {
     "generate_dataset": {
       "component": "transformer-status",
