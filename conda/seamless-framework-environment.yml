@@ -8,7 +8,7 @@ dependencies:
   - conda=4.12
   - pip:
     - nglview
-    - snakemake
+    - snakemake==7.18
     - cson==0.8
     - speg==0.3
     - websockets==10.3
