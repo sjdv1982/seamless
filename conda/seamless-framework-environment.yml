@@ -20,6 +20,7 @@ dependencies:
     - debugpy==1.6.*
     - tornado==6.2.*
     - orjson
+    - jinja2==3.0.*
 
 variables:
     RPY2_CFFI_MODE: ABI
