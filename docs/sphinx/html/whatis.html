@@ -37,7 +37,10 @@
               <p class="caption"><span class="caption-text">Introduction</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Seamless: a cell-based interactive workflow framework</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#documentation-http-sjdv1982-github-io-seamless">Documentation: http://sjdv1982.github.io/seamless</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#features">Features</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#documentation-http-sjdv1982-github-io-seamless">Documentation: http://sjdv1982.github.io/seamless</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#try-out-seamless">Try out Seamless</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#quick-installation">Quick installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#basic-example">Basic example</a><ul>
@@ -118,11 +121,17 @@
   <div class="section" id="seamless-a-cell-based-interactive-workflow-framework">
 <h1>Seamless: a cell-based interactive workflow framework<a class="headerlink" href="#seamless-a-cell-based-interactive-workflow-framework" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb"><img alt="Binder" src="https://mybinder.org/badge_logo.svg" /></a></p>
-<p>Seamless is a framework to set up workflows and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations. All cells and computations can be created, edited and connected interactively.</p>
+<p>Seamless is a framework to set up reproducible workflows and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations. All cells and computations can be created, edited and connected interactively.</p>
 <p>The main application domains are data science, scientific computing, software prototyping, and interactive web services.</p>
-<p>Workflows, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible.</p>
+<p>Wrokflows, computations and results are all internally represented as trees of checksums. This makes them strongly interoperable and reproducible.</p>
+<div class="section" id="features">
+<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<p>Seamless workflows define both data and code in a single file. Any user can re-execute a Seamless workflow (reproducing its results) and then modify it easily: by editing workflow parameters in a web interface, or by changing the source code cells, or by extending the workflow with additional steps. Modification of the workflow takes place while it is running.</p>
+<p>Seamless-generated web interfaces are interactive and collaborative for the user. Also, the process of workflow creation is interactive for the programmer. At all times, the status of all of the workflow is being reported.
+In fact, there is no sharp distinction between user and programmer. Each step of the workflow (which can be in Python, bash, C/C++, or several other languages) can be mounted to a file, so that you can use Git, diff, and text editors. If you use an IDE, live debugging with code breakpoints is supported. As a programmer, you can work collaboratively, creating a live shared session where a team of developers can work on different parts of the workflow in parallel.</p>
 <div class="section" id="documentation-http-sjdv1982-github-io-seamless">
-<h2>Documentation: <a class="reference external" href="http://sjdv1982.github.io/seamless">http://sjdv1982.github.io/seamless</a><a class="headerlink" href="#documentation-http-sjdv1982-github-io-seamless" title="Permalink to this headline">¶</a></h2>
+<h3>Documentation: <a class="reference external" href="http://sjdv1982.github.io/seamless">http://sjdv1982.github.io/seamless</a><a class="headerlink" href="#documentation-http-sjdv1982-github-io-seamless" title="Permalink to this headline">¶</a></h3>
+</div>
 </div>
 <div class="section" id="try-out-seamless">
 <h2>Try out Seamless<a class="headerlink" href="#try-out-seamless" title="Permalink to this headline">¶</a></h2>

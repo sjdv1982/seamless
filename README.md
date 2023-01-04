@@ -2,11 +2,18 @@
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb)
 
-Seamless is a framework to set up workflows and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations. All cells and computations can be created, edited and connected interactively.
+Seamless is a framework to set up reproducible workflows and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations. All cells and computations can be created, edited and connected interactively.
 
 The main application domains are data science, scientific computing, software prototyping, and interactive web services.
 
-Workflows, computations and results are all represented as directed acyclic graphs that consist of cell checksums. This makes them strongly interoperable and reproducible.
+Wrokflows, computations and results are all internally represented as trees of checksums. This makes them strongly interoperable and reproducible.
+
+## Features
+
+Seamless workflows define both data and code in a single file. Any user can re-execute a Seamless workflow (reproducing its results) and then modify it easily: by editing workflow parameters in a web interface, or by changing the source code cells, or by extending the workflow with additional steps. Modification of the workflow takes place while it is running.
+
+Seamless-generated web interfaces are interactive and collaborative for the user. Also, the process of workflow creation is interactive for the programmer. At all times, the status of all of the workflow is being reported.
+In fact, there is no sharp distinction between user and programmer. Each step of the workflow (which can be in Python, bash, C/C++, or several other languages) can be mounted to a file, so that you can use Git, diff, and text editors. If you use an IDE, live debugging with code breakpoints is supported. As a programmer, you can work collaboratively, creating a live shared session where a team of developers can work on different parts of the workflow in parallel.
 
 ### Documentation: <http://sjdv1982.github.io/seamless>
 

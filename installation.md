@@ -23,7 +23,7 @@ There are three methods to run Seamless. Below, each of the three methods is bri
 
     This method has been tested under macOS and Linux. As it relies on `os.fork()`, it will not work under Windows.
 
-    Note that Seamless is tested only with the Python version inside its Docker image (For Seamless 0.9, this is Python 3.8). Currently, Seamless uses Python syntax that requires at least Python 3.7.
+    Note that Seamless is tested only with the Python version inside its Docker image (For Seamless 0.10, this is Python 3.8). Currently, Seamless uses Python syntax that requires at least Python 3.7.
 
 3. Finally, there is also the seamless-minimal installation method. This is not a full Seamless installation, since Jupyter and IPython are missing. Instead, the aim of seamless-minimal is to run Seamless computations inside arbitrary conda environments.
 
@@ -63,7 +63,7 @@ conda config --env --set channel_priority strict
 conda env update --file https://raw.githubusercontent.com/sjdv1982/seamless/stable/conda/seamless-framework-environment.yml
 ```
 
-The seamless-framework conda environment is big and installing additional packages may take a lot of time, even with strict channel priority. Therefore, it has `mamba` installed as a fast, drop-in replacement for the `conda` command.
+The seamless-framework conda environment is big and installing additional packages may take a lot of time, even with strict channel priority. Therefore, you are recommended to install `mamba` as a fast, drop-in replacement for the `conda` command.
 
 When running compiled transformers, Seamless assumes that gcc (for C), g++ (for C++) and gfortran are available. These are not installed by default. If you wish to run transformers written in these languages, you must install these compilers yourself.
 
