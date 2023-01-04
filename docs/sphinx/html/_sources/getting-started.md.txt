@@ -26,7 +26,7 @@ A final source of information are the examples and the tests. The feature docume
 
 ### Running examples on mybinder.org
 
-Three of the examples can be run as notebooks on mybinder.org, which means that no installation is necessary. The first is the [basic example](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb). The second is the [webserver demo](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=webserver/webserver.ipynb). This example shows how to port a simple data science notebook to a Seamless workflow with an interactive web interface. Third, the [reproducible molecular viewer] https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=reproducible-pdb-viewer/reproducible-pdb-viewer.ipynb shows how to manage a remote dataset of hundreds of gigabytes in a reproducible manner.
+Three of the examples can be run as notebooks on mybinder.org, which means that no installation is necessary. The first is the [basic example](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb). The second is the [webserver demo](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=webserver/webserver.ipynb). This example shows how to port a simple data science notebook to a Seamless workflow with an interactive web interface. Third, the [reproducible molecular viewer](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=reproducible-pdb-viewer/reproducible-pdb-viewer.ipynb) shows how to manage a remote dataset of hundreds of gigabytes in a reproducible manner.
 
 ### Running examples locally
 
