@@ -55,6 +55,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#transformer-execution">Transformer execution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#transformer-result">Transformer result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#transformer-programming-languages">Transformer programming languages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#python-transformers">Python transformers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#preliminary-results-and-progress">Preliminary results and progress</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#bash-transformers">Bash transformers</a></li>
@@ -111,15 +112,15 @@
              
   <div class="section" id="transformers">
 <h1>Transformers<a class="headerlink" href="#transformers" title="Permalink to this headline">¶</a></h1>
-<p>Transformers perform a data transformation (computation), with cells as input, and one cell as the output. The source code of the transformation is an additional input. In principle, transformations can be in any programming language. Transformations in Python, IPython, bash, or a compiled language (C, C++ or Fortran) are supported directly. You can add your own languages as well.</p>
+<p>Transformers perform a data transformation (computation), with cells as input, and one cell as the output. The source code of the transformation is an additional input. In principle, transformations can be in any programming language.</p>
 <p>Transformers must be bound to a context. <code class="docutils literal notranslate"><span class="pre">ctx.tf</span> <span class="pre">=</span> <span class="pre">Transformer()</span></code> creates a new transformer <code class="docutils literal notranslate"><span class="pre">ctx.tf</span></code>, bound to context <code class="docutils literal notranslate"><span class="pre">ctx</span></code>.</p>
 <p><em><strong>In the documentation below, <code class="docutils literal notranslate"><span class="pre">ctx.tf</span> <span class="pre">=</span> <span class="pre">Transformer()</span></code> is assumed.</strong></em></p>
 <div class="section" id="pins">
 <h2>Pins<a class="headerlink" href="#pins" title="Permalink to this headline">¶</a></h2>
 <p>The inputs of a transformer are declared as <em>pins</em>. If <code class="docutils literal notranslate"><span class="pre">ctx.tf</span></code> does not have a pin <code class="docutils literal notranslate"><span class="pre">x</span></code>, then <code class="docutils literal notranslate"><span class="pre">ctx.tf.x</span> <span class="pre">=</span> <span class="pre">10</span></code> creates a new pin <code class="docutils literal notranslate"><span class="pre">x</span></code> with the value 10. If it does have a pin <code class="docutils literal notranslate"><span class="pre">x</span></code>, it assigns the value 10 to it. A pin can also be connected to a cell <code class="docutils literal notranslate"><span class="pre">ctx.c</span></code> using <code class="docutils literal notranslate"><span class="pre">ctx.tf.x</span> <span class="pre">=</span> <span class="pre">ctx.c</span></code>.</p>
-<p>Pin <em>values</em> can be accessed with e.g. <code class="docutils literal notranslate"><span class="pre">ctx.tf.x</span></code> for pin <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<p>Pin <em>values</em> can be accessed with e.g. <code class="docutils literal notranslate"><span class="pre">ctx.tf.x.value</span></code> for pin <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
 <p>Pin <em>attributes</em> can be accessed using <code class="docutils literal notranslate"><span class="pre">ctx.tf.pins</span></code>, e.g <code class="docutils literal notranslate"><span class="pre">ctx.tf.pins.x</span></code> for pin <code class="docutils literal notranslate"><span class="pre">x</span></code>. The celltype of a pin <code class="docutils literal notranslate"><span class="pre">x</span></code> can be changed using <code class="docutils literal notranslate"><span class="pre">ctx.tf.pins.x.celltype</span></code> . Pin <code class="docutils literal notranslate"><span class="pre">x</span></code> can be deleted using <code class="docutils literal notranslate"><span class="pre">del</span> <span class="pre">ctx.tf.pins.x</span></code> or <code class="docutils literal notranslate"><span class="pre">del</span> <span class="pre">ctx.tf.x</span></code>.</p>
-<p>Pins can be mounted to files, just like cells can. The same restrictions apply regarding dependent values and celltype. See the documentation of Cell for more details.</p>
+<p>Pins can be mounted to files, just like cells can, e.g <code class="docutils literal notranslate"><span class="pre">ctx.tf.x.mount(...)</span></code> for pin x. The same restrictions apply as for cells regarding dependent values and celltype. See the documentation of Cell for more details.</p>
 <p>Newly created/deleted/connected/mounted pins require a re-translation of the context to take effect. This is also the case for a change in pin celltype.</p>
 <div class="section" id="alternative-pin-syntax">
 <h3>Alternative pin syntax<a class="headerlink" href="#alternative-pin-syntax" title="Permalink to this headline">¶</a></h3>
@@ -146,14 +147,33 @@ Seamless keeps track of the (checksum of) a transformation result, as a function
 <h2>Transformer result<a class="headerlink" href="#transformer-result" title="Permalink to this headline">¶</a></h2>
 <p>The result of a transformer is None until the transformation has completed successfully.
 It is available as the <em>result pin</em> <code class="docutils literal notranslate"><span class="pre">ctx.tf.result</span></code>.
-The value of the result is available as <code class="docutils literal notranslate"><span class="pre">ctx.tf.result.value</span></code>
-The celltype of the result is always “structured”. Use <code class="docutils literal notranslate"><span class="pre">ctx.tf.result.value.unsilk</span></code> to get it as “mixed” (i.e. a JSON-encodable Python object, a Numpy array, or a mix of both).</p>
+The value of the result is available as <code class="docutils literal notranslate"><span class="pre">ctx.tf.result.value</span></code>.</p>
+<p>The celltype of the result is always “structured”. Use <code class="docutils literal notranslate"><span class="pre">ctx.tf.result.value.unsilk</span></code> to get it as “mixed” (i.e. a JSON-encodable Python object, a Numpy array, or a mix of both).</p>
 <p>The execution status of the transformer can be retrieved using <code class="docutils literal notranslate"><span class="pre">ctx.tf.status</span></code>. If it is “error”, the error message can be retrieved using <code class="docutils literal notranslate"><span class="pre">ctx.tf.exception</span></code>.</p>
-<p>Transformers can print to stdout or stderr during execution.
-The printed output is only available after execution has finished.</p>
-<p>The printed output will be part of the error message if the transformation fails.
-If it succeeds, the printed output will be in <code class="docutils literal notranslate"><span class="pre">ctx.tf.logs</span></code>.</p>
-<p>To assign a transformer result to a cell <code class="docutils literal notranslate"><span class="pre">ctx.c</span></code>, do <code class="docutils literal notranslate"><span class="pre">ctx.c</span> <span class="pre">=</span> <span class="pre">ctx.tf</span></code>, or <code class="docutils literal notranslate"><span class="pre">ctx.c</span> <span class="pre">=</span> <span class="pre">ctx.tf.result</span></code> (preferred).</p>
+<p>Transformers can print to stdout or stderr during execution. The printed output will be in <code class="docutils literal notranslate"><span class="pre">ctx.tf.logs</span></code>, together with the execution time and result.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ctx.tf.logs</span></code> is only available after execution has finished. It is possible to put a transformer in debug mode in order to get more immediate feedback (see the “debugging” documentation section).</p>
+<p>To assign a transformer result to a cell <code class="docutils literal notranslate"><span class="pre">ctx.c</span></code>, do <code class="docutils literal notranslate"><span class="pre">ctx.c</span> <span class="pre">=</span> <span class="pre">ctx.tf</span></code>, or <code class="docutils literal notranslate"><span class="pre">ctx.c</span> <span class="pre">=</span> <span class="pre">ctx.tf.result</span></code> (preferred syntax).</p>
+</div>
+<div class="section" id="transformer-programming-languages">
+<h2>Transformer programming languages<a class="headerlink" href="#transformer-programming-languages" title="Permalink to this headline">¶</a></h2>
+<p>In principle, Seamless transformers can be in any programming language.
+The language is set in the <code class="docutils literal notranslate"><span class="pre">Transformer.language</span></code> field.</p>
+<p>The following languages are supported directly:</p>
+<ul class="simple">
+<li><p>“python” (default)</p></li>
+<li><p>“bash”</p></li>
+<li><p>“ipython”</p></li>
+<li><p>“r”</p></li>
+<li><p>compiled languages:</p>
+<ul>
+<li><p>“c”</p></li>
+<li><p>“cpp”</p></li>
+<li><p>“fortran”</p></li>
+</ul>
+</li>
+</ul>
+<p>Cython is also bundled with the Seamless Docker image. Within an IPython transformer, you can use %%cython magics to embed Cython code.</p>
+<p>Seamless has an API to dynamically add support for new programming languages. See the section “Adding new transformer languages” below.</p>
 </div>
 <div class="section" id="python-transformers">
 <h2>Python transformers<a class="headerlink" href="#python-transformers" title="Permalink to this headline">¶</a></h2>
@@ -174,8 +194,13 @@ For example, the following will not work:</p>
 <span class="n">ctx</span><span class="o">.</span><span class="n">tf</span> <span class="o">=</span> <span class="n">func</span>
 </pre></div>
 </div>
-<p>This is because <code class="docutils literal notranslate"><span class="pre">np</span></code> is not defined inside of <code class="docutils literal notranslate"><span class="pre">func</span></code>, but outside of it,
-so the transformer will not have access to it.</p>
+<p>This is because <code class="docutils literal notranslate"><span class="pre">np</span></code> is not defined inside of <code class="docutils literal notranslate"><span class="pre">func</span></code>, but outside of it, so the transformer will not have access to it. The solution is to put imports inside the transformer code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">tf</span> <span class="o">=</span> <span class="n">func</span>
+</pre></div>
+</div>
 <p>Python source code can be an expression, a function, or simply a block of code. For an expression or a function, the return value is the result value. A code block must define a variable named “result”.</p>
 </div>
 <div class="section" id="preliminary-results-and-progress">
@@ -188,14 +213,10 @@ so the transformer will not have access to it.</p>
 <p>In both cases, <code class="docutils literal notranslate"><span class="pre">ctx.tf.code</span></code> is written in bash.
 The bash code will have access to every input pin stored as a file of the same name.
 Small inputs are also available as a bash variable of the same name.
-You can use the alternative pin syntax to specify input pins that will be stored as a file
-with an extension: <code class="docutils literal notranslate"><span class="pre">ctx.tf[&quot;inputfile.txt&quot;]</span> <span class="pre">=</span> <span class="pre">ctx.inputfile</span></code>, where <code class="docutils literal notranslate"><span class="pre">ctx.inputfile</span></code> is a cell.</p>
-<p>Execution takes place in a temporary directory, that is cleaned up afterwards. The bash code is literally executed under bash, Seamless does not perform parsing or substitution of any kind.</p>
+You can use the alternative pin syntax to specify input pins that will be stored as a file with an extension: <code class="docutils literal notranslate"><span class="pre">ctx.tf[&quot;inputfile.txt&quot;]</span> <span class="pre">=</span> <span class="pre">ctx.inputfile</span></code>, where <code class="docutils literal notranslate"><span class="pre">ctx.inputfile</span></code> is a cell.</p>
+<p>Execution takes place in a temporary directory, that is cleaned up afterwards. The bash code is literally executed under bash, Seamless does not perform parsing or variable substitution of any kind.</p>
 <p>After execution, Seamless expects that a file or directory with the name <code class="docutils literal notranslate"><span class="pre">RESULT</span></code> has been created.
-This file/directory must contain the result of the transformation. This result will be assigned
-to the result pin (<code class="docutils literal notranslate"><span class="pre">ctx.tf.result</span></code>). In case of a result directory, the result will be a dict
-where the keys are the original file names within the <code class="docutils literal notranslate"><span class="pre">RESULT</span></code> directory and the values are the
-contents of those files. To get the individual result file values, use subcells (see the Cell documentation for more details). For example:</p>
+This file/directory must contain the result of the transformation. This result will be assigned to the result pin (<code class="docutils literal notranslate"><span class="pre">ctx.tf.result</span></code>). In case of a result directory, the result will be a dict where the keys are the original file names within the <code class="docutils literal notranslate"><span class="pre">RESULT</span></code> directory and the values are the contents of those files. To get the individual result file values, use subcells (see the Cell documentation for more details). For example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">tf</span> <span class="o">=</span> <span class="n">Transformer</span><span class="p">()</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">language</span> <span class="o">=</span> <span class="s2">&quot;bash&quot;</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mi">5</span>
@@ -225,10 +246,8 @@ contents of those files. To get the individual result file values, use subcells 
 test
 </pre></div>
 </div>
-<p>Bash transformers with a docker_image attribute have their bash script executed
-inside a Docker container.
-Note that to execute a such transformer under standard Seamless
-(i.e. without configuring job servants to delegate the work), you will need to expose the Docker socket to Seamless, e.g using <code class="docutils literal notranslate"><span class="pre">seamless-bash-trusted</span></code> or <code class="docutils literal notranslate"><span class="pre">seamless-jupyter-trusted</span></code>. Also, unlike <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">run</span></code>, Seamless does not pull any Docker images for you.</p>
+<p>Bash transformers with a <code class="docutils literal notranslate"><span class="pre">docker_image</span></code> attribute have their bash script executed inside a Docker container.
+Note that to execute a such transformer under standard Seamless (i.e. without configuring job servants to delegate the work), you will need to expose the Docker socket to Seamless, e.g using <code class="docutils literal notranslate"><span class="pre">seamless-bash-trusted</span></code> or <code class="docutils literal notranslate"><span class="pre">seamless-jupyter-trusted</span></code>. Also, unlike <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">run</span></code>, Seamless does not pull any Docker images for you.</p>
 <p>An example of a bash transformer is <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py">here</a>. An example of a bash transformer with Docker image is <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py">here</a>.</p>
 <p>Note that bash transformers are executed in a separate temporary execution directory, they have no access to the file system available to <code class="docutils literal notranslate"><span class="pre">ctx</span></code>. The execution directory is deleted after execution.
 Also, the files inside this directory have file names that correspond only to the name of the transformer pins. There is also absolutely no relation with the cells to which these are connected. There is also no relation between these file names and the file names under which cells/pins are mounted or shared. This is demonstrated using the following example code:</p>
@@ -240,6 +259,7 @@ Also, the files inside this directory have file names that correspond only to th
 <span class="n">ctx</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">language</span> <span class="o">=</span> <span class="s2">&quot;bash&quot;</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">name4</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">name1</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2"># name2.txt or name3.txt do NOT exist ...</span>
 <span class="s2">mkdir RESULT</span>
 <span class="s2">echo $name4 &gt; RESULT/x</span>
 <span class="s2">seq $name4 &gt; RESULT/y</span>
@@ -286,10 +306,10 @@ TODO: from tutorial:
 <p>(integrate or delegate to <a class="reference external" href="https://sjdv1982.github.io/seamless/sphinx/html/environments">documentation on environments</a>)</p>
 <p><strong>Relevant test examples:</strong></p>
 <ul class="simple">
-<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment.py">environment.py</a></p></li>
-<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment2.py">environment2.py</a></p></li>
-<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment3.py">environment3.py</a></p></li>
-<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment6.py">environment6.py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment.py">environment.py</a>. At the end of this test, it is shown how to add Rust support. First, Rust must be installed in the container using “mamba install rust”.</p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment2.py">environment2.py</a>. This test shows how to add Go support. First, Go must be installed in the container using “mamba install go-cgo”.</p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment3.py">environment3.py</a>. This test shows how to add direct Cython support (without IPython magics).</p></li>
+<li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment6.py">environment6.py</a>. This test shows how to add PHP support. First, install php7.4-cli with apt and python-bond with pip.</p></li>
 </ul>
 <p>See <a class="reference external" href="https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-tests-locally">Running tests</a> on how to execute tests.</p>
 <!--

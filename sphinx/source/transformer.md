@@ -1,6 +1,6 @@
 # Transformers
 
-Transformers perform a data transformation (computation), with cells as input, and one cell as the output. The source code of the transformation is an additional input. In principle, transformations can be in any programming language. Transformations in Python, IPython, bash, or a compiled language (C, C++ or Fortran) are supported directly. You can add your own languages as well.
+Transformers perform a data transformation (computation), with cells as input, and one cell as the output. The source code of the transformation is an additional input. In principle, transformations can be in any programming language.
 
 Transformers must be bound to a context. `ctx.tf = Transformer()` creates a new transformer `ctx.tf`, bound to context `ctx`.
 
@@ -10,11 +10,11 @@ Transformers must be bound to a context. `ctx.tf = Transformer()` creates a new 
 
 The inputs of a transformer are declared as *pins*. If `ctx.tf` does not have a pin `x`, then `ctx.tf.x = 10` creates a new pin `x` with the value 10. If it does have a pin `x`, it assigns the value 10 to it. A pin can also be connected to a cell `ctx.c` using `ctx.tf.x = ctx.c`.
 
-Pin *values* can be accessed with e.g. `ctx.tf.x` for pin `x`.
+Pin *values* can be accessed with e.g. `ctx.tf.x.value` for pin `x`.
 
 Pin *attributes* can be accessed using `ctx.tf.pins`, e.g `ctx.tf.pins.x` for pin `x`. The celltype of a pin `x` can be changed using `ctx.tf.pins.x.celltype` . Pin `x` can be deleted using `del ctx.tf.pins.x` or `del ctx.tf.x`.
 
-Pins can be mounted to files, just like cells can. The same restrictions apply regarding dependent values and celltype. See the documentation of Cell for more details.
+Pins can be mounted to files, just like cells can, e.g `ctx.tf.x.mount(...)` for pin x. The same restrictions apply as for cells regarding dependent values and celltype. See the documentation of Cell for more details.
 
 Newly created/deleted/connected/mounted pins require a re-translation of the context to take effect. This is also the case for a change in pin celltype.
 
@@ -42,18 +42,37 @@ Seamless keeps track of the (checksum of) a transformation result, as a function
 
 The result of a transformer is None until the transformation has completed successfully.
 It is available as the *result pin* `ctx.tf.result`.
-The value of the result is available as `ctx.tf.result.value`
+The value of the result is available as `ctx.tf.result.value`.
+
 The celltype of the result is always "structured". Use `ctx.tf.result.value.unsilk` to get it as "mixed" (i.e. a JSON-encodable Python object, a Numpy array, or a mix of both).
 
 The execution status of the transformer can be retrieved using `ctx.tf.status`. If it is "error", the error message can be retrieved using `ctx.tf.exception`.
 
-Transformers can print to stdout or stderr during execution.
-The printed output is only available after execution has finished.
+Transformers can print to stdout or stderr during execution. The printed output will be in `ctx.tf.logs`, together with the execution time and result.
 
-The printed output will be part of the error message if the transformation fails.
-If it succeeds, the printed output will be in `ctx.tf.logs`.
+`ctx.tf.logs` is only available after execution has finished. It is possible to put a transformer in debug mode in order to get more immediate feedback (see the "debugging" documentation section).
 
-To assign a transformer result to a cell `ctx.c`, do `ctx.c = ctx.tf`, or `ctx.c = ctx.tf.result` (preferred).
+To assign a transformer result to a cell `ctx.c`, do `ctx.c = ctx.tf`, or `ctx.c = ctx.tf.result` (preferred syntax).
+
+## Transformer programming languages
+
+In principle, Seamless transformers can be in any programming language.
+The language is set in the `Transformer.language` field.
+
+The following languages are supported directly:
+
+- "python" (default)
+- "bash"
+- "ipython"
+- "r"
+- compiled languages:
+  - "c"
+  - "cpp"
+  - "fortran"
+
+Cython is also bundled with the Seamless Docker image. Within an IPython transformer, you can use %%cython magics to embed Cython code.
+
+Seamless has an API to dynamically add support for new programming languages. See the section "Adding new transformer languages" below.
 
 ## Python transformers
 
@@ -79,8 +98,14 @@ def func(a, b):
 ctx.tf = func
 ```
 
-This is because `np` is not defined inside of `func`, but outside of it,
-so the transformer will not have access to it.
+This is because `np` is not defined inside of `func`, but outside of it, so the transformer will not have access to it. The solution is to put imports inside the transformer code:
+
+```python
+def func(a, b):
+    import numpy as np
+    return np.arange(a, b)
+ctx.tf = func
+```
 
 Python source code can be an expression, a function, or simply a block of code. For an expression or a function, the return value is the result value. A code block must define a variable named "result".
 
@@ -95,16 +120,12 @@ Bash transformers have `ctx.tf.language` set to "bash".
 In both cases, `ctx.tf.code` is written in bash.
 The bash code will have access to every input pin stored as a file of the same name.
 Small inputs are also available as a bash variable of the same name.
-You can use the alternative pin syntax to specify input pins that will be stored as a file
-with an extension: `ctx.tf["inputfile.txt"] = ctx.inputfile`, where `ctx.inputfile` is a cell.
+You can use the alternative pin syntax to specify input pins that will be stored as a file with an extension: `ctx.tf["inputfile.txt"] = ctx.inputfile`, where `ctx.inputfile` is a cell.
 
-Execution takes place in a temporary directory, that is cleaned up afterwards. The bash code is literally executed under bash, Seamless does not perform parsing or substitution of any kind.
+Execution takes place in a temporary directory, that is cleaned up afterwards. The bash code is literally executed under bash, Seamless does not perform parsing or variable substitution of any kind.
 
 After execution, Seamless expects that a file or directory with the name `RESULT` has been created.
-This file/directory must contain the result of the transformation. This result will be assigned
-to the result pin (`ctx.tf.result`). In case of a result directory, the result will be a dict
-where the keys are the original file names within the `RESULT` directory and the values are the
-contents of those files. To get the individual result file values, use subcells (see the Cell documentation for more details). For example:
+This file/directory must contain the result of the transformation. This result will be assigned to the result pin (`ctx.tf.result`). In case of a result directory, the result will be a dict where the keys are the original file names within the `RESULT` directory and the values are the contents of those files. To get the individual result file values, use subcells (see the Cell documentation for more details). For example:
 
 ```python
 ctx.tf = Transformer()
@@ -137,10 +158,8 @@ print(ctx.filetxt.value)
 test
 ```
 
-Bash transformers with a docker_image attribute have their bash script executed
-inside a Docker container.
-Note that to execute a such transformer under standard Seamless
-(i.e. without configuring job servants to delegate the work), you will need to expose the Docker socket to Seamless, e.g using `seamless-bash-trusted` or `seamless-jupyter-trusted`. Also, unlike `docker run`, Seamless does not pull any Docker images for you.
+Bash transformers with a `docker_image` attribute have their bash script executed inside a Docker container.
+Note that to execute a such transformer under standard Seamless (i.e. without configuring job servants to delegate the work), you will need to expose the Docker socket to Seamless, e.g using `seamless-bash-trusted` or `seamless-jupyter-trusted`. Also, unlike `docker run`, Seamless does not pull any Docker images for you.
 
 An example of a bash transformer is [here](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py). An example of a bash transformer with Docker image is [here](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py).
 
@@ -156,6 +175,7 @@ ctx.tf = Transformer()
 ctx.tf.language = "bash"
 ctx.tf.name4 = ctx.name1
 ctx.tf.code = """
+# name2.txt or name3.txt do NOT exist ...
 mkdir RESULT
 echo $name4 > RESULT/x
 seq $name4 > RESULT/y
@@ -207,13 +227,13 @@ TODO: from tutorial:
 
 **Relevant test examples:**
 
-- [environment.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment.py)
+- [environment.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment.py). At the end of this test, it is shown how to add Rust support. First, Rust must be installed in the container using "mamba install rust".
 
-- [environment2.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment2.py)
+- [environment2.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment2.py). This test shows how to add Go support. First, Go must be installed in the container using "mamba install go-cgo".
 
-- [environment3.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment3.py)
+- [environment3.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment3.py). This test shows how to add direct Cython support (without IPython magics).
 
-- [environment6.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment6.py)
+- [environment6.py](https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/environment6.py). This test shows how to add PHP support. First, install php7.4-cli with apt and python-bond with pip.
 
 See [Running tests](https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-tests-locally) on how to execute tests.
 
