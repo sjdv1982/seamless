@@ -15,6 +15,8 @@ Seamless workflows define both data and code in a single file. Any user can re-e
 Seamless-generated web interfaces are interactive and collaborative for the user. Also, the process of workflow creation is interactive for the programmer. At all times, the status of all of the workflow is being reported.
 In fact, there is no sharp distinction between user and programmer. Each step of the workflow (which can be in Python, bash, C/C++, or several other languages) can be mounted to a file, so that you can use Git, diff, and text editors. If you use an IDE, live debugging with code breakpoints is supported. As a programmer, you can work collaboratively, creating a live shared session where a team of developers can work on different parts of the workflow in parallel.
 
+### Source code: <https://github.com/sjdv1982/seamless>
+
 ### Documentation: <http://sjdv1982.github.io/seamless>
 
 ## Try out Seamless
@@ -369,6 +371,10 @@ ctx.add.code.value
 >>> curl http://localhost:5813/ctx/c
 35
 ```
+
+##### Source code
+
+<https://github.com/sjdv1982/seamless>
 
 ##### Documentation
 
