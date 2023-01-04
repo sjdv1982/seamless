@@ -6,7 +6,7 @@ Seamless is a framework to set up reproducible workflows and computations that r
 
 The main application domains are data science, scientific computing, software prototyping, and interactive web services.
 
-Wrokflows, computations and results are all internally represented as trees of checksums. This makes them strongly interoperable and reproducible.
+Workflows, computations and results are all internally represented as trees of checksums. This makes them strongly interoperable and reproducible.
 
 ## Features
 
