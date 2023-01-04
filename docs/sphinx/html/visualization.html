@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Visualization &mdash; Seamless 0.9 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <title>Visualization &mdash; Seamless 0.10 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
@@ -90,8 +90,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Visualization</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Visualization</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/visualization.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -141,6 +141,15 @@ When you share a cell (and retranslate the graph), an entry is automatically add
 <h2>Modifying the web status generator<a class="headerlink" href="#modifying-the-web-status-generator" title="Permalink to this headline">¶</a></h2>
 <p>TODO. Integrate/merge with “visualization and monitoring” in “Seamless explained”.</p>
 <!--
+
+TODO:
+
+- Webunits
+
+- ctx.path.x (Seamless Python) vs /ctx/path/x (HTTP) vs ctx.path__x (Javascript client). This is all for cells shared with .share() (no arguments), which become "cells" in the webform.
+
+- "extra cells" are the ones with .share(path), where the sharepath ( HTTP+Javascript) is different from the Python path. They can be referred to in the ["cell" attribute / "cells" list attribute] of extra components.
+In case of "cells", ctx.attr is guaranteed to work in Javascript. For extra cells, it may not..
 
 ### C4. Web status and web interface generation
 

@@ -22,7 +22,7 @@ copyright = '2016-2022, INSERM, CNRS and code contributors'
 author = 'Sjoerd de Vries'
 
 # The full version, including alpha/beta/rc tags
-release = '0.9'
+release = '0.10'
 
 
 # -- General configuration ---------------------------------------------------

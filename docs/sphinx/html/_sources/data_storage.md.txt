@@ -32,15 +32,25 @@ These roles are normally taken by the ***Seamless database***.
 ***IMPORTANT: This documentation section is a stub.***
 (checksum-to-buffer cache, buffer info, etc. over the network, "serving a vault")
 
+A Seamless instance connected to the database does not maintain its own checksum-to-buffer cache, and therefore uses a lot less memory.
+
 ### Using the database
 
 ***IMPORTANT: This documentation section is a draft. The preliminary text is shown below***
 
-A Seamless instance connected to the database does not maintain its own checksum-to-buffer cache, and therefore uses a lot less memory.
+The Seamless database is started with the command `seamless-database`. The simplest way to use it is without arguments. In that case, it will maintain the database dir in \$HOME/.seamless/database.
 
-You can start the database with the command `seamless-database`. By default, it loads  /seamless-tools/tools/default-database.yaml, which maintains the database dir in  \$HOME/.seamless/database, but you can supply your own configuration file. Primarily, the database dir contains /buffers, containing one file per buffer (the filename is the checksum, e.g. /buffers/93237a60bf6417104795ed085c074d52f7ae99b5ec773004311ce665eddb4880).The other stores (buffer info, transformation result, compilation, and a few specialized others) map a checksum to either another checksum or something other that is very small. Therefore, each of those stores is organized as JSON files that are split in buckets as they grow larger.
+The second way is to invoke `seamless-database $d` with an empty directory `$d` as argument. In that case, it will create a default database configuration file in `$d/database-config.yaml`, and then launch the database, maintaining `$d` as the database dir.
+
+The third way is to invoke `seamless-database $d` with a directory `$d` as argument, where `$d` already contains a `database-config.yaml`. Finally, you can invoke `seamless-database` with a config YAML file as argument. See the default `database-config.yaml` for a description of the options.
 
 Seamless reads the database IP from the SEAMLESS_DATABASE_IP environment variable, which defaults your Docker host IP. The default Seamless database port (SEAMLESS_DATABASE_PORT) is 5522.
+
+Primarily, the database dir contains /buffers, containing one file per buffer (the filename is the checksum, e.g. /buffers/93237a60bf6417104795ed085c074d52f7ae99b5ec773004311ce665eddb4880).The other stores (buffer info, transformation result, compilation, and a few specialized others) map a checksum to either another checksum or something other that is very small. Therefore, each of those stores is organized as JSON files that are split in buckets as they grow larger.
+
+Normally, Seamless contacts the database, specifying the desired store and the checksum. For buffers, the content is returned. As an optimization, it is also possible to ask for the file name (see below).
+
+
 
 ### Database cleanup
 

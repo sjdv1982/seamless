@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seamless.highlevel.Transformer &mdash; Seamless 0.9 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>seamless.highlevel.Transformer &mdash; Seamless 0.10 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -82,10 +82,10 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-          <li><a href="../highlevel.html">seamless.highlevel</a> &raquo;</li>
-      <li>seamless.highlevel.Transformer</li>
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../highlevel.html">seamless.highlevel</a></li>
+      <li class="breadcrumb-item active">seamless.highlevel.Transformer</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -542,6 +542,22 @@
         <span class="c1"># TODO: self.self</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inp</span><span class="p">)</span><span class="o">.</span><span class="n">add_validator</span><span class="p">(</span><span class="n">validator</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span></div>
 
+    <span class="k">def</span> <span class="nf">add_special_pin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pinname</span><span class="p">,</span> <span class="n">celltype</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">.Cell</span> <span class="kn">import</span> <span class="n">celltypes</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pinname</span><span class="o">.</span><span class="n">isupper</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Special pinname must be all uppercase&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">celltype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">celltypes</span> <span class="ow">and</span> <span class="n">celltype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;deepcell&quot;</span><span class="p">,</span> <span class="s2">&quot;folder&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">celltype</span><span class="p">)</span>
+        <span class="n">htf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_htf</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">pinname</span> <span class="ow">in</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;pins&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Pin already exists&quot;</span><span class="p">)</span>
+        <span class="n">pin</span> <span class="o">=</span> <span class="n">default_pin</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">pin</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">celltype</span>
+        <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;pins&quot;</span><span class="p">][</span><span class="n">pinname</span><span class="p">]</span> <span class="o">=</span> <span class="n">pin</span>
+        <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
+        <span class="n">parent</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
+
     <span class="k">def</span> <span class="nf">_assign_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hctx</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">assign_connection</span>
 
@@ -555,14 +571,14 @@
         <span class="k">if</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">attr</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setattr</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setattr</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">from_setitem</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;item must be &#39;str&#39;, not &#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">item</span><span class="p">)))</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">from_setitem</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">from_setitem</span><span class="p">):</span>
         <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">assign_connection</span>
 
         <span class="n">translate</span> <span class="o">=</span> <span class="kc">False</span>
@@ -584,6 +600,9 @@
             <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">Cell</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">DeepCellBase</span><span class="p">))</span>
             <span class="ow">and</span> <span class="n">attr</span> <span class="o">!=</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;RESULT&quot;</span><span class="p">]</span>
         <span class="p">):</span>
+            <span class="k">if</span> <span class="n">attr</span><span class="o">.</span><span class="n">isupper</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">attr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;pins&quot;</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Cannot define new special pins before translation&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Resource</span><span class="p">):</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">data</span>
             <span class="k">if</span> <span class="s2">&quot;TEMP&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">htf</span> <span class="ow">or</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;TEMP&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -662,6 +681,11 @@
             <span class="c1"># TODO: suppress inchannel warning</span>
             <span class="n">result</span><span class="o">.</span><span class="n">handle_no_inference</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">attr</span><span class="o">.</span><span class="n">isupper</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">attr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;pins&quot;</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Cannot define new special pins like this, use add_special_pin&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">from_setitem</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Special pins must be set using bracket syntax&quot;</span><span class="p">)</span>
             <span class="n">pin0</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">DeepCell</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Cell</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">hash_pattern</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;*&quot;</span><span class="p">:</span> <span class="s2">&quot;#&quot;</span><span class="p">}</span>
@@ -692,7 +716,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">htf</span><span class="p">[</span><span class="s2">&quot;pins&quot;</span><span class="p">][</span><span class="n">attr</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">pin0</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">Cell</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">DeepCellBase</span><span class="p">)):</span>
-                <span class="k">if</span> <span class="n">new_pin</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Cell</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;checksum&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">new_pin</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Cell</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">SubCell</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">celltype</span> <span class="o">==</span> <span class="s2">&quot;checksum&quot;</span><span class="p">:</span>
                     <span class="n">pin</span><span class="p">[</span><span class="s2">&quot;celltype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;checksum&quot;</span>
                 <span class="n">target_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">+</span> <span class="p">(</span><span class="n">attr</span><span class="p">,)</span>
                 <span class="k">assert</span> <span class="n">value</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span> <span class="ow">is</span> <span class="n">parent</span>
@@ -1714,6 +1738,7 @@
 <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">check_libinstance_subcontext_binding</span>
 <span class="kn">from</span> <span class="nn">..core.status</span> <span class="kn">import</span> <span class="n">StatusReasonEnum</span>
 <span class="kn">from</span> <span class="nn">.DeepCell</span> <span class="kn">import</span> <span class="n">DeepCellBase</span><span class="p">,</span> <span class="n">DeepCell</span><span class="p">,</span> <span class="n">DeepFolderCell</span>
+<span class="kn">from</span> <span class="nn">.SubCell</span> <span class="kn">import</span> <span class="n">SubCell</span>
 </pre></div>
 
            </div>
