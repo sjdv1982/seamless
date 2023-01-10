@@ -40,11 +40,13 @@ However, the big difference with a static web server is that a dynamic, reactive
 
 ### Cells
 
-A cell is essentially a container that holds a *checksum* (a SHA3-256 hash). A checksum corresponds to a *buffer* (the raw bytes). This correspondence is one-to-one: each buffer has a unique checksum and vice versa. Finally, the *celltype* describes how the buffer is to be interpreted (*deserialized*) into a *value*. For example, celltype "plain" means a conversion to a Python string (which means UTF-8 decoding) followed by loading the string as JSON. Likewise, to go from value to buffer (*serialization*), a value of celltype "plain" is first converted to a JSON string, and then encoded (using UTF-8) into a byte buffer.
+A cell is essentially a container that holds a *checksum* (a SHA3-256 hash). A checksum corresponds to a *buffer* (the raw bytes). This correspondence is one-to-one: each buffer has a unique checksum and vice versa. Finally, the *celltype* describes how the buffer is to be interpreted (*deserialized*) into a *value*.
+
+For example, celltype "plain" means a conversion to a Python string (which means UTF-8 decoding) followed by loading the string as JSON. Likewise, to go from value to buffer (*serialization*), a value of celltype "plain" is first converted to a JSON string, and then encoded (using UTF-8) into a byte buffer.
 
 Concretely, the byte buffer `42\n` corresponds to the value `42` for celltype "plain", and vice versa.
 
-There is also a celltype "python", which means that a cell can contain not only data, but also code.
+There are about a dozen celltypes in Seamless. For example, celltype "binary" is for structured binary data, which deserialized into Numpy arrays (or C/C++ structs). Celltype "bytes" is for raw binary data; Seamless does not (de)serialize it at all, it is up to the transformer to parse it (example: a PNG image). There is also a celltype "python", which means that a cell can contain not only data, but also code.
 
 Using the Seamless API in Python gives the *illusion* that Seamless cells are containers of *values*, just like:
 

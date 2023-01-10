@@ -161,9 +161,10 @@
 </div>
 <div class="section" id="cells">
 <h3>Cells<a class="headerlink" href="#cells" title="Permalink to this headline">¶</a></h3>
-<p>A cell is essentially a container that holds a <em>checksum</em> (a SHA3-256 hash). A checksum corresponds to a <em>buffer</em> (the raw bytes). This correspondence is one-to-one: each buffer has a unique checksum and vice versa. Finally, the <em>celltype</em> describes how the buffer is to be interpreted (<em>deserialized</em>) into a <em>value</em>. For example, celltype “plain” means a conversion to a Python string (which means UTF-8 decoding) followed by loading the string as JSON. Likewise, to go from value to buffer (<em>serialization</em>), a value of celltype “plain” is first converted to a JSON string, and then encoded (using UTF-8) into a byte buffer.</p>
+<p>A cell is essentially a container that holds a <em>checksum</em> (a SHA3-256 hash). A checksum corresponds to a <em>buffer</em> (the raw bytes). This correspondence is one-to-one: each buffer has a unique checksum and vice versa. Finally, the <em>celltype</em> describes how the buffer is to be interpreted (<em>deserialized</em>) into a <em>value</em>.</p>
+<p>For example, celltype “plain” means a conversion to a Python string (which means UTF-8 decoding) followed by loading the string as JSON. Likewise, to go from value to buffer (<em>serialization</em>), a value of celltype “plain” is first converted to a JSON string, and then encoded (using UTF-8) into a byte buffer.</p>
 <p>Concretely, the byte buffer <code class="docutils literal notranslate"><span class="pre">42\n</span></code> corresponds to the value <code class="docutils literal notranslate"><span class="pre">42</span></code> for celltype “plain”, and vice versa.</p>
-<p>There is also a celltype “python”, which means that a cell can contain not only data, but also code.</p>
+<p>There are about a dozen celltypes in Seamless. For example, celltype “binary” is for structured binary data, which deserialized into Numpy arrays (or C/C++ structs). Celltype “bytes” is for raw binary data; Seamless does not (de)serialize it at all, it is up to the transformer to parse it (example: a PNG image). There is also a celltype “python”, which means that a cell can contain not only data, but also code.</p>
 <p>Using the Seamless API in Python gives the <em>illusion</em> that Seamless cells are containers of <em>values</em>, just like:</p>
 <ul class="simple">
 <li><p>variables in Python</p></li>
