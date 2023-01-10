@@ -38,7 +38,9 @@ def _remove_independent_mountshares(hcell):
 
 def under_libinstance_control(nodedict, path):
     lp = len(path)
-    if path in nodedict:
+    if lp == 0:
+        return False
+    elif path in nodedict:
         longest_path = path
     elif lp == 1:
         return False
@@ -222,7 +224,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
             t = ctx._children[target]
             arguments[attr] = parse_argument(attr, t, par)
             return True
-        except Exception: 
+        except Exception:
             msg = "Cannot connect from path under libinstance control: {}"
             raise Exception(msg.format(source)) from None        
     if under_libinstance_control(nodedict, target):
@@ -609,8 +611,14 @@ def assign(ctx, path, value, *, help_context=False):
     from .Transformer import TransformerCopy
     nodedict = ctx._graph[0]
     if under_libinstance_control(nodedict, path):
-        msg = "Cannot assign to path under libinstance control: {}"
-        raise Exception(msg.format(path))
+        ok = False
+        if path in nodedict:
+            if nodedict[path]["type"] == "libinstance":
+                if not under_libinstance_control(nodedict, path[:-1]):
+                    ok = True
+        if not ok:
+            msg = "Cannot assign to path under libinstance control: {}"
+            raise Exception(msg.format(path))
     if isinstance(value, (Library, LibraryContainer)):
         raise TypeError("Library must be included first")
     elif isinstance(value, (IncludedLibrary, IncludedLibraryContainer)):
