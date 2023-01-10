@@ -1,0 +1,47 @@
+VALIDATE <Silk: {'x': 20} >
+<Silk: {'x': 20} >
+{'x': 20}
+None
+
+VALIDATE2 <Silk: {'x': 20} >
+<Silk: None >
+{'x': 20}
+jsonschema.exceptions.ValidationError: 
+************************************************************************
+*  Silk validation error
+************************************************************************
+Traceback (most recent call last):
+  File "/silk/silk/validation/validators.py", line 237, in validator_validators
+    validator_func(silkobject)
+  File "Silk validator 1", line 3, in validate
+    assert self.x > 100
+AssertionError
+************************************************************************
+
+
+Failed validating 'validators' in schema:
+    {'properties': {'x': {}},
+     'type': 'object',
+     'validators': [{'code': 'def validate(self):\n'
+                             '    print("VALIDATE2", self)\n'
+                             '    assert self.x > 100\n',
+                     'language': 'python',
+                     'name': 'validate'}]}
+
+On instance:
+    {'x': 20}
+
+
+{'properties': {'x': {'type': 'object'}}, 'type': 'object', 'validators': [{'code': 'def validate(self):\n    print("VALIDATE2", self)\n    assert self.x > 100\n', 'language': 'python', 'name': 'validate'}]}
+
+VALIDATE2 <Silk: {'x': {}} >
+<Silk: None >
+{'x': 20}
+jsonschema.exceptions.ValidationError: 20 is not of type 'object'
+
+Failed validating 'type' in schema['properties']['x']:
+    {'type': 'object'}
+
+On instance['x']:
+    20
+

@@ -1,12 +1,3 @@
-"""
-TO DOCUMENT:
-To get Silk in your transformer:
-- Declare the inputpin celltype as "silk"
-- Declare an extra inputpin <pinname>_SCHEMA
-  If this extra inputpin is not there, an empty schema is applied.
-Pins ending with _SCHEMA are never provided as arguments to the transform()
-function (or lambda)
-"""
 from seamless.highlevel import Context, Cell, Transformer
 
 ctx = Context()

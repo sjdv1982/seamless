@@ -13,6 +13,7 @@ auth-checksum.py
 filezones.py: run with Seamless database
 independence-error-message.py
 schema.py
+schema-invalid.py
 subcell.py
 subsubcell.py
 inchannel-conflict.py
