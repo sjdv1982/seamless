@@ -15,7 +15,7 @@ session = requests.Session()
 
 class DatabaseBase:
     active = False
-    PROTOCOLS = [("seamless", "database", "0.2"), ("seamless", "database", "0.1")]    
+    PROTOCOLS = [("seamless", "database", "0.2"), ("seamless", "database", "0.1")]
     _loghandle = None
 
     def set_log(self, log):

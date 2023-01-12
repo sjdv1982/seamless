@@ -132,8 +132,8 @@ default_master_config = {
     "buffer": True,
     "buffer_status": True,
     "buffer_info": True,
-    "transformation_job": False,
-    "transformation_status": False,
+    "transformation_job": True,
+    "transformation_status": True,
     "semantic_to_syntactic": True,
 }
 
