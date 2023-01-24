@@ -288,12 +288,12 @@ class TransformationJob:
         self.restart = False
         self.n_restarted = 0
 
-    async def _probe_remote(self, clients):
+    async def _probe_remote(self, clients, meta):
         if not len(clients):
             return
         coros = []
         for client in clients:
-            coro = client.status(self.checksum)
+            coro = client.status(self.checksum, meta)
             coros.append(coro)
         futures = [asyncio.ensure_future(coro) for coro in coros]
         rev = {fut:n for n,fut in enumerate(futures)}
@@ -388,9 +388,10 @@ class TransformationJob:
     async def _execute(self, prelim_callback, progress_callback):
         while not transformation_cache.active:
             await asyncio.sleep(0.05)
+        meta = self.transformation.get("__meta__")
         clients = list(communion_client_manager.clients["transformation"])
         if self.debug is None:
-            await self._probe_remote(clients)
+            await self._probe_remote(clients, meta)
         if self.remote:
             self.remote_futures = None
             try:
@@ -417,11 +418,11 @@ class TransformationJob:
     async def _execute_remote(self,
         prelim_callback, progress_callback
     ):
-
+        meta = self.transformation.get("__meta__")
         async def get_result1(client):
             try:
-                await client.submit(self.checksum)
-                result = await client.status(self.checksum)
+                await client.submit(self.checksum, meta)
+                result = await client.status(self.checksum, meta)
                 return result
             except asyncio.CancelledError:
                 if self._hard_cancelled:
@@ -431,7 +432,7 @@ class TransformationJob:
         async def get_result2(client):
             try:
                 await client.wait(self.checksum)
-                return await client.status(self.checksum)
+                return await client.status(self.checksum, meta)
             except asyncio.CancelledError:
                 if self._hard_cancelled:
                     await client.hard_cancel(self.checksum)

@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 REMOTE_TIMEOUT = 5.0
 
@@ -110,12 +111,29 @@ class CommunionTransformationClient(CommunionClient):
         self.config_clear_exception = config["clear_exception"]
         self.future_clear_exception = None
 
-    async def status(self, checksum):
+    async def status(self, checksum, meta=None):
         if self.future_clear_exception is not None:
             await self.future_clear_exception
         assert checksum is not None
         if not self.config_status:
             return None, None
+        message = {
+            "type": "transformation_status_with_meta",
+            "content": json.dumps({
+                "checksum": checksum.hex(),
+                "meta": meta,
+            }),
+        }
+        result = None
+        if meta is not None:
+            try:
+                result = await communion_server.client_submit(message, self.servant)
+            except Exception:
+                result = None
+        if result is not None:
+            if result[0] != 0 and isinstance(result[-1], str):
+                result = (*result[:-1], bytes.fromhex(result[-1]))
+            return result
         message = {
             "type": "transformation_status",
             "content": checksum.hex()
@@ -136,11 +154,26 @@ class CommunionTransformationClient(CommunionClient):
         }
         await communion_server.client_submit(message, self.servant)
 
-    async def submit(self, checksum):
+    async def submit(self, checksum, meta=None):
         if self.future_clear_exception is not None:
             await self.future_clear_exception
         if not self.config_job:
             return
+        message = {
+            "type": "transformation_job_with_meta",
+            "content": json.dumps({
+                "checksum": checksum.hex(),
+                "meta": meta,
+            }),
+        }
+        result = None
+        if meta is not None:
+            try:
+                result = await communion_server.client_submit(message, self.servant)
+            except Exception:
+                result = None
+        if result is not None:
+            return result
         message = {
             "type": "transformation_job",
             "content": checksum.hex()

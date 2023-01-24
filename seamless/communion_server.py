@@ -543,6 +543,9 @@ class CommunionServer:
                 rem_transformer = tcache.remote_transformers.get(key)
                 if key is not None:
                     tcache.decref_transformation(transformation, rem_transformer)
+            
+            else:
+                raise Exception("Unknown communion message type '{}'".format(type))
 
         except Exception as exc:
             print_error(traceback.format_exc())
