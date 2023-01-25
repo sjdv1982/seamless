@@ -26,8 +26,7 @@ ctx.tf.a = 10
 ctx.tf.b = 20
 ctx.tf.debug.direct_print = True
 ctx.tf.testmodule = ctx.testmodule
-ctx.tf.pins.testmodule.celltype = "plain"
-ctx.tf.pins.testmodule.subcelltype = "module"
+ctx.tf.pins.testmodule.celltype = "module"
 ctx.c = ctx.tf
 ctx.compute()
 print(ctx.testmodule.status)

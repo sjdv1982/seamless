@@ -92,7 +92,7 @@ def assign_constant(ctx, path, value, help_context=False):
         elif isinstance(old, Module):
             removed = ctx.remove_connections(
                 path,
-                endpoint="all"
+                endpoint="target"
             )
             if removed:
                 ctx._translate()
@@ -130,7 +130,6 @@ def assign_resource(ctx, path, value):
     child.mount(value.filename)
 
 def assign_transformer(ctx, path, func):
-    from .Transformer import default_pin
     existing_transformer = None
     if path in ctx._children:
         old = ctx._children[path]
@@ -284,7 +283,7 @@ def assign_connection(ctx, source, target, standalone_target, exempt=[]):
             hcell = s._get_hcell()
             if hcell.get("constant"):
                 raise TypeError("Cannot assign to constant cell")
-        elif isinstance(s, (Module, DeepCellBase)):            
+        elif isinstance(s, (Module, DeepCellBase)):
             if isinstance(s, DeepCellBase):
                 if not standalone_target:
                     t2 = ctx._children.get(target[:-1])

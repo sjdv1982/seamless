@@ -68,7 +68,7 @@ class Macro(Base):
             assert code is None
             assert pins is None
             node = self._get_node()
-        except:
+        except Exception:
             node = None
         if node is None:
             node = new_macro(parent, path, code, pins)

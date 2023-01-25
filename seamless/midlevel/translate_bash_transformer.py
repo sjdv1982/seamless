@@ -34,7 +34,14 @@ def translate_bash_transformer(
     node_pins = deepcopy(node["pins"])
     deep_pins = {}
     for pinname,pin in list(node_pins.items()):
-        if pin.get("celltype") in ("folder", "deepfolder", "deepcell"):
+        pin.pop("subcelltype", None) # just to make sure...
+        if pin.get("celltype") == "module":
+            pin.clear()
+            pin.update({
+                "celltype": "plain",
+                "subcelltype": "module"
+            })
+        elif pin.get("celltype") in ("folder", "deepfolder", "deepcell"):
             if pin["celltype"] == "deepcell":
                 pin = {
                     "celltype": "mixed",

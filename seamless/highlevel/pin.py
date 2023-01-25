@@ -39,7 +39,7 @@ class PinWrapper:
         from .Transformer import Transformer
         if self._pinname == "code":
             raise AttributeError
-        if value not in celltypes and (
+        if value not in celltypes and value != "module" and (
             (
                 not isinstance(self._parent(), Transformer)
                 or (value not in ("default", "silk", "deepfolder", "folder", "deepcell"))
@@ -48,22 +48,6 @@ class PinWrapper:
             raise TypeError(value)
         hpin = self._get_hpin()
         hpin["celltype"] = value
-        self._parent()._parent()._translate()
-
-    @property
-    def subcelltype(self):
-        if self._pinname == "code":
-            return "code"
-        hpin = self._get_hpin()
-        return hpin.get("subcelltype")
-
-    @subcelltype.setter
-    def subcelltype(self, value):
-        if self._pinname == "code":
-            raise AttributeError
-        # TODO: validation
-        hpin = self._get_hpin()
-        hpin["subcelltype"] = value
         self._parent()._parent()._translate()
 
     @property

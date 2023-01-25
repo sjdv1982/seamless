@@ -17,6 +17,7 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
     pin_mpaths0 = {}
     for pinname in list(node["pins"].keys()):
         pin = node["pins"][pinname]
+        pin.pop("subcelltype", None) # just to make sure...
         if pin["io"] == "parameter":
             pin_cell_name = pinname + "_PARAM"
             assert pin_cell_name not in node["pins"]
@@ -33,6 +34,8 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
         celltype = pin.get("celltype", "mixed")
         if celltype == "mixed":
             pin_cell = cell(celltype, hash_pattern=pin_hash_pattern)
+        elif celltype == "module":
+            pin_cell = cell("plain")
         elif (celltype == "checksum" and pin["io"] == "parameter"):
             pin_cell = cell("plain")
         else:
@@ -66,6 +69,9 @@ def translate_macro(node, root, namespace, inchannels, outchannels):
         p.update(pin)
         if p.get("celltype") == "checksum":
             p["celltype"] = "plain"
+        elif p.get("celltype") == "module":
+            p["celltype"] = "plain"
+            p["subcelltype"] = "module"
         param_pins[pinname] = p
     ctx.macro = macro(param_pins)
     if node.get("elision"):

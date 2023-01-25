@@ -627,6 +627,8 @@ This cell is not fully independent, i.e. it has incoming connections"""
         if hcell.get("UNTRANSLATED"):
             raise AttributeError
         cell = self._get_cell()
+        if cell.no_auth:
+            raise TypeError("Cannot set the value of a cell that is not independent")        
         if self.hash_pattern is not None:
             return cell.handle_hash
         else:

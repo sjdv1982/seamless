@@ -1,7 +1,5 @@
 import os
-import weakref
-from xml.dom import NotFoundErr
-from numpy import isin
+import traceback
 from .Base import Base
 
 def get_new_module(path):
@@ -153,7 +151,7 @@ class Module(Base):
         try:
             codecell = self._get_codecell()
         except Exception:
-            import traceback; traceback.print_exc()
+            traceback.print_exc()
             raise
         if codecell is None:
             raise ValueError
@@ -307,7 +305,7 @@ Or, it could use an internal package name like "spamalot" and do
             try:
                 codecell = self._get_codecell()
             except Exception:
-                import traceback; traceback.print_exc()
+                traceback.print_exc()
                 raise
             return codecell.checksum
 
@@ -331,7 +329,7 @@ Or, it could use an internal package name like "spamalot" and do
         try:
             codecell = self._get_codecell()
         except Exception:
-            import traceback; traceback.print_exc()
+            traceback.print_exc()
             raise
         codecell.set(value)
 
@@ -354,8 +352,8 @@ Or, it could use an internal package name like "spamalot" and do
             return
         try:
             codecell = self._get_codecell()
-        except Exception:
-            import traceback; traceback.print_exc()
+        except Exception:            
+            traceback.print_exc()
             raise
         code = codecell.value
         if not isinstance(code, dict):

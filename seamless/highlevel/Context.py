@@ -612,7 +612,7 @@ class Context(Base, HelpMixin):
             params = deepcopy(params)
             lib = deepcopy(lib)
         graph = {
-            "__seamless__": "0.8",
+            "__seamless__": "0.11",
             "nodes": nodes,
             "connections": connections,
             "params": params,
@@ -644,7 +644,7 @@ class Context(Base, HelpMixin):
             params = deepcopy(params)
             lib = deepcopy(lib)
         graph = {
-            "__seamless__": "0.8",
+            "__seamless__": "0.11",
             "nodes": nodes,
             "connections": connections,
             "params": params,

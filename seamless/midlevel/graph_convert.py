@@ -122,6 +122,21 @@ The value will be re-read from the mounted directory.
             mount["directory_text_only"] = True
     return graph
 
+def graph_convert_011(graph):
+    graph = deepcopy(graph)
+    graph["__seamless__"] = "0.11"
+    for node in graph["nodes"]:
+        if node["type"] == "transformer":
+            for _, pin in node.get("pins", {}).items():
+                subcelltype = pin.pop("subcelltype", None)
+                if subcelltype is None:
+                    continue
+                celltype = pin.get("celltype")
+                if subcelltype != "module" or celltype != "plain":
+                    print("""WARNING: legacy subcelltype that is not 'module', ignoring:
+Transformer: {}""".format("." + ".".join(node.get('path', []))))
+                pin["celltype"] = "module"
+        return graph
 
 def graph_convert(graph, ctx):
     if ctx is not None:
@@ -132,8 +147,10 @@ def graph_convert(graph, ctx):
     seamless_version = graph.get("__seamless__")
     if seamless_version is None: #pre-0.7
         graph = graph_convert_pre07(graph, ctx)
-    elif seamless_version == "0.7": 
+    elif seamless_version == "0.7":
         graph = graph_convert_07(graph, ctx)
+    if seamless_version == "0.8":
+        graph = graph_convert_011(graph)
     return graph
 
 from ..core.protocol.get_buffer import get_buffer    

@@ -179,8 +179,7 @@ def constructor(ctx, libctx, context_graph, inp, result):
     }
     ctx.macro_code_lib = Cell("plain").set(macro_code_lib)
     m.macro_code_lib = ctx.macro_code_lib
-    m.pins.macro_code_lib.celltype = "plain"
-    m.pins.macro_code_lib.subcelltype = "module"
+    m.pins.macro_code_lib.celltype = "module"
     m.map_list_N_code = libctx.map_list_N.value
 
     m.code = libctx.main.value

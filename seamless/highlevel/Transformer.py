@@ -604,20 +604,22 @@ class Transformer(Base, HelpMixin):
                 pin0 = {
                     "celltype": "folder",
                 }
+            elif isinstance(value, Module):
+                pin0 = {
+                    "celltype": "module",
+                }
             if attr not in htf["pins"]:
-                if isinstance(value, Module):
-                    pin = {
-                        "celltype": "plain",
-                        "subcelltype": "module",
-                    }
-                else:
-                    pin = default_pin.copy()
-                    new_pin = True
+                pin = default_pin.copy()
+                new_pin = True
                 pin.update(pin0)
                 htf["pins"][attr] = pin
                 translate = True
             else:
-                htf["pins"][attr].update(pin0)
+                pin = htf["pins"][attr]
+                old_pin = deepcopy(pin)
+                pin.update(pin0)
+                if old_pin != pin:
+                    translate = True
             if isinstance(value, (Cell, Module, DeepCellBase)):
                 if new_pin and isinstance(value, Cell) and not isinstance(value, SubCell) and value.celltype == "checksum":
                     pin["celltype"] = "checksum"

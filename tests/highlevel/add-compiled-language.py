@@ -1,1 +1,0 @@
-#g++ -x c++ blah.cfront -o blah
