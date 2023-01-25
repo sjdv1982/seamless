@@ -6,6 +6,7 @@ lib = LibraryContainer("stdlib")
 
 currdir=os.path.dirname(os.path.abspath(__file__))
 graph_files = glob.glob("{}/*.seamless".format(currdir))
+__all__ = []
 for graph_file in graph_files:
     graph_name0 = os.path.split(graph_file)[1]
     graph_name = os.path.splitext(graph_name0)[0]
@@ -52,3 +53,7 @@ for graph_file in graph_files:
             api_schema=api_schema
         )
     globals()[path[1]] = getattr(lib, path[1])
+    __all__.append(path[1])
+
+def __dir__():
+    return sorted(__all__)    

@@ -86,10 +86,19 @@ class LibraryContainer:
             path, graph, zip, None, None,
             api_schema=None, constructor_schema=None
         )
+    def __dir__(self):
+        spath = self._path
+        lspath = len(spath)
+        result = []
+        for path in _libraries:
+            if len(path) == lspath + 1:
+                if path[:lspath] == spath:
+                    result.append(path[-1])
+        return sorted(result)
 
 class Library:
-    def __init__(self, path, graph, zip, 
-        constructor=None, params=None, 
+    def __init__(self, path, graph, zip,
+        constructor=None, params=None,
         *,
         api_schema=None, constructor_schema=None
     ):
