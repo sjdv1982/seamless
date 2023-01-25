@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.8",
+  "__seamless__": "0.11",
   "connections": [],
   "lib": [],
   "nodes": [
@@ -12,7 +12,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "c224b0b8b0c1a5b4d14d1bd3fe02eec74ae59607e83e94586cc51a76726d83d3"
+        "value": "6ca787429e25d6d1dbed78328a657961ec599d84fa4b487b7e79988664512a7a"
       },
       "datatype": "mixed",
       "language": "python",
@@ -26,7 +26,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "c701acd0e1c534f87dc52db82ea87fbaf7d5da5c011aa528f7d1c8347af895c1",
-        "buffer": "c701acd0e1c534f87dc52db82ea87fbaf7d5da5c011aa528f7d1c8347af895c1",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "c701acd0e1c534f87dc52db82ea87fbaf7d5da5c011aa528f7d1c8347af895c1"
       },
@@ -80,7 +79,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "e9c046c9a1e91ce5caea4547c6560f7a7db245c43bbda002b08dd95d971dd782"
+        "value": "9c7ef241c1caeb2d55459d68ffcf8b8d8815f237f1f6e739bc51dfbf3d97bc7b"
       },
       "datatype": "mixed",
       "language": "python",
@@ -94,7 +93,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "301054af9a48d86e891f2c421be1c5a0a82a3346000200fedc092fcb4a82bf13",
-        "buffer": "301054af9a48d86e891f2c421be1c5a0a82a3346000200fedc092fcb4a82bf13",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "301054af9a48d86e891f2c421be1c5a0a82a3346000200fedc092fcb4a82bf13"
       },
@@ -148,7 +146,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "0659278c9e0f05374eb4a156e19444dc3d2ebcf1e223b2c8226ae7738bd167c0"
+        "value": "e5db434a3496e2e576c93fe5396520fa5cae7b9f7a57748f4b995b6fe70d1374"
       },
       "datatype": "mixed",
       "language": "python",
@@ -162,7 +160,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "b792c2edd8e286bc58ab0cc02ad6f2903b6fe9b8758bba260cb75db916dc9f6c",
-        "buffer": "b792c2edd8e286bc58ab0cc02ad6f2903b6fe9b8758bba260cb75db916dc9f6c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "b792c2edd8e286bc58ab0cc02ad6f2903b6fe9b8758bba260cb75db916dc9f6c"
       },
@@ -216,7 +213,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "6d2e319c02b1f5ccbdb0845d935f9a6034d675d8fae3830eea4ffa7d78b0dfd1"
+        "value": "1a001e4a335020a840df3a436f774c3b54144a94183fe354e621ef77ec586411"
       },
       "datatype": "mixed",
       "language": "python",
@@ -230,7 +227,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "92665d9f2d4fcbed4472fd092ea42481a1ffd5463489c143e016dc256d526430",
-        "buffer": "92665d9f2d4fcbed4472fd092ea42481a1ffd5463489c143e016dc256d526430",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "92665d9f2d4fcbed4472fd092ea42481a1ffd5463489c143e016dc256d526430"
       },

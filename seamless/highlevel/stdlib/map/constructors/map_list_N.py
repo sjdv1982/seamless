@@ -59,8 +59,7 @@ def constructor(
     }
     ctx.lib_code = Cell("plain").set(lib_code)  # not strictly necessary to create a cell
     m.lib = ctx.lib_code
-    m.pins.lib.celltype = "plain"
-    m.pins.lib.subcelltype = "module"
+    m.pins.lib.celltype = "module"
 
     if elision:
         m.code = lib_module_dict["map_list_N"]["top"]
