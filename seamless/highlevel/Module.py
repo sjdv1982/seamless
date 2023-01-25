@@ -132,8 +132,11 @@ class Module(Base):
 
     def __setattr__(self, attr, value):
         if attr == "code":
+            from . import parse_function_code
             from .assign import assign
             parent = self._parent()
+            if callable(value):
+                value = parse_function_code(value)[0]
             return assign(parent, self._path, value)
         return object.__setattr__(self, attr, value)
 
