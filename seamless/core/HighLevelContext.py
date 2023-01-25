@@ -14,6 +14,8 @@ class HighLevelContext(UnboundContext):
         else:
             graph = deepcopy(graph)
         for node in graph["nodes"]:
+            node.pop("mount", None)
+            node.pop("share", None)
             node["path"] = tuple(node["path"])
         for con in graph["connections"]:
             if con["type"] == "connection":
