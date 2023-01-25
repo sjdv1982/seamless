@@ -665,7 +665,6 @@ class MountManager:
                     self.run_once()
                 except Exception:
                     self._tick.set()
-                    import traceback
                     traceback.print_exc()
                 while time.time() - t < self.latency:
                     time.sleep(0.05)

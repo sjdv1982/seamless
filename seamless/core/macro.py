@@ -83,11 +83,11 @@ class Macro(Worker):
         manager = self._get_manager()
         ok = False
         assert self._gen_context is None
-        try:    
+        try:
             for path in list(self._paths.keys()):
                 mp = self._paths.pop(path)
-                mp.destroy() 
-            unbound_ctx = None       
+                mp.destroy()
+            unbound_ctx = None
             ctx = None
             with macro_mode_on(self):
                 unbound_ctx = UnboundContext(toplevel=False, macro=True)
@@ -181,15 +181,21 @@ class Macro(Worker):
                 ctx._manager = self._get_manager()
                 unbound_ctx._bind(ctx)
                 self._gen_context = ctx
-                ok = True
+            ok = True
         except Exception as exception:
             manager._set_macro_exception(self, exception)
             if ctx is not None:
-                ctx.destroy()
+                try:
+                    ctx.destroy()
+                except Exception:
+                    traceback.print_exc()
             if unbound_ctx is not None:
                 unbound_ctx._context = lambda: DummyContext(self.path) # KLUDGE
                 unbound_ctx.name = "ctx" # KLUDGE
-                unbound_ctx.destroy()
+                try:
+                    unbound_ctx.destroy()
+                except Exception:
+                    traceback.print_exc()
         finally:
             self._unbound_gen_context = None
         if ok:
