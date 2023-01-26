@@ -8,19 +8,22 @@ First, Seamless is a framework for *interactive* programming and scripting. Ther
 
 Second, Seamless is a framework for building *workflows* (dataflow programming), i.e. dependency graphs. There are essentially three ways you can do this: stream-based (NoFlo), file-based (NextFlow, Snakemake) or cell-based (Jupyter, Excel). Again, Seamless follows the cell-based approach.
 
+Third, Seamless is a framework for *reproducible* computing.
+The idea is that by observing some simple rules in your code, you gain reproducibility and interactivity for free. Unlike interactivity, which is everywhere in Seamless, reproducibility is mostly hidden from the user.
+
 In a nutshell, most of Seamless revolves around ***cells***, that hold the data and code, and ***transformers***, that do the computation. Transformers take cells (including code cells) as input and have a single cell as output.
 
 ### Checksums
 
 What makes Seamless special is that cells don't hold values or filenames, but ***checksums*** (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren't tied to a hierarchy of files, carefully named and accessible on a mounted file system. Although in Seamless you *can* mount a cell to a file, it just means that the cell's checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is always free in terms of space, in the same way that a hardlink to a file is always free (but copying a file or value is not). Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. They just contain checksums, and data values are obtained only when they are needed. Checksums are small, and a workflow description with checksums is small, but their underlying data can be much larger than what fits in memory, or on disk. In other words, big data is possible with Seamless.
 
-On the flip side, you can't automatically assume that you have a cell's data at your fingertips. By default, Seamless sets up some simple checksum-to-data stores, but that reintroduces some of the problems (potential memory issues, file copying) of using files and values instead of checksums. These problems can be minimized by manually configuring your data storage.
+On the flip side, you can't automatically assume that you have a cell's data buffer at your fingertips. By default, Seamless sets up a simple in-memory checksum-to-buffer store, but that reintroduces some of the problems (potential memory issues, file copying) of using files and values instead of checksums. These problems can be minimized by manually configuring your data storage. In this way, data can be read piece-meal from disk or over the network instead of being in-memory all the time. Alternatively, you can delegate a computation over the network to where the data resides.
 
 The final implication is that since transformers are also based on checksums, and since these checksums fully describe the computation (parameters *and* code *and* result), you can replace a computation with its result, and replace a result with its computation (referential transparency). This is very beneficial for ***reproducibility***, and it provides ***reactivity***: after cell updates, it is always obvious which computations need to be re-executed. No need for manual re-execution (Jupyter) or reliance on file modification times (Snakemake). Finally, it means that computations are small to describe, and can run anywhere, as long as they can locate the data of their input checksums. More details are in the transformation section.
 
 ### Interactivity
 
-Seamless has three features that contribute to interactivity.
+Seamless has four features that contribute to interactivity.
 
 First, based on the reactivity explained above. You can essentially re-run the entire workflow continuously without much cost, because recomputation only happens if something changes.
 
@@ -32,9 +35,11 @@ The other mechanism of synchronization is over HTTP. You can expose cells as rea
 
 In Seamless, there is no sharp difference between user and programmer. All sources of interactivity are treated the same: change of a cell over HTTP, change of a cell linked to the file system, or modification of the entire workflow via IPython. From Seamless's point of view, they are all acts of programming, although the user of a web interface normally has a very limited "API" at their disposition. You *can* allow actual programming via the web interface, by exposing code cells in read-write mode and link them to textarea editor elements in your HTML page. If you really want to.
 
+Fourth, Seamless aims to be very modifiable. For example, you can add support for a new programming language dynamically, while the workflow remains running. For another example, there is a web interface generator that you can completely customize or rewrite, again while the workflow remains running. Seamless workflows are stored in one or two files that define every modification, including these two examples.
+
 ### Using Seamless as a reactive web framework
 
-Seamless's automatic reactivity and interactivity makes it very convenient to make a certain type of web services. No matter what, you don't have to write server code that explicitly handles dynamic change, while this is required if you use Django or React or Flask or any of those web frameworks. ***Seamless workflows don't handle dynamic change, because there is none***. Whenever something changes, Seamless effectively discards the old workflow and replaces it with a new workflow. All computations that were excuted before by the old workflow (or that were ever executed by any workflow at all!) are automatically re-used. In that sense, Seamless is more similar to a traditional static CGI web server, which doesn't require any dynamic change either.
+Seamless's automatic reactivity and interactivity makes it very convenient to make a certain type of web services. No matter what, you don't have to write server code that explicitly handles dynamic change, while this is required if you use Django or Flask or any of those web frameworks. ***Seamless workflows don't handle dynamic change, because there is none***. Whenever something changes, Seamless effectively discards the old workflow and replaces it with a new workflow. All computations that were excuted before by the old workflow (or that were ever executed by any workflow at all!) are automatically re-used. In that sense, Seamless is more similar to a traditional static CGI web server, which doesn't require any dynamic change either.
 
 However, the big difference with a static web server is that a dynamic, reactive web server must always be live: there must always a Seamless process that listens for HTTP updates. You can't simply wait until the user submits a static webform with all the parameters and then fire up your workflow. Likewise, the browser must be live too, and listen from continuous updates from the server, but this is easy to do nowadays (web sockets).
 
@@ -46,7 +51,7 @@ For example, celltype "plain" means a conversion to a Python string (which means
 
 Concretely, the byte buffer `42\n` corresponds to the value `42` for celltype "plain", and vice versa.
 
-There are about a dozen celltypes in Seamless. For example, celltype "binary" is for structured binary data, which deserialized into Numpy arrays (or C/C++ structs). Celltype "bytes" is for raw binary data; Seamless does not (de)serialize it at all, it is up to the transformer to parse it (example: a PNG image). There is also a celltype "python", which means that a cell can contain not only data, but also code.
+There are about a dozen celltypes in Seamless. For example, celltype "binary" is for structured binary data, which is deserialized into Numpy arrays (or C/C++ structs). Celltype "bytes" is for raw binary data; Seamless does not (de)serialize it at all, it is up to the transformer to parse it (example: a PNG image). There is also a celltype "code", which means that a cell can contain not only data, but also code.
 
 Using the Seamless API in Python gives the *illusion* that Seamless cells are containers of *values*, just like:
 
@@ -54,7 +59,7 @@ Using the Seamless API in Python gives the *illusion* that Seamless cells are co
 
 - code cells in Jupyter
 
-- value cells and formula cells in Microsoft Excel. 
+- value cells and formula cells in Microsoft Excel.
 
 However, internally, whenever you *set* the value of a cell:
 
@@ -111,6 +116,51 @@ b'"testvalue"\n'
 testvalue
 ```
 
+### Transformations
+
+Computation in Seamless is delocalized. You can run it locally on your machine. However, when your data or computation grows large, you can configure Seamless to delegate computations to a remote location.
+
+In principle, there are five ways to do that:
+
+- Remote Procedure Call (RPC). There are many frameworks that can do this, for example ipycluster and execnet. In essence, everything is packaged into a single command message that is sent to the remote service. All of the input values and code are serialized (pickled) and the remote service is asked to execute the command. This is reproducible, since the result is completely defined by the command message. But the command message can be extremely big, since it embeds all input values.
+
+- Remote execution using file names. This is what Slurm does for single computations, and NextFlow/Snakemake for workflows. The command messages are small, but they rely on a shared file system. Organizing files into inputs, outputs, versioned banks etc. requires mental effort and discipline. Reproducibility is an issue: there is no guarantee that a file name always refers to the same value. File modification time is used to detect this, but this only works within the same file system. Federation is therefore not easily possible: sharing files is difficult (files can be big) and fragile in terms of reproducibility (need to preserve modification times). If command line tools are sloppy (creating hidden output files that are implicitly needed by downstream tools, or having implicit file dependencies), some very strange errors can happen. See "Don't rely on file names" for an example where this can go wrong.
+
+- Remote execution using URLs. This is essentially the same as file names, but using the Internet as a global file system. Federation is much easier, but reproducibility (already hard) is now much harder (no control over remote sites, cannot use modification times). Requires immense discipline in using globally unique identifiers for URLs.
+
+- Remote execution inside an environment (conda, Docker container). This works well if the environment is popular and stable, i.e. you can re-use the same environment over and over again. If the environment itself is under active development, this method is a disaster.
+
+- The fifth method is how Seamless does it. Remote execution is done by providing the checksums of the inputs and of the code. This is what Seamless call a *transformation*. The remote service is then responsible to retrieve the corresponding input buffers. This means that a computation is always well-defined, but not always executable: it may fail if one or more buffers cannot be found. In contrast, in the first three methods, a computation becomes only well-defined when it becomes executable.
+
+#### Transformers vs. transformations
+
+A transformer is essentially a container that holds a transformation. A transformer has cells as input, whereas a transformation has the checksums of those cells as input.
+
+A transformation describes a unique computation that transforms the input checksums (including the code checksum) into a result checksum. Each input checksum has a name and a celltype. When the transformation is executed, each input checksum is converted to a variable with the same name, and whose value is obtained in the same way as for cells. Likewise, after the transformation has finished, the result variable is retrieved, serialized and checksummed.
+
+#### Types of transformations
+
+Seamless allows a transformation to contain an *environment*: as a Docker image, a conda environment definition, or a list of command line tools that must be available. This is a bit informal and should be used with care when it comes to reproducibility. See the [documentation of environments](http://sjdv1982.github.io/seamless/sphinx/html/environments.html) for more details.
+
+In addition, Seamless transformers can in principle be written in any language. Python/IPython transformers are executed directly. Interpreted languages (e.g. R) are executed via a bridge to IPython (e.g. using rpy). Bash transformers are executed using a special Python function. So are compiled transformers (e.g. in C++) after compilation.
+
+The following combinations of language and environment are currently possible for Seamless transformations:
+
+- Transformers written in bash, with no environment (pure UNIX commands)
+- Transformers written in bash, with a Docker image environment.
+- Generic transformers (Python, compiled, bash, etc.), with no environment
+- Generic transformers, with a conda environment.
+
+#### Deployment of transformations
+
+Each Seamless instance is able to do its own computation, but during deployment, this is normally not very efficient. So Seamless has a protocol (communion protocol) where a Seamless instance can delegate transformation requests (jobs) to another Seamless instance (a jobslave) or to a dedicated job manager (jobless). Transformation requests can then be delegated further, e.g. to a job slave on a HPC cluster.
+
+Then, from a computing viewpoint, a Seamless instance can be seen as a black box, where cell values come in (e.g. via HTTP) and a stream of transformation requests come out. The transformation requests are small, as they contain only checksums.
+
+The communion protocol can also exchange buffers, but it is easier if both the Seamless instance and the job slave have access to the same Seamless database (see [documentation](http://sjdv1982.github.io/seamless/sphinx/html/data_storage.html)).
+In that case, the buffers corresponding to the input checksums will have been pre-deposited by the Seamless instance, so only the transformation needs to be sent. After computation, the jobslave will deposit the result checksum for that transformation, and the corresponding buffer. The Seamless instance needs to interrogate only the database to retrieve the results.
+
+
 ### Dependent and independent data
 
 ***IMPORTANT: This documentation section is an early draft. The raw text material is shown below***
@@ -147,50 +197,6 @@ buffers and other info statistics, to reason if a conversion is a priori impossi
 or trivial.
 
 Finally, Seamless has a last-resort function to go from checksum to buffer. It is possible to define a list of buffer servers (\$SEAMLESS_BUFFER_SERVERS) and Seamless will try to contact them. By default, it contains the RPBS buffer server, so that `https://buffer.rpbs.univ-paris-diderot.fr/<checksum>` will be contacted.
-
-### Transformations
-
-Large scale computing means the deployment of computations to remote systems.
-
-In principle, there are five ways to do that:
-
-- Remote Procedure Call (RPC). There are many frameworks that can do this, for example ipycluster and execnet. In essence, everything is packaged into a single command message that is sent to the remote service. All of the input values and code are serialized (pickled) and the remote service is asked to execute the command. This is reproducible, since the result is completely defined by the command message. But the command message can be extremely big, since it embeds all input values.
-
-- Remote execution using file names. This is what Slurm does for single computations, and NextFlow/Snakemake for workflows. The command messages are small, but they rely on a shared file system. Organizing files into inputs, outputs, versioned banks etc. requires mental effort and discipline. Reproducibility is an issue: there is no guarantee that a file name always refers to the same value. File modification time is used to detect this, but this only works within the same file system. Federation is therefore not easily possible: sharing files is difficult (files can be big) and fragile in terms of reproducibility (need to preserve modification times). If command line tools are sloppy (creating hidden output files that are implicitly needed by downstream tools, or having implicit file dependencies), some very strange errors can happen. See "Don't rely on file names" for an example where this can go wrong.
-
-- Remote execution using URLs. This is essentially the same as file names, but using the Internet as a global file system. Federation is much easier, but reproducibility (already hard) is now much harder (no control over remote sites,  cannot use modification times). Requires immense discipline in using globally unique identifiers for URLs (discipline that the PDB and UniProt do not have).
-
-- Remote execution inside an environment (conda, Docker container). This works well if the environment is popular and stable, i.e. you can re-use the same environment over and over again. If the environment itself is under active development, this method is a disaster.
-
-- The fifth method is how Seamless does it. Remote execution is done by providing the checksums of the inputs and of the code. This is what Seamless call a *transformation*. The remote service is then responsible to retrieve the corresponding buffers/values. This means that a computation is always well-defined, but not always executable: it may fail if one or more buffers cannot be found. In contrast, in the first three methods, a computation becomes only well-defined when it becomes executable.
-
-#### Transformers vs. transformations
-
-A transformer is essentially a container that holds a transformation. A transformer has cells as input, whereas a transformation has the checksums of those cells as input.
-
-A transformation describes a unique computation that transforms the input checksums (including the code checksum) into a result checksum. Each input checksum has a name and a celltype. When the transformation is executed, each input checksum is converted to a variable with the same name, and whose value is obtained in the same way as for cells.
-
-#### Types of transformations
-
-Seamless allows a transformation to contain an *environment*: as a Docker image, a conda environment definition, or a list of command line tools that must be available. This is a bit informal and should be used with care when it comes to reproducibility. See the [documentation of environments](http://sjdv1982.github.io/seamless/sphinx/html/environments.html) for more details.
-
-In addition, Seamless transformers can in principle be written in any language. Python/IPython transformers are executed directly. Interpreted languages (e.g. R) are executed via a bridge to IPython (e.g. using rpy). Bash transformers are executed using a special Python function. So are compiled transformers (e.g. in C++) after compilation.
-
-The following combinations of language and environment are currently possible for Seamless transformations:
-
-- Transformers written in bash, with no environment (pure UNIX commands)
-- Transformers written in bash, with a Docker image environment.
-- Generic transformers (Python, compiled, etc.), with no environment
-- Generic transformers, with a conda environment.
-
-#### Deployment of transformations
-
-Each Seamless instance is able to do its own computation, but during deployment, this is normally not very efficient. So Seamless has a protocol (communion protocol) where a Seamless instance can delegate transformation requests (jobs) to another Seamless instance (a jobslave) or to a dedicated job manager (jobless). Transformation requests can then be delegated further, e.g. to a job slave on a HPC cluster.
-
-Then, from a computing viewpoint, a Seamless instance can be seen as a black box, where cell values come in (via HTTP) and a stream of transformation requests come out. The transformation requests are small, as they contain only checksums.
-
-The communion protocol can also exchange buffers, but it is easier if both the Seamless instance and the job slave have access to the same Seamless database (see [documentation](http://sjdv1982.github.io/seamless/sphinx/html/data_storage.html)).
-In that case, the buffers corresponding to the input checksums will have been pre-deposited by the Seamless instance, so only the transformation needs to be sent. After computation, the jobslave will deposit the result checksum for that transformation, and the corresponding buffer. The Seamless instance needs to interrogate only the database to retrieve the results.
 
 ### Deep structures
 
