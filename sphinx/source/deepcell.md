@@ -19,7 +19,7 @@ TODO: move/clone from "Deep structures" in "Seamless explained"
 
 Mapping libs are in stdlib.map. Currently, there is no reduce (to be done).
 
-You have the choice between `map_dict` and `map_dict_chunk` (support for lists is working, but untested/undocumented). In either case, you must prepare a `mapping context` that will be applied to each element (`map_dict`) or each chunk (`map_dict_chunk`) or an input dict.
+You have the choice between `map_dict` and `map_dict_chunk` (support for lists is working, but untested/undocumented). In either case, you must prepare a `mapping context` that will be applied to each element (`map_dict`) or each chunk (`map_dict_chunk`) of an input dict.
 
 Mapping contexts must contain at least two cells: `inp` and `result`. The workflow will generate many clones of the mapping context, and each clone's `inp` will contain its input: a single value (no key) for `map_dict`, and a chunk (a dict containing keys and values) for `map_dict_chunk`.  Typically, the mapping context contains at least one transformer that transforms `inp` to `result`.
 
