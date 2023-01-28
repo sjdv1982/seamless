@@ -1,12 +1,12 @@
 {
-  "__seamless__": "0.8",
+  "__seamless__": "0.11",
   "connections": [],
   "lib": [],
   "nodes": [
     {
       "celltype": "code",
       "checksum": {
-        "value": "f3ab346fa545fecf91f3565fc158813943c7c7bb8855209c3037f8401ff8959e"
+        "value": "4be480df11bb793a28839d93430070b194d371c2326aa1329453eb6d936caaa6"
       },
       "datatype": "mixed",
       "language": "python",
@@ -19,7 +19,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "46de9824d3fa745d4294cfba05eba4216673a974848778f4848effb3ba91777d",
-        "buffer": "46de9824d3fa745d4294cfba05eba4216673a974848778f4848effb3ba91777d",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "46de9824d3fa745d4294cfba05eba4216673a974848778f4848effb3ba91777d"
       },

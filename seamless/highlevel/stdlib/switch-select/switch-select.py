@@ -55,6 +55,7 @@ def select_func2(ctx, celltype, input_hash_pattern, input_value, selected):
         ctx.selected_input.set_checksum(selected_input)
     
 def constructor_switch(ctx, libctx, celltype, input, selected, outputs):
+    import json
     ctx.input = Cell(celltype)
     input.connect(ctx.input)
     ctx.selected = Cell("str")
@@ -86,6 +87,8 @@ def constructor_switch(ctx, libctx, celltype, input, selected, outputs):
     """
     options = []
     for output_name in outputs:
+        if not isinstance(output_name, str):
+            output_name = json.loads(json.dumps(output_name))
         assert isinstance(output_name, str), output_name
         if output_name in macro_pins or output_name == "switch_macro":
             msg = "You cannot switch to a cell under the selector '{}'"
@@ -148,6 +151,8 @@ def constructor_select(ctx, libctx, celltype, input, inputs, selected, output):
 
         options = []
         for input_name in inputs:
+            if not isinstance(input_name, str):
+                input_name = json.loads(json.dumps(input_name))
             assert isinstance(input_name, str), input_name
             if input_name in macro1_pins or input_name == "select_macro1":
                 msg = "You cannot select from a cell under the selector '{}'"
