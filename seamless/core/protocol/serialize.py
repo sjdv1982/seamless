@@ -20,7 +20,8 @@ logger = logging.getLogger("seamless")
 def _serialize(value, celltype):
     from seamless.core.protocol.json import json_dumps
     if celltype == "str":
-        value = str(value)
+        if not isinstance(value, bool):
+            value = str(value)
         buffer = json_dumps(value, as_bytes=True) + b"\n"
     elif celltype in text_types:
         if isinstance(value, bytes):
