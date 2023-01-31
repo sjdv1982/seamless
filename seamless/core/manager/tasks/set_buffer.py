@@ -3,7 +3,7 @@ import asyncio
 from . import Task
 
 class SetCellBufferTask(Task):
-    # For buffers that come from the command line
+    # For buffers that come from an interactive modification
     def __init__(self, manager, cell, buffer, checksum):
         assert isinstance(buffer, bytes)
         super().__init__(manager)

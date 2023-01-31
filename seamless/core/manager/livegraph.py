@@ -2,10 +2,10 @@ import asyncio
 import traceback
 import weakref
 from functools import update_wrapper
-from ..status import StatusReasonEnum
 from collections import deque
-
 import logging
+from ..status import StatusReasonEnum
+
 logger = logging.getLogger("seamless")
 
 def print_info(*args):
@@ -386,13 +386,10 @@ class LiveGraph:
         worker = target.worker_ref()
         if isinstance(worker, Transformer):
             to_upstream = self.transformer_to_upstream[worker]
-            cancel = manager.cancel_transformer
         elif isinstance(worker, Reactor):
             to_upstream = self.reactor_to_upstream[worker]
-            cancel = manager.cancel_reactor
         elif isinstance(worker, Macro):
             to_upstream = self.macro_to_upstream[worker]
-            cancel = manager.cancel_macro
         assert to_upstream[pinname] is None, target # must have received no connections
 
         read_accessor = ReadAccessor(
@@ -984,15 +981,11 @@ class LiveGraph:
         return cyclic_scells
 
 
-
-
-from .accessor import Accessor, ReadAccessor, WriteAccessor
+from .accessor import ReadAccessor, WriteAccessor
 from ..transformer import Transformer
 from ..reactor import Reactor
 from ..macro import Macro, Path
 from ..cell import Cell
 from ..worker import EditPin
 from ..runtime_reactor import RuntimeReactor
-from .tasks.upon_connection import UponBiLinkTask
-from .cancel import get_scell_state, scell_any_pending
-
+from .cancel import scell_any_pending

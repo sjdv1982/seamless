@@ -2,7 +2,7 @@
 
 The goal of validation is to make sure that invalid or unreasonable input values do not occur. In Seamless, validation should happen on the *data*, which means *cells* or *transformer input pins*. That means that transformation code can assume that its inputs are sensible, eliminating one class of errors. *Transformation code is not the correct place to do validation*.
 
-The simplest way to do validation is to declare a cell type (see cell documentation). Otherwise, validation happens via *schemas*. Schemas can be only attached to structured cells and the `Transformer.inp` and `Transformer.result` objects. Seamless schemas have also some similarities with Python classes, and can be used for object-oriented programming of cells.
+The simplest way to do validation is to declare a cell type (see cell documentation). Otherwise, validation happens via *schemas*. Schemas can be only attached to structured cells and to the `Transformer.inp` and `Transformer.result` objects (which are, in fact, structured cells as well). In addition. Seamless schemas have some similarities with Python classes, and can be used for object-oriented programming of cells.
 
 ***IMPORTANT: This documentation section is a draft. The preliminary text is shown below***
 

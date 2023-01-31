@@ -1,6 +1,6 @@
 # Macros and the low level
 
-***IMPORTANT: This documentation section is a stub.***
+***IMPORTANT: This documentation section is a draft. The preliminary text is shown below***
 
 The function of the low level is threefold:
 
@@ -10,7 +10,7 @@ The function of the low level is threefold:
 
     1. The low level has *reactors*, which function as transformers except that 1) they maintain state between invocations; and 2) they can edit the values some of their (independent!) input pins ("edit pins"). Since in Seamless, there is no history and modification of (independent) values creates a new workflow, the low-level allows self-editing workflows. In the future, reactors may be ported to the high level.
 
-    2. The low level has *macros*. Macros have input pins, and whenever any input changes, the macro code is executed. ***Macro code is Python code that uses the low level, constructing a low-level context***. This context can be connected to the main context that contains the macro. Macros can be nested indefinitely. Macros allow Seamless to overcome the limitations of directed acyclic graphs, by allowing cyclic dependencies (nested macros where the nesting terminates based on the value of the macro input pin), if statements (building a connection or not, based on the value of the macro input pin) and for loops (building cells and connections for each value of the macro input pin). Macros are exposed to the high level as `seamless.highlevel.Macro`, although the macro code itself must fundamentally contain low level code. High-level contexts graphs can be embedded in the low level using seamless.core.HighLevelContext.
+    2. The low level has *macros*. Like transformers, macros have input pins, and whenever any input changes, the macro code is executed. ***Macro code is Python code that uses the low level, constructing a low-level context***. This context can be connected to the main context that contains the macro. Macros can be nested indefinitely. Macros allow Seamless to overcome the limitations of directed acyclic graphs, by allowing cyclic dependencies (nested macros where the nesting terminates based on the value of the macro input pin), if statements (building a connection or not, based on the value of the macro input pin) and for loops (building cells and connections for each value of the macro input pin). Macros are exposed to the high level as `seamless.highlevel.Macro`, although the macro code itself must fundamentally contain low level code. High-level workflow graphs can be embedded in the low level using seamless.core.HighLevelContext.
 
 - Finally, the low level is how the high level is implemented in Seamless. The translation of a high level context graph is one big macro: whenever translation is triggered, Seamless enters macro mode and builds a low-level context based on the value of the high-level context graph, destroying any previous low-level context. This is typically one-to-many: for example, a high-level compiled transformer is translated into several low-level transformers.
 
@@ -36,5 +36,6 @@ Intermediate:
 In-depth:
 - Libraries vs macros
 
-Async tasks overview
+Async tasks overview (link to seamless explained)
+livegraph and the various managers
 -->

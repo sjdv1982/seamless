@@ -505,7 +505,7 @@ def assign_context(ctx, path, value):
 def assign_to_deep_subcell(cell, attr, value):
     hcell = cell._get_hcell()
     ctx = cell._parent()
-    if isinstance(value, Cell):        
+    if isinstance(value, Cell):
         raise AttributeError("Can only assign cells to DeepCell.blacklist and DeepCell.whitelist")
     elif isinstance(value, ConstantTypes):
         check_libinstance_subcontext_binding(ctx, (attr,))

@@ -4,7 +4,7 @@ import asyncio
 import numpy as np
 
 class SetCellValueTask(Task):
-    # For values that come from the command line
+    # For values that come from an interactive modification
     def __init__(self, manager, cell, value, *, origin_reactor=None):
         super().__init__(manager)
         self.cell = cell
@@ -48,7 +48,7 @@ class SetCellValueTask(Task):
                     raise exc from None
                 except Exception as exc:
                     raise exc from None
-                assert buffer is None or isinstance(buffer, bytes)                
+                assert buffer is None or isinstance(buffer, bytes)
                 checksum = await CalculateChecksumTask(manager, buffer).run()
             if checksum is not None:
                 if isinstance(value, np.ndarray):
@@ -72,8 +72,8 @@ class SetCellValueTask(Task):
             if self._canceled:
                 raise exc from None
             exc = traceback.format_exc()
-            livegraph.cell_parsing_exceptions[self.cell] = exc
             manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.INVALID, origin_task=self)
+            livegraph.cell_parsing_exceptions[self.cell] = exc
         except Exception as exc:
             exc = traceback.format_exc()
             manager.cancel_cell(self.cell, True, reason=StatusReasonEnum.INVALID, origin_task=self)
@@ -86,5 +86,4 @@ from ...protocol.evaluate import validate_evaluation_subcelltype, validate_text
 from ...protocol.calculate_checksum import checksum_cache
 from ...status import StatusReasonEnum
 from ...protocol.deep_structure import value_to_deep_structure
-from .get_buffer import GetBufferTask
 from ...cache.buffer_cache import buffer_cache

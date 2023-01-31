@@ -28,6 +28,7 @@ print(ctx.a.value)
 `<Silk 123>`
 
 Cells are by default *structured cells*, which:
+
 - Contain values that are **mixed**: they can contain plain (JSON-serializable) values, Numpy arrays, or a mix of the two.
 - Have a schema (a superset of JSON schema)
 - Support subcells:
@@ -51,12 +52,16 @@ print(ctx.c.value)
 <Silk: 12 >
 ```
 
-Using the `celltype` property, a cell can be changed to a non-structured cell (see the documentation of the Cell class for more details).
+Using the `celltype` property, a cell can be changed to a simple (i.e. non-structured) cell (see the documentation of the Cell class for more details).
 
 Cells are *dependent* if (part of) the cell's value is computed from a dependency, i.e from a transformer or from another cell.
 Cells are *independent* if they have their own value, with no dependencies.
 
-Cells can be *mounted* to a file using `Cell.mount`. By default, mounts are both read (the cell changes its value when the file changes its value) and write (vice versa) . Only independent cells can have a read mount. *Structured cells cannot be mounted.*
+Simple cells are either fully dependent or fully independent. 
+
+Structured cells may have an independent part (accessible and via `Cell.handle`) together with zero or more dependent parts. Whenever one part changed, all parts get joined into a value, which is then validated (see the "Validation" documentation chapter for more details). If validation fails, the cell's value is set to None, but the value before validation is still available as `Cell.buffered`. In fact, at the low level, structured cells are implemented using three mixed cells for storage, "auth" for (the checksum of) the independent part, "buffer" for the value before validation, and "data" for the validated value.
+
+Simple cells can be *mounted* to a file using `Cell.mount`. By default, mounts are both read (the cell changes its value when the file changes its value) and write (vice versa) . Only independent cells can have a read mount. *Structured cells cannot be mounted.*
 
 Cells can be *shared* over HTTP (via the Seamless REST API), using `Cell.share`. By default, shares are read-only (only HTTP GET requests are supported). Independent cells can also be shared as read/write (their value can be changed using HTTP PUT requests). If a cell is to be accessed as a URL from the browser, you are recommended to set `Cell.mimetype`.
 
