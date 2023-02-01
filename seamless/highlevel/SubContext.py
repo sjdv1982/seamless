@@ -248,6 +248,10 @@ class SubContext(Base, HelpMixin):
         d = [p for p in type(self).__dict__ if not p.startswith("_")]
         return sorted(d + self.get_children())
 
-
+    @property
+    def self(self):
+        # TODO: implement
+        return self
+        
 from .Context import _get_status
 from .Transformer import Transformer

@@ -377,14 +377,14 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
         nodes, connections, _, _ = ctx._graph
     if not fast:
         for p in list(nodes.keys()):
-            if p[:len(path)] == path:
+            if p[:len(path)] == path or p[:len(path) + 1] == ("HELP",) + path:
                 nodes.pop(p)
         for con in list(connections):
             if con["type"] == "connection":
                 source, target = con["source"], con["target"]
-                if source[:len(path)] != path:
+                if source[:len(path)] != path and source[:len(path) + 1] != ("HELP",) + path:
                     continue
-                if target[:len(path)] != path:
+                if target[:len(path)] != path and target[:len(path) + 1] != ("HELP",) + path:
                     continue
                 connections.remove(con)
     nodes[path] = {
@@ -399,7 +399,10 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
     indexed_nodepaths = []
     for node in new_nodes:
         old_path = node["path"]
-        pp = path + old_path
+        if old_path[0] == "HELP":
+            pp = ("HELP",) + path + old_path[1:]
+        else:
+            pp = path + old_path
         node["path"] = pp
         nodetype = node["type"]
         indexed_nodepaths.append(pp)
@@ -470,8 +473,13 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
                 cs.pop(item, None)
     indexed_connections = []
     for con in new_connections:
-        con["source"] = path + con["source"]
-        con["target"] = path + con["target"]
+        for attr in "source", "target":
+            old_path = con[attr]
+            if old_path[0] == "HELP":
+                pp = ("HELP",) + path + old_path[1:]
+            else:
+                pp = path + old_path
+            con[attr] = pp
         indexed_connections.append(con)
         connections.append(con)
     if fast:
@@ -481,6 +489,7 @@ def _assign_context(ctx, new_nodes, new_connections, path, runtime, *, fast=Fals
     if runtime and not fast:
         old_graph = deepcopy(ctx._graph)
     ctx._destroy_path(path, runtime=runtime, fast=fast)
+    ctx._destroy_path(("HELP",) + path, runtime=runtime, fast=fast)
     _assign_context2(ctx, new_nodes, new_connections, path, runtime, fast=fast)
     if not fast:
         graph = ctx._runtime_graph if runtime else ctx._graph
