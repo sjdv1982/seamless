@@ -50,8 +50,6 @@ Primarily, the database dir contains /buffers, containing one file per buffer (t
 
 Normally, Seamless contacts the database, specifying the desired store and the checksum. For buffers, the content is returned. As an optimization, it is also possible to ask for the file name (see below).
 
-
-
 ### Database cleanup
 
 The buckets do not take up much space, there is little reason to delete them.  In contrast, buffers/ can get very large. You can freely delete the contents of /buffers while the database is running, this will not cause any crash. The database has a memory cache that may continue to hold the buffer for a while. To cleanly remove any kind of database entry, create a file with a format like

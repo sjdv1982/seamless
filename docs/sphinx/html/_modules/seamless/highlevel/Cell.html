@@ -700,7 +700,7 @@
 <span class="sd">        - If not available, try to re-compute it using its provenance,</span>
 <span class="sd">            i.e. re-evaluating any transformation or expression that produced it</span>
 <span class="sd">        - Such recomputation is done in &quot;fingertip&quot; mode, i.e. disallowing</span>
-<span class="sd">            use of expression-to-checksum or transformation-to-checksum caches&quot;&quot;&quot;</span>
+<span class="sd">            cache hits from expression-to-checksum or transformation-to-checksum caches&quot;&quot;&quot;</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span>
         <span class="n">manager</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">_manager</span>
         <span class="n">cachemanager</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">cachemanager</span>
@@ -724,6 +724,8 @@
         <span class="k">if</span> <span class="n">hcell</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span>
         <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cell</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">no_auth</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Cannot set the value of a cell that is not independent&quot;</span><span class="p">)</span>        
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hash_pattern</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">cell</span><span class="o">.</span><span class="n">handle_hash</span>
         <span class="k">else</span><span class="p">:</span>

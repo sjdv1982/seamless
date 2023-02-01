@@ -47,19 +47,35 @@
 <li class="toctree-l3"><a class="reference internal" href="#using-seamless-as-a-reactive-web-framework">Using Seamless as a reactive web framework</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#cells">Cells</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#demonstration">Demonstration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#subcells">Subcells</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#dependent-and-independent-data">Dependent and independent data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#caching">Caching</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#transformations">Transformations</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#transformers-vs-transformations">Transformers vs. transformations</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#types-of-transformations">Types of transformations</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#deployment-of-transformations">Deployment of transformations</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#deep-structures">Deep structures</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#visualization-and-monitoring">Visualization and monitoring</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#understanding-seamless-dependency-graphs">Understanding Seamless dependency graphs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#essential-mechanics">Essential mechanics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#asynchronous-tasks">Asynchronous tasks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reproducibility-and-pure-functions">Reproducibility and pure functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-interactive-modification-is-treated">How interactive modification is treated</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#high-level-versus-low-level">High level versus low level</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#changes-in-topology">Changes in topology</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#changes-in-inputs">Changes in inputs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#special-cases-libraries-and-macros">Special cases: libraries and macros</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#caching-and-performance">Caching and performance</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#checksum-to-buffer-cache">Checksum-to-buffer cache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#buffer-info-cache">Buffer info cache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#transformation-cache">Transformation cache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fingertipping">Fingertipping</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#limitations-of-workflow-graphs">Limitations of workflow graphs</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#guidelines-for-experienced-developers">Guidelines for experienced developers</a><ul>
@@ -70,9 +86,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#environments">Environments</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#don-t-confuse-files-and-cell-names">Don’t confuse files and cell names</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#don-t-rely-on-file-names-or-urls">Don’t rely on file names or URLs</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#use-celltypes">Use celltypes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#use-schemas">Use schemas</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#use-structured-cells">Use structured cells</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#use-celltypes-judiciously">Use celltypes judiciously</a></li>
 </ul>
 </li>
 </ul>
@@ -138,33 +152,36 @@
 <h2>Core concepts<a class="headerlink" href="#core-concepts" title="Permalink to this headline">¶</a></h2>
 <p>First, Seamless is a framework for <em>interactive</em> programming and scripting. There are essentially two ways that you can do this. The first is file-based, like the bash shell. The second is cell-based, such as IPython, Jupyter, or a spreadsheet. Seamless follows the cell-based approach.</p>
 <p>Second, Seamless is a framework for building <em>workflows</em> (dataflow programming), i.e. dependency graphs. There are essentially three ways you can do this: stream-based (NoFlo), file-based (NextFlow, Snakemake) or cell-based (Jupyter, Excel). Again, Seamless follows the cell-based approach.</p>
-<p>In a nutshell, most of Seamless revolves around <em><strong>cells</strong></em>, that hold the data and code, and <em><strong>transformers</strong></em>, that do the computation. Transformers take cells (including code cells) as input and have a single cell as output.</p>
+<p>Third, Seamless is a framework for <em>reproducible</em> computation.
+The idea is that by following some simple rules in your code, you gain reproducibility and interactivity for free. Unlike interactivity, which is everywhere in Seamless, reproducibility is mostly hidden from the user.</p>
+<p>In a nutshell, most of Seamless revolves around <em><strong>cells</strong></em>, that hold the data and code, and <em><strong>transformers</strong></em>, that do reproducible computation. Transformers take cells (including code cells) as input and have a single cell as output.</p>
 <div class="section" id="checksums">
 <h3>Checksums<a class="headerlink" href="#checksums" title="Permalink to this headline">¶</a></h3>
-<p>What makes Seamless special is that cells don’t hold values or filenames, but <em><strong>checksums</strong></em> (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren’t tied to a hierarchy of files, carefully named and accessible on a mounted file system. Although in Seamless you <em>can</em> mount a cell to a file, it just means that the cell’s checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is always free in terms of space, in the same way that a hardlink to a file is always free (but copying a file or value is not). Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. They just contain checksums, and data values are obtained only when they are needed. Checksums are small, and a workflow description with checksums is small, but their underlying data can be much larger than what fits in memory, or on disk. In other words, big data is possible with Seamless.</p>
-<p>On the flip side, you can’t automatically assume that you have a cell’s data at your fingertips. By default, Seamless sets up some simple checksum-to-data stores, but that reintroduces some of the problems (potential memory issues, file copying) of using files and values instead of checksums. These problems can be minimized by manually configuring your data storage.</p>
-<p>The final implication is that since transformers are also based on checksums, and since these checksums fully describe the computation (parameters <em>and</em> code <em>and</em> result), you can replace a computation with its result, and replace a result with its computation (referential transparency). This is very beneficial for <em><strong>reproducibility</strong></em>, and it provides <em><strong>reactivity</strong></em>: after cell updates, it is always obvious which computations need to be re-executed. No need for manual re-execution (Jupyter) or reliance on file modification times (Snakemake). Finally, it means that computations are small to describe, and can run anywhere, as long as they can locate the data of their input checksums. More details are in the transformation section.</p>
+<p>What makes Seamless special is that cells don’t hold values or filenames, but <em><strong>checksums</strong></em> (aka hashes, aka content-addressed storage). This has several implications. First, unlike e.g. NextFlow, you aren’t tied to a complex hierarchy of files. Although in Seamless you <em>can</em> mount a cell to a file, it just means that the cell’s checksum tracks the file content when it changes (and vice versa). Computations can be executed anywhere, without copying over any files first. Second, it means that copying a cell is always free in terms of space, in the same way that a hardlink to a file is always free (but copying a file or value is not). Third, although they give the illusion of wrapping an in-memory value, Seamless cells do no such thing. They just contain checksums, and data values are obtained only when they are needed. Checksums are small, and a workflow description with checksums is small, but their underlying data can be much larger than what fits in memory, or on disk. In other words, big data is possible with Seamless.</p>
+<p>On the flip side, you can’t automatically assume that you have a cell’s data at your fingertips. By default, Seamless sets up a simple in-memory checksum-to-data store, but that reintroduces some of the problems (potential memory issues, file copying) of using files and values instead of checksums. These problems can be reduced or eliminated by manually configuring your data storage.</p>
+<p>The final implication is that since transformers are also based on checksums, and since these checksums fully describe the computation (input <em>and</em> code <em>and</em> result), you can replace a computation with its result, and replace a result with its computation (referential transparency). This is very beneficial for <em><strong>reproducibility</strong></em>, and it provides <em><strong>reactivity</strong></em>: after cell updates, it is always obvious which computations need to be re-executed. No need for manual re-execution (Jupyter) or reliance on file modification times (Snakemake). Finally, it means that computations are small to describe, and can run anywhere, as long as they can locate the data of their input checksums. More details are in the transformation section.</p>
 </div>
 <div class="section" id="interactivity">
 <h3>Interactivity<a class="headerlink" href="#interactivity" title="Permalink to this headline">¶</a></h3>
-<p>Seamless has three features that contribute to interactivity.</p>
+<p>Seamless has four features that contribute to interactivity.</p>
 <p>First, based on the reactivity explained above. You can essentially re-run the entire workflow continuously without much cost, because recomputation only happens if something changes.</p>
-<p>Second, while the workflow remains running, you can always modify it in IPython/Jupyter. Both the topology of the workflow and the parameters can be modified.</p>
+<p>Second, while the workflow remains running, you can always modify it in IPython/Jupyter. Both the topology of the workflow and the inputs can be modified (see “How interactive modification is treated” for details).</p>
 <p>Third, Seamless allows cells to be <em><strong>synchronized</strong></em>. There are two mechanisms for this. The first mechanism is that during development, cells can be synchronized (mounted) to the file system. In this way, you can define a code cell initially in a Jupyter Notebook, but then link it to a source code file under Git version control that you can edit with a standard text editor or IDE. The synchronization is two-way, which means that the file contains the cell buffer, and that the cell contains the file checksum. During deployment, the file is no longer needed (or used), although the cell buffer must be retrievable from somewhere.</p>
-<p>The other mechanism of synchronization is over HTTP. You can expose cells as read-only, allowing their value to be read in the browser (HTTP GET), or as read-write, so that they can be modified (HTTP PUT). There is also a websocket port where you can receive notifications from Seamless when a cell has been updated. Seamless includes a simple javascript client that uses all of this to synchronize cell values bidirectionally between Seamless and the browser. This is how you build web interfaces that are fundamentally interactive.</p>
+<p>The other mechanism of synchronization is over HTTP. You can expose cells as read-only, allowing their value to be read in the browser (HTTP GET), or as read-write, so that they can be modified (HTTP PUT). There is also a websocket port where you can receive notifications from Seamless when a cell has been updated. Seamless includes a simple Javascript client that uses all of this to synchronize cell values bidirectionally between Seamless and the browser. This is how you build web interfaces that are fundamentally interactive.</p>
 <p>In Seamless, there is no sharp difference between user and programmer. All sources of interactivity are treated the same: change of a cell over HTTP, change of a cell linked to the file system, or modification of the entire workflow via IPython. From Seamless’s point of view, they are all acts of programming, although the user of a web interface normally has a very limited “API” at their disposition. You <em>can</em> allow actual programming via the web interface, by exposing code cells in read-write mode and link them to textarea editor elements in your HTML page. If you really want to.</p>
+<p>Fourth, Seamless aims to be very modifiable. For example, you can add support for a new programming language dynamically, while the workflow remains running. For another example, there is a web interface generator that you can completely customize or rewrite, again while the workflow remains running. Seamless workflows are stored in one or two checksum graph files that define every modification, including these two examples.</p>
 </div>
 <div class="section" id="using-seamless-as-a-reactive-web-framework">
 <h3>Using Seamless as a reactive web framework<a class="headerlink" href="#using-seamless-as-a-reactive-web-framework" title="Permalink to this headline">¶</a></h3>
-<p>Seamless’s automatic reactivity and interactivity makes it very convenient to make a certain type of web services. No matter what, you don’t have to write server code that explicitly handles dynamic change, while this is required if you use Django or React or Flask or any of those web frameworks. <em><strong>Seamless workflows don’t handle dynamic change, because there is none</strong></em>. Whenever something changes, Seamless effectively discards the old workflow and replaces it with a new workflow. All computations that were excuted before by the old workflow (or that were ever executed by any workflow at all!) are automatically re-used. In that sense, Seamless is more similar to a traditional static CGI web server, which doesn’t require any dynamic change either.</p>
+<p>Seamless’s automatic reactivity and interactivity makes it very convenient to make a certain type of web services. No matter what, you don’t have to write server code that explicitly handles dynamic change, while this is required if you use Django or Flask or any of those web frameworks. <em><strong>Seamless workflows don’t handle dynamic change, because there is none</strong></em>. Whenever something changes, Seamless effectively discards the old workflow and replaces it with a new workflow. All computations that were excuted before by the old workflow (or that were ever executed by any workflow at all!) are automatically re-used. In that sense, Seamless is more similar to a traditional static CGI web server, which doesn’t require any dynamic change either.</p>
 <p>However, the big difference with a static web server is that a dynamic, reactive web server must always be live: there must always a Seamless process that listens for HTTP updates. You can’t simply wait until the user submits a static webform with all the parameters and then fire up your workflow. Likewise, the browser must be live too, and listen from continuous updates from the server, but this is easy to do nowadays (web sockets).</p>
 </div>
 <div class="section" id="cells">
 <h3>Cells<a class="headerlink" href="#cells" title="Permalink to this headline">¶</a></h3>
 <p>A cell is essentially a container that holds a <em>checksum</em> (a SHA3-256 hash). A checksum corresponds to a <em>buffer</em> (the raw bytes). This correspondence is one-to-one: each buffer has a unique checksum and vice versa. Finally, the <em>celltype</em> describes how the buffer is to be interpreted (<em>deserialized</em>) into a <em>value</em>.</p>
-<p>For example, celltype “plain” means a conversion to a Python string (which means UTF-8 decoding) followed by loading the string as JSON. Likewise, to go from value to buffer (<em>serialization</em>), a value of celltype “plain” is first converted to a JSON string, and then encoded (using UTF-8) into a byte buffer.</p>
-<p>Concretely, the byte buffer <code class="docutils literal notranslate"><span class="pre">42\n</span></code> corresponds to the value <code class="docutils literal notranslate"><span class="pre">42</span></code> for celltype “plain”, and vice versa.</p>
-<p>There are about a dozen celltypes in Seamless. For example, celltype “binary” is for structured binary data, which deserialized into Numpy arrays (or C/C++ structs). Celltype “bytes” is for raw binary data; Seamless does not (de)serialize it at all, it is up to the transformer to parse it (example: a PNG image). There is also a celltype “python”, which means that a cell can contain not only data, but also code.</p>
+<p>For example, celltype “plain” means a conversion to a Python string (which means UTF-8 decoding) followed by loading the string as JSON. Likewise, to go from value to buffer (<em>serialization</em>), a value of celltype “plain” is first converted to a JSON string, and then encoded (using UTF-8) into a buffer.</p>
+<p>Concretely, the buffer <code class="docutils literal notranslate"><span class="pre">b'42\n'</span></code> corresponds to the value <code class="docutils literal notranslate"><span class="pre">42</span></code> for celltype “plain”, and vice versa.</p>
+<p>There are about a dozen celltypes in Seamless. For example, celltype “binary” is for structured binary data, which is deserialized into Numpy arrays (or C/C++ structs). Celltype “bytes” is for raw binary data; Seamless does not (de)serialize it at all, it is up to the transformer to parse it (example: a PNG image). There is also a celltype “code” for transformer code.</p>
 <p>Using the Seamless API in Python gives the <em>illusion</em> that Seamless cells are containers of <em>values</em>, just like:</p>
 <ul class="simple">
 <li><p>variables in Python</p></li>
@@ -217,56 +234,26 @@
 </pre></div>
 </div>
 </div>
+<div class="section" id="subcells">
+<h4>Subcells<a class="headerlink" href="#subcells" title="Permalink to this headline">¶</a></h4>
+<p>Another important feature of Seamless is support for subcells, which correspond to <em>partial checksums</em>, i.e. the checksum of a part of the cell data. This part is defined by an <em>attribute path</em>: this can refer to a single attribute (e.g. <code class="docutils literal notranslate"><span class="pre">Cell.x</span></code>), but indices (<code class="docutils literal notranslate"><span class="pre">Cell[0]</span></code>) and attributes-of-attributes (<code class="docutils literal notranslate"><span class="pre">Cell.x.y</span></code> or <code class="docutils literal notranslate"><span class="pre">Cell.a[0].z</span></code>) are also supported. See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/cell.html">the cell documentation</a> for a demonstration).</p>
 </div>
-<div class="section" id="dependent-and-independent-data">
-<h3>Dependent and independent data<a class="headerlink" href="#dependent-and-independent-data" title="Permalink to this headline">¶</a></h3>
-<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
-<p>TODO: merge with the corresponding paragraph in context.md
-…
-By default, Seamless maintains a checksum-to-data cache in-memory that distinguish between <em>dependent</em> (computed) and <em>independent</em> data. Dependent data may get evicted … TODO</p>
-<ul class="simple">
-<li><p>Independent vs dependent: history doesn’t matter, creating a new workflow… syntax…
-Deeper:</p></li>
-<li><p>Fingertipping, cache misses and irreproducibility (link to transformer)</p></li>
-<li><p>Resolving cycles…</p></li>
-<li><p>bidirectional link</p></li>
-<li><p>Async tasks (link to low_level.md)</p></li>
-</ul>
-</div>
-<div class="section" id="caching">
-<h3>Caching<a class="headerlink" href="#caching" title="Permalink to this headline">¶</a></h3>
-<p><em><strong>IMPORTANT: This documentation section is a draft. The preliminary text is shown below</strong></em></p>
-<p>TODO</p>
-<ul class="simple">
-<li><p>Various kinds of caches in Seamless</p></li>
-</ul>
-<p>The checksum-to-buffer conversion cache is more than just for performance. The
-correspondence between checksum and buffer is one-to-one, but you can only compute
-the checksum from a buffer, not the other way around. Therefore,
-it is essential that for each checksum, the corresponding buffer is available
-where needed.</p>
-<p>In addition, sometimes very large buffers must be converted between different cell
-types, e.g. from text to JSON. Caching the conversion will avoid the loading of
-the source buffer from wherever it is stored. Seamless also caches the length of
-buffers and other info statistics, to reason if a conversion is a priori impossible
-or trivial.</p>
-<p>Finally, Seamless has a last-resort function to go from checksum to buffer. It is possible to define a list of buffer servers ($SEAMLESS_BUFFER_SERVERS) and Seamless will try to contact them. By default, it contains the RPBS buffer server, so that <code class="docutils literal notranslate"><span class="pre">https://buffer.rpbs.univ-paris-diderot.fr/&lt;checksum&gt;</span></code> will be contacted.</p>
 </div>
 <div class="section" id="transformations">
 <h3>Transformations<a class="headerlink" href="#transformations" title="Permalink to this headline">¶</a></h3>
-<p>Large scale computing means the deployment of computations to remote systems.</p>
+<p>Computation in Seamless is delocalized. You can run it locally on your machine, but when your data or computation grows large, you can configure Seamless to delegate computations to a remote location.</p>
 <p>In principle, there are five ways to do that:</p>
 <ul class="simple">
 <li><p>Remote Procedure Call (RPC). There are many frameworks that can do this, for example ipycluster and execnet. In essence, everything is packaged into a single command message that is sent to the remote service. All of the input values and code are serialized (pickled) and the remote service is asked to execute the command. This is reproducible, since the result is completely defined by the command message. But the command message can be extremely big, since it embeds all input values.</p></li>
 <li><p>Remote execution using file names. This is what Slurm does for single computations, and NextFlow/Snakemake for workflows. The command messages are small, but they rely on a shared file system. Organizing files into inputs, outputs, versioned banks etc. requires mental effort and discipline. Reproducibility is an issue: there is no guarantee that a file name always refers to the same value. File modification time is used to detect this, but this only works within the same file system. Federation is therefore not easily possible: sharing files is difficult (files can be big) and fragile in terms of reproducibility (need to preserve modification times). If command line tools are sloppy (creating hidden output files that are implicitly needed by downstream tools, or having implicit file dependencies), some very strange errors can happen. See “Don’t rely on file names” for an example where this can go wrong.</p></li>
-<li><p>Remote execution using URLs. This is essentially the same as file names, but using the Internet as a global file system. Federation is much easier, but reproducibility (already hard) is now much harder (no control over remote sites,  cannot use modification times). Requires immense discipline in using globally unique identifiers for URLs (discipline that the PDB and UniProt do not have).</p></li>
+<li><p>Remote execution using URLs. This is essentially the same as file names, but using the Internet as a global file system. Federation is much easier, but reproducibility (already hard) is now much harder (no control over remote sites, cannot use modification times). Requires immense discipline in using globally unique identifiers for URLs.</p></li>
 <li><p>Remote execution inside an environment (conda, Docker container). This works well if the environment is popular and stable, i.e. you can re-use the same environment over and over again. If the environment itself is under active development, this method is a disaster.</p></li>
-<li><p>The fifth method is how Seamless does it. Remote execution is done by providing the checksums of the inputs and of the code. This is what Seamless call a <em>transformation</em>. The remote service is then responsible to retrieve the corresponding buffers/values. This means that a computation is always well-defined, but not always executable: it may fail if one or more buffers cannot be found. In contrast, in the first three methods, a computation becomes only well-defined when it becomes executable.</p></li>
+<li><p>The fifth method is how Seamless does it. Remote execution is done by providing the checksums of the inputs and of the code. This is what Seamless call a <em>transformation</em>. The remote service is then responsible to retrieve the corresponding input buffers. This means that a computation is always well-defined, but not always executable: it may fail if one or more buffers cannot be found. In contrast, in the first three methods, a computation becomes only well-defined when it becomes executable.</p></li>
 </ul>
 <div class="section" id="transformers-vs-transformations">
 <h4>Transformers vs. transformations<a class="headerlink" href="#transformers-vs-transformations" title="Permalink to this headline">¶</a></h4>
 <p>A transformer is essentially a container that holds a transformation. A transformer has cells as input, whereas a transformation has the checksums of those cells as input.</p>
-<p>A transformation describes a unique computation that transforms the input checksums (including the code checksum) into a result checksum. Each input checksum has a name and a celltype. When the transformation is executed, each input checksum is converted to a variable with the same name, and whose value is obtained in the same way as for cells.</p>
+<p>A transformation describes a unique computation that transforms the input checksums (including the code checksum) into a result checksum. Each input checksum has a name and a celltype. When the transformation is executed, each input checksum is converted to a variable with the same name, and whose value is obtained in the same way as for cells. Likewise, after the transformation has finished, the result variable is retrieved, serialized and checksummed.</p>
 </div>
 <div class="section" id="types-of-transformations">
 <h4>Types of transformations<a class="headerlink" href="#types-of-transformations" title="Permalink to this headline">¶</a></h4>
@@ -276,55 +263,149 @@ or trivial.</p>
 <ul class="simple">
 <li><p>Transformers written in bash, with no environment (pure UNIX commands)</p></li>
 <li><p>Transformers written in bash, with a Docker image environment.</p></li>
-<li><p>Generic transformers (Python, compiled, etc.), with no environment</p></li>
+<li><p>Generic transformers (Python, compiled, bash, etc.), with no environment</p></li>
 <li><p>Generic transformers, with a conda environment.</p></li>
 </ul>
 </div>
 <div class="section" id="deployment-of-transformations">
 <h4>Deployment of transformations<a class="headerlink" href="#deployment-of-transformations" title="Permalink to this headline">¶</a></h4>
-<p>Each Seamless instance is able to do its own computation, but during deployment, this is normally not very efficient. So Seamless has a protocol (communion protocol) where a Seamless instance can delegate transformation requests (jobs) to another Seamless instance (a jobslave) or to a dedicated job manager (jobless). Transformation requests can then be delegated further, e.g. to a job slave on a HPC cluster.</p>
-<p>Then, from a computing viewpoint, a Seamless instance can be seen as a black box, where cell values come in (via HTTP) and a stream of transformation requests come out. The transformation requests are small, as they contain only checksums.</p>
+<p>Each Seamless instance is able to do its own computation, but during deployment, this is normally not very efficient. So Seamless has a protocol (communion protocol) where a Seamless instance can delegate transformation requests (jobs) to another Seamless instance (a jobslave) or to a dedicated job manager (jobless). Transformation requests can then be delegated further, e.g. to a job slave on a HPC cluster. See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/job_management.html">job management</a> for more details.</p>
+<p>Then, from a deployment viewpoint, a Seamless instance can be seen as a black box, where cell values come in (e.g. via HTTP) and a stream of transformation requests come out. The transformation requests are small, as they contain only checksums.</p>
 <p>The communion protocol can also exchange buffers, but it is easier if both the Seamless instance and the job slave have access to the same Seamless database (see <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/data_storage.html">documentation</a>).
 In that case, the buffers corresponding to the input checksums will have been pre-deposited by the Seamless instance, so only the transformation needs to be sent. After computation, the jobslave will deposit the result checksum for that transformation, and the corresponding buffer. The Seamless instance needs to interrogate only the database to retrieve the results.</p>
 </div>
 </div>
-<div class="section" id="deep-structures">
-<h3>Deep structures<a class="headerlink" href="#deep-structures" title="Permalink to this headline">¶</a></h3>
-<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
-<p>TODO: move/clone into deepcell.md</p>
-<p>A transformation is in fact a “deep structure”. Its checksum corresponds to a dictionary, where each value is itself a checksum (of the input cells).</p>
-<p>Seamless has support for two other kinds of deep structures: deep cells and deep folders. In both cases, the deep structure is again a dictionary, where the keys are strings and the values are checksums. The difference is the cell type of the checksums. For deep cells, the cell type is “mixed” (Seamless’s default cell type), which means that you can easily access an individual element and convert it trivially to a normal Seamless cell. In contrast, for deep folders, the cell type is “bytes”, which means that buffer and value are the same. This allows a one-to-one mapping with a
-folder on the file system.</p>
 </div>
-<div class="section" id="visualization-and-monitoring">
-<h3>Visualization and monitoring<a class="headerlink" href="#visualization-and-monitoring" title="Permalink to this headline">¶</a></h3>
-<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
-<p>TODO: integrate/merge with visualization.md</p>
-<p>Typically, a web service consists of two graphs (.seamless files).
-The first graph contains the main workflow. The second graph contains a status graph. The status graph can be bound by Seamless to the main graph (<code class="docutils literal notranslate"><span class="pre">seamless.metalevel.bind_status_graph</span></code>; this function is automatically invoked by <code class="docutils literal notranslate"><span class="pre">seamless-serve-graph</span></code> if you provide two graph files). In that case, the status graph receives the current value and status of the  main workflow graph as its input, and normally visualizes it as a web page. Manually-coded web interfaces are normally added to the main workflow graph. In contrast, the automatic web interface generator is part of the status graph, as it generates the web interface HTML by taking the main workflow graph as an input. During development, both graphs are developed, which is made possible by <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span></code> and <code class="docutils literal notranslate"><span class="pre">seamless-load-project</span></code>.</p>
+<div class="section" id="essential-mechanics">
+<h2>Essential mechanics<a class="headerlink" href="#essential-mechanics" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="asynchronous-tasks">
+<h3>Asynchronous tasks<a class="headerlink" href="#asynchronous-tasks" title="Permalink to this headline">¶</a></h3>
+<p>As shown in the “Cells” section above, <code class="docutils literal notranslate"><span class="pre">Cell.set(value)</span></code> is implemented in Seamless as three tasks: serialization, checksum calculation, and update of the cell’s checksum. As a user, you don’t work with tasks directly, but understanding them is important to predict the performance of a workflow.</p>
+<p>All tasks in Seamless are <em><strong>asynchronous</strong></em>. See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/cell.html">the cell documentation</a> for a demonstration. When an “update” task gets executed, all downstream dependencies get canceled and become pending. Tasks get re-executed when their input changes. Tasks are executed concurrently within the main Seamless process. However, transformation tasks are executed in parallel, either inside a forked subprocess (default) or by remote execution.</p>
+<p>Altogether, Seamless has the following tasks (*):</p>
+<ul class="simple">
+<li><p>Serialization (value to buffer)</p></li>
+<li><p>Deserialization (buffer to value)</p></li>
+<li><p>Checksum calculation (buffer to checksum)</p></li>
+<li><p>Updating a cell checksum</p></li>
+<li><p>Conversion between cell types</p></li>
+<li><p>Updating an “accessor”, which describes a dependency/connection.</p></li>
+<li><p>Evaluating an “expression”, which is the attribute path to derive a partial checksum from a full checksum (see “Subcells” above), followed by a cell type conversion.</p></li>
+<li><p>Joining partial checksums into a full checksum (for structured cells), and validating the result.</p></li>
+<li><p>Macro/reactor execution (advanced features, mostly hidden from the user)</p></li>
+<li><p>Transformer execution</p></li>
+</ul>
+<!--
+Seamless has support for preliminary outputs ...
+(Need to fix eager cells before this is useful? or not?)
+--><p>(*) To be complete, <code class="docutils literal notranslate"><span class="pre">Cell.set</span></code> and <code class="docutils literal notranslate"><span class="pre">Cell.set_buffer</span></code> are also wrapped in their own tasks (that invoke the other tasks). This is so that they can be cancelled by another <code class="docutils literal notranslate"><span class="pre">Cell.set</span></code> (or if the cell is destroyed) during execution.</p>
 </div>
-<div class="section" id="understanding-seamless-dependency-graphs">
-<h3>Understanding Seamless dependency graphs<a class="headerlink" href="#understanding-seamless-dependency-graphs" title="Permalink to this headline">¶</a></h3>
-<p><em><strong>IMPORTANT: This documentation section is an outline. The outline is shown below</strong></em></p>
+<div class="section" id="reproducibility-and-pure-functions">
+<h3>Reproducibility and pure functions<a class="headerlink" href="#reproducibility-and-pure-functions" title="Permalink to this headline">¶</a></h3>
+<p>To be reproducible, transformer code must have the following requirements:</p>
+<ol class="simple">
+<li><p>It must run in isolation from the rest of the workflow, communicating only via inputs and outputs. This requirement is already enforced by Seamless.</p></li>
+<li><p>It must be deterministic. Given the inputs, a transformation must either fail (e.g. lack of resources) or give a constant result that is independent of hardware. Code that uses a random generator must take an explicit random seed as an input. Within a transformer, you are free to create threads or subprocesses for parallel execution, but take care, parallel code is not always deterministic.</p></li>
+<li><p>No side effects are allowed. More precisely: the <em>result</em> may not depend on side effects (e.g. writing to a log is okay). Side effects include reading from arbitrary files, URLs or databases. This can be relaxed a little bit by including files (or databases) inside the environment. Since these files are constant, reading from them does not count as side effects. See “Don’t rely on file names or URLs” for details.</p></li>
+</ol>
+<p>These requirements roughly correspond to the definition of “pure functions”. They apply primarily to transformer code; other Seamless tasks (such as deserialization and checksum calculation) are pure functions by themselves. Transformer code is nearly (*) the only case where custom code is executed.</p>
+<p>Seamless workflows as a whole are also pure functions. Notably, interactive modifications are <em>not</em> treated as a source of side effects. Therefore, there is no need for monads or event streams or other complex mechanisms to deal with side effects in a purely functional context. Each interactive modification simply creates a completely new workflow, that just happens to be very similar to previous workflows. History doesn’t matter.</p>
+<p>You are <em>not</em> required to write transformer code in a purely functional language. Seamless is polyglot, you can in principle use any programming language for your transformers.</p>
+<p>(*) The other cases are: macro code, library constructor code, ipy templates and Python bridges. These are all uncommon special cases where the purpose is syntax rewriting, which is naturally pure.</p>
+</div>
+<div class="section" id="how-interactive-modification-is-treated">
+<h3>How interactive modification is treated<a class="headerlink" href="#how-interactive-modification-is-treated" title="Permalink to this headline">¶</a></h3>
+<p>In theory, every interactive modification results in a brand new workflow. In practice, for technical reasons, Seamless distinguishes between two kinds of modifications: topology and inputs. This is because Seamless workflows exist at two levels: the high level and the low level.</p>
+<div class="section" id="high-level-versus-low-level">
+<h4>High level versus low level<a class="headerlink" href="#high-level-versus-low-level" title="Permalink to this headline">¶</a></h4>
+<p>The Seamless high level is primarily a wrapper around the workflow graph: simple, inert data. <code class="docutils literal notranslate"><span class="pre">ctx.get_graph</span></code> returns this almost exactly in its internal representation. Most properties and methods of the high level classes, such as <code class="docutils literal notranslate"><span class="pre">Cell.celltype</span></code>, simply access and manipulate this data.</p>
+<p>In between the levels is the Seamless translation machinery, invoked by <code class="docutils literal notranslate"><span class="pre">ctx.translate</span></code>. This operates on the workflow graph and generates a low-level representation: for each high-level Cell, there will be a low-level Cell. As above, so below. It is on this low-level workflow (the “livegraph”) that all the Seamless tasks operate.</p>
+<p>The high-level and low-level workflows are connected in two ways:</p>
 <ul class="simple">
-<li><p>Topology vs parameters.</p></li>
-<li><p>Seamless translation machinery (midlevel), metalevel. How the high level wraps the graph data structure</p></li>
-<li><p>Discussion of the limitations of workflows (dependency graphs): if statements, for loops, cyclic dependencies.
-Dummy solution: for loop and if statement inside transformer code.
-Proper duration of a transformer: seconds to minutes.
-Alternative solution: move away from dependency graph, launch jobs imperatively (Prefect 2.0).</p></li>
-<li><p>Ways to work around these limitations:
-libraries, macros and reactors.
-Note that library instances require translation, macros do not. Translation is in fact a macro.</p></li>
-<li><p>Always keep a test where you maintain interactivity.</p></li>
+<li><p>The top high-level Context <code class="docutils literal notranslate"><span class="pre">ctx</span></code> contains a reference to its low-level counterpart <code class="docutils literal notranslate"><span class="pre">gen_context</span></code>. Paths within the two contexts are the same: if there is a high-level Cell <code class="docutils literal notranslate"><span class="pre">ctx.subctx.a</span></code>, the low-level Cell will also be <code class="docutils literal notranslate"><span class="pre">gen_context.subctx.a</span></code>. Each high-level instance knows its own path, so it knows how to access its low-level counterpart. Property getters such as <code class="docutils literal notranslate"><span class="pre">Cell.value</span></code> and <code class="docutils literal notranslate"><span class="pre">Context.status</span></code> are directly forwarded to the low level.</p></li>
+<li><p>High-level cells, transformers etc. are registered as observers of their low-level counterparts. Whenever the checksum at the low-level changes, the high level is informed and the checksum is stored in the workflow graph.</p></li>
 </ul>
-<p>Practical:</p>
+</div>
+<div class="section" id="changes-in-topology">
+<h4>Changes in topology<a class="headerlink" href="#changes-in-topology" title="Permalink to this headline">¶</a></h4>
+<p>A modification in the <em>topology</em> is: creation or deletion of elements (cells, transformers, etc.) or their connections, or changes in their types (including cell types and transformer languages). Such modifications result in a brand new workflow, but not automatically. The reason is that it is mildly expensive (in the order of tenths of seconds) to destroy the old low-level workflow and to build a new one. Therefore, this is done explicitly using <code class="docutils literal notranslate"><span class="pre">ctx.translate</span></code>.</p>
+<p>At the low level, topology is constant and must be pre-declared. If you wish, you can write low-level syntax directly, see <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/low_level.html">the documentation on the low level</a> for details.</p>
+</div>
+<div class="section" id="changes-in-inputs">
+<h4>Changes in inputs<a class="headerlink" href="#changes-in-inputs" title="Permalink to this headline">¶</a></h4>
+<p>The workflow <em>inputs</em> consist of all cell checksums that are <em>independent</em>, i.e. that have been directly defined by the programmer or the user. In contrast, <em>dependent</em> cell checksums are the result of a computation, such as a transformer, a subcell expression, or a cell conversion.</p>
+<p>The low-level workflow supports the interactive modification of independent checksums, as it is capable of canceling the downstream dependent checksums and re-launching their computations. This means that independent checksums can be modified without re-translation. Methods that do so, such as <code class="docutils literal notranslate"><span class="pre">Cell.set</span></code>, are directly passed on from the high level to the low level.</p>
+</div>
+<div class="section" id="special-cases-libraries-and-macros">
+<h4>Special cases: libraries and macros<a class="headerlink" href="#special-cases-libraries-and-macros" title="Permalink to this headline">¶</a></h4>
+<p>Seamless has two graph-rewriting classes: libraries and macros. Both of them synthesize new workflow topology based on the values of their inputs. Libraries work at the high level, and macros work at the low level.</p>
+<p>Library instances take value parameters as inputs, and do their graph rewriting during translation: when you modify a parameter, the change is only taken into account at <code class="docutils literal notranslate"><span class="pre">ctx.translate</span></code>. In addition, some libraries also have cells as input, these are statically connected to the generated topology. Changes in the values of those cells do not require translation, but do not change the topology either, unless the library contains macros.</p>
+<p>Macros take cells as input, and generate a low-level subcontext based on the input cell values. Like transformers, they get re-executed whenever an input changes. Therefore, macros are used to dynamically generate topology based on variable input values, without the need for re-translation. Macros are an advanced low-level feature, not often used directly, but libraries such as <code class="docutils literal notranslate"><span class="pre">stdlib.map</span></code> use them heavily. See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/low_level.html">the documentation on the low level</a> for more details on macros.</p>
+<p>All topology generated by library instances and macros is read-only. All their cell checksums are dependent and cannot be modified.</p>
+</div>
+</div>
+<div class="section" id="caching-and-performance">
+<h3>Caching and performance<a class="headerlink" href="#caching-and-performance" title="Permalink to this headline">¶</a></h3>
+<p>Many tasks in Seamless have some kind of caching. For e.g. deserialization, this is a small LRU cache to increase performance. As a user, you don’t interact with caches directly, and they can be disabled to save memory. However, just like tasks themselves, it can still be useful to learn about caches, so that you can predict the performance of a workflow. Of the four caches that impact performance the most, three are discussed below. The fourth one, the elision cache, is discussed in <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/deepcell.html">the deepcell documentation</a>. That documentation also discusses other performance considerations related to very large workflows and incremental computing.</p>
+<div class="section" id="checksum-to-buffer-cache">
+<h4>Checksum-to-buffer cache<a class="headerlink" href="#checksum-to-buffer-cache" title="Permalink to this headline">¶</a></h4>
+<p>There are is one cache that is absolutely essential for understanding the running of your workflow: the checksum-to-buffer cache. This cache is not just there for performance reasons. The correspondence between checksum and buffer is one-to-one, but you can only compute the checksum from a buffer, not the other way around. Therefore, it is critical that for each checksum, the corresponding buffer is available where needed. If not, a CacheMissError for that checksum will be raised and the task aborted.</p>
+<p>By default, Seamless keeps an in-memory checksum-to-buffer cache (with refcounting) for all <em>independent</em> checksums in the workflow. Dependent checksums are also in this cache, but they get regularly evicted. Since buffers can be rather large and numerous, the checksum-to-buffer cache can easily consume a lot of memory.</p>
+<p>Besides this cache, there are three other ways to retrieve a checksum’s buffer.</p>
 <ul class="simple">
-<li><p>Scatter transformers</p></li>
-<li><p>stdlib.map</p></li>
-<li><p>Elision and incremental computing</p></li>
-<li><p>Hacking the midlevel</p></li>
+<li><p>It is possible to set up a Seamless database with the <code class="docutils literal notranslate"><span class="pre">seamless-database</span></code> command. The database stores buffers on disk and makes them available over HTTP. If a database is found, the in-memory checksum-to-buffer cache is disabled. Therefore, setting up a database is an easy way to reduce the memory footprint of a Seamless workflow. Under certain circumstances, a Seamless database may also provide Seamless with file names, which may avoid a buffer to be loaded into memory at all. See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/data_storage.html">data storage</a> for more details.</p></li>
+<li><p>Buffers of dependent checksums can also be computed on-the-fly (“fingertipping”, see below).</p></li>
+<li><p>Finally, it is possible to define a list of last-resort buffer servers ($SEAMLESS_BUFFER_SERVERS). By default, it contains the RPBS buffer server, so that <code class="docutils literal notranslate"><span class="pre">https://buffer.rpbs.univ-paris-diderot.fr/&lt;checksum&gt;</span></code> will be contacted.</p></li>
 </ul>
+</div>
+<div class="section" id="buffer-info-cache">
+<h4>Buffer info cache<a class="headerlink" href="#buffer-info-cache" title="Permalink to this headline">¶</a></h4>
+<p>Sometimes very large buffers must be converted between different cell types. In many cases, Seamless can reason that a conversion is trivial (e.g. from plain to mixed) or impossible (e.g. from binary to plain). In other cases, conversion can be done from the buffer alone, without deserializing into a value.</p>
+<p>The buffer info cache contains buffer characteristics that help with conversion: for example, any buffer that is not UTF-8 cannot be deserialized as text or plain. The buffer info cache may also contain the length of the buffer and the actual checksums of known conversions.</p>
+<p>Buffer info caches are small, and Seamless holds a local in-memory cache for every locally known buffer checksum. In addition, if there is a Seamless database, it too is contacted with buffer info requests and updates.</p>
+</div>
+<div class="section" id="transformation-cache">
+<h4>Transformation cache<a class="headerlink" href="#transformation-cache" title="Permalink to this headline">¶</a></h4>
+<p>A transformation can be represented as a single checksum (of the JSON serialization of a dict of input checksums). Its result is also a single checksum. Therefore, transformations can be cached with a small checksum-to-checksum dict, and Seamless maintains a local in-memory cache for all locally known transformations.</p>
+<p>In addition, if there is a Seamless database, it too is contacted with transformation cache requests and updates.</p>
+<p>Upon changes in inputs, Seamless cancels and re-executes only the downstream transformations of the affected inputs. Re-executed transformations are looked up in the transformation cache. For example, given the following workflow:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">ab</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span>
+
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+  <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+
+<span class="n">ctx</span><span class="o">.</span><span class="n">tf1</span> <span class="o">=</span> <span class="n">add</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">tf1</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">ab</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">tf1</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">ab</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">tf1</span>
+
+<span class="n">ctx</span><span class="o">.</span><span class="n">tf2</span> <span class="o">=</span> <span class="n">add</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">tf2</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">result</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b2</span> <span class="o">=</span> <span class="mi">3</span> 
+<span class="n">ctx</span><span class="o">.</span><span class="n">tf2</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">b2</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+
+<span class="n">ctx</span><span class="o">.</span><span class="n">ab</span><span class="o">.</span><span class="n">set</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="n">ctx</span><span class="o">.</span><span class="n">b2</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here, after <code class="docutils literal notranslate"><span class="pre">ctx.ab.set([3,</span> <span class="pre">2])</span></code>, both tf1 and tf2 will be marked for re-execution. However, once tf1 has been executed, tf2 gives a transformation cache hit, because its inputs are still a=5, b=3.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ctx.b2.set(3)</span></code> will only mark tf2 for re-execution. Once the checksum of <code class="docutils literal notranslate"><span class="pre">3</span></code> has been computed, tf2 will give a cache hit since nothing has changed.</p>
+<p>Note that the transformation cache is universal, in the sense that a) the <em>name</em> of the transformer is not part of the cache, and b) it’s not just the previous version of the workflow that may give a cache hit, but <em>any</em> known transformation. For example, after a new modification <code class="docutils literal notranslate"><span class="pre">ctx.ab.set([5,</span> <span class="pre">3])</span></code>, it is now tf1 that gives a cache hit, re-using the previous result of tf2. Then, upon <code class="docutils literal notranslate"><span class="pre">ctx.ab.set([1,</span> <span class="pre">1])</span></code>, it is tf2 that gives a cache hit, re-using the initial (not the previous) result (a=2, b=3) for tf1.</p>
+<p>What happens when the workflow graph gets re-translated? In the above example, no topology changes have taken place, so adding a <code class="docutils literal notranslate"><span class="pre">ctx.translate()</span></code> at the end would do nothing. However, translation can be forced with <code class="docutils literal notranslate"><span class="pre">ctx.translate(force=True)</span></code>, or the topology can be modified first with e.g. <code class="docutils literal notranslate"><span class="pre">ctx.result.celltype</span> <span class="pre">=</span> <span class="pre">&quot;int&quot;</span></code>, followed by <code class="docutils literal notranslate"><span class="pre">ctx.translate()</span></code>. If you do this, a new workflow gets built, and all of its tasks are executed. <em>The old workflow gets completely destroyed, nothing is explicitly re-used</em>. However, both tf1 and tf2 give a transformation cache hit, so very little computation is actually re-done.</p>
+<p>In the above examples, all cache hits come from earlier computations in the same IPython/Jupyter session. However, when a database is available, transformation cache hits may come from computations performed much longer ago, by other people. Such universal federation of computation results is not easy to set up with other workflow systems than Seamless.</p>
+</div>
+<div class="section" id="fingertipping">
+<h4>Fingertipping<a class="headerlink" href="#fingertipping" title="Permalink to this headline">¶</a></h4>
+<p>“Fingertipping” means the recomputation of <em>dependent</em> cells for which the checksum is known, but the buffer cannot be found. Local transformation cache is inspected to detect transformations that have the desired checksum as a result. Local and remote buffer info caches are inspected for known conversions into the desired checksum. Expression caches and the caches of joining tasks are likewise inspected. If there are hits, the input checksums of the transformation, expression, etc. are themselves fingertipped, and re-computation of the transformation, expression, etc. is performed. In short, Seamless tries to do every possible thing to make a buffer locally available, “at your fingertips”.</p>
+<p>If possible, fingertipping is automatically performed by e.g. <code class="docutils literal notranslate"><span class="pre">Cell.value</span></code>. Fingertipping is an asynchronous operation: invocation by blocking, synchronous code such as <code class="docutils literal notranslate"><span class="pre">Cell.value</span></code> can only work if there is no running event loop, so it will normally be skipped inside Jupyter. You can trigger it manually using <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">Cell.fingertip()</span></code>.</p>
+<p>Non-deterministic transformations can give a lot of trouble in Seamless. Because result checksums are dependent and can be fingertipped, large result buffers will quickly be evicted from checksum-to-buffer cache to save space (or from a database; databases do not delete buffers automatically, but they do mark them as dependent, so an external maintenance tool could certainly target these buffers for deletion). When recomputed, a non-deterministic transformation will however not give the desired result buffer, but a new one. There is a <a class="reference external" href="https://github.com/sjdv1982/seamless/issues/56">GitHub issue</a> that could mitigate the problem, but the superior solution is to not write non-deterministic transformer code in the first place.</p>
+</div>
+</div>
+<div class="section" id="limitations-of-workflow-graphs">
+<h3>Limitations of workflow graphs<a class="headerlink" href="#limitations-of-workflow-graphs" title="Permalink to this headline">¶</a></h3>
+<p>Like other workflow systems, Seamless workflows are directed acyclic graphs (DAGs), which have certain limitations. In particular, DAGs are declarative and can’t have cyclic dependencies, i.e. an output cannot depend on itself. This means that you can’t use <code class="docutils literal notranslate"><span class="pre">if</span></code> statements or <code class="docutils literal notranslate"><span class="pre">for</span></code> or <code class="docutils literal notranslate"><span class="pre">while</span></code> loops to describe a Seamless workflow. You <em>can</em> use <code class="docutils literal notranslate"><span class="pre">if</span></code>, <code class="docutils literal notranslate"><span class="pre">for</span></code> and <code class="docutils literal notranslate"><span class="pre">while</span></code> (in any programming language) inside your transformers. Also, you could mix them in with “outside” Python code to create the workflow (See the “Programming in two places” section). But you can’t dynamically launch transformations in Seamless the way you can e.g. in Prefect 2.0 (or to a lesser extent, in NextFlow). There is a <a class="reference external" href="https://github.com/sjdv1982/seamless/issues/130">GitHub issue</a> to add this feature to Seamless, if it is needed.</p>
+<p>In addition, Seamless has a number of features to work around this limitation. Using the standard library, you can use <code class="docutils literal notranslate"><span class="pre">stdlib.switch</span></code> and <code class="docutils literal notranslate"><span class="pre">stdlib.select</span></code> to emulate if statements, and <code class="docutils literal notranslate"><span class="pre">stdlib.map</span></code> to emulate for loops (dynamic data parallelism). In advanced cases, you could write your own libraries and macros to rewrite the graph, or use reactors to create self-modifying graphs. See also the “Special cases: libraries and macros” section above. <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/low_level.html">The documentation on the low level</a> contains more details on macros and reactors.</p>
 </div>
 </div>
 <div class="section" id="guidelines-for-experienced-developers">
@@ -333,7 +414,7 @@ Note that library instances require translation, macros do not. Translation is i
 <h3>Keep it simple, while you can<a class="headerlink" href="#keep-it-simple-while-you-can" title="Permalink to this headline">¶</a></h3>
 <p>The beginner’s guide’s section on “how to keep it simple” contains good advice for a small, young project. With Jupyter, you can quickly set something up, adding Seamless’s interactivity to Jupyter’s own. This works best for workflows that don’t have too many steps, where the data is rather small, and the code too.</p>
 <p>When the code gets more complex, you should move away from Jupyter by mounting your code cells to files. Code that modifies the workflow becomes throw-away code. See “Moving away from Jupyter” for more details.</p>
-<p>When the data gets bigger, or execution becomes time-consuming, you should start thinking about <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/data_storage.html">data storage</a> and <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/job_management.html">job management</a>. With default settings, Seamless transformations are parallelized on your local machine and cached in memory, and you may want to change that. If the data gets really big, you should bring the computation where the data is. But even in that case, try to have a small-data version of your workflow that executes fast, so that you can modify the code easily and interactively. Whitelists work very well for this <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/deep_cells.html">see deep cells</a>.</p>
+<p>When the data gets bigger, or execution becomes time-consuming, you should start thinking about <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/data_storage.html">data storage</a> and <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/job_management.html">job management</a>. With default settings, Seamless transformations are parallelized on your local machine and cached in memory, and you may want to change that. If the data gets really big, you should bring the computation where the data is. But even in that case, try to have a small-data version of your workflow that executes fast, so that you can modify the code easily and interactively. Whitelists work very well for this (<a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/deep_cells.html">see deep cells</a> for more details).</p>
 <p>If either the code or the data gets bigger, you should start thinking about version control, and whether or not to use <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span></code>. See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/new-project.html">the documentation for creating a Seamless project</a> for more details.</p>
 </div>
 <div class="section" id="programming-in-two-places">
@@ -351,11 +432,9 @@ Note that library instances require translation, macros do not. Translation is i
 </div>
 <div class="section" id="edit-the-editor">
 <h3>Edit the editor<a class="headerlink" href="#edit-the-editor" title="Permalink to this headline">¶</a></h3>
-<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
-<p>TODO: perhaps merge with “visualization and monitoring”.
-(Status graph is your friend)
-Don’t be afraid to modify it (Link to last paragraph in visualization). If you have HTML/JS skills, you can organize the cells and transformers into cleaner flowcharts. Beyond that, there is nothing to stop you from extending the webctx further into a full visual programming interface.
-Light-weight experience: don’t use seamless-new-project at all</p>
+<p>Seamless is meant to be very modifiable and malleable. Many features that one might expect to be built-in are in fact defined as a (piece of) workflow that can be interactively modified, while it remains running.</p>
+<p>The best example of this is probably the web interface generator. Typically, a web service consists of two graphs (.seamless files). The first graph <code class="docutils literal notranslate"><span class="pre">ctx</span></code> contains the main workflow. The secondary graph contains the web interface generator. During development, both graphs are developed, which is made possible by <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span></code> and <code class="docutils literal notranslate"><span class="pre">seamless-load-project</span></code>. See the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/new-project.md">documentation of projects</a> and <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/visualization.html">of visualization</a>. As described there, you edit the web interface at the level of parameters (webform.json), or by editing the web components, or by editing the generated HTML/JS web page by hand.</p>
+<p>But you can edit the entire secondary workflow to your liking. You can modify the code to completely change the representation it generates. Since it is shared over HTTP, and could be consumed by a completely different program, e.g. a local GUI. Or, you could share the cell containing the original graph over HTTP with readonly=False, modify <code class="docutils literal notranslate"><span class="pre">load-project.py</span></code> to connect an observer (<code class="docutils literal notranslate"><span class="pre">Cell.traitlet().observe(...)</span></code>), and let the observer do <code class="docutils literal notranslate"><span class="pre">ctx.set_graph</span></code>. In that way, you can <em>control</em> the main workflow graph from a web interface (or the local GUI, or any other program), allowing visual programming.</p>
 </div>
 <div class="section" id="environments">
 <h3>Environments<a class="headerlink" href="#environments" title="Permalink to this headline">¶</a></h3>
@@ -370,20 +449,11 @@ Light-weight experience: don’t use seamless-new-project at all</p>
 <p>If you need external files or directories, add their <em>checksums</em> explicitly to the workflow (inside a normal cell for files, and inside a FolderCell or DeepFolderCell for directories). Else, reproducibility will be broken. The same applies for other external data sources, such as URLs or databases. In other words, reading an external data source must be <em>outside</em> code (see “Programming in two places”) where you define a cell’s value, and Seamless converts it internally to a checksum that becomes part of the workflow. This must be done inside IPython or Jupyter, and <em>not</em> inside transformer code. The transformer code never uses the original file name or URL, but operates directly on the content (retrieved by Seamless using the stored checksum). See the beginner’s guide on “Don’t rely on file names or URLs” for more details.</p>
 <p>There is one exception to this rule: you may choose to embed external data sources in the environment, by installing them inside a Docker image. In that case, it is fine to refer to the file name of the data source inside transformer code. Reproducibility is guaranteed by the checksum of the Docker image, and you are highly recommended to include it in the Docker image name in <code class="docutils literal notranslate"><span class="pre">Transformer.docker_image</span></code> (e.g “jupyter/scipy-notebook&#64;sha256:a891adee079e8c3eee54fef732cd282fe6b06c5fabe1948b9b11e07144526865” for a specific version of Jupyter). Of course, when your external data source changes, you must rebuild the Docker image and change <code class="docutils literal notranslate"><span class="pre">Transformer.docker_image</span></code> to reflect the new Docker image checksum.</p>
 </div>
-<div class="section" id="use-celltypes">
-<h3>Use celltypes<a class="headerlink" href="#use-celltypes" title="Permalink to this headline">¶</a></h3>
-<p>By default, every cell is a structured cell, which is normally overkill. Structured cells are great for subcell access and for schemas, but not every cell needs those features. Setting the celltype to something simpler may clarify the workflow.</p>
-<p>All celltypes and their conversions are described in the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/cell.html">cell documentation</a>. Note that transformer pins have celltypes too. Their default celltype is “mixed”.</p>
-</div>
-<div class="section" id="use-schemas">
-<h3>Use schemas<a class="headerlink" href="#use-schemas" title="Permalink to this headline">¶</a></h3>
-<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
-<p>Transformer code is not the correct place for validation. Use schemas instead.</p>
-</div>
-<div class="section" id="use-structured-cells">
-<h3>Use structured cells<a class="headerlink" href="#use-structured-cells" title="Permalink to this headline">¶</a></h3>
-<p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
-<p>Because of subcell access and schemas, and integration of independent (auth) and dependent (inchannel) data, and cyclic dependencies, and object oriented programming. Same reason why beginners should avoid them. Keep them small, else use DeepCells. At odds with “use celltypes”.</p>
+<div class="section" id="use-celltypes-judiciously">
+<h3>Use celltypes judiciously<a class="headerlink" href="#use-celltypes-judiciously" title="Permalink to this headline">¶</a></h3>
+<p>By default, every cell is a structured cell. These are rich in features, in particular subcells and schemas. Schemas are good to use as much as possible. In particular, transformer code is not the correct place for validation, use schemas instead (see <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/validation.html">validation</a>. You have the choice between adding a schema to Transformer.inp or to cells.</p>
+<p>If you don’t use a schema and don’t need subcell access for a particular cell, then the “structured” celltype is overkill. Setting the celltype to something simpler may clarify the workflow. If many copies of the cell are created (e.g. inside a <code class="docutils literal notranslate"><span class="pre">stdlib.map</span></code> mapping context), a simple cell will be better for performance, especially if you can avoid conversions. For cells that hold very large buffers, consider a [deep cell](http://sjdv1982.github.io/seamless/sphinx/html/deep_cells.html.</p>
+<p>All celltypes and their conversions are described in the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/cell.html">cell documentation</a>. Note that transformer pins have celltypes too. Their default celltype is “mixed”, but they adopt the cell type of the first cell that they are connected to.</p>
 </div>
 </div>
 </div>

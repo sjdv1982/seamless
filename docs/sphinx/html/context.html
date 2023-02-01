@@ -47,7 +47,6 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Contexts</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#creating-a-new-workflow-child">Creating a new workflow child</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#dependent-and-independent-data">Dependent and independent data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#transformation">Transformation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#translation">Translation</a></li>
 </ul>
@@ -120,21 +119,15 @@
 <p>Seamless maintains a checksum-to-buffer cache, either in memory or in a database. It can also query remotely connected Seamless instances.</p>
 <p>The Context class can launch a <em>translation</em> of the workflow graph to a low-level representation that can be evaluated.</p>
 </div>
-<div class="section" id="dependent-and-independent-data">
-<h2>Dependent and independent data<a class="headerlink" href="#dependent-and-independent-data" title="Permalink to this headline">¶</a></h2>
-<p><em><strong>IMPORTANT: This documentation section is a draft. The preliminary text is shown below</strong></em></p>
-<p>TODO: merge with the corresponding paragraph in explained.md</p>
-<p>The workflow graph consists of <em>dependent</em> and <em>independent</em> checksums. Independent checksums correspond to the code and the input parameters that have been directly defined by the programmer or the user. <em>dependent</em> checksums are the result of a computation, such as a transformer, a subcell expression, or a cell conversion. Parts of the graph that are under macro control (this includes the library instances of much of the stdlib) are also dependent.</p>
-<p>During evaluation, all dependent checksums of the workflow are computed. In principle, the independent checksums are constant, i.e. immutable: modification of the workflow via the Context class creates a <em>new</em> workflow that is re-translated and re-computed. However, the low-level representation also supports the modification of independent checksums, as it is capable of canceling the downstream dependent checksums and re-launching their computations. This means that independent checksums can be modified without re-translation. Any changes in the topology (cell types, new cells, new transformers, new connections, etc.) do require translation. If this is not desired (for example in a web interface), the topology generation must be under macro control.</p>
-</div>
 <div class="section" id="transformation">
 <h2>Transformation<a class="headerlink" href="#transformation" title="Permalink to this headline">¶</a></h2>
 <p>In the graph, each transformer performs a transformation from input + code to result. Seamless keeps a result cache of all transformations. Just like the checksum-to-buffer cache, databases or remote Seamless instances can also be queried. Because of this, the only transformations that are performed are those that have never been performed anywhere before, or where the result value is no longer accessible.</p>
 </div>
 <div class="section" id="translation">
 <h2>Translation<a class="headerlink" href="#translation" title="Permalink to this headline">¶</a></h2>
-<p>Before any computation starts, a context has to be translated (using <code class="docutils literal notranslate"><span class="pre">ctx.translate()</span></code> or <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation</span></code>). Implicit translation is done if <code class="docutils literal notranslate"><span class="pre">ctx.compute()</span></code> is invoked. Changing the topology of the graph (e.g. adding a cell) or changing the cell types only takes effect upon re-translation. The modification of cell <em>values</em> does not require re-translation. This is because translation creates a low-level context that does the work and holds the data. Most of the methods and properties of the Seamless high-level classes (Cell, Transformer, etc.) are wrappers that interact with their low-level counterparts. Seamless low-level contexts accept value changes but not modifications in topology.</p>
-<p>See <code class="docutils literal notranslate"><span class="pre">http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class</span></code> for more documentation.</p>
+<p>Before any computation starts, a context has to be translated (using <code class="docutils literal notranslate"><span class="pre">ctx.translate()</span></code> or <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation</span></code>). Implicit translation is done if <code class="docutils literal notranslate"><span class="pre">ctx.compute()</span></code> is invoked. Changing the topology of the graph (e.g. adding a cell) or changing the cell types only takes effect upon re-translation. The modification of <em>parameters</em> (primarily, cell contents) does not require re-translation. This is because translation creates a low-level context that does the work and holds the data. Most of the methods and properties of the Seamless high-level classes (Cell, Transformer, etc.) are wrappers that interact with their low-level counterparts. Seamless low-level contexts accept parameter changes but not modifications in topology.</p>
+<p>See <code class="docutils literal notranslate"><span class="pre">http://sjdv1982.github.io/seamless/sphinx/html/explained.html</span></code> for a more detailed explanation.
+See <code class="docutils literal notranslate"><span class="pre">http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class</span></code> for more documentation on the syntax.</p>
 </div>
 </div>
 
