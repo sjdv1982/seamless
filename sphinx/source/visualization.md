@@ -46,6 +46,20 @@ When you share a cell (and retranslate the graph), an entry is automatically add
 
 TODO. Integrate/merge with "visualization and monitoring" in "Seamless explained".
 <!--
+TODO: from old "explained.md":
+
+Typically, a web service consists of two graphs (.seamless files).
+-The first graph contains the main workflow. The second graph contains a status gra
+ph. The status graph can be bound by Seamless to the main graph (`seamless.metaleve
+l.bind_status_graph`; this function is automatically invoked by `seamless-serve-gra
+ph` if you provide two graph files). In that case, the status graph receives the cu
+rrent value and status of the  main workflow graph as its input, and normally visua
+lizes it as a web page. Manually-coded web interfaces are normally added to the mai
+n workflow graph. In contrast, the automatic web interface generator is part of the
+ status graph, as it generates the web interface HTML by taking the main workflow g
+raph as an input. During development, both graphs are developed, which is made poss
+ible by `seamless-new-project` and `seamless-load-project`.
+
 
 TODO:
 

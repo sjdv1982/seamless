@@ -7,7 +7,7 @@ The seamless.highlevel.Context class is a wrapper around a *workflow graph*, tha
 If `ctx.a` does not exist yet, then `ctx.a = X`:
 
 - will bind X to `ctx.a` if X is a cell, transformer, module, macro or context that is not currently bound to a parent context. Example: `ctx.a = Transformer()`.
-- will create a new cell `ctx.a` if X is a constant. `ctx.a` will have the value X. The celltype will be "mixed". This means that X must be either JSON-serializable, or a Numpy array, or a mixture of both.
+- will create a new cell `ctx.a` if X is a constant. `ctx.a` will have the value X. The celltype will be "structured". This means that X must be either JSON-serializable, or a Numpy array, or a mixture of both.
 - will create a new Python transformer `ctx.a` if X is a Python function. The transformer will copy the source code and function signature of X.
 - will create a new cell `ctx.a` if X is a transformer that is already bound to `ctx`. Then, a new connection from ```X.result```  (the transformer outputpin) to `ctx.a` is created.
 - will create a new cell `ctx.a` if X is a cell, subcell, or transformer outputpin that is already bound to `ctx`. Then, a connection from X to `ctx.a` is created.
@@ -27,7 +27,7 @@ In the graph, each transformer performs a transformation from input + code to re
 
 ## Translation
 
-Before any computation starts, a context has to be translated (using `ctx.translate()` or `await ctx.translation`). Implicit translation is done if `ctx.compute()` is invoked. Changing the topology of the graph (e.g. adding a cell) or changing the cell types only takes effect upon re-translation. The modification of *parameters* (primarily, cell contents) does not require re-translation. This is because translation creates a low-level context that does the work and holds the data. Most of the methods and properties of the Seamless high-level classes (Cell, Transformer, etc.) are wrappers that interact with their low-level counterparts. Seamless low-level contexts accept parameter changes but not modifications in topology.
+Before any computation starts, a context has to be translated (using `ctx.translate()` or `await ctx.translation`). Implicit translation is done if `ctx.compute()` is invoked. Changing the topology of the graph (e.g. adding a cell) or changing the cell types only takes effect upon re-translation. The modification of *inputs* (primarily, cell contents) does not require re-translation. This is because translation creates a low-level context that does the work and holds the data. Most of the methods and properties of the Seamless high-level classes (Cell, Transformer, etc.) are wrappers that interact with their low-level counterparts. Seamless low-level contexts accept input changes but not modifications in topology.
 
-See `http://sjdv1982.github.io/seamless/sphinx/html/explained.html` for a more detailed explanation.
-See `http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class` for more documentation on the syntax.
+See [Seamless explained](http://sjdv1982.github.io/seamless/sphinx/html/explained.html) for a more detailed explanation.
+See <http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class> for more documentation on the syntax.
