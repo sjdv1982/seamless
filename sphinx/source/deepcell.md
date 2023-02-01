@@ -4,7 +4,13 @@ The primary function of deep cells is to describe data that is too big to fit in
 
 ***IMPORTANT: This documentation section is a stub.***
 
-(relevant tests are probably not that useful without explanation first. Integrate with "deep structures" in "Seamless explained".)
+(relevant tests are probably not that useful without explanation first. Integrate with the following:)
+
+A transformation is in fact a "deep structure". Its checksum corresponds to a dictionary, where each value is itself a checksum (of the input cells).
+
+Seamless has support for two other kinds of deep structures: deep cells and deep folders. In both cases, the deep structure is again a dictionary, where the keys are strings and the values are checksums. The difference is the cell type of the checksums. For deep cells, the cell type is "mixed" (Seamless's default cell type), which means that you can easily access an individual element and convert it trivially to a normal Seamless cell. In contrast, for deep folders, the cell type is "bytes", which means that buffer and value are the same. This allows a one-to-one mapping with a
+folder on the file system.
+
 <!--
 Intro:
 - Deep cells

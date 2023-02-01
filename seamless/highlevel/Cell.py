@@ -603,7 +603,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
         - If not available, try to re-compute it using its provenance,
             i.e. re-evaluating any transformation or expression that produced it
         - Such recomputation is done in "fingertip" mode, i.e. disallowing
-            use of expression-to-checksum or transformation-to-checksum caches"""
+            cache hits from expression-to-checksum or transformation-to-checksum caches"""
         parent = self._parent()
         manager = parent._manager
         cachemanager = manager.cachemanager

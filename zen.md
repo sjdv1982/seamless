@@ -3,9 +3,9 @@ Seamless Zen
 
 History doesn't matter.
 
-Code is just another kind of input.
-
 Cells are good, files are bad, URLs are ugly. Checksums are forever.
+
+Code is just another kind of input.
 
 Keeping the checksum is enough, if you can look up the value later.
 
@@ -13,7 +13,7 @@ Always resubmit your entire computation.
 
 All state is in cells, unless it is ephemeral.
 
-Always be prepared to rebuild from cells.
+As above, so below.
 
 Errors can happen, but wrong answers are unforgivable.
 
