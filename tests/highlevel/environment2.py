@@ -151,12 +151,15 @@ ctx.tf.a = 80
 ctx.compute()
 print(ctx.tf.result.value) # 2096
 
+'''
 # We can even launch debugging 
 #  GDB is not very good, but other debuggers (Delve) exist
 # TODO: source file mapping (Seamless only does this for gcc compilers)
+
 ctx.tf.code.mount("/tmp/x.go")
 ctx.compute()
 ctx.tf.debug.enable("light")
 ctx.tf.a = 18
 ctx.compute()
 print(ctx.tf.result.value)
+'''

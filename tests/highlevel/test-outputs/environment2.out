@@ -29,9 +29,9 @@ int transform(int a, int b, int *result);
 
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 403, in _execute
+  File "/seamless/seamless/core/transformation.py", line 405, in _execute
     result, logs = await self._execute_local(
-  File "/seamless/seamless/core/transformation.py", line 569, in _execute_local
+  File "/seamless/seamless/core/transformation.py", line 571, in _execute_local
     full_module_names = build_all_modules(
   File "/seamless/seamless/core/build_module.py", line 366, in build_all_modules
     mod = build_module(
@@ -66,9 +66,9 @@ ValueError: No compiler defined for compiled language 'go'
 
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 403, in _execute
+  File "/seamless/seamless/core/transformation.py", line 405, in _execute
     result, logs = await self._execute_local(
-  File "/seamless/seamless/core/transformation.py", line 569, in _execute_local
+  File "/seamless/seamless/core/transformation.py", line 571, in _execute_local
     full_module_names = build_all_modules(
   File "/seamless/seamless/core/build_module.py", line 366, in build_all_modules
     mod = build_module(
@@ -79,10 +79,26 @@ Traceback (most recent call last):
 seamless.core.build_module.BuildModuleError: 
 go build  -buildmode=c-archive -o /tmp/seamless-extensions/seamless_module_4f8253ac01040ccc3a7c50000771cc349728a45d75ae16755695299f1320b325_module/_PACKAGE__1.a /tmp/seamless-extensions/seamless_module_4f8253ac01040ccc3a7c50000771cc349728a45d75ae16755695299f1320b325_module/main.go
 ******************** ERROR ********************
-/bin/sh: 1: go: not found
+# command-line-arguments
+In file included from _cgo_export.c:4:
+cgo-gcc-export-header-prolog:43:12: error: conflicting types for 'transform'; have 'int(int,  int)'
+In file included from _cgo_export.c:4:
+main.go:5:5: note: previous declaration of 'transform' with type 'int(int,  int,  int *)'
+_cgo_export.c:24:5: error: conflicting types for 'transform'; have 'int(int,  int)'
+   24 | int transform(int a, int b)
+      |     ^~~~~~~~~
+In file included from _cgo_export.c:4:
+main.go:5:5: note: previous declaration of 'transform' with type 'int(int,  int,  int *)'
 
 ******************** /ERROR ********************
 *** /executor ***
 
 
-ValueError: which: 'go' is not available in command line path'
+OK
+
+go build  -buildmode=c-archive -o /tmp/seamless-extensions/seamless_module_440b52f2ecd1db16f4fc8d3dfa4450a25803e0986e681359cca398a10b3dac32_module/_PACKAGE__1.a /tmp/seamless-extensions/seamless_module_440b52f2ecd1db16f4fc8d3dfa4450a25803e0986e681359cca398a10b3dac32_module/main.go
+
+
+None
+<Silk: 2029 >
+<Silk: 2096 >
