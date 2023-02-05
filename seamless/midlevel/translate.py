@@ -7,7 +7,8 @@ The mid-level is assumed to be correct; any errors should be caught there
 
 from collections import OrderedDict
 
-from seamless.core import cell as core_cell, context, StructuredCell
+from seamless.core import cell as core_cell, context, Context as core_context, StructuredCell
+from seamless.core.context import UnboundContext
 
 from .util import get_path, get_path_link, find_channels, build_structured_cell
 
@@ -332,8 +333,28 @@ def translate(graph, ctx, environment):
         print_info("*" * 30 + "TRANSLATE" + "*" * 30)
     #import traceback; stack = traceback.extract_stack(); print("TRANSLATE:"); print("".join(traceback.format_list(stack[:3])))
     nodes, connections = graph["nodes"], graph["connections"]
+    
+    # add extra contexts for the help system
+    help_nodes = {(node["type"], node["path"]) for node in nodes if list(node["path"][:1]) == ["HELP"]}
+    help_contexts = set()
+    for node_type, path in sorted(help_nodes, key=lambda k:len(k)):
+        mx = len(path) + 1 if node_type == "context" else len(path)
+        for n in range(1, mx):
+            help_contexts.add(path[:n])
+    for path in sorted(help_contexts, key=lambda k:len(k)):
+        parent = get_path(ctx, path[:-1], None, is_target=False)
+        name = path[-1]
+        if hasattr(parent, name):
+            c = getattr(parent, name)
+            assert isinstance(c, (core_context, UnboundContext)), c
+            continue
+        c = context()
+        setattr(parent, name, c)
+
     contexts = {con["path"]: con for con in nodes if con["type"] == "context"}
     for path in sorted(contexts.keys(), key=lambda k:len(k)):
+        if path[0] == "HELP":
+            continue
         parent = get_path(ctx, path[:-1], None, is_target=False)
         name = path[-1]
         c = context()

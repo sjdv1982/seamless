@@ -5,6 +5,106 @@
   "nodes": [
     {
       "path": [
+        "HELP",
+        "map_dict",
+        "static"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "22f34681f62def957cea1b18f209e22920c27586a681638857a4277343a5f372"
+      },
+      "datatype": "mixed",
+      "file_extension": "md",
+      "hash_pattern": null,
+      "mimetype": "text/markdown",
+      "path": [
+        "HELP",
+        "map_dict",
+        "static",
+        "INDEX"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "HELP",
+        "map_dict_chunk",
+        "static"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "c65f2249c6e9b7d4a4c82da73425f7906c70666319243499330db518554b4122"
+      },
+      "datatype": "mixed",
+      "file_extension": "md",
+      "hash_pattern": null,
+      "mimetype": "text/markdown",
+      "path": [
+        "HELP",
+        "map_dict_chunk",
+        "static",
+        "INDEX"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "HELP",
+        "map_list",
+        "static"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "02fd98715645b8a2791e741f7ddb1083fe2e0bab8ce286d305c8d05f46cdb4ad"
+      },
+      "datatype": "mixed",
+      "file_extension": "md",
+      "hash_pattern": null,
+      "mimetype": "text/markdown",
+      "path": [
+        "HELP",
+        "map_list",
+        "static",
+        "INDEX"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
+        "HELP",
+        "map_list_N",
+        "static"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "4098a37835b5f4544d29ee7e60c61fa26c5733eadde1a50a713bee9a2d75034e"
+      },
+      "datatype": "mixed",
+      "file_extension": "md",
+      "hash_pattern": null,
+      "mimetype": "text/markdown",
+      "path": [
+        "HELP",
+        "map_list_N",
+        "static",
+        "INDEX"
+      ],
+      "type": "cell"
+    },
+    {
+      "path": [
         "map_dict"
       ],
       "type": "context"

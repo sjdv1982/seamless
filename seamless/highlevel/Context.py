@@ -1563,6 +1563,10 @@ These modifications have been CANCELED.""" % (
     def __repr__(self):
         return str(self)
 
+    def __copy__(self):
+        graph = self.get_graph()
+        return Context.from_graph(graph, manager=self._manager)
+
     def __del__(self):
         self._destroy()
 

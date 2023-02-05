@@ -1,5 +1,6 @@
 import inspect
 import textwrap
+import copy
 
 def bootstrap(module):
     import inspect
@@ -57,6 +58,8 @@ if __name__ == "__main__":
     ctx0.lib_module_dict = Cell("plain").set(lib_module_dict)
     ctx0.lib_codeblock = Cell("plain").set(lib_codeblock)
 
+    contexts = {}
+
     from seamless.highlevel.library import LibraryContainer
     mylib = LibraryContainer("mylib")
 
@@ -78,12 +81,16 @@ if __name__ == "__main__":
 
     from testing import test
     ctx = test(mylib)
-
+    
     libctx = Context()
     for attr in ("map_list", "map_list_N", "map_dict", "map_dict_chunk"):
         setattr(libctx, attr, Context())
         l = getattr(libctx, attr)
-        l.static = ctx0
+        ctx00 = copy.copy(ctx0)
+        ctx00.help = Cell("text")
+        ctx00.help.mimetype = "md"
+        ctx00.help.set(open("help/{}.md".format(attr)).read())
+        l.static = ctx00
         l.constructor_code = Cell("code").set(getattr(constructors, attr).constructor)
         l.constructor_params = getattr(constructors, attr).constructor_params
     libctx.compute()
