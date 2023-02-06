@@ -116,6 +116,15 @@
 <li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
 </ul>
+<p class="caption"><span class="caption-text">stdlib documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/merge.html">stdlib.merge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/select.html">stdlib.select</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/switch.html">stdlib.switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/instantiate.html">stdlib.instantiate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict.html">stdlib.map.map_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict_chunk.html">stdlib.map.map_dict_chunk</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
@@ -452,7 +461,7 @@ Seamless has support for preliminary outputs ...
 <div class="section" id="use-celltypes-judiciously">
 <h3>Use celltypes judiciously<a class="headerlink" href="#use-celltypes-judiciously" title="Permalink to this headline">¶</a></h3>
 <p>By default, every cell is a structured cell. These are rich in features, in particular subcells and schemas. Schemas are good to use as much as possible. In particular, transformer code is not the correct place for validation, use schemas instead (see <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/validation.html">validation</a>. You have the choice between adding a schema to Transformer.inp or to cells.</p>
-<p>If you don’t use a schema and don’t need subcell access for a particular cell, then the “structured” celltype is overkill. Setting the celltype to something simpler may clarify the workflow. If many copies of the cell are created (e.g. inside a <code class="docutils literal notranslate"><span class="pre">stdlib.map</span></code> mapping context), a simple cell will be better for performance, especially if you can avoid conversions. For cells that hold very large buffers, consider a [deep cell](http://sjdv1982.github.io/seamless/sphinx/html/deep_cells.html.</p>
+<p>If you don’t use a schema and don’t need subcell access for a particular cell, then the “structured” celltype is overkill. Setting the celltype to something simpler may clarify the workflow. If many copies of the cell are created (e.g. inside a <code class="docutils literal notranslate"><span class="pre">stdlib.map</span></code> mapping context), a simple cell will be better for performance, especially if you can avoid conversions. For cells that hold very large buffers, consider a <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/deep_cells.html">deep cell</a>.</p>
 <p>All celltypes and their conversions are described in the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/cell.html">cell documentation</a>. Note that transformer pins have celltypes too. Their default celltype is “mixed”, but they adopt the cell type of the first cell that they are connected to.</p>
 </div>
 </div>
@@ -469,7 +478,7 @@ Seamless has support for preliminary outputs ...
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
+    <p>&#169; Copyright 2016-2023, INSERM, CNRS and code contributors.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

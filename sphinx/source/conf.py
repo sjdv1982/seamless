@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Seamless'
-copyright = '2016-2022, INSERM, CNRS and code contributors'
+copyright = '2016-2023, INSERM, CNRS and code contributors'
 author = 'Sjoerd de Vries'
 
 # The full version, including alpha/beta/rc tags

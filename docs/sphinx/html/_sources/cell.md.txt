@@ -59,7 +59,7 @@ Cells are *independent* if they have their own value, with no dependencies.
 
 Simple cells are either fully dependent or fully independent. 
 
-Structured cells may have an independent part (accessible and via `Cell.handle`) together with zero or more dependent parts. Whenever one part changed, all parts get joined into a value, which is then validated (see the "Validation" documentation chapter for more details). If validation fails, the cell's value is set to None, but the value before validation is still available as `Cell.buffered`. In fact, at the low level, structured cells are implemented using three mixed cells for storage, "auth" for (the checksum of) the independent part, "buffer" for the value before validation, and "data" for the validated value.
+Structured cells may have an independent part (accessible and modifiable via `Cell.handle`) together with zero or more dependent parts. Whenever one part changed, all parts get joined into a value, which is then validated (see the "Validation" documentation chapter for more details). If validation fails, the cell's value is set to None, but the value before validation is still available as `Cell.buffered`. In fact, at the low level, structured cells are implemented using three mixed cells for storage, "auth" for (the checksum of) the independent part, "buffer" for the value before validation, and "data" for the validated value.
 
 Simple cells can be *mounted* to a file using `Cell.mount`. By default, mounts are both read (the cell changes its value when the file changes its value) and write (vice versa) . Only independent cells can have a read mount. *Structured cells cannot be mounted.*
 

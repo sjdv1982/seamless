@@ -71,6 +71,15 @@
 <li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
 </ul>
+<p class="caption"><span class="caption-text">stdlib documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/merge.html">stdlib.merge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/select.html">stdlib.select</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/switch.html">stdlib.switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/instantiate.html">stdlib.instantiate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict.html">stdlib.map.map_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict_chunk.html">stdlib.map.map_dict_chunk</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
@@ -108,7 +117,7 @@
 <p>If <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> does not exist yet, then <code class="docutils literal notranslate"><span class="pre">ctx.a</span> <span class="pre">=</span> <span class="pre">X</span></code>:</p>
 <ul class="simple">
 <li><p>will bind X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell, transformer, module, macro or context that is not currently bound to a parent context. Example: <code class="docutils literal notranslate"><span class="pre">ctx.a</span> <span class="pre">=</span> <span class="pre">Transformer()</span></code>.</p></li>
-<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a constant. <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> will have the value X. The celltype will be “mixed”. This means that X must be either JSON-serializable, or a Numpy array, or a mixture of both.</p></li>
+<li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a constant. <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> will have the value X. The celltype will be “structured”. This means that X must be either JSON-serializable, or a Numpy array, or a mixture of both.</p></li>
 <li><p>will create a new Python transformer <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a Python function. The transformer will copy the source code and function signature of X.</p></li>
 <li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a transformer that is already bound to <code class="docutils literal notranslate"><span class="pre">ctx</span></code>. Then, a new connection from <code class="docutils literal notranslate"><span class="pre">X.result</span></code>  (the transformer outputpin) to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> is created.</p></li>
 <li><p>will create a new cell <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell, subcell, or transformer outputpin that is already bound to <code class="docutils literal notranslate"><span class="pre">ctx</span></code>. Then, a connection from X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> is created.</p></li>
@@ -125,9 +134,9 @@
 </div>
 <div class="section" id="translation">
 <h2>Translation<a class="headerlink" href="#translation" title="Permalink to this headline">¶</a></h2>
-<p>Before any computation starts, a context has to be translated (using <code class="docutils literal notranslate"><span class="pre">ctx.translate()</span></code> or <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation</span></code>). Implicit translation is done if <code class="docutils literal notranslate"><span class="pre">ctx.compute()</span></code> is invoked. Changing the topology of the graph (e.g. adding a cell) or changing the cell types only takes effect upon re-translation. The modification of <em>parameters</em> (primarily, cell contents) does not require re-translation. This is because translation creates a low-level context that does the work and holds the data. Most of the methods and properties of the Seamless high-level classes (Cell, Transformer, etc.) are wrappers that interact with their low-level counterparts. Seamless low-level contexts accept parameter changes but not modifications in topology.</p>
-<p>See <code class="docutils literal notranslate"><span class="pre">http://sjdv1982.github.io/seamless/sphinx/html/explained.html</span></code> for a more detailed explanation.
-See <code class="docutils literal notranslate"><span class="pre">http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class</span></code> for more documentation on the syntax.</p>
+<p>Before any computation starts, a context has to be translated (using <code class="docutils literal notranslate"><span class="pre">ctx.translate()</span></code> or <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation</span></code>). Implicit translation is done if <code class="docutils literal notranslate"><span class="pre">ctx.compute()</span></code> is invoked. Changing the topology of the graph (e.g. adding a cell) or changing the cell types only takes effect upon re-translation. The modification of <em>inputs</em> (primarily, cell contents) does not require re-translation. This is because translation creates a low-level context that does the work and holds the data. Most of the methods and properties of the Seamless high-level classes (Cell, Transformer, etc.) are wrappers that interact with their low-level counterparts. Seamless low-level contexts accept input changes but not modifications in topology.</p>
+<p>See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/explained.html">Seamless explained</a> for a more detailed explanation.
+See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class">http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class</a> for more documentation on the syntax.</p>
 </div>
 </div>
 
@@ -142,7 +151,7 @@ See <code class="docutils literal notranslate"><span class="pre">http://sjdv1982
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
+    <p>&#169; Copyright 2016-2023, INSERM, CNRS and code contributors.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

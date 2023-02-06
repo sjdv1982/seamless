@@ -46,6 +46,17 @@ Welcome to Seamless's documentation!
 
 .. toctree::
    :maxdepth: 2
+   :caption: stdlib documentation
+   
+   stdlib/merge
+   stdlib/select
+   stdlib/switch
+   stdlib/instantiate
+   stdlib/map_dict
+   stdlib/map_dict_chunk
+   
+.. toctree::
+   :maxdepth: 2
    :caption: Reference
    
    reference

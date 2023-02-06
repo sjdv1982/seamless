@@ -6,7 +6,7 @@ To debug your transformer code, you can use either print statements, or a debugg
 
 ## Debugging with print statements
 
-This the most easy form of debugging: add print statements (or `echo`/`cat`/`cout`/`printf`/...) to your transformer code.
+This the easiest form of debugging: add print statements (or `echo`/`cat`/`cout`/`printf`/...) to your transformer code.
 
 For Python transformers, the transformation is aborted if an exception is raised. `Transformer.exception` will then contain the exception traceback, stdout and stderr. If no exception is raised, stdout and stderr can be retrieved using `Transformer.logs`
 
@@ -30,7 +30,7 @@ See [Running tests](https://sjdv1982.github.io/seamless/sphinx/html/getting-star
 
 Debugging sessions with breakpoints are directly supported, but only in Visual Studio Code. Other IDEs are currently not supported, but they should be in the future. If you are willing to help, see [this GitHub issue](https://github.com/sjdv1982/seamless/issues/132).
 
-Debugging sessions with Seamless is best learned by running some of the Seamless tests. Open a terminal within Visual Studio Code. Start a Seamless container with `seamless-bash-trusted`, the  do `cd ~/seamless-tests/highlevel`, and run any test with `ipython -i` (any test) or `python` (any test that doesn't end with "-shell.py"). Follow the instructions printed on screen.
+Debugging sessions with Seamless is best learned by running some of the Seamless tests below. Open a terminal within Visual Studio Code. Start a Seamless container with `seamless-bash-trusted`, the  do `cd ~/seamless-tests/highlevel`, and run any test with `ipython -i` (any test) or `python` (any test that doesn't end with "-shell.py"). Follow the instructions printed on screen.
 
 NOTE: `seamless-bash-trusted` is needed because its exposes ports 5679-5785 for use by `debugpy`. If you get a "connection refused" error in Visual Studio Code, you probably used `seamless-bash` instead.
 

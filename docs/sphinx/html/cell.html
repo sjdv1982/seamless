@@ -70,6 +70,15 @@
 <li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
 </ul>
+<p class="caption"><span class="caption-text">stdlib documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/merge.html">stdlib.merge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/select.html">stdlib.select</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/switch.html">stdlib.switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/instantiate.html">stdlib.instantiate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict.html">stdlib.map.map_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict_chunk.html">stdlib.map.map_dict_chunk</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
@@ -146,7 +155,7 @@ Thus, cells are always part of a Context (called <code class="docutils literal n
 <p>Cells are <em>dependent</em> if (part of) the cell’s value is computed from a dependency, i.e from a transformer or from another cell.
 Cells are <em>independent</em> if they have their own value, with no dependencies.</p>
 <p>Simple cells are either fully dependent or fully independent.</p>
-<p>Structured cells may have an independent part (accessible and via <code class="docutils literal notranslate"><span class="pre">Cell.handle</span></code>) together with zero or more dependent parts. Whenever one part changed, all parts get joined into a value, which is then validated (see the “Validation” documentation chapter for more details). If validation fails, the cell’s value is set to None, but the value before validation is still available as <code class="docutils literal notranslate"><span class="pre">Cell.buffered</span></code>. In fact, at the low level, structured cells are implemented using three mixed cells for storage, “auth” for (the checksum of) the independent part, “buffer” for the value before validation, and “data” for the validated value.</p>
+<p>Structured cells may have an independent part (accessible and modifiable via <code class="docutils literal notranslate"><span class="pre">Cell.handle</span></code>) together with zero or more dependent parts. Whenever one part changed, all parts get joined into a value, which is then validated (see the “Validation” documentation chapter for more details). If validation fails, the cell’s value is set to None, but the value before validation is still available as <code class="docutils literal notranslate"><span class="pre">Cell.buffered</span></code>. In fact, at the low level, structured cells are implemented using three mixed cells for storage, “auth” for (the checksum of) the independent part, “buffer” for the value before validation, and “data” for the validated value.</p>
 <p>Simple cells can be <em>mounted</em> to a file using <code class="docutils literal notranslate"><span class="pre">Cell.mount</span></code>. By default, mounts are both read (the cell changes its value when the file changes its value) and write (vice versa) . Only independent cells can have a read mount. <em>Structured cells cannot be mounted.</em></p>
 <p>Cells can be <em>shared</em> over HTTP (via the Seamless REST API), using <code class="docutils literal notranslate"><span class="pre">Cell.share</span></code>. By default, shares are read-only (only HTTP GET requests are supported). Independent cells can also be shared as read/write (their value can be changed using HTTP PUT requests). If a cell is to be accessed as a URL from the browser, you are recommended to set <code class="docutils literal notranslate"><span class="pre">Cell.mimetype</span></code>.</p>
 <p>Newly created/connected/mounted/shared cells require a re-translation of the context to take effect. This is also the case for a change in celltype.</p>
@@ -197,7 +206,7 @@ Cell types:
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
+    <p>&#169; Copyright 2016-2023, INSERM, CNRS and code contributors.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
