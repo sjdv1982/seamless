@@ -1,6 +1,8 @@
 from seamless.highlevel import Context, Cell
 from seamless.highlevel.stdlib import map
 
+print(str(map.map_list.help.value)[:30])
+
 ctx = Context()
 ctx.inp = Cell("mixed")
 ctx.inp0 = Cell()
@@ -18,9 +20,9 @@ ctx.compute()
 
 mapped_ctx = ctx
 
-
 ctx = Context()
 ctx.include(map.map_list)
+print(str(ctx.lib.map_list.help.value)[:30])
 
 ctx.inp1 = {"a": 10, "b": 20}
 ctx.inp2 = {"a": -80, "b": 30}
@@ -40,7 +42,9 @@ ctx.mapping = ctx.lib.map_list(
     uniform=ctx.uniform,
     result=ctx.result
 )
+print(str(ctx.mapping.help.value)[:30])
 ctx.compute()
+print(str(ctx.mapping.help.value)[:30])
 print(ctx.result.value)
 ctx.inp1 = {"a": 0, "b": 1}
 ctx.compute()

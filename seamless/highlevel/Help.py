@@ -7,6 +7,7 @@ from .Cell import Cell
 from .SubContext import SubContext
 
 class HelpWrapper:
+    _wrapped_stronglink = None
     def __init__(self, wrapped, sub_path=None):
         if sub_path is None:
             sub_path = ()
@@ -25,7 +26,10 @@ class HelpWrapper:
                 return None
             return SubContext(wrapped_parent, self._wrapped_path)
         else:
-            return self._wrapped()
+            wrapped = self._wrapped()
+            if wrapped is None and self._wrapped_strongref is not None:
+                wrapped = self._wrapped_strongref
+            return wrapped
 
     @property
     def _path(self):
@@ -34,12 +38,15 @@ class HelpWrapper:
 
     @property
     def _help_path(self):
-        return ("HELP",) + self._path + self._sub_path
+        return ("HELP",) + tuple(self._path) + tuple(self._sub_path)
 
     def _get_ctx(self):
+        from ..midlevel.StaticContext import StaticContext
         wrapped = self._get_wrapped()
         if wrapped is None:
             return None
+        if isinstance(wrapped, StaticContext):
+            return wrapped
         parent = wrapped._parent()
         if parent is None:
             return None
@@ -57,7 +64,7 @@ class HelpWrapper:
 class HelpCell(HelpWrapper):
         
     @property
-    def _index_path(self):        
+    def _index_path(self):
         return self._help_path + ("INDEX",)
 
     def _help_index_cell(self, create=False):
@@ -70,9 +77,9 @@ class HelpCell(HelpWrapper):
         if create and help_index_cell is None:
             path = self._index_path
             Cell(parent=ctx, path=path) #inserts itself as child
-            cell = get_new_cell(path)          
+            cell = get_new_cell(path)
             cell["celltype"] = "text"
-            cell["UNTRANSLATED"] = True  
+            cell["UNTRANSLATED"] = True
             nodes = ctx._graph[0]
             nodes[path] = cell
             help_index_cell = ctx._children[path]
@@ -97,7 +104,10 @@ class HelpCell(HelpWrapper):
         help_index_cell = self._help_index_cell()
         if help_index_cell is None:
             return None
-        hcell = help_index_cell._get_hcell()
+        try:
+            hcell = help_index_cell._get_hcell()
+        except AttributeError:
+            hcell = {}
         if hcell.get("UNTRANSLATED"):
             return hcell.get("TEMP")
         return help_index_cell.value
@@ -161,6 +171,7 @@ class HelpCell(HelpWrapper):
         help_index_cell = self._help_index_cell(create=True)
         return help_index_cell.connect_from(*args, **kwargs)
 
+    @property
     @wraps(Cell.checksum)
     def checksum(self):
         help_index_cell = self._help_index_cell()

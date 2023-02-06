@@ -160,7 +160,12 @@ class Library:
         self._params = value
 
     def __getattr__(self, attr):
-        if attr == "ctx":
+        if attr == "help":
+            ctx = self.ctx
+            helpwrapper = ctx.help
+            helpwrapper._wrapped_strongref = ctx
+            return helpwrapper
+        elif attr == "ctx":
             graph = self._graph
             if graph is None:
                 raise AttributeError(attr)

@@ -1,6 +1,5 @@
-from copy import deepcopy
-from inspect import Signature, Parameter
 from collections import OrderedDict
+from ...midlevel.StaticContext import StaticContext
 
 class IncludedLibraryContainer:
     def __init__(self, ctx, path):
@@ -41,6 +40,12 @@ class IncludedLibrary:
         self._params = OrderedDict(params)
         identifier = ".".join(self._path)
         cached_compile(self._constructor, identifier)  # just to validate
+
+    @property
+    def help(self):
+
+        sctx = StaticContext.from_graph(self._graph)
+        return sctx.help
 
     def __call__(self, **kwargs):
         kwargs2 = kwargs.copy()

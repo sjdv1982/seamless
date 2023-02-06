@@ -3,8 +3,9 @@ from io import BytesIO
 from ..core import context, cell
 from . import copying
 from copy import deepcopy
+from ..highlevel.HelpMixin import HelpMixin
 
-class StaticContext:
+class StaticContext(HelpMixin):
     _parent_path = None
 
     @classmethod
@@ -20,10 +21,11 @@ class StaticContext:
 
     def __init__(self, nodes, connections, lib={}, params={}, *, manager=None):
         from seamless.core.manager import Manager
-        self._nodes = nodes
+        self._nodes = deepcopy(nodes)
         self._connections = connections
         self._lib = lib
         self._params = params
+        self._path = []
         if manager is not None:
             assert isinstance(manager, Manager), type(manager)
             self._manager = manager
@@ -33,6 +35,8 @@ class StaticContext:
         self.root = context(toplevel=True,manager=self._manager)
         if old_root is not None:
             self._manager.add_context(old_root)
+        for node in self._nodes.values():
+            node["path"] = tuple(node["path"])
 
     def __del__(self):
         self.root.destroy()
@@ -50,10 +54,16 @@ class StaticContext:
         lp = len(path)
         newnodes = []
         for nodepath, node in sorted(nodes.items(), key=lambda kv: kv[0]):
-            if len(nodepath) > lp and nodepath[:lp] == path:
-                newnode = deepcopy(node)
-                newnode["path"] = nodepath[lp:]
-                newnodes.append(newnode)
+            if nodepath[0] == "HELP":
+                if len(nodepath[1:]) > lp and nodepath[1:lp+1] == path:
+                    newnode = deepcopy(node)
+                    newnode["path"] = ("HELP",) + tuple(nodepath[lp+1:])
+                    newnodes.append(newnode)
+            else:
+                if len(nodepath) > lp and nodepath[:lp] == path:
+                    newnode = deepcopy(node)
+                    newnode["path"] = nodepath[lp:]
+                    newnodes.append(newnode)
         new_connections = []
         for connection in connections:
             if connection["type"] == "connection":
@@ -91,7 +101,7 @@ class StaticContext:
         return copying.add_zip(self._manager, zipfile)
 
 
-    def get_children(self, type=None):
+    def get_children(self, type=None, full_path=False):
         if type is not None:
             raise ValueError("StaticContext only supports type=None")
         parent_path = self._parent_path
@@ -101,10 +111,11 @@ class StaticContext:
                 pp = path[:len(parent_path)]
                 if pp != parent_path:
                     continue
-                child = result.append(path[len(parent_path):][0])
+                fullchild = result.append(path[len(parent_path):])
             else:
-                child = path[0]
-            if child not in result:
+                fullchild = path
+            child = fullchild if full_path else fullchild[0]
+            if child not in result and child != "HELP":
                 result.append(child)
         return sorted(result)
 
@@ -112,14 +123,12 @@ class StaticContext:
     def children(self):
         return self.get_children(type=None)
 
-    def __getattr__(self, attr):
-        parent_path = self._parent_path
-        if parent_path is None:
-            path = (attr,)
-        else:
-            path = parent_path + (attr,)
-        if path not in self._nodes:
-            raise AttributeError(attr)
+    @property
+    def _children(self):
+        full_children = self.get_children(type=None, full_path=True)
+        return {path: self._get_child(path) for path in full_children}
+
+    def _get_child(self, path):
         node = self._nodes[path]
         t = node["type"]
         if t == "cell":
@@ -136,6 +145,8 @@ class StaticContext:
         elif t == "context":
             l = len(path)
             def in_path(p):
+                if p[0] == "HELP":
+                    return in_path(p[1:])
                 if len(p) < l:
                     return False
                 return p[:l] == path
@@ -157,6 +168,22 @@ class StaticContext:
             raise NotImplementedError(t)
         else:
             raise TypeError(t)
+
+    @property
+    def help(self):
+        helpwrapper = super().help
+        helpwrapper._wrapped_strongref = self
+        return helpwrapper
+
+    def __getattr__(self, attr):
+        parent_path = self._parent_path
+        if parent_path is None:
+            path = (attr,)
+        else:
+            path = parent_path + (attr,)
+        if path not in self._nodes:
+            raise AttributeError(attr)
+        return self._get_child(path)
 
 class WrapperBase:
     def __init__(self, manager, node):

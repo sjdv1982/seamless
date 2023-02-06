@@ -322,13 +322,15 @@ class LibInstance:
         else:
             libpath = self._temp_libpath
             arguments = self._temp_arguments
-        lib = self.get_lib()
+        lib = self._get_lib()
         params = lib["params"]
         if attr not in arguments:
             if attr == "ctx":
                 parent = self._parent()
                 path = self._path + ("ctx",)
                 return SynthContext(parent, path)
+            if attr == "help":
+                return self.get_lib().help
             if attr == "libpath":
                 return libpath
             if attr == "arguments":
@@ -365,7 +367,7 @@ class LibInstance:
             arguments = hnode["arguments"]
         else:
             arguments = self._temp_arguments
-        lib = self.get_lib()
+        lib = self._get_lib()
         params = lib["params"]
         parent = self._parent()
         par = params[argname]
@@ -373,17 +375,15 @@ class LibInstance:
         value = parent._children.get(argvalue)
         return getattr(value, attr)
 
-
     def __dir__(self):        
         hnode = self._get_node()
         arguments = hnode["arguments"]
         result = list(arguments.keys()) 
-        result += ["ctx", "libpath", "arguments", "status"]
+        result += ["ctx", "libpath", "arguments", "help", "status"]
         result += self._get_api_methods()
         return sorted(result)
 
-    def get_lib(self, copy=True):
-        """Returns the library of which this is an instance"""
+    def _get_lib(self, copy=True):
         if self._bound is not None:
             hnode = self._get_node()
             libpath = hnode["libpath"]
@@ -406,15 +406,24 @@ class LibInstance:
         else:
             return deepcopy(lib)
 
+    def get_lib(self):
+        """Returns the library of which this is an instance
+        NOTE: this is the library at the time of construction.
+        subsequent ctx.includes are not taken into account.
+        """
+        from .include import IncludedLibrary 
+        lib_dict = self._get_lib(copy=True)
+        return IncludedLibrary(self.ctx, **lib_dict)
+
     def _get_api_methods(self):
-        lib = self.get_lib(copy=False)
+        lib = self._get_lib(copy=False)
         schema = lib.get("api_schema")
         if schema is None:
             return []
         return sorted(list(schema.get("methods", {}).keys()))
 
     def _build_api(self, arguments):
-        lib = self.get_lib(copy=False)
+        lib = self._get_lib(copy=False)
         schema = lib.get("api_schema")
         assert schema is not None
         result = LibInstanceSilk(data=arguments, schema=schema)
@@ -428,7 +437,7 @@ class LibInstance:
             return
         hnode = self._get_node()
         arguments = hnode["arguments"]
-        lib = self.get_lib()
+        lib = self._get_lib()
         params = lib["params"]
         if attr not in params:
             for parname in params:
