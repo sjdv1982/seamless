@@ -225,6 +225,10 @@ class Library:
         dirs += ["ctx", "constructor", "params", "api_schema", "constructor_schema"]
         return dirs
 
+    @property
+    def __doc__(self):
+        return self.help.value
+
 from .include import IncludedLibrary
 from ..Context import Context
 from silk import Silk

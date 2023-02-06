@@ -65,6 +65,10 @@ class IncludedLibrary:
         libinstance = LibInstance(self._ctx, libpath=self._path, arguments=arguments)
         return libinstance
 
+    @property
+    def __doc__(self):
+        return self.help.value
+
 from ...core.cached_compile import cached_compile
 from .libinstance import LibInstance
 from .argument import parse_argument

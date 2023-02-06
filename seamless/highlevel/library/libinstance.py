@@ -465,6 +465,10 @@ class LibInstance:
         parent = self._parent()
         parent._translate()
 
+    @property
+    def __doc__(self):
+        return self.help.value
+
 from .iowrappers import ConnectionWrapper, InputCellWrapper, OutputCellWrapper, EditCellWrapper
 from ..synth_context import SynthContext
 from ..Cell import Cell, FolderCell, SimpleDeepCell

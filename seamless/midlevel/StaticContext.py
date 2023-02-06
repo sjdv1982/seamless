@@ -54,7 +54,7 @@ class StaticContext(HelpMixin):
         lp = len(path)
         newnodes = []
         for nodepath, node in sorted(nodes.items(), key=lambda kv: kv[0]):
-            if nodepath[0] == "HELP":
+            if len(nodepath) and nodepath[0] == "HELP":
                 if len(nodepath[1:]) > lp and nodepath[1:lp+1] == path:
                     newnode = deepcopy(node)
                     newnode["path"] = ("HELP",) + tuple(nodepath[lp+1:])
@@ -145,7 +145,7 @@ class StaticContext(HelpMixin):
         elif t == "context":
             l = len(path)
             def in_path(p):
-                if p[0] == "HELP":
+                if len(p) and p[0] == "HELP":
                     return in_path(p[1:])
                 if len(p) < l:
                     return False
