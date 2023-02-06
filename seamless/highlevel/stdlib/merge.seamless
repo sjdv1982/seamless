@@ -1,8 +1,29 @@
 {
-  "__seamless__": "0.8",
+  "__seamless__": "0.11",
   "connections": [],
   "lib": [],
   "nodes": [
+    {
+      "path": [
+        "HELP"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "72372a23d44fce3b69343a2bfde92c3ef469031d1fba99ea9516432c1e4a6ac7"
+      },
+      "datatype": "mixed",
+      "file_extension": "md",
+      "hash_pattern": null,
+      "mimetype": "text/markdown",
+      "path": [
+        "HELP",
+        "INDEX"
+      ],
+      "type": "cell"
+    },
     {
       "celltype": "code",
       "checksum": {
@@ -55,7 +76,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "dd30e83df6e0adec80f1c6817f34e1438d3f806de7f70533a080bdb4a8df0fe3",
-        "buffer": "dd30e83df6e0adec80f1c6817f34e1438d3f806de7f70533a080bdb4a8df0fe3",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "dd30e83df6e0adec80f1c6817f34e1438d3f806de7f70533a080bdb4a8df0fe3"
       },

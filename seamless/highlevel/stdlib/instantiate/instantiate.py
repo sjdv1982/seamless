@@ -93,6 +93,9 @@ ctx.constructor_params = {
     "entries": "value",
     "exits": "value",
 }
+ctx.help = Cell("text")
+ctx.help.mimetype = "md"
+ctx.help.set(open("help/instantiate.md").read())
 
 ctx.compute()
 

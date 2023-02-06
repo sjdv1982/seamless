@@ -133,6 +133,9 @@ ctx.code_start = set_resource("cell-merge-START.py")
 ctx.code_start.celltype = "code"
 ctx.code_update = set_resource("cell-merge-UPDATE.py")
 ctx.code_update.celltype = "code"
+ctx.help = Cell("text")
+ctx.help.mimetype = "md"
+ctx.help.set(open("help/merge.md").read())
 
 ctx.compute()
 

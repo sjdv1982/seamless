@@ -4,6 +4,27 @@
   "lib": [],
   "nodes": [
     {
+      "path": [
+        "HELP"
+      ],
+      "type": "context"
+    },
+    {
+      "celltype": "text",
+      "checksum": {
+        "value": "616d86468c057a8bdf01dcf7a1bf5c1cd7b1beb9e417b65674d4a0ce00ca58ea"
+      },
+      "datatype": "mixed",
+      "file_extension": "md",
+      "hash_pattern": null,
+      "mimetype": "text/markdown",
+      "path": [
+        "HELP",
+        "INDEX"
+      ],
+      "type": "cell"
+    },
+    {
       "celltype": "code",
       "checksum": {
         "value": "4be480df11bb793a28839d93430070b194d371c2326aa1329453eb6d936caaa6"

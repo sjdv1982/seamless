@@ -243,6 +243,10 @@ ctx_switch.constructor_params = {
         "io": "output"
     },
 }
+ctx_switch.help = Cell("text")
+ctx_switch.help.mimetype = "md"
+ctx_switch.help.set(open("help/switch.md").read())
+
 ctx_switch.compute()
 
 ctx_select.select_code1 = Cell("code")
@@ -272,6 +276,10 @@ ctx_select.constructor_params = {
         "must_be_defined": False,
     },
 }
+ctx_select.help = Cell("text")
+ctx_select.help.mimetype = "md"
+ctx_select.help.set(open("help/select.md").read())
+
 ctx_select.compute()
 
 # 2: obtain graph and zip
