@@ -502,6 +502,7 @@ Execution time: {:.1f} seconds
                     result_queue.join()
             except Exception:
                 traceback.print_exc()
+        kill_children(multiprocessing.current_process())
 
 
 from silk import Silk
@@ -511,3 +512,4 @@ from .protocol.deep_structure import deep_structure_to_value, value_to_deep_stru
 from .protocol.serialize import serialize_sync
 from .protocol.deserialize import deserialize_sync
 from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum, calculate_checksum_func, calculate_checksum_cache
+from ..subprocess_ import kill_children

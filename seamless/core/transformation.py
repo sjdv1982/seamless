@@ -35,6 +35,7 @@ def _kill_processes():
         if not process.is_alive():
             continue
         print("Killing transformer process... cleanup will not have happened!")
+        kill_children(process)
         process.kill()
 
 atexit.register(_kill_processes)
@@ -633,7 +634,13 @@ class TransformationJob:
                         sys.stdout = sys.__stdout__
                     if isinstance(stderr_orig, StdoutProxy):
                         sys.stderr = sys.__stderr__
-                self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=True)
+                # Set daemon = False so that transformers can spawn their own transformations.
+                # daemon was True in Seamless 0.10 and before!
+                # Multiprocessing processes aren't true Unix daemons,
+                # and "daemon" is a multiprocessing-only thing.
+                # Looking at the source, daemon = False should have no impact,
+                #  but we must make sure to kill all transformer children
+                self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=False)
                 self.executor.start()
             finally:
                 sys.stdout = stdout_orig
@@ -791,3 +798,4 @@ from .cache.transformation_cache import transformation_cache, syntactic_is_seman
 from .status import SeamlessInvalidValueError
 from ..communion_client import communion_client_manager
 from .environment import validate_environment
+from ..subprocess_ import kill_children
