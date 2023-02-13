@@ -84,8 +84,17 @@ def activate_transformations():
     transformation_cache.active = True
 
 def run_transformation(checksum):
+    if running_in_jupyter:
+        raise RuntimeError("'run_transformation' cannot be called from within Jupyter. Use 'await run_transformation_async' instead")
+    elif asyncio.get_event_loop().is_running():
+        raise RuntimeError("'run_transformation' cannot be called from within a coroutine. Use 'await run_transformation_async' instead")
+
     from .core.cache.transformation_cache import transformation_cache
     return transformation_cache.run_transformation(checksum)
+
+async def run_transformation_async(checksum):
+    from .core.cache.transformation_cache import transformation_cache
+    return await transformation_cache.run_transformation_async(checksum)
 
 _original_event_loop = asyncio.get_event_loop()
 def check_original_event_loop():

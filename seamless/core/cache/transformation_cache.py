@@ -1007,9 +1007,15 @@ class TransformationCache:
         return result_checksum
 
     def run_transformation(self, tf_checksum):
-        fut = asyncio.ensure_future(self.run_transformation_async(tf_checksum))
-        asyncio.get_event_loop().run_until_complete(fut)
-        return fut.result()
+        if asyncio.get_event_loop().is_running:
+            # To support run_transformation inside transformer code
+            return asyncio.new_event_loop().run_until_complete(
+                self.run_transformation_async(tf_checksum)
+            )            
+        else:
+            fut = asyncio.ensure_future(self.run_transformation_async(tf_checksum))
+            asyncio.get_event_loop().run_until_complete(fut)
+            return fut.result()
 
     def destroy(self):
         # only called when Seamless shuts down
