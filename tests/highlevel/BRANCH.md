@@ -5,4 +5,4 @@ First, simple "imperative" draft code that can run a transformation w/o database
 
 DONE
 Also for Jupyter, transformer-inside-transformer, and transformer-inside-transformer-inside-transformer
-The latter should be supported by innjecting the 'reproducible' object instead.
+The latter is now supported by injecting the 'transformer' object directly

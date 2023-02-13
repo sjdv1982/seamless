@@ -109,6 +109,7 @@ library-reassign.py
 library-context-argument.py
 library-in-library.py
 library-schema.py
+imperative.py
 map-list.py
 channel.py
 environment3.py
@@ -183,8 +184,8 @@ share-pdb-docker.seamless/.zip: to test using:
       seamless-serve-graph-trusted share-pdb-docker.seamless share-pdb-docker.zip
     Open in http://localhost:5813/ctx/index.html
     Potentially, add:
-      --status-graph /seamless/seamless/graphs/status-visualization.seamless \
-      --add-zip /seamless/seamless/graphs/status-visualization.zip
+      --status-graph /seamless-graphs/status-visualization.seamless \
+      --add-zip /seamless-graphs/status-visualization.zip
     In that case, open also http://localhost:5813/status/index.html
 parse-pdb.py: requires seamless database.
               will fail unless parse-pdb-environment.yml is installed
@@ -229,6 +230,9 @@ r.py
    http://localhost:5813/ctx/result.png
   edit plot.R
   The PNG should update, the SVG should not
+imperative-async.py: open "jupyter console | tee test-outputs/imperative-async.out", 
+  then run "%load imperative-async.py"
+  Output should be the same as for imperative.py
 compute-ctrl-c.py: open with ipython, type "ctx.compute()" and press ctrl+c
 delay-direct-print-file: open with ipython, monitor /tmp/direct-print.out, change ctx.tf1.a and ctx.tf1.delay
 debugmode-py-light.py
