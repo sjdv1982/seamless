@@ -10,15 +10,7 @@ ctx.tf.a = 21
 ctx.tf.b = 17
 ctx.compute()
 transformation_checksum = ctx.tf.get_transformation()
-#print(transformation_checksum)
 transformation_dict = ctx.resolve(transformation_checksum, "plain")
-#print(json.dumps(transformation_dict, indent=2))
-
-'''
-from seamless.imperative import run_transformation_dict
-result = run_transformation_dict(transformation_dict)
-print(result)
-'''
 
 from seamless.imperative import run_transformation_dict
 result = run_transformation_dict(transformation_dict)
@@ -48,8 +40,6 @@ print(result)
 ##################################################
 
 def func2(a, b):
-
-    from seamless.imperative import transformer
     @transformer
     def func(a, b):
         import time
@@ -68,10 +58,8 @@ print(ctx.tf.status)
 
 def func3(a, b):
 
-    from seamless.imperative import transformer
     @transformer
     def func2(a, b):
-        from seamless.imperative import transformer
         @transformer
         def func(a, b):
             import time
