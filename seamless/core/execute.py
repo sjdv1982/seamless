@@ -328,6 +328,8 @@ def execute(name, code,
       debug = None,
     ):
     if multiprocessing.current_process().name != "MainProcess":
+        import seamless
+        seamless.running_in_jupyter = False
         database_client.session = requests.Session()
         signal.signal(signal.SIGINT, signal.SIG_IGN)
     direct_print = False

@@ -9,6 +9,7 @@ import asyncio
 import logging
 import subprocess
 import sys
+import multiprocessing
 sys.modules["seamless.subprocess"] = subprocess  # pre-0.7 compat
 logger = logging.getLogger("seamless")
 
@@ -87,7 +88,11 @@ def run_transformation(checksum):
     if running_in_jupyter:
         raise RuntimeError("'run_transformation' cannot be called from within Jupyter. Use 'await run_transformation_async' instead")
     elif asyncio.get_event_loop().is_running():
-        raise RuntimeError("'run_transformation' cannot be called from within a coroutine. Use 'await run_transformation_async' instead")
+        if multiprocessing.current_process().name != "MainProcess":
+            # Allow it for forked processes (a new event loop will be launched)
+            pass
+        else:
+            raise RuntimeError("'run_transformation' cannot be called from within a coroutine. Use 'await run_transformation_async' instead")
 
     from .core.cache.transformation_cache import transformation_cache
     return transformation_cache.run_transformation(checksum)
