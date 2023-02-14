@@ -390,6 +390,7 @@ class TransformationJob:
         while not transformation_cache.active:
             await asyncio.sleep(0.05)
         meta = self.transformation.get("__meta__")
+        meta = deepcopy(meta)
         clients = list(communion_client_manager.clients["transformation"])
         if self.debug is None:
             await self._probe_remote(clients, meta)
@@ -420,6 +421,7 @@ class TransformationJob:
         prelim_callback, progress_callback
     ):
         meta = self.transformation.get("__meta__")
+        meta = deepcopy(meta)
         async def get_result1(client):
             try:
                 await client.submit(self.checksum, meta)
@@ -534,6 +536,7 @@ class TransformationJob:
         with_ipython_kernel = False
 
         meta = self.transformation.get("__meta__")
+        meta = deepcopy(meta)
         # meta not used for now...
 
         env_checksum0 = self.transformation.get("__env__")
