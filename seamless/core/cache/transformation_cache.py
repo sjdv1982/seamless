@@ -816,7 +816,7 @@ class TransformationCache:
             raise KeyError(tf_checksum) from None
 
     async def serve_get_transformation(self, tf_checksum, remote_peer_id):
-        assert isinstance(tf_checksum, bytes)
+        assert isinstance(tf_checksum, bytes), type(tf_checksum)
         transformation = self.transformations.get(tf_checksum)
         if transformation is None:
             transformation_buffer = get_buffer(
@@ -945,7 +945,7 @@ class TransformationCache:
             return
         self._hard_cancel(job)
 
-    async def run_transformation_async(self, tf_checksum):
+    async def run_transformation_async(self, tf_checksum, metalike=None):
         from . import CacheMissError
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
         if result_checksum is not None and not prelim:
@@ -953,6 +953,11 @@ class TransformationCache:
         transformation = await self.serve_get_transformation(tf_checksum, None)
         if transformation is None:
             raise CacheMissError(tf_checksum.hex())
+        if metalike is not None:
+            transformation = transformation.copy()
+            for k in ("__compilers__", "__languages__", "__meta__"):
+                if k in metalike:
+                    transformation[k] = metalike[k] 
         for k,v in transformation.items():
             if k in ("__language__", "__output__", "__as__",):
                 continue
@@ -1014,14 +1019,16 @@ class TransformationCache:
         assert not prelim
         return result_checksum
 
-    def run_transformation(self, tf_checksum):
+    def run_transformation(self, tf_checksum, metalike=None):
         if asyncio.get_event_loop().is_running:
             # To support run_transformation inside transformer code
             return asyncio.new_event_loop().run_until_complete(
-                self.run_transformation_async(tf_checksum)
+                self.run_transformation_async(tf_checksum, metalike=metalike)
             )            
         else:
-            fut = asyncio.ensure_future(self.run_transformation_async(tf_checksum))
+            fut = asyncio.ensure_future(
+                self.run_transformation_async(tf_checksum, metalike=metalike)
+            )
             asyncio.get_event_loop().run_until_complete(fut)
             return fut.result()
 

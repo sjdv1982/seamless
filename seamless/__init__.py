@@ -84,7 +84,7 @@ def activate_transformations():
     from .core.cache.transformation_cache import transformation_cache
     transformation_cache.active = True
 
-def run_transformation(checksum):
+def run_transformation(checksum, metalike=None):
     if running_in_jupyter:
         raise RuntimeError("'run_transformation' cannot be called from within Jupyter. Use 'await run_transformation_async' instead")
     elif asyncio.get_event_loop().is_running():
@@ -95,11 +95,13 @@ def run_transformation(checksum):
             raise RuntimeError("'run_transformation' cannot be called from within a coroutine. Use 'await run_transformation_async' instead")
 
     from .core.cache.transformation_cache import transformation_cache
-    return transformation_cache.run_transformation(checksum)
+    checksum = parse_checksum(checksum, as_bytes=True)
+    return transformation_cache.run_transformation(checksum, metalike=metalike)
 
-async def run_transformation_async(checksum):
+async def run_transformation_async(checksum, metalike=None):
     from .core.cache.transformation_cache import transformation_cache
-    return await transformation_cache.run_transformation_async(checksum)
+    checksum = parse_checksum(checksum, as_bytes=True)
+    return await transformation_cache.run_transformation_async(checksum,metalike=metalike)
 
 _original_event_loop = asyncio.get_event_loop()
 def check_original_event_loop():
@@ -116,3 +118,4 @@ from .core.transformation import set_ncores
 from .core.manager.tasks import set_parallel_evaluations
 from .calculate_checksum import calculate_checksum, calculate_dict_checksum
 from .core.cache.database_client import database_sink, database_cache
+from .util import parse_checksum
