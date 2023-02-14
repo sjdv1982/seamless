@@ -93,6 +93,21 @@ class DummyTransformer:
         self.progress = None
         self.prelim = None
 
+def incref_transformation(tf_checksum, tf_buffer, transformation):
+    buffer_cache.incref_buffer(tf_checksum, tf_buffer, False)
+    for pinname in transformation:
+        if pinname in ("__compilers__", "__languages__", "__as__",  "__format__", "__meta__"):
+            continue
+        if pinname in ("__language__", "__output__"):
+            continue
+        if pinname == "__env__":
+            sem_checksum = bytes.fromhex(transformation[pinname])
+        else:
+            _, _, sem_checksum0 = transformation[pinname]
+            sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
+        if sem_checksum is not None:
+            buffer_cache.incref(sem_checksum, pinname == "__env__")
+
 def tf_get_buffer(transformation):
     from seamless.core.protocol.json import json_dumps
     assert isinstance(transformation, dict)
@@ -342,25 +357,16 @@ class TransformationCache:
         tf_checksum = await calculate_checksum(tf_buffer)
         #print("INCREF", tf_checksum.hex(), transformer)
 
-        if tf_checksum not in self.transformations:
-            buffer_cache.incref_buffer(tf_checksum, tf_buffer, False)
+        if tf_checksum not in self.transformations:            
             self.transformations_to_transformers[tf_checksum] = []
-            self.transformations[tf_checksum] = transformation
+            self.transformations[tf_checksum] = transformation            
             if tf_checksum in self.transformation_results:
                 result_checksum, prelim = self.transformation_results[tf_checksum]
                 buffer_cache.incref(result_checksum, False)
-            for pinname in transformation:
-                if pinname in ("__compilers__", "__languages__", "__as__",  "__format__", "__meta__"):
-                    continue
-                if pinname in ("__language__", "__output__"):
-                    continue
-                if pinname == "__env__":
-                    sem_checksum = bytes.fromhex(transformation[pinname])
-                else:
-                    celltype, subcelltype, sem_checksum0 = transformation[pinname]
-                    sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
-                if sem_checksum is not None:
-                    buffer_cache.incref(sem_checksum, pinname == "__env__")
+            incref_transformation(tf_checksum, tf_buffer, transformation)
+        else:
+            # Just to reflect updates in __meta__ etc.
+            self.transformations[tf_checksum] = transformation
 
         tf = self.transformations_to_transformers[tf_checksum]
         if transformer not in tf:
@@ -948,9 +954,11 @@ class TransformationCache:
         if transformation is None:
             raise CacheMissError(tf_checksum.hex())
         for k,v in transformation.items():
-            if k in ("__language__", "__output__", "__as__"):
+            if k in ("__language__", "__output__", "__as__",):
                 continue
             if k == "__env__":
+                continue
+            if k in ("__compilers__", "__languages__", "__meta__"):
                 continue
             celltype, subcelltype, sem_checksum0 = v
             sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
