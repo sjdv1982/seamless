@@ -510,8 +510,6 @@ class Transformer(Base, HelpMixin):
                 value = value.data
             if "TEMP" not in htf or htf["TEMP"] is None:
                 htf["TEMP"] = {}
-            if "input_auth" not in htf["TEMP"]:
-                htf["TEMP"]["input_auth"] = {}
             if attr == "code":
                 code = value
                 if callable(value):
@@ -521,6 +519,8 @@ class Transformer(Base, HelpMixin):
                 if isinstance(value, Base):
                     raise TypeError(type(value))
                 get_form(value)
+                if "input_auth" not in htf["TEMP"]:
+                    htf["TEMP"]["input_auth"] = {}
                 htf["TEMP"]["input_auth"][attr] = value
                 if attr not in htf["pins"]:
                     htf["pins"][attr] = default_pin.copy()
