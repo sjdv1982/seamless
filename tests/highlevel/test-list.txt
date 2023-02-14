@@ -110,6 +110,7 @@ library-context-argument.py
 library-in-library.py
 library-schema.py
 imperative.py
+imperative-database.py: run with Seamless database, preferably in a clean dir
 map-list.py
 channel.py
 environment3.py
@@ -232,7 +233,12 @@ r.py
   The PNG should update, the SVG should not
 imperative-async.py: open "jupyter console | tee test-outputs/imperative-async.out", 
   then run "%load imperative-async.py"
-  Output should be the same as for imperative.py
+imperative-database-async.py: open "jupyter console | tee test-outputs/imperative-database-async.out", 
+  then run "%load imperative-database-async.py"
+imperative-communion-async.py: open "jupyter console | tee test-outputs/imperative-communion-async.out", 
+  then run "%load imperative-communion-async.py"
+  NOTE: does not work under ipython, only under Jupyter
+
 compute-ctrl-c.py: open with ipython, type "ctx.compute()" and press ctrl+c
 delay-direct-print-file: open with ipython, monitor /tmp/direct-print.out, change ctx.tf1.a and ctx.tf1.delay
 debugmode-py-light.py

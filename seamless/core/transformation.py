@@ -533,6 +533,7 @@ class TransformationJob:
     async def _execute_local(self,
         prelim_callback, progress_callback
     ):
+        from .. import database_sink
         with_ipython_kernel = False
 
         meta = self.transformation.get("__meta__")
@@ -602,6 +603,7 @@ class TransformationJob:
         self.start = time.time()
         running = False
         try:
+            run_transformation_futures = []
             python_attach_port = None
 
             if multiprocessing.get_start_method(allow_none=True) is None:
@@ -630,7 +632,7 @@ class TransformationJob:
                 kwargs["debug"] = debug
 
             stdout_orig = sys.stdout
-            stderr_orig = sys.stderr            
+            stderr_orig = sys.stderr
             try:
                 if StdoutProxy is not None:
                     if isinstance(stdout_orig, StdoutProxy):
@@ -643,6 +645,7 @@ class TransformationJob:
                 # and "daemon" is a multiprocessing-only thing.
                 # Looking at the source, daemon = False should have no impact,
                 #  but we must make sure to kill all transformer children
+                imperative._set_parent_process_queue(queue)
                 self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=False)
                 self.executor.start()
             finally:
@@ -651,7 +654,7 @@ class TransformationJob:
             running = True
             result = None
             done = False
-            result_checksum = None
+            result_checksum = None            
             while 1:
                 while not queue.empty():
                     status, msg = queue.get()
@@ -693,6 +696,31 @@ class TransformationJob:
                                 lock = None
                             else:
                                 raise Exception("Unknown return message '{}'".format(msg))
+                        elif status == 6:
+                            # run_transformation
+                            tf_checksum, metalike, syntactic_cache = msg
+                            for celltype, subcelltype, buf in syntactic_cache:
+                                # TODO: create a transformation_cache method and invoke it, common with other code
+                                syn_checksum = await calculate_checksum(buf)
+                                buffer_cache.incref_buffer(syn_checksum, buf, False)
+                                sem_checksum = await syntactic_to_semantic(
+                                    syn_checksum, celltype, subcelltype, 
+                                    self.codename + ":@transformer"
+                                )
+                                key = (syn_checksum, celltype, subcelltype)
+                                transformation_cache.syntactic_to_semantic_checksums[key] = sem_checksum
+                                semkey = (sem_checksum, celltype, subcelltype)
+                                s2s = transformation_cache.semantic_to_syntactic_checksums
+                                if semkey not in s2s:
+                                    s2s[semkey] = []
+                                s2s[semkey].append(syn_checksum)
+                                database_sink.sem2syn(semkey, s2s[semkey])
+                                buffer_cache.cache_buffer(syn_checksum, buf)
+                                buffer_cache.decref(syn_checksum)
+                            fut = asyncio.ensure_future(
+                                run_transformation_async(tf_checksum, metalike)
+                            )
+                            run_transformation_futures.append(fut)
                         else:
                             raise Exception("Unknown return status {}".format(status))
                     elif isinstance(status, tuple) and len(status) == 2 and status[1] == "checksum":
@@ -717,6 +745,21 @@ class TransformationJob:
                         raise SeamlessTransformationError("Transformation exited without result")
                 if done:
                     break
+                fut_done = []
+                for fut in run_transformation_futures:
+                    if fut.done():
+                        try:
+                            cs = fut.result()
+                        except Exception as exc:
+                            msg = traceback.format_exc()
+                            if running:
+                                self.executor.terminate()
+                                forked_processes[self.executor] = time.time()
+                            raise SeamlessTransformationError(msg) from None
+                        else:
+                            fut_done.append(fut)
+                for fut in fut_done:
+                    run_transformation_futures.remove(fut)
                 await asyncio.sleep(0.01)
             if not self.executor.is_alive():
                 self.executor = None
@@ -728,6 +771,11 @@ class TransformationJob:
         finally:
             if python_attach_port is not None:
                 free_python_attach_port(python_attach_port)
+            for fut in run_transformation_futures:
+                try:
+                    fut.cancel()
+                except Exception:
+                    pass
             if lock is not None:
                 release_lock(lock)
         if result_checksum is None:
@@ -797,8 +845,10 @@ from .protocol.calculate_checksum import calculate_checksum
 from .protocol.evaluate import validate_evaluation_subcelltype
 from .cache import CacheMissError
 from .cache.buffer_cache import buffer_cache
-from .cache.transformation_cache import transformation_cache, syntactic_is_semantic
+from .cache.transformation_cache import transformation_cache, syntactic_is_semantic, syntactic_to_semantic
 from .status import SeamlessInvalidValueError
 from ..communion_client import communion_client_manager
 from .environment import validate_environment
 from ..subprocess_ import kill_children
+from .. import imperative
+from .. import run_transformation_async
