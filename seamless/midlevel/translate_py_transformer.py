@@ -323,7 +323,7 @@ def translate_py_transformer(
     else:
         meta = node.get("meta")
         if meta is not None:
-            ctx.tf.meta = meta
+            ctx.tf.meta = deepcopy(meta)
 
     if result_celltype == "structured":
         result, result_ctx = build_structured_cell(
