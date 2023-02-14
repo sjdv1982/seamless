@@ -575,6 +575,9 @@ class CommunionServer:
         message_id = message["id"]
         content = message["content"]
         print_debug("RESPONSE", message_id)
+        if message_id not in self.futures[peer]:
+            print("Unknown message", message_id)
+            return
         future = self.futures[peer][message_id]
         if message.get("error"):
             future.set_exception(CommunionError(content))
