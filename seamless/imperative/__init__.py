@@ -24,20 +24,18 @@ def _set_parent_process_queue(parent_process_queue):
     _parent_process_queue = parent_process_queue
 
 def getsource(func):
+    from ..util import strip_decorators
     if isinstance(func, LambdaType) and func.__name__ == "<lambda>":
         code = lambdacode(func)
         if code is None:
             raise ValueError("Cannot extract source code from this lambda")
         return code
     else:
-        code0 = inspect.getsource(func)
-        code0 = textwrap.dedent(code0)
-        code0 = code0.splitlines()
-        for lnr, l in enumerate(code0):
-            if l.startswith("@"):
-                continue
-            return "\n".join(code0[lnr:])
-
+        code = inspect.getsource(func)
+        code = textwrap.dedent(code)
+        code = strip_decorators(code)
+        return code
+        
 def cache_buffer(checksum, buf):
    from ..core.cache.buffer_cache import buffer_cache
    buffer_cache.cache_buffer(checksum, buf) 
