@@ -1003,13 +1003,8 @@ class Transformer(Base, HelpMixin):
         minus __meta__, __compilers__ and __languages__. The checksum is
         treated like any other buffer, i.e. including database, communion etc.
 
-        With the following code, you can obtain the full transformation dict,
+        With Transformation.get_transformation_dict(), you can obtain the full transformation dict,
         including __meta__, __compilers__ and __languages__.
-
-        ```
-        from seamless.core.cache.transformation_cache import transformation_cache
-        transformation_cache.get_transformation_dict(checksum)
-        ```
         """
         htf = self._get_htf()
         tf = self._get_tf()
@@ -1017,6 +1012,32 @@ class Transformer(Base, HelpMixin):
             return tf.tf.executor.get_transformation()
         else:
             return tf.tf.get_transformation()
+
+    def get_transformation_dict(self):
+        """Return the full transformation dict.
+        The transformation dict contains the checksums of all input pins,
+        including the code.
+
+        In addition, it may contain the following special keys:
+        - __output__: the name (usually "result") and (sub)celltype of the output pin
+          If it has a hash pattern, this is appended as the fourth element. 
+        - __env__: the checksum of the environment description
+        - __as__: a dictionary of pin-to-variable renames (pins.pinname.as_ attribute)
+        - __format__: a dictionary that contains deepcell and filesystem attributes
+
+        Finally, it may contain additional information that is not reflected
+        in its checksum:
+
+        - __meta__: meta information (Transformer.meta).
+        - __compilers__: context-wide compiler definitions.
+        - __languages__: context-wide language definition."""
+        
+        from seamless.core.cache.transformation_cache import transformation_cache
+        checksum = self.get_transformation()
+        if checksum is None:
+            return None
+        return transformation_cache.get_transformation_dict(checksum)
+
 
     def cancel(self) -> None:
         """Hard-cancels the transformer.
