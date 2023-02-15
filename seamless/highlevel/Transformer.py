@@ -172,6 +172,7 @@ class Transformer(Base, HelpMixin):
         assert parent is not None
         htf = self._get_htf()
         target_path = self._path + ("meta",)
+        realtime_meta = False
         if isinstance(value, Cell):
             assert value._parent() is parent
             assign_connection(parent, value._path, target_path, False)
@@ -184,8 +185,24 @@ class Transformer(Base, HelpMixin):
             json.dumps(value)
             parent.remove_connections(target_path, endpoint="target")
             htf["meta"] = value
-        self._get_htf()["UNTRANSLATED"] = True
-        parent._translate()
+        try:
+            self.cancel()
+        except Exception:
+            pass
+        try:
+            tf = self._get_tf(force=True)
+            htf = self._get_htf()
+            if htf["compiled"]:
+                tf2 = tf.tf.executor
+            else:
+                tf2 = tf.tf
+            tf2.meta = deepcopy(value)
+            realtime_meta = True
+        except Exception:
+            pass
+        if not realtime_meta:
+            self._get_htf()["UNTRANSLATED"] = True
+            parent._translate()
 
     @property
     def RESULT(self) -> str:
