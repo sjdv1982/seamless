@@ -218,7 +218,13 @@ class CommunionClientManager:
 
     _clientclasses = {klass.config_type:klass for klass in _clientclasses}
 
+    _restarted = False
     def __init__(self):
+        self._init()
+        self._restarted = False
+        
+    def _init(self):
+        self._restarted = True
         self.clients = {k:[] for k in self._clientclasses}
         self.remote_checksum_available = set()
         self.servant_to_clients = {}
@@ -259,7 +265,8 @@ class CommunionClientManager:
                 sub_communion_types[sub_communion_type] = c
             if not any(sub_communion_types.values()):
                 continue
-            print_warning("ADD SERVANT", communion_type)
+            if not self._restarted:
+                print_warning("ADD SERVANT", communion_type)
             clientclass = self._clientclasses[communion_type]
             client = clientclass(servant, sub_communion_types)
             self.clients[communion_type].append(client)

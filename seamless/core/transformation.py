@@ -422,6 +422,10 @@ class TransformationJob:
     ):
         meta = self.transformation.get("__meta__")
         meta = deepcopy(meta)
+        if meta is not None and meta.get("local") == False:
+            remote_only = True
+        else:
+            remote_only = False
         async def get_result1(client):
             try:
                 await client.submit(self.checksum, meta)
@@ -521,7 +525,7 @@ class TransformationJob:
         if status == 1 and get_result is get_result1:
             self.restart = True
             return
-        elif has_negative_status and not has_exceptions:
+        elif has_negative_status and not has_exceptions and not remote_only:
             self.restart = True
             self.remote = False
         elif has_exceptions:
@@ -538,7 +542,8 @@ class TransformationJob:
 
         meta = self.transformation.get("__meta__")
         meta = deepcopy(meta)
-        # meta not used for now...
+        if meta is not None and meta.get("local") == False:
+            raise RuntimeError("Local execution has been disabled for this transformation")
 
         env_checksum0 = self.transformation.get("__env__")
         if env_checksum0 is not None:

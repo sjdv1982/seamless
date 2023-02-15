@@ -35,7 +35,7 @@ def getsource(func):
         code = textwrap.dedent(code)
         code = strip_decorators(code)
         return code
-        
+
 def cache_buffer(checksum, buf):
    from ..core.cache.buffer_cache import buffer_cache
    buffer_cache.cache_buffer(checksum, buf) 
@@ -122,6 +122,7 @@ async def run_transformation_dict_async(transformation_dict):
 def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, meta, *args, **kwargs):
     # TODO: support *args (makefun)
     # TODO: celltype support for args / return
+    from .. import database_sink
     arguments = signature.bind(*args, **kwargs).arguments
     transformation_dict = {
         "__output__": ("result", "mixed", None), 
@@ -136,12 +137,21 @@ def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, 
         cache_buffer(checksum, buf)
         transformation_dict[argname] = ("mixed", None, checksum.hex())
     cache_buffer(code_checksum, codebuf)
-    cache_buffer(bytes.fromhex(semantic_code_checksum), _sem_code_cache[semantic_code_checksum])
+    # Code below could be moved, see transformation.py syntactic_cache
+    # (same code as _run_transformer_async)
+    semantic_code_checksum2 = bytes.fromhex(semantic_code_checksum)
+    semcode = _sem_code_cache[semantic_code_checksum]
+    cache_buffer(semantic_code_checksum2, semcode)
+    database_sink.set_buffer(semantic_code_checksum2, semcode, False)
+    database_sink.set_buffer(code_checksum, codebuf, False)
+    semkey = (semantic_code_checksum2, "python", "transformer")
+    database_sink.sem2syn(semkey, [code_checksum])
     return run_transformation_dict(transformation_dict)
 
 async def _run_transformer_async(semantic_code_checksum,  codebuf, code_checksum, signature, meta, *args, **kwargs):
     # TODO: support *args (makefun)
     # TODO: celltype support for args / return
+    from .. import database_sink
     arguments = signature.bind(*args, **kwargs).arguments
     transformation_dict = {
         "__output__": ("result", "mixed", None), 
@@ -156,7 +166,15 @@ async def _run_transformer_async(semantic_code_checksum,  codebuf, code_checksum
         cache_buffer(checksum, buf)
         transformation_dict[argname] = ("mixed", None, checksum.hex())
     cache_buffer(code_checksum, codebuf)
-    cache_buffer(bytes.fromhex(semantic_code_checksum), _sem_code_cache[semantic_code_checksum])
+    # Code below could be moved, see transformation.py syntactic_cache
+    # (same code as _run_transformer)
+    semantic_code_checksum2 = bytes.fromhex(semantic_code_checksum)
+    semcode = _sem_code_cache[semantic_code_checksum]
+    cache_buffer(semantic_code_checksum2, semcode)
+    database_sink.set_buffer(semantic_code_checksum2, semcode, False)
+    database_sink.set_buffer(code_checksum, codebuf, False)
+    semkey = (semantic_code_checksum2, "python", "transformer")
+    database_sink.sem2syn(semkey, [code_checksum])
     return await run_transformation_dict_async(transformation_dict)
 
 class Transformer:

@@ -154,13 +154,22 @@ import numpy as np
 
 class CommunionServer:
     future = None
+    server = None
+    startup = None
+    peers = {}
     PROTOCOL = ("seamless", "communion", "0.3")
     _started = False
     _started_outgoing = False
     _to_start_incoming = None
+    _restarted = False
     def __init__(self):
         self.config_master = default_master_config.copy()
         self.config_servant = default_servant_config.copy()
+        self._init()
+        self._restarted = False
+
+    def _init(self):
+        self._restarted = True
         cid = os.environ.get("SEAMLESS_COMMUNION_ID", "")
         if cid == "":
             cid = hash(int(id(self)) + int(10000*time.time()))
@@ -169,6 +178,18 @@ class CommunionServer:
         self.message_count = {}
         self.futures = {}
         self.ready = WeakSet()
+        self._started = False
+        self._started_outgoing = False
+        self._to_start_incoming = None
+        if self.future is not None:
+            self.future.cancel()
+            self.future = None
+        if self.server is not None:
+            self.server.cancel()
+            self.server = None
+        if self.startup is not None:
+            self.startup.cancel()
+            self.startup = None
 
     def configure_master(self, config=None, **update):
         if self._started_outgoing and any(list(update.values())):
@@ -224,7 +245,9 @@ class CommunionServer:
             pass
         except Exception:
             print_error(traceback.format_exc())
-        finally:
+        finally:            
+            if websocket not in self.peers:
+                return  # communion server reset
             self.peers.pop(websocket)
             self.message_count.pop(websocket)
             self.futures.pop(websocket)
@@ -243,7 +266,8 @@ class CommunionServer:
                 await websocket.send(json.dumps(config))
                 peer_config = await websocket.recv()
                 peer_config = json.loads(peer_config)
-                print_warning("INCOMING", self.id, peer_config["id"])
+                if not self._restarted:
+                    print_warning("INCOMING", self.id, peer_config["id"])
                 start_incoming()
                 ok = True
                 await self._listen_peer(websocket, peer_config, incoming=True)
@@ -275,7 +299,7 @@ class CommunionServer:
                 print("ERROR: outgoing port %d already in use" % outgoing_port)
                 raise Exception
             server = functools.partial(self._serve_outgoing, config)
-            coro_server = websockets.serve(server, outgoing_ip, outgoing_port)
+            self.server = websockets.serve(server, outgoing_ip, outgoing_port)
             print("Set up a communion outgoing port {}, listening on {}".format(outgoing_port, outgoing_ip))
         if len(incoming):
             for n in range(len(incoming)):
@@ -294,14 +318,27 @@ class CommunionServer:
             if not url.startswith("ws://") and not url.startswith("wss://"):
                 url = "ws://" + url
             coro = self._connect_incoming(config, url, url0)
-            coros.append(coro)
+            coros.append(asyncio.ensure_future(coro))
 
         if outgoing_port is not None:
-            await coro_server
+            await self.server
         self._started_outgoing = True
         self._started = True
         if len(coros):
-            await asyncio.gather(*coros)
+            try:
+                await asyncio.gather(*coros)
+            finally:
+                for coro in coros:
+                    if coro.done():
+                        try:
+                            coro.result()
+                        except Exception:
+                            pass
+                    else:
+                        try:
+                            coro.cancel()
+                        except Exception:
+                            pass
 
     async def _startup(self):
         print_debug("Communion server startup commencing")
@@ -354,6 +391,9 @@ class CommunionServer:
                 break
             loop.run_until_complete(asyncio.sleep(0.1))
 
+    @property
+    def started(self):
+        return self._started
 
     async def _process_transformation_request(self, transformation, transformer, peer):
         try:

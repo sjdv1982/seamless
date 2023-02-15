@@ -170,6 +170,7 @@ class DatabaseSink(DatabaseBase):
         self.send_request(request)
 
     def set_buffer(self, checksum, buffer, persistent):
+        #
         '''
         # works, but only for string buffers...
         request = {

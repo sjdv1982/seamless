@@ -945,86 +945,121 @@ class TransformationCache:
             return
         self._hard_cancel(job)
 
-    async def run_transformation_async(self, tf_checksum, metalike=None):
+    async def run_transformation_async(self, tf_checksum, metalike=None, fresh_event_loop=False):
         from . import CacheMissError
-        result_checksum, prelim = self._get_transformation_result(tf_checksum)
-        if result_checksum is not None and not prelim:
+        from ... import communion_server
+        from ...communion_client import communion_client_manager
+        
+        if fresh_event_loop:
+            if communion_server.started:
+                for peer in communion_server.futures:
+                    if len(communion_server.futures[peer]):
+                        raise RuntimeError("Communion server has outstanding requests in other event loop")
+                communion_server._init()
+                communion_client_manager._init()
+                await asyncio.sleep(0.1)
+                await communion_server.start_async()
+            else:                
+                if communion_server.future is not None:
+                    raise RuntimeError("Communion server is starting up in other event loop")            
+        
+        try:
+            result_checksum, prelim = self._get_transformation_result(tf_checksum)
+            if result_checksum is not None and not prelim:
+                return result_checksum
+            transformation = await self.serve_get_transformation(tf_checksum, None)
+            if transformation is None:
+                raise CacheMissError(tf_checksum.hex())
+            if metalike is not None:
+                transformation = transformation.copy()
+                for k in ("__compilers__", "__languages__", "__meta__"):
+                    if k in metalike:
+                        transformation[k] = metalike[k] 
+            for k,v in transformation.items():
+                if k in ("__language__", "__output__", "__as__",):
+                    continue
+                if k == "__env__":
+                    continue
+                if k in ("__compilers__", "__languages__", "__meta__"):
+                    continue
+                celltype, subcelltype, sem_checksum0 = v
+                sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
+                if syntactic_is_semantic(celltype, subcelltype):
+                    continue
+                await self.serve_semantic_to_syntactic(
+                    sem_checksum, celltype, subcelltype,
+                    None
+                )
+            transformer = DummyTransformer(tf_checksum)
+            async def incref_and_run():
+                result = await self.incref_transformation(
+                    transformation, transformer, 
+                    transformation_build_exception=None 
+                )
+                if result is not None:
+                    tf_checksum, tf_exc, result_checksum, prelim = result
+                    if tf_exc is None and (result_checksum is None or prelim):
+                        job = self.run_job(transformation, tf_checksum)
+                        if job is not None:
+                            await asyncio.shield(job.future)
+                    elif tf_exc is not None:                    
+                        self._set_exc([transformer], tf_checksum, tf_exc)
+
+            coro = incref_and_run()
+            fut = asyncio.ensure_future(coro)
+            last_result_checksum = None
+            last_progress = None
+            fut_done_time = None
+            while 1:
+                if fut.done():
+                    if fut_done_time is None:
+                        fut_done_time = time.time()
+                    else:
+                        if time.time() - fut_done_time > 2:
+                            fut.result()
+                            raise Exception("Transformation finished, but didn't trigger a result or exception")
+                if transformer._status_reason == StatusReasonEnum.EXECUTING:
+                    if self.transformation_jobs.get(tf_checksum) is None:
+                        break
+                if transformer.prelim != last_result_checksum \
+                or transformer.progress != last_progress:
+                    last_progress = transformer.progress
+                    last_result_checksum = transformer.prelim
+                    if last_result_checksum is None:
+                        log(last_progress)
+                    else:
+                        log(last_progress, last_result_checksum.hex())
+                await asyncio.sleep(0.05)
+            if tf_checksum in self.transformation_exceptions:
+                raise self.transformation_exceptions[tf_checksum]
+            result_checksum, prelim = self._get_transformation_result(tf_checksum)
+            assert not prelim
             return result_checksum
-        transformation = await self.serve_get_transformation(tf_checksum, None)
-        if transformation is None:
-            raise CacheMissError(tf_checksum.hex())
-        if metalike is not None:
-            transformation = transformation.copy()
-            for k in ("__compilers__", "__languages__", "__meta__"):
-                if k in metalike:
-                    transformation[k] = metalike[k] 
-        for k,v in transformation.items():
-            if k in ("__language__", "__output__", "__as__",):
-                continue
-            if k == "__env__":
-                continue
-            if k in ("__compilers__", "__languages__", "__meta__"):
-                continue
-            celltype, subcelltype, sem_checksum0 = v
-            sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
-            if syntactic_is_semantic(celltype, subcelltype):
-                continue
-            await self.serve_semantic_to_syntactic(
-                sem_checksum, celltype, subcelltype,
-                None
-            )
-        transformer = DummyTransformer(tf_checksum)
-        async def incref_and_run():
-            result = await self.incref_transformation(
-                transformation, transformer, 
-                transformation_build_exception=None 
-            )
-            if result is not None:
-                tf_checksum, tf_exc, result_checksum, prelim = result
-                if tf_exc is None and (result_checksum is None or prelim):
-                    job = self.run_job(transformation, tf_checksum)
-                    if job is not None:
-                        await asyncio.shield(job.future)
-                elif tf_exc is not None:                    
-                    self._set_exc([transformer], tf_checksum, tf_exc)
+        finally:
+            if fresh_event_loop:
+                if communion_server.started:
+                    communion_server._init()
+                    communion_client_manager._init()
+                    await asyncio.sleep(0.1)
 
-        coro = incref_and_run()
-        fut = asyncio.ensure_future(coro)
-        last_result_checksum = None
-        last_progress = None
-        fut_done_time = None
-        while 1:
-            if fut.done():
-                if fut_done_time is None:
-                    fut_done_time = time.time()
-                else:
-                    if time.time() - fut_done_time > 2:
-                        fut.result()
-                        raise Exception("Transformation finished, but didn't trigger a result or exception")
-            if transformer._status_reason == StatusReasonEnum.EXECUTING:
-                if self.transformation_jobs.get(tf_checksum) is None:
-                    break
-            if transformer.prelim != last_result_checksum \
-              or transformer.progress != last_progress:
-                last_progress = transformer.progress
-                last_result_checksum = transformer.prelim
-                if last_result_checksum is None:
-                    log(last_progress)
-                else:
-                    log(last_progress, last_result_checksum.hex())
-            await asyncio.sleep(0.05)
-        if tf_checksum in self.transformation_exceptions:
-            raise self.transformation_exceptions[tf_checksum]
-        result_checksum, prelim = self._get_transformation_result(tf_checksum)
-        assert not prelim
-        return result_checksum
-
-    def run_transformation(self, tf_checksum, metalike=None):
-        if asyncio.get_event_loop().is_running:
+    def run_transformation(self, tf_checksum, metalike=None, new_event_loop=False):        
+        from ... import communion_server
+        from ...communion_client import communion_client_manager
+        if asyncio.get_event_loop().is_running or new_event_loop:
             # To support run_transformation inside transformer code
-            return asyncio.new_event_loop().run_until_complete(
-                self.run_transformation_async(tf_checksum, metalike=metalike)
-            )            
+            communion_server_restarted = False            
+            if communion_server.started:
+                for peer in communion_server.futures:
+                    if len(communion_server.futures[peer]):
+                        raise RuntimeError("Communion server has outstanding requests in other event loop")
+                    communion_server_restarted = True
+            try:                
+                return asyncio.new_event_loop().run_until_complete(
+                    self.run_transformation_async(tf_checksum, metalike=metalike, fresh_event_loop=True)
+                )
+            finally:
+                if communion_server_restarted:
+                    communion_server.start()
         else:
             fut = asyncio.ensure_future(
                 self.run_transformation_async(tf_checksum, metalike=metalike)
