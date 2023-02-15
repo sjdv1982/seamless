@@ -38,11 +38,13 @@ def set_resource(f):
         return data
 
 def parse_function_code(code_or_func, identifier="<None>"):
+    from ..util import strip_decorators
     if callable(code_or_func):
         func = code_or_func
         code = inspect.getsource(func)
         if code is not None:
             code = textwrap.dedent(code)
+            code = strip_decorators(code)
         if isinstance(func, LambdaType) and func.__name__ == "<lambda>":
             code = lambdacode(func)
             if code is None:

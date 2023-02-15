@@ -21,3 +21,10 @@ def as_tuple(v):
         return (v,)
     else:
         return tuple(v)
+
+def strip_decorators(code):
+    lines = code.splitlines()
+    for lnr, l in enumerate(lines):
+        if not l.startswith("@"):
+            break
+    return "\n".join(lines[lnr:])

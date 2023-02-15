@@ -534,10 +534,12 @@ class PythonCell(Cell):
 
     def set(self, value):
         """Update cell data from authority"""
+        from ..util import strip_decorators
         if callable(value):
             value = inspect.getsource(value)
         if value is not None:
             value = textwrap.dedent(value)
+            value = strip_decorators(value)
         return super().set(value)
 
     def __str__(self):
@@ -587,10 +589,12 @@ class IPythonCell(Cell):
 
     def set(self, value):
         """Update cell data from authority"""
+        from ..util import strip_decorators
         if callable(value):
             value = inspect.getsource(value)
         if value is not None:
             value = textwrap.dedent(value)
+            value = strip_decorators(value)
         return super().set(value)
 
     def __str__(self):

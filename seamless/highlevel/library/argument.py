@@ -5,11 +5,13 @@ import textwrap
 from seamless.highlevel.DeepCell import DeepCell
 
 def _get_value(name, value):
+    from ...util import strip_decorators
     if callable(value):
         value = inspect.getsource(value)
         if value is None:
             raise Exception("Cannot obtain source code for '{}'".format(name))
         value = textwrap.dedent(value)
+        value = strip_decorators(value)
     return RichValue(value).value
 
 def get_argument_value(name, value):
