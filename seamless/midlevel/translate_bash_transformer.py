@@ -209,6 +209,14 @@ def translate_bash_transformer(
     namespace[node["path"] + ("code",), "target"] = ctx.code, node
     namespace[node["path"] + ("code",), "source"] = ctx.code, node
 
+    meta = deepcopy(node.get("meta", {}))
+    meta["transformer_type"] = "bash"
+    ctx.tf.meta = meta
+    if has_meta_connection:
+        ctx.meta = cell("plain")
+        ctx.meta.connect(ctx.tf.META)
+        namespace[node["path"] + ("meta",), "target"] = ctx.meta, node
+
     pin_cells = {}
     for pin in list(node_pins.keys()) + list(deep_pins.keys()):        
         hash_pattern = None
@@ -246,14 +254,6 @@ def translate_bash_transformer(
         target = ctx.tf.get_pin(pinname)
         pin_cell.connect(target)
         namespace[path, "target"] = pin_cell, node
-
-    meta = deepcopy(node.get("meta", {}))
-    meta["transformer_type"] = "bash"
-    ctx.tf.meta = meta
-    if has_meta_connection:
-        ctx.meta = cell("plain")
-        ctx.meta.connect(ctx.tf.META)
-        namespace[node["path"] + ("meta",), "target"] = ctx.meta, node    
 
     if result_celltype == "structured":
         result, result_ctx = build_structured_cell(

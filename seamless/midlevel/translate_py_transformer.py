@@ -305,6 +305,16 @@ def translate_py_transformer(
     namespace[node["path"] + ("code",), "target"] = ctx.code, node
     namespace[node["path"] + ("code",), "source"] = ctx.code, node
 
+    if has_meta_connection:
+        ctx.meta = cell("plain")
+        ctx.meta.connect(ctx.tf.META)
+        namespace[node["path"] + ("meta",), "target"] = ctx.meta, node
+    else:
+        meta = node.get("meta")
+        if meta is not None:
+            print("SETMETA", meta)
+            ctx.tf.meta = deepcopy(meta)
+
     for pin in list(node_pins.keys()):
         target = ctx.tf.get_pin(pin)
         pin_cell = pin_cells[pin]
@@ -315,15 +325,6 @@ def translate_py_transformer(
         target = ctx.tf.get_pin(pin)
         pin_cell = pin_cells[pin]
         pin_cell.connect(target)
-
-    if has_meta_connection:
-        ctx.meta = cell("plain")
-        ctx.meta.connect(ctx.tf.META)
-        namespace[node["path"] + ("meta",), "target"] = ctx.meta, node    
-    else:
-        meta = node.get("meta")
-        if meta is not None:
-            ctx.tf.meta = deepcopy(meta)
 
     if result_celltype == "structured":
         result, result_ctx = build_structured_cell(

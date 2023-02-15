@@ -145,6 +145,14 @@ def translate_bashdocker_transformer(
     namespace[node["path"] + ("code",), "target"] = ctx.code, node
     namespace[node["path"] + ("code",), "source"] = ctx.code, node
 
+    meta = deepcopy(node.get("meta", {}))
+    meta["transformer_type"] = "bashdocker"
+    ctx.tf.meta = meta
+    if has_meta_connection:
+        ctx.meta = cell("plain")
+        ctx.meta.connect(ctx.tf.META)
+        namespace[node["path"] + ("meta",), "target"] = ctx.meta, node
+
     for pin in list(node_pins.keys()):
         target = ctx.tf.get_pin(pin)
         intermediate_cell = pin_cells[pin]
@@ -158,14 +166,6 @@ def translate_bashdocker_transformer(
         target = ctx.tf.get_pin(pinname)
         pin_cell.connect(target)
         namespace[path, "target"] = pin_cell, node
-
-    meta = deepcopy(node.get("meta", {}))
-    meta["transformer_type"] = "bashdocker"
-    ctx.tf.meta = meta
-    if has_meta_connection:
-        ctx.meta = cell("plain")
-        ctx.meta.connect(ctx.tf.META)
-        namespace[node["path"] + ("meta",), "target"] = ctx.meta, node    
 
     result, result_ctx = build_structured_cell(
         ctx, result_name, [()],

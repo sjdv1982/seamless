@@ -186,6 +186,15 @@ def translate_compiled_transformer(
     _init_from_graph(ctf, sctx)
     ctf.integrator.debug_.cell().set(False)
 
+    if has_meta_connection:
+        ctx.meta = cell("plain")
+        ctx.meta.connect(ctf.executor.META)
+        namespace[node["path"] + ("meta",), "target"] = ctx.meta, node
+    else:
+        meta = node.get("meta")
+        if meta is not None:
+            ctf.executor.meta = meta
+
     ctx.code = cell("text")
     ctx.code.set_file_extension(node["file_extension"])
     if "code" in mount:
@@ -210,17 +219,6 @@ def translate_compiled_transformer(
         ctx.main_module.inchannels[("headers",)]
     )
     namespace[node["path"] + ("_main_module", "headers"), "target"] = headers_cell, node        
-
-
-    if has_meta_connection:
-        ctx.meta = cell("plain")
-        ctx.meta.connect(ctf.executor.META)
-        namespace[node["path"] + ("meta",), "target"] = ctx.meta, node    
-    else:
-        meta = node.get("meta")
-        if meta is not None:
-            ctf.executor.meta = meta
-
 
     result, result_ctx = build_structured_cell(
         ctx, result_name, [()],
