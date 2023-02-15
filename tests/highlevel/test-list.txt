@@ -111,6 +111,7 @@ library-in-library.py
 library-schema.py
 imperative.py
 imperative-database.py: run with Seamless database, preferably in a clean dir
+imperative-communion.py: run with jobless and a Seamless database, preferably in a clean dir
 map-list.py
 channel.py
 environment3.py
@@ -235,10 +236,11 @@ imperative-async.py: open "jupyter console | tee test-outputs/imperative-async.o
   then run "%load imperative-async.py"
 imperative-database-async.py: open "jupyter console | tee test-outputs/imperative-database-async.out", 
   then run "%load imperative-database-async.py"
+  run with Seamless database, preferably in a clean dir
 imperative-communion-async.py: open "jupyter console | tee test-outputs/imperative-communion-async.out", 
   then run "%load imperative-communion-async.py"
-  NOTE: does not work under ipython, only under Jupyter
-
+  run with jobless and a Seamless database, preferably in a clean dir
+  
 compute-ctrl-c.py: open with ipython, type "ctx.compute()" and press ctrl+c
 delay-direct-print-file: open with ipython, monitor /tmp/direct-print.out, change ctx.tf1.a and ctx.tf1.delay
 debugmode-py-light.py

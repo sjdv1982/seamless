@@ -7,7 +7,7 @@ Traceback (most recent call last):
     result = func2(a=a,b=b)
   File "Seamless transformer: .tf.tf", line 9, in func2
     return func(a, b) + func(b, a)
-  File "/seamless/seamless/imperative/__init__.py", line 197, in __call__
+  File "/seamless/seamless/imperative/__init__.py", line 212, in __call__
     raise RuntimeError("Running @transformer inside a transformation requires a Seamless database")
 RuntimeError: Running @transformer inside a transformation requires a Seamless database
 *************************************************
