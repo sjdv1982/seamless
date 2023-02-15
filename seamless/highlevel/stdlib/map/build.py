@@ -4,6 +4,7 @@ import copy
 
 def bootstrap(module):
     import inspect
+    from ....util import strip_decorators
     result = {}
     for objname, obj in sorted(module.__dict__.items()):
         if objname.startswith("__"):
@@ -17,12 +18,14 @@ def bootstrap(module):
         elif inspect.isfunction(obj):
             code = inspect.getsource(obj)
             code = textwrap.dedent(code)
+            code = strip_decorators(code)
             result[objname] = code
         else:
             continue
     return result
 
 def build_codeblock(module):
+    from ....util import strip_decorators
     result = ""
     for objname, obj in sorted(module.__dict__.items()):
         if objname.startswith("__"):
@@ -38,6 +41,7 @@ def build_codeblock(module):
         elif inspect.isfunction(obj):
             code = inspect.getsource(obj)
             code = textwrap.dedent(code)
+            code = strip_decorators(code)
             result += "\n" + code
         else:
             continue

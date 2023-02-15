@@ -111,6 +111,7 @@ class Library:
         self._constructor_schema = constructor_schema
 
     def __setattr__(self, attr, value):
+        from ...util import strip_decorators
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
         ok = False
@@ -123,6 +124,7 @@ class Library:
             if inspect.isfunction(constructor):
                 code = inspect.getsource(constructor)
                 code = textwrap.dedent(code)
+                code = strip_decorators(code)
                 constructor = code
             self._constructor = constructor
             ok = True
