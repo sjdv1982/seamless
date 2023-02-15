@@ -312,7 +312,6 @@ def translate_py_transformer(
     else:
         meta = node.get("meta")
         if meta is not None:
-            print("SETMETA", meta)
             ctx.tf.meta = deepcopy(meta)
 
     for pin in list(node_pins.keys()):
