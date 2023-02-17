@@ -29,7 +29,7 @@ class Wrapper:
 
 import numpy as np
 
-if np.dtype(np.object).itemsize != 8:
+if np.dtype(object).itemsize != 8:
     raise ImportError("Seamless requires a 64-bit system")
 
 ipython_instance = None

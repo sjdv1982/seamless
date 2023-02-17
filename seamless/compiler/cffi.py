@@ -1,13 +1,12 @@
-from cffi import FFI
 import os, sys, io, tempfile
-from cffi.ffiplatform import _hack_at_distutils
-from cffi.recompiler import Recompiler
-
+try:
+    from cffi import FFI
+    from cffi.ffiplatform import _hack_at_distutils
+    from cffi.recompiler import Recompiler
+except ImportError:
+    FFI = None
+    Recompiler = None
 import distutils
-from distutils.core import Extension
-from distutils.core import Distribution
-from numpy.distutils.core import Extension as NumpyExtension
-from numpy.distutils.core import NumpyDistribution, numpy_cmdclass
 
 import json
 import importlib
@@ -18,6 +17,8 @@ from .locks import locks, locklock
 
 def cffi(module_name, c_header):
   """Generates CFFI C source for given C header"""
+  if FFI is None or Recompiler is None:
+    raise ImportError("cffi")
   ffibuilder = FFI()
   # Use the header twice:-
   ffibuilder.cdef(c_header) # once for the declaration of exported code...

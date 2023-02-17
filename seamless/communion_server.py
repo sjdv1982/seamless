@@ -373,6 +373,7 @@ class CommunionServer:
             await asyncio.sleep(0.1)
 
     def start(self):
+        import websockets
         from seamless import running_in_jupyter
         if running_in_jupyter:
             raise RuntimeError("'communion_server.start()' cannot be called from within Jupyter. Use 'await communion_server.start_async()' instead")
