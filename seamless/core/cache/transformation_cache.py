@@ -458,7 +458,10 @@ class TransformationCache:
               time.time() - job.start > TF_ALIVE_THRESHOLD:
                 delay = TF_KEEP_ALIVE_MAX
             tempref = functools.partial(self.destroy_transformation, transformation, dummy)
-            temprefmanager.add_ref(tempref, delay, on_shutdown=True)
+            if dummy:
+                temprefmanager.add_ref(tempref, delay, on_shutdown=True, group="imperative")
+            else:
+                temprefmanager.add_ref(tempref, delay, on_shutdown=True)
 
     def destroy_transformation(self, transformation, dummy):
         tf_buffer = tf_get_buffer(transformation)

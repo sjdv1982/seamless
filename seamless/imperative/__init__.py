@@ -13,6 +13,7 @@ from ..core.protocol.deserialize import deserialize_sync as deserialize, deseria
 from ..core.protocol.get_buffer import get_buffer as _get_buffer
 from ..core.lambdacode import lambdacode
 from ..core.cache.transformation_cache import transformation_cache, tf_get_buffer, incref_transformation, syntactic_is_semantic, DummyTransformer
+from ..core.cache.tempref import temprefmanager
 from .. import run_transformation, run_transformation_async
 
 _sem_code_cache = {}
@@ -127,6 +128,7 @@ def run_transformation_dict(transformation_dict):
     finally:
         if increfed and increfed in transformation_cache.transformations_to_transformers.get(transformation, []):            
             transformation_cache.decref_transformation(transformation_dict, increfed)
+        temprefmanager.purge_group('imperative')
 
     celltype = transformation_dict["__output__"][1]
     result_buffer = get_buffer(result_checksum) # does this raise CacheMissError?
@@ -146,6 +148,7 @@ async def run_transformation_dict_async(transformation_dict):
     finally:
         if increfed and increfed in transformation_cache.transformations_to_transformers.get(transformation, []):            
             transformation_cache.decref_transformation(transformation_dict, increfed)
+        temprefmanager.purge_group('imperative')
 
 def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, meta, *args, **kwargs):
     # TODO: support *args (makefun)
