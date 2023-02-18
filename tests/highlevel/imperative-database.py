@@ -42,6 +42,7 @@ print(result)
 
 ##################################################
 
+@transformer
 def func2(a, b):
     @transformer
     def func(a, b):
@@ -51,14 +52,8 @@ def func2(a, b):
     
     return func(a, b) + func(b, a)
 
-ctx.tf.code = func2
-ctx.compute()
-print(ctx.tf.logs)
-print(ctx.tf.status)
 
-
-# transformer within transformer within transformer...
-
+@transformer
 def func3(a, b):
 
     @transformer
@@ -71,6 +66,20 @@ def func3(a, b):
         return func(a,b)
 
     return func2(a, b) + func2(b, a)
+
+
+result = func2(86, 2) 
+print(result)
+
+result = func3(6, 13) 
+print(result)
+
+ctx.tf.code = func2
+ctx.compute()
+print(ctx.tf.logs)
+print(ctx.tf.status)
+
+# transformer within transformer within transformer...
 
 ctx.tf.code = func3
 ctx.compute()

@@ -53,6 +53,7 @@ ctx.tf.code = func2
 await ctx.computation()
 print(ctx.tf.logs)
 print(ctx.tf.status)
+print(ctx.tf.result.value)
 
 # transformer within transformer within transformer...
 
@@ -73,9 +74,11 @@ ctx.tf.code = func3
 await ctx.computation()
 print(ctx.tf.logs)
 print(ctx.tf.status)
+print(ctx.tf.result.value)
 
 ctx.tf.a = 33
 ctx.tf.b = 33
 await ctx.computation()
 print(ctx.tf.logs)
 print(ctx.tf.status)
+print(ctx.tf.result.value)

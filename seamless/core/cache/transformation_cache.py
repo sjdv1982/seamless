@@ -357,9 +357,9 @@ class TransformationCache:
         tf_checksum = await calculate_checksum(tf_buffer)
         #print("INCREF", tf_checksum.hex(), transformer)
 
-        if tf_checksum not in self.transformations:            
+        if tf_checksum not in self.transformations:
             self.transformations_to_transformers[tf_checksum] = []
-            self.transformations[tf_checksum] = transformation            
+            self.transformations[tf_checksum] = transformation
             if tf_checksum in self.transformation_results:
                 result_checksum, prelim = self.transformation_results[tf_checksum]
                 buffer_cache.incref(result_checksum, False)
@@ -427,7 +427,6 @@ class TransformationCache:
         return tf_checksum, tf_exc, result_checksum, prelim
 
     def decref_transformation(self, transformation, transformer):
-        ###import traceback; traceback.print_stack()
         assert isinstance(transformer, (Transformer, RemoteTransformer, DummyTransformer))
         if isinstance(transformer, RemoteTransformer):
             try:
@@ -438,7 +437,7 @@ class TransformationCache:
             self.remote_transformers.pop(key, None)
         tf_buffer = tf_get_buffer(transformation)
         tf_checksum = calculate_checksum_sync(tf_buffer)
-        #print("DECREF", tf_checksum.hex(), transformer)
+        #print("DECREF", tf_checksum.hex(), transformer, self.transformations_to_transformers.get(tf_checksum))
         assert tf_checksum in self.transformations
         if not isinstance(transformer, DummyTransformer):
             dummy = False
@@ -447,7 +446,11 @@ class TransformationCache:
             transformers.remove(transformer)
         else:
             dummy = True
-            transformers = []
+            try:
+                transformers = self.transformations_to_transformers[tf_checksum]
+                transformers.remove(transformer)
+            except (KeyError, ValueError):
+                pass
         if not len(transformers):
             delay = TF_KEEP_ALIVE_MIN
             job = self.transformation_jobs.get(tf_checksum)

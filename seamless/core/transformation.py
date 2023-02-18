@@ -616,6 +616,7 @@ class TransformationJob:
             assert multiprocessing.get_start_method(allow_none=False) == "fork"
 
             queue = Queue()
+            rqueue = Queue()
 
             args = (
                 self.codename, code,
@@ -651,6 +652,7 @@ class TransformationJob:
                 # Looking at the source, daemon = False should have no impact,
                 #  but we must make sure to kill all transformer children
                 imperative._set_parent_process_queue(queue)
+                imperative._set_parent_process_response_queue(rqueue)
                 self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=False)
                 self.executor.start()
             finally:
@@ -703,6 +705,7 @@ class TransformationJob:
                                 raise Exception("Unknown return message '{}'".format(msg))
                         elif status == 6:
                             # run_transformation
+                            # TODO: possibility to re-acquire lock
                             tf_checksum, metalike, syntactic_cache = msg
                             for celltype, subcelltype, buf in syntactic_cache:
                                 # TODO: create a transformation_cache method and invoke it, common with other code
@@ -725,6 +728,13 @@ class TransformationJob:
                             fut = asyncio.ensure_future(
                                 run_transformation_async(tf_checksum, metalike)
                             )
+                            def fut_done(fut):
+                                try:
+                                    checksum = fut.result()
+                                except Exception:
+                                    checksum = None
+                                rqueue.put(checksum)
+                            fut.add_done_callback(fut_done)
                             run_transformation_futures.append(fut)
                         else:
                             raise Exception("Unknown return status {}".format(status))
