@@ -124,6 +124,7 @@ def run_transformation_dict(transformation_dict):
                     time.sleep(0.5)
                 '''
         else:
+            #print("TF!", transformation.hex())
             result_checksum = run_transformation(transformation)
     finally:
         if increfed and increfed in transformation_cache.transformations_to_transformers.get(transformation, []):            
@@ -150,11 +151,19 @@ async def run_transformation_dict_async(transformation_dict):
             transformation_cache.decref_transformation(transformation_dict, increfed)
         temprefmanager.purge_group('imperative')
 
-def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, meta, *args, **kwargs):
+def _parse_arguments(signature, args, kwargs):
+    if signature is None:
+        assert not args
+        arguments = kwargs
+    else:
+        arguments = signature.bind(*args, **kwargs).arguments
+    return arguments
+
+def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, meta, args, kwargs):
     # TODO: support *args (makefun)
     # TODO: celltype support for args / return
     from .. import database_sink
-    arguments = signature.bind(*args, **kwargs).arguments
+    arguments = _parse_arguments(signature, args, kwargs)
     transformation_dict = {
         "__output__": ("result", "mixed", None), 
         "__language__": "python"
@@ -179,7 +188,7 @@ def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, 
     database_sink.sem2syn(semkey, [code_checksum])
     return run_transformation_dict(transformation_dict)
 
-async def _run_transformer_async(semantic_code_checksum,  codebuf, code_checksum, signature, meta, *args, **kwargs):
+async def _run_transformer_async(semantic_code_checksum,  codebuf, code_checksum, signature, meta, args, kwargs):
     # TODO: support *args (makefun)
     # TODO: celltype support for args / return
     from .. import database_sink
@@ -208,17 +217,21 @@ async def _run_transformer_async(semantic_code_checksum,  codebuf, code_checksum
     database_sink.sem2syn(semkey, [code_checksum])
     return await run_transformation_dict_async(transformation_dict)
 
+def _get_semantic(code, code_checksum):
+    tree = ast.parse(code, filename="<None>")
+    semcode = ast.dump(tree).encode()
+    semantic_code_checksum = calculate_checksum(semcode, hex=True)
+    _sem_code_cache[semantic_code_checksum] = semcode
+    key = (bytes.fromhex(semantic_code_checksum), "python", "transformer")
+    transformation_cache.semantic_to_syntactic_checksums[key] = [code_checksum]
+    return semantic_code_checksum
+
 class Transformer:
     def __init__(self, func, is_async, **kwargs):
         code = getsource(func)
         codebuf = serialize(code, "python")
         code_checksum = calculate_checksum(codebuf)
-        tree = ast.parse(code, filename="<None>")
-        semcode = ast.dump(tree).encode()
-        semantic_code_checksum = calculate_checksum(semcode, hex=True)
-        _sem_code_cache[semantic_code_checksum] = semcode
-        key = (bytes.fromhex(semantic_code_checksum), "python", "transformer")
-        transformation_cache.semantic_to_syntactic_checksums[key] = [code_checksum]
+        semantic_code_checksum = _get_semantic(code, code_checksum)
         signature = inspect.signature(func)
 
         self.semantic_code_checksum = semantic_code_checksum
@@ -249,8 +262,8 @@ class Transformer:
             self.code_checksum,
             self.signature,
             self.meta,
-            *args,
-            **kwargs
+            args,
+            kwargs
         )
 
     @property
