@@ -22,7 +22,7 @@ _sem_code_cache = {}
 
 _parent_process_queue = None
 _parent_process_response_queue = None
-
+_has_lock = True
 
 def _set_parent_process_queue(parent_process_queue):
     global _parent_process_queue
@@ -74,7 +74,7 @@ def _register_transformation_dict(transformation_checksum, transformation_buffer
     transformation_cache.transformations[transformation_checksum] = transformation_dict
     return result
 
-def run_transformation_dict(transformation_dict, blocking=True):
+def run_transformation_dict(transformation_dict, result_callback=None):
     from .. import database_sink
     # TODO: add type annotation and all kinds of validation...
     transformation_buffer = tf_get_buffer(transformation_dict)
@@ -114,14 +114,12 @@ def run_transformation_dict(transformation_dict, blocking=True):
     else:
         metalike, syntactic_cache = None, []
     
-    if blocking:    
-        assert not len(_queued_transformations)        
     output_celltype = transformation_dict["__output__"][1]
-    _queued_transformations.append((transformation.hex(), transformation_dict, metalike, syntactic_cache, increfed, output_celltype))
-    if blocking:
+    _queued_transformations.append((result_callback, transformation.hex(), transformation_dict, metalike, syntactic_cache, increfed, output_celltype))
+    if result_callback is None:
         return wait()[0]
     else:
-        raise NotImplementedError
+        return
 
 async def run_transformation_dict_async(transformation_dict):
     # TODO: add type annotation and all kinds of validation...
@@ -148,8 +146,7 @@ def _parse_arguments(signature, args, kwargs):
         arguments = signature.bind(*args, **kwargs).arguments
     return arguments
 
-def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, meta, args, kwargs):
-    # TODO: support *args (makefun)
+def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, meta, celltypes, result_callback, args, kwargs):
     # TODO: celltype support for args / return
     from .. import database_sink
     arguments = _parse_arguments(signature, args, kwargs)
@@ -175,12 +172,11 @@ def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, 
     database_sink.set_buffer(code_checksum, codebuf, False)
     semkey = (semantic_code_checksum2, "python", "transformer")
     database_sink.sem2syn(semkey, [code_checksum])
-    return run_transformation_dict(transformation_dict)
+    return run_transformation_dict(transformation_dict, result_callback)
 
-async def _run_transformer_async(semantic_code_checksum,  codebuf, code_checksum, signature, meta, args, kwargs):
-    # TODO: support *args (makefun)
-    # TODO: celltype support for args / return
+async def _run_transformer_async(semantic_code_checksum,  codebuf, code_checksum, signature, meta, celltypes, result_callback, args, kwargs):
     from .. import database_sink
+    assert result_callback is None  # meaningless for async
     arguments = signature.bind(*args, **kwargs).arguments
     transformation_dict = {
         "__output__": ("result", "mixed", None), 
@@ -215,6 +211,19 @@ def _get_semantic(code, code_checksum):
     transformation_cache.semantic_to_syntactic_checksums[key] = [code_checksum]
     return semantic_code_checksum
 
+class Transformation:
+    def __init__(self):
+        self._value = None
+
+    def _set_value(self, value):
+        self._value = value
+
+    @property
+    def value(self):
+        if self._value is None:
+            wait()
+        return self._value
+
 class Transformer:
     def __init__(self, func, is_async, **kwargs):
         code = getsource(func)
@@ -228,6 +237,8 @@ class Transformer:
         self.codebuf = codebuf
         self.code_checksum = code_checksum
         self.is_async = is_async
+        self._celltypes = {}
+        self._blocking = True
         if "meta" in kwargs:
             self.meta = deepcopy(kwargs["meta"])
         else:
@@ -241,19 +252,30 @@ class Transformer:
         self.signature.bind(*args, **kwargs)
         if multiprocessing.current_process().name != "MainProcess":
             if self.is_async:
-                raise NotImplementedError
+                raise NotImplementedError  # no plans to implement this...
             if not database_sink.active:
                 raise RuntimeError("Running @transformer inside a transformation requires a Seamless database")
         runner = _run_transformer_async if self.is_async else _run_transformer
-        return runner(
+        if not self._blocking:
+            tr = Transformation()
+            result_callback = tr._set_value
+        else:
+            result_callback = None
+        result = runner(
             self.semantic_code_checksum,
             self.codebuf,
             self.code_checksum,
             self.signature,
             self.meta,
+            self._celltypes,
+            result_callback,
             args,
             kwargs
         )
+        if self._blocking:
+            return result
+        else:
+            return tr
 
     @property
     def local(self):
@@ -263,6 +285,18 @@ class Transformer:
     def local(self, value:bool):
         self.meta["local"] = value
 
+    @property
+    def blocking(self):
+        return self._blocking
+
+    @blocking.setter
+    def blocking(self, value:bool):
+        if not isinstance(value, bool):
+            raise TypeError(value)
+        if (not value) and self.is_async:
+            raise ValueError("non-blocking is meaningless for a coroutine")
+        self._blocking = value
+
 def transformer(func, **kwargs):
     return Transformer(func, is_async=False, **kwargs)
 
@@ -271,13 +305,22 @@ def transformer_async(func, **kwargs):
 
 def wait():
     global _queued_transformations
+    global _has_lock
+    if not _queued_transformations:
+        return None
     results = []
     queued_transformations = _queued_transformations.copy()
     _queued_transformations.clear()
-    for transformation, transformation_dict, metalike, syntactic_cache, increfed, output_celltype in queued_transformations:
+    # NOTE: for future optimization, one could run transformations in batch mode.
+    #   one batch for the parent process queue, and one batch for local run_transformation
+    forked = (multiprocessing.current_process().name != "MainProcess")
+    if forked and _has_lock:        
+        _parent_process_queue.put((5, "release lock"))
+        _has_lock = False
+    for callback, transformation, transformation_dict, metalike, syntactic_cache, increfed, output_celltype in queued_transformations:
         try:
-            if multiprocessing.current_process().name != "MainProcess":
-                _parent_process_queue.put((6, (transformation, metalike, syntactic_cache)))
+            if forked:
+                _parent_process_queue.put((7, (transformation, metalike, syntactic_cache)))
                 result_checksum = _parent_process_response_queue.get()
                 # TODO: acquire lock message (analogous to release lock)
             else:
@@ -289,9 +332,23 @@ def wait():
             if increfed and bytes.fromhex(transformation) in transformation_cache.transformations:
                 transformation_cache.decref_transformation(transformation_dict, increfed)
             temprefmanager.purge_group('imperative')
+            if forked and not _has_lock:
+                _parent_process_queue.put((6, "acquire lock"))
+                _has_lock = True
 
         result_buffer = get_buffer(result_checksum) # does this raise CacheMissError?
         result = deserialize(result_buffer, result_checksum, output_celltype, copy=True)
-
-    results.append(result)
+        if callback is not None:
+            callback(result)
+        else:
+            results.append(result)
+    if not results:
+        return None
     return results
+
+def _cleanup():
+    for _, transformation, transformation_dict, _, _, increfed, _ in _queued_transformations:
+        # For some reason, the logic here is different than for the async version
+        # (see run_transformation_dict_async)
+        if increfed and bytes.fromhex(transformation) in transformation_cache.transformations:
+            transformation_cache.decref_transformation(transformation_dict, increfed)

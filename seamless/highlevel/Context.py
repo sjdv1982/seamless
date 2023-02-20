@@ -153,6 +153,7 @@ def _get_status(
 
 
 def _destroy_contexts():
+    _cleanup()
     for context in _contexts:
         try:
             context._destroy()
@@ -1593,3 +1594,4 @@ from .SubContext import SubContext
 from ..core.manager import Manager
 from .SeamlessTraitlet import SeamlessTraitlet
 from .library import Library
+from ..imperative import _cleanup

@@ -183,7 +183,7 @@ def _execute(name, code,
       result_queue
     ):        
         from .transformation import SeamlessTransformationError, SeamlessStreamTransformationError
-        from ..imperative import transformer
+        from ..imperative import transformer, wait
         assert identifier is not None
         namespace["return_preliminary"] = functools.partial(
             return_preliminary, result_queue, output_celltype
@@ -192,6 +192,7 @@ def _execute(name, code,
             set_progress, result_queue
         )
         namespace["transformer"] = transformer
+        namespace["wait"] = wait
         try:
             namespace.pop(output_name, None)
             for pinname, value in deep_structures_to_unpack.items():

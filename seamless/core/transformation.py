@@ -704,6 +704,12 @@ class TransformationJob:
                             else:
                                 raise Exception("Unknown return message '{}'".format(msg))
                         elif status == 6:
+                            if msg == "acquire lock":
+                                assert lock is None
+                                lock = await acquire_lock(self.checksum)
+                            else:
+                                raise Exception("Unknown return message '{}'".format(msg))
+                        elif status == 7:
                             # run_transformation
                             # TODO: possibility to re-acquire lock
                             tf_checksum, metalike, syntactic_cache = msg
