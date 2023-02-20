@@ -135,6 +135,7 @@ async def run_transformation_dict_async(transformation_dict):
         result_buffer = get_buffer(result_checksum) # does this raise CacheMissError?
         return await deserialize_async(result_buffer, result_checksum, celltype, copy=True)
     finally:
+        # For some reason, the logic here is different than for the sync version (see wait())
         if increfed and increfed in transformation_cache.transformations_to_transformers.get(transformation, []):            
             transformation_cache.decref_transformation(transformation_dict, increfed)
         temprefmanager.purge_group('imperative')
@@ -282,8 +283,10 @@ def wait():
             else:
                 result_checksum = run_transformation(transformation)
         finally:
-            print("BOO", increfed, increfed in transformation_cache.transformations_to_transformers.get(transformation, []))
-            if increfed: #and increfed in transformation_cache.transformations_to_transformers.get(transformation, []):
+            # For some reason, the logic here is different than for the async version
+            # (see run_transformation_dict_async)
+            temprefmanager.purge_group('imperative')
+            if increfed and bytes.fromhex(transformation) in transformation_cache.transformations:
                 transformation_cache.decref_transformation(transformation_dict, increfed)
             temprefmanager.purge_group('imperative')
 
