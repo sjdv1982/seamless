@@ -117,7 +117,7 @@ def run_transformation_dict(transformation_dict, result_callback=None):
     output_celltype = transformation_dict["__output__"][1]
     _queued_transformations.append((result_callback, transformation.hex(), transformation_dict, metalike, syntactic_cache, increfed, output_celltype))
     if result_callback is None:
-        return wait()[0]
+        return _wait()[0]
     else:
         return
 
@@ -133,7 +133,7 @@ async def run_transformation_dict_async(transformation_dict):
         result_buffer = get_buffer(result_checksum) # does this raise CacheMissError?
         return await deserialize_async(result_buffer, result_checksum, celltype, copy=True)
     finally:
-        # For some reason, the logic here is different than for the sync version (see wait())
+        # For some reason, the logic here is different than for the sync version (see _wait())
         if increfed and increfed in transformation_cache.transformations_to_transformers.get(transformation, []):            
             transformation_cache.decref_transformation(transformation_dict, increfed)
         temprefmanager.purge_group('imperative')
@@ -214,15 +214,23 @@ def _get_semantic(code, code_checksum):
 class Transformation:
     def __init__(self):
         self._value = None
+        self._logs = None
 
-    def _set_value(self, value):
+    def _set(self, value, logs):
         self._value = value
+        self._logs = logs
 
     @property
     def value(self):
         if self._value is None:
-            wait()
+            _wait()
         return self._value
+        
+    @property
+    def logs(self):
+        if self._value is None:
+            _wait()
+        return self._logs
 
 class Transformer:
     def __init__(self, func, is_async, **kwargs):
@@ -258,7 +266,7 @@ class Transformer:
         runner = _run_transformer_async if self.is_async else _run_transformer
         if not self._blocking:
             tr = Transformation()
-            result_callback = tr._set_value
+            result_callback = tr._set
         else:
             result_callback = None
         result = runner(
@@ -303,7 +311,7 @@ def transformer(func, **kwargs):
 def transformer_async(func, **kwargs):
     return Transformer(func, is_async=True, **kwargs)
 
-def wait():
+def _wait():
     global _queued_transformations
     global _has_lock
     if not _queued_transformations:
@@ -311,6 +319,7 @@ def wait():
     results = []
     queued_transformations = _queued_transformations.copy()
     _queued_transformations.clear()
+    had_lock = _has_lock
     # NOTE: for future optimization, one could run transformations in batch mode.
     #   one batch for the parent process queue, and one batch for local run_transformation
     forked = (multiprocessing.current_process().name != "MainProcess")
@@ -321,10 +330,13 @@ def wait():
         try:
             if forked:
                 _parent_process_queue.put((7, (transformation, metalike, syntactic_cache)))
-                result_checksum = _parent_process_response_queue.get()
-                # TODO: acquire lock message (analogous to release lock)
+                result_checksum, logs = _parent_process_response_queue.get()
             else:
                 result_checksum = run_transformation(transformation)
+                logs = None
+                if result_checksum is not None:
+                    tf_checksum = bytes.fromhex(transformation)
+                    logs = transformation_cache.transformation_logs.get(tf_checksum)
         finally:
             # For some reason, the logic here is different than for the async version
             # (see run_transformation_dict_async)
@@ -332,23 +344,27 @@ def wait():
             if increfed and bytes.fromhex(transformation) in transformation_cache.transformations:
                 transformation_cache.decref_transformation(transformation_dict, increfed)
             temprefmanager.purge_group('imperative')
-            if forked and not _has_lock:
+            if forked and had_lock and not _has_lock:
                 _parent_process_queue.put((6, "acquire lock"))
                 _has_lock = True
 
         result_buffer = get_buffer(result_checksum) # does this raise CacheMissError?
         result = deserialize(result_buffer, result_checksum, output_celltype, copy=True)
         if callback is not None:
-            callback(result)
+            callback(result, logs)
         else:
+            # in blocking mode, results are discarded
+            # TODO? we could extract stdout/stderr from them?
             results.append(result)
     if not results:
         return None
     return results
 
 def _cleanup():
+    """is registered atexit by seamless.core, because it must run first"""
     for _, transformation, transformation_dict, _, _, increfed, _ in _queued_transformations:
         # For some reason, the logic here is different than for the async version
         # (see run_transformation_dict_async)
         if increfed and bytes.fromhex(transformation) in transformation_cache.transformations:
             transformation_cache.decref_transformation(transformation_dict, increfed)
+

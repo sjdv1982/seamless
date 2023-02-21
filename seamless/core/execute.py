@@ -183,7 +183,7 @@ def _execute(name, code,
       result_queue
     ):        
         from .transformation import SeamlessTransformationError, SeamlessStreamTransformationError
-        from ..imperative import transformer, wait
+        from ..imperative import transformer
         assert identifier is not None
         namespace["return_preliminary"] = functools.partial(
             return_preliminary, result_queue, output_celltype
@@ -192,7 +192,6 @@ def _execute(name, code,
             set_progress, result_queue
         )
         namespace["transformer"] = transformer
-        namespace["wait"] = wait
         try:
             namespace.pop(output_name, None)
             for pinname, value in deep_structures_to_unpack.items():
@@ -237,7 +236,7 @@ def _execute(name, code,
                         input_params = ",".join(["{0}={0}".format(inp) for inp in sorted(list(inputs))])
                         msg = """The transformer code contains a single function "{f}" and {d} other statement(s).
 Did you mean to:
-1. Define the transformer code as a pure function "{f}"?
+1. Define the transformer code as a single function "{f}"?
    In that case, you must put the other statements within "def {f}(...):  ".
 or
 2. Define the transformer code as a code block?

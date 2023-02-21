@@ -737,9 +737,11 @@ class TransformationJob:
                             def fut_done(fut):
                                 try:
                                     checksum = fut.result()
+                                    logs = transformation_cache.transformation_logs.get(bytes.fromhex(tf_checksum))                                    
                                 except Exception:
                                     checksum = None
-                                rqueue.put(checksum)
+                                    logs = None
+                                rqueue.put((checksum, logs))
                             fut.add_done_callback(fut_done)
                             run_transformation_futures.append(fut)
                         else:

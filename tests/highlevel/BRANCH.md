@@ -13,6 +13,5 @@ Probably nothing left to do, except API documentation/rewrite
 
 Non-blocking evaluation works
 Only to do: 
-- .logs in addition to .value
 - celltypes
 ******************
