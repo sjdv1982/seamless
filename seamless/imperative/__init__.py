@@ -232,6 +232,20 @@ class Transformation:
             _wait()
         return self._logs
 
+class CelltypesWrapper:
+    def __init__(self, celltypes):
+        self._celltypes = celltypes
+    def __getattr__(self, attr):
+        return self._celltypes[attr]
+    def __setattr__(self, attr, value):
+        from ..core.cell import celltypes
+        pin_celltypes = list(celltypes.keys()) + ["silk"]
+        if value not in pin_celltypes:
+            raise TypeError(value, pin_celltypes)
+        self._celltypes[attr] = value
+    def __str__(self):
+        return str(self._celltypes)
+
 class Transformer:
     def __init__(self, func, is_async, **kwargs):
         code = getsource(func)
@@ -254,6 +268,10 @@ class Transformer:
             self.meta = {"transformer_path": ["tf", "tf"]}
         self.kwargs = kwargs
         functools.update_wrapper(self, func)
+
+    @property
+    def celltypes(self):
+        return CelltypesWrapper(self._celltypes)
 
     def __call__(self, *args, **kwargs):
         from .. import database_sink
