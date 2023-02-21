@@ -344,36 +344,40 @@ def _wait():
     if forked and _has_lock:        
         _parent_process_queue.put((5, "release lock"))
         _has_lock = False
-    for callback, transformation, transformation_dict, metalike, syntactic_cache, increfed, output_celltype in queued_transformations:
-        try:
+    try:
+        for callback, transformation, transformation_dict, metalike, syntactic_cache, increfed, output_celltype in queued_transformations:
             if forked:
                 _parent_process_queue.put((7, (transformation, metalike, syntactic_cache)))
-                result_checksum, logs = _parent_process_response_queue.get()
-            else:
-                result_checksum = run_transformation(transformation)
-                logs = None
-                if result_checksum is not None:
-                    tf_checksum = bytes.fromhex(transformation)
-                    logs = transformation_cache.transformation_logs.get(tf_checksum)
-        finally:
-            # For some reason, the logic here is different than for the async version
-            # (see run_transformation_dict_async)
-            temprefmanager.purge_group('imperative')
-            if increfed and bytes.fromhex(transformation) in transformation_cache.transformations:
-                transformation_cache.decref_transformation(transformation_dict, increfed)
-            temprefmanager.purge_group('imperative')
-            if forked and had_lock and not _has_lock:
-                _parent_process_queue.put((6, "acquire lock"))
-                _has_lock = True
+        for callback, transformation, transformation_dict, metalike, syntactic_cache, increfed, output_celltype in queued_transformations:
+            try:
+                if forked:
+                    result_checksum, logs = _parent_process_response_queue.get()
+                else:
+                    result_checksum = run_transformation(transformation)
+                    logs = None
+                    if result_checksum is not None:
+                        tf_checksum = bytes.fromhex(transformation)
+                        logs = transformation_cache.transformation_logs.get(tf_checksum)
+            finally:
+                # For some reason, the logic here is different than for the async version
+                # (see run_transformation_dict_async)
+                temprefmanager.purge_group('imperative')
+                if increfed and bytes.fromhex(transformation) in transformation_cache.transformations:
+                    transformation_cache.decref_transformation(transformation_dict, increfed)
+                temprefmanager.purge_group('imperative')
 
-        result_buffer = get_buffer(result_checksum) # does this raise CacheMissError?
-        result = deserialize(result_buffer, result_checksum, output_celltype, copy=True)
-        if callback is not None:
-            callback(result, logs)
-        else:
-            # in blocking mode, results are discarded
-            # TODO? we could extract stdout/stderr from them?
-            results.append(result)
+            result_buffer = get_buffer(result_checksum) # does this raise CacheMissError?
+            result = deserialize(result_buffer, result_checksum, output_celltype, copy=True)
+            if callback is not None:
+                callback(result, logs)
+            else:
+                # in blocking mode, results are discarded
+                # TODO? we could extract stdout/stderr from them?
+                results.append(result)
+    finally:
+        if forked and had_lock and not _has_lock:
+            _parent_process_queue.put((6, "acquire lock"))
+            _has_lock = True
     if not results:
         return None
     return results

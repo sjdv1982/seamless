@@ -112,6 +112,7 @@ library-schema.py
 imperative.py
 imperative-database.py: run with Seamless database, preferably in a clean dir
 imperative-nonblocking.py: run with Seamless database, preferably in a clean dir
+imperative-nonblocking-parallel.py: run with Seamless database, preferably in a clean dir
 imperative-communion.py: run with jobless and a Seamless database, preferably in a clean dir
 map-list.py
 channel.py
