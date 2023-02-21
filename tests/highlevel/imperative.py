@@ -1,5 +1,6 @@
 from seamless.highlevel import Context
-import json
+from seamless.core.transformation import SeamlessTransformationError
+import traceback
 ctx = Context()
 def func(a, b):
     import time
@@ -35,6 +36,18 @@ result = func(88, 17) # immediate
 print(result)
 result = func(21, 17) # immediate
 print(result)
+
+print("The following will give an exception:")
+@transformer
+def func0(a, b):
+    print("START")
+    raise Exception # deliberately
+try:
+    func0(0,0)
+except SeamlessTransformationError:
+    traceback.print_exc(1)
+print("/exception")
+print()
 
 def func2(a, b):
     @transformer
