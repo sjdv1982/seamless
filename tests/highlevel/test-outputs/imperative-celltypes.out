@@ -1,0 +1,11 @@
+105 <class 'int'>
+{'a': 'mixed', 'b': 'mixed', 'result': 'mixed'}
+mixed
+mixed
+{'a': 'str', 'b': 'str', 'result': 'mixed'}
+str
+str
+8817 <class 'str'>
+{'a': 'str', 'b': 'str', 'result': 'bytes'}
+bytes
+b'8817' <class 'bytes'>

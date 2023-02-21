@@ -711,7 +711,6 @@ class TransformationJob:
                                 raise Exception("Unknown return message '{}'".format(msg))
                         elif status == 7:
                             # run_transformation
-                            # TODO: possibility to re-acquire lock
                             tf_checksum, metalike, syntactic_cache = msg
                             for celltype, subcelltype, buf in syntactic_cache:
                                 # TODO: create a transformation_cache method and invoke it, common with other code

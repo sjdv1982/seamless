@@ -150,18 +150,19 @@ def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, 
     # TODO: celltype support for args / return
     from .. import database_sink
     arguments = _parse_arguments(signature, args, kwargs)
+    result_celltype = celltypes["result"]
     transformation_dict = {
-        "__output__": ("result", "mixed", None), 
+        "__output__": ("result", result_celltype, None), 
         "__language__": "python"
     }
     if meta:
         transformation_dict["__meta__"] = meta
     transformation_dict["code"] = ("python", "transformer", semantic_code_checksum)
     for argname, arg in arguments.items():
-        buf = serialize(arg, "mixed")
+        buf = serialize(arg, celltypes[argname])
         checksum = calculate_checksum(buf, hex=False)
         cache_buffer(checksum, buf)
-        transformation_dict[argname] = ("mixed", None, checksum.hex())
+        transformation_dict[argname] = (celltypes[argname], None, checksum.hex())
     cache_buffer(code_checksum, codebuf)
     # Code below could be moved, see transformation.py syntactic_cache
     # (same code as _run_transformer_async)
@@ -178,18 +179,19 @@ async def _run_transformer_async(semantic_code_checksum,  codebuf, code_checksum
     from .. import database_sink
     assert result_callback is None  # meaningless for async
     arguments = signature.bind(*args, **kwargs).arguments
+    result_celltype = celltypes["result"]
     transformation_dict = {
-        "__output__": ("result", "mixed", None), 
+        "__output__": ("result", result_celltype, None), 
         "__language__": "python"
     }
     if meta:
         transformation_dict["__meta__"] = meta
     transformation_dict["code"] = ("python", "transformer", semantic_code_checksum)
     for argname, arg in arguments.items():
-        buf = await serialize_async(arg, "mixed")
+        buf = await serialize_async(arg, celltypes[argname])
         checksum = calculate_checksum(buf, hex=False)
         cache_buffer(checksum, buf)
-        transformation_dict[argname] = ("mixed", None, checksum.hex())
+        transformation_dict[argname] = (celltypes[argname], None, checksum.hex())
     cache_buffer(code_checksum, codebuf)
     # Code below could be moved, see transformation.py syntactic_cache
     # (same code as _run_transformer)
@@ -239,6 +241,10 @@ class CelltypesWrapper:
         return self._celltypes[attr]
     def __setattr__(self, attr, value):
         from ..core.cell import celltypes
+        if attr.startswith("_"):
+            return super().__setattr__(attr, value)
+        if attr not in self._celltypes:
+            raise AttributeError(attr)
         pin_celltypes = list(celltypes.keys()) + ["silk"]
         if value not in pin_celltypes:
             raise TypeError(value, pin_celltypes)
@@ -259,7 +265,8 @@ class Transformer:
         self.codebuf = codebuf
         self.code_checksum = code_checksum
         self.is_async = is_async
-        self._celltypes = {}
+        self._celltypes = {k: "mixed" for k in signature.parameters}
+        self._celltypes["result"] = "mixed"
         self._blocking = True
         if "meta" in kwargs:
             self.meta = deepcopy(kwargs["meta"])
