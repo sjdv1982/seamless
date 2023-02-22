@@ -239,18 +239,26 @@ class CelltypesWrapper:
         self._celltypes = celltypes
     def __getattr__(self, attr):
         return self._celltypes[attr]
-    def __setattr__(self, attr, value):
-        from ..core.cell import celltypes
+    def __getitem__(self, key):
+        return self._celltypes[key]
+    def __setattr__(self, attr, value):        
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
-        if attr not in self._celltypes:
-            raise AttributeError(attr)
+        return self.__setitem__(attr, value)
+    def __setitem__(self, key, value):
+        from ..core.cell import celltypes
+        if key not in self._celltypes:
+            raise AttributeError(key)
         pin_celltypes = list(celltypes.keys()) + ["silk"]
         if value not in pin_celltypes:
             raise TypeError(value, pin_celltypes)
-        self._celltypes[attr] = value
+        self._celltypes[key] = value
+    def __dir__(self):
+        return sorted(self._celltypes.keys())
     def __str__(self):
         return str(self._celltypes)
+    def __repr__(self):
+        return str(self)
 
 class Transformer:
     def __init__(self, func, is_async, **kwargs):
