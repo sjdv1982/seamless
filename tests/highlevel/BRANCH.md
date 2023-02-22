@@ -9,9 +9,6 @@ The latter is now supported by injecting the 'transformer' object directly
 
 ******************
 Lots of stuff works now, including top-level @transformer
-Probably nothing left to do, except API documentation/rewrite
+Probably nothing left to do, except API documentation + major refactor
 
-Non-blocking evaluation works
-Only to do: 
-- celltypes
 ******************
