@@ -24,6 +24,7 @@ def as_tuple(v):
 
 def strip_decorators(code):
     lines = code.splitlines()
+    lnr = 0
     for lnr, l in enumerate(lines):
         if not l.startswith("@"):
             break
