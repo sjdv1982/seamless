@@ -6,7 +6,7 @@ dependencies:
   - python=3.10.*
   - pip=23.0.*
   - rpbs::seamless-framework==0.11
-  - rpbs::silk==0.1.9
+  - rpbs::silk==0.1.10
   - conda=23.1.*
   - ipython=8.10.*
   - ipykernel=6.21.*
