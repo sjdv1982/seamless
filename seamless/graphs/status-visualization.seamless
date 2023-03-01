@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.8",
+  "__seamless__": "0.11",
   "connections": [
     {
       "source": [
@@ -234,7 +234,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "buffer": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },

@@ -1129,7 +1129,7 @@ class Transformer(Base, HelpMixin):
         deleter = None
         setter = None
         pull_source = functools.partial(self._pull_source, attr)
-        if attr in htf["pins"]:
+        if attr in htf["pins"] and attr != "pins":
             getter = functools.partial(self._valuegetter, attr)
             pin = getattr(self.pins, attr)
             setter = functools.partial(setattr, pin)

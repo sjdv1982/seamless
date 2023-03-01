@@ -36,9 +36,8 @@ def func(module, pins, input_schema, result_schema, input_name, result_name, kwa
 ctx.executor = func
 ctx.executor.add_special_pin("DIRECT_PRINT", "bool")
 ctx.executor.code = set_resource(executor_file)
-pins = ctx.executor._get_htf()["pins"] ### need to access like this; TODO: implement .self.pins
-pins["module"]["celltype"] =  "plain"
-pins["module"]["subcelltype"] =  "module"
+pins = ctx.executor.pins
+pins["module"]["celltype"] =  "module"
 pins["input_schema"]["celltype"] = "plain"
 pins["result_schema"]["celltype"] = "plain"
 pins["input_name"]["celltype"] = "text"

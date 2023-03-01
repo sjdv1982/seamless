@@ -28,7 +28,10 @@ import os
 
 def set_resource(f):
     caller_frame = inspect.currentframe().f_back
-    filename = inspect.getfile(caller_frame)
+    filename = os.path.realpath(inspect.getfile(caller_frame))
+    currdir = os.path.realpath(os.getcwd())
+    if filename.startswith(currdir):
+        filename = os.path.relpath(filename, currdir)
     dirname = os.path.dirname(filename)
     ff = os.path.join(dirname, f)
     if inspect.getmodule(caller_frame).__name__ == "__main__":

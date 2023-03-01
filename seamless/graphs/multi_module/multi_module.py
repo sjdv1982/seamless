@@ -34,6 +34,7 @@ ctx.pypackage_dirdict_value = ctx.pypackage_dirdict
 ctx.pypackage_dirdict_value.celltype = "plain"
 ctx.pypackage_dirdict_value.mount("pypackage_dirdict.json", mode="w")
 tf.pypackage_dirdict = ctx.pypackage_dirdict
+tf.pins.pypackage_dirdict.celltype = "mixed"
 tf.internal_package_name = "mytestpackage"
 tf.get_pypackage_dependencies = mod
 ctx.pypackage_moduledict = tf
@@ -60,8 +61,7 @@ def func():
 
 ctx.func = func
 ctx.func.testpackage = ctx.testpackage
-ctx.func.testpackage.celltype = "plain"
-ctx.func.testpackage.subcelltype = "module"
+ctx.func.testpackage.celltype = "module"
 ctx.compute()
 
 if ctx.pypackage_to_moduledict.result.value.unsilk is None:

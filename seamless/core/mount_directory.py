@@ -51,7 +51,7 @@ Cell can be None.
                     continue
             else:
                 result[key] = deserialize_raw(buf)
-    result_buf = serialize_sync(result, "plain")
+    result_buf = serialize_sync(result, "mixed")
     result_checksum = calculate_checksum_sync(result_buf)
     assert result_checksum is not None
     buffer_cache.cache_buffer(result_checksum, result_buf)

@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.8",
+  "__seamless__": "0.11",
   "connections": [
     {
       "source": [
@@ -183,8 +183,7 @@
           "celltype": "default"
         },
         "module": {
-          "celltype": "plain",
-          "subcelltype": "module"
+          "celltype": "module"
         },
         "pins": {
           "celltype": "default"
@@ -215,7 +214,6 @@
       "SCHEMA": null,
       "checksum": {
         "code": "8e5c60f331ad52a518ca011500ac5a856e2e3b7f4fe551eb93c49284a8d44ab7",
-        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -303,7 +301,6 @@
       "SCHEMA": null,
       "checksum": {
         "code": "58d3eabc2e72543e49179a9a02e590ad95566b5f170197c18c86ff03cdf1dbc2",
-        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },

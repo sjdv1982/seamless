@@ -1184,7 +1184,7 @@ class FolderCell(Cell):
         super().mount(path, mode, "cell", persistent=persistent)
         if text_only:
             hcell = self._get_hcell2()
-            hcell["mount"]["text_only"] = True
+            hcell["mount"]["directory_text_only"] = True
         return self
 
     def __str__(self):
