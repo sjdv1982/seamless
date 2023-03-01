@@ -136,7 +136,7 @@ def graph_convert_011(graph):
                     print("""WARNING: legacy subcelltype that is not 'module', ignoring:
 Transformer: {}""".format("." + ".".join(node.get('path', []))))
                 pin["celltype"] = "module"
-        return graph
+    return graph
 
 def graph_convert(graph, ctx):
     if ctx is not None:
