@@ -584,10 +584,16 @@ class CommunionServer:
                 rem_transformer = tcache.remote_transformers.get(key)
                 if key is not None:
                     tcache.decref_transformation(transformation, rem_transformer)
-            
+            elif type == "transformation_status_with_meta":
+                raise NotImplementedError
+            elif type == "transformation_job_with_meta":
+                raise NotImplementedError
             else:
                 raise Exception("Unknown communion message type '{}'".format(type))
 
+        except NotImplementedError as exc:
+            error = True
+            result = repr(exc)
         except Exception as exc:
             print_error(traceback.format_exc())
             error = True
