@@ -205,8 +205,9 @@ async def _run_transformer_async(semantic_code_checksum,  codebuf, code_checksum
     return await run_transformation_dict_async(transformation_dict)
 
 def _get_semantic(code, code_checksum):
+    from ..util import ast_dump
     tree = ast.parse(code, filename="<None>")
-    semcode = ast.dump(tree).encode()
+    semcode = ast_dump(tree).encode()
     semantic_code_checksum = calculate_checksum(semcode, hex=True)
     _sem_code_cache[semantic_code_checksum] = semcode
     key = (bytes.fromhex(semantic_code_checksum), "python", "transformer")

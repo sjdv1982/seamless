@@ -137,6 +137,7 @@ def syntactic_is_semantic(celltype, subcelltype):
 async def syntactic_to_semantic(
     checksum, celltype, subcelltype, codename
 ):
+    from ...util import ast_dump
     assert checksum is None or isinstance(checksum, bytes)
     if syntactic_is_semantic(celltype, subcelltype):
         return checksum
@@ -157,7 +158,7 @@ async def syntactic_to_semantic(
     elif celltype == "python":
         value = await deserialize(buffer, checksum, "python", False)
         tree = ast.parse(value, filename=codename)
-        dump = ast.dump(tree).encode()
+        dump = ast_dump(tree).encode()
         semantic_checksum = await calculate_checksum(dump)
         buffer_cache.cache_buffer(semantic_checksum, dump)
     else:
