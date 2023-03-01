@@ -1,0 +1,15 @@
+<Silk: {'a': array(b'abc', dtype='|S3'), 'a2': 'xyz', 'b': array(b'\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02',
+      dtype='|S24'), 'c': 42} >
+
+<Silk: {'a': array(b'abc', dtype='|S3'), 'a2': 'xyz', 'b': array(b'\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02',
+      dtype='|S24'), 'c': 42} >
+
+<Silk: b'abc' >
+
+b'abc' <class 'numpy.ndarray'> binary
+
+b'abc' <class 'bytes'> bytes
+
+abc <class 'str'> text
+
+xyz <class 'str'> text

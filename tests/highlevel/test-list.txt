@@ -64,6 +64,7 @@ docker2.py
 docker_gpu.py: run only on a machine with nvidia-docker2 installed
 docker-debug.py
 expression-exceptions.py
+transformer-bytedict.py
 highlink-schema.py
 highlink-schema-tf.py
 test-copy.py
