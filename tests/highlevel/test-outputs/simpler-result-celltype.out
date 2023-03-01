@@ -11,9 +11,9 @@ The result is: 7.5
 bork!bork!bork!
 None
 Traceback (most recent call last):
-  File "/opt/conda/lib/python3.8/site-packages/seamless/core/execute.py", line 270, in _execute
+  File "/seamless/seamless/core/execute.py", line 272, in _execute
     result_buffer = serialize(result, output_celltype)
-  File "/opt/conda/lib/python3.8/site-packages/seamless/core/protocol/serialize.py", line 30, in _serialize
+  File "/seamless/seamless/core/protocol/serialize.py", line 31, in _serialize
     value = int(value)
 ValueError: invalid literal for int() with base 10: 'bork!bork!bork!'
 *************************************************
@@ -29,11 +29,11 @@ bork!bork!bork!bork!bork!
 
 None
 Traceback (most recent call last):
-  File "/opt/conda/lib/python3.8/site-packages/seamless/core/execute.py", line 270, in _execute
+  File "/seamless/seamless/core/execute.py", line 272, in _execute
     result_buffer = serialize(result, output_celltype)
-  File "/opt/conda/lib/python3.8/site-packages/seamless/core/protocol/serialize.py", line 30, in _serialize
+  File "/seamless/seamless/core/protocol/serialize.py", line 31, in _serialize
     value = int(value)
 ValueError: invalid literal for int() with base 10: 'bork!bork!bork!bork!bork!\n'
 *************************************************
-Execution time: 0.1 seconds
+Execution time: 0.0 seconds
 

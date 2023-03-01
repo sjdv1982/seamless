@@ -1,30 +1,30 @@
 Traceback (most recent call last):
-  File "special-pins.py", line 14, in <module>
+  File "/cwd/tests/highlevel/special-pins.py", line 14, in <module>
     ctx.tf = func
 TypeError: Pin name 'WRONG' must not be all uppercase
 Traceback (most recent call last):
-  File "special-pins.py", line 23, in <module>
+  File "/cwd/tests/highlevel/special-pins.py", line 23, in <module>
     ctx.tf.WRONG = 12
 AttributeError: Cannot define new special pins before translation
 Traceback (most recent call last):
-  File "special-pins.py", line 30, in <module>
+  File "/cwd/tests/highlevel/special-pins.py", line 30, in <module>
     ctx.tf["WRONG"] = 12
 AttributeError: Cannot define new special pins before translation
 Traceback (most recent call last):
-  File "special-pins.py", line 38, in <module>
+  File "/cwd/tests/highlevel/special-pins.py", line 38, in <module>
     ctx.tf.WRONG = 12
 AttributeError: Cannot define new special pins like this, use add_special_pin
 Traceback (most recent call last):
-  File "special-pins.py", line 45, in <module>
+  File "/cwd/tests/highlevel/special-pins.py", line 45, in <module>
     ctx.tf["WRONG"] = 12
 AttributeError: Cannot define new special pins like this, use add_special_pin
 Traceback (most recent call last):
-  File "special-pins.py", line 52, in <module>
+  File "/cwd/tests/highlevel/special-pins.py", line 52, in <module>
     ctx.tf.add_special_pin("nonsense", "bool")
 ValueError: Special pinname must be all uppercase
 Status: {'tf': '*tf*: Status: upstream => SPECIAL undefined'}
 Traceback (most recent call last):
-  File "special-pins.py", line 67, in <module>
+  File "/cwd/tests/highlevel/special-pins.py", line 67, in <module>
     ctx.tf.SPECIAL = 12
 AttributeError: Special pins must be set using bracket syntax
 OK
@@ -40,7 +40,7 @@ SPECIAL: This must be printed
 *************************************************
 Execution time: 0.0 seconds
 *************************************************
-f0641b3641c6f3c03bbb6be98bfdd23616d2aa7d6c7a57e6c4bfba825aff54b3
+bf1737d1dcec7fb2d0db1fb9eb0bcf484746084c1816e082303324c9fc3721ff
 *************************************************
 * Result
 *************************************************
@@ -53,7 +53,7 @@ SPECIAL: This must be printed
 *************************************************
 Execution time: 0.0 seconds
 *************************************************
-f0641b3641c6f3c03bbb6be98bfdd23616d2aa7d6c7a57e6c4bfba825aff54b3
+bf1737d1dcec7fb2d0db1fb9eb0bcf484746084c1816e082303324c9fc3721ff
 Nothing printed
 /Nothing printed
 SPECIAL: This will be printed IN THE END

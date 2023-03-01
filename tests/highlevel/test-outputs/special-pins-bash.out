@@ -1,27 +1,27 @@
 Traceback (most recent call last):
-  File "special-pins-bash.py", line 25, in <module>
+  File "/cwd/tests/highlevel/special-pins-bash.py", line 25, in <module>
     ctx.tf.WRONG = 12
 AttributeError: Cannot define new special pins before translation
 Traceback (most recent call last):
-  File "special-pins-bash.py", line 32, in <module>
+  File "/cwd/tests/highlevel/special-pins-bash.py", line 32, in <module>
     ctx.tf["WRONG"] = 12
 AttributeError: Cannot define new special pins before translation
 Traceback (most recent call last):
-  File "special-pins-bash.py", line 40, in <module>
+  File "/cwd/tests/highlevel/special-pins-bash.py", line 40, in <module>
     ctx.tf.WRONG = 12
 AttributeError: Cannot define new special pins like this, use add_special_pin
 Traceback (most recent call last):
-  File "special-pins-bash.py", line 47, in <module>
+  File "/cwd/tests/highlevel/special-pins-bash.py", line 47, in <module>
     ctx.tf["WRONG"] = 12
 AttributeError: Cannot define new special pins like this, use add_special_pin
 Traceback (most recent call last):
-  File "special-pins-bash.py", line 54, in <module>
+  File "/cwd/tests/highlevel/special-pins-bash.py", line 54, in <module>
     ctx.tf.add_special_pin("nonsense", "bool")
 ValueError: Special pinname must be all uppercase
 None
 Status: {'tf': '*tf*: Status: upstream => SPECIAL undefined'}
 Traceback (most recent call last):
-  File "special-pins-bash.py", line 75, in <module>
+  File "/cwd/tests/highlevel/special-pins-bash.py", line 75, in <module>
     ctx.tf.SPECIAL = 12
 AttributeError: Special pins must be set using bracket syntax
 OK
@@ -39,7 +39,7 @@ SPECIAL This must be printed
 *************************************************
 Execution time: 0.0 seconds
 *************************************************
-d72013843c783d00a010bf3004d57600658591121ea049f0141b7ba7a8af7dcd
+ec2f3a8f493ad0387a8d3499d5184a2b89e3b16e7c939657adead5ce2c30a002
 *************************************************
 * Result
 *************************************************
@@ -54,7 +54,7 @@ SPECIAL This must be printed
 *************************************************
 Execution time: 0.0 seconds
 *************************************************
-d72013843c783d00a010bf3004d57600658591121ea049f0141b7ba7a8af7dcd
+ec2f3a8f493ad0387a8d3499d5184a2b89e3b16e7c939657adead5ce2c30a002
 Nothing printed
 /Nothing printed
 3

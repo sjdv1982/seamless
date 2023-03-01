@@ -6,7 +6,6 @@ def constructor(ctx, libctx, result):
     ctx.set_graph(graph)
     if result is not None:
         result.connect_from(ctx.result)
-
 5
 4
 def constructor(ctx, libctx, result):
@@ -14,7 +13,6 @@ def constructor(ctx, libctx, result):
     ctx.set_graph(graph)
     if result is not None:
         result.connect_from(ctx.result)
-
 5
 1221
 Seamless Context: .

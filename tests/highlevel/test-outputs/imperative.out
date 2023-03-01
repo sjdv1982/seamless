@@ -4,12 +4,12 @@
 2117
 The following will give an exception:
 Traceback (most recent call last):
-  File "imperative.py", line 46, in <module>
+  File "/cwd/tests/highlevel/imperative.py", line 46, in <module>
     func0(0,0)
 seamless.core.transformation.SeamlessTransformationError: Traceback (most recent call last):
-  File "<seamless.core.cache.transformation_cache.DummyTransformer object at 0x7fd1771cafa0>", line 6, in <module>
+  File "<seamless.core.cache.transformation_cache.DummyTransformer object at 0x7f88a5a46aa0>", line 6, in <module>
     result = func0(a=a,b=b)
-  File "<seamless.core.cache.transformation_cache.DummyTransformer object at 0x7fd1771cafa0>", line 4, in func0
+  File "<seamless.core.cache.transformation_cache.DummyTransformer object at 0x7f88a5a46aa0>", line 4, in func0
     raise Exception # deliberately
 Exception
 
@@ -29,7 +29,7 @@ Traceback (most recent call last):
     result = func2(a=a,b=b)
   File "Seamless transformer: .tf.tf", line 9, in func2
     return func(a, b) + func(b, a)
-  File "/seamless/seamless/imperative/__init__.py", line 283, in __call__
+  File "/seamless/seamless/imperative/__init__.py", line 299, in __call__
     raise RuntimeError("Running @transformer inside a transformation requires a Seamless database")
 RuntimeError: Running @transformer inside a transformation requires a Seamless database
 *************************************************

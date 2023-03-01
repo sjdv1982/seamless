@@ -24,7 +24,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/silk/silk/validation/validators.py", line 237, in validator_validators
+  File "/silk/silk/validation/validators.py", line 242, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in validator
     assert self.f > self.d
@@ -32,18 +32,18 @@ AssertionError
 ************************************************************************
 
 
-Failed validating 'validators' in schema:
-    {'properties': {'c': {}, 'd': {}, 'f': {}, 'g': {}},
-     'type': 'object',
-     'validators': [{'code': 'def validator(self):\n'
-                             '    print("VALIDATE", self)\n'
-                             '    assert self.g > self.c + self.f\n'
-                             '    assert self.f > self.d\n',
-                     'language': 'python',
-                     'name': 'validator'}]}
+            Failed validating 'validators' in schema:
+                {'properties': {'c': {}, 'd': {}, 'f': {}, 'g': {}},
+                 'type': 'object',
+                 'validators': [{'code': 'def validator(self):\n'
+                                         '    print("VALIDATE", self)\n'
+                                         '    assert self.g > self.c + self.f\n'
+                                         '    assert self.f > self.d\n',
+                                 'language': 'python',
+                                 'name': 'validator'}]}
 
-On instance:
-    {'g': 50, 'c': 8, 'd': 108, 'f': 20}
+            On instance:
+                {'g': 50, 'c': 8, 'd': 108, 'f': 20}
 
 Stage 8
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 88, 'f': 20} >
@@ -54,7 +54,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/silk/silk/validation/validators.py", line 237, in validator_validators
+  File "/silk/silk/validation/validators.py", line 242, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 4, in validator
     assert self.f > self.d
@@ -62,18 +62,18 @@ AssertionError
 ************************************************************************
 
 
-Failed validating 'validators' in schema:
-    {'properties': {'c': {}, 'd': {}, 'f': {}, 'g': {}},
-     'type': 'object',
-     'validators': [{'code': 'def validator(self):\n'
-                             '    print("VALIDATE", self)\n'
-                             '    assert self.g > self.c + self.f\n'
-                             '    assert self.f > self.d\n',
-                     'language': 'python',
-                     'name': 'validator'}]}
+            Failed validating 'validators' in schema:
+                {'properties': {'c': {}, 'd': {}, 'f': {}, 'g': {}},
+                 'type': 'object',
+                 'validators': [{'code': 'def validator(self):\n'
+                                         '    print("VALIDATE", self)\n'
+                                         '    assert self.g > self.c + self.f\n'
+                                         '    assert self.f > self.d\n',
+                                 'language': 'python',
+                                 'name': 'validator'}]}
 
-On instance:
-    {'g': 50, 'c': 8, 'd': 88, 'f': 20}
+            On instance:
+                {'g': 50, 'c': 8, 'd': 88, 'f': 20}
 
 Stage 9
 VALIDATE <Silk: {'g': 50, 'c': 8, 'd': 12, 'f': 20} >

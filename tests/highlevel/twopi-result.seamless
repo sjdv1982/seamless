@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.8",
+  "__seamless__": "0.11",
   "connections": [
     {
       "source": [
@@ -54,7 +54,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3",
-        "buffer": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "0553638f3a0f6235e46d1cd6b7fc12e468fd91bcc901f488fef8d15bdd48a7d3"
       },
@@ -68,7 +67,6 @@
     {
       "celltype": "structured",
       "checksum": {
-        "buffer": "9acc23666aadc2bb7c469e92fe770f49604bbdeecd6cc850677459be5327e9da",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "9acc23666aadc2bb7c469e92fe770f49604bbdeecd6cc850677459be5327e9da"
       },

@@ -5,7 +5,7 @@ jsonschema.exceptions.ValidationError:
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.10.egg/silk/validation/validators.py", line 237, in validator_validators
+  File "/silk/silk/validation/validators.py", line 242, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 2, in validator
     assert self.a > 0
@@ -13,26 +13,26 @@ AssertionError
 ************************************************************************
 
 
-Failed validating 'validators' in schema:
-    {'methods': {'mean': {'code': 'def mean(self):\n'
-                                  '    return (self.a + self.b)/2\n',
-                          'language': 'python'}},
-     'properties': {'a': {}},
-     'type': 'object',
-     'validators': [{'code': 'def validator(self):\n'
-                             '    assert self.a > 0\n'
-                             '    assert self.mean() > 0\n',
-                     'language': 'python'}]}
+            Failed validating 'validators' in schema:
+                {'methods': {'mean': {'code': 'def mean(self):\n'
+                                              '    return (self.a + self.b)/2\n',
+                                      'language': 'python'}},
+                 'properties': {'a': {}},
+                 'type': 'object',
+                 'validators': [{'code': 'def validator(self):\n'
+                                         '    assert self.a > 0\n'
+                                         '    assert self.mean() > 0\n',
+                                 'language': 'python'}]}
 
-On instance:
-    {'a': -10, 'b': 2000}
+            On instance:
+                {'a': -10, 'b': 2000}
 
 jsonschema.exceptions.ValidationError: 
 ************************************************************************
 *  Silk validation error
 ************************************************************************
 Traceback (most recent call last):
-  File "/opt/conda/lib/python3.8/site-packages/silk-0.1-py3.10.egg/silk/validation/validators.py", line 237, in validator_validators
+  File "/silk/silk/validation/validators.py", line 242, in validator_validators
     validator_func(silkobject)
   File "Silk validator 1", line 3, in validator
     assert self.mean() > 0
@@ -40,19 +40,19 @@ AssertionError
 ************************************************************************
 
 
-Failed validating 'validators' in schema:
-    {'methods': {'mean': {'code': 'def mean(self):\n'
-                                  '    return (self.a + self.b)/2\n',
-                          'language': 'python'}},
-     'properties': {'a': {}, 'b': {}},
-     'type': 'object',
-     'validators': [{'code': 'def validator(self):\n'
-                             '    assert self.a > 0\n'
-                             '    assert self.mean() > 0\n',
-                     'language': 'python'}]}
+            Failed validating 'validators' in schema:
+                {'methods': {'mean': {'code': 'def mean(self):\n'
+                                              '    return (self.a + self.b)/2\n',
+                                      'language': 'python'}},
+                 'properties': {'a': {}, 'b': {}},
+                 'type': 'object',
+                 'validators': [{'code': 'def validator(self):\n'
+                                         '    assert self.a > 0\n'
+                                         '    assert self.mean() > 0\n',
+                                 'language': 'python'}]}
 
-On instance:
-    {'a': 10, 'b': -1000}
+            On instance:
+                {'a': 10, 'b': -1000}
 
 a = 10
 b = 200
