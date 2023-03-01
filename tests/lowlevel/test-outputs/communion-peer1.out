@@ -12,12 +12,12 @@ REMOVE SERVANT buffer
 REMOVE SERVANT buffer_info
 REMOVE SERVANT semantic_to_syntactic
 Traceback (most recent call last):
-  File "communion-peer1.py", line 40, in <module>
+  File "/cwd/tests/lowlevel/communion-peer1.py", line 40, in <module>
     asyncio.get_event_loop().run_forever()
-  File "/opt/conda/lib/python3.8/asyncio/base_events.py", line 570, in run_forever
+  File "/opt/conda/lib/python3.10/asyncio/base_events.py", line 603, in run_forever
     self._run_once()
-  File "/opt/conda/lib/python3.8/asyncio/base_events.py", line 1823, in _run_once
+  File "/opt/conda/lib/python3.10/asyncio/base_events.py", line 1868, in _run_once
     event_list = self._selector.select(timeout)
-  File "/opt/conda/lib/python3.8/selectors.py", line 468, in select
+  File "/opt/conda/lib/python3.10/selectors.py", line 469, in select
     fd_event_list = self._selector.poll(timeout, max_ev)
 KeyboardInterrupt

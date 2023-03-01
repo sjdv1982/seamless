@@ -9,7 +9,7 @@ c: could not find file/directory for a3b9a39c707177f10d440c071303df8beff535c40c7
 c: could not find file/directory for a3b9a39c707177f10d440c071303df8beff535c40c7c25e92da187b14aac127e
 None
 None
-589a7fa584352c025e994c95ad1e1bb373704f9718be1ff6ca0d0449a02bf9ba
+d1676bb657819efd84207076bef917e2f797f50e15f0eb3eaa45bce8f6fe5efe
 Start database
 
 Run 2
@@ -23,7 +23,7 @@ d: could not find file/directory for 0bd8ba492aecc071c429d7363b89d6d413ca713933b
 d: could not find file/directory for 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
 None
 None
-589a7fa584352c025e994c95ad1e1bb373704f9718be1ff6ca0d0449a02bf9ba
+d1676bb657819efd84207076bef917e2f797f50e15f0eb3eaa45bce8f6fe5efe
 
 Share folder 2 and restart database
 Computed deepfolder for testfolder2: deep buffer checksum 0bd8ba492aecc071c429d7363b89d6d413ca713933b5bce60a67a706a470daa2
@@ -56,7 +56,7 @@ Execution time: 0.0 seconds
 *************************************************
 946f8cf70c3251e6cb01e1be75dfe4769fe81e5f1aca4083aecefd4a12a392d5
 OK
-589a7fa584352c025e994c95ad1e1bb373704f9718be1ff6ca0d0449a02bf9ba
+d1676bb657819efd84207076bef917e2f797f50e15f0eb3eaa45bce8f6fe5efe
 
 Share folder 1 and restart database
 Computed deepfolder for testfolder1: deep buffer checksum 45eda5dc76b4247d554e2b8592df1c5031f84b00ff35a1547a8d241b529da9c1
@@ -89,7 +89,7 @@ Execution time: 0.0 seconds
 *************************************************
 946f8cf70c3251e6cb01e1be75dfe4769fe81e5f1aca4083aecefd4a12a392d5
 OK
-589a7fa584352c025e994c95ad1e1bb373704f9718be1ff6ca0d0449a02bf9ba
+d1676bb657819efd84207076bef917e2f797f50e15f0eb3eaa45bce8f6fe5efe
 
 Server log
 Press Ctrl+C to end

@@ -1,3 +1,4 @@
+Entered start.sh with args: python3 -u /home/jovyan/seamless-scripts/jobslave.py --communion_id jobslave --direct-print
 Executing the command: python3 -u /home/jovyan/seamless-scripts/jobslave.py --communion_id jobslave --direct-print
 Set up a communion outgoing port 8602, listening on 0.0.0.0
 OUTGOING jobslave simple-duplex-remote
