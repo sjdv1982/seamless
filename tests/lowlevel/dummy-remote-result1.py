@@ -14,23 +14,23 @@ from seamless import calculate_checksum
 def h(value):
     return calculate_checksum(json.dumps(value)+"\n")
 
-async def server1(checksum):
+async def server1(checksum, meta):
     print("Server 1")
     return -3, None
 
-async def server2(checksum):
+async def server2(checksum, meta):
     print("Server 2...")
     await asyncio.sleep(2)
     print("... server 2")
     raise Exception # Server 2 raises an exception
     
-async def server3(checksum):
+async def server3(checksum, meta):
     print("Server 3...")
     await asyncio.sleep(3)
     print("... server 3")
     return 3, h(42)
 
-async def server4(checksum):
+async def server4(checksum, meta):
     print("Server 4...")
     try:
         await asyncio.sleep(5)

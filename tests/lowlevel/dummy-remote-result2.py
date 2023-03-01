@@ -16,7 +16,7 @@ def h(value):
 seamless.set_ncores(0)
 
 class DummyClient0:
-    async def status(self, checksum):
+    async def status(self, checksum, meta):
         return -1, None
 
 class DummyClient1:
@@ -24,11 +24,11 @@ class DummyClient1:
         self.st = 2
         self.progress = 0
         self.prelim = None
-    async def submit(self, checksum):
+    async def submit(self, checksum, meta):
         raise Exception
     async def wait(self, checksum):
         pass
-    async def status(self, checksum):
+    async def status(self, checksum, meta):
         print("Server 1 status", self.st)
         if self.st == 2:
             self.st = -1
@@ -49,14 +49,14 @@ class DummyClient2:
         await asyncio.sleep(2)
         self.result = h(42)
         self.st = 3
-    async def submit(self, checksum):
+    async def submit(self, checksum, meta):
         self.checksum = checksum
         self.job = asyncio.ensure_future(self._server())
         self.st = 2
     async def wait(self, checksum):
         assert self.job is not None
         await self.job
-    async def status(self, checksum):
+    async def status(self, checksum, meta):
         if self.st == 2:
             return self.st, self.progress, self.prelim
         elif self.st == 3:

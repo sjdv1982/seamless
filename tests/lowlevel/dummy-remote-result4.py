@@ -31,7 +31,7 @@ class DummyClient:
         self.st = 3
         self.result = h(1.0)
         await self.queue.put(None)
-    async def submit(self, checksum):
+    async def submit(self, checksum, meta):
         self.checksum = checksum
         self.job = asyncio.ensure_future(self._server())
         self.st = 2
@@ -50,7 +50,7 @@ class DummyClient:
         self.prelim = None
     async def clear_exception(self, checksum):
         pass # dummy
-    async def status(self, checksum):
+    async def status(self, checksum, meta):
         if self.st == 2:
             return self.st, self.progress, self.prelim
         elif self.st == 3:
