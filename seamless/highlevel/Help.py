@@ -152,6 +152,7 @@ class HelpCell(HelpWrapper):
         help_index_cell = self._help_index_cell(create=True)
         return help_index_cell.share(*args, **kwargs)
 
+    @property
     @wraps(Cell.status)
     def status(self):
         help_index_cell = self._help_index_cell()
@@ -159,6 +160,7 @@ class HelpCell(HelpWrapper):
             return None
         return help_index_cell.status
 
+    @property
     @wraps(Cell.exception)
     def exception(self):
         help_index_cell = self._help_index_cell()

@@ -4,7 +4,7 @@ import copy
 
 def bootstrap(module):
     import inspect
-    from ....util import strip_decorators
+    from seamless.util import strip_decorators
     result = {}
     for objname, obj in sorted(module.__dict__.items()):
         if objname.startswith("__"):
@@ -25,7 +25,7 @@ def bootstrap(module):
     return result
 
 def build_codeblock(module):
-    from ....util import strip_decorators
+    from seamless.util import strip_decorators
     result = ""
     for objname, obj in sorted(module.__dict__.items()):
         if objname.startswith("__"):

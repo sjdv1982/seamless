@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.7",
+  "__seamless__": "0.11",
   "connections": [],
   "lib": [],
   "nodes": [
@@ -7,7 +7,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "ed282a8cab041ad8ac21f888d93762dfb18b5db3c9b4392abf8445fb607112bf",
-        "buffer": "ed282a8cab041ad8ac21f888d93762dfb18b5db3c9b4392abf8445fb607112bf",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "ed282a8cab041ad8ac21f888d93762dfb18b5db3c9b4392abf8445fb607112bf"
       },
@@ -34,7 +33,6 @@
       "celltype": "structured",
       "checksum": {
         "auth": "5fd66abb7f10876cf512ad319362d042048e0696567e7cd911426d879d8b040f",
-        "buffer": "5fd66abb7f10876cf512ad319362d042048e0696567e7cd911426d879d8b040f",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "value": "5fd66abb7f10876cf512ad319362d042048e0696567e7cd911426d879d8b040f"
       },
