@@ -2,10 +2,8 @@ import inspect
 import textwrap
 from types import LambdaType
 import ast
-import functools
-from copy import deepcopy
+from functools import update_wrapper
 import multiprocessing
-import time
 
 from ..calculate_checksum import calculate_checksum
 from ..core.protocol.serialize import serialize_sync as serialize, serialize as serialize_async
@@ -75,8 +73,10 @@ def _register_transformation_dict(transformation_checksum, transformation_buffer
     return result
 
 def run_transformation_dict(transformation_dict, result_callback=None):
-    from .. import database_sink
+    """Runs a transformation that is specified as a dict of checksums,
+    such as returned by highlevel.Transformer.get_transformation_dict"""
     # TODO: add type annotation and all kinds of validation...
+    from .. import database_sink
     transformation_buffer = tf_get_buffer(transformation_dict)
     transformation = calculate_checksum(transformation_buffer)
     cache_buffer(transformation, transformation_buffer)
@@ -122,6 +122,8 @@ def run_transformation_dict(transformation_dict, result_callback=None):
         return
 
 async def run_transformation_dict_async(transformation_dict):
+    """Runs a transformation that is specified as a dict of checksums,
+    such as returned by highlevel.Transformer.get_transformation_dict"""
     # TODO: add type annotation and all kinds of validation...
     transformation_buffer = tf_get_buffer(transformation_dict)
     transformation = calculate_checksum(transformation_buffer)
@@ -134,7 +136,7 @@ async def run_transformation_dict_async(transformation_dict):
         return await deserialize_async(result_buffer, result_checksum, celltype, copy=True)
     finally:
         # For some reason, the logic here is different than for the sync version (see _wait())
-        if increfed and increfed in transformation_cache.transformations_to_transformers.get(transformation, []):            
+        if increfed and increfed in transformation_cache.transformations_to_transformers.get(transformation, []):
             transformation_cache.decref_transformation(transformation_dict, increfed)
         temprefmanager.purge_group('imperative')
 
@@ -175,7 +177,7 @@ def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, 
     database_sink.sem2syn(semkey, [code_checksum])
     return run_transformation_dict(transformation_dict, result_callback)
 
-async def _run_transformer_async(semantic_code_checksum,  codebuf, code_checksum, signature, meta, celltypes, result_callback, args, kwargs):
+async def _run_transformer_async(semantic_code_checksum, codebuf, code_checksum, signature, meta, celltypes, result_callback, args, kwargs):
     from .. import database_sink
     assert result_callback is None  # meaningless for async
     arguments = signature.bind(*args, **kwargs).arguments
@@ -214,137 +216,6 @@ def _get_semantic(code, code_checksum):
     transformation_cache.semantic_to_syntactic_checksums[key] = [code_checksum]
     return semantic_code_checksum
 
-class Transformation:
-    def __init__(self):
-        self._value = None
-        self._logs = None
-
-    def _set(self, value, logs):
-        self._value = value
-        self._logs = logs
-
-    @property
-    def value(self):
-        if self._value is None:
-            _wait()
-        return self._value
-        
-    @property
-    def logs(self):
-        if self._value is None:
-            _wait()
-        return self._logs
-
-class CelltypesWrapper:
-    def __init__(self, celltypes):
-        self._celltypes = celltypes
-    def __getattr__(self, attr):
-        return self._celltypes[attr]
-    def __getitem__(self, key):
-        return self._celltypes[key]
-    def __setattr__(self, attr, value):        
-        if attr.startswith("_"):
-            return super().__setattr__(attr, value)
-        return self.__setitem__(attr, value)
-    def __setitem__(self, key, value):
-        from ..core.cell import celltypes
-        if key not in self._celltypes:
-            raise AttributeError(key)
-        pin_celltypes = list(celltypes.keys()) + ["silk"]
-        if value not in pin_celltypes:
-            raise TypeError(value, pin_celltypes)
-        self._celltypes[key] = value
-    def __dir__(self):
-        return sorted(self._celltypes.keys())
-    def __str__(self):
-        return str(self._celltypes)
-    def __repr__(self):
-        return str(self)
-
-class Transformer:
-    def __init__(self, func, is_async, **kwargs):
-        code = getsource(func)
-        codebuf = serialize(code, "python")
-        code_checksum = calculate_checksum(codebuf)
-        semantic_code_checksum = _get_semantic(code, code_checksum)
-        signature = inspect.signature(func)
-
-        self.semantic_code_checksum = semantic_code_checksum
-        self.signature = signature
-        self.codebuf = codebuf
-        self.code_checksum = code_checksum
-        self.is_async = is_async
-        self._celltypes = {k: "mixed" for k in signature.parameters}
-        self._celltypes["result"] = "mixed"
-        self._blocking = True
-        if "meta" in kwargs:
-            self.meta = deepcopy(kwargs["meta"])
-        else:
-            #self.meta = {}
-            self.meta = {"transformer_path": ["tf", "tf"]}
-        self.kwargs = kwargs
-        functools.update_wrapper(self, func)
-
-    @property
-    def celltypes(self):
-        return CelltypesWrapper(self._celltypes)
-
-    def __call__(self, *args, **kwargs):
-        from .. import database_sink
-        self.signature.bind(*args, **kwargs)
-        if multiprocessing.current_process().name != "MainProcess":
-            if self.is_async:
-                raise NotImplementedError  # no plans to implement this...
-            if not database_sink.active:
-                raise RuntimeError("Running @transformer inside a transformation requires a Seamless database")
-        runner = _run_transformer_async if self.is_async else _run_transformer
-        if not self._blocking:
-            tr = Transformation()
-            result_callback = tr._set
-        else:
-            result_callback = None
-        result = runner(
-            self.semantic_code_checksum,
-            self.codebuf,
-            self.code_checksum,
-            self.signature,
-            self.meta,
-            self._celltypes,
-            result_callback,
-            args,
-            kwargs
-        )
-        if self._blocking:
-            return result
-        else:
-            return tr
-
-    @property
-    def local(self):
-        return self.meta.get("local", False)
-
-    @local.setter
-    def local(self, value:bool):
-        self.meta["local"] = value
-
-    @property
-    def blocking(self):
-        return self._blocking
-
-    @blocking.setter
-    def blocking(self, value:bool):
-        if not isinstance(value, bool):
-            raise TypeError(value)
-        if (not value) and self.is_async:
-            raise ValueError("non-blocking is meaningless for a coroutine")
-        self._blocking = value
-
-def transformer(func, **kwargs):
-    return Transformer(func, is_async=False, **kwargs)
-
-def transformer_async(func, **kwargs):
-    return Transformer(func, is_async=True, **kwargs)
-
 def _wait():
     global _queued_transformations
     global _has_lock
@@ -357,7 +228,7 @@ def _wait():
     # NOTE: for future optimization, one could run transformations in batch mode.
     #   one batch for the parent process queue, and one batch for local run_transformation
     forked = (multiprocessing.current_process().name != "MainProcess")
-    if forked and _has_lock:        
+    if forked and _has_lock:
         _parent_process_queue.put((5, "release lock"))
         _has_lock = False
     try:
@@ -406,3 +277,29 @@ def _cleanup():
         if increfed and bytes.fromhex(transformation) in transformation_cache.transformations:
             transformation_cache.decref_transformation(transformation_dict, increfed)
 
+from .Transformer import Transformer
+
+def transformer(func, **kwargs):
+    """Wraps a function in an imperative transformer
+Imperative transformers can be called as normal functions, but 
+the source code of the function and the arguments are converted
+into a Seamless transformation."""
+    result = Transformer(func, is_async=False, **kwargs)
+    update_wrapper(result, func)
+    return result
+
+def transformer_async(func, **kwargs):
+    """Wraps a function in an asynchronous imperative transformer
+Asynchronous imperative transformers can be called and awaited as
+normal async functions, but the source code of the function 
+and the arguments are converted into a Seamless transformation."""
+    result = Transformer(func, is_async=True, **kwargs)
+    update_wrapper(result, func)
+    return result
+
+
+__all__ = ["transformer", "transformer_async", 
+           "run_transformation_dict", "run_transformation_dict_async"]
+
+def __dir__():
+    return sorted(__all__)

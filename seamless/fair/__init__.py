@@ -201,3 +201,6 @@ def find_checksum(dataset:str, *, type:str=None, version:str=None, date:str=None
     raise ConnectionError("Cannot contact any FAIR server")        
 
 __all__ = ["get_dataset", "find", "get_buffer", "deepbuffer", "access", "keyorder", "find_distribution", "find_checksum"]
+
+def __dir__():
+    return sorted(__all__)

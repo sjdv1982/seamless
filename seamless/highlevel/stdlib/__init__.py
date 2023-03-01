@@ -56,4 +56,4 @@ for graph_file in graph_files:
     __all__.append(path[1])
 
 def __dir__():
-    return sorted(__all__)    
+    return sorted(__all__)

@@ -3,6 +3,7 @@ from seamless.core.transformation import SeamlessTransformationError
 import traceback
 ctx = Context()
 def func(a, b):
+    """Some docstring"""
     import time
     time.sleep(0.5)
     return 100 * a + b

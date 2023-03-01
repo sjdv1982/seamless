@@ -144,3 +144,6 @@ __all__ = [
     "Link", "StaticContext", "Module",
     "Resource", "load_graph", "copy"
 ]
+
+def __dir__():
+    return sorted(__all__)
