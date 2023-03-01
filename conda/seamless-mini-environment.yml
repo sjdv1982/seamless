@@ -19,27 +19,12 @@ dependencies:
   - cython
   - commentjson
   - expandvars
-  - notebook
-  - jupyterhub
-  - jupyterlab
-  - scipy
-  - pandas
-  - r-base
-  - scikit-learn
-  - r-cairo
-  - rpy2
-  - sympy
   - pip:
     - websockets
     - cson
     - speg
     - aiohttp_cors
     - makefun
-    - nglview
-    - matplotlib 
-    - snakemake
-    - jupyter-console
-    - itables
 
 variables:
     RPY2_CFFI_MODE: ABI

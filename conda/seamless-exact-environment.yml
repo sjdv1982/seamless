@@ -1,0 +1,46 @@
+name: seamless-framework
+channels:
+  - conda-forge
+dependencies:
+  # keep this in sync with seamless-tools/docker/seamless-deps-environment.yml
+  - python=3.10.*
+  - pip=23.0.*
+  - rpbs::seamless-framework==0.11
+  - rpbs::silk==0.1.9
+  - conda=23.1.*
+  - ipython=8.10.*
+  - ipykernel=6.21.*
+  - aiofiles=22.1.*
+  - cffi=1.15.*
+  - traitlets=5.9.*
+  - ipywidgets=8.0.*
+  - debugpy=1.6.*
+  - openmp=8.0.*
+  - wurlitzer=3.0.*
+  - cython=0.29.*
+  - commentjson
+  - expandvars
+  - notebook=6.5.*
+  - jupyterhub=3.1.*
+  - jupyterlab=3.6.*
+  - scipy
+  - pandas
+  - r-base=4.2.*
+  - scikit-learn=1.2.*
+  - r-cairo=1.6_0.*
+  - rpy2=3.5.*
+  - sympy
+  - pip:
+    - websockets==10.3.*
+    - cson==0.8.*
+    - speg
+    - aiohttp_cors==0.7.*
+    - makefun
+    - nglview
+    - matplotlib 
+    - snakemake==7.18.*
+    - jupyter-console==6.6.*
+    - itables==1.4.*
+
+variables:
+    RPY2_CFFI_MODE: ABI

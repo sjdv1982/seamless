@@ -1,0 +1,17 @@
+name: seamless-framework
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - pip
+  - rpbs::seamless-framework==0.11
+  - rpbs::silk>=0.1.9
+  - conda
+  - pip:
+    - websockets
+    - cson
+    - speg
+    - aiohttp_cors
+
+variables:
+    RPY2_CFFI_MODE: ABI
