@@ -34,6 +34,8 @@ dependencies:
     - cson
     - speg
     - aiohttp_cors
+    - docker
+    - rpbs::seamless-cli
     - makefun
     - nglview
     - matplotlib 

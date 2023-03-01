@@ -8,12 +8,16 @@ dependencies:
   - rpbs::seamless-framework==0.11
   - rpbs::silk==0.1.10
   - conda=23.1.*
+  - ruamel.yaml=0.17.*
+  - psutil=5.9.*
+  - jinja2=3.1.*
+  - traitlets=5.9.*
+  - jsonschema=4.17.*
   - ipython=8.10.*
   - ipykernel=6.21.*
   - aiofiles=22.1.*
   - cffi=1.15.*
-  - traitlets=5.9.*
-  - ipywidgets=8.0.*
+  - ipywidgets=8.0.*  
   - debugpy=1.6.*
   - openmp=8.0.*
   - wurlitzer=3.0.*
@@ -35,6 +39,8 @@ dependencies:
     - cson==0.8.*
     - speg
     - aiohttp_cors==0.7.*
+    - docker==6.0.*
+    - rpbs::seamless-cli
     - makefun
     - nglview
     - matplotlib 
