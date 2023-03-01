@@ -92,7 +92,7 @@ transformer-compiled-error.py
 transformer-compiled-module.py
 transformer-compiled-header.py
 twopi-graph-database.sh: run with Seamless database
-                      first delete job reults: rm -rf /tmp/seamless-db
+                      first delete job results: rm -rf /tmp/seamless-db
                       then: seamless-database twopi-graph-database.yaml
                       run as i=twopi-graph-database; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
@@ -153,11 +153,11 @@ high-in-low8.py
 high-in-low4-memory.py    # Quite long test.
                           # Creates 5.6 GB of buffer cache in /tmp/dummy-db
                           # Run with rm -rf /tmp/dummy-db  && mkdir -p /tmp/dummy-db && seamless-database dummydb-config.yaml
-                          # Time is ~165 seconds, or ~110 seconds when re-executed
+                          # Time is ~100 seconds, or ~60 seconds when re-executed
                           # Re-executing the test is faster, because the transformation results and input buffers are cached
                           # Exact output will depend on timings
                           # After the test, "rm -rf /tmp/dummy-db && docker stop seamless-database-container"
-high-in-low6-memory.py    # See above. Time is ~95 seconds, or ~70 seconds when re-executed
+high-in-low6-memory.py    # See above. Time is ~60 seconds, or ~35 seconds when re-executed
 switch-select-stdlib.py
 map-speed-test.py: long test, calculates the speed of stdlib.map_dict
 map-speed-test2.py: long test, calculates the speed of stdlib.map_dict_chunk

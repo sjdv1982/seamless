@@ -1,3 +1,5 @@
+Opened the seamless share update server at port 5138
+Opened the seamless REST server at port 5813
 Project testproject created.
 
 - Use seamless-load-project to start up IPython
@@ -13,10 +15,6 @@ or:
   and in the Jupyter browser window,
   open /home/jovyan/cwd/testproject.ipynb
 
-Opened the seamless share update server at port 5138
-Opened the seamless REST server at port 5813
-[22;0t]0;IPython: highlevel/webinterface-filesOpened the seamless share update server at port 5138
-Opened the seamless REST server at port 5813
 *** define_graph() function is empty. Loading 'graph/testproject.seamless' ***
 
 Project loaded.
@@ -29,6 +27,8 @@ Project loaded.
 
     Run save() to save the project
     
+Opened the seamless share update server at port 5138
+Opened the seamless REST server at port 5813
 
 
 
