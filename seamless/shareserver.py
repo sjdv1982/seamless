@@ -63,6 +63,7 @@ import base64
 from asyncio import CancelledError
 try:
     import aiohttp
+    import aiohttp_cors
     from websockets.exceptions import ConnectionClosed
     miss_http_lib = False
 except ImportError:
@@ -924,7 +925,7 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
 
     def start(self):
         if miss_http_lib:
-            raise ImportError("aiohttp and/or websockets are missing")
+            raise ImportError("aiohttp, aiohttp_cors and/or websockets are missing")
         if self.address is None:
             self.address = self.DEFAULT_ADDRESS
         if self.update_port is None:
