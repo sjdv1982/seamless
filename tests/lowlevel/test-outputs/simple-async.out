@@ -12,6 +12,8 @@ None
 1012 Status: OK
 Introduce delay...
 after 1.0 sec...
--12 Status: OK
+None Status: {
+  "tf": "executing"
+}
 ...
 -12 Status: OK
