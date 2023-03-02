@@ -3,15 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seamless.highlevel.Context &mdash; Seamless 0.10 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <title>seamless.highlevel.Context &mdash; Seamless 0.10 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
+  
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -22,17 +24,21 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../index.html" class="icon icon-home"> Seamless
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Seamless
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Introduction</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
@@ -41,7 +47,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../explained.html">Seamless explained</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../new-project.html">Seamless projects</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Seamless features</span></p>
+<p class="caption" role="heading"><span class="caption-text">Seamless features</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../context.html">Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../cell.html">Cells</a></li>
@@ -59,12 +65,21 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../deployment.html">Deployment</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Advanced features</span></p>
+<p class="caption" role="heading"><span class="caption-text">Advanced features</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../deepcell.html">Deep cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../low_level.html">Macros and the low level</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Reference</span></p>
+<p class="caption" role="heading"><span class="caption-text">stdlib documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../stdlib/merge.html">stdlib.merge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../stdlib/select.html">stdlib.select</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../stdlib/switch.html">stdlib.switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../stdlib/instantiate.html">stdlib.instantiate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../stdlib/map_dict.html">stdlib.map.map_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../stdlib/map_dict_chunk.html">stdlib.map.map_dict_chunk</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference.html">Reference</a></li>
 </ul>
@@ -82,7 +97,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
           <li class="breadcrumb-item"><a href="../highlevel.html">seamless.highlevel</a></li>
       <li class="breadcrumb-item active">seamless.highlevel.Context</li>
@@ -145,25 +160,25 @@
 
 
 <span class="k">def</span> <span class="nf">print_info</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Logger function&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Logger function&quot;&quot;&quot;</span>
     <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">print_warning</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Logger function&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Logger function&quot;&quot;&quot;</span>
     <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">print_debug</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Logger function&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Logger function&quot;&quot;&quot;</span>
     <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">print_error</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Logger function&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Logger function&quot;&quot;&quot;</span>
     <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
@@ -212,7 +227,7 @@
     <span class="n">nodes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">Any</span><span class="p">],</span>
     <span class="n">path</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StatusReport</span> <span class="o">|</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Return the status of all direct children</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the status of all direct children</span>
 
 <span class="sd">    Children have been taken from .children, as well as all nodes in the nodegraph</span>
 <span class="sd">    of type &quot;context&quot;, creating a SubContext on the fly.</span>
@@ -250,6 +265,7 @@
 
 
 <span class="k">def</span> <span class="nf">_destroy_contexts</span><span class="p">():</span>
+    <span class="n">_cleanup</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">context</span> <span class="ow">in</span> <span class="n">_contexts</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">context</span><span class="o">.</span><span class="n">_destroy</span><span class="p">()</span>
@@ -276,7 +292,7 @@
 
 
 <div class="viewcode-block" id="Context"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context">[docs]</a><span class="k">class</span> <span class="nc">Context</span><span class="p">(</span><span class="n">Base</span><span class="p">,</span> <span class="n">HelpMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Context class. Organizes cells and workers hierarchically.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Context class. Organizes cells and workers hierarchically.</span>
 
 <span class="sd">    Wrapper around a workflow graph, which can be serialized as JSON to a</span>
 <span class="sd">    .seamless file.</span>
@@ -350,7 +366,7 @@
         <span class="n">share_namespace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="nb">zip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="n">ZipFile</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># pylint: disable=redefined-builtin</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Construct a Context from a graph</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct a Context from a graph</span>
 
 <span class="sd">        &quot;graph&quot; can be a file name or a JSON dict</span>
 <span class="sd">        Normally, it has been generated with Context.save_graph / Context.get_graph</span>
@@ -377,7 +393,7 @@
         <span class="k">return</span> <span class="bp">self</span></div>
 
 <div class="viewcode-block" id="Context.set_graph"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.set_graph">[docs]</a>    <span class="k">def</span> <span class="nf">set_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mounts</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">shares</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Set the graph of the Context</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the graph of the Context</span>
 
 <span class="sd">        &quot;graph&quot; can be a file name or a JSON dict</span>
 <span class="sd">        Normally, it has been generated with Context.save_graph / Context.get_graph</span>
@@ -439,7 +455,7 @@
         <span class="k">return</span> <span class="bp">self</span></div>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">manager</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Manager</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Create a new Seamless context</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new Seamless context</span>
 
 <span class="sd">        &quot;manager&quot;: re-use the manager of a previous context.</span>
 <span class="sd">        The manager controls caching and execution.</span>
@@ -472,7 +488,7 @@
                 <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="kn">from</span> <span class="bp">None</span>
 
     <span class="k">def</span> <span class="nf">_get_from_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]):</span>
-        <span class="sd">&quot;&quot;&quot;Return the child under &quot;path&quot;.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the child under &quot;path&quot;.</span>
 <span class="sd">        e.g. ctx._get_from_path((&quot;a&quot;, &quot;b&quot;)) return ctx.a.b</span>
 <span class="sd">        First, a child is looked up in ._children</span>
 <span class="sd">        If that fails, &quot;path&quot; is looked up in the graph nodes</span>
@@ -560,7 +576,7 @@
         <span class="k">return</span> <span class="n">traitlet</span>
 
 <div class="viewcode-block" id="Context.compute"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.compute">[docs]</a>    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">report</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Block until no more computation is required.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Block until no more computation is required.</span>
 
 <span class="sd">        This means that all cells and transformers have either been computed,</span>
 <span class="sd">        or they have an error, or they have unsatisfied upstream dependencies.</span>
@@ -577,7 +593,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">timeout</span><span class="p">,</span> <span class="n">report</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Context.computation"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.computation">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">computation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">report</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Block until no more computation is required.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Block until no more computation is required.</span>
 
 <span class="sd">        This means that all cells and transformers have either been computed,</span>
 <span class="sd">        or they have an error, or they have unsatisfied upstream dependencies.</span>
@@ -589,7 +605,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">self</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return a wrapper where the children are not directly accessible.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a wrapper where the children are not directly accessible.</span>
 
 <span class="sd">        By default, a Cell called &quot;compute&quot; will cause &quot;ctx.compute&quot; to return</span>
 <span class="sd">        the Cell. This is problematic if you want to access the method compute().</span>
@@ -603,7 +619,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">environment</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return the global execution environment of the context&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the global execution environment of the context&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_environment</span>
 
     <span class="k">def</span> <span class="nf">_translate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -612,7 +628,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_needs_translation</span> <span class="o">=</span> <span class="kc">True</span>
 
 <div class="viewcode-block" id="Context.translate"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.translate">[docs]</a>    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;(Re-)translate the graph.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;(Re-)translate the graph.</span>
 <span class="sd">        The graph is translated to a low-level, computable form</span>
 <span class="sd">        (seamless.core). After translation, return immediately,</span>
 <span class="sd">        although computation will start automatically.</span>
@@ -634,7 +650,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Context.translation"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.translation">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">translation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;(Re-)translate the graph.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;(Re-)translate the graph.</span>
 <span class="sd">        The graph is translated to a low-level, computable form</span>
 <span class="sd">        (seamless.core). After translation, return immediately,</span>
 <span class="sd">        although computation will start automatically.</span>
@@ -649,7 +665,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">share_namespace</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The preferred namespace for sharing cells by the HTTP server</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The preferred namespace for sharing cells by the HTTP server</span>
 
 <span class="sd">        Cells are shared under:</span>
 <span class="sd">         http://&lt;shareserver URL&gt;/&lt;live_share_namespace&gt;/&lt;cell path&gt;</span>
@@ -670,7 +686,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">live_share_namespace</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The actual namespace for sharing cells by the HTTP server</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The actual namespace for sharing cells by the HTTP server</span>
 
 <span class="sd">        Cells are shared under:</span>
 <span class="sd">         http://&lt;shareserver URL&gt;/&lt;live_share_namespace&gt;/&lt;cell path&gt;</span>
@@ -683,7 +699,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_live_share_namespace</span>
 
     <span class="k">def</span> <span class="nf">_get_graph_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">copy</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Obtain the graph in dict format, ready to be serialized.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtain the graph in dict format, ready to be serialized.</span>
 
 <span class="sd">        First give pending auth tasks (independent checksums being set)</span>
 <span class="sd">        some time to finish.</span>
@@ -721,7 +737,7 @@
         <span class="k">return</span> <span class="n">graph</span>
 
     <span class="k">async</span> <span class="k">def</span> <span class="nf">_get_graph_dict_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">copy</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Obtain the graph in dict format, ready to be serialized.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtain the graph in dict format, ready to be serialized.</span>
 
 <span class="sd">        Async version of _get_graph_dict.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -753,7 +769,7 @@
         <span class="k">return</span> <span class="n">graph</span>
 
 <div class="viewcode-block" id="Context.get_graph"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_graph">[docs]</a>    <span class="k">def</span> <span class="nf">get_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">runtime</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Return the graph in JSON format.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the graph in JSON format.</span>
 
 <span class="sd">        &quot;runtime&quot;: The graph is returned after Library/LibInstance/Macro</span>
 <span class="sd">        transformations of the graph.</span>
@@ -786,13 +802,13 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_graph</span><span class="p">()</span>
         
 <div class="viewcode-block" id="Context.save_graph"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_graph">[docs]</a>    <span class="k">def</span> <span class="nf">save_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Save the graph in JSON format.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the graph in JSON format.&quot;&quot;&quot;</span>
         <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_graph</span><span class="p">()</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Context.get_zip"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_zip">[docs]</a>    <span class="k">def</span> <span class="nf">get_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Obtain the checksum-to-buffer cache for the current graph.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtain the checksum-to-buffer cache for the current graph.</span>
 
 <span class="sd">        The cache is returned as zipped bytes.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -809,7 +825,7 @@
         <span class="k">return</span> <span class="n">_get_zip</span><span class="p">(</span><span class="n">buffer_dict</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Context.get_zip_async"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_zip_async">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_zip_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Obtain the checksum-to-buffer cache for the current graph</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtain the checksum-to-buffer cache for the current graph</span>
 
 <span class="sd">        The cache is returned as zipped bytes.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -826,7 +842,7 @@
         <span class="k">return</span> <span class="n">_get_zip</span><span class="p">(</span><span class="n">buffer_dict</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Context.save_zip"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_zip">[docs]</a>    <span class="k">def</span> <span class="nf">save_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Save the checksum-to-buffer cache for the current graph.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the checksum-to-buffer cache for the current graph.</span>
 
 <span class="sd">        The cache is saved to &quot;filename&quot;, which should be a .zip file.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -835,7 +851,7 @@
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">zipd</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Context.save_zip_async"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_zip_async">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">save_zip_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Save the checksum-to-buffer cache for the current graph.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the checksum-to-buffer cache for the current graph.</span>
 
 <span class="sd">        The cache is saved to &quot;filename&quot;, which should be a .zip file.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -844,7 +860,7 @@
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">zipd</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Context.save_vault"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_vault">[docs]</a>    <span class="k">def</span> <span class="nf">save_vault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dirname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Save the checksum-to-buffer cache for the current graph in a vault directory&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the checksum-to-buffer cache for the current graph in a vault directory&quot;&quot;&quot;</span>
         <span class="c1"># TODO: option to not follow deep cell checksums (currently, they are always followed)</span>
         <span class="n">force</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_auth_tasks</span><span class="p">(</span><span class="s2">&quot;the graph buffers are obtained for zip&quot;</span><span class="p">)</span>
@@ -864,7 +880,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span>
 
     <span class="k">def</span> <span class="nf">_set_lib</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">lib</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Insert a library &quot;lib&quot; into self._graph.lib.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Insert a library &quot;lib&quot; into self._graph.lib.</span>
 <span class="sd">        Privileged method to be used by &quot;friendly&quot; code.</span>
 
 <span class="sd">        Library &quot;lib&quot; must be a dict that corresponds to an includable Library.</span>
@@ -897,7 +913,7 @@
                 <span class="n">buffer_cache</span><span class="o">.</span><span class="n">decref</span><span class="p">(</span><span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">old_checksum</span><span class="p">))</span>
 
 <div class="viewcode-block" id="Context.add_zip"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.add_zip">[docs]</a>    <span class="k">def</span> <span class="nf">add_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">zip</span><span class="p">,</span> <span class="n">incref</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>  <span class="c1"># pylint: disable=redefined-builtin</span>
-        <span class="sd">&quot;&quot;&quot;Add entries from &quot;zip&quot; to the checksum-to-buffer cache.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add entries from &quot;zip&quot; to the checksum-to-buffer cache.</span>
 
 <span class="sd">        &quot;zip&quot; can be a file name, zip-compressed bytes or a Python ZipFile object.</span>
 <span class="sd">        Normally, it has been generated with Context.save_zip / Context.get_zip</span>
@@ -924,7 +940,7 @@
         <span class="k">return</span> <span class="n">copying</span><span class="o">.</span><span class="n">add_zip</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="n">zipfile</span><span class="p">,</span> <span class="n">incref</span><span class="o">=</span><span class="n">incref</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Context.load_vault"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.load_vault">[docs]</a>    <span class="k">def</span> <span class="nf">load_vault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vault_directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">incref</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Load the contents of a vault directory in the checksum-to-buffer cache.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the contents of a vault directory in the checksum-to-buffer cache.</span>
 
 <span class="sd">        Normally, the vault has been generated with Context.save_vault.</span>
 
@@ -938,7 +954,7 @@
         <span class="k">return</span> <span class="n">load_vault</span><span class="p">(</span><span class="n">vault_directory</span><span class="p">,</span> <span class="n">incref</span><span class="o">=</span><span class="n">incref</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Context.include"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.include">[docs]</a>    <span class="k">def</span> <span class="nf">include</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lib</span><span class="p">:</span> <span class="n">Library</span><span class="p">,</span> <span class="n">only_zip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_path</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Include a library in the graph.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Include a library in the graph.</span>
 
 <span class="sd">        A library (seamless.highlevel.Library) must be included before</span>
 <span class="sd">        library instances (seamless.highlevel.LibInstance) can be constructed</span>
@@ -954,7 +970,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span></div>
 
     <span class="k">def</span> <span class="nf">_wait_for_auth_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">what_happens_text</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Wait up to 10 seconds for auth tasks to complete.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wait up to 10 seconds for auth tasks to complete.</span>
 
 <span class="sd">        Auth tasks are those that modify independent checksums of the workflow.</span>
 <span class="sd">        i.e. the checksums that are input parameters (including code) and are</span>
@@ -980,7 +996,7 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">auth_lost_cells</span><span class="p">):</span>
                 <span class="n">warn</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;WARNING: the following cells had their authoritative value</span>
 <span class="s2">under modification while </span><span class="si">%s</span><span class="s2">.</span>
-<span class="s2">    </span><span class="si">%s</span><span class="s2"></span>
+<span class="s2">    </span><span class="si">%s</span>
 <span class="s2">These modifications have been CANCELED.&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span>
                     <span class="n">what_happens_text</span><span class="p">,</span>
                     <span class="nb">list</span><span class="p">(</span><span class="n">auth_lost_cells</span><span class="p">),</span>
@@ -988,7 +1004,7 @@
                 <span class="nb">print</span><span class="p">(</span><span class="n">warn</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span> <span class="nf">_wait_for_auth_tasks_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">what_happens_text</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Async version of _wait_for_auth_tasks.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Async version of _wait_for_auth_tasks.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_libroot</span><span class="p">:</span>
             <span class="n">taskmanager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">_get_manager</span><span class="p">()</span><span class="o">.</span><span class="n">taskmanager</span>
             <span class="k">await</span> <span class="n">taskmanager</span><span class="o">.</span><span class="n">computation</span><span class="p">(</span>
@@ -1005,7 +1021,7 @@
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">auth_lost_cells</span><span class="p">):</span>
                 <span class="c1"># pylint: disable=line-too-long</span>
-                <span class="n">warn</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;WARNING: the following cells had their authoritative value under modification while </span><span class="si">%s</span><span class="s2"></span>
+                <span class="n">warn</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;WARNING: the following cells had their authoritative value under modification while </span><span class="si">%s</span>
 <span class="s2">    These modifications have been CANCELED:</span>
 <span class="s2">    </span><span class="si">%s</span><span class="s2">&quot;&quot;&quot;</span> <span class="o">%</span> <span class="p">(</span>
                     <span class="n">what_happens_text</span><span class="p">,</span>
@@ -1025,7 +1041,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate2</span><span class="p">(</span><span class="n">graph0</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_do_translate2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph0</span><span class="p">,</span> <span class="n">force</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Translates a graph dict (graph0) into a low-level representation.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translates a graph dict (graph0) into a low-level representation.</span>
 
 <span class="sd">        Called from _do_translateXXX, where a graph dict is obtained.</span>
 <span class="sd">        No-op if no translation is needed, unless force=True.</span>
@@ -1130,7 +1146,7 @@
                         <span class="s2">&quot;Cannot re-translate, since clean-up of old context was incomplete&quot;</span>
                     <span class="p">)</span>
             <span class="n">import_before_translate</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
-            <span class="sd">&quot;&quot;&quot; KLUDGE</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot; KLUDGE</span>
 <span class="sd">            The translation process does NOT happen in one async step; it will start launching tasks</span>
 <span class="sd">            and those tasks will be run.</span>
 <span class="sd">            This is a problem for the high level observers, that will miss checksum updates</span>
@@ -1207,7 +1223,7 @@
         <span class="n">livegraph</span><span class="o">.</span><span class="n">_flush_observations</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_activate_fallbacks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Activate all fallbacks of all cells in the Context&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Activate all fallbacks of all cells in the Context&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">fallback</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reverse_fallbacks</span><span class="p">:</span>
             <span class="n">fallback</span><span class="o">.</span><span class="n">_activate</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
@@ -1230,7 +1246,7 @@
         <span class="k">return</span> <span class="n">shares</span>
 
     <span class="k">def</span> <span class="nf">_connect_share</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Invoke .share on newly created cells.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invoke .share on newly created cells.</span>
 
 <span class="sd">        This is to be invoked right after translation.</span>
 <span class="sd">        Only for cells that have a &quot;share&quot; entry in their graph node dict.</span>
@@ -1320,7 +1336,7 @@
         <span class="n">ind</span><span class="p">[</span><span class="n">pp</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">,</span> <span class="n">nodepathlist</span><span class="p">,</span> <span class="n">connections</span>
 
     <span class="k">def</span> <span class="nf">_destroy_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">runtime</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fast</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Destroy the child listed under &quot;path&quot;.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Destroy the child listed under &quot;path&quot;.</span>
 
 <span class="sd">        &quot;path&quot; can also refer to a subcontext.</span>
 <span class="sd">        In fact, all children whose path starts with &quot;path&quot;</span>
@@ -1398,7 +1414,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;The computation status of the context</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The computation status of the context</span>
 <span class="sd">        Returns a dictionary containing the status of all direct children that are not OK.</span>
 <span class="sd">        If all children are OK, returns &quot;Status: OK&quot;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1407,7 +1423,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">lib</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the libraries that were included in the graph&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the libraries that were included in the graph&quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">.library.include</span> <span class="kn">import</span> <span class="n">IncludedLibraryContainer</span>
 
         <span class="n">libroot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_libroot</span>
@@ -1416,7 +1432,7 @@
         <span class="k">return</span> <span class="n">IncludedLibraryContainer</span><span class="p">(</span><span class="n">libroot</span><span class="p">,</span> <span class="p">())</span>
 
 <div class="viewcode-block" id="Context.resolve"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.resolve">[docs]</a>    <span class="k">def</span> <span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checksum</span><span class="p">,</span> <span class="n">celltype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the data buffer that corresponds to the checksum.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the data buffer that corresponds to the checksum.</span>
 <span class="sd">        If celltype is provided, a value is returned instead</span>
 
 <span class="sd">        The checksum must be a SHA3-256 hash, as hex string or as bytes&quot;&quot;&quot;</span>
@@ -1425,7 +1441,7 @@
 <div class="viewcode-block" id="Context.observe"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.observe">[docs]</a>    <span class="k">def</span> <span class="nf">observe</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">polling_interval</span><span class="p">,</span> <span class="n">observe_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Observe attributes of the context, analogous to Cell.observe.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Observe attributes of the context, analogous to Cell.observe.&quot;&quot;&quot;</span>
 
         <span class="n">observer</span> <span class="o">=</span> <span class="n">PollingObserver</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
@@ -1439,7 +1455,7 @@
         <span class="k">return</span> <span class="n">observer</span></div>
 
 <div class="viewcode-block" id="Context.unobserve"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.unobserve">[docs]</a>    <span class="k">def</span> <span class="nf">unobserve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="p">()):</span>
-        <span class="sd">&quot;&quot;&quot;Analogous to Cell.unobserve&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Analogous to Cell.unobserve&quot;&quot;&quot;</span>
         <span class="n">lp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">obs</span><span class="o">.</span><span class="n">path</span><span class="p">[:</span><span class="n">lp</span><span class="p">]</span> <span class="o">==</span> <span class="n">path</span><span class="p">:</span>
@@ -1461,7 +1477,7 @@
         <span class="k">return</span> <span class="n">libroot</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">lib</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">path</span><span class="p">)]</span>
 
 <div class="viewcode-block" id="Context.remove_connections"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.remove_connections">[docs]</a>    <span class="k">def</span> <span class="nf">remove_connections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">runtime</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">&quot;sub&quot;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Remove all connections/links with source or target matching path.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove all connections/links with source or target matching path.</span>
 
 <span class="sd">        &quot;endpoint&quot; can be &quot;source&quot;, &quot;target&quot;, &quot;connection&quot;, &quot;link&quot; or &quot;all&quot;.</span>
 
@@ -1539,7 +1555,7 @@
         <span class="k">return</span> <span class="n">WebunitWrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Context.link"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.link">[docs]</a>    <span class="k">def</span> <span class="nf">link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Create a bidirectional link between the first and second cell.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a bidirectional link between the first and second cell.</span>
 
 <span class="sd">        Both cells must be authoritative (independent).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1549,7 +1565,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Context.unlink"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.unlink">[docs]</a>    <span class="k">def</span> <span class="nf">unlink</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Remove a bidirectional link between the first and second cell.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a bidirectional link between the first and second cell.</span>
 <span class="sd">        (If it exists).</span>
 <span class="sd">        Returns True if a link was removed</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1562,7 +1578,7 @@
         <span class="k">return</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="Context.get_links"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_links">[docs]</a>    <span class="k">def</span> <span class="nf">get_links</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get all Link (bidirectional cell-cell) connections.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all Link (bidirectional cell-cell) connections.&quot;&quot;&quot;</span>
         <span class="n">connections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">connections</span>
         <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">connections</span><span class="p">:</span>
@@ -1573,7 +1589,7 @@
 <div class="viewcode-block" id="Context.get_children"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_children">[docs]</a>    <span class="k">def</span> <span class="nf">get_children</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># pylint: disable=redefined-builtin</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;Select all children that are directly ours.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Select all children that are directly ours.</span>
 <span class="sd">        A sorted list of strings (attribute names) is returned.</span>
 
 <span class="sd">        It is possible to define a type of children, which can be one of:</span>
@@ -1607,7 +1623,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return a wrapper for the direct children of the context.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a wrapper for the direct children of the context.</span>
 <span class="sd">        This includes subcontexts and libinstances&quot;&quot;&quot;</span>
         <span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="p">]</span>
         <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1690,6 +1706,7 @@
 <span class="kn">from</span> <span class="nn">..core.manager</span> <span class="kn">import</span> <span class="n">Manager</span>
 <span class="kn">from</span> <span class="nn">.SeamlessTraitlet</span> <span class="kn">import</span> <span class="n">SeamlessTraitlet</span>
 <span class="kn">from</span> <span class="nn">.library</span> <span class="kn">import</span> <span class="n">Library</span>
+<span class="kn">from</span> <span class="nn">..imperative</span> <span class="kn">import</span> <span class="n">_cleanup</span>
 </pre></div>
 
            </div>
@@ -1699,7 +1716,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
+    <p>&#169; Copyright 2016-2023, INSERM, CNRS and code contributors.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

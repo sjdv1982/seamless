@@ -3,15 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>seamless.highlevel &mdash; Seamless 0.10 documentation</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <title>seamless.highlevel &mdash; Seamless 0.10 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
+  
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -22,17 +24,21 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../index.html" class="icon icon-home"> Seamless
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Seamless
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Introduction</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
@@ -41,7 +47,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../explained.html">Seamless explained</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../new-project.html">Seamless projects</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Seamless features</span></p>
+<p class="caption" role="heading"><span class="caption-text">Seamless features</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../context.html">Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../cell.html">Cells</a></li>
@@ -59,12 +65,21 @@
 <li class="toctree-l1"><a class="reference internal" href="../../job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../deployment.html">Deployment</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Advanced features</span></p>
+<p class="caption" role="heading"><span class="caption-text">Advanced features</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../deepcell.html">Deep cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../low_level.html">Macros and the low level</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Reference</span></p>
+<p class="caption" role="heading"><span class="caption-text">stdlib documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../stdlib/merge.html">stdlib.merge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../stdlib/select.html">stdlib.select</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../stdlib/switch.html">stdlib.switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../stdlib/instantiate.html">stdlib.instantiate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../stdlib/map_dict.html">stdlib.map.map_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../stdlib/map_dict_chunk.html">stdlib.map.map_dict_chunk</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../reference.html">Reference</a></li>
 </ul>
@@ -82,7 +97,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../../index.html" class="icon icon-home"></a></li>
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
       <li class="breadcrumb-item active">seamless.highlevel</li>
       <li class="wy-breadcrumbs-aside">
@@ -124,7 +139,10 @@
 
 <span class="k">def</span> <span class="nf">set_resource</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
     <span class="n">caller_frame</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_back</span>
-    <span class="n">filename</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">caller_frame</span><span class="p">)</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">caller_frame</span><span class="p">))</span>
+    <span class="n">currdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">currdir</span><span class="p">):</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">currdir</span><span class="p">)</span>
     <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
     <span class="n">ff</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmodule</span><span class="p">(</span><span class="n">caller_frame</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
@@ -134,11 +152,13 @@
         <span class="k">return</span> <span class="n">data</span>
 
 <span class="k">def</span> <span class="nf">parse_function_code</span><span class="p">(</span><span class="n">code_or_func</span><span class="p">,</span> <span class="n">identifier</span><span class="o">=</span><span class="s2">&quot;&lt;None&gt;&quot;</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">..util</span> <span class="kn">import</span> <span class="n">strip_decorators</span>
     <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">code_or_func</span><span class="p">):</span>
         <span class="n">func</span> <span class="o">=</span> <span class="n">code_or_func</span>
         <span class="n">code</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsource</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">code</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">code</span> <span class="o">=</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="n">strip_decorators</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">LambdaType</span><span class="p">)</span> <span class="ow">and</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;&lt;lambda&gt;&quot;</span><span class="p">:</span>
             <span class="n">code</span> <span class="o">=</span> <span class="n">lambdacode</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">code</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -173,7 +193,7 @@
 <span class="kn">from</span> <span class="nn">.copy</span> <span class="kn">import</span> <span class="n">copy</span>
 
 <div class="viewcode-block" id="load_graph"><a class="viewcode-back" href="../../reference.html#seamless.highlevel.load_graph">[docs]</a><span class="k">def</span> <span class="nf">load_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="nb">zip</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cache_ctx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">static</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mounts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shares</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Load a Context from graph.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a Context from graph.</span>
 
 <span class="sd">    &quot;graph&quot; can be a file name or a JSON dict</span>
 <span class="sd">    Normally, it has been generated with Context.save_graph / Context.get_graph</span>
@@ -235,6 +255,9 @@
     <span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;StaticContext&quot;</span><span class="p">,</span> <span class="s2">&quot;Module&quot;</span><span class="p">,</span>
     <span class="s2">&quot;Resource&quot;</span><span class="p">,</span> <span class="s2">&quot;load_graph&quot;</span><span class="p">,</span> <span class="s2">&quot;copy&quot;</span>
 <span class="p">]</span>
+
+<span class="k">def</span> <span class="fm">__dir__</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">__all__</span><span class="p">)</span>
 </pre></div>
 
            </div>
@@ -244,7 +267,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2016-2022, INSERM, CNRS and code contributors.</p>
+    <p>&#169; Copyright 2016-2023, INSERM, CNRS and code contributors.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

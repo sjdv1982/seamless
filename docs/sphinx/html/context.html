@@ -1,17 +1,20 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contexts &mdash; Seamless 0.10 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <title>Contexts &mdash; Seamless 0.10 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
+  
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -24,17 +27,21 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> Seamless
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Seamless
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Introduction</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
@@ -43,7 +50,7 @@
 <li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new-project.html">Seamless projects</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Seamless features</span></p>
+<p class="caption" role="heading"><span class="caption-text">Seamless features</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Contexts</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#creating-a-new-workflow-child">Creating a new workflow child</a></li>
@@ -66,12 +73,12 @@
 <li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Advanced features</span></p>
+<p class="caption" role="heading"><span class="caption-text">Advanced features</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
 </ul>
-<p class="caption"><span class="caption-text">stdlib documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">stdlib documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="stdlib/merge.html">stdlib.merge</a></li>
 <li class="toctree-l1"><a class="reference internal" href="stdlib/select.html">stdlib.select</a></li>
@@ -80,7 +87,7 @@
 <li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict.html">stdlib.map.map_dict</a></li>
 <li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict_chunk.html">stdlib.map.map_dict_chunk</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Reference</span></p>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
@@ -98,7 +105,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">Contexts</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/context.md.txt" rel="nofollow"> View page source</a>
@@ -109,11 +116,11 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="contexts">
-<h1>Contexts<a class="headerlink" href="#contexts" title="Permalink to this headline">¶</a></h1>
+  <section id="contexts">
+<h1>Contexts<a class="headerlink" href="#contexts" title="Permalink to this heading"></a></h1>
 <p>The seamless.highlevel.Context class is a wrapper around a <em>workflow graph</em>, that contains of <em>workflow children</em> (cells, transformers, modules, macros, library instances, and subcontexts). By convention, a Context is called <code class="docutils literal notranslate"><span class="pre">ctx</span></code>.</p>
-<div class="section" id="creating-a-new-workflow-child">
-<h2>Creating a new workflow child<a class="headerlink" href="#creating-a-new-workflow-child" title="Permalink to this headline">¶</a></h2>
+<section id="creating-a-new-workflow-child">
+<h2>Creating a new workflow child<a class="headerlink" href="#creating-a-new-workflow-child" title="Permalink to this heading"></a></h2>
 <p>If <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> does not exist yet, then <code class="docutils literal notranslate"><span class="pre">ctx.a</span> <span class="pre">=</span> <span class="pre">X</span></code>:</p>
 <ul class="simple">
 <li><p>will bind X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell, transformer, module, macro or context that is not currently bound to a parent context. Example: <code class="docutils literal notranslate"><span class="pre">ctx.a</span> <span class="pre">=</span> <span class="pre">Transformer()</span></code>.</p></li>
@@ -127,18 +134,18 @@
 <p>Cell values (and the workers’ input and output values) are stored as the <em>checksums</em> of their data buffers. Therefore, the workflow graph is always well-defined, yet small in size.</p>
 <p>Seamless maintains a checksum-to-buffer cache, either in memory or in a database. It can also query remotely connected Seamless instances.</p>
 <p>The Context class can launch a <em>translation</em> of the workflow graph to a low-level representation that can be evaluated.</p>
-</div>
-<div class="section" id="transformation">
-<h2>Transformation<a class="headerlink" href="#transformation" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="transformation">
+<h2>Transformation<a class="headerlink" href="#transformation" title="Permalink to this heading"></a></h2>
 <p>In the graph, each transformer performs a transformation from input + code to result. Seamless keeps a result cache of all transformations. Just like the checksum-to-buffer cache, databases or remote Seamless instances can also be queried. Because of this, the only transformations that are performed are those that have never been performed anywhere before, or where the result value is no longer accessible.</p>
-</div>
-<div class="section" id="translation">
-<h2>Translation<a class="headerlink" href="#translation" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="translation">
+<h2>Translation<a class="headerlink" href="#translation" title="Permalink to this heading"></a></h2>
 <p>Before any computation starts, a context has to be translated (using <code class="docutils literal notranslate"><span class="pre">ctx.translate()</span></code> or <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation</span></code>). Implicit translation is done if <code class="docutils literal notranslate"><span class="pre">ctx.compute()</span></code> is invoked. Changing the topology of the graph (e.g. adding a cell) or changing the cell types only takes effect upon re-translation. The modification of <em>inputs</em> (primarily, cell contents) does not require re-translation. This is because translation creates a low-level context that does the work and holds the data. Most of the methods and properties of the Seamless high-level classes (Cell, Transformer, etc.) are wrappers that interact with their low-level counterparts. Seamless low-level contexts accept input changes but not modifications in topology.</p>
 <p>See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/explained.html">Seamless explained</a> for a more detailed explanation.
 See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class">http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class</a> for more documentation on the syntax.</p>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>

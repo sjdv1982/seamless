@@ -1,17 +1,20 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Transformers &mdash; Seamless 0.10 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <title>Transformers &mdash; Seamless 0.10 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
-  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
+  
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -24,17 +27,21 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> Seamless
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Seamless
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption"><span class="caption-text">Introduction</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="whatis.html">Seamless: a cell-based interactive workflow framework</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
@@ -43,7 +50,7 @@
 <li class="toctree-l1"><a class="reference internal" href="explained.html">Seamless explained</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new-project.html">Seamless projects</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Seamless features</span></p>
+<p class="caption" role="heading"><span class="caption-text">Seamless features</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="context.html">Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cell.html">Cells</a></li>
@@ -76,12 +83,12 @@
 <li class="toctree-l1"><a class="reference internal" href="job_management.html">Job management</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Advanced features</span></p>
+<p class="caption" role="heading"><span class="caption-text">Advanced features</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="deepcell.html">Deep cells</a></li>
 <li class="toctree-l1"><a class="reference internal" href="low_level.html">Macros and the low level</a></li>
 </ul>
-<p class="caption"><span class="caption-text">stdlib documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">stdlib documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="stdlib/merge.html">stdlib.merge</a></li>
 <li class="toctree-l1"><a class="reference internal" href="stdlib/select.html">stdlib.select</a></li>
@@ -90,7 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict.html">stdlib.map.map_dict</a></li>
 <li class="toctree-l1"><a class="reference internal" href="stdlib/map_dict_chunk.html">stdlib.map.map_dict_chunk</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Reference</span></p>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
@@ -108,7 +115,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">Transformers</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/transformer.md.txt" rel="nofollow"> View page source</a>
@@ -119,30 +126,30 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="transformers">
-<h1>Transformers<a class="headerlink" href="#transformers" title="Permalink to this headline">¶</a></h1>
+  <section id="transformers">
+<h1>Transformers<a class="headerlink" href="#transformers" title="Permalink to this heading"></a></h1>
 <p>Transformers perform a data transformation (computation), with cells as input, and one cell as the output. The source code of the transformation is an additional input. In principle, transformations can be in any programming language.</p>
 <p>Transformers must be bound to a context. <code class="docutils literal notranslate"><span class="pre">ctx.tf</span> <span class="pre">=</span> <span class="pre">Transformer()</span></code> creates a new transformer <code class="docutils literal notranslate"><span class="pre">ctx.tf</span></code>, bound to context <code class="docutils literal notranslate"><span class="pre">ctx</span></code>.</p>
 <p><em><strong>In the documentation below, <code class="docutils literal notranslate"><span class="pre">ctx.tf</span> <span class="pre">=</span> <span class="pre">Transformer()</span></code> is assumed.</strong></em></p>
-<div class="section" id="pins">
-<h2>Pins<a class="headerlink" href="#pins" title="Permalink to this headline">¶</a></h2>
+<section id="pins">
+<h2>Pins<a class="headerlink" href="#pins" title="Permalink to this heading"></a></h2>
 <p>The inputs of a transformer are declared as <em>pins</em>. If <code class="docutils literal notranslate"><span class="pre">ctx.tf</span></code> does not have a pin <code class="docutils literal notranslate"><span class="pre">x</span></code>, then <code class="docutils literal notranslate"><span class="pre">ctx.tf.x</span> <span class="pre">=</span> <span class="pre">10</span></code> creates a new pin <code class="docutils literal notranslate"><span class="pre">x</span></code> with the value 10. If it does have a pin <code class="docutils literal notranslate"><span class="pre">x</span></code>, it assigns the value 10 to it. A pin can also be connected to a cell <code class="docutils literal notranslate"><span class="pre">ctx.c</span></code> using <code class="docutils literal notranslate"><span class="pre">ctx.tf.x</span> <span class="pre">=</span> <span class="pre">ctx.c</span></code>.</p>
 <p>Pin <em>values</em> can be accessed with e.g. <code class="docutils literal notranslate"><span class="pre">ctx.tf.x.value</span></code> for pin <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
 <p>Pin <em>attributes</em> can be accessed using <code class="docutils literal notranslate"><span class="pre">ctx.tf.pins</span></code>, e.g <code class="docutils literal notranslate"><span class="pre">ctx.tf.pins.x</span></code> for pin <code class="docutils literal notranslate"><span class="pre">x</span></code>. The celltype of a pin <code class="docutils literal notranslate"><span class="pre">x</span></code> can be changed using <code class="docutils literal notranslate"><span class="pre">ctx.tf.pins.x.celltype</span></code> . Pin <code class="docutils literal notranslate"><span class="pre">x</span></code> can be deleted using <code class="docutils literal notranslate"><span class="pre">del</span> <span class="pre">ctx.tf.pins.x</span></code> or <code class="docutils literal notranslate"><span class="pre">del</span> <span class="pre">ctx.tf.x</span></code>.</p>
 <p>Pins can be mounted to files, just like cells can, e.g <code class="docutils literal notranslate"><span class="pre">ctx.tf.x.mount(...)</span></code> for pin x. The same restrictions apply as for cells regarding dependent values and celltype. See the documentation of Cell for more details.</p>
 <p>Newly created/deleted/connected/mounted pins require a re-translation of the context to take effect. This is also the case for a change in pin celltype.</p>
-<div class="section" id="alternative-pin-syntax">
-<h3>Alternative pin syntax<a class="headerlink" href="#alternative-pin-syntax" title="Permalink to this headline">¶</a></h3>
+<section id="alternative-pin-syntax">
+<h3>Alternative pin syntax<a class="headerlink" href="#alternative-pin-syntax" title="Permalink to this heading"></a></h3>
 <p>As an alternative pin syntax, you can also use <code class="docutils literal notranslate"><span class="pre">ctx.tf[&quot;x&quot;]</span> <span class="pre">=</span> <span class="pre">10</span></code>.
 This allows pins with names that are not valid Python attributes, such as <code class="docutils literal notranslate"><span class="pre">ctx.tf[&quot;file.txt&quot;]</span> <span class="pre">=</span> <span class="pre">10</span></code>.</p>
-</div>
-<div class="section" id="code-pin">
-<h3>Code pin<a class="headerlink" href="#code-pin" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="code-pin">
+<h3>Code pin<a class="headerlink" href="#code-pin" title="Permalink to this heading"></a></h3>
 <p>There is one special pin that always exists: <code class="docutils literal notranslate"><span class="pre">ctx.tf.code</span></code>. This pin defines the source code of the transformer, in the programming language defined by <code class="docutils literal notranslate"><span class="pre">ctx.tf.language</span></code>. Depending on the programming language, other special pins may exist as well (see below).</p>
-</div>
-</div>
-<div class="section" id="transformer-execution">
-<h2>Transformer execution<a class="headerlink" href="#transformer-execution" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="transformer-execution">
+<h2>Transformer execution<a class="headerlink" href="#transformer-execution" title="Permalink to this heading"></a></h2>
 <p>Transformers (re-)execute whenever any of their pins change in value. If any pin is None, the transformer result is None as well. Transformers execute in perfect isolation:</p>
 <ul class="simple">
 <li><p>Concurrently, without blocking the ipython shell, file mounting, HTTP sharing, or other transformers.</p></li>
@@ -151,9 +158,9 @@ This allows pins with names that are not valid Python attributes, such as <code 
 </ul>
 <p>Transformers that are being executed are canceled when any of their pins change.
 Seamless keeps track of the (checksum of) a transformation result, as a function of (the checksums of) the input value. If the result of a transformation is already known, it is not re-executed.</p>
-</div>
-<div class="section" id="transformer-result">
-<h2>Transformer result<a class="headerlink" href="#transformer-result" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="transformer-result">
+<h2>Transformer result<a class="headerlink" href="#transformer-result" title="Permalink to this heading"></a></h2>
 <p>The result of a transformer is None until the transformation has completed successfully.
 It is available as the <em>result pin</em> <code class="docutils literal notranslate"><span class="pre">ctx.tf.result</span></code>.
 The value of the result is available as <code class="docutils literal notranslate"><span class="pre">ctx.tf.result.value</span></code>.</p>
@@ -162,9 +169,9 @@ The value of the result is available as <code class="docutils literal notranslat
 <p>Transformers can print to stdout or stderr during execution. The printed output will be in <code class="docutils literal notranslate"><span class="pre">ctx.tf.logs</span></code>, together with the execution time and result.</p>
 <p><code class="docutils literal notranslate"><span class="pre">ctx.tf.logs</span></code> is only available after execution has finished. It is possible to put a transformer in debug mode in order to get more immediate feedback (see the “debugging” documentation section).</p>
 <p>To assign a transformer result to a cell <code class="docutils literal notranslate"><span class="pre">ctx.c</span></code>, do <code class="docutils literal notranslate"><span class="pre">ctx.c</span> <span class="pre">=</span> <span class="pre">ctx.tf</span></code>, or <code class="docutils literal notranslate"><span class="pre">ctx.c</span> <span class="pre">=</span> <span class="pre">ctx.tf.result</span></code> (preferred syntax).</p>
-</div>
-<div class="section" id="transformer-programming-languages">
-<h2>Transformer programming languages<a class="headerlink" href="#transformer-programming-languages" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="transformer-programming-languages">
+<h2>Transformer programming languages<a class="headerlink" href="#transformer-programming-languages" title="Permalink to this heading"></a></h2>
 <p>In principle, Seamless transformers can be in any programming language.
 The language is set in the <code class="docutils literal notranslate"><span class="pre">Transformer.language</span></code> field.</p>
 <p>The following languages are supported directly:</p>
@@ -183,9 +190,9 @@ The language is set in the <code class="docutils literal notranslate"><span clas
 </ul>
 <p>Cython is also bundled with the Seamless Docker image. Within an IPython transformer, you can use %%cython magics to embed Cython code.</p>
 <p>Seamless has an API to dynamically add support for new programming languages. See the section “Adding new transformer languages” below.</p>
-</div>
-<div class="section" id="python-transformers">
-<h2>Python transformers<a class="headerlink" href="#python-transformers" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="python-transformers">
+<h2>Python transformers<a class="headerlink" href="#python-transformers" title="Permalink to this heading"></a></h2>
 <p>Python transformers have <code class="docutils literal notranslate"><span class="pre">ctx.tf.language</span> <span class="pre">=</span> <span class="pre">&quot;python&quot;</span></code>, which is the default. Python transformers can also be directly created from a Python function:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
@@ -211,13 +218,13 @@ For example, the following will not work:</p>
 </pre></div>
 </div>
 <p>Python source code can be an expression, a function, or simply a block of code. For an expression or a function, the return value is the result value. A code block must define a variable named “result”.</p>
-</div>
-<div class="section" id="preliminary-results-and-progress">
-<h2>Preliminary results and progress<a class="headerlink" href="#preliminary-results-and-progress" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="preliminary-results-and-progress">
+<h2>Preliminary results and progress<a class="headerlink" href="#preliminary-results-and-progress" title="Permalink to this heading"></a></h2>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
-</div>
-<div class="section" id="bash-transformers">
-<h2>Bash transformers<a class="headerlink" href="#bash-transformers" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="bash-transformers">
+<h2>Bash transformers<a class="headerlink" href="#bash-transformers" title="Permalink to this heading"></a></h2>
 <p>Bash transformers have <code class="docutils literal notranslate"><span class="pre">ctx.tf.language</span></code> set to “bash”.</p>
 <p>In both cases, <code class="docutils literal notranslate"><span class="pre">ctx.tf.code</span></code> is written in bash.
 The bash code will have access to every input pin stored as a file of the same name.
@@ -284,9 +291,9 @@ Also, the files inside this directory have file names that correspond only to th
 <span class="n">ctx</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="compiled-transformers">
-<h2>Compiled transformers<a class="headerlink" href="#compiled-transformers" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="compiled-transformers">
+<h2>Compiled transformers<a class="headerlink" href="#compiled-transformers" title="Permalink to this heading"></a></h2>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <p><strong>Relevant examples:</strong></p>
 <ul class="simple">
@@ -308,9 +315,9 @@ TODO: from tutorial:
 - Compiled transformers:
     - header, integrator, executor
     - main_module multiple files (link to module)
---></div>
-<div class="section" id="adding-new-transformer-languages">
-<h2>Adding new transformer languages<a class="headerlink" href="#adding-new-transformer-languages" title="Permalink to this headline">¶</a></h2>
+--></section>
+<section id="adding-new-transformer-languages">
+<h2>Adding new transformer languages<a class="headerlink" href="#adding-new-transformer-languages" title="Permalink to this heading"></a></h2>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <p>(integrate or delegate to <a class="reference external" href="https://sjdv1982.github.io/seamless/sphinx/html/environments">documentation on environments</a>)</p>
 <p><strong>Relevant test examples:</strong></p>
@@ -357,8 +364,8 @@ In-depth:
 - Irreproducible transformers (link to determinism)
 
 - cancel, clearing exceptions
---></div>
-</div>
+--></section>
+</section>
 
 
            </div>
