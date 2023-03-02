@@ -15,11 +15,11 @@ conda activate seamless
 
 ## Comparison between installation methods
 
-This paragraph is in case the quick installation does not work for you, or for advanced use cases.
+This paragraph is in case the quick installation does not work for you, or if you want to know first what you are doing.
 
 There are three methods to run Seamless. Below, each of the three methods is briefly explained. The section after provides installation instructions for each of the methods.
 
-1. The easiest method is to run Seamless inside Docker containers. With command-line tools such as `seamless-jupyter`, `seamless-bash` and `seamless-ipython` you can create new Docker containers where you can import Seamless into Jupyter, IPython, etc.
+1. The easiest method is to run Seamless inside Docker containers (the quick installation above). With command-line tools such as `seamless-jupyter`, `seamless-bash` and `seamless-ipython` you can create new Docker containers where you can import Seamless into Jupyter, IPython, etc.
 
     This method will work under any platform where you can install Docker, conda and bash. It has been tested under macOS and Linux. It should also work under Windows with MSYS2.
 
@@ -27,7 +27,7 @@ There are three methods to run Seamless. Below, each of the three methods is bri
 
     This method has been tested under macOS and Linux. As it relies on `os.fork()`, it will not work under Windows.
 
-    You will have the choice between several environment files, on a spectrum between minimalist and maximum compatibility with the Seamless Docker image.
+    You will have the choice between several conda environment definitions, on a spectrum between minimalist and maximum compatibility with the Seamless Docker image.
 
 3. Finally, there is also the seamless-minimal installation method. This is not a real Seamless installation. The aim of seamless-minimal is to act as a *service* to execute reproducible computations (transformations) inside arbitrary conda environments. These transformations are generated elsewhere, by a full Seamless installation, or by a different reproducible computation framework.
 
@@ -54,7 +54,7 @@ and [(mini)conda](https://docs.conda.io/en/latest/miniconda.html).
 
 First, you must [install (mini)conda](https://docs.conda.io/en/latest/miniconda.html).
 
-Then, you must install `mamba` in the base environment. `mamba` is a fast, drop-in replacement for the `conda` command. The seamless-framework conda environments are big and the default `conda env create` command does not handle their dependencies very well.
+Then, you must install `mamba` in the base environment. `mamba` is a fast, drop-in replacement for the `conda` command. The Seamless conda environments are big and the default `conda env create` command does not handle their dependencies very well.
 
 Then, create a `seamless-framework` conda environment with the following command:
 
@@ -63,14 +63,6 @@ Then, create a `seamless-framework` conda environment with the following command
 where `<file>.yml` has one of the values below.
 
 In all cases, a conda environment `seamless-framework` is created. If you want to rename it (e.g. to compare different installations), you can do so with `conda rename -n seamless-framework ...`
-
-#### Manual steps
-
-Even with the most compatible installation, making it fully working requires some manual steps.
-
-- When running compiled transformers, Seamless assumes that gcc (for C), g++ (for C++) and gfortran are available. These are not installed by default. If you wish to run transformers written in these languages, you must install these compilers yourself.
-
-- Most likely, you will want to checkout the [seamless-tools Git repo](https://github.com/sjdv1982/seamless-tools). Almost all Seamless commands are wrappers around Python scripts, either in `seamless-tools/scripts` (these scripts heavily rely on Seamless) or `seamless-tools/tools` (these scripts are mostly independent of Seamless). For example, the command `seamless-new-project` (which can be found in `seamless-tools/seamless-cli/seamless-new-project`) is a wrapper around `seamless-tools/scripts/new-project.py` . You will have to set up (some of) the variables that are normally set up by `source seamless-tools/seamless-cli/seamless-fill-environment-variables`. For example, you may need to change SEAMLESS_COMMUNION_IP or SEAMLESS_DATABASE_IP from the Docker host IP into "localhost". Other tools (e.g. the Seamless database) assume a Docker-mapped directory in their default configurations, this needs to be changed as well.
 
 #### Possible conda installations
 
@@ -83,6 +75,14 @@ Even with the most compatible installation, making it fully working requires som
 - `seamless-mini-environment.yml`. Same as above, but will omit some packages. Not all Seamless tests and examples will work. Jupyter is no longer installed, and neither are packages such as scikit-learn, scipy, matplotlib or pandas. If you need those packages, you must install them yourself. The environment is ~410 MB in size.
 
 - `seamless-micro-environment.yml`. Same as above, but this will install only the absolute minimum to run (most of) Seamless. As of early 2023, the environment contains 82 packages and is ~330 MB in size.
+
+#### Post-installation
+
+Even with the most compatible installation, making it fully working requires some manual steps.
+
+- When running compiled transformers, Seamless assumes that gcc (for C), g++ (for C++) and gfortran are available. These are not installed by default. If you wish to run transformers written in these languages, you must install these compilers yourself.
+
+- Most likely, you will want to checkout the [seamless-tools Git repo](https://github.com/sjdv1982/seamless-tools). Almost all Seamless commands are wrappers around Python scripts, either in `seamless-tools/scripts` (these scripts heavily rely on Seamless) or `seamless-tools/tools` (these scripts are mostly independent of Seamless). For example, the command `seamless-new-project` (which can be found in `seamless-tools/seamless-cli/seamless-new-project`) is a wrapper around `seamless-tools/scripts/new-project.py` . You will have to set up (some of) the variables that are normally set up by `source seamless-tools/seamless-cli/seamless-fill-environment-variables`. For example, you may need to change SEAMLESS_COMMUNION_IP or SEAMLESS_DATABASE_IP from the Docker host IP into "localhost". Other tools (e.g. the Seamless database) assume a Docker-mapped directory in their default configurations, this needs to be changed as well.
 
 ### 3. Installation of minimal Seamless
 
