@@ -1,12 +1,14 @@
 name: seamless-framework
 channels:
   - conda-forge
+  - rpbs
 dependencies:
   # keep this in sync with seamless-tools/docker/seamless-deps-environment.yml
   - python=3.10.*
   - pip=23.0.*
   - rpbs::seamless-framework==0.11
   - rpbs::silk==0.1.10
+  - rpbs::seamless-cli
   - conda=23.1.*
   - ruamel.yaml=0.17.*
   - psutil=5.9.*
@@ -40,7 +42,6 @@ dependencies:
     - speg
     - aiohttp_cors==0.7.*
     - docker==6.0.*
-    - rpbs::seamless-cli
     - makefun
     - nglview
     - matplotlib 

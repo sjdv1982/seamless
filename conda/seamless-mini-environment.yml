@@ -1,6 +1,7 @@
 name: seamless-framework
 channels:
   - conda-forge
+  - rpbs
 dependencies:
   - python
   - pip

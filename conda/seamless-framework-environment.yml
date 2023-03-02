@@ -1,11 +1,13 @@
 name: seamless-framework
 channels:
   - conda-forge
+  - rpbs
 dependencies:
   - python
   - pip
   - rpbs::seamless-framework==0.11
   - rpbs::silk>=0.1.10
+  - rpbs::seamless-cli
   - conda
   - ipython
   - ipykernel
@@ -35,11 +37,10 @@ dependencies:
     - speg
     - aiohttp_cors
     - docker
-    - rpbs::seamless-cli
     - makefun
     - nglview
     - matplotlib 
-    - snakemake
+    - snakemake==7.18.*
     - jupyter-console
     - itables
 
