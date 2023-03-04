@@ -199,13 +199,7 @@ def _execute(name, code,
                 unpacked_value = fast_unpack(deep_structure, hash_pattern)
                 namespace[pinname] = unpacked_value
                 namespace["PINS"][pinname] = unpacked_value
-            if len(module_workspace):
-                with injector.active_workspace(module_workspace, namespace):
-                    exec_code(
-                        code, identifier, namespace, inputs, output_name, 
-                        with_ipython_kernel=with_ipython_kernel
-                    )
-            else:
+            with injector.active_workspace(module_workspace, namespace):
                 exec_code(
                     code, identifier, namespace, inputs, output_name, 
                     with_ipython_kernel=with_ipython_kernel
