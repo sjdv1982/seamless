@@ -44,6 +44,7 @@ def translate_module(node, root, namespace, inchannels, outchannels):
             codecell2 = core_cell("mixed")
             subcontext.code2 = codecell2
             mount["as_directory"] = True
+            mount["directory_text_only"] = True
             codecell2.mount(**mount)
             mode = mount.get("mode", "rw")
             if mode == "rw" :
