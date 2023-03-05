@@ -21,8 +21,6 @@ class Injector:
             old_modules[self.topmodule_name] = sys_modules[self.topmodule_name]
         try:
             sys_modules[self.topmodule_name] = self.topmodule
-            if self.topmodule_name != "macro":
-                namespace[self.topmodule_name] = self.topmodule
             package_mapping = {}
             for modname, mod in workspace.items():
                 if isinstance(mod, Package):
