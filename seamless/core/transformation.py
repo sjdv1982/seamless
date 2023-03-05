@@ -203,7 +203,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
                 e = traceback.format_exc()
                 raise Exception(pinname, e) from None
             if value is None:
-                raise CacheMissError(pinname, codename)
+                raise CacheMissError(pinname, codename, buffer)
         if pinname == "code":
             code = value
         elif (celltype, subcelltype) == ("plain", "module"):

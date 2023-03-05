@@ -136,6 +136,7 @@ def build_interpreted_package(
         vv = v
         if v.get("dependencies"):
             vv = v.copy()
+            v["dependencies-ORIGINAL"] = deepcopy(v["dependencies"])
             for depnr, dep in enumerate(v["dependencies"]):
                 dep2 = parent_module_name + dep if dep[:1] == "." else dep
                 if dep2 == "__init__":
@@ -344,7 +345,7 @@ def build_all_modules(
     global bootstrap_package_definition
     try:
         full_module_names = {}
-        all_modules = list(modules_to_build.keys())
+        all_modules = sorted(list(modules_to_build.keys()))
         while len(modules_to_build):
             modules_to_build_new = {}
             for modname, module_def in modules_to_build.items():

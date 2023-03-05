@@ -44,48 +44,59 @@ The following properties can be set:
         semantic_code_checksum = _get_semantic(code, code_checksum)
         signature = inspect.signature(func)
 
-        self.semantic_code_checksum = semantic_code_checksum
-        self.signature = signature
-        self.codebuf = codebuf
-        self.code_checksum = code_checksum
-        self.is_async = is_async
+        self._semantic_code_checksum = semantic_code_checksum
+        self._signature = signature
+        self._codebuf = codebuf
+        self._code_checksum = code_checksum
+        self._is_async = is_async
         self._celltypes = {k: "mixed" for k in signature.parameters}
         self._celltypes["result"] = "mixed"
+        self._modules = {}
         self._blocking = True
         if "meta" in kwargs:
-            self.meta = deepcopy(kwargs["meta"])
+            self._meta = deepcopy(kwargs["meta"])
         else:
-            self.meta = {"transformer_path": ["tf", "tf"]}
-        self.kwargs = kwargs
+            self._meta = {"transformer_path": ["tf", "tf"]}
+        self._kwargs = kwargs
         functools.update_wrapper(self, func)
 
     @property
     def celltypes(self):
         return CelltypesWrapper(self._celltypes)
 
+    @property
+    def modules(self):
+        return ModulesWrapper(self._modules)
+
     def __call__(self, *args, **kwargs):
         from .Transformation import Transformation
+        from .module import get_module_definition
         from . import _run_transformer, _run_transformer_async
         from .. import database_sink
-        self.signature.bind(*args, **kwargs)
+        self._signature.bind(*args, **kwargs)
         if multiprocessing.current_process().name != "MainProcess":
-            if self.is_async:
+            if self._is_async:
                 raise NotImplementedError  # no plans to implement this...
             if not database_sink.active:
                 raise RuntimeError("Running @transformer inside a transformation requires a Seamless database")
-        runner = _run_transformer_async if self.is_async else _run_transformer
+        runner = _run_transformer_async if self._is_async else _run_transformer
         if not self._blocking:
             tr = Transformation()
             result_callback = tr._set
         else:
             result_callback = None
+        modules = {}
+        for module_name, module in self._modules.items():
+            module_definition = get_module_definition(module)
+            modules[module_name] = module_definition
         result = runner(
-            self.semantic_code_checksum,
-            self.codebuf,
-            self.code_checksum,
-            self.signature,
-            self.meta,
+            self._semantic_code_checksum,
+            self._codebuf,
+            self._code_checksum,
+            self._signature,
+            self._meta,
             self._celltypes,
+            modules,
             result_callback,
             args,
             kwargs
@@ -94,6 +105,14 @@ The following properties can be set:
             return result
         else:
             return tr
+
+    @property
+    def meta(self):
+        return self._meta
+
+    @meta.setter
+    def meta(self, meta):
+        self._meta[:] = meta
 
     @property
     def local(self):
@@ -111,10 +130,15 @@ The following properties can be set:
     def blocking(self, value:bool):
         if not isinstance(value, bool):
             raise TypeError(value)
-        if (not value) and self.is_async:
+        if (not value) and self._is_async:
             raise ValueError("non-blocking is meaningless for a coroutine")
         self._blocking = value
 
+    def __setattr__(self, attr, value):
+        if attr.startswith("_") or hasattr(type(self), attr):
+            return super().__setattr__(attr, value)
+        raise AttributeError(attr)
+    
 class CelltypesWrapper:
     """Wrapper around an imperative transformer's celltypes."""
     def __init__(self, celltypes):
@@ -139,5 +163,25 @@ class CelltypesWrapper:
         return sorted(self._celltypes.keys())
     def __str__(self):
         return str(self._celltypes)
+    def __repr__(self):
+        return str(self)
+
+class ModulesWrapper:
+    """Wrapper around an imperative transformer's imported modules."""
+    def __init__(self, modules):
+        self._modules = modules
+    def __getattr__(self, attr):
+        return self._modules[attr]
+    def __setattr__(self, attr, value):
+        from types import ModuleType
+        if attr.startswith("_"):
+            return super().__setattr__(attr, value)
+        if not isinstance(value, ModuleType):
+            raise TypeError(type(value))
+        self._modules[attr] = value
+    def __dir__(self):
+        return sorted(self._modules.keys())
+    def __str__(self):
+        return str(self._modules)
     def __repr__(self):
         return str(self)

@@ -148,7 +148,7 @@ def _parse_arguments(signature, args, kwargs):
         arguments = signature.bind(*args, **kwargs).arguments
     return arguments
 
-def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, meta, celltypes, result_callback, args, kwargs):
+def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, meta, celltypes, modules, result_callback, args, kwargs):
     # TODO: celltype support for args / return
     from .. import database_sink
     arguments = _parse_arguments(signature, args, kwargs)
@@ -165,6 +165,11 @@ def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, 
         checksum = calculate_checksum(buf, hex=False)
         cache_buffer(checksum, buf)
         transformation_dict[argname] = (celltypes[argname], None, checksum.hex())
+    for module_name, module_definition in modules.items():
+        buf = serialize(module_definition, "plain")
+        checksum = calculate_checksum(buf, hex=False)
+        cache_buffer(checksum, buf)
+        transformation_dict[module_name] = ("plain", "module", checksum.hex())
     cache_buffer(code_checksum, codebuf)
     # Code below could be moved, see transformation.py syntactic_cache
     # (same code as _run_transformer_async)
@@ -177,7 +182,7 @@ def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, 
     database_sink.sem2syn(semkey, [code_checksum])
     return run_transformation_dict(transformation_dict, result_callback)
 
-async def _run_transformer_async(semantic_code_checksum, codebuf, code_checksum, signature, meta, celltypes, result_callback, args, kwargs):
+async def _run_transformer_async(semantic_code_checksum, codebuf, code_checksum, signature, meta, celltypes, modules, result_callback, args, kwargs):
     from .. import database_sink
     assert result_callback is None  # meaningless for async
     arguments = signature.bind(*args, **kwargs).arguments
@@ -194,6 +199,11 @@ async def _run_transformer_async(semantic_code_checksum, codebuf, code_checksum,
         checksum = calculate_checksum(buf, hex=False)
         cache_buffer(checksum, buf)
         transformation_dict[argname] = (celltypes[argname], None, checksum.hex())
+    for module_name, module_definition in modules.items():
+        buf = serialize(module_definition, "plain")
+        checksum = calculate_checksum(buf, hex=False)
+        cache_buffer(checksum, buf)
+        transformation_dict[module_name] = ("plain", "module", checksum.hex())
     cache_buffer(code_checksum, codebuf)
     # Code below could be moved, see transformation.py syntactic_cache
     # (same code as _run_transformer)
@@ -298,7 +308,7 @@ and the arguments are converted into a Seamless transformation."""
     return result
 
 
-__all__ = ["transformer", "transformer_async", 
+__all__ = ["transformer", "transformer_async",
            "run_transformation_dict", "run_transformation_dict_async"]
 
 def __dir__():
