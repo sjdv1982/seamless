@@ -2,8 +2,10 @@
 
 FROM rpbs/seamless:0.11
 USER root
-#RUN --mount=from=seamless cp seamless/communion_client.py seamless/communion_server.py /opt/conda/lib/python3.8/site-packages/seamless && \
-#    cp seamless/core/transformation.py /opt/conda/lib/python3.8/site-packages/seamless/core/transformation.py && \
-#    cp seamless/highlevel/assign.py  /opt/conda/lib/python3.8/site-packages/seamless/highlevel/assign.py
-#COPY --from=seamless-tools scripts/serve-graph.py /home/jovyan/seamless-scripts
 RUN sed -i 's/3.10.9/3.10.*/' /opt/conda/conda-meta/pinned
+RUN --mount=from=seamless cat docker-patch/filelist | xargs -I {} cp {} /opt/conda/lib/python3.10/site-packages/{}
+#COPY --from=seamless-tools scripts/serve-graph.py /home/jovyan/seamless-scripts
+USER jovyan
+COPY --from=seamless tests/highlevel/debugmount/pypackage /home/jovyan/seamless-tests/highlevel/debugmount/pypackage
+RUN --mount=from=seamless,target=/TEMP cat /TEMP/docker-patch/filelist-test | xargs -t -I {} cp /TEMP/tests/{} /home/jovyan/seamless-tests/{}
+
