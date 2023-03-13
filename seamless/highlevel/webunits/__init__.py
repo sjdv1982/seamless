@@ -108,7 +108,7 @@ def _add_webunit_instance(ctx, webunit_dict, **params):
     return id_
 
 
-def add_webunit_template(name:str, webunit_dict:Dict[str, Any]) -> None:
+def add_webunit_template(name:str, webunit_dict:dict[str, Any]) -> None:
     """Adds a new webunit template.
 webunit_dict must be a dict of webunit template parameters.
 They are typically loaded from a .yaml file.

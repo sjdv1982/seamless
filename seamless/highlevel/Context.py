@@ -111,9 +111,9 @@ shareserver = None
 
 def _get_status(
     parent: Context,
-    children: dict[Tuple[str, ...], Base],
-    nodes: dict[Tuple[str, ...], Any],
-    path: Tuple[str, ...],
+    children: dict[tuple[str, ...], Base],
+    nodes: dict[tuple[str, ...], Any],
+    path: tuple[str, ...],
 ) -> StatusReport | str:
     """Return the status of all direct children
 
