@@ -55,6 +55,19 @@ def sighandler(signal, frame):
     raise SystemExit() from None
 
 old_cwd = os.getcwd()
+
+def _write_file(pinname, data, filemode):
+    if pinname.startswith("/"):
+        raise ValueError("Pin {}: Absolute path is not allowed")
+    path_elements = pinname.split("/")
+    if ".." in path_elements:
+        raise ValueError("Pin {}: .. is not allowed")
+    if len(path_elements) > 1:
+        parent_dir = os.path.dirname(pinname)
+        os.makedirs(parent_dir, exist_ok=True)       
+    with open(pinname, filemode) as pinf:
+        pinf.write(data)
+
 try:
     import signal
     import docker as docker_module
@@ -93,11 +106,9 @@ try:
                     env[pin] = vv.rstrip("\n")
             else:
                 vv = json.dumps(v)
-            with open(pin, "w") as pinf:
-                pinf.write(vv)
+            _write_file(pin, vv, "w")
         elif isinstance(v, bytes):
-            with open(pin, "bw") as pinf:
-                pinf.write(v)
+            _write_file(pin, v, "bw")
         else:
             if v.dtype == np.uint8 and v.ndim == 1:
                 vv = v.tobytes()

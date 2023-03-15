@@ -12,6 +12,7 @@ from ..core.protocol.get_buffer import get_buffer as _get_buffer
 from ..core.lambdacode import lambdacode
 from ..core.cache.transformation_cache import transformation_cache, tf_get_buffer, incref_transformation, syntactic_is_semantic, DummyTransformer
 from ..core.cache.tempref import temprefmanager
+from ..util import parse_checksum
 from .. import run_transformation, run_transformation_async
 
 _queued_transformations = []
@@ -148,7 +149,7 @@ def _parse_arguments(signature, args, kwargs):
         arguments = signature.bind(*args, **kwargs).arguments
     return arguments
 
-def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, meta, celltypes, modules, result_callback, args, kwargs):
+def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, meta, celltypes, modules, result_callback, args, kwargs, checksum_kwargs=[]):
     # TODO: celltype support for args / return
     from .. import database_sink
     arguments = _parse_arguments(signature, args, kwargs)
@@ -161,14 +162,21 @@ def _run_transformer(semantic_code_checksum, codebuf, code_checksum, signature, 
         transformation_dict["__meta__"] = meta
     transformation_dict["code"] = ("python", "transformer", semantic_code_checksum)
     for argname, arg in arguments.items():
-        buf = serialize(arg, celltypes[argname])
-        checksum = calculate_checksum(buf, hex=False)
-        cache_buffer(checksum, buf)
+        if argname in checksum_kwargs:
+            checksum = parse_checksum(arg, as_bytes=True)
+        else:
+            buf = serialize(arg, celltypes[argname])
+            checksum = calculate_checksum(buf, hex=False)
+            cache_buffer(checksum, buf)
         transformation_dict[argname] = (celltypes[argname], None, checksum.hex())
-    for module_name, module_definition in modules.items():
-        buf = serialize(module_definition, "plain")
-        checksum = calculate_checksum(buf, hex=False)
-        cache_buffer(checksum, buf)
+    for module_name, arg in modules.items():
+        if argname in checksum_kwargs:
+            checksum = parse_checksum(arg, as_bytes=True)
+        else:
+            module_definition = arg
+            buf = serialize(module_definition, "plain")
+            checksum = calculate_checksum(buf, hex=False)
+            cache_buffer(checksum, buf)
         transformation_dict[module_name] = ("plain", "module", checksum.hex())
     cache_buffer(code_checksum, codebuf)
     # Code below could be moved, see transformation.py syntactic_cache
