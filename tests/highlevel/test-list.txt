@@ -58,6 +58,7 @@ special-pins-bash.py
 multi-module.py: can also be run in non-interactive mode (see instructions in file)
 module-pyaccess.py: can also be run in non-interactive mode (mount /tmp/module.py)
 bash.py
+bash-slashpins.py
 bash-debug.py
 docker_.py
 docker2.py
