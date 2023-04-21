@@ -19,6 +19,7 @@ webctx.graph.celltype = "plain"
 webctx.graph.share()
 webctx.graph_rt = {}
 webctx.graph_rt.celltype = "plain"
+webctx.graph_rt.share()
 webctx.status_ = {}
 webctx.status_data = webctx.status_
 webctx.status_data.celltype = "plain"

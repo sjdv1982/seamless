@@ -6,7 +6,7 @@
 #   - under seamless-framework (bare-metal conda)
 #   Docker tests require continuumio/anaconda3 to be pulled
 bytes-conversion.py
-set-python-invalid.py: can also be run in non-interactive mode (mount /tmp/code.py)
+set-python-invalid.py: can also be run in interactive mode (mount /tmp/code.py)
 mime.py
 test-html.py
 auth-checksum.py
@@ -19,7 +19,7 @@ subsubcell.py
 inchannel-conflict.py
 logs.py
 deepcell-simple.py
-deepcell-filter.py: can also be run in non-interactive mode (mount /tmp/blacklist.json, /tmp/filt_cell.json)
+deepcell-filter.py: can also be run in interactive mode (mount /tmp/blacklist.json, /tmp/filt_cell.json)
 deepcell-share.py
 deepcell-transform.py
 deepfolder.py
@@ -55,8 +55,8 @@ module-simplified.py
 module.py
 special-pins.py
 special-pins-bash.py
-multi-module.py: can also be run in non-interactive mode (see instructions in file)
-module-pyaccess.py: can also be run in non-interactive mode (mount /tmp/module.py)
+multi-module.py: can also be run in interactive mode (see instructions in file)
+module-pyaccess.py: can also be run in interactive mode (mount /tmp/module.py)
 bash.py
 bash-slashpins.py
 bash-debug.py
@@ -104,6 +104,7 @@ load-graph2.py
 load-graph-static.py
 build-structured-list.py
 vault.bash: run as i=vault; seamless-run ./$i.bash > test-outputs/$i.out 2>&1
+bind-status.py: can also be run in interactive mode, run with "ipython3 -i", make modifications and type "report" and monitor /tmp/graph.json and /tmp/status.json
 library.py
 library-context-argument.py
 library2.py
@@ -124,7 +125,7 @@ environment3.py
 meta.py
 fallback.py
 eager.py: FAILS as of 0.7 (https://github.com/sjdv1982/seamless/issues/90)
-help.py: Can also be run non-interactively with IPython. See the source code for mounts and shares
+help.py: Can also be run interactively with IPython. See the source code for mounts and shares
 help-copy.py
 webinterface.sh: open with bash inside the Seamless Docker container.
                  Can also be run interactively, see line 6 of the code

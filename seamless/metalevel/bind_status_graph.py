@@ -12,9 +12,9 @@ OBSERVE_STATUS_DELAY2 = 0.2
 status_observers = []
 
 class StatusObserver:
-    def __init__(self, ctx, webctx):
+    def __init__(self, ctx, status_ctx):
         self.ctx = weakref.ref(ctx)
-        self.webctx = weakref.ref(webctx)
+        self.status_ctx = weakref.ref(status_ctx)
         self.status = {}
         self._dirty = True
         self.observers = {}
@@ -35,15 +35,15 @@ class StatusObserver:
             return
         t = time.time()
         if self.last_time is None or t - self.last_time > OBSERVE_STATUS_DELAY2:
-            ctx, webctx = self.ctx(), self.webctx()
-            if ctx is None or webctx is None:
+            ctx, status_ctx = self.ctx(), self.status_ctx()
+            if ctx is None or status_ctx is None:
                 return
-            if ctx._gen_context is None or webctx._gen_context is None:
+            if ctx._gen_context is None or status_ctx._gen_context is None:
                 return
-            if ctx._gen_context._destroyed or webctx._gen_context._destroyed:
+            if ctx._gen_context._destroyed or status_ctx._gen_context._destroyed:
                 return
             try:
-                c = webctx.status_
+                c = status_ctx.status_
                 if not isinstance(c, Cell):
                     return
                 c.set(self.status)
@@ -58,8 +58,8 @@ class StatusObserver:
             self._update()
 
     def observe(self, path):
-        ctx, webctx = self.ctx(), self.webctx()
-        if ctx is None or webctx is None:
+        ctx, status_ctx = self.ctx(), self.status_ctx()
+        if ctx is None or status_ctx is None:
             return
         callback = functools.partial(self._callback, path)
         callback(None)
@@ -78,26 +78,26 @@ class StatusObserver:
         callback(None)
 
 
-def observe_graph(ctx, webctx, graph):
+def observe_graph(ctx, status_ctx, graph):
     try:
-        graph_rt = webctx.graph_rt
+        graph_rt = status_ctx.graph_rt
     except AttributeError:
         graph_rt = None
     if isinstance(graph_rt, Cell):
         graph_rt.set(deepcopy(graph))
     else:
         try:
-            graph_cell = webctx.graph
+            graph_cell = status_ctx.graph
         except AttributeError:
             graph_cell = None
         if isinstance(graph_cell, Cell):
             graph_cell.set(deepcopy(graph))
 
     for status_observer in status_observers:
-        if status_observer.ctx() is ctx and status_observer.webctx() is webctx:
+        if status_observer.ctx() is ctx and status_observer.status_ctx() is status_ctx:
             break
     else:
-        status_observer = StatusObserver(ctx, webctx)
+        status_observer = StatusObserver(ctx, status_ctx)
         status_observers.append(status_observer)
 
     paths_to_delete = set(status_observer.observers.keys())
@@ -122,17 +122,55 @@ def observe_graph(ctx, webctx, graph):
         status_observer.destroy(dpath)
     #print("DONE")
 
+def bind_status_context(ctx, status_ctx):
+    """"Sets up monitoring of ctx by status visualization context status_ctx
+
+The status context must have cells called "graph" and/or "graph_rt",
+ (for ctx's static graph and the runtime graph, respectively),
+ and a cell called "status_".
+"""
+    observe_graph_bound = partial(
+        observe_graph, ctx, status_ctx
+    )
+
+    params = {"runtime": True}
+
+    # Primary observation of realtime graph.
+    # Send to status_ctx.graph_rt if it exists, else to status_ctx.graph.
+    ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
+    def observe2(graph):
+        try:
+            graphc = status_ctx.graph
+        except AttributeError:
+            graphc = None
+        if not isinstance(graphc, Cell):
+            return
+        graphc.set(deepcopy(graph))
+    
+    # Secondary observation of static graph.
+    # Only if both status_ctx.graph and status_ctx.graph_rt exist
+    try:
+        graph_rt = status_ctx.graph_rt
+        if not isinstance(graph_rt, Cell):
+            raise AttributeError
+        graph = status_ctx.graph
+        if not isinstance(graph, Cell):
+            raise AttributeError
+    except AttributeError:
+        pass
+    else:
+        ctx.observe(("get_graph",), observe2, OBSERVE_GRAPH_DELAY)
+    
 def bind_status_graph(ctx, status_graph, *, zips=None, mounts=False, shares=True):
     """"Creates status visualization context that will monitor the status of ctx
 
 The status visualization context is loaded from status_graph, 
  which must be a workflow in JSON format, from a .seamless file.
-It uses the same manager as ctx.
 The status context's underlying buffers must be available already
 (from add_zip or via Seamless database) or provided with "zips"
-The status context must have cells called "graph" and "graph_rt",
- (for ctx's static graph and the runtime graph, respectively)
- and normally, also a cell shared as "index.html".
+The status context must have cells called "graph" and/or "graph_rt",
+ (for ctx's static graph and the runtime graph, respectively),
+ a cell called "status_", and normally, also a cell shared as "index.html".
 The status context will receive the share namespace "status"
 
 mounts and shares have the same meaning as in from_graph
@@ -141,45 +179,31 @@ Additional zips can be provided.
 They will be passed to ctx.add_zip before the graph is loaded
 """
     from seamless.highlevel import Context
-    webctx = Context()
+    status_ctx = Context()
     if zips is not None:
         for zipf in zips:
-            webctx.add_zip(zipf)
-    webctx.share_namespace="status"
-    webctx.set_graph(
+            status_ctx.add_zip(zipf)
+    status_ctx.share_namespace="status"
+    status_ctx.set_graph(
         status_graph,
         mounts=mounts,
         shares=shares
     )
-    assert "graph" in webctx.get_children()
-    observe_graph_bound = partial(
-        observe_graph, ctx, webctx
-    )
-    webctx.translate()
-    params = {"runtime": True}
-    ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
-    def observe2(graph):
-        try:
-            graph = webctx.graph
-        except AttributeError:
-            graph = None
-        if not isinstance(graph, Cell):
-            return
-        webctx.graph.set(deepcopy(graph))
-    ctx.observe(("get_graph",), observe2, OBSERVE_GRAPH_DELAY)
-    return webctx
+    status_ctx.translate()
+
+    bind_status_context(ctx, status_ctx)
+    return status_ctx
 
 async def bind_status_graph_async(ctx, status_graph, *, zips=None, mounts=False, shares=True):
     """"Creates status visualization context that will monitor the status of ctx
 
 The status visualization context is loaded from status_graph, 
  which must be a workflow in JSON format, from a .seamless file.
-It uses the same manager as ctx.
 The status context's underlying buffers must be available already
 (from add_zip or via Seamless database) or provided with "zips"
-The status context must have cells called "graph" and "graph_rt",
- (for ctx's static graph and the runtime graph, respectively)
- and normally, also a cell shared as "index.html".
+The status context must have cells called "graph" and/or "graph_rt",
+ (for ctx's static graph and the runtime graph, respectively),
+ a cell called "status_", and normally, also a cell shared as "index.html".
 The status context will receive the share namespace "status"
 
 mounts and shares have the same meaning as in from_graph
@@ -188,32 +212,18 @@ Additional zips can be provided.
 They will be passed to ctx.add_zip before the graph is loaded
 """
     from seamless.highlevel import Context
-    webctx = Context()
+    status_ctx = Context()
     if zips is not None:
         for zipf in zips:
-            webctx.add_zip(zipf)
-    webctx.share_namespace="status"
-    webctx.set_graph(
+            status_ctx.add_zip(zipf)
+    status_ctx.share_namespace="status"
+    status_ctx.set_graph(
         status_graph,
         mounts=mounts,
         shares=shares
     )
-    assert "graph" in webctx.get_children()
-    observe_graph_bound = partial(
-        observe_graph, ctx, webctx,
-    )
-    await webctx.translation()
-    params = {"runtime": True}
-    ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
-    def observe2(graph):
-        try:
-            graph = webctx.graph
-        except AttributeError:
-            graph = None
-        if not isinstance(graph, Cell):
-            return
-        webctx.graph.set(deepcopy(graph))
-    ctx.observe(("get_graph",), observe2, OBSERVE_GRAPH_DELAY)
-    return webctx
+    await status_ctx.translation()
+    bind_status_context(ctx, status_ctx)
+    return status_ctx
 
 from seamless.highlevel import Cell
