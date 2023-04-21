@@ -160,10 +160,10 @@ They will be passed to ctx.add_zip before the graph is loaded
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
     def observe2(graph):
         try:
-            graph_rt = webctx.graph_rt
+            graph = webctx.graph
         except AttributeError:
-            graph_rt = None
-        if not isinstance(graph_rt, Cell):
+            graph = None
+        if not isinstance(graph, Cell):
             return
         webctx.graph.set(deepcopy(graph))
     ctx.observe(("get_graph",), observe2, OBSERVE_GRAPH_DELAY)
@@ -207,10 +207,10 @@ They will be passed to ctx.add_zip before the graph is loaded
     ctx.observe(("get_graph",), observe_graph_bound, OBSERVE_GRAPH_DELAY, params=params)
     def observe2(graph):
         try:
-            graph_rt = webctx.graph_rt
+            graph = webctx.graph
         except AttributeError:
-            graph_rt = None
-        if not isinstance(graph_rt, Cell):
+            graph = None
+        if not isinstance(graph, Cell):
             return
         webctx.graph.set(deepcopy(graph))
     ctx.observe(("get_graph",), observe2, OBSERVE_GRAPH_DELAY)
