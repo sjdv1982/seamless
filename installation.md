@@ -50,6 +50,16 @@ and [(mini)conda](https://docs.conda.io/en/latest/miniconda.html).
 
 ```seamless-jupyter``` does the same for Jupyter Notebook. Inside the notebook file tree, browse `seamless-examples`, or `cwd` for the current directory.
 
+#### Updating your Seamless installation
+
+- Update the Seamless Docker image with `docker pull rpbs/seamless`
+
+- Update the Seamless commands with: 
+```bash
+conda activate seamless
+conda update -c rpbs -c conda-forge seamless-cli
+```
+
 #### Installing a specific Seamless version
 
 By default, the Seamless CLI creates `rpbs/seamless` Docker containers.
