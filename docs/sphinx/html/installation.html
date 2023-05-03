@@ -48,7 +48,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#quick-installation-for-the-impatient">Quick installation (for the impatient)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#comparison-between-installation-methods">Comparison between installation methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#installation-instructions">Installation instructions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#installation-of-seamless-running-inside-docker-containers">1. Installation of Seamless running inside Docker containers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installation-of-seamless-running-inside-docker-containers">1. Installation of Seamless running inside Docker containers</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#updating-your-seamless-installation">Updating your Seamless installation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#installing-a-specific-seamless-version">Installing a specific Seamless version</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#installation-of-seamless-running-directly-in-a-conda-environment">2. Installation of Seamless running directly in a conda environment</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#possible-conda-installations">Possible conda installations</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#post-installation">Post-installation</a></li>
@@ -171,6 +175,28 @@ and <a class="reference external" href="https://docs.conda.io/en/latest/minicond
 <li><p>The command <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code> launches an IPython terminal inside a Seamless Docker container.</p></li>
 </ul>
 <p><code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code> does the same for Jupyter Notebook. Inside the notebook file tree, browse <code class="docutils literal notranslate"><span class="pre">seamless-examples</span></code>, or <code class="docutils literal notranslate"><span class="pre">cwd</span></code> for the current directory.</p>
+<section id="updating-your-seamless-installation">
+<h4>Updating your Seamless installation<a class="headerlink" href="#updating-your-seamless-installation" title="Permalink to this heading"></a></h4>
+<ul class="simple">
+<li><p>Update the Seamless Docker image with <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">pull</span> <span class="pre">rpbs/seamless</span></code></p></li>
+<li><p>Update the Seamless commands with:</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>seamless
+conda<span class="w"> </span>update<span class="w"> </span>-c<span class="w"> </span>rpbs<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>seamless-cli
+</pre></div>
+</div>
+</section>
+<section id="installing-a-specific-seamless-version">
+<h4>Installing a specific Seamless version<a class="headerlink" href="#installing-a-specific-seamless-version" title="Permalink to this heading"></a></h4>
+<p>By default, the Seamless CLI creates <code class="docutils literal notranslate"><span class="pre">rpbs/seamless</span></code> Docker containers.
+To specifically install e.g. Seamless 0.11, you can do:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>pull<span class="w"> </span>rpbs/seamless:0.11
+docker<span class="w"> </span>tag<span class="w"> </span>rpbs/seamless:0.11<span class="w"> </span>rpbs/seamless
+</pre></div>
+</div>
+<p>Alternatively, you can set the <code class="docutils literal notranslate"><span class="pre">SEAMLESS_DOCKER_IMAGE</span></code> variable:
+<code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">SEAMLESS_DOCKER_IMAGE=rpbs/seamless:0.11</span></code></p>
+</section>
 </section>
 <section id="installation-of-seamless-running-directly-in-a-conda-environment">
 <h3>2. Installation of Seamless running directly in a conda environment<a class="headerlink" href="#installation-of-seamless-running-directly-in-a-conda-environment" title="Permalink to this heading"></a></h3>
