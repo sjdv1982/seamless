@@ -201,7 +201,8 @@ parse-pdb.py: requires seamless database.
               can be done when running the test, or afterwards using:
                cs=...  # parse from initial output
                seamless-conda-env-export SOMEDIR
-               seamless-conda-env-modify SOMEDIR parse-pdb-environment.yaml
+               seamless-conda-env-modify SOMEDIR parse-pdb-environment.yml
+               (seamless-conda-env-modify must be run outside the container)
                seamless-conda-env-run-transformation SOMEDIR $cs
 plotting.py. Change ctx.plot.period and ctx.plot.npoints.
 environment.py
