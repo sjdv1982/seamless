@@ -12,6 +12,18 @@ import atexit
 import json
 import orjson
 import logging
+import loky
+loky.backend.context.set_start_method("fork") ###
+from loky.process_executor import TerminatedWorkerError
+
+_queues = {}
+
+def execute2(*args, **kwargs):
+    print("CHILD", _queues)
+    queue = _queues[args[-1]]
+    args2 = args[:-1] + (queue,)
+    execute(*args2, **kwargs)
+
 try:
     from prompt_toolkit.patch_stdout import StdoutProxy
 except ImportError:
@@ -19,24 +31,29 @@ except ImportError:
 
 logger = logging.getLogger("seamless")
 
-forked_processes = weakref.WeakKeyDictionary()
+running_executors = weakref.WeakKeyDictionary()
 def _kill_processes():
-    for process, termination_time in forked_processes.items():
-        if not process.is_alive():
+    for future, termination_time in running_executors.items():
+        if future.done():
+            continue
+        executor = future.EXECUTOR()
+        if executor is None:
             continue
         kill_time = termination_time + 15  # "docker stop" has 10 secs grace, add 5 secs margin
         ctime = time.time()
         while kill_time > ctime:
             print("Waiting for transformer process to terminate...")
             time.sleep(2)
-            if not process.is_alive():
+            if future.done():
                 break
             ctime = time.time()
-        if not process.is_alive():
+        if future.done():
             continue
         print("Killing transformer process... cleanup will not have happened!")
-        kill_children(process)
-        process.kill()
+        #kill_children(process)
+        #process.kill()
+        future.cancel()
+        executor.shutdown(wait=False)
 
 atexit.register(_kill_processes)
 
@@ -283,7 +300,7 @@ class TransformationJob:
         self.transformation = transformation
         self.semantic_cache = semantic_cache
         self.debug = debug
-        self.executor = None
+        self.execute_future = None
         self.future = None
         self.remote = False
         self.restart = False
@@ -607,17 +624,20 @@ class TransformationJob:
 
         self.start = time.time()
         running = False
+        hqueue = None
         try:
             run_transformation_futures = []
             python_attach_port = None
 
             if multiprocessing.get_start_method(allow_none=True) is None:
                 multiprocessing.set_start_method("fork")
-            assert multiprocessing.get_start_method(allow_none=False) == "fork"
+            assert multiprocessing.get_start_method(allow_none=False) == "fork"            
 
             queue = Queue()
             rqueue = Queue()
 
+            hqueue = id(queue)
+            _queues[hqueue] = queue
             args = (
                 self.codename, code,
                 with_ipython_kernel,
@@ -625,8 +645,10 @@ class TransformationJob:
                 self.codename,
                 namespace, deep_structures_to_unpack,
                 inputs, outputname, output_celltype, output_hash_pattern,
-                queue,
+                ###queue,
+                hqueue
             )
+            print("MAIN", _queues)
             if debug is not None:
                 if debug.get("python_attach"):
                     python_attach_port = await acquire_python_attach_port(self.checksum)
@@ -640,21 +662,24 @@ class TransformationJob:
             stdout_orig = sys.stdout
             stderr_orig = sys.stderr
             try:
+                executor = loky.get_reusable_executor()
                 if StdoutProxy is not None:
                     if isinstance(stdout_orig, StdoutProxy):
                         sys.stdout = sys.__stdout__
                     if isinstance(stderr_orig, StdoutProxy):
                         sys.stderr = sys.__stderr__
-                # Set daemon = False so that transformers can spawn their own transformations.
-                # daemon was True in Seamless 0.10 and before!
-                # Multiprocessing processes aren't true Unix daemons,
-                # and "daemon" is a multiprocessing-only thing.
-                # Looking at the source, daemon = False should have no impact,
-                #  but we must make sure to kill all transformer children
                 imperative._set_parent_process_queue(queue)
                 imperative._set_parent_process_response_queue(rqueue)
-                self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=False)
-                self.executor.start()
+                '''
+                func = functools.partial(execute, *args, **kwargs)
+                self.execute_future = asyncio.get_event_loop().run_in_executor(
+                    executor, func
+                )
+                '''
+                self.execute_future = executor.submit(execute2, *args, **kwargs)
+                #self.execute_future = executor.submit(execute, *args, **kwargs)
+                self.execute_future.EXECUTOR = executor
+
             finally:
                 sys.stdout = stdout_orig
                 sys.stderr = stderr_orig
@@ -758,11 +783,17 @@ class TransformationJob:
                             raise Exception("Unknown return status ({}, 'checksum')".format(status))
                     else:
                         raise Exception("Unknown return status {}".format(status))
-                if not self.executor.is_alive():
-                    if self.executor.exitcode != 0:
+                if self.execute_future.done():
+                    '''
+                    if self.execute_future.exitcode != 0:
                         raise SeamlessTransformationError(
-                          "Transformation exited with code %s\n" % self.executor.exitcode
+                          "Transformation exited with code %s\n" % self.execute_future.exitcode
                         )
+                    '''
+                    exc = self.execute_future.exception()
+                    if exc is not None:
+                        # uncaught exception
+                        raise SeamlessTransformationError(str(exc)) ### TODO
                     if not done:
                         raise SeamlessTransformationError("Transformation exited without result")
                 if done:
@@ -775,22 +806,24 @@ class TransformationJob:
                         except Exception as exc:
                             msg = traceback.format_exc()
                             if running:
-                                self.executor.terminate()
-                                forked_processes[self.executor] = time.time()
+                                self.execute_future.terminate()
+                                running_executors[self.execute_future] = time.time()
                             raise SeamlessTransformationError(msg) from None
                         else:
                             fut_done.append(fut)
                 for fut in fut_done:
                     run_transformation_futures.remove(fut)
                 await asyncio.sleep(0.01)
-            if not self.executor.is_alive():
-                self.executor = None
+            if not self.execute_future.is_alive():
+                self.execute_future = None
         except asyncio.CancelledError:
             if running:
-                self.executor.terminate()
-                forked_processes[self.executor] = time.time()
+                self.execute_future.terminate()
+                running_executors[self.execute_future] = time.time()
             raise asyncio.CancelledError from None
         finally:
+            ###if hqueue is not None:
+            ###    _queues.pop(hqueue, None)
             if python_attach_port is not None:
                 free_python_attach_port(python_attach_port)
             for fut in run_transformation_futures:

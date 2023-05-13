@@ -354,10 +354,9 @@ def execute(name, code,
 
     _exiting = False
     direct_print_filehandle = None
+    ok = False
     try:
-        old_stdio = sys.stdout, sys.stderr
-
-        ok = False
+        old_stdio = sys.stdout, sys.stderr        
 
         if debug.get("python_attach"):
             port = int(debug["python_attach_port"])  # MUST be set right before forking
@@ -492,7 +491,7 @@ Execution time: {:.1f} seconds
             try:
                 debug_post_hook(debug)
             except Exception:
-                traceback.print_exc()        
+                traceback.print_exc()
         if not _exiting:
             try:
                 result_queue.close()
