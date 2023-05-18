@@ -8,5 +8,6 @@ seamless.code-workspace
 */__pycache__/
 */.ipynb_checkpoints/
 tests/highlevel/*.json
+tests/highlevel/data/*
 tests/highlevel/context2-graph-raw.txt
 tests/highlevel/debugmount/*

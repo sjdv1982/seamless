@@ -28,6 +28,7 @@ class Environment:
     def _update(self):
         from .Context import Context
         from .Transformer import Transformer
+        from ..imperative import Transformer as ImperativeTransformer
         parent = self._parent()
         if parent is None:
             return
@@ -40,6 +41,10 @@ class Environment:
             if state is not None:
                 node["environment"] = state
             parent._parent()._translate()
+        elif isinstance(parent, ImperativeTransformer):
+            parent._environment_state = None
+            state = self._save()
+            parent._environment_state = state
         else:
             raise TypeError(type(parent))
 
@@ -57,6 +62,7 @@ class Environment:
     def _sync(self):
         from .Context import Context
         from .Transformer import Transformer
+        from ..imperative import Transformer as ImperativeTransformer
         parent = self._parent()
         if parent is None:
             return
@@ -65,6 +71,10 @@ class Environment:
         elif isinstance(parent, Transformer):
             node = parent._get_htf()
             state = node.get("environment", None)
+            if state is not None:
+                self._load(state)
+        elif isinstance(parent, ImperativeTransformer):
+            state = parent._environment_state
             if state is not None:
                 self._load(state)
 
@@ -77,7 +87,7 @@ class Environment:
                     setattr(self, prop, v)
             self._update()
 
-    def set_conda(self, conda, format):
+    def set_conda(self, conda, format="yaml"):
         """Definition of the conda environment.
         
 This is for the context as a whole, e.g. conda packages to support
@@ -92,10 +102,14 @@ for transformers individually (Transformer.environment)"""
             self._conda = None
             self._update()
             return
+        if hasattr(conda, "read") and callable(conda.read):
+            conda = conda.read()
+        elif isinstance(conda, str) and (conda.endswith(".yaml") or conda.endswith(".yml")):
+            conda = open(conda).read()
         result = yaml.load(conda)
         if not isinstance(result, dict):
             raise TypeError("Must be dict, not {}".format(type(result)))
-        result["dependencies"]        
+        result["dependencies"]
         self._conda = conda
         self._update()
 

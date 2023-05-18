@@ -122,6 +122,8 @@ imperative-module.py: run with Seamless database, DEFINITELY in a clean dir
 map-list.py
 channel.py
 environment3.py
+environment7.py: requires delegation (an assistant OR database+jobless) to be set up
+imperative-environment.py: requires delegation (an assistant OR database+jobless) to be set up
 meta.py
 fallback.py
 eager.py: FAILS as of 0.7 (https://github.com/sjdv1982/seamless/issues/90)

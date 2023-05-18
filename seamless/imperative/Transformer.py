@@ -37,6 +37,7 @@ The following properties can be set:
     The syntax is: Transformer.celltypes.a = "text" 
     (or Transformer.celltypes["a"] = "text") 
     for pin "a"."""
+        from ..highlevel.Environment import Environment
         from . import getsource, serialize, calculate_checksum, _get_semantic
         code = getsource(func)
         codebuf = serialize(code, "python")
@@ -53,6 +54,9 @@ The following properties can be set:
         self._celltypes["result"] = "mixed"
         self._modules = {}
         self._blocking = True
+        self._environment = Environment(self)
+        self._environment_state = None
+
         if "meta" in kwargs:
             self._meta = deepcopy(kwargs["meta"])
         else:
@@ -67,6 +71,11 @@ The following properties can be set:
     @property
     def modules(self):
         return ModulesWrapper(self._modules)
+
+    @property
+    def environment(self) -> "Environment":
+        """Computing environment to execute transformations in"""
+        return self._environment
 
     def __call__(self, *args, **kwargs):
         from .Transformation import Transformation
@@ -99,7 +108,8 @@ The following properties can be set:
             modules,
             result_callback,
             args,
-            kwargs
+            kwargs,
+            env=self._environment._to_lowlevel()
         )
         if self._blocking:
             return result
@@ -185,3 +195,4 @@ class ModulesWrapper:
         return str(self._modules)
     def __repr__(self):
         return str(self)
+    
