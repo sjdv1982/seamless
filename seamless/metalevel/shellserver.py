@@ -25,15 +25,23 @@ if os.path.exists(docker_container_file):
     with open(docker_container_file) as f:
         DOCKER_CONTAINER = f.read().strip()
 
+CODE_MOUNT_MESSAGE1 = """
+Modifying the code will update the code in the shell:
+    {code_mount_file}
+For the rest, the shell is not auto-synchronized with the sandbox."""
+
+CODE_MOUNT_MESSAGE0 = """The shell is not auto-synchronized with the sandbox."""
+
 PYMESSAGE = """**********************************************************************
 Seamless IPython shell {name} started.
 
 The shell contains the *current* values of the code and inputs
-of the debugged transformer sandbox. The shell is not auto-synchronized with
-the sandbox. 
+of the debugged transformer sandbox. {code_mount_message}
 
 In a bash terminal, you can connect to the shell with:
   {CONSOLE_COMMAND} {connection_file}
+  
+  In many cases, just "{CONSOLE_COMMAND0}" will work as well
 **********************************************************************
 """
 
@@ -41,8 +49,7 @@ PYBANNER = """******************************************************************
 Seamless IPython shell {name}.
 
 The shell contains the *current* values of the code and inputs
-of the debugged transformer sandbox ".{name}". 
-The shell is not synchronized with value updates from elsewhere. 
+of the debugged transformer sandbox ".{name}".{code_mount_message} 
 
 In the shell, you can:
 - Execute the transformation with "transform()"
@@ -84,9 +91,11 @@ import os, tempfile
 
 DOCKER_IMAGE = os.environ.get("DOCKER_IMAGE")
 if DOCKER_IMAGE is None and DOCKER_CONTAINER is None:
-    CONSOLE_COMMAND = "jupyter console --existing"
+    CONSOLE_COMMAND0 = "jupyter console --existing"
+    CONSOLE_COMMAND = CONSOLE_COMMAND0
 else:
-    CONSOLE_COMMAND = "seamless-jupyter-connect"
+    CONSOLE_COMMAND0 = "seamless-jupyter-connect"
+    CONSOLE_COMMAND = CONSOLE_COMMAND0
     if DOCKER_CONTAINER is not None:
         CONSOLE_COMMAND += " --container {}".format(DOCKER_CONTAINER)
     elif DOCKER_IMAGE != "rpbs/seamless":
@@ -145,6 +154,7 @@ class ShellDict(dict):
                 return self.push
             elif attr == "transform":
                 return self.transform
+
             raise KeyError(attr) from None
 
     def _set_code(self, value):
@@ -221,9 +231,46 @@ def init_io_patched(self):
 
     self.patch_io()
 
+async def monitor_code_mount_file(code_mount_file, namespace, stderr):
+    import traceback
+    try:
+        def _get_mtime():
+            try:
+                stat = os.stat(code_mount_file)
+                mtime = stat.st_mtime
+            except Exception:
+                stderr(traceback.format_exc())
+                return None
+            return mtime
+
+        def _read():
+            try:
+                with open(code_mount_file) as f:
+                    return f.read()
+            except Exception:
+                stderr(traceback.format_exc())
+                return None
+        
+        mtime = _get_mtime()
+        if mtime is None:
+            return
+        while 1:
+            await asyncio.sleep(1)
+            new_mtime = _get_mtime()
+            if new_mtime is None:
+                return
+            if new_mtime != mtime:                
+                mtime = new_mtime
+                code = _read()
+                if code is None:
+                    return
+                namespace["code"] = code
+    except Exception:
+        stderr(traceback.format_exc())
+
 def start_shell(
     name, connection_file, namespace, module_workspace, push_queue, inputs, 
-    output_name, ipython_language
+    output_name, ipython_language, code_mount_file
 ):
     from IPython import get_ipython
     from ..core.injector import transformer_injector
@@ -273,19 +320,31 @@ def start_shell(
 
     try:
         def stdout(msg):
+           if not isinstance(msg, str):
+               msg = str(msg)
            push_queue.put((-1, msg)) 
         def stderr(msg):
+           if not isinstance(msg, str):
+               msg = str(msg)
            push_queue.put((-2, msg)) 
 
         app.init_shell()
         # From now on, stdout and stderr are not working
 
+        code_mount_message = CODE_MOUNT_MESSAGE0
+        if code_mount_file is not None:
+            code_mount_message = CODE_MOUNT_MESSAGE1.format(code_mount_file=code_mount_file)
+
         app.shell.banner1 = PYBANNER.format(
             name=name,
+            code_mount_message=code_mount_message,
         )
+            
         message = PYMESSAGE.format(
             name=name,
             CONSOLE_COMMAND=CONSOLE_COMMAND,
+            CONSOLE_COMMAND0=CONSOLE_COMMAND0,
+            code_mount_message=code_mount_message,
             connection_file=connection_file
         )
         stderr(message)
@@ -296,7 +355,7 @@ def start_shell(
         # initialization do not get associated with the first execution request
         sys.stdout.flush()
         sys.stderr.flush()
-        # /copy-paste
+        # /copy-paste        
 
         with transformer_injector.active_workspace(module_workspace, namespace):
             shelldict = ShellDict(
@@ -306,6 +365,7 @@ def start_shell(
             )
             shelldict.update(namespace)
             shelldict._set_code(shelldict["code"])
+            coro = asyncio.ensure_future(monitor_code_mount_file(code_mount_file, shelldict, stderr)) 
 
             app.kernel.user_ns = shelldict
             app.shell.set_completer_frame()    
@@ -355,7 +415,7 @@ class ShellHub:
             self._destroyed = True
 
 class PyShellHub(ShellHub):
-    def __init__(self, name, inputs, output_name, ipython_language, push_callback):
+    def __init__(self, name, inputs, output_name, ipython_language, push_callback, *, debug_mount):
         super().__init__(name)
         #self.shells: name => (Process, connection_file) dict
         self.inputs = inputs
@@ -365,15 +425,25 @@ class PyShellHub(ShellHub):
         if multiprocessing.get_start_method(allow_none=True) is None:
             multiprocessing.set_start_method("fork")
         assert multiprocessing.get_start_method(allow_none=False) == "fork"
-        self.push_queue = multiprocessing.Queue()        
+        self.push_queue = multiprocessing.Queue()
+        self.debug_mount = debug_mount
 
     def new_shell(self, namespace, module_workspace):
         name = self.new_shell_name()
         connection_file = "seamless-shell-{}.json".format(name)
+        code_mount_file = None
+        if self.debug_mount is not None:
+            code_cell_name = self.debug_mount.pinname_to_cells.get("code")
+            if len(code_cell_name) == 1:
+                code_cell = getattr(self.debug_mount.mount_ctx, code_cell_name[0])
+                code_mount = code_cell._mount
+                if isinstance(code_mount, dict) and not code_mount["as_directory"]:
+                    code_mount_file = code_mount["path"]
         args = (
             name, connection_file, namespace, module_workspace,
             self.push_queue, self.inputs, self.output_name,
-            self.ipython_language
+            self.ipython_language,
+            code_mount_file
         )
         if multiprocessing.get_start_method(allow_none=True) is None:
             multiprocessing.set_start_method("fork")
@@ -414,8 +484,10 @@ In a bash terminal, you can connect to each shell with:"""
                 pushable, value = self.push_queue.get_nowait()
                 if pushable == -1:
                     sys.stdout.write(value)
+                    sys.stdout.flush()
                 elif pushable == -2:
                     sys.stderr.write(value)
+                    sys.stderr.flush()
                 else:
                     try:
                         self.push_callback(pushable, value)
@@ -594,9 +666,9 @@ class ShellServer:
                 if name2 not in self._shellhubs:
                     return name2
 
-    def new_pyshellhub(self, name:str, inputs, output_name, ipython_language, push_callback):
+    def new_pyshellhub(self, name:str, inputs, output_name, ipython_language, push_callback, *, debug_mount=None):
         name = self._new_shellhub_name(name)
-        shellhub = PyShellHub(name, inputs, output_name, ipython_language, push_callback)
+        shellhub = PyShellHub(name, inputs, output_name, ipython_language, push_callback, debug_mount=debug_mount)
         self._shellhubs[name] = shellhub
         asyncio.ensure_future(shellhub.listen_push_queue(self.INTERVAL))
         return name

@@ -133,6 +133,7 @@ class DebugMount:
         self._pulling = False
         self._object_codes = {}
         self.kwargs_cells = {}
+        self.pinname_to_cells = {}
 
     def mount(self, skip_pins):
         from ..core.context import context
@@ -158,7 +159,8 @@ class DebugMount:
         assert not len(self.modules)  # cannot re-mount
         with macro_mode_on():
             self.mount_ctx = context(toplevel=True)
-            pinname_to_cells = {}
+            self.pinname_to_cells = {}
+            pinname_to_cells = self.pinname_to_cells
             for pinname, pin in tf._pins.items():
                 if pinname in skip_pins:
                     continue

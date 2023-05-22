@@ -602,8 +602,13 @@ To create a directory where you can manually execute bash code, do Transformer.d
         c = getattr(self._mount.mount_ctx, inputname, None)
         if c is None:
             print("Cannot push '{}', not mounted as such".format(inputname))
-        c.set(value) # observer should take care of the rest
-        
+        old_cs = c.checksum
+        if old_cs is not None and value is None:  # glitch
+            c._checksum = None
+            c.set(value) # observer should take care of the rest
+        else:
+            c.set(value) # observer should take care of the rest
+
     async def _new_shell(self):
         from ..core.cache.transformation_cache import transformation_cache
         from ..core.transformation import get_transformation_inputs_output
@@ -623,8 +628,8 @@ To create a directory where you can manually execute bash code, do Transformer.d
                 ipython_language = (tf.language == "ipython")
                 shellname = shellserver.new_pyshellhub(
                     shellname0, inputs, outputname, ipython_language,
-                    push_callback=self._push_from_shell
-
+                    push_callback=self._push_from_shell,
+                    debug_mount=tf._get_debugmount()
                 )
             self._shellname = shellname 
         await shellserver.new_shell_from_transformation(
