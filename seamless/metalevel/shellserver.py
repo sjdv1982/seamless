@@ -442,7 +442,8 @@ class BashShellHub(ShellHub):
 
         SEAMLESS_DEBUGGING_DIRECTORY = os.environ.get("SEAMLESS_DEBUGGING_DIRECTORY")
         if SEAMLESS_DEBUGGING_DIRECTORY is None:
-            raise Exception("SEAMLESS_DEBUGGING_DIRECTORY undefined")
+            raise Exception("""SEAMLESS_DEBUGGING_DIRECTORY undefined. 
+Use seamless-XXX-trusted to define it automatically""")
         shelldir = os.path.join(SEAMLESS_DEBUGGING_DIRECTORY, "shell-" + name)
         if not os.path.exists(shelldir):
             os.mkdir(shelldir)
