@@ -34,6 +34,7 @@ For conversions ("valid" means "preserves checksum". "not valid" means a failure
    bytes to mixed is valid. Otherwise, (and not is_numpy, not is_json), invalid
 - bytes2binary: gives the checksum of the np.dtype(S...) array corresponding to the bytes.
   This is just for caching, as this conversion is always possible.
+- members: the number of members for a deep buffer
 
 buffer_info contains nothing about valid conversion to python/ipython/cson/yaml.
 This is stored in evaluate.py:text_validation_celltype_cache

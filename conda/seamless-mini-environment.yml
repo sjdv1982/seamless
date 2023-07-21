@@ -10,7 +10,7 @@ dependencies:
   - conda
   - ipython
   - ipykernel
-  - aiofiles
+
   - cffi
   - traitlets
   - ipywidgets
