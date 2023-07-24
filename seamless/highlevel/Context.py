@@ -77,8 +77,8 @@ from ..core.macro_mode import macro_mode_on, until_macro_mode_off
 from ..core.context import StatusReport, context as core_context
 from .assign import assign
 from .proxy import Pull
-from ..midlevel import copying
-from ..midlevel.vault import save_vault, load_vault
+from .. import copying
+from ..vault import save_vault, load_vault
 
 Graph = namedtuple("Graph", ("nodes", "connections", "params", "lib"))
 

@@ -1,7 +1,7 @@
 from zipfile import ZipFile
 from io import BytesIO
 from ..core import context, cell
-from . import copying
+from .. import copying
 from copy import deepcopy
 from ..highlevel.HelpMixin import HelpMixin
 

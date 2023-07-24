@@ -4,12 +4,12 @@ import textwrap
 from silk.mixed import MixedBase
 import inspect, asyncio
 
-from ..core.cache.buffer_cache import buffer_cache
-from ..core.protocol.deserialize import deserialize_sync as deserialize
-from ..core.protocol.serialize import serialize_sync as serialize
-from ..core.protocol.get_buffer import get_buffer
-from ..core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
-from ..core.protocol.deep_structure import apply_hash_pattern_sync, deep_structure_to_checksums
+from .core.cache.buffer_cache import buffer_cache
+from .core.protocol.deserialize import deserialize_sync as deserialize
+from .core.protocol.serialize import serialize_sync as serialize
+from .core.protocol.get_buffer import get_buffer
+from .core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
+from .core.protocol.deep_structure import apply_hash_pattern_sync, deep_structure_to_checksums
 
 def get_checksums(nodes, connections, *, with_annotations):
     def add_checksum(node, dependent, checksum, subpath=None):
@@ -108,7 +108,7 @@ async def get_buffer_dict(manager, checksums):
 def get_buffer_dict_sync(manager, checksums):
     """This function can be executed if the asyncio event loop is already running"""
 
-    from ..core.protocol.get_buffer import get_buffer
+    from .core.protocol.get_buffer import get_buffer
     if not asyncio.get_event_loop().is_running():
         coro = get_buffer_dict(
             manager, checksums
@@ -134,7 +134,7 @@ def add_zip(manager, zipfile, incref=False):
      if no element (cell, expression, or high-level library) holds their checksum
     This can be overridden with "incref=True" (not recommended for long-living contexts)
     """
-    from ..core.cache.buffer_cache import empty_dict_checksum, empty_list_checksum
+    from .core.cache.buffer_cache import empty_dict_checksum, empty_list_checksum
     result = []
     for checksum in zipfile.namelist():
         if checksum in (empty_dict_checksum, empty_list_checksum):
@@ -151,7 +151,7 @@ def add_zip(manager, zipfile, incref=False):
     return result
 
 def fill_checksum(manager, node, temp_path, composite=True):
-    from ..core.cell import celltypes
+    from .core.cell import celltypes
     checksum = None
     subcelltype = None
     hash_pattern = None
@@ -292,7 +292,7 @@ def get_graph_checksums(graph, with_libraries, *, with_annotations):
 def fill_checksums(mgr, nodes, *, path=None):
     """Fills checksums in the nodes from TEMP values, if untranslated
     """
-    from ..core.structured_cell import StructuredCell
+    from .core.structured_cell import StructuredCell
     first_exc = None
     for p in nodes:
         node, old_checksum = None, None

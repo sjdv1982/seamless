@@ -298,6 +298,26 @@ languages: dict or None
     def internal_children(self):
         return _InternalChildrenWrapper(self)
 
+    def save_vault(self, dirname: str):
+        """Save the checksum-to-buffer cache for the current graph in a vault directory"""
+        # TODO: option to not follow deep cell checksums (currently, they are always followed)
+        manager = self._get_manager()
+        assert manager is not None
+        annotated_checksums0 = {}
+        for child in self._children.values():
+            if not isinstance(child, Cell):
+                continue
+            checksum = child.checksum
+            if checksum is None:
+                continue
+            has_independence = child.has_independence()
+            if not annotated_checksums0.get(checksum, False):
+                annotated_checksums0[checksum] = has_independence
+        annotated_checksums = [(checksum, not has_independence) for checksum, has_independence in annotated_checksums0.items()]
+        checksums = [c[0] for c in annotated_checksums]
+        buffer_dict = get_buffer_dict_sync(manager, checksums)
+        save_vault(dirname, annotated_checksums, buffer_dict)
+
     def destroy(self, *, from_del=False, manager=None):
         if self._destroyed:
             return
@@ -390,6 +410,8 @@ from .unilink import UniLink
 from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .structured_cell import StructuredCell
+from ..copying import get_buffer_dict_sync
+from ..vault import save_vault
 try:
     from ..metalevel.debugmount import debugmountmanager
 except ImportError:
