@@ -219,6 +219,18 @@ class Transformer(Worker):
             return logs
 
     @property
+    def execution_metadata(self):
+        from .cache.database_client import database
+        if not database.active:
+            return None
+        manager = self._get_manager()
+        transformation_cache = manager.cachemanager.transformation_cache
+        transformation = transformation_cache.transformer_to_transformations.get(self)
+        if transformation is None:
+            return None
+        return database.get_metadata(transformation)
+
+    @property
     def void(self):
         return self._void
 

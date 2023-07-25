@@ -447,7 +447,30 @@ async def evaluate_expression(expression, fingertip_mode=False, manager=None):
     
     result = database.get_expression(expression)
     if result is None:
-        result = await EvaluateExpressionTask(manager, expression, fingertip_mode=fingertip_mode).run()
+        celltype = celltype_mapping.get(expression.celltype, expression.celltype)
+        target_celltype = celltype_mapping.get(expression.target_celltype, expression.target_celltype)
+
+        if expression.target_subcelltype and celltype == target_celltype and not expression.path:
+            assert not expression.hash_pattern and not expression.target_hash_pattern
+            # validate subcelltype only if we can get a result buffer without heroics
+            result_buffer = await GetBufferTask(manager, expression.checksum).run()
+            if result_buffer is not None:
+                try:
+                    validate_evaluation_subcelltype(
+                        expression.checksum,
+                        result_buffer,
+                        target_celltype,
+                        expression.target_subcelltype,
+                        codename="expression"
+                    )
+                except Exception as exc:
+                    fexc = traceback.format_exc()
+                    expression.exception = fexc
+                    return None  
+                result = expression.checksum
+
+        if result is None:
+            result = await EvaluateExpressionTask(manager, expression, fingertip_mode=fingertip_mode).run()
         if result is not None:
             database.set_expression(expression, result)
     return result

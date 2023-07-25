@@ -1,5 +1,5 @@
 print("""TODO:
-Write metadata for transformation
+Port Transformer.execution_metadata to the high level, and write lowlevel/highlevel tests
 Test compilation being blocked
 StructuredCellJoin
 redo elision
@@ -19,6 +19,7 @@ import sys
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
 
+import datetime
 import json
 import ast
 import functools
@@ -302,12 +303,12 @@ class TransformationCache:
                         if semkey in self.semantic_to_syntactic_checksums:
                             semsyn = self.semantic_to_syntactic_checksums[semkey]
                         else:
-                            semsyn = database_cache.get_sem2syn(semkey)
+                            semsyn = database.get_sem2syn(semkey)
                             if semsyn is None:
                                 semsyn = []
                             self.semantic_to_syntactic_checksums[semkey] = semsyn
                         semsyn.append(checksum)
-                        database_sink.set_sem2syn(semkey, semsyn)
+                        database.set_sem2syn(semkey, semsyn)
                     else:
                         sem_checksum = checksum
             sem_checksum0 = sem_checksum.hex() if sem_checksum is not None else None
@@ -622,7 +623,7 @@ class TransformationCache:
                     pass
             if isinstance(transformer, DummyTransformer):
                 transformer.prelim = prelim_checksum
-        self.set_transformation_result(tf_checksum, prelim_checksum, True)
+        self._set_transformation_result(tf_checksum, prelim_checksum, True, execution_metadata=None)
 
     def _hard_cancel(self, job):
         if self._destroyed:
@@ -674,10 +675,10 @@ class TransformationCache:
             )
             _write_logs_file(transformer, logs)
 
-    def job_done(self, job, _):
+    def job_done(self, job:"TransformationJob", _):
         if self._destroyed:
             return
-
+        
         future = job.future
         cancelled = (future.cancelled() or job._cancelled) and not job._hard_cancelled
 
@@ -751,13 +752,30 @@ class TransformationCache:
             self.transformation_exceptions[tf_checksum] = exc
             self._set_exc(transformers, tf_checksum, exc)
         else:
-            self.set_transformation_result(tf_checksum, result_checksum, False, update=not job.fingertip)
+            self._set_transformation_result(tf_checksum, result_checksum, False, job.execution_metadata, update=not job.fingertip)
             logs = self.transformation_logs.get(tf_checksum)
             if logs is not None:
                 for tf in transformers:
                     _write_logs_file(tf, logs)
 
-    def set_transformation_result(self, tf_checksum, result_checksum, prelim, *, update=True):
+        if database.active and not job.remote:
+            meta = job.execution_metadata
+            if meta is not None:
+                if exc is not None:
+                    meta["Success"] = False
+                    meta["Exception"] = str(exc)
+                    progress = self.job_progress.get(id(job))
+                    if progress is not None:
+                        meta["Progress"] = progress
+                    if job.start is not None:
+                        execution_time = time.time() - job.start
+                        job.execution_metadata["Execution time (seconds)"] = execution_time
+                else:
+                    meta["Success"] = True
+                meta["Time"] = str(datetime.datetime.now())
+                database.set_metadata(tf_checksum, meta)
+
+    def _set_transformation_result(self, tf_checksum, result_checksum, prelim, execution_metadata, *, update=True):
         from ..manager.tasks.transformer_update import (
             TransformerResultUpdateTask
         )
@@ -769,7 +787,7 @@ class TransformationCache:
         self.transformation_results[tf_checksum] = result_checksum, prelim
         buffer_cache.incref(result_checksum, False)
         if not prelim:
-            database_sink.set_transformation_result(tf_checksum, result_checksum)
+            database.set_transformation_result(tf_checksum, result_checksum)
         transformers = self.transformations_to_transformers[tf_checksum]
         for transformer in transformers:
             if not update:
@@ -797,7 +815,7 @@ class TransformationCache:
             tf_checksum, (None, None)
         )
         if result_checksum is None:
-            result_checksum = database_cache.get_transformation_result(tf_checksum)
+            result_checksum = database.get_transformation_result(tf_checksum)
             prelim = False
         return result_checksum, prelim
 
@@ -813,7 +831,7 @@ class TransformationCache:
         semsyn = self.semantic_to_syntactic_checksums.get(semkey)
         if semsyn is not None:
             return ret(semsyn)
-        semsyn = database_cache.get_sem2syn(semkey)
+        semsyn = database.get_sem2syn(semkey)
         if semsyn is not None:
             self.semantic_to_syntactic_checksums[semkey] = semsyn
             return ret(semsyn)
@@ -821,7 +839,7 @@ class TransformationCache:
         semsyn = await remote(sem_checksum, celltype, subcelltype, peer_id)
         if semsyn is not None:
             self.semantic_to_syntactic_checksums[semkey] = semsyn
-            database_sink.set_sem2syn(semkey, semsyn)
+            database.set_sem2syn(semkey, semsyn)
             return ret(semsyn)
         return None
 
@@ -1119,7 +1137,7 @@ from .buffer_cache import buffer_cache
 from ..protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
 from ..protocol.deserialize import deserialize
 from ..protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
-from .database_client import database_cache, database_sink
+from .database_client import database
 from ..transformation import (
     TransformationJob, SeamlessTransformationError, 
     SeamlessStreamTransformationError, RemoteJobError

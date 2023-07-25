@@ -182,6 +182,18 @@ class Database:
         self._log("SET", request["type"], str(expression))
         self.send_put_request(request)
 
+    def set_metadata(self, tf_checksum,  metadata:dict):
+        tf_checksum = parse_checksum(tf_checksum) 
+        if not self.active:
+            return
+        request = {
+            "type": "metadata",
+            "checksum": parse_checksum(tf_checksum),
+            "value": json.dumps(metadata),
+        }
+        self._log("SET", request["type"], request["type"])
+        self.send_put_request(request)
+
     def send_get_request(self, request):
         if not self.active:
             return
@@ -274,6 +286,21 @@ class Database:
             result = bytes.fromhex(response.content.decode())
             self._log("GET", request["type"], request["checksum"])
             return result
+
+    def get_metadata(self, tf_checksum) -> dict:
+        request = {
+            "type": "metadata",
+            "checksum": parse_checksum(tf_checksum)
+        }
+        self._log("SET", request["type"], request["type"])
+        response = self.send_get_request(request)
+        if response is not None:
+            try:
+                rj = response.json()
+            except requests.exceptions.JSONDecodeError as exc:
+                print(str(response.text())[:1000], file=sys.stderr)
+                raise exc from None
+            return rj
 
 class Dummy:
     _connected = False    

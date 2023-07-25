@@ -12,6 +12,9 @@ import atexit
 import json
 import orjson
 import logging
+import importlib
+import os
+import subprocess
 try:
     from prompt_toolkit.patch_stdout import StdoutProxy
 except ImportError:
@@ -265,6 +268,7 @@ class TransformationJob:
     remote_clients = None
     remote_result = None
     start = None
+    execution_metadata = None
     def __init__(self,
         checksum, codename,
         transformation,
@@ -543,6 +547,10 @@ class TransformationJob:
         from .. import database_sink
         with_ipython_kernel = False
 
+        get_global_info()
+        self.execution_metadata = deepcopy(execution_metadata0)
+        self.execution_metadata["Executor"] = "seamless internal"
+ 
         meta = self.transformation.get("__meta__")
         meta = deepcopy(meta)
         if meta is not None and meta.get("local") == False:
@@ -856,6 +864,7 @@ Execution time: {} seconds
 """.format(execution_time)
 
         logstr += "*************************************************"
+        self.execution_metadata["Execution time (seconds)"] = execution_time
         return result_checksum, logstr
 
 
@@ -866,7 +875,7 @@ from .build_module import build_all_modules
 from ..compiler import compilers as default_compilers, languages as default_languages
 from .protocol.get_buffer import get_buffer
 from .protocol.deserialize import deserialize
-from .protocol.calculate_checksum import calculate_checksum
+from .protocol.calculate_checksum import calculate_checksum, calculate_checksum_func
 from .protocol.evaluate import validate_evaluation_subcelltype
 from .cache import CacheMissError
 from .cache.buffer_cache import buffer_cache
@@ -877,3 +886,66 @@ from .environment import validate_environment
 from ..subprocess_ import kill_children
 from .. import imperative
 from .. import run_transformation_async
+
+execution_metadata0 = {}
+
+if "DOCKER_IMAGE" in os.environ:
+    execution_metadata0["Docker image"] = os.environ["DOCKER_IMAGE"]
+    if "DOCKER_VERSION" in os.environ:
+        execution_metadata0["Docker version"] = os.environ["DOCKER_VERSION"]
+
+_got_global_info = False
+def get_global_info():
+    from .cache.database_client import database
+    global _got_global_info
+    if _got_global_info:
+        return
+    if not database.active:
+        return
+
+    seamless_version = "development"
+    try:
+        import conda.cli.python_api
+        conda.cli.python_api.run_command
+        conda.cli.python_api.Commands.LIST
+    except (ImportError, AttributeError):
+        pass
+    else:
+        info = conda.cli.python_api.run_command(conda.cli.python_api.Commands.LIST)[0]
+        execution_metadata0["Conda environment checksum"] = calculate_checksum_func(info, hex=True)
+        info = conda.cli.python_api.run_command(conda.cli.python_api.Commands.LIST, ["-f", "seamless-framework"])[0]
+        for l in info.split("\n"):
+            l = l.strip()
+            if l.startswith("#"):
+                continue
+            ll = l.split()
+            if len(ll) < 2:
+                continue
+            if ll[0] != "seamless-framework":
+                continue
+            seamless_version = ll[1]
+    if seamless_version == "development":
+        try:
+            seamless_version = importlib.metadata.version("seamless-framework")
+        except importlib.metadata.PackageNotFoundError:
+            pass
+    execution_metadata0["Seamless version"] = seamless_version
+
+    commands = {
+        "Memory": "lshw -C memory -short | tail -n +3",
+        "CPU": "lshw -C cpu -short | tail -n +3",
+        "GPU": 'nvidia-smi --query-gpu "name,memory.total" --format=csv,noheader',
+        "GPU2": "lshw -C display -short | tail -n +3",
+    }
+    result = {}
+    for field, cmd in commands.items():
+        if field == "GPU2":
+            if "GPU" in result:
+                continue
+            field = "GPU"
+        proc = subprocess.run(cmd, shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if proc.returncode or not proc.stdout:
+            continue
+        result[field] = proc.stdout.decode()
+    execution_metadata0.update(result)
+    _got_global_info = True
