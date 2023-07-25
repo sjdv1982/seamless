@@ -3,7 +3,7 @@ LABEL author="Sjoerd de Vries <sjdv1982@gmail.com>"
 LABEL maintainer="Sjoerd de Vries <sjdv1982@gmail.com>"
 LABEL version="0.11"
 USER root
-RUN apt update && apt install -y gcc g++ gfortran && export RPY2_CFFI_MODE=ABI
+RUN apt update && apt install -y gcc g++ gfortran lshw && export RPY2_CFFI_MODE=ABI
 COPY seamless-minimal/environment.yml /seamless-minimal/environment.yml
 COPY seamless /usr/local/software/seamless
 RUN git clone https://github.com/sjdv1982/seamless-tools && \
