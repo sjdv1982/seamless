@@ -41,6 +41,7 @@ compile-fortran.py
 compile-mixedlang.py
 schema.py
 fingertip.py
+reuse.sh: run with Seamless database.
 injection.py
 dependent-modules.py
 module-package.py

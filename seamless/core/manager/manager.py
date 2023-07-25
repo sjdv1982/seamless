@@ -75,9 +75,9 @@ def _run_in_mainthread(func):
 
 class Manager:
     _destroyed = False
-    _active = True
     _highlevel_refs = 0
     _last_ctx = None
+    _blocked = False
     def __init__(self):
         self._destroyed = True
         from seamless import check_original_event_loop

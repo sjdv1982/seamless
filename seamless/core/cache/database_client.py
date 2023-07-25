@@ -7,15 +7,18 @@ from ..buffer_info import BufferInfo
 
 session = requests.Session()
 
-# TODO: make all set_X requests non-blocking, 
+# TODO (if proven to be a bottleneck): 
+#  make all set_X requests non-blocking, 
 # by adding them into a queue and processing them 
 #  in a different thread.
 # (and have a set_X(key, value1) in the queue 
 # superseded by a subsequent set_X(key, value2) request)
 
-class DatabaseBase:
+global Expression
+
+class Database:
     active = False
-    PROTOCOLS = [("seamless", "database", "0.2"), ("seamless", "database", "0.1")]
+    PROTOCOLS = [("seamless", "database", "0.3")]
     _loghandle = None
 
     def set_log(self, log):
@@ -26,10 +29,10 @@ class DatabaseBase:
             loghandle = log
         self._loghandle = loghandle
 
-    def _log(self, type, checksum):
+    def _log(self, getset, type, checksum):
         if self._loghandle is None:
             return
-        logstr = "{} {}\n".format(type, checksum)
+        logstr = "{} {} {}\n".format(getset, type, checksum)
         self._loghandle.write(logstr)
 
     def _get_host_port(self):
@@ -46,7 +49,7 @@ class DatabaseBase:
             raise TypeError("environment variable SEAMLESS_DATABASE_PORT must be integer") from None
         return host, port
 
-    def _connect(self, host, port, *, sink):
+    def _connect(self, host, port):
         self.host = host
         self.port = port
         url = "http://" + self.host + ":" + str(self.port)
@@ -58,53 +61,34 @@ class DatabaseBase:
         except requests.ConnectionError:
             raise requests.ConnectionError("Cannot connect to Seamless database: host {}, port {}".format(self.host, self.port))
 
+        if response.status_code != 200:
+            raise Exception(response.text)
+
         try:
             protocol = response.json()
             assert protocol in [list(p) for p in self.PROTOCOLS]                
         except (AssertionError, ValueError, json.JSONDecodeError):
             raise Exception("Incorrect Seamless database protocol") from None
 
-
-        if sink and float(protocol[-1]) > 0.1:
-            request = {
-                "type": "readonly",
-            }
-            try:
-                response = session.get(url, data=json.dumps(request))
-            except requests.ConnectionError:
-                raise requests.ConnectionError("Cannot connect to Seamless database: host {}, port {}".format(self.host, self.port))
-            try:
-                readonly = response.json()
-                assert readonly in (True, False)
-            except (AssertionError, ValueError, json.JSONDecodeError):
-                raise Exception("Incorrect Seamless database protocol") from None
-            if readonly:
-                return
-
         self.active = True
 
-    def has_buffer(self, checksum):
-        if not self.active:
-            return
-        url = "http://" + self.host + ":" + str(self.port)
-        request = {
-            "type": "has_buffer",
-            "checksum": parse_checksum(checksum),
-        }
-        response = session.get(url, data=json.dumps(request))
-        if response.status_code != 200:
-            raise Exception((response.status_code, response.text))
-        return response.json() == True
+    def connect(self):
+        global Expression
+        from ..manager.expression import Expression
+        host, port = self._get_host_port()
+        self._connect(host, port)
 
     def delete_key(self, key_type, checksum):
         assert key_type in [
-            "buffer",
-            "buffer_info", 
-            "transformation",
+            "buffer_info",
             "compilation",
-            "buffer_independence", 
-            "semantic_to_syntactic"
+            "transformation",
+            "elision",
+            "metadata",
+            "expression",
+            "structured_cell_join",
         ]
+
         if not self.active:
             return
         url = "http://" + self.host + ":" + str(self.port)
@@ -118,16 +102,10 @@ class DatabaseBase:
             raise Exception((response.status_code, response.text))
         return response.json() == True
 
-class DatabaseSink(DatabaseBase):
+    def delete_syntactic_to_semantic(self, *, semantic, syntactic, celltype, subcelltype):
+        raise NotImplementedError
 
-    def connect(self, *,
-      store_compile_result=True
-    ):
-        host, port = self._get_host_port()
-        self.store_compile_result = store_compile_result
-        self._connect(host, port, sink=True)
-
-    def send_request(self, request):
+    def send_put_request(self, request):
         if not self.active:
             return
         url = "http://" + self.host + ":" + str(self.port)
@@ -140,14 +118,14 @@ class DatabaseSink(DatabaseBase):
             raise Exception((response.status_code, response.text))
         return response
 
-    def set_transformation_result(self, tf_checksum, checksum):        
+    def set_transformation_result(self, tf_checksum, checksum):   
         request = {
             "type": "transformation",
             "checksum": parse_checksum(tf_checksum),
             "value": parse_checksum(checksum),
         }
-        self._log(request["type"], request["checksum"])
-        self.send_request(request)
+        self._log("SET", request["type"], request["checksum"])
+        self.send_put_request(request)
 
     def set_elision_result(self, elision_checksum, elision_result):        
         request = {
@@ -155,10 +133,10 @@ class DatabaseSink(DatabaseBase):
             "checksum": parse_checksum(elision_checksum),
             "value": elision_result,
         }
-        self._log(request["type"], request["checksum"])
-        self.send_request(request)
+        self._log("SET", request["type"], request["checksum"])
+        self.send_put_request(request)
 
-    def sem2syn(self, semkey, syn_checksums):
+    def set_sem2syn(self, semkey, syn_checksums):
         sem_checksum, celltype, subcelltype = semkey
         request = {
             "type": "semantic_to_syntactic",
@@ -167,24 +145,7 @@ class DatabaseSink(DatabaseBase):
             "subcelltype": subcelltype,
             "value": list({cs.hex() for cs in syn_checksums}),
         }
-        self.send_request(request)
-
-    def set_buffer(self, checksum, buffer, persistent):
-        #
-        '''
-        # works, but only for string buffers...
-        request = {
-            "type": "buffer",
-            "checksum": parse_checksum(checksum),
-            "value": buffer.decode(),
-            "persistent": persistent,
-        }
-        rqbuf = json.dumps(request).encode()
-        '''
-        ps = chr(int(persistent)).encode()
-        rqbuf = b'SEAMLESS_BUFFER' + parse_checksum(checksum).encode() + ps + buffer
-        self._log("buffer", parse_checksum(checksum))
-        self.send_request(rqbuf)
+        self.send_put_request(request)
 
     def set_buffer_info(self, checksum, buffer_info:BufferInfo):
         request = {
@@ -192,36 +153,36 @@ class DatabaseSink(DatabaseBase):
             "checksum": parse_checksum(checksum),
             "value": buffer_info.as_dict(),
         }
-        self.send_request(request)
+        self.send_put_request(request)
 
     def set_compile_result(self, checksum, compile_checksum):
         if not self.active:
-            return
-        if not self.store_compile_result:
             return
         request = {
             "type": "compilation",
             "checksum": parse_checksum(checksum),
             "value": parse_checksum(compile_checksum),
         }
-        self._log(request["type"], request["checksum"])
-        self.send_request(request)
-
-class DatabaseCache(DatabaseBase):
-    _filezones = None
-    def set_filezones(self, filezones:list):
-        if filezones is None:
-            self._filezones = None
-        else:
-            if not isinstance(filezones, list):
-                raise TypeError(filezones)
-            self._filezones = [str(filezone) for filezone in filezones]
+        self._log("SET", request["type"], request["checksum"])
+        self.send_put_request(request)
             
-    def connect(self):
-        host, port = self._get_host_port()
-        self._connect(host, port, sink=False)
+    def set_expression(self, expression: "Expression", result):
+        request = {
+            "type": "expression",
+            "checksum": parse_checksum(expression.checksum),
+            "celltype": expression.celltype,
+            "path": expression.path,        
+            "value": parse_checksum(result),
+            "target_celltype": expression.target_celltype,
+        }
+        if expression.hash_pattern is not None:
+            request["hash_pattern"] = expression.hash_pattern
+        if expression.target_hash_pattern is not None:
+            request["target_hash_pattern"] = expression.target_hash_pattern
+        self._log("SET", request["type"], str(expression))
+        self.send_put_request(request)
 
-    def send_request(self, request):
+    def send_get_request(self, request):
         if not self.active:
             return
         url = "http://" + self.host + ":" + str(self.port)
@@ -241,35 +202,14 @@ class DatabaseCache(DatabaseBase):
             "type": "transformation",
             "checksum": parse_checksum(checksum),
         }
-        response = self.send_request(request)
+        response = self.send_get_request(request)
         if response is not None:
             result = bytes.fromhex(response.content.decode())
-            self._log(request["type"], request["checksum"])
+            self._log("GET", request["type"], request["checksum"])
             return result
 
-    def get_filename(self, checksum):
-        request = {
-            "type": "filename",
-            "checksum": parse_checksum(checksum),
-        }
-        if self._filezones is not None:
-            request["filezones"] = self._filezones
-        response = self.send_request(request)
-        if response is not None:
-            return response.text
 
-    def get_directory(self, checksum):
-        request = {
-            "type": "directory",
-            "checksum": parse_checksum(checksum),
-        }
-        if self._filezones is not None:
-            request["filezones"] = self._filezones
-        response = self.send_request(request)
-        if response is not None:
-            return response.text
-
-    def sem2syn(self, semkey):
+    def get_sem2syn(self, semkey):
         sem_checksum, celltype, subcelltype = semkey
         request = {
             "type": "semantic_to_syntactic",
@@ -277,30 +217,16 @@ class DatabaseCache(DatabaseBase):
             "celltype": celltype,
             "subcelltype": subcelltype,
         }
-        response = self.send_request(request)
+        response = self.send_get_request(request)
         if response is not None:
             return [bytes.fromhex(cs.strip()) for cs in response.json()]
-
-    def get_buffer(self, checksum):
-        checksum = parse_checksum(checksum)
-        request = {
-            "type": "buffer",
-            "checksum": checksum,
-        }
-        response = self.send_request(request)
-        if response is not None:
-            result = response.content
-            verify_checksum = parse_checksum(calculate_checksum(result))
-            assert checksum == verify_checksum, "Database corruption!!! Checksum {}".format(parse_checksum(checksum))
-            self._log(request["type"], request["checksum"])
-            return result
 
     def get_buffer_info(self, checksum) -> BufferInfo:
         request = {
             "type": "buffer_info",
             "checksum": parse_checksum(checksum),
         }
-        response = self.send_request(request)
+        response = self.send_get_request(request)
         if response is not None:
             try:
                 rj = response.json()
@@ -314,10 +240,10 @@ class DatabaseCache(DatabaseBase):
             "type": "compilation",
             "checksum": parse_checksum(checksum),
         }
-        response = self.send_request(request)
+        response = self.send_get_request(request)
         if response is not None:
             result = bytes.fromhex(response.content.decode())
-            self._log(request["type"], request["checksum"])
+            self._log("GET", request["type"], request["checksum"])
             return result
 
     def get_elision_result(self, checksum):
@@ -325,14 +251,51 @@ class DatabaseCache(DatabaseBase):
             "type": "elision",
             "checksum": parse_checksum(checksum),
         }
-        response = self.send_request(request)
+        response = self.send_get_request(request)
         if response is not None:
-            result = response.json()
-            self._log(request["type"], request["checksum"])
+            result = bytes.fromhex(response.content.decode())
+            self._log("GET", request["type"], request["checksum"])
             return result
 
-database_sink = DatabaseSink()
-database_cache = DatabaseCache()
+    def get_expression(self, expression: "Expression"):
+        request = {
+            "type": "expression",
+            "checksum": parse_checksum(expression.checksum),
+            "celltype": expression.celltype,
+            "path": expression.path,        
+            "target_celltype": expression.target_celltype,
+        }
+        if expression.hash_pattern is not None:
+            request["hash_pattern"] = expression.hash_pattern
+        if expression.target_hash_pattern is not None:
+            request["target_hash_pattern"] = expression.target_hash_pattern
+        response = self.send_get_request(request)
+        if response is not None:
+            result = bytes.fromhex(response.content.decode())
+            self._log("GET", request["type"], request["checksum"])
+            return result
 
-from ...calculate_checksum import calculate_checksum
+class Dummy:
+    _connected = False    
+    
+    @property
+    def active(self):
+        if not self._connected:
+            return False
+        return database.active
+    
+    def connect(self):
+        if not self._connected:
+            print(DeprecationWarning("""'database_sink' and 'database_cache' are deprecated.
+                                     Use 'database' instead"""))
+            database.connect()
+            self._connected = True
+
+    def __getattr__(self, attr):
+        return getattr(database, attr)
+
+database = Database()
+database_sink = Dummy()
+database_cache = Dummy()
+
 from ...util import parse_checksum

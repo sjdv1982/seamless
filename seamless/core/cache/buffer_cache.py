@@ -1,12 +1,11 @@
 import time
 import functools
-from seamless.core import buffer_info
 
 from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 
 from seamless.core.buffer_info import BufferInfo
 
-from .database_client import database_sink, database_cache
+from . import buffer_remote
 
 import logging
 logger = logging.getLogger("seamless")
@@ -46,11 +45,8 @@ class BufferCache:
 
 
     SMALL_BUFFER_LIMIT = 100000
-    LIFETIME_TEMP = 20.0 # buffer_cache keeps unreferenced/non-persistent buffer values alive for 20 secs
-    LIFETIME_TEMP_SMALL = 3600.0 # buffer_cache keeps unreferenced/non-persistent small buffer values (< SMALL_BUFFER_LIMIT bytes) alive for an hour
-    LOCAL_MODE_FULL_PERSISTENCE = True # If true, all non-authoritative buffers are persistent in local mode, i.e. when there is no database.
-                                       # Else, only authoritative buffers are persistent.
-                                       # Unreferenced buffers are never persistent.
+    LIFETIME_TEMP = 20.0 # buffer_cache keeps unreferenced buffer values alive for 20 secs
+    LIFETIME_TEMP_SMALL = 600.0 # buffer_cache keeps unreferenced small buffer values (< SMALL_BUFFER_LIMIT bytes) alive for 10 minutes
 
     def __init__(self):
         self.buffer_cache = {} #local cache, checksum-to-buffer
@@ -59,23 +55,10 @@ class BufferCache:
         # Buffer info cache (never expire)
         self.buffer_info = {} #checksum-to-buffer-info
         self.synced_buffer_info = set()  #set of bufferinfo checksums that are in-sync with the database
-        self.non_persistent = set()
         self.missing = set()
-        self.downloaded = set()  # keep track of downloaded buffers, don't cache them for long
 
         self.incref_buffer(bytes.fromhex(empty_dict_checksum), b'{}\n', True)
         self.incref_buffer(bytes.fromhex(empty_list_checksum), b'[]\n', True)
-
-    def _is_persistent(self, authoritative):
-        if authoritative:
-            persistent = True
-        else:
-            local = (not database_sink.active) or (not database_cache.active)
-            if not local:
-                persistent = False
-            else:
-                persistent = self.LOCAL_MODE_FULL_PERSISTENCE
-        return persistent
 
     def _check_delete_buffer(self, checksum):
         if checksum not in self.last_time:
@@ -90,13 +73,12 @@ class BufferCache:
             delay = max(lifetime-curr_lifetime, 1)
             temprefmanager.add_ref(func, delay, on_shutdown=False)
             return
-        self.uncache_buffer(checksum)
+        self._uncache_buffer(checksum)
 
-    def uncache_buffer(self, checksum):
+    def _uncache_buffer(self, checksum):
         self.last_time.pop(checksum, None)
         if checksum in self.buffer_refcount:
-            local = (not database_sink.active) or (not database_cache.active)
-            if local and checksum not in self.non_persistent and checksum not in self.downloaded:
+            if not buffer_remote.can_delete_buffer(checksum):
                 return
         self.buffer_cache.pop(checksum, None)
 
@@ -115,10 +97,6 @@ class BufferCache:
         """Caches a buffer locally for a short time, without incrementing its refcount
         Does not write into the database.
         The checksum can be incref'ed later, without the need to re-provide the buffer.
-
-        If the buffer already has a refcount:
-            - If the buffer was previously missing
-        If the buffer already has a refcount AND a database is active, nothing at all happens
         """
         if checksum is None:
             return
@@ -129,16 +107,12 @@ class BufferCache:
         if checksum not in self.buffer_refcount:
             self._update_time(checksum, len(buffer))
         self.update_buffer_info(checksum, "length", len(buffer), sync_remote=False)
-        local = (not database_sink.active) or (not database_cache.active)
-        if local or checksum not in self.buffer_refcount:
-            if checksum not in self.buffer_cache:
-                self.buffer_cache[checksum] = buffer
+        if not buffer_remote.is_known(checksum):
+            self.buffer_cache[checksum] = buffer
         if checksum in self.missing:
             print_debug("Found missing buffer (1): {}".format(checksum.hex()))
             self.missing.discard(checksum)
-            if database_sink.active:
-                persistent = checksum not in self.non_persistent
-                database_sink.set_buffer(checksum, buffer, persistent)
+            buffer_remote.write_buffer(checksum, buffer)
 
     def incref_buffer(self, checksum, buffer, authoritative):
         """Increments the refcount of a known buffer.
@@ -150,88 +124,60 @@ class BufferCache:
         assert isinstance(buffer, bytes)
         l = len(buffer)
         self.update_buffer_info(checksum, "length", l, sync_remote=False)
-        return self._incref([checksum], self._is_persistent(authoritative), [buffer])
+        return self._incref([checksum], authoritative, [buffer])
 
-    def _incref(self, checksums, persistent, buffers):
-        local = (not database_sink.active) or (not database_cache.active)
+    def _incref(self, checksums, authoritative, buffers):
         for n, checksum in enumerate(checksums):
             if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
                 continue
             buffer = None
             if buffers is not None:
                 buffer = buffers[n]
-            #print("INCREF     ", checksum.hex(), persistent, buffer is None)
+            #print("INCREF     ", checksum.hex(), buffer is None)
             if checksum in self.buffer_refcount:
                 self.buffer_refcount[checksum] += 1
-                if database_sink.active:
-                    if persistent and checksum in self.non_persistent:
-                        self.non_persistent.discard(checksum)
-                        if database_cache.active and buffer is None:
-                            buffer = self.get_buffer(checksum)
-                        if buffer is not None:
-                            # TODO: this will normally not work. Add a database_sink "make_persistent" API function!
-                            database_sink.set_buffer(checksum, buffer, persistent)
                 if buffer is not None and checksum in self.missing:
                     assert isinstance(buffer, bytes)
                     print_debug("Found missing buffer (2): {}".format(checksum.hex()))
                     self.missing.discard(checksum)
-                    if persistent and local:
-                        if checksum not in self.buffer_cache:
-                            self.buffer_cache[checksum] = buffer
-                    if not local:
-                        if not database_sink.has_buffer(checksum):
-                            database_sink.set_buffer(checksum, buffer, persistent)
+                    if not buffer_remote.is_known(checksum):
+                        self.buffer_cache[checksum] = buffer
+                    buffer_remote.write_buffer(checksum, buffer)
             else:
                 self.buffer_refcount[checksum] = 1
-                if not persistent:
-                    self.non_persistent.add(checksum)
                 if buffer is None:
                     buffer = self.buffer_cache.get(checksum)
+                caching = False
                 if buffer is not None:
-                    if database_sink.active:
-                        if not database_sink.has_buffer(checksum):
-                            database_sink.set_buffer(checksum, buffer, persistent)
-                    if local:
-                        if persistent:
-                            if checksum not in self.buffer_cache:
-                                self.buffer_cache[checksum] = buffer
-                        else:
-                            self.cache_buffer(checksum, buffer)
+                    if not buffer_remote.is_known(checksum):
+                        self.buffer_cache[checksum] = buffer
+                        caching = True
+                    buffer_remote.write_buffer(checksum, buffer)
                 else:
-                    if database_cache.active and database_cache.has_buffer(checksum):
-                        pass
-                    else:
+                    if not buffer_remote.is_known(checksum):
                         if n < 10:
                             print_debug("Incref checksum of missing buffer: {}".format(checksum.hex()))
                         elif n == 10:
                             print_debug("... ({} more buffers)".format(len(checksums) - 10))
                         self.missing.add(checksum)
-                if not local and checksum in self.last_time:
+                if checksum in self.last_time:
                     self.last_time.pop(checksum)
-                    self.buffer_cache.pop(checksum, None)
+                    if not caching:
+                        self.buffer_cache.pop(checksum, None)
 
     def incref(self, checksum, authoritative):
         """Increments the refcount of a buffer checksum.
 
         If the buffer cannot be retrieved, it is registered as missing.
-        Otherwise:
-        - If it is the first *non-persistent* reference, and a database is active,
-           it is moved from local cache into the database. If there is no database,
-           it will remain in local cache for a short while.
-        - If it is the first *persistent* reference,
-           it is written persistently into the database. If there is no database,
-           it will now remain in local cache as long as there are refs to it.
-
-        If a database is active, only authoritative buffers are considered persistent
-        If there is no database, all buffers are considered persistent,
-         unless LOCAL_MODE_FULL_PERSISTENCE is disabled, in which case only authoritative buffers are.
+        Otherwise, it is moved from local cache into the database. 
+        If there is no database, it will remain in local cache for a short while.
         """
         assert isinstance(checksum, bytes)
         assert len(checksum) == 32
         buffer = None
         if checksum not in self.buffer_refcount:
             buffer = self.buffer_cache.get(checksum)
-        return self._incref([checksum], self._is_persistent(authoritative), [buffer])
+        self._incref([checksum], authoritative, [buffer])
 
     def _decref(self, checksums):
         for checksum in checksums:
@@ -244,9 +190,9 @@ class BufferCache:
             if self.buffer_refcount[checksum] == 0:
                 self.buffer_refcount.pop(checksum)
                 self.missing.discard(checksum)
-                local = (not database_sink.active) or (not database_cache.active)
-                #print("DESTROY", checksum.hex(), local, checksum in self.buffer_cache)
-                if local and checksum in self.buffer_cache:
+                can_delete = buffer_remote.can_delete_buffer(checksum)
+                #print("DESTROY", checksum.hex(), can_delete, checksum in self.buffer_cache)
+                if can_delete and checksum in self.buffer_cache:
                     buffer = self.get_buffer(checksum)
                     if buffer is not None:  # should be ok normally
                         self.cache_buffer(checksum, buffer)
@@ -263,7 +209,7 @@ class BufferCache:
         return self._decref([checksum])
 
     def get_buffer(self, checksum, *, remote=True, deep=False):
-        from ... import fair      
+        from ... import fair     
         if checksum is None:
             return None
         if isinstance(checksum, str):
@@ -284,10 +230,10 @@ class BufferCache:
             return buffer
         if remote:
             try:
-                buffer = database_cache.get_buffer(checksum)
+                buffer = buffer_remote.get_buffer(checksum)
             except Exception:
                 import traceback
-                traceback.print_exc()                
+                traceback.print_exc()
             if buffer is not None:
                 assert isinstance(buffer, bytes)
             else:
@@ -295,7 +241,6 @@ class BufferCache:
                 if buffer is not None:
                     assert isinstance(buffer, bytes)
                     buffer_cache.cache_buffer(checksum, buffer)
-                    buffer_cache.downloaded.add(checksum)
                     return buffer
 
         return buffer
@@ -304,7 +249,7 @@ class BufferCache:
         local_buffer_info = self.buffer_info[checksum]       
         if checksum in self.synced_buffer_info:
             return
-        buffer_info_remote = database_cache.get_buffer_info(checksum)
+        buffer_info_remote = database.get_buffer_info(checksum)
         if buffer_info_remote is None:
             return
         buffer_info_remote_old = buffer_info_remote.as_dict()
@@ -317,7 +262,7 @@ class BufferCache:
         local_buffer_info = self.buffer_info[checksum]        
         if checksum in self.synced_buffer_info:
             return
-        database_sink.set_buffer_info(checksum, local_buffer_info)
+        database.set_buffer_info(checksum, local_buffer_info)
         self.synced_buffer_info.add(checksum)
 
     def get_buffer_info(self, checksum, *, sync_remote, buffer_from_remote, force_length):
@@ -438,7 +383,7 @@ class BufferCache:
         assert len(checksum) == 32
         if checksum in self.buffer_cache:
             return True
-        return database_cache.has_buffer(checksum)
+        return buffer_remote.has_buffer(checksum)
 
     def destroy(self):
         if self.buffer_cache is None:
@@ -451,13 +396,11 @@ class BufferCache:
         self.last_time = None
         self.buffer_refcount = None
         self.buffer_info = None
-        self.non_persistent = None
 
 
 buffer_cache = BufferCache()
-buffer_cache.database_cache = database_cache
-buffer_cache.database_sink = database_sink
 
 from ..protocol.calculate_checksum import checksum_cache
 from .tempref import temprefmanager
+from .database_client import database
 from . import CacheMissError

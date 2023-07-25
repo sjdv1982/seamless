@@ -61,7 +61,7 @@ class AccessorUpdateTask(Task):
         #
 
         try:
-            expression_result_checksum = await EvaluateExpressionTask(manager, expression).run()
+            expression_result_checksum = await evaluate_expression(expression, manager=manager)
         except Exception as exc:
             expression_result_checksum = None
             expression.exception = exc
@@ -154,7 +154,7 @@ class AccessorUpdateTask(Task):
             release_evaluation_lock(locknr)
 
 from ..accessor import ReadAccessor
-from .evaluate_expression import EvaluateExpressionTask
+from .evaluate_expression import evaluate_expression
 from .transformer_update import TransformerUpdateTask
 from .reactor_update import ReactorUpdateTask
 from .cell_update import CellUpdateTask

@@ -74,6 +74,9 @@ class Task:
         if isinstance(manager, weakref.ref):
             manager = manager()
         assert isinstance(manager, Manager)
+        if manager._blocked:
+            if not isinstance(self, UnblockedTasks):
+                raise Exception(f"{type(self).__name__}: Tasks are blocked")
         assert not manager._destroyed
         self._dependencies = []
         taskmanager = manager.taskmanager
@@ -258,4 +261,9 @@ from .upon_connection import UponConnectionTask, UponBiLinkTask
 from .structured_cell import StructuredCellAuthTask, StructuredCellJoinTask
 from .evaluate_expression import EvaluateExpressionTask
 from .get_buffer import GetBufferTask
+from .accessor_update import AccessorUpdateTask
+from .transformer_update import TransformerUpdateTask, TransformerResultUpdateTask
 from ..manager import Manager
+UnblockedTasks = (UponConnectionTask, AccessorUpdateTask, TransformerUpdateTask, 
+                  TransformerResultUpdateTask, CellUpdateTask, GetBufferTask, 
+                  DeserializeBufferTask)

@@ -1,3 +1,10 @@
+print("""TODO:
+Write metadata for transformation
+Test compilation being blocked
+StructuredCellJoin
+redo elision
+            
+      """)
 # A transformation is a dictionary of semantic checksums,
 #  representing the input pins, together with celltype and subcelltype
 # The checksum of a transformation is the hash of the JSON buffer of this dict.
@@ -167,6 +174,7 @@ async def syntactic_to_semantic(
 
 class TransformationCache:
     active = True
+    _blocked = False
     _destroyed = False
     def __init__(self):
         self.transformations = {} # tf-checksum-to-transformation
@@ -294,12 +302,12 @@ class TransformationCache:
                         if semkey in self.semantic_to_syntactic_checksums:
                             semsyn = self.semantic_to_syntactic_checksums[semkey]
                         else:
-                            semsyn = database_cache.sem2syn(semkey)
+                            semsyn = database_cache.get_sem2syn(semkey)
                             if semsyn is None:
                                 semsyn = []
                             self.semantic_to_syntactic_checksums[semkey] = semsyn
                         semsyn.append(checksum)
-                        database_sink.sem2syn(semkey, semsyn)
+                        database_sink.set_sem2syn(semkey, semsyn)
                     else:
                         sem_checksum = checksum
             sem_checksum0 = sem_checksum.hex() if sem_checksum is not None else None
@@ -325,7 +333,11 @@ class TransformationCache:
         if result is not None:
             tf_checksum, tf_exc, result_checksum, prelim = result
             if tf_exc is None and (result_checksum is None or prelim):
-                job = self.run_job(transformation, tf_checksum)
+                try:
+                    job = self.run_job(transformation, tf_checksum)
+                except Exception as exc:                    
+                    self._set_exc([transformer], tf_checksum, exc)                    
+                    job = None
                 if job is not None:
                     await asyncio.shield(job.future)
             elif tf_exc is not None:
@@ -528,7 +540,9 @@ class TransformationCache:
             semantic_cache[semkey] = checksums
         return semantic_cache
 
-    def run_job(self, transformation, tf_checksum):
+    def run_job(self, transformation, tf_checksum, *, fingertip=False):
+        if self._blocked:
+            raise Exception(f"Transformation jobs are blocked")
         transformers = self.transformations_to_transformers[tf_checksum]
         if tf_checksum in self.transformation_exceptions:
             exc = self.transformation_exceptions[tf_checksum]
@@ -562,6 +576,7 @@ class TransformationCache:
         job = TransformationJob(
             tf_checksum, codename,
             transformation, semantic_cache,
+            fingertip=fingertip,
             debug=debug
         )
         job.execute(
@@ -624,6 +639,7 @@ class TransformationCache:
         future.cancel()
 
     def _set_exc(self, transformers, tf_checksum, exc):
+        self.transformation_exceptions[tf_checksum] = exc
         # TODO: offload to provenance? unless hard-canceled
         if tf_checksum not in self.transformation_logs:
             if isinstance(exc, (RemoteJobError, SeamlessTransformationError, SeamlessStreamTransformationError, CacheMissError)):
@@ -735,13 +751,13 @@ class TransformationCache:
             self.transformation_exceptions[tf_checksum] = exc
             self._set_exc(transformers, tf_checksum, exc)
         else:
-            self.set_transformation_result(tf_checksum, result_checksum, False)
+            self.set_transformation_result(tf_checksum, result_checksum, False, update=not job.fingertip)
             logs = self.transformation_logs.get(tf_checksum)
             if logs is not None:
                 for tf in transformers:
                     _write_logs_file(tf, logs)
 
-    def set_transformation_result(self, tf_checksum, result_checksum, prelim):
+    def set_transformation_result(self, tf_checksum, result_checksum, prelim, *, update=True):
         from ..manager.tasks.transformer_update import (
             TransformerResultUpdateTask
         )
@@ -756,6 +772,8 @@ class TransformationCache:
             database_sink.set_transformation_result(tf_checksum, result_checksum)
         transformers = self.transformations_to_transformers[tf_checksum]
         for transformer in transformers:
+            if not update:
+                continue
             if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
                 continue
             manager = transformer._get_manager()
@@ -795,7 +813,7 @@ class TransformationCache:
         semsyn = self.semantic_to_syntactic_checksums.get(semkey)
         if semsyn is not None:
             return ret(semsyn)
-        semsyn = database_cache.sem2syn(semkey)
+        semsyn = database_cache.get_sem2syn(semkey)
         if semsyn is not None:
             self.semantic_to_syntactic_checksums[semkey] = semsyn
             return ret(semsyn)
@@ -803,7 +821,7 @@ class TransformationCache:
         semsyn = await remote(sem_checksum, celltype, subcelltype, peer_id)
         if semsyn is not None:
             self.semantic_to_syntactic_checksums[semkey] = semsyn
-            database_sink.sem2syn(semkey, semsyn)
+            database_sink.set_sem2syn(semkey, semsyn)
             return ret(semsyn)
         return None
 
@@ -1006,7 +1024,11 @@ class TransformationCache:
                 if result is not None:
                     tf_checksum, tf_exc, result_checksum, prelim = result
                     if tf_exc is None and (result_checksum is None or prelim):
-                        job = self.run_job(transformation, tf_checksum)
+                        try:
+                            job = self.run_job(transformation, tf_checksum)
+                        except Exception as exc:
+                            self._set_exc([transformer], tf_checksum, exc)
+                            job = None                    
                         if job is not None:
                             await asyncio.shield(job.future)
                     elif tf_exc is not None:                    

@@ -1,0 +1,20 @@
+++ rm -rf reuse-vault
+++ python3 reuse1.py            
+      
+Status: OK
+None
+++ python3 reuse1.py        
+      
+Status: OK
+None
+++ python3 reuse2.py
+                  
+1
+2
+3.5
+++ python3 reuse3.py
+                  
+Status: OK
+3.5
+None
+++ rm -rf reuse-vault

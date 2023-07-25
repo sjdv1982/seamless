@@ -441,9 +441,15 @@ class EvaluateExpressionTask(Task):
             return
         return await _evaluate_expression(self, expression, manager, self.fingertip_mode)
 
-async def evaluate_expression(expression):
-    manager = Manager()
-    result = await EvaluateExpressionTask(manager, expression).run()
+async def evaluate_expression(expression, fingertip_mode=False, manager=None):
+    if manager is None:
+        manager = Manager()
+    
+    result = database.get_expression(expression)
+    if result is None:
+        result = await EvaluateExpressionTask(manager, expression, fingertip_mode=fingertip_mode).run()
+        if result is not None:
+            database.set_expression(expression, result)
     return result
 
 from .get_buffer import GetBufferTask
@@ -455,6 +461,7 @@ from ...conversion import SeamlessConversionError, conversion_forbidden
 from ...protocol.expression import get_subpath
 from .checksum import CalculateChecksumTask
 from ...cache.buffer_cache import buffer_cache, CacheMissError
+from ...cache.database_client import database
 from . import acquire_evaluation_lock, release_evaluation_lock
 from ...protocol.deep_structure import apply_hash_pattern, validate_deep_structure
 from ...protocol.expression import get_subpath

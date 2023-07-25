@@ -187,7 +187,7 @@ class CacheManager:
 
     async def _fingertip(self, checksum, *, must_have_cell, done):
         from ..cache import CacheMissError
-        from .tasks.evaluate_expression import EvaluateExpressionTask
+        from .tasks.evaluate_expression import evaluate_expression
         from .tasks.deserialize_buffer import DeserializeBufferTask
         from .tasks.serialize_buffer import SerializeToBufferTask
 
@@ -223,16 +223,15 @@ class CacheManager:
                 checksum2 = sem2syn.get(semkey, [sem_checksum])[0]
                 coros.append(self._fingertip(checksum2, must_have_cell=False, done=done))
             await asyncio.gather(*coros)
-            job = tf_cache.run_job(transformation, tf_checksum)
+            job = tf_cache.run_job(transformation, tf_checksum, fingertip=True)
             if job is not None:
                 await asyncio.shield(job.future)
 
         async def fingertip_expression(expression):
             await self._fingertip(expression.checksum, must_have_cell=False, done=done)
-            task = EvaluateExpressionTask(
-                manager, expression, fingertip_mode=True
+            await evaluate_expression(
+                expression, manager=manager, fingertip_mode=True
             )
-            await task.run()
 
         async def fingertip_join(checksum, join_dict):
             hash_pattern = join_dict["hash_pattern"]

@@ -271,7 +271,7 @@ def _run_transformer(
     database_sink.set_buffer(semantic_code_checksum2, semcode, False)
     database_sink.set_buffer(code_checksum, codebuf, False)
     semkey = (semantic_code_checksum2, "python", "transformer")
-    database_sink.sem2syn(semkey, [code_checksum])
+    database_sink.set_sem2syn(semkey, [code_checksum])
     return run_transformation_dict(transformation_dict, result_callback)
 
 
@@ -332,7 +332,7 @@ async def _run_transformer_async(
     database_sink.set_buffer(semantic_code_checksum2, semcode, False)
     database_sink.set_buffer(code_checksum, codebuf, False)
     semkey = (semantic_code_checksum2, "python", "transformer")
-    database_sink.sem2syn(semkey, [code_checksum])
+    database_sink.set_sem2syn(semkey, [code_checksum])
     return await run_transformation_dict_async(transformation_dict)
 
 

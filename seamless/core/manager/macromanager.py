@@ -100,10 +100,7 @@ async def _prepare(macro, manager, max_running_tasks):
             return
         if accessor.expression.hash_pattern is not None:
             raise NotImplementedError
-        expression_checksum = await EvaluateExpressionTask(
-            manager,
-            accessor.expression
-        ).run()
+        expression_checksum = await evaluate_expression(accessor.expression, manager=manager)
         celltype = accessor.write_accessor.celltype
         subcelltype = accessor.write_accessor.subcelltype
         buffer = await cachemanager.fingertip(expression_checksum)
@@ -260,9 +257,7 @@ class MacroManager:
     def destroy(self):
         self._destroyed = True
 
-from .tasks.accessor_update import AccessorUpdateTask
-from .tasks.evaluate_expression import EvaluateExpressionTask
-from ..protocol.get_buffer import get_buffer
+from .tasks.evaluate_expression import evaluate_expression
 from ..protocol.deserialize import deserialize
 from .tasks import is_equal
 from ..status import StatusReasonEnum

@@ -302,7 +302,7 @@ Source %s; target %s, %s""" % (source, target, target_subpath)
                         return
 
                     if source._checksum is not None:
-                        manager.cancel_reactor(reactor,void=False)
+                        manager.cancel_reactor(source,void=False)
                         ReactorUpdateTask(manager, source).launch()
             else:
                 raise TypeError(source)

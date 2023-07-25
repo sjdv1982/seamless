@@ -73,6 +73,8 @@ _python_attach_ports = {
 }
 
 def set_ncores(ncores):
+    if ncores == 0:
+        print(DeprecationWarning("set_ncores(0) is deprecated. Use seamless.block() instead"))
     if len(_locks) != ncores:
         if any(_locks):
             msg = "WARNING: Cannot change ncores from %d to %d since there are running jobs"
@@ -266,7 +268,7 @@ class TransformationJob:
     def __init__(self,
         checksum, codename,
         transformation,
-        semantic_cache, *, debug,
+        semantic_cache, *, debug, fingertip
     ):
         self.checksum = checksum
         assert codename is not None
@@ -283,6 +285,7 @@ class TransformationJob:
         self.transformation = transformation
         self.semantic_cache = semantic_cache
         self.debug = debug
+        self.fingertip = fingertip
         self.executor = None
         self.future = None
         self.remote = False
@@ -727,7 +730,7 @@ class TransformationJob:
                                 if semkey not in s2s:
                                     s2s[semkey] = []
                                 s2s[semkey].append(syn_checksum)
-                                database_sink.sem2syn(semkey, s2s[semkey])
+                                database_sink.set_sem2syn(semkey, s2s[semkey])
                                 buffer_cache.cache_buffer(syn_checksum, buf)
                                 buffer_cache.decref(syn_checksum)
                             fut = asyncio.ensure_future(
