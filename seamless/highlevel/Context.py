@@ -753,10 +753,23 @@ class Context(Base, HelpMixin):
         force = self._gen_context is None
         self._wait_for_auth_tasks("the graph buffers are obtained for zip")
         self._do_translate(force=force)
+        if self._gen_context is not None:
+            # capture from the low level
+            annotated_checksums_low = {}
+            self._gen_context._update_annotated_checksums(annotated_checksums_low)
+
+        # update from the high level
         graph = self.get_graph()
-        annotated_checksums = copying.get_graph_checksums(
+        annotated_checksums_high = copying.get_graph_checksums(
             graph, with_libraries, with_annotations=True
         )
+        
+
+        annotated_checksums = {}
+        annotated_checksums.update(annotated_checksums_low)
+        annotated_checksums.update({c[0]: not c[1] for c in annotated_checksums_high})
+        annotated_checksums = [(checksum, not has_independence) for checksum, has_independence in annotated_checksums.items()]
+
         manager = self._manager
         checksums = [c[0] for c in annotated_checksums]
         buffer_dict = copying.get_buffer_dict_sync(manager, checksums)

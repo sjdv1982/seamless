@@ -1,8 +1,8 @@
 print("""TODO:
 Port Transformer.execution_metadata to the high level, and write lowlevel/highlevel tests
-Test compilation being blocked
 StructuredCellJoin
 redo elision
+Standard add add_buffer_folder(./vault) to new project      
             
       """)
 # A transformation is a dictionary of semantic checksums,
@@ -277,7 +277,12 @@ class TransformationCache:
                 FORMAT[pinname]["filesystem"] = deepcopy(filesystem)
             if hash_pattern is not None:
                 FORMAT[pinname]["hash_pattern"] = deepcopy(hash_pattern)
-            await cachemanager.fingertip(checksum)
+            try:
+                await cachemanager.fingertip(checksum)
+            except CacheMissError as exc:
+                transformation_build_exception = exc
+                break
+
             pin = transformer._pins[pinname]
             celltype, subcelltype = celltypes[pinname]
             if pin.as_ is not None:

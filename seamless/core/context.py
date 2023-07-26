@@ -298,17 +298,20 @@ languages: dict or None
     def internal_children(self):
         return _InternalChildrenWrapper(self)
 
-    def save_vault(self, dirname: str):
-        """Save the checksum-to-buffer cache for the current graph in a vault directory"""
-        # TODO: option to not follow deep cell checksums (currently, they are always followed)
+    def _update_annotated_checksums(self, annotated_checksums0):
         from .build_module import get_compiled_module_code
         from .cache.buffer_cache import buffer_cache
-        manager = self._get_manager()
-        assert manager is not None
-        annotated_checksums0 = {}
         for child in self._children.values():
+            if isinstance(child, Context):
+                child._update_annotated_checksums(annotated_checksums0)
+            elif isinstance(child, Macro):
+                cctx = child._gen_context
+                if cctx is not None:
+                    cctx._update_annotated_checksums(annotated_checksums0)
+            
             if not isinstance(child, Cell):
                 continue            
+            
             checksum = child.checksum
             if checksum is None:
                 continue
@@ -320,6 +323,14 @@ languages: dict or None
             has_independence = child.has_independence()
             if not annotated_checksums0.get(checksum, False):
                 annotated_checksums0[checksum] = has_independence
+
+    def save_vault(self, dirname: str):
+        """Save the checksum-to-buffer cache for the current graph in a vault directory"""
+        # TODO: option to not follow deep cell checksums (currently, they are always followed)
+        manager = self._get_manager()
+        assert manager is not None
+        annotated_checksums0 = {}
+        self._update_annotated_checksums(annotated_checksums0)
         annotated_checksums = [(checksum, not has_independence) for checksum, has_independence in annotated_checksums0.items()]
         checksums = [c[0] for c in annotated_checksums]
         buffer_dict = get_buffer_dict_sync(manager, checksums)

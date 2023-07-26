@@ -182,7 +182,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
         target_celltype = celltype_mapping.get(target_celltype, target_celltype)
 
         trivial_path = (expression.path is None or expression.path == [] or expression.path == ())
-        result_hash_pattern = expression.result_hash_pattern          
+        result_hash_pattern = expression.result_hash_pattern
         target_hash_pattern = expression.target_hash_pattern
 
         if result_hash_pattern not in (None, "#", "##") and target_celltype == "checksum":
@@ -445,7 +445,10 @@ async def evaluate_expression(expression, fingertip_mode=False, manager=None):
     if manager is None:
         manager = Manager()
     
-    result = database.get_expression(expression)
+    result = None
+    if not fingertip_mode:
+        result = database.get_expression(expression)
+    from_task = False
     if result is None:
         celltype = celltype_mapping.get(expression.celltype, expression.celltype)
         target_celltype = celltype_mapping.get(expression.target_celltype, expression.target_celltype)
@@ -471,8 +474,22 @@ async def evaluate_expression(expression, fingertip_mode=False, manager=None):
 
         if result is None:
             result = await EvaluateExpressionTask(manager, expression, fingertip_mode=fingertip_mode).run()
+            from_task = True
+
         if result is not None:
             database.set_expression(expression, result)
+
+    if result and not from_task:
+        if result != expression.checksum:
+            manager.cachemanager.incref_checksum(
+                result,
+                expression,
+                authoritative=False,
+                result=True
+            )
+
+        manager.cachemanager.expression_to_result_checksum[expression] = result
+
     return result
 
 from .get_buffer import GetBufferTask

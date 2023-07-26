@@ -56,8 +56,7 @@ class DeepRefManager:
                 return
             sub_checksums2 = [bytes.fromhex(cs) for cs in sub_checksums]
             #print("INC DEEP", checksum.hex(), len(sub_checksums))
-            persistent = buffer_cache._is_persistent(authoritative)
-            buffer_cache._incref(sub_checksums2, persistent, None)
+            buffer_cache._incref(sub_checksums2, authoritative, None)
             refcount = self.refcount.get(checksum, 0)
             if refcount > 0:
                 assert checksum in self.checksum_to_subchecksums, checksum.hex()

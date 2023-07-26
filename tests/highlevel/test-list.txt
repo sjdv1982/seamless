@@ -99,6 +99,8 @@ twopi-graph-database.sh: run with Seamless database
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
 pin-filesystem.sh: run as i=pin-filesystem; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
   If not in the Docker image, set SEAMLESS_TOOLS_DIR to <seamless-tools-git>/tools
+reuse-compile.sh: run with Seamless database
+
 load-graph.py
 load-graph2.py
 load-graph-static.py
