@@ -72,7 +72,7 @@ test-copy.py
 test-copy-tf-assign.py
 traitlet.py
 traitlet2.py: The exact output is dependent on random memory locations
-simple.py
+simple.py: can be run with Seamless database (fresh), in which case the execution metadata is printed
 simple-deepcell.py
 simple-pi.py: Also creates twopi.seamless, twopi-result.seamless, twopi-result.zip
 simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-result.seamless, twopi-deepcell-result.zip

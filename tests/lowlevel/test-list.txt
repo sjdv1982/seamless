@@ -10,7 +10,7 @@ bytecell3.py
 bufferserver.py
 cachehit-semantic.py
 conversions.py: the output is approximate, depends on exact timings
-simple.py
+simple.py: can be run with Seamless database (fresh), in which case the execution metadata is printed
 simple-async.py
 simple-indirect.py
 simple-ipython.py

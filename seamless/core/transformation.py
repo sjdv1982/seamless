@@ -548,7 +548,7 @@ class TransformationJob:
 
         get_global_info()
         self.execution_metadata = deepcopy(execution_metadata0)
-        self.execution_metadata["Executor"] = "seamless internal"
+        self.execution_metadata["Executor"] = "seamless-internal"
  
         meta = self.transformation.get("__meta__")
         meta = deepcopy(meta)

@@ -1111,6 +1111,16 @@ class Transformer(Base, HelpMixin):
         Input parameters and connections to input pins are all copied."""
         return TransformerCopy(self)
 
+    @property
+    def execution_metadata(self):
+        tf = self._get_tf(force=True)
+        htf = self._get_htf()
+        if htf["compiled"]:
+            tf2 = tf.tf.executor
+        else:
+            tf2 = tf.tf
+        return tf2.execution_metadata
+
     def __getattribute__(self, attr):
         if attr.startswith("_"):
             return super().__getattribute__(attr)
