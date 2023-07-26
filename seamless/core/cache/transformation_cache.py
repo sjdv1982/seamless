@@ -1,6 +1,4 @@
 print("""TODO:
-Port Transformer.execution_metadata to the high level, and write lowlevel/highlevel tests
-StructuredCellJoin
 redo elision
 Standard add add_buffer_folder(./vault) to new project      
             

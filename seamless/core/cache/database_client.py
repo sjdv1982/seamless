@@ -189,7 +189,17 @@ class Database:
         request = {
             "type": "metadata",
             "checksum": parse_checksum(tf_checksum),
-            "value": json.dumps(metadata),
+            "value": json.dumps(metadata, sort_keys=True, indent=2) + "\n",
+        }
+        self._log("SET", request["type"], request["type"])
+        self.send_put_request(request)
+
+    def set_structured_cell_join(self, checksum, join_dict: dict):
+        join_checksum = calculate_dict_checksum(join_dict)
+        request = {
+            "type": "structured_cell_join",
+            "checksum": parse_checksum(join_checksum),
+            "value": parse_checksum(checksum)
         }
         self._log("SET", request["type"], request["type"])
         self.send_put_request(request)
@@ -292,7 +302,7 @@ class Database:
             "type": "metadata",
             "checksum": parse_checksum(tf_checksum)
         }
-        self._log("SET", request["type"], request["type"])
+        self._log("GET", request["type"], request["type"])
         response = self.send_get_request(request)
         if response is not None:
             try:
@@ -301,6 +311,18 @@ class Database:
                 print(str(response.text())[:1000], file=sys.stderr)
                 raise exc from None
             return rj
+
+    def get_structured_cell_join(self, join_dict: dict):
+        checksum = calculate_dict_checksum(join_dict)
+        request = {
+            "type": "structured_cell_join",
+            "checksum": parse_checksum(checksum)
+        }
+        response = self.send_get_request(request)
+        if response is not None:
+            result = bytes.fromhex(response.content.decode())
+            self._log("GET", request["type"], request["checksum"])
+            return result
 
 class Dummy:
     _connected = False    
@@ -326,3 +348,4 @@ database_sink = Dummy()
 database_cache = Dummy()
 
 from ...util import parse_checksum
+from ...calculate_checksum import calculate_dict_checksum

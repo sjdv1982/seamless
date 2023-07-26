@@ -267,4 +267,5 @@ from ..manager import Manager
 UnblockedTasks = (UponConnectionTask, AccessorUpdateTask, TransformerUpdateTask, 
                   TransformerResultUpdateTask, CellUpdateTask, SetCellValueTask, 
                   GetBufferTask, DeserializeBufferTask, SerializeToBufferTask,
-                  CalculateChecksumTask)
+                  CalculateChecksumTask, StructuredCellAuthTask)
+UnblockedTasks += (StructuredCellJoinTask,)  #blocking is managed internally

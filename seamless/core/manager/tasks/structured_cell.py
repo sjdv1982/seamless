@@ -240,11 +240,13 @@ class StructuredCellJoinTask(StructuredCellTask):
         manager = self.manager()
         if manager is None or manager._destroyed:
             return
-
+        
         locknr = await acquire_evaluation_lock(self)
 
         any_prelim = False
-        join_dict = {"hash_pattern": sc.hash_pattern}
+        join_dict = {}
+        if sc.hash_pattern is not None:
+            join_dict["hash_pattern"] = sc.hash_pattern
         if not sc.no_auth:
             if sc.auth._checksum is not None:
                 join_dict["auth"] = sc.auth._checksum.hex()
@@ -271,9 +273,11 @@ class StructuredCellJoinTask(StructuredCellTask):
         prelim = None
         if not any_prelim:
             checksum = manager.cachemanager.get_join_cache(join_dict)
+            if checksum is None:
+                checksum = database.get_structured_cell_join(join_dict)
             if checksum is not None:
                 from_cache = True
-                ok = True
+                ok = True            
         try:
             data_value = None  # obeys hash pattern (if there is one), i.e. is a deep structure not a raw value
             if not from_cache:
@@ -289,135 +293,139 @@ class StructuredCellJoinTask(StructuredCellTask):
                 ok = True
                 has_auth = False
                 has_inchannel = False
-                if len(sc.inchannels):
-                    paths = sorted(list(sc.inchannels))
-                    if paths == [()] and not sc.hash_pattern:
-                        # No need for auth relic cleanup, the high level handles this case already
-                        checksum = sc.inchannels[()]._checksum
-                        assert checksum is None or isinstance(checksum, bytes), checksum
-                        if checksum is None:
-                            ok = False
-                    else:
-                        try:
-                            if not sc.no_auth:
-                                auth_checksum = sc.auth._checksum
-                                if sc._auth_invalid:
-                                    ok = False
+                if manager._blocked:
+                    sc._exception = "StructuredCellJoinTask: Tasks are blocked"
+                    ok = False
+                else:
+                    if len(sc.inchannels):
+                        paths = sorted(list(sc.inchannels))
+                        if paths == [()] and not sc.hash_pattern:
+                            # No need for auth relic cleanup, the high level handles this case already
+                            checksum = sc.inchannels[()]._checksum
+                            assert checksum is None or isinstance(checksum, bytes), checksum
+                            if checksum is None:
+                                ok = False
+                        else:
+                            try:
+                                if not sc.no_auth:
+                                    auth_checksum = sc.auth._checksum
+                                    if sc._auth_invalid:
+                                        ok = False
+                                    else:
+                                        if auth_checksum is not None:
+                                            buffer = await GetBufferTask(manager, auth_checksum).run()
+                                            if buffer is None:
+                                                raise CacheMissError(auth_checksum.hex())
+                                            data_value = await DeserializeBufferTask(
+                                                manager, buffer, auth_checksum, "mixed", copy=True
+                                            ).run()
+                                            if data_value is not None:
+                                                has_auth = True
+                                            
+                                            # auth relic cleanup
+                                            auth_relic_cleanup = False
+                                            for path in paths:
+                                                if not len(path):
+                                                    auth_relic_cleanup = True
+                                                    data_value = None
+                                                    break
+                                                elif path_cleanup(data_value, path):
+                                                    auth_relic_cleanup = True
+                                            if auth_relic_cleanup:
+                                                if data_value is None:
+                                                    auth_checksum = None
+                                                else:
+                                                    auth_buf = await SerializeToBufferTask(
+                                                        manager, data_value, "mixed",
+                                                        use_cache=False  # the data_value object changes all the time...
+                                                    ).run()
+                                                    auth_checksum = await CalculateChecksumTask(manager, auth_buf).run()
+                                                    assert auth_checksum is not None
+                                                    buffer_cache.cache_buffer(auth_checksum, auth_buf)
+                                                manager._set_cell_checksum(sc.auth, auth_checksum, False)
+                                            # /auth relic cleanup
+                                            
+                                        checksum = None  # needs to be re-computed after updating with inchannels
+                            except CacheMissError: # shouldn't happen; we keep refs-to-auth!
+                                sc._exception = traceback.format_exc(limit=0)
+                                ok = False
+                            except (TypeError, ValueError, KeyError):
+                                sc._exception = traceback.format_exc(limit=0)
+                                ok = False
+                            except CancelledError as exc:
+                                if self._canceled:
+                                    raise exc from None
                                 else:
-                                    if auth_checksum is not None:
-                                        buffer = await GetBufferTask(manager, auth_checksum).run()
-                                        if buffer is None:
-                                            raise CacheMissError(auth_checksum.hex())
-                                        data_value = await DeserializeBufferTask(
-                                            manager, buffer, auth_checksum, "mixed", copy=True
-                                        ).run()
-                                        if data_value is not None:
-                                            has_auth = True
-                                        
-                                        # auth relic cleanup
-                                        auth_relic_cleanup = False
-                                        for path in paths:
-                                            if not len(path):
-                                                auth_relic_cleanup = True
-                                                data_value = None
-                                                break
-                                            elif path_cleanup(data_value, path):
-                                                auth_relic_cleanup = True
-                                        if auth_relic_cleanup:
-                                            if data_value is None:
-                                                auth_checksum = None
-                                            else:
-                                                auth_buf = await SerializeToBufferTask(
-                                                    manager, data_value, "mixed",
-                                                    use_cache=False  # the data_value object changes all the time...
-                                                ).run()
-                                                auth_checksum = await CalculateChecksumTask(manager, auth_buf).run()
-                                                assert auth_checksum is not None
-                                                buffer_cache.cache_buffer(auth_checksum, auth_buf)
-                                            manager._set_cell_checksum(sc.auth, auth_checksum, False)
-                                        # /auth relic cleanup
-                                        
-                                    checksum = None  # needs to be re-computed after updating with inchannels
-                        except CacheMissError: # shouldn't happen; we keep refs-to-auth!
-                            sc._exception = traceback.format_exc(limit=0)
-                            ok = False
-                        except (TypeError, ValueError, KeyError):
-                            sc._exception = traceback.format_exc(limit=0)
-                            ok = False
-                        except CancelledError as exc:
-                            if self._canceled:
-                                raise exc from None
-                            else:
+                                    sc._exception = traceback.format_exc()
+                                    ok = False
+                            except Exception as exc:
                                 sc._exception = traceback.format_exc()
                                 ok = False
-                        except Exception as exc:
-                            sc._exception = traceback.format_exc()
-                            ok = False
-                        if ok:
-                            if data_value is None:
-                                if isinstance(paths[0], int):
-                                    data_value = []
-                                elif isinstance(paths[0], (list, tuple)) and len(paths[0]) and isinstance(paths[0][0], int):
-                                    data_value = []
-                                else:
-                                    if sc.hash_pattern is not None:
-                                        if isinstance(sc.hash_pattern, dict):
-                                            for k in sc.hash_pattern:
-                                                if k.startswith("!"):
-                                                    data_value = []
-                                                    break
-                                    if data_value is None:
-                                        data_value = {}
-                            assert data_value is not None
-                            for path in paths:
-                                subchecksum = sc.inchannels[path]._checksum
-                                if subchecksum is not None:
-                                    has_inchannel = True
-                                    try:
-                                        # - no need to buffer-cache, since the inchannel holds a ref
-                                        # - the subchecksum has already the correct hash pattern (accessors make sure of this)
+                            if ok:
+                                if data_value is None:
+                                    if isinstance(paths[0], int):
+                                        data_value = []
+                                    elif isinstance(paths[0], (list, tuple)) and len(paths[0]) and isinstance(paths[0][0], int):
+                                        data_value = []
+                                    else:
+                                        if sc.hash_pattern is not None:
+                                            if isinstance(sc.hash_pattern, dict):
+                                                for k in sc.hash_pattern:
+                                                    if k.startswith("!"):
+                                                        data_value = []
+                                                        break
+                                        if data_value is None:
+                                            data_value = {}
+                                assert data_value is not None
+                                for path in paths:
+                                    subchecksum = sc.inchannels[path]._checksum
+                                    if subchecksum is not None:
+                                        has_inchannel = True
+                                        try:
+                                            # - no need to buffer-cache, since the inchannel holds a ref
+                                            # - the subchecksum has already the correct hash pattern (accessors make sure of this)
 
-                                        sub_buffer = None
-                                        if sc.hash_pattern is None or access_hash_pattern(sc.hash_pattern, path) not in ("#", "##"):
-                                            sub_buffer = await GetBufferTask(manager, subchecksum).run()
-                                        await set_subpath_checksum(data_value, sc.hash_pattern, path, subchecksum, sub_buffer)
-                                    except CancelledError as exc:
-                                        if self._canceled:
-                                            raise exc from None
-                                        ok = False
-                                        break
-                                    except CacheMissError:
-                                        sc._exception = traceback.format_exc(limit=0)
-                                        sc._data._status_reason = StatusReasonEnum.INVALID
-                                        ok = False
-                                        break
-                                    except (TypeError, ValueError, KeyError):
-                                        sc._exception = traceback.format_exc(limit=0)
-                                        ok = False
-                                        break
-                                    except Exception:
-                                        sc._exception = traceback.format_exc()
-                                        ok = False
-                                        break
-                                else:
-                                    pass  # It is OK to have inchannels at None (undefined)
-                                        # Else, use required properties in the schema
-                else:
-                    checksum = sc.auth._checksum
-                    if checksum is not None:
-                        try:
-                            buffer = await GetBufferTask(manager, checksum).run()
-                        except CacheMissError: # should not happen: we keep refs-to-auth!
-                            sc._exception = traceback.format_exc(limit=0)
-                            ok = False
-                        else:
-                            data_value = await DeserializeBufferTask(
-                                manager, buffer, checksum, "mixed", copy=True
-                            ).run()
-                            if data_value is not None:
-                                has_auth = True
+                                            sub_buffer = None
+                                            if sc.hash_pattern is None or access_hash_pattern(sc.hash_pattern, path) not in ("#", "##"):
+                                                sub_buffer = await GetBufferTask(manager, subchecksum).run()
+                                            await set_subpath_checksum(data_value, sc.hash_pattern, path, subchecksum, sub_buffer)
+                                        except CancelledError as exc:
+                                            if self._canceled:
+                                                raise exc from None
+                                            ok = False
+                                            break
+                                        except CacheMissError:
+                                            sc._exception = traceback.format_exc(limit=0)
+                                            sc._data._status_reason = StatusReasonEnum.INVALID
+                                            ok = False
+                                            break
+                                        except (TypeError, ValueError, KeyError):
+                                            sc._exception = traceback.format_exc(limit=0)
+                                            ok = False
+                                            break
+                                        except Exception:
+                                            sc._exception = traceback.format_exc()
+                                            ok = False
+                                            break
+                                    else:
+                                        pass  # It is OK to have inchannels at None (undefined)
+                                            # Else, use required properties in the schema
                     else:
-                        ok = False
+                        checksum = sc.auth._checksum
+                        if checksum is not None:
+                            try:
+                                buffer = await GetBufferTask(manager, checksum).run()
+                            except CacheMissError: # should not happen: we keep refs-to-auth!
+                                sc._exception = traceback.format_exc(limit=0)
+                                ok = False
+                            else:
+                                data_value = await DeserializeBufferTask(
+                                    manager, buffer, checksum, "mixed", copy=True
+                                ).run()
+                                if data_value is not None:
+                                    has_auth = True
+                        else:
+                            ok = False
                 if not ok:
                     data_value = None
                     checksum = None
@@ -499,6 +507,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                 )
                 if not from_cache and not any_prelim:
                     manager.cachemanager.set_join_cache(join_dict, cs)
+                    database.set_structured_cell_join(cs, join_dict)
                 for inchannel in sc.inchannels.values():
                     inchannel._save_state()
         finally:
@@ -526,3 +535,4 @@ from silk.Silk import Silk, ValidationError
 from ..cancel import get_scell_state, SCModeEnum
 from ...protocol.expression import get_subpath, set_subpath_checksum, access_hash_pattern, value_to_deep_structure
 from . import acquire_evaluation_lock, release_evaluation_lock
+from ...cache.database_client import database
