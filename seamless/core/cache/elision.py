@@ -131,7 +131,7 @@ class Elision:
 
 
 def elide(macro):
-    from .database_client import database_cache
+    from .database_client import database
     topmacro = macro._get_macro()
     if topmacro is None:
         topmacro = macro
@@ -152,7 +152,7 @@ def elide(macro):
     cache_hit = elision_cache.get(elision_checksum)
     if cache_hit is None:
         #print("CACHE MISS", macro, elision_checksum.hex())
-        db_cache_hit = database_cache.get_elision_result(elision_checksum)
+        db_cache_hit = database.get_elision_result(elision_checksum)
         if db_cache_hit is None:
             #print("DB CACHE MISS", macro, elision_checksum.hex())
             return False

@@ -10,7 +10,6 @@ from logging import warn
 import os, tempfile, shutil, functools
 
 from numpy import mod
-from seamless.core.build_module import build_compiled_module
 from sys import modules
 from seamless.core.protocol.calculate_checksum import calculate_checksum_sync
 from seamless.core.protocol.serialize import serialize_sync

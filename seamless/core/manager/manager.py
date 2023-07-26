@@ -31,7 +31,7 @@ def print_error(*args):
 
 def mainthread(func):
     def func2(*args, **kwargs):
-        if threading.current_thread is None: # destruction at exit
+        if threading is None or threading.current_thread is None: # destruction at exit
             return
         assert threading.current_thread() == threading.main_thread()
         return func(*args, **kwargs)

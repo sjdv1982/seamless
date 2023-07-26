@@ -543,7 +543,7 @@ class TransformationCache:
 
     def run_job(self, transformation, tf_checksum, *, fingertip=False):
         if self._blocked:
-            raise Exception(f"Transformation jobs are blocked")
+            raise Exception("Transformation jobs are blocked")
         transformers = self.transformations_to_transformers[tf_checksum]
         if tf_checksum in self.transformation_exceptions:
             exc = self.transformation_exceptions[tf_checksum]

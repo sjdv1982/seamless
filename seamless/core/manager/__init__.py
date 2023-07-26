@@ -4,6 +4,7 @@ def block():
     from ..cache.transformation_cache import transformation_cache
     from ..macro_mode import _toplevel_managers
     from .tasks import UnblockedTasks
+    from .. import build_module    
     Manager._blocked = True
     for manager in _toplevel_managers:
         taskmanager = manager.taskmanager
@@ -14,8 +15,11 @@ def block():
     transformation_cache._blocked = True
     for transformer in transformation_cache.transformer_to_transformations:
         transformation_cache.cancel_transformer(transformer, void_error=False)
+    build_module.block()
 
 def unblock():
     from ..cache.transformation_cache import transformation_cache
+    from .. import build_module    
     Manager._blocked = False
     transformation_cache._blocked = False
+    build_module.unblock()

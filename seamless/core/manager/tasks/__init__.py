@@ -265,5 +265,6 @@ from .accessor_update import AccessorUpdateTask
 from .transformer_update import TransformerUpdateTask, TransformerResultUpdateTask
 from ..manager import Manager
 UnblockedTasks = (UponConnectionTask, AccessorUpdateTask, TransformerUpdateTask, 
-                  TransformerResultUpdateTask, CellUpdateTask, GetBufferTask, 
-                  DeserializeBufferTask)
+                  TransformerResultUpdateTask, CellUpdateTask, SetCellValueTask, 
+                  GetBufferTask, DeserializeBufferTask, SerializeToBufferTask,
+                  CalculateChecksumTask)

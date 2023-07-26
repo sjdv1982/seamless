@@ -301,15 +301,22 @@ languages: dict or None
     def save_vault(self, dirname: str):
         """Save the checksum-to-buffer cache for the current graph in a vault directory"""
         # TODO: option to not follow deep cell checksums (currently, they are always followed)
+        from .build_module import get_compiled_module_code
+        from .cache.buffer_cache import buffer_cache
         manager = self._get_manager()
         assert manager is not None
         annotated_checksums0 = {}
         for child in self._children.values():
             if not isinstance(child, Cell):
-                continue
+                continue            
             checksum = child.checksum
             if checksum is None:
                 continue
+            if child.celltype == "plain":
+                compiled_module_code_checksum, compiled_module_code = get_compiled_module_code(bytes.fromhex(checksum))
+                if compiled_module_code is not None:
+                    buffer_cache.cache_buffer(compiled_module_code_checksum, compiled_module_code)
+                    annotated_checksums0[compiled_module_code_checksum.hex()] = False    
             has_independence = child.has_independence()
             if not annotated_checksums0.get(checksum, False):
                 annotated_checksums0[checksum] = has_independence

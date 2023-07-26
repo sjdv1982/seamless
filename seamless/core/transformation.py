@@ -134,8 +134,7 @@ def get_transformation_inputs_output(transformation):
         outputname, output_celltype, output_subcelltype, output_hash_pattern = outputpin
     return inputs, outputname, output_celltype, output_subcelltype, output_hash_pattern
 
-async def build_transformation_namespace(transformation, semantic_cache, codename):
-    from .cache.database_client import database_cache
+async def build_transformation_namespace(transformation, semantic_cache, codename):    
     namespace = {
         "__name__": "transformer",
         "__package__": "transformer",
@@ -172,9 +171,9 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
                 optional = fs["optional"]
                 mode = fs["mode"]
                 if mode == "file":
-                    fs_result = database_cache.get_filename(checksum)
+                    fs_result = buffer_remote.get_filename(checksum)
                 else: # mode == "directory"
-                    fs_result = database_cache.get_directory(checksum)
+                    fs_result = buffer_remote.get_directory(checksum)
                 fs_entry = deepcopy(fs)
                 if fs_result is None:
                     if not optional:
@@ -949,3 +948,6 @@ def get_global_info():
         result[field] = proc.stdout.decode()
     execution_metadata0.update(result)
     _got_global_info = True
+
+from .cache import buffer_remote
+from .cache.database_client import database

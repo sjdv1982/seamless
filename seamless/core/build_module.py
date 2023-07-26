@@ -217,15 +217,24 @@ def _merge_objects(objects):
             curr["code_dict"][objname + "." + obj["extension"]] = obj["code"]                    
     return result
 
-def build_compiled_module(full_module_name, checksum, module_definition, *, module_error_name):
-    from .cache.database_client import database_cache, database_sink
+from ..pylru import lrucache
+_compilation_buffers = lrucache(size=1000)
+
+def get_compiled_module_code(checksum):
+    return _compilation_buffers.get(checksum, (None, None))
+
+def build_compiled_module(full_module_name, original_checksum, checksum, module_definition, *, module_error_name):
     module_code = None
-    module_code_checksum = database_cache.get_compile_result(checksum)
-    if module_code_checksum is not None:
-        module_code = database_cache.get_buffer(module_code_checksum)
+    module_code_checksum, module_code = get_compiled_module_code(original_checksum)
+    if module_code is None:
+        module_code_checksum = database.get_compile_result(checksum)
+        if module_code_checksum is not None:
+            module_code = get_buffer(module_code_checksum, remote=True)
     source_files = {}
     debug = (module_definition.get("target") == "debug")
     if module_code is None:
+        if _blocked:
+            raise Exception("Building compiled modules is blocked")
         objects = module_definition["objects"]
         objects = _merge_objects(objects)
         binary_objects = {}
@@ -234,9 +243,9 @@ def build_compiled_module(full_module_name, checksum, module_definition, *, modu
         for object_file, object_ in objects.items():
             object_checksum = calculate_dict_checksum(object_)
             binary_code = None
-            binary_code_checksum = database_cache.get_compile_result(object_checksum)
+            binary_code_checksum = database.get_compile_result(object_checksum)
             if binary_code_checksum is None:
-                binary_code = database_cache.get_buffer(binary_code_checksum)
+                binary_code = get_buffer(binary_code_checksum, remote=True)
             if binary_code is not None:
                 binary_objects[object_file] = binary_code
             else:
@@ -260,8 +269,8 @@ def build_compiled_module(full_module_name, checksum, module_definition, *, modu
                 binary_objects[object_file] = binary_code
                 object_checksum = object_checksums[object_file]
                 binary_code_checksum = calculate_checksum(binary_code)
-                database_sink.set_buffer(binary_code_checksum, binary_code, False)
-                database_sink.set_compile_result(object_checksum, binary_code_checksum)
+                buffer_remote.write_buffer(binary_code_checksum, binary_code)
+                database.set_compile_result(object_checksum, binary_code_checksum)
         link_options = module_definition["link_options"]
         target = module_definition["target"]
         header = module_definition["public_header"]
@@ -278,8 +287,10 @@ def build_compiled_module(full_module_name, checksum, module_definition, *, modu
           )
         )
         module_code_checksum = calculate_checksum(module_code)
-        database_sink.set_buffer(module_code_checksum, module_code, False)
-        database_sink.set_compile_result(checksum, module_code_checksum)
+        buffer_remote.write_buffer(module_code_checksum, module_code)
+        if not buffer_remote.can_write():
+            _compilation_buffers[original_checksum] = module_code_checksum, module_code
+        database.set_compile_result(checksum, module_code_checksum)
     mod = import_extension_module(full_module_name, module_code, debug, source_files)
     return mod
 
@@ -325,7 +336,8 @@ def build_module(module_definition, module_workspace={}, *,
             completed_module_definition = complete(module_definition, compilers, languages)
             completed_checksum = calculate_dict_checksum(completed_module_definition)
             mod = build_compiled_module(
-              full_module_name, completed_checksum, completed_module_definition,
+              full_module_name, checksum,
+              completed_checksum, completed_module_definition,
               module_error_name=module_error_name
             )
         if not dependencies:
@@ -438,4 +450,17 @@ the module definition is simply returned.
                 if mod in module_definition_cache:
                     return module_definition_cache[mod]
             raise exc from None
-    
+
+_blocked = False
+
+def block():
+    global _blocked
+    _blocked = True
+
+def unblock():
+    global _blocked
+    _blocked = False
+
+from .cache import buffer_remote    
+from .cache.database_client import database
+from .protocol.get_buffer import get_buffer
