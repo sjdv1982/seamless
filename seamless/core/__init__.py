@@ -50,7 +50,7 @@ class SeamlessBase:
         self.name = name
         return self
 
-    def _get_manager(self):
+    def _get_manager(self) -> "Manager":
         assert self._context is not None, self.name #worker/cell must have a context
         assert self._context() is not None, self.name #worker/cell must have a context
         return self._context()._get_manager()
@@ -100,3 +100,4 @@ from .structured_cell import StructuredCell, Inchannel, Outchannel
 from .macro import Macro, macro, path
 from .reactor import Reactor, reactor
 from .unilink import unilink
+from .manager import Manager

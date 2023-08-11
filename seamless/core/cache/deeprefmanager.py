@@ -25,6 +25,7 @@ class DeepRefManager:
         self.refcount = {}
         self.big_buffers = set()
         self.invalid_deep_buffers = set()
+        self.missing_deep_buffers = set()
         self._destroyed = False
         self.runner = asyncio.ensure_future(self.run())
         self.coros = {}
@@ -82,20 +83,12 @@ class DeepRefManager:
             checksum, _ = key
             """
             # TODO: "get_buffer_database" where the database buffer request is done async
-    
-            deep_buffer = get_buffer(checksum, remote=False)
-            if deep_buffer is None:
-                coro = asyncio.ensure_future(get_buffer_database(checksum, None))
-                coro_entry = 1, key, coro
-                self.coros[key] = coro_entry
-            else:
-                new_coro_2(key, deep_buffer)
-
-            # instead:
             """
             deep_buffer = get_buffer(checksum, remote=True)
             if deep_buffer is None:
-                raise CacheMissError(checksum.hex())
+                self.missing_deep_buffers.add(checksum)
+                return
+            self.missing_deep_buffers.discard(checksum)
             new_coro_2(key, deep_buffer)
             
         def invalidate(checksum, exc):
@@ -224,14 +217,15 @@ class DeepRefManager:
                         self.buffers_to_incref.pop(key)
                     return
 
-        assert checksum in self.checksum_to_subchecksums, checksum.hex()
-        sub_checksums = self.checksum_to_subchecksums[checksum]
-        buffer_cache._decref(sub_checksums)
-        refcount = self.refcount.pop(checksum) - 1
-        if refcount > 0:
-            self.refcount[checksum] = refcount
-        else:
-            self.checksum_to_subchecksums.pop(checksum)
+        if checksum not in self.missing_deep_buffers:
+            assert checksum in self.checksum_to_subchecksums, checksum.hex()
+            sub_checksums = self.checksum_to_subchecksums[checksum]
+            buffer_cache._decref(sub_checksums)
+            refcount = self.refcount.pop(checksum) - 1
+            if refcount > 0:
+                self.refcount[checksum] = refcount
+            else:
+                self.checksum_to_subchecksums.pop(checksum)
 
 deeprefmanager = DeepRefManager()
 

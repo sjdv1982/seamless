@@ -275,9 +275,11 @@ class StructuredCellJoinTask(StructuredCellTask):
             checksum = manager.cachemanager.get_join_cache(join_dict)
             if checksum is None:
                 checksum = database.get_structured_cell_join(join_dict)
+                if checksum is not None:
+                    manager.cachemanager.set_join_cache(join_dict, checksum)
             if checksum is not None:
                 from_cache = True
-                ok = True            
+                ok = True
         try:
             data_value = None  # obeys hash pattern (if there is one), i.e. is a deep structure not a raw value
             if not from_cache:
