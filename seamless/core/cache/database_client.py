@@ -127,11 +127,11 @@ class Database:
         self._log("SET", request["type"], request["checksum"])
         self.send_put_request(request)
 
-    def set_elision_result(self, elision_checksum, elision_result):        
+    def set_elision_result(self, elision_checksum, elision_result_checksum):
         request = {
             "type": "elision",
             "checksum": parse_checksum(elision_checksum),
-            "value": elision_result,
+            "value": parse_checksum(elision_result_checksum),
         }
         self._log("SET", request["type"], request["checksum"])
         self.send_put_request(request)
@@ -226,7 +226,7 @@ class Database:
         }
         response = self.send_get_request(request)
         if response is not None:
-            result = bytes.fromhex(response.content.decode())
+            result = parse_checksum(response.content.decode(), as_bytes=True)
             self._log("GET", request["type"], request["checksum"])
             return result
 
@@ -264,7 +264,7 @@ class Database:
         }
         response = self.send_get_request(request)
         if response is not None:
-            result = bytes.fromhex(response.content.decode())
+            result = parse_checksum(response.content.decode(), as_bytes=True)
             self._log("GET", request["type"], request["checksum"])
             return result
 
@@ -275,7 +275,7 @@ class Database:
         }
         response = self.send_get_request(request)
         if response is not None:
-            result = bytes.fromhex(response.content.decode())
+            result = parse_checksum(response.content.decode(), as_bytes=True)
             self._log("GET", request["type"], request["checksum"])
             return result
 
@@ -293,7 +293,7 @@ class Database:
             request["target_hash_pattern"] = expression.target_hash_pattern
         response = self.send_get_request(request)
         if response is not None:
-            result = bytes.fromhex(response.content.decode())
+            result = parse_checksum(response.content.decode(), as_bytes=True)
             self._log("GET", request["type"], request["checksum"])
             return result
 
@@ -320,7 +320,7 @@ class Database:
         }
         response = self.send_get_request(request)
         if response is not None:
-            result = bytes.fromhex(response.content.decode())
+            result = parse_checksum(response.content.decode(), as_bytes=True)
             self._log("GET", request["type"], request["checksum"])
             return result
 
