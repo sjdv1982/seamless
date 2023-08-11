@@ -301,10 +301,24 @@ languages: dict or None
     def _update_annotated_checksums(self, annotated_checksums0):
         from .build_module import get_compiled_module_code
         from .cache.buffer_cache import buffer_cache
+        from .protocol.serialize import serialize_sync as serialize
+        from .protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
+        manager = self._get_manager()
+        livegraph = manager.livegraph
         for child in self._children.values():
             if isinstance(child, Context):
                 child._update_annotated_checksums(annotated_checksums0)
             elif isinstance(child, Macro):
+                elision = livegraph.macro_elision.get(child)
+                if elision is not None:
+                    elision_result = elision.get_elision_result()
+                    if elision_result is None:
+                        return
+                    elision_result_buffer = serialize(elision_result, "plain")
+                    elision_result_checksum = calculate_checksum(elision_result_buffer)
+                    buffer_cache.cache_buffer(elision_result_checksum, elision_result_buffer)
+                    annotated_checksums0[elision_result_checksum.hex()] = False    
+
                 cctx = child._gen_context
                 if cctx is not None:
                     cctx._update_annotated_checksums(annotated_checksums0)

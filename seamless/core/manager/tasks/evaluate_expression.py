@@ -160,12 +160,13 @@ async def value_conversion(
 
 async def _evaluate_expression(self, expression, manager, fingertip_mode):
     # Get the expression result checksum from cache.
+    from ....util import parse_checksum
     cachemanager = manager.cachemanager    
     if not fingertip_mode:
         result_checksum = \
             cachemanager.expression_to_result_checksum.get(expression)
         if result_checksum is not None:
-            assert isinstance(result_checksum, bytes)
+            result_checksum = parse_checksum(result_checksum, as_bytes=True)
             return result_checksum
 
     locknr = await acquire_evaluation_lock(self)    
@@ -174,6 +175,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
         result_buffer = None
         result_value = None
         source_checksum = expression.checksum
+        
         assert isinstance(source_checksum, bytes)
         source_hash_pattern = expression.hash_pattern
         source_celltype = expression.celltype
@@ -282,7 +284,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                         value_conversion_callback=value_conversion_callback
                     )
                     if result_checksum is not None:
-                        assert isinstance(result_checksum, bytes), result_checksum
+                        result_checksum = parse_checksum(result_checksum, as_bytes=True)                        
                 done = False  # still need to account for target hash pattern
                 needs_value_conversion = False
             elif trivial_path and hash_pattern_equivalent: #deepcell-to-deepcell

@@ -1,5 +1,4 @@
 print("""TODO:
-redo elision
 Standard add add_buffer_folder(./vault) to new project      
             
       """)

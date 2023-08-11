@@ -49,7 +49,7 @@ class Elision:
 
     def update(self):
         """Triggered if one of the output cells changes value"""
-        from .database_client import database_sink
+        from .database_client import database
         if self.macro._in_elision:
             return
         elision_checksum = self.get_elision_checksum()
@@ -59,7 +59,8 @@ class Elision:
         if elision_result is None:
             return
         #print("ELISION UPDATE", self.macro, elision_checksum.hex(), elision_result)
-        database_sink.set_elision_result(elision_checksum, elision_result)
+        elision_result_checksum = calculate_dict_checksum(elision_result)
+        database.set_elision_result(elision_checksum, elision_result_checksum)
         elision_cache[elision_checksum] = elision_result
 
 
@@ -88,6 +89,10 @@ class Elision:
 
 
     def get_elision_result(self):
+        cs = self.get_elision_checksum()
+        if cs is None:
+            return None
+            
         elision_result = {}
         for c,p in self.output_cells.items():
             upstream = self.livegraph().cell_to_upstream[c]
@@ -130,8 +135,10 @@ class Elision:
                 livegraph.cell_from_macro_elision.pop(c)
 
 
-def elide(macro):
+def elide(macro: "Macro"):
     from .database_client import database
+    from ..protocol.get_buffer import get_buffer
+    from ..protocol.deserialize import deserialize_sync
     topmacro = macro._get_macro()
     if topmacro is None:
         topmacro = macro
@@ -139,7 +146,8 @@ def elide(macro):
         #print("ELISION DISABLED", macro, topmacro)
         return False
 
-    livegraph = macro._get_manager().livegraph
+    manager = macro._get_manager()
+    livegraph = manager.livegraph
     elision = livegraph.macro_elision.get(macro)
     if elision is None:
         #print("NO ELISION", macro)
@@ -157,8 +165,14 @@ def elide(macro):
             #print("DB CACHE MISS", macro, elision_checksum.hex())
             return False
         else:
-            #print("DB CACHE HIT", macro, elision_checksum.hex())
-            cache_hit = db_cache_hit
+            #print("DB CACHE HIT?", macro, elision_checksum.hex())
+            elision_result_buffer = get_buffer(db_cache_hit, remote=True)
+            if elision_result_buffer is not None:
+                #print("DB CACHE HIT!", macro, elision_checksum.hex())
+                cache_hit = deserialize_sync(elision_result_buffer, db_cache_hit, "plain", copy=True)
+                elision_cache[elision_checksum] = cache_hit
+            else:
+                return False
     else:
         #print("CACHE HIT", macro, elision_checksum.hex())
         pass
@@ -192,7 +206,7 @@ def elide(macro):
     macro._execute(callback, {}, [])
     return True
 
-from ..macro import Path, path as make_path
+from ..macro import Macro, Path, path as make_path
 from ..cell import Cell, cell
 from ..context import context
 from ...calculate_checksum import calculate_dict_checksum
