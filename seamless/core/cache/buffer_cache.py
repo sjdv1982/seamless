@@ -190,7 +190,7 @@ class BufferCache:
             if self.buffer_refcount[checksum] == 0:
                 self.buffer_refcount.pop(checksum)
                 self.missing.discard(checksum)
-                can_delete = buffer_remote.can_delete_buffer(checksum)
+                can_delete = buffer_remote.can_read_buffer(checksum)
                 #print("DESTROY", checksum.hex(), can_delete, checksum in self.buffer_cache)
                 if can_delete and checksum in self.buffer_cache:
                     buffer = self.get_buffer(checksum)

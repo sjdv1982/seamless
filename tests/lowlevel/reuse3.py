@@ -2,7 +2,7 @@ import seamless
 from seamless.core import context, cell, transformer
 
 seamless.load_vault("./reuse-vault")
-seamless.database.connect()
+seamless.config.database.connect()
 
 ctx = context(toplevel=True)
 
@@ -20,7 +20,7 @@ ctx.tf = transformer({
 ctx.result = cell()
 ctx.code = cell("python").set(func)
 ctx.compute()
-seamless.block()
+seamless.config.block()
 ctx.a.connect(ctx.tf.a)
 ctx.b.connect(ctx.tf.b)
 ctx.code.connect(ctx.tf.code)

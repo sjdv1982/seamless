@@ -1,5 +1,5 @@
 import seamless
-seamless.database.connect()
+seamless.config.database.connect()
 
 from seamless.highlevel import Context, Cell
 

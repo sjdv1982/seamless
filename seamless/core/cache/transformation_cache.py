@@ -1,7 +1,3 @@
-print("""TODO:
-Standard add add_buffer_folder(./vault) to new project      
-            
-      """)
 # A transformation is a dictionary of semantic checksums,
 #  representing the input pins, together with celltype and subcelltype
 # The checksum of a transformation is the hash of the JSON buffer of this dict.

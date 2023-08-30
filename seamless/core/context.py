@@ -338,8 +338,10 @@ languages: dict or None
             if not annotated_checksums0.get(checksum, False):
                 annotated_checksums0[checksum] = has_independence
 
-    def save_vault(self, dirname: str):
-        """Save the checksum-to-buffer cache for the current graph in a vault directory"""
+    def save_vault(self, dirname: str, *, flat=False):
+        """Save the checksum-to-buffer cache for the current graph in a vault directory
+
+If flat=True, buffers are directly written into that directory, else they are organized by dependence and size."""
         # TODO: option to not follow deep cell checksums (currently, they are always followed)
         manager = self._get_manager()
         assert manager is not None
@@ -348,7 +350,10 @@ languages: dict or None
         annotated_checksums = [(checksum, not has_independence) for checksum, has_independence in annotated_checksums0.items()]
         checksums = [c[0] for c in annotated_checksums]
         buffer_dict = get_buffer_dict_sync(manager, checksums)
-        save_vault(dirname, annotated_checksums, buffer_dict)
+        if flat:
+            save_vault_flat(dirname, annotated_checksums, buffer_dict)
+        else:
+            save_vault(dirname, annotated_checksums, buffer_dict)
 
     def destroy(self, *, from_del=False, manager=None):
         if self._destroyed:
@@ -443,7 +448,7 @@ from .cell import Cell
 from .worker import Worker, InputPinBase, OutputPinBase, EditPinBase
 from .structured_cell import StructuredCell
 from ..copying import get_buffer_dict_sync
-from ..vault import save_vault
+from ..vault import save_vault, save_vault_flat
 try:
     from ..metalevel.debugmount import debugmountmanager
 except ImportError:

@@ -1,8 +1,8 @@
 import seamless
 
 seamless.load_vault("./reuse-vault")
-seamless.database.connect()
-seamless.block()
+seamless.config.database.connect()
+seamless.config.block()
 
 code = """
 #include <cmath>

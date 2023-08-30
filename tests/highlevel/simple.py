@@ -3,7 +3,7 @@ import seamless
 from seamless.highlevel import Context
 
 try:
-    seamless.database.connect()
+    seamless.config.database.connect()
 except Exception:
     pass
 
@@ -68,6 +68,6 @@ json.dump(graph, open("simple-graph.json", "w"), sort_keys=True, indent=2)
 inp = ctx.transform.inp
 print(inp.value.unsilk)
 
-if seamless.database.active:
+if seamless.config.database.active:
     from pprint import pprint
     pprint(ctx.transform.execution_metadata)

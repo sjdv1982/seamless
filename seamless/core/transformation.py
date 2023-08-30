@@ -77,7 +77,7 @@ _python_attach_ports = {
 
 def set_ncores(ncores):
     if ncores == 0:
-        print(DeprecationWarning("set_ncores(0) is deprecated. Use seamless.block() instead"))
+        print(DeprecationWarning("set_ncores(0) is deprecated. Use seamless.config.block() instead"))
     if len(_locks) != ncores:
         if any(_locks):
             msg = "WARNING: Cannot change ncores from %d to %d since there are running jobs"

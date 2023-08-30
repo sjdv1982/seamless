@@ -31,6 +31,8 @@ class VaultLock:
              self.mtime = t
 
 def save_vault_flat(dirname, annotated_checksums, buffer_dict):
+    if not os.path.exists(dirname):
+        os.makedirs(dirname, exist_ok=True)        
     with VaultLock(dirname) as vl:
         for checksum, is_dependent in annotated_checksums:
             buffer = buffer_dict[checksum]
@@ -57,6 +59,8 @@ def save_vault(dirname, annotated_checksums, buffer_dict):
                     except (TypeError, ValueError, AssertionError):
                         pass
                     break
+    else:
+        os.makedirs(dirname, exist_ok=True)
     if is_flat:
         return save_vault_flat(dirname, annotated_checksums, buffer_dict)
     

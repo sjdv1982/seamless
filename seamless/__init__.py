@@ -115,31 +115,12 @@ def check_original_event_loop():
 "The asyncio eventloop was changed (e.g. by asyncio.run) since Seamless was started"
         )
 
-def delegate():
-    """Delegate all computation and data storage to a remote server.
-Disables all local transformations. 
-First try to connect to an assistant. 
-If that fails, try to connect to a communion peer and to a database.
-"""
-    # TODO: assistant
-    block()
-
-    communion_server.configure_master(
-        transformation_job=True,
-        transformation_status=True,
-    )
-
-    database.connect()
-    communion_server.start()
-
-
 from silk import Silk
 from .shareserver import shareserver
 from .communion_server import communion_server
 from .core.transformation import set_ncores
-from .core.manager import block, unblock
-from .core.manager.tasks import set_parallel_evaluations
 from .calculate_checksum import calculate_checksum, calculate_dict_checksum
-from .core.cache.database_client import database, database_sink, database_cache
+from .core.cache.database_client import database_sink, database_cache
 from .util import parse_checksum
 from .vault import load_vault
+from . import config

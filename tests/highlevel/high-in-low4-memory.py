@@ -9,7 +9,7 @@ seamless.core.execute.DIRECT_PRINT = True
 seamless.database_sink.connect()
 seamless.database_cache.connect()
 seamless.set_ncores(2)
-seamless.set_parallel_evaluations(5)
+seamless.config.set_parallel_evaluations(5)
 
 """
 import logging

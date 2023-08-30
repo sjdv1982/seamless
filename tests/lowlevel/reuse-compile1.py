@@ -1,5 +1,5 @@
 import seamless
-seamless.database.connect()
+seamless.config.database.connect()
 
 code = """
 #include <cmath>

@@ -2,7 +2,7 @@ import seamless
 from seamless.core import context, cell, transformer, unilink
 
 try:
-    seamless.database.connect()
+    seamless.config.database.connect()
 except Exception:
     pass
 
@@ -57,6 +57,6 @@ ctx.compute()
 print(ctx.result.value, ctx.status)
 print(ctx.tf.exception)
 print("STOP")
-if seamless.database.active:
+if seamless.config.database.active:
     from pprint import pprint
     pprint(ctx.tf.execution_metadata)

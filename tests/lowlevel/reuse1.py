@@ -1,7 +1,7 @@
 import seamless
 from seamless.core import context, cell, transformer
 
-seamless.database.connect()
+seamless.config.database.connect()
 
 ctx = context(toplevel=True)
 

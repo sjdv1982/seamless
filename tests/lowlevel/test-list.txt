@@ -4,10 +4,11 @@
 #   Before each release, the test set must be run:
 #   - under seamless-bash/seamless-run (within Docker)
 #   - under seamless-framework (bare-metal conda)
+jupyter.sh
 bytecell.py
 bytecell2.py
 bytecell3.py
-bufferserver.py
+buffer_remote.sh
 cachehit-semantic.py
 conversions.py: the output is approximate, depends on exact timings
 simple.py: can be run with Seamless database (fresh), in which case the execution metadata is printed
