@@ -1,0 +1,5 @@
+START
+RuntimeError: 'ctx.compute()' cannot be called from within Jupyter. Use 'await ctx.computation()' instead
+In [2]: exit()              
+In [2]: exit()
+Shutting down kernel
