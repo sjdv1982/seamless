@@ -379,7 +379,7 @@ class CacheManager:
                 else:
                     task.cancel()
 
-        buffer = get_buffer(checksum,remote=False)
+        buffer = get_buffer(checksum,remote=True)
         if buffer is not None:
             return buffer
 

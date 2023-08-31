@@ -124,3 +124,4 @@ from .core.cache.database_client import database_sink, database_cache
 from .util import parse_checksum
 from .vault import load_vault
 from . import config
+from .core.cache import CacheMissError

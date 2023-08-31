@@ -21,9 +21,19 @@ def _contact_assistant():
 def init_from_env():
     """Configure database and buffer remote folders/servers based on environment variables"""
     init_buffer_remote_from_env()
-    raise NotImplementedError # read database env vars here, not in database.py
-    database.connect()
 
+    env = os.environ
+    host = env.get("SEAMLESS_DATABASE_IP")
+    if host is None:
+        raise ValueError("environment variable SEAMLESS_DATABASE_IP not defined")
+    port = env.get("SEAMLESS_DATABASE_PORT")
+    if port is None:
+        raise ValueError("environment variable SEAMLESS_DATABASE_PORT not defined")
+    try:
+        port = int(port)
+    except Exception:
+        raise TypeError("environment variable SEAMLESS_DATABASE_PORT must be integer") from None
+    database.connect(host, port)
 
 def init_buffer_remote_from_env():
     def _split_env(var, mode):

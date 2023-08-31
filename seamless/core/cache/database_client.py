@@ -35,21 +35,9 @@ class Database:
         logstr = "{} {} {}\n".format(getset, type, checksum)
         self._loghandle.write(logstr)
 
-    def _get_host_port(self):
-        env = os.environ
-        host = env.get("SEAMLESS_DATABASE_IP")
-        if host is None:
-            raise ValueError("environment variable SEAMLESS_DATABASE_IP not defined")
-        port = env.get("SEAMLESS_DATABASE_PORT")
-        if port is None:
-            raise ValueError("environment variable SEAMLESS_DATABASE_PORT not defined")
-        try:
-            port = int(port)
-        except Exception:
-            raise TypeError("environment variable SEAMLESS_DATABASE_PORT must be integer") from None
-        return host, port
-
-    def _connect(self, host, port):
+    def connect(self, host, port):
+        global Expression
+        from ..manager.expression import Expression
         self.host = host
         self.port = port
         url = "http://" + self.host + ":" + str(self.port)
@@ -71,12 +59,6 @@ class Database:
             raise Exception("Incorrect Seamless database protocol") from None
 
         self.active = True
-
-    def connect(self):
-        global Expression
-        from ..manager.expression import Expression
-        host, port = self._get_host_port()
-        self._connect(host, port)
 
     def delete_key(self, key_type, checksum):
         assert key_type in [
@@ -332,12 +314,28 @@ class Dummy:
         if not self._connected:
             return False
         return database.active
-    
+
+    def _get_host_port(self):
+        env = os.environ
+        host = env.get("SEAMLESS_DATABASE_IP")
+        if host is None:
+            raise ValueError("environment variable SEAMLESS_DATABASE_IP not defined")
+        port = env.get("SEAMLESS_DATABASE_PORT")
+        if port is None:
+            raise ValueError("environment variable SEAMLESS_DATABASE_PORT not defined")
+        try:
+            port = int(port)
+        except Exception:
+            raise TypeError("environment variable SEAMLESS_DATABASE_PORT must be integer") from None
+        return host, port
+
     def connect(self):
         if not self._connected:
             print(DeprecationWarning("""'database_sink' and 'database_cache' are deprecated.
                                      Use 'database' instead"""))
-            database.connect()
+            
+            host, port = self._get_host_port()
+            database.connect(host, port)
             self._connected = True
 
     def __getattr__(self, attr):

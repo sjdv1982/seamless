@@ -543,7 +543,7 @@ class TransformationJob:
     async def _execute_local(self,
         prelim_callback, progress_callback
     ):
-        from .. import database_sink
+        from .cache.database_client import database
         with_ipython_kernel = False
 
         get_global_info()
@@ -737,7 +737,7 @@ class TransformationJob:
                                 if semkey not in s2s:
                                     s2s[semkey] = []
                                 s2s[semkey].append(syn_checksum)
-                                database_sink.set_sem2syn(semkey, s2s[semkey])
+                                database.set_sem2syn(semkey, s2s[semkey])
                                 buffer_cache.cache_buffer(syn_checksum, buf)
                                 buffer_cache.decref(syn_checksum)
                             fut = asyncio.ensure_future(

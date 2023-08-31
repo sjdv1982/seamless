@@ -19,7 +19,7 @@ except ImportError:
     try_convert = None
 session = requests.Session()
     
-MAX_DOWNLOADS = 10    
+MAX_DOWNLOADS = 10
 mirrors = {}
 
 class DownloadError(Exception):
@@ -325,6 +325,7 @@ async def download_buffer(checksum, url_infos, celltype="bytes"):
     return await future2
 
 def download_buffer_from_servers(checksum):
+    # TODO: obsolete this
     checksum = parse_checksum(checksum)
     assert checksum is not None
     buffer_servers = os.environ.get("SEAMLESS_BUFFER_SERVERS")

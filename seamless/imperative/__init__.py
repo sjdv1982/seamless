@@ -111,7 +111,7 @@ def run_transformation_dict(transformation_dict, result_callback=None):
     """Runs a transformation that is specified as a dict of checksums,
     such as returned by highlevel.Transformer.get_transformation_dict"""
     # TODO: add type annotation and all kinds of validation...
-    from .. import database_sink
+    from ..core.cache.database_client import database
 
     transformation_buffer = tf_get_buffer(transformation_dict)
     transformation = calculate_checksum(transformation_buffer)
@@ -120,7 +120,7 @@ def run_transformation_dict(transformation_dict, result_callback=None):
         transformation, transformation_buffer, transformation_dict
     )
     if multiprocessing.current_process().name != "MainProcess":
-        assert database_sink.active
+        assert database.active
         result_checksum, prelim = transformation_cache._get_transformation_result(
             transformation
         )
@@ -229,7 +229,8 @@ def _run_transformer(
     checksum_kwargs=[]
 ):
     # TODO: celltype support for args / return
-    from .. import database_sink
+    from ..core.cache.database_client import database
+    from ..core.cache.buffer_remote import write_buffer as remote_write_buffer
 
     arguments = _parse_arguments(signature, args, kwargs)
     result_celltype = celltypes["result"]
@@ -268,10 +269,10 @@ def _run_transformer(
     semantic_code_checksum2 = bytes.fromhex(semantic_code_checksum)
     semcode = _sem_code_cache[semantic_code_checksum]
     cache_buffer(semantic_code_checksum2, semcode)
-    database_sink.set_buffer(semantic_code_checksum2, semcode, False)
-    database_sink.set_buffer(code_checksum, codebuf, False)
+    remote_write_buffer(semantic_code_checksum2, semcode)
+    remote_write_buffer(code_checksum, codebuf)
     semkey = (semantic_code_checksum2, "python", "transformer")
-    database_sink.set_sem2syn(semkey, [code_checksum])
+    database.set_sem2syn(semkey, [code_checksum])
     return run_transformation_dict(transformation_dict, result_callback)
 
 
@@ -290,7 +291,8 @@ async def _run_transformer_async(
     env=None,
     checksum_kwargs=[]
 ):
-    from .. import database_sink
+    from ..core.cache.database_client import database
+    from ..core.cache.buffer_remote import write_buffer as remote_write_buffer
 
     assert result_callback is None  # meaningless for async
     arguments = signature.bind(*args, **kwargs).arguments
@@ -329,10 +331,10 @@ async def _run_transformer_async(
     semantic_code_checksum2 = bytes.fromhex(semantic_code_checksum)
     semcode = _sem_code_cache[semantic_code_checksum]
     cache_buffer(semantic_code_checksum2, semcode)
-    database_sink.set_buffer(semantic_code_checksum2, semcode, False)
-    database_sink.set_buffer(code_checksum, codebuf, False)
+    remote_write_buffer(semantic_code_checksum2, semcode)
+    remote_write_buffer(code_checksum, codebuf)
     semkey = (semantic_code_checksum2, "python", "transformer")
-    database_sink.set_sem2syn(semkey, [code_checksum])
+    database.set_sem2syn(semkey, [code_checksum])
     return await run_transformation_dict_async(transformation_dict)
 
 
@@ -390,7 +392,7 @@ def _wait():
                 if forked:
                     result_checksum, logs = _parent_process_response_queue.get()
                 else:
-                    result_checksum = run_transformation(transformation)
+                    result_checksum = run_transformation(transformation, new_event_loop=True)
                     logs = None
                     if result_checksum is not None:
                         tf_checksum = bytes.fromhex(transformation)

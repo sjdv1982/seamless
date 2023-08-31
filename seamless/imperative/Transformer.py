@@ -81,12 +81,13 @@ The following properties can be set:
         from .Transformation import Transformation
         from .module import get_module_definition
         from . import _run_transformer, _run_transformer_async
-        from .. import database_sink
+        from ..core.cache.database_client import database
         self._signature.bind(*args, **kwargs)
         if multiprocessing.current_process().name != "MainProcess":
             if self._is_async:
                 raise NotImplementedError  # no plans to implement this...
-            if not database_sink.active:
+            if not database.active:
+                #raise NotImplementedError # ALSO requires a buffer write server... unless it is non-local and a assistant is available
                 raise RuntimeError("Running @transformer inside a transformation requires a Seamless database")
         runner = _run_transformer_async if self._is_async else _run_transformer
         if not self._blocking:
