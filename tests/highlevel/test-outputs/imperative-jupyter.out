@@ -1,0 +1,26 @@
+Locally executed code
+
+Python
+START
+1213
+
+Jupyter
+START
+1213
+In [2]: exit()              
+In [2]: exit()
+Shutting down kernel
+
+Delegated code
+
+Python
+START
+1213
+
+Jupyter
+START
+1213
+In [2]: exit()              
+In [2]: exit()
+Shutting down kernel
+

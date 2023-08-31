@@ -8,6 +8,7 @@ class HardCancelError(Exception):
     def __str__(self):
         return self.__class__.__name__
 
+from concurrent.futures import ThreadPoolExecutor
 import sys
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
@@ -1089,8 +1090,8 @@ class TransformationCache:
 
     def run_transformation(self, tf_checksum, metalike=None, new_event_loop=False):        
         from ... import communion_server
-        from ...communion_client import communion_client_manager
-        if asyncio.get_event_loop().is_running or new_event_loop:
+        event_loop = asyncio.get_event_loop()
+        if event_loop.is_running or new_event_loop:
             # To support run_transformation inside transformer code
             communion_server_restarted = False            
             if communion_server.started:
@@ -1098,10 +1099,25 @@ class TransformationCache:
                     if len(communion_server.futures[peer]):
                         raise RuntimeError("Communion server has outstanding requests in other event loop")
                     communion_server_restarted = True
-            try:                
-                return asyncio.new_event_loop().run_until_complete(
-                    self.run_transformation_async(tf_checksum, metalike=metalike, fresh_event_loop=True)
-                )
+            try:
+                if event_loop.is_running:
+                    # This is potentially tricky. 
+                    # The Seamless manager will be running in a different thread.
+                    # Therefore, we can't update the Seamless workflow graph, but we shouldn't have to
+                    # The use case is essentially: using the functional style under Jupyter
+                    def func():
+                        coro = self.run_transformation_async(tf_checksum, metalike=metalike)
+                        # The following hangs, even for a "dummy" coroutine:
+                        #  future = asyncio.run_coroutine_threadsafe(coro, event_loop)                        
+                        #  return future.result()
+                        return asyncio.run(coro)
+                                            
+                    with ThreadPoolExecutor() as tp:
+                        return tp.submit(func).result()
+                else:                
+                    return asyncio.new_event_loop().run_until_complete(
+                        self.run_transformation_async(tf_checksum, metalike=metalike, fresh_event_loop=True)
+                    )
             finally:
                 if communion_server_restarted:
                     communion_server.start()

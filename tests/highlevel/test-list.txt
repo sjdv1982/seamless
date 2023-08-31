@@ -116,6 +116,7 @@ library-in-library.py
 library-schema.py
 imperative.py
 imperative-celltypes.py
+imperative-jupyter.sh
 imperative-database.py: run with Seamless database, preferably in a clean dir
 imperative-nonblocking.py: run with Seamless database, preferably in a clean dir
 imperative-nonblocking-parallel.py: run with Seamless database, preferably in a clean dir
