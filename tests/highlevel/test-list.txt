@@ -5,6 +5,9 @@
 #   - under seamless-bash/seamless-run (within Docker)
 #   - under seamless-framework (bare-metal conda)
 #   Docker tests require continuumio/anaconda3 to be pulled
+# Tests ending with .sh, run with:
+#   ./TEST.py > test-outputs/TEST.out 2>&1
+
 bytes-conversion.py
 set-python-invalid.py: can also be run in interactive mode (mount /tmp/code.py)
 mime.py
@@ -115,9 +118,13 @@ library-context-argument.py
 library-in-library.py
 library-schema.py
 imperative.py
+imperative-async.py
 imperative-celltypes.py
 imperative-jupyter.sh
-imperative-database.py: run with Seamless database, preferably in a clean dir
+imperative-database.py: run with Seamless database and buffer dir, preferably in a clean setup
+imperative-database-async.sh: run with Seamless database and buffer dir, preferably in a clean setup
+imperative-communion-async.sh: run with a job slave, Seamless database and buffer dir, preferably in a clean setup
+  
 imperative-nonblocking.py: run with Seamless database, preferably in a clean dir
 imperative-nonblocking-parallel.py: run with Seamless database, preferably in a clean dir
 imperative-communion.py: run with jobless and a Seamless database, preferably in a clean dir
@@ -136,7 +143,7 @@ webinterface.sh: open with bash inside the Seamless Docker container.
                  Can also be run interactively, see line 6 of the code
 meta-local: 1. run without jobless/jobslave:                        #1 succeed, #2 fail, #3 fail
             2. run with --communion and a jobslave:                 #1 succeed, #2 succeed, #3 succeed
-                (export SEAMLESS_COMMUNION_OUTGOING_PORT=5533; seamless-jobslave)
+                (seamless-jobslave)
                 See test-outputs/meta-local.log
             3. run with --communion --database and jobless:         #1 succeed, #2 succeed, #3 fail
             Database can be cleaned with: 
@@ -245,15 +252,7 @@ r.py
    http://localhost:5813/ctx/result.png
   edit plot.R
   The PNG should update, the SVG should not
-imperative-async.py: open "jupyter console | tee test-outputs/imperative-async.out", 
-  then run "%load imperative-async.py"
-imperative-database-async.py: open "jupyter console | tee test-outputs/imperative-database-async.out", 
-  then run "%load imperative-database-async.py"
-  run with Seamless database, preferably in a clean dir
-imperative-communion-async.py: open "jupyter console | tee test-outputs/imperative-communion-async.out", 
-  then run "%load imperative-communion-async.py"
-  run with jobless and a Seamless database, preferably in a clean dir
-  
+   
 compute-ctrl-c.py: open with ipython, type "ctx.compute()" and press ctrl+c
 delay-direct-print-file: open with ipython, monitor /tmp/direct-print.out, change ctx.tf1.a and ctx.tf1.delay
 debugmode-py-light.py

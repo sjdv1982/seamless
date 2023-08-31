@@ -987,7 +987,7 @@ class TransformationCache:
             return
         self._hard_cancel(job)
 
-    async def run_transformation_async(self, tf_checksum, metalike=None, fresh_event_loop=False):
+    async def run_transformation_async(self, tf_checksum, *, fingertip, metalike=None, fresh_event_loop=False):
         from . import CacheMissError
         from ... import communion_server
         from ...communion_client import communion_client_manager
@@ -1007,7 +1007,7 @@ class TransformationCache:
         
         try:
             result_checksum, prelim = self._get_transformation_result(tf_checksum)
-            if result_checksum is not None and not prelim:
+            if result_checksum is not None and not prelim and not fingertip:
                 return result_checksum
             transformation = await self.serve_get_transformation(tf_checksum, None)
             if transformation is None:
@@ -1036,13 +1036,12 @@ class TransformationCache:
             async def incref_and_run():
                 result = await self.incref_transformation(
                     transformation, transformer, 
-                    transformation_build_exception=None 
-                )
+                    transformation_build_exception=None                 )
                 if result is not None:
                     tf_checksum, tf_exc, result_checksum, prelim = result
-                    if tf_exc is None and (result_checksum is None or prelim):
+                    if tf_exc is None and (result_checksum is None or prelim or fingertip):
                         try:
-                            job = self.run_job(transformation, tf_checksum)
+                            job = self.run_job(transformation, tf_checksum, fingertip=fingertip)
                         except Exception as exc:
                             self._set_exc([transformer], tf_checksum, exc)
                             job = None                    
@@ -1088,7 +1087,7 @@ class TransformationCache:
                     communion_client_manager._init()
                     await asyncio.sleep(0.1)
 
-    def run_transformation(self, tf_checksum, metalike=None, new_event_loop=False):        
+    def run_transformation(self, tf_checksum, *, fingertip, metalike=None, new_event_loop=False):        
         from ... import communion_server
         event_loop = asyncio.get_event_loop()
         if event_loop.is_running or new_event_loop:
@@ -1106,7 +1105,7 @@ class TransformationCache:
                     # Therefore, we can't update the Seamless workflow graph, but we shouldn't have to
                     # The use case is essentially: using the functional style under Jupyter
                     def func():
-                        coro = self.run_transformation_async(tf_checksum, metalike=metalike)
+                        coro = self.run_transformation_async(tf_checksum, fingertip=fingertip, metalike=metalike)
                         # The following hangs, even for a "dummy" coroutine:
                         #  future = asyncio.run_coroutine_threadsafe(coro, event_loop)                        
                         #  return future.result()
@@ -1116,14 +1115,14 @@ class TransformationCache:
                         return tp.submit(func).result()
                 else:                
                     return asyncio.new_event_loop().run_until_complete(
-                        self.run_transformation_async(tf_checksum, metalike=metalike, fresh_event_loop=True)
+                        self.run_transformation_async(tf_checksum, fingertip=fingertip, metalike=metalike, fresh_event_loop=True)
                     )
             finally:
                 if communion_server_restarted:
                     communion_server.start()
         else:
             fut = asyncio.ensure_future(
-                self.run_transformation_async(tf_checksum, metalike=metalike)
+                self.run_transformation_async(tf_checksum, fingertip=fingertip, metalike=metalike)
             )
             asyncio.get_event_loop().run_until_complete(fut)
             return fut.result()

@@ -741,7 +741,7 @@ class TransformationJob:
                                 buffer_cache.cache_buffer(syn_checksum, buf)
                                 buffer_cache.decref(syn_checksum)
                             fut = asyncio.ensure_future(
-                                run_transformation_async(tf_checksum, metalike)
+                                run_transformation_async(tf_checksum, metalike=metalike, fingertip=False)
                             )
                             def fut_done(fut):
                                 try:

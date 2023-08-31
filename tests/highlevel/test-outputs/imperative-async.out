@@ -1,13 +1,79 @@
-Jupyter console 6.4.4
-
-Python 3.8.10 | packaged by conda-forge | (default, May 11 2021, 07:01:05) 
-Type 'copyright', 'credits' or 'license' for more information
-IPython 7.33.0 -- An enhanced Interactive Python. Type '?' for help.
-
-
+   ...: print("START")
+   ...: from seamless.highlevel import Context
+   ...: import json
+   ...: ctx = Context()
+   ...: def func(a, b):
+   ...:     import time
+   ...:     time.sleep(0.5)
+   ...:     return 100 * a + b
+   ...: ctx.tf = func
+   ...: ctx.tf.a = 21
+   ...: ctx.tf.b = 17
+   ...: await ctx.computation()
+   ...: transformation_checksum = ctx.tf.get_transformation()
+   ...: transformation_dict = ctx.resolve(transformation_checksum, "plain")
+   ...: 
+   ...: from seamless.imperative import run_transformation_dict_async
+   ...: result = await run_transformation_dict_async(transformation_dict)
+   ...: print(result)
+   ...: 
+   ...: ##################################################
+   ...: 
+   ...: from seamless.imperative import transformer_async
+   ...: 
+   ...: @transformer_async
+   ...: def func(a, b):
+   ...:     import time
+   ...:     time.sleep(0.5)
+   ...:     return 100 * a + b
+   ...: 
+   ...: result = await func(88, 17) # takes 0.5 sec
+   ...: print(result)
+   ...: result = await func(88, 17) # immediate
+   ...: print(result)
+   ...: result = await func(21, 17) # immediate
+   ...: print(result)                     
+In [2]: # %load imperative-async.py
+   ...: print("START")
+   ...: from seamless.highlevel import Context
+   ...: import json
+   ...: ctx = Context()
+   ...: def func(a, b):
+   ...:     import time
+   ...:     time.sleep(0.5)
+   ...:     return 100 * a + b
+   ...: ctx.tf = func
+   ...: ctx.tf.a = 21
+   ...: ctx.tf.b = 17
+   ...: await ctx.computation()
+   ...: transformation_checksum = ctx.tf.get_transformation()
+   ...: transformation_dict = ctx.resolve(transformation_checksum, "plain")
+   ...: 
+   ...: from seamless.imperative import run_transformation_dict_async
+   ...: result = await run_transformation_dict_async(transformation_dict)
+   ...: print(result)
+   ...: 
+   ...: ##################################################
+   ...: 
+   ...: from seamless.imperative import transformer_async
+   ...: 
+   ...: @transformer_async
+   ...: def func(a, b):
+   ...:     import time
+   ...:     time.sleep(0.5)
+   ...:     return 100 * a + b
+   ...: 
+   ...: result = await func(88, 17) # takes 0.5 sec
+   ...: print(result)
+   ...: result = await func(88, 17) # immediate
+   ...: print(result)
+   ...: result = await func(21, 17) # immediate
+   ...: print(result)
+START
 2117
 8817
 8817
 2117
-
-Do you really want to exit ([y]/n)? Shutting down kernel
+In [3]: exit()              
+In [3]: exit()
+Shutting down kernel

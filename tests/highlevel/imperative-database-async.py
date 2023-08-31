@@ -1,6 +1,6 @@
+print("START")
 import seamless
-seamless.database_cache.connect()
-seamless.database_sink.connect()
+seamless.config.init_from_env()
 
 from seamless.highlevel import Context
 import json

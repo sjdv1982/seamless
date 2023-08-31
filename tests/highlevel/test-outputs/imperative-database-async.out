@@ -1,10 +1,4 @@
-Jupyter console 6.4.4
-
-Python 3.8.10 | packaged by conda-forge | (default, May 11 2021, 07:01:05) 
-Type 'copyright', 'credits' or 'license' for more information
-IPython 7.33.0 -- An enhanced Interactive Python. Type '?' for help.
-
-
+START
 2117
 8817
 8817
@@ -14,7 +8,7 @@ IPython 7.33.0 -- An enhanced Interactive Python. Type '?' for help.
 *************************************************
 <checksum 0c6a7b06f7f95aef0d134c75080744103f650c4b3f8c0c2c15bba458ae41dfde>
 *************************************************
-Execution time: 0.7 seconds
+Execution time: 0.6 seconds
 *************************************************
 Status: OK
 <Silk: 3838 >
@@ -23,7 +17,7 @@ Status: OK
 *************************************************
 <checksum 0c6a7b06f7f95aef0d134c75080744103f650c4b3f8c0c2c15bba458ae41dfde>
 *************************************************
-Execution time: 0.3 seconds
+Execution time: 0.2 seconds
 *************************************************
 Status: OK
 <Silk: 3838 >
@@ -32,9 +26,10 @@ Status: OK
 *************************************************
 <checksum 88da1e33db07af78fb1fc6674663fccb0e18a2abdde4cb30acac8d315b445937>
 *************************************************
-Execution time: 0.8 seconds
+Execution time: 0.7 seconds
 *************************************************
 Status: OK
 <Silk: 6666 >
-
-Do you really want to exit ([y]/n)? Shutting down kernel
+In [3]: exit()              
+In [3]: exit()
+Shutting down kernel

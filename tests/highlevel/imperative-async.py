@@ -1,3 +1,4 @@
+print("START")
 from seamless.highlevel import Context
 import json
 ctx = Context()

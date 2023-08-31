@@ -1,6 +1,5 @@
 import seamless
-seamless.database_cache.connect()
-seamless.database_sink.connect()
+seamless.config.init_from_env()
 from seamless.highlevel import Context
 import json
 ctx = Context()
@@ -19,6 +18,7 @@ transformation_dict = ctx.resolve(transformation_checksum, "plain")
 
 from seamless.imperative import run_transformation_dict
 result = run_transformation_dict(transformation_dict)
+print(result)
 
 ##################################################
 

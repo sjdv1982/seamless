@@ -84,7 +84,7 @@ def activate_transformations():
     from .core.cache.transformation_cache import transformation_cache
     transformation_cache.active = True
 
-def run_transformation(checksum, metalike=None, new_event_loop=False):
+def run_transformation(checksum, *, fingertip=False, metalike=None, new_event_loop=False):
     if running_in_jupyter and not new_event_loop:
         raise RuntimeError("'run_transformation' cannot be called from within Jupyter. Use 'await run_transformation_async' instead")
     elif asyncio.get_event_loop().is_running():
@@ -99,13 +99,13 @@ def run_transformation(checksum, metalike=None, new_event_loop=False):
 
     from .core.cache.transformation_cache import transformation_cache
     checksum = parse_checksum(checksum, as_bytes=True)
-    return transformation_cache.run_transformation(checksum, metalike=metalike, new_event_loop=new_event_loop)
+    return transformation_cache.run_transformation(checksum, fingertip=fingertip, metalike=metalike, new_event_loop=new_event_loop)
 
-async def run_transformation_async(checksum, metalike=None):
+async def run_transformation_async(checksum, *, fingertip, metalike=None):
     from .core.cache.transformation_cache import transformation_cache
     checksum = parse_checksum(checksum, as_bytes=True)
     transformation_cache.transformation_exceptions.pop(checksum, None)
-    return await transformation_cache.run_transformation_async(checksum,metalike=metalike)
+    return await transformation_cache.run_transformation_async(checksum,metalike=metalike, fingertip=fingertip)
 
 _original_event_loop = asyncio.get_event_loop()
 def check_original_event_loop():

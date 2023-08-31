@@ -1,9 +1,13 @@
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import inspect
 import textwrap
 from types import LambdaType
 import ast
 from functools import update_wrapper
 import multiprocessing
+
+from seamless.core.cache import CacheMissError
 
 from ..calculate_checksum import calculate_checksum
 from ..core.protocol.serialize import (
@@ -35,6 +39,11 @@ _parent_process_queue = None
 _parent_process_response_queue = None
 _has_lock = True
 
+_dummy_manager = None
+def set_dummy_manager():
+    global _dummy_manager
+    from seamless.core.manager import Manager
+    _dummy_manager = Manager()
 
 def _set_parent_process_queue(parent_process_queue):
     global _parent_process_queue
@@ -68,8 +77,22 @@ def cache_buffer(checksum, buf):
 
 
 def get_buffer(checksum):
-    # return _get_buffer(checksum, remote=False)
-    return _get_buffer(checksum, remote=True)
+    result = _get_buffer(checksum, remote=True)
+    if result is not None:
+        return result
+    
+def fingertip(checksum):
+    result = _get_buffer(checksum, remote=True)
+    if result is not None:
+        return result
+    set_dummy_manager()
+    coro = _dummy_manager.cachemanager.fingertip(checksum)
+    with ThreadPoolExecutor() as tp:
+        result = tp.submit(lambda: asyncio.run(coro)).result()
+    if result is None:
+        raise CacheMissError(checksum.hex())
+    return result
+    
 
 
 def _register_transformation_dict(
@@ -178,6 +201,7 @@ async def run_transformation_dict_async(transformation_dict):
     """Runs a transformation that is specified as a dict of checksums,
     such as returned by highlevel.Transformer.get_transformation_dict"""
     # TODO: add type annotation and all kinds of validation...
+    from seamless import CacheMissError
     transformation_buffer = tf_get_buffer(transformation_dict)
     transformation = calculate_checksum(transformation_buffer)
     cache_buffer(transformation, transformation_buffer)
@@ -185,9 +209,14 @@ async def run_transformation_dict_async(transformation_dict):
         transformation, transformation_buffer, transformation_dict
     )
     try:
-        result_checksum = await run_transformation_async(transformation)
+        result_checksum = await run_transformation_async(transformation, fingertip=False)
         celltype = transformation_dict["__output__"][1]
-        result_buffer = get_buffer(result_checksum)  # does this raise CacheMissError?
+        result_buffer = get_buffer(result_checksum)
+        if result_buffer is None:
+            await run_transformation_async(transformation, fingertip=True)
+            result_buffer = get_buffer(result_checksum)    
+        if result_buffer is None:
+            raise CacheMissError(result_checksum.hex())
         return await deserialize_async(
             result_buffer, result_checksum, celltype, copy=True
         )
@@ -353,6 +382,7 @@ def _get_semantic(code, code_checksum):
 def _wait():
     global _queued_transformations
     global _has_lock
+    from seamless import CacheMissError
     if not _queued_transformations:
         return None
     results = []
@@ -392,7 +422,7 @@ def _wait():
                 if forked:
                     result_checksum, logs = _parent_process_response_queue.get()
                 else:
-                    result_checksum = run_transformation(transformation, new_event_loop=True)
+                    result_checksum = run_transformation(transformation, fingertip=False, new_event_loop=True)
                     logs = None
                     if result_checksum is not None:
                         tf_checksum = bytes.fromhex(transformation)
@@ -413,7 +443,14 @@ def _wait():
 
             result_buffer = get_buffer(
                 result_checksum
-            )  # does this raise CacheMissError?
+            )
+            if result_buffer is None and not forked:
+                run_transformation(transformation, fingertip=True, new_event_loop=True)
+                result_buffer = get_buffer(
+                    result_checksum
+                )
+            if result_buffer is None:
+                raise CacheMissError(result_checksum.hex())
             result = deserialize(
                 result_buffer, result_checksum, output_celltype, copy=True
             )
