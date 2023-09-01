@@ -1,3 +1,4 @@
+raise NotImplementedError
 import seamless
 seamless.delegate()
 from seamless.imperative import transformer

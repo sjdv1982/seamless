@@ -1,3 +1,4 @@
+raise NotImplementedError
 
 from seamless.highlevel import Context, Cell, Module
 from seamless.imperative import transformer

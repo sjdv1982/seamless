@@ -1,3 +1,5 @@
+raise NotImplementedError
+
 from seamless.imperative import transformer
 
 @transformer

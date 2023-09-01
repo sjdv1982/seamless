@@ -16,6 +16,7 @@ def _contact_assistant():
 
     raise NotImplementedError # receive a message, or invoke init_from_env
 
+    # TODO: this won't work from Jupyter...
     communion_server.start()
 
 def init_from_env():
@@ -67,12 +68,12 @@ def init_buffer_remote_from_env():
 def delegate():
     """Delegate all computation and data storage to remote servers.
 Disable all local transformations. Connect to an assistant and get configuration."""
-    block()
+    block_local()
     _contact_assistant()
 
 
 from .core.cache.database_client import database
-from .core.manager import block, unblock
+from .core.manager import block, unblock, block_local, unblock_local
 from .core.manager.tasks import set_parallel_evaluations
 from .core.cache.buffer_remote import (
     set_read_buffer_folders, set_read_buffer_servers, set_write_buffer_server

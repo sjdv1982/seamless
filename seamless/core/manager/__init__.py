@@ -23,3 +23,15 @@ def unblock():
     Manager._blocked = False
     transformation_cache._blocked = False
     build_module.unblock()
+
+def block_local():
+    from ..cache.transformation_cache import transformation_cache
+    from .. import build_module    
+    transformation_cache._blocked_local = True
+    build_module.block()
+
+def unblock_local():
+    from ..cache.transformation_cache import transformation_cache
+    from .. import build_module    
+    transformation_cache._blocked_local = False
+    build_module.unblock()

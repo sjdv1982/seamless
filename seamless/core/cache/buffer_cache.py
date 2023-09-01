@@ -383,7 +383,7 @@ class BufferCache:
         assert len(checksum) == 32
         if checksum in self.buffer_cache:
             return True
-        return buffer_remote.has_buffer(checksum)
+        return buffer_remote.can_read_buffer(checksum)
 
     def destroy(self):
         if self.buffer_cache is None:

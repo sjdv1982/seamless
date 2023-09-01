@@ -2,7 +2,7 @@ import seamless
 
 seamless.load_vault("./reuse-vault")
 seamless.config.database.connect()
-seamless.config.block()
+seamless.config.block_local()
 
 code = """
 #include <cmath>

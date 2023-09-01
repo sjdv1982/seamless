@@ -1,16 +1,38 @@
+raise NotImplementedError
+
+print("START")
+import os
+os.environ["SEAMLESS_COMMUNION_ID"] = "test-imperative-communion"
+
+''''
 import seamless
-seamless.set_ncores(0)
+seamless.config.block_local()
+
 from seamless import communion_server
-
-seamless.database_sink.connect()
-seamless.database_cache.connect()
-
-communion_server.configure_master(
-    transformation_job=True,
-    transformation_status=True,
-)
-
 await communion_server.start_async()
+'''
+
+#MUST use full delegation, and so must the communion peer
+### seamless.config.delegate() ### TODO
+
+import seamless
+seamless.config.block_local()
+seamless.config.init_from_env()
+
+seamless.communion_server.configure_master({
+    "buffer": False,
+    "buffer_status": False,
+    "buffer_info": False,
+    "transformation_job": True,
+    "transformation_status": True,
+    "semantic_to_syntactic": True,
+})
+    
+from seamless import communion_server
+await communion_server.start_async()
+
+###
+
 
 from seamless.imperative import transformer_async
 
@@ -48,6 +70,7 @@ print(ctx.tf.status)
 print(ctx.tf.exception)
 print(ctx.tf.result.value)
 
+seamless.config.unblock_local()
 seamless.set_ncores(8)
 
 def func2(a, b):

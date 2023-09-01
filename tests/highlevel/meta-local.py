@@ -26,7 +26,7 @@ ctx.func1 = func1
 ctx.compute()
 print("#1", ctx.func1.result.value, "exception:", ctx.func1.exception)
 
-seamless.set_ncores(0)
+seamless.config.block_local()
 def func2():
     return 88
 ctx.func2 = func2

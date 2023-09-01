@@ -80,15 +80,45 @@ def get_buffer(checksum):
     result = _get_buffer(checksum, remote=True)
     if result is not None:
         return result
+    return fingertip(checksum)
     
 def fingertip(checksum):
+    from seamless import communion_server
+    from seamless.communion_client import communion_client_manager
     result = _get_buffer(checksum, remote=True)
     if result is not None:
         return result
     set_dummy_manager()
-    coro = _dummy_manager.cachemanager.fingertip(checksum)
-    with ThreadPoolExecutor() as tp:
-        result = tp.submit(lambda: asyncio.run(coro)).result()
+    async def fingertip_coro():
+        if communion_server.started:
+            raise NotImplementedError # TODO: rip communion
+            for peer in communion_server.futures:
+                if len(communion_server.futures[peer]):
+                    raise RuntimeError("Communion server has outstanding requests in other event loop")
+            communion_server._init()
+            communion_client_manager._init()
+            await asyncio.sleep(0.1)
+            await communion_server.start_async()
+        else:                
+            if communion_server.future is not None:
+                raise RuntimeError("Communion server is starting up in other event loop")        
+        return await _dummy_manager.cachemanager.fingertip(checksum)
+    event_loop = asyncio.get_event_loop()
+    if event_loop.is_running():
+        with ThreadPoolExecutor() as tp:
+            result = tp.submit(lambda: asyncio.run(fingertip_coro())).result()
+        if communion_server.started:
+            raise NotImplementedError # TODO: rip communion
+            communion_server._init()
+            communion_client_manager._init()
+            if asyncio.get_event_loop().is_running():
+                asyncio.ensure_future(communion_server.start_async())
+            else:
+                communion_server.start()
+    else:
+        future = asyncio.ensure_future(_dummy_manager.cachemanager.fingertip(checksum))
+        event_loop.run_until_complete(future)
+        result = future.result()
     if result is None:
         raise CacheMissError(checksum.hex())
     return result
@@ -391,7 +421,7 @@ def _wait():
     had_lock = _has_lock
     # NOTE: for future optimization, one could run transformations in batch mode.
     #   one batch for the parent process queue, and one batch for local run_transformation
-    forked = multiprocessing.current_process().name != "MainProcess"
+    forked = multiprocessing.current_process().name != "MainProcess"    
     if forked and _has_lock:
         _parent_process_queue.put((5, "release lock"))
         _has_lock = False
@@ -421,12 +451,17 @@ def _wait():
             try:
                 if forked:
                     result_checksum, logs = _parent_process_response_queue.get()
+                    if result_checksum is not None:
+                        assert isinstance(result_checksum, bytes)
                 else:
-                    result_checksum = run_transformation(transformation, fingertip=False, new_event_loop=True)
+                    running_event_loop = asyncio.get_event_loop().is_running()
+                    result_checksum = run_transformation(transformation, fingertip=False, new_event_loop=running_event_loop)  # new_event_loop used to be True...
                     logs = None
                     if result_checksum is not None:
+                        assert isinstance(result_checksum, bytes)
                         tf_checksum = bytes.fromhex(transformation)
                         logs = transformation_cache.transformation_logs.get(tf_checksum)
+
             finally:
                 # For some reason, the logic here is different than for the async version
                 # (see run_transformation_dict_async)
@@ -441,11 +476,14 @@ def _wait():
                     )
                 temprefmanager.purge_group("imperative")
 
+            if result_checksum is None:
+                return [None]
             result_buffer = get_buffer(
                 result_checksum
             )
             if result_buffer is None and not forked:
-                run_transformation(transformation, fingertip=True, new_event_loop=True)
+                running_event_loop = asyncio.get_event_loop().is_running()
+                run_transformation(transformation, fingertip=True, new_event_loop=running_event_loop)  # new_event_loop used to be True...
                 result_buffer = get_buffer(
                     result_checksum
                 )

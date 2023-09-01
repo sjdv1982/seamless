@@ -1,75 +1,51 @@
-raise NotImplementedError
-
-import os
-os.environ["SEAMLESS_COMMUNION_ID"] = "test-imperative-communion"
-
 import seamless
-seamless.config.block_local()
+seamless.config.init_from_env()
 
-from seamless import communion_server
-communion_server.start()
+from seamless.highlevel import Context
+from seamless.core.transformation import SeamlessTransformationError
+import traceback
+ctx = Context()
 
 from seamless.imperative import transformer
 
 @transformer
-def func(a, b):
-    import time
-    time.sleep(0.5)
-    return 100 * a + b
-func.local = False
+def func2(a, b):
+    @transformer
+    def func(a, b):
+        import time
+        time.sleep(0.4)
+        return 100 * a + b
+    
+    return func(a, b) + func(b, a)
 
-result = func(88, 17) # takes 0.5 sec
-print(result)
-result = func(88, 17) # immediate
-print(result)
-result = func(21, 17) # takes 0.5 sec
-print(result)
-
-######################
-
-from seamless.highlevel import Context
-
-ctx = Context()
-
-def func(a, b):
-    import time
-    time.sleep(0.6)
-    return 100 * a + b
-ctx.tf = func
-ctx.tf.meta = {"local": False}
+ctx.tf = func2
 ctx.tf.a = 21
 ctx.tf.b = 17
 ctx.compute()
 print(ctx.tf.logs)
 print(ctx.tf.status)
-print(ctx.tf.exception)
 print(ctx.tf.result.value)
+print('')
 
-seamless.config.unblock_local()
-seamless.set_ncores(8)
+print(func2(21,17))
+print(func2(22,18))
 
-def func2(a, b):
+@transformer
+def func2a(a, b):
     @transformer
     def func(a, b):
         import time
         time.sleep(2)
         return 100 * a + b
-    func.local = False
+    #func.local = False
     
     return func(a, b) + func(b, a)
 
-ctx.tf = func2
-ctx.tf.meta = {"local": True}
-ctx.tf.a = 21
-ctx.tf.b = 17
-ctx.compute()
-print(ctx.tf.logs)
-print(ctx.tf.status)
-print(ctx.tf.exception)
-print(ctx.tf.result.value)
+print(func2a(29,12))
 
 # transformer within transformer within transformer...
 
+@transformer
 def func3(a, b):
 
     @transformer
@@ -79,7 +55,7 @@ def func3(a, b):
             import time
             time.sleep(2)
             return 100 * a + b
-        func.local = False
+        #func.local = False
         return func(a,b)
     func2b.local = True
 
@@ -105,3 +81,6 @@ ctx.compute()
 print(ctx.tf.logs)
 print(ctx.tf.status)
 print(ctx.tf.result.value)
+
+print(func3(7,22))
+print(func3(101,720))

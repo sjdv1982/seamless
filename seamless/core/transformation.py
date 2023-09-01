@@ -77,7 +77,7 @@ _python_attach_ports = {
 
 def set_ncores(ncores):
     if ncores == 0:
-        print(DeprecationWarning("set_ncores(0) is deprecated. Use seamless.config.block() instead"))
+        print(DeprecationWarning("set_ncores(0) is deprecated. Use seamless.config.block_local() instead"))
     if len(_locks) != ncores:
         if any(_locks):
             msg = "WARNING: Cannot change ncores from %d to %d since there are running jobs"
@@ -87,7 +87,7 @@ def set_ncores(ncores):
 
 async def acquire_lock(tf_checksum):
     if not len(_locks):
-        raise SeamlessTransformationError("Local computation has been disabled for this Seamless instance")
+        raise SeamlessTransformationError("Local computation has been disabled for this Seamless instance (deprecated)")
     while 1:
         for locknr, lock in enumerate(_locks):
             if lock is None:
@@ -271,7 +271,8 @@ class TransformationJob:
     def __init__(self,
         checksum, codename,
         transformation,
-        semantic_cache, *, debug, fingertip
+        semantic_cache, *, debug, fingertip,
+        cannot_be_local=False
     ):
         self.checksum = checksum
         assert codename is not None
@@ -294,6 +295,7 @@ class TransformationJob:
         self.remote = False
         self.restart = False
         self.n_restarted = 0
+        self.cannot_be_local = cannot_be_local
 
     async def _probe_remote(self, clients, meta):
         if not len(clients):
@@ -544,6 +546,8 @@ class TransformationJob:
         prelim_callback, progress_callback
     ):
         from .cache.database_client import database
+        if self.cannot_be_local:
+            raise SeamlessTransformationError("Local computation has been disabled for this Seamless instance")
         with_ipython_kernel = False
 
         get_global_info()

@@ -20,7 +20,7 @@ ctx.tf = transformer({
 ctx.result = cell()
 ctx.code = cell("python").set(func)
 ctx.compute()
-seamless.config.block()
+seamless.config.block_local()
 ctx.a.connect(ctx.tf.a)
 ctx.b.connect(ctx.tf.b)
 ctx.code.connect(ctx.tf.code)

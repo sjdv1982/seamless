@@ -136,4 +136,7 @@ def set_write_buffer_server(write_buffer_server):
     global _write_server
     _write_server = write_buffer_server
 
+def has_readwrite_servers():
+    return _write_server is not None and len(_read_servers)
+
 from . import buffer_read_client, buffer_write_client

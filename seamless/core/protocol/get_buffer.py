@@ -53,33 +53,52 @@ async def get_buffer_remote(checksum, remote_peer_id):
     rev = {fut:n for n,fut in enumerate(futures)}
     best_client = None
     best_status = None
-    while 1:
-        done, pending = await asyncio.wait(
-            futures,
-            timeout=REMOTE_TIMEOUT,
-            return_when=asyncio.FIRST_COMPLETED
-        )
-        if len(done):
-            for fut in done:
-                if fut.exception() is not None:
-                    if DEBUG:
-                        try:
-                            fut.result()
-                        except:
-                            traceback.print_exc()
-                    continue
-                status = fut.result()
-                if status == -1:
-                    continue
-                if best_status is None or status > best_status:
-                    best_status = status
-                    best_client = rev[fut]
-                    if best_status == 1:
-                        break
-            if best_status == 1:
+    printed_exc = set()
+    try:
+        while 1:
+            done, pending = await asyncio.wait(
+                futures,
+                timeout=REMOTE_TIMEOUT,
+                return_when=asyncio.FIRST_COMPLETED
+            )
+            if len(done):
+                for fut in done:
+                    if fut.exception() is not None:
+                        if DEBUG and fut not in printed_exc:
+                            try:
+                                fut.result()
+                            except TimeoutError:
+                                pass
+                            except Exception:
+                                traceback.print_exc()
+                                printed_exc.add(fut)
+                        continue
+                    status = fut.result()
+                    if status == -1:
+                        continue
+                    if best_status is None or status > best_status:
+                        best_status = status
+                        best_client = rev[fut]
+                        if best_status == 1:
+                            break
+                if best_status == 1:
+                    break
+            if not len(pending):
                 break
-        if not len(pending):
-            break
+            for future in pending:
+                future.cancel()
+            return None
+    finally:        
+        # Just to retrieve exceptions
+        for future in futures:
+            try:
+                if future.done():
+                    future.result()
+                else:
+                    future.cancel()
+            except Exception:
+                pass
+
     if best_client is not None:
         buffer = await clients[best_client].submit(checksum)
         if buffer is None:

@@ -118,16 +118,21 @@ library-context-argument.py
 library-in-library.py
 library-schema.py
 imperative.py
-imperative-async.py
+imperative-jupyter.sh
+imperative-async.sh
+imperative-nested.py
+imperative-nested-jupyter.sh
+imperative-nested-async.sh
+
 imperative-celltypes.py
 imperative-jupyter.sh
 imperative-database.py: run with Seamless database and buffer dir, preferably in a clean setup
 imperative-database-async.sh: run with Seamless database and buffer dir, preferably in a clean setup
-imperative-communion-async.sh: run with a job slave, Seamless database and buffer dir, preferably in a clean setup
+imperative-communion-async.sh: run with a jobslave
   
 imperative-nonblocking.py: run with Seamless database, preferably in a clean dir
 imperative-nonblocking-parallel.py: run with Seamless database, preferably in a clean dir
-imperative-communion.py: run with jobless and a Seamless database, preferably in a clean dir
+imperative-communion.py: run with a jobslave
 imperative-module.py: run with Seamless database, DEFINITELY in a clean dir
 map-list.py
 channel.py
@@ -197,6 +202,8 @@ highlink-cpp.py:  Run with ipython -i, then continue in interactive mode,
 mount.py:         Run with ipython -i, then continue in interactive mode.
                   Initial output is in test-outputs/mount.out
 cython_.py        Run with ipython -i                 
+
+imperative-*-async.py: Run with ipython -i -c '%load '$i'.py' and press enter
 observe-graph.ipynb: Run "seamless-jupyter" and then open /cwd in the browser
 traitlets.ipynb: same as above
 share-subcontext.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/sub/b

@@ -1,3 +1,4 @@
+raise NotImplementedError
 import seamless
 seamless.database_cache.connect()
 seamless.database_sink.connect()

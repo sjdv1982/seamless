@@ -1,34 +1,12 @@
-from seamless.highlevel import Context
+from seamless.imperative import transformer
 from seamless.core.transformation import SeamlessTransformationError
 import traceback
-ctx = Context()
-def func(a, b):
-    """Some docstring"""
-    import time
-    time.sleep(0.5)
-    return 100 * a + b
-ctx.tf = func
-ctx.tf.a = 21
-ctx.tf.b = 17
-ctx.compute()
-transformation_checksum = ctx.tf.get_transformation()
-transformation_dict = ctx.resolve(transformation_checksum, "plain")
 
-from seamless.imperative import run_transformation_dict
-result = run_transformation_dict(transformation_dict)
-print(result)
-
-##################################################
-
-from seamless.imperative import transformer
-
-"""
 @transformer
 def func(a, b):
     import time
     time.sleep(0.5)
     return 100 * a + b
-"""
 func = transformer(func)
 
 result = func(88, 17) # takes 0.5 sec
