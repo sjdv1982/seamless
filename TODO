@@ -5,10 +5,15 @@ Random things TODO regarding integration:
   Make a seamless-simple-assistant that needs a database and a buffer read/write server.
   Use aiohttp requests to contact the assistant.
   (DONE up to here)
+  
+  Check a nested/fingertip issue where imperative-communion works if you restart the simple-assistant.py
+  (after cleaning up database and buffer directory) but not otherwise. 
+  UPDATE: happens even for simple functions in imperative-database if you delete buffers but not database
+
   Pimp the protocol a bit so that "peer ID" (project information) is sent along in the request
   After that, support transformation meta (see old jobless), progress/prelim, hardcancel, etc.
   Some kind of response-and-make-a-new-request? We really don't want websockets...
-  Finally, rnename imperative-communion and split it into a re-entrant version 
+  Finally, rename imperative-communion and split it into a re-entrant version 
   (local=False, currently commented out), and the all-local version.
   simple-assistant.py can't deal with re-entrant delegation.
 - Make sure that bash jobs with a buffer read folder have get_filename/get_directory working directory. Rip filezones.
