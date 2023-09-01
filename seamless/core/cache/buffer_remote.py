@@ -4,6 +4,7 @@ from seamless.util import parse_checksum
 import os
 import time
 import traceback
+from requests.exceptions import ConnectionError
 
 _read_servers:Optional[list[str]] = None
 _read_folders:Optional[list[str]] = None
@@ -134,6 +135,12 @@ def set_read_buffer_servers(read_buffer_servers):
 
 def set_write_buffer_server(write_buffer_server):
     global _write_server
+    try:
+        buffer_write_client.has(session, write_buffer_server, b'0' * 32)
+    except ValueError:
+        pass
+    except ConnectionError:
+        raise ConnectionError(write_buffer_server) from None
     _write_server = write_buffer_server
 
 def has_readwrite_servers():

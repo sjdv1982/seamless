@@ -231,4 +231,4 @@ deeprefmanager = DeepRefManager()
 
 from ..protocol.deep_structure import deep_structure_to_checksums
 from ..protocol.deserialize import deserialize
-from ..protocol.get_buffer import get_buffer, get_buffer_remote
+from ..protocol.get_buffer import get_buffer

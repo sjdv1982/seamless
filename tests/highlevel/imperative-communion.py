@@ -1,13 +1,8 @@
-raise NotImplementedError
-
 import os
-os.environ["SEAMLESS_COMMUNION_ID"] = "test-imperative-communion"
+os.environ["SEAMLESS_ASSISTANT_ID"] = "test-imperative-communion"
 
 import seamless
-seamless.config.block_local()
-
-from seamless import communion_server
-communion_server.start()
+seamless.config.delegate()
 
 from seamless.imperative import transformer
 
@@ -54,7 +49,7 @@ def func2(a, b):
         import time
         time.sleep(2)
         return 100 * a + b
-    func.local = False
+    ###func.local = False
     
     return func(a, b) + func(b, a)
 
@@ -79,7 +74,7 @@ def func3(a, b):
             import time
             time.sleep(2)
             return 100 * a + b
-        func.local = False
+        ###func.local = False
         return func(a,b)
     func2b.local = True
 

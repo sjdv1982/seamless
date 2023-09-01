@@ -17,7 +17,7 @@ await communion_server.start_async()
 
 import seamless
 seamless.config.block_local()
-seamless.config.init_from_env()
+seamless.config.delegate(level=3)()
 
 seamless.communion_server.configure_master({
     "buffer": False,

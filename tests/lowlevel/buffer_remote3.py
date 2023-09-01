@@ -1,6 +1,6 @@
 import seamless
 from seamless.core import context, cell
-seamless.config.init_buffer_remote_from_env()
+seamless.config.delegate(level=2)()
 from seamless.core.cache.buffer_remote import can_read_buffer
 
 cs = "3b1a2d4cf36b88daddecb57f0e26b6fa31654d3ff853866148d65bfa2b4e0951"

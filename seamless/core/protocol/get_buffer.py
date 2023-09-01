@@ -5,108 +5,6 @@ import os
 DEBUG = True
 REMOTE_TIMEOUT = 5.0
 
-async def get_buffer_info_remote(checksum, remote_peer_id):
-    clients = communion_client_manager.clients["buffer_info"]
-    coros = []
-    for client in clients:
-        client_peer_id = client.get_peer_id()
-        if client_peer_id != remote_peer_id:
-            coro = client.submit(checksum)
-            coros.append(coro)
-    if not len(coros):
-        return None
-    futures = [asyncio.ensure_future(coro) for coro in coros]
-    while 1:
-        done, pending = await asyncio.wait(
-            futures,
-            timeout=REMOTE_TIMEOUT,
-            return_when=asyncio.FIRST_COMPLETED
-        )
-        if len(done):
-            for fut in done:
-                if fut.exception() is not None:
-                    if DEBUG:
-                        try:
-                            fut.result()
-                        except:
-                            traceback.print_exc()
-                    continue
-                buffer_info = fut.result()
-                if buffer_info is None:
-                    continue
-                return buffer_info
-        if not len(pending):
-            break
-    return None
-
-async def get_buffer_remote(checksum, remote_peer_id):
-    clients = communion_client_manager.clients["buffer"]
-    coros = []
-    for client in clients:
-        client_peer_id = client.get_peer_id()
-        if client_peer_id != remote_peer_id:
-            coro = client.status(checksum)
-            coros.append(coro)
-    if not len(coros):
-        return None
-    futures = [asyncio.ensure_future(coro) for coro in coros]
-    rev = {fut:n for n,fut in enumerate(futures)}
-    best_client = None
-    best_status = None
-    printed_exc = set()
-    try:
-        while 1:
-            done, pending = await asyncio.wait(
-                futures,
-                timeout=REMOTE_TIMEOUT,
-                return_when=asyncio.FIRST_COMPLETED
-            )
-            if len(done):
-                for fut in done:
-                    if fut.exception() is not None:
-                        if DEBUG and fut not in printed_exc:
-                            try:
-                                fut.result()
-                            except TimeoutError:
-                                pass
-                            except Exception:
-                                traceback.print_exc()
-                                printed_exc.add(fut)
-                        continue
-                    status = fut.result()
-                    if status == -1:
-                        continue
-                    if best_status is None or status > best_status:
-                        best_status = status
-                        best_client = rev[fut]
-                        if best_status == 1:
-                            break
-                if best_status == 1:
-                    break
-            if not len(pending):
-                break
-            for future in pending:
-                future.cancel()
-            return None
-    finally:        
-        # Just to retrieve exceptions
-        for future in futures:
-            try:
-                if future.done():
-                    future.result()
-                else:
-                    future.cancel()
-            except Exception:
-                pass
-
-    if best_client is not None:
-        buffer = await clients[best_client].submit(checksum)
-        if buffer is None:
-            return None
-        assert isinstance(buffer, bytes), buffer
-        return buffer
-
-
 def get_buffer(checksum, remote, _done=None, deep=False):
     """  Gets the buffer from its checksum.
 What is tried:
@@ -117,7 +15,6 @@ What is tried:
 Since it is synchronous, it doesn't try everything possible to obtain it.
 - Only the remote facilities from buffer cache are used 
   (i.e. database, fairserver and buffer server), 
-- Communion server is not used, as it is asynchronous.
 - No recomputation from transformation/expression is attempted 
   (use fingertip for that).
 
@@ -168,5 +65,4 @@ Else, return None
 
 from ..cache import CacheMissError
 from ..cache.buffer_cache import buffer_cache
-from ...communion_client import communion_client_manager
 from ..cache.transformation_cache import transformation_cache, tf_get_buffer

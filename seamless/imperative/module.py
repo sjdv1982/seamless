@@ -7,6 +7,7 @@ import ast
 import os
 
 # from graphs/multi_module code....
+# TODO: bring it to one place, since we are building only one Seamless package
 
 def get_pypackage_dependencies(pycode:str, package_name:str, is_init:bool):
     tree = ast.parse(pycode)

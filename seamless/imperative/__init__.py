@@ -83,38 +83,16 @@ def get_buffer(checksum):
     return fingertip(checksum)
     
 def fingertip(checksum):
-    from seamless import communion_server
-    from seamless.communion_client import communion_client_manager
     result = _get_buffer(checksum, remote=True)
     if result is not None:
         return result
     set_dummy_manager()
     async def fingertip_coro():
-        if communion_server.started:
-            raise NotImplementedError # TODO: rip communion
-            for peer in communion_server.futures:
-                if len(communion_server.futures[peer]):
-                    raise RuntimeError("Communion server has outstanding requests in other event loop")
-            communion_server._init()
-            communion_client_manager._init()
-            await asyncio.sleep(0.1)
-            await communion_server.start_async()
-        else:                
-            if communion_server.future is not None:
-                raise RuntimeError("Communion server is starting up in other event loop")        
         return await _dummy_manager.cachemanager.fingertip(checksum)
     event_loop = asyncio.get_event_loop()
     if event_loop.is_running():
         with ThreadPoolExecutor() as tp:
             result = tp.submit(lambda: asyncio.run(fingertip_coro())).result()
-        if communion_server.started:
-            raise NotImplementedError # TODO: rip communion
-            communion_server._init()
-            communion_client_manager._init()
-            if asyncio.get_event_loop().is_running():
-                asyncio.ensure_future(communion_server.start_async())
-            else:
-                communion_server.start()
     else:
         future = asyncio.ensure_future(_dummy_manager.cachemanager.fingertip(checksum))
         event_loop.run_until_complete(future)

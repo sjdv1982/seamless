@@ -312,7 +312,7 @@ class Transformer(Base, HelpMixin):
         """Clear any exception associated with this transformer.
 
         Re-execute of the associated transformation.
-        Both local and remote (via communion) execution are affected.
+        Both local and remote (via assistant) execution are affected.
 
         If this transformer has no transformation (missing or pending inputs),
         this will set a flag, causing clear_exception to take effect
@@ -1001,7 +1001,7 @@ class Transformer(Base, HelpMixin):
 
         `ctx.resolve(checksum, "plain")` will return the transformation dict,
         minus __meta__, __compilers__ and __languages__. The checksum is
-        treated like any other buffer, i.e. including database, communion etc.
+        treated like any other buffer, i.e. including database, assistant etc.
 
         With Transformation.get_transformation_dict(), you can obtain the full transformation dict,
         including __meta__, __compilers__ and __languages__.

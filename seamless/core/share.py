@@ -264,11 +264,6 @@ class ShareManager:
                     cell = cell._structured_cell
                 elif checksum is not None and cell._celltype in ("plain", "mixed"):
                     buffer = get_buffer(checksum, remote=True)
-                    if buffer is None:
-                        buffer = await get_buffer_remote(
-                            checksum,
-                            None
-                        )
                     if buffer is not None:
                         try:
                             checksum = await conversion(
@@ -357,5 +352,5 @@ class ShareManager:
 sharemanager = ShareManager(0.2)
 
 from ..shareserver import shareserver
-from .protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
+from .protocol.get_buffer import get_buffer, CacheMissError
 from ..core.protocol.evaluate import conversion

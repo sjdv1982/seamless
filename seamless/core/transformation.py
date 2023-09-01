@@ -298,6 +298,7 @@ class TransformationJob:
         self.cannot_be_local = cannot_be_local
 
     async def _probe_remote(self, clients, meta):
+        # TODO: see TODO document
         if not len(clients):
             return
         coros = []
@@ -399,11 +400,10 @@ class TransformationJob:
             await asyncio.sleep(0.05)
         meta = self.transformation.get("__meta__")
         meta = deepcopy(meta)
-        clients = list(communion_client_manager.clients["transformation"])
-        if self.debug is None:
-            await self._probe_remote(clients, meta)
+        from seamless.config import get_delegate_level
+        if get_delegate_level() == 4:
+            self.remote = True # previous: call self._probe_remote ...
         if self.remote:
-            self.remote_futures = None
             try:
                 result = await self._execute_remote(
                     prelim_callback, progress_callback
@@ -428,6 +428,17 @@ class TransformationJob:
     async def _execute_remote(self,
         prelim_callback, progress_callback
     ):
+        from seamless.assistant_client import run_job
+        try:
+            result = await run_job(self.checksum)
+        except RuntimeError as exc:
+            raise RemoteJobError(str(exc)) from None
+        if result is None:
+            self.remote = False
+            return
+        return bytes.fromhex(result)
+        '''
+        TODO, see TODO document
         meta = self.transformation.get("__meta__")
         meta = deepcopy(meta)
         if meta is not None and meta.get("local") == False:
@@ -540,6 +551,7 @@ class TransformationJob:
             raise RemoteJobError(exc_str)
         else:
             raise RemoteJobError()
+        '''
 
 
     async def _execute_local(self,
@@ -884,7 +896,6 @@ from .cache import CacheMissError
 from .cache.buffer_cache import buffer_cache
 from .cache.transformation_cache import transformation_cache, syntactic_is_semantic, syntactic_to_semantic
 from .status import SeamlessInvalidValueError
-from ..communion_client import communion_client_manager
 from .environment import validate_environment
 from ..subprocess_ import kill_children
 from .. import imperative

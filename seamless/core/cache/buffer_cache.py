@@ -377,7 +377,6 @@ class BufferCache:
             self._sync_buffer_info_to_remote(checksum)
 
     def buffer_check(self, checksum):
-        """For the communion_server..."""
         assert checksum is not None
         assert isinstance(checksum, bytes)
         assert len(checksum) == 32

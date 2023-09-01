@@ -117,7 +117,6 @@ def check_original_event_loop():
 
 from silk import Silk
 from .shareserver import shareserver
-from .communion_server import communion_server
 from .core.transformation import set_ncores
 from .calculate_checksum import calculate_checksum, calculate_dict_checksum
 from .core.cache.database_client import database_sink, database_cache

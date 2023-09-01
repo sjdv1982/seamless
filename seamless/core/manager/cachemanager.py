@@ -302,15 +302,6 @@ class CacheManager:
                 remote = recompute + 1
 
         if remote > recompute:
-            try:
-                buffer = await get_buffer_remote(
-                    checksum,
-                    None
-                )
-                if buffer is not None:
-                    return buffer
-            except CacheMissError:
-                pass
             buffer = get_buffer(checksum, remote=True, deep=is_deep)
             if buffer is not None:
                 return buffer
@@ -544,7 +535,7 @@ from ..cell import Cell
 from ..transformer import Transformer
 from ..structured_cell import Inchannel
 from .expression import Expression
-from ..protocol.get_buffer import get_buffer, get_buffer_remote
+from ..protocol.get_buffer import get_buffer
 from ..cache.transformation_cache import syntactic_to_semantic
 from ..protocol.expression import set_subpath_checksum, access_hash_pattern
 from ..cache.deeprefmanager import deeprefmanager

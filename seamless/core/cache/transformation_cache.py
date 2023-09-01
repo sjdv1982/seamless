@@ -147,13 +147,8 @@ async def syntactic_to_semantic(
 
     buffer = get_buffer(checksum, remote=True)
     if buffer is None:
-        buffer = await get_buffer_remote(
-            checksum,
-            None
-        )
-        if buffer is None:
-            raise CacheMissError(checksum.hex()) from None
-        buffer_cache.cache_buffer(checksum, buffer)
+        raise CacheMissError(checksum.hex()) from None
+    buffer_cache.cache_buffer(checksum, buffer)
     if celltype in ("cson", "yaml"):
         semantic_checksum = try_convert(
             checksum,  celltype, "plain", buffer=buffer,
@@ -538,7 +533,11 @@ class TransformationCache:
             try:
                 checksums = self.semantic_to_syntactic_checksums[semkey]
             except KeyError:
-                raise KeyError(sem_checksum0, celltype, subcelltype) from None
+                semsyn = database.get_sem2syn(semkey)
+                if semsyn is not None:
+                    self.semantic_to_syntactic_checksums[semkey] = semsyn
+                else:
+                    raise KeyError(sem_checksum0, celltype, subcelltype) from None
             semantic_cache[semkey] = checksums
         return semantic_cache
 
@@ -822,7 +821,6 @@ class TransformationCache:
         return result_checksum, prelim
 
     async def serve_semantic_to_syntactic(self, sem_checksum, celltype, subcelltype, peer_id):
-        from ...communion_client import communion_client_manager
         def ret(semsyn):
             for semsyn_checksum in semsyn:
                 assert isinstance(semsyn_checksum, bytes), semsyn
@@ -836,12 +834,6 @@ class TransformationCache:
         semsyn = database.get_sem2syn(semkey)
         if semsyn is not None:
             self.semantic_to_syntactic_checksums[semkey] = semsyn
-            return ret(semsyn)
-        remote = communion_client_manager.remote_semantic_to_syntactic
-        semsyn = await remote(sem_checksum, celltype, subcelltype, peer_id)
-        if semsyn is not None:
-            self.semantic_to_syntactic_checksums[semkey] = semsyn
-            database.set_sem2syn(semkey, semsyn)
             return ret(semsyn)
         return None
 
@@ -867,21 +859,12 @@ class TransformationCache:
             transformation_buffer = get_buffer(
                 tf_checksum, remote=True
             )
-            if transformation_buffer is None:
-                try:
-                    transformation_buffer = await get_buffer_remote(
-                        tf_checksum,
-                        None # NOT remote_peer_id! The submitting peer may hold a buffer we need!
-                    )
-                except TimeoutError:
-                    raise CacheMissError(tf_checksum.hex()) from None
             if transformation_buffer is not None:
                 transformation = json.loads(transformation_buffer)
         return transformation
 
     async def serve_transformation_status(self, tf_checksum, peer_id):
         assert isinstance(tf_checksum, bytes)
-        from ...communion_client import communion_client_manager
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
         if result_checksum is not None:
             if not prelim:
@@ -899,11 +882,6 @@ class TransformationCache:
             )
             exc_str = "".join(exc_list)
             return 0, exc_str
-        result = await communion_client_manager.remote_transformation_status(
-            tf_checksum, peer_id
-        )
-        if result is not None:
-            return result
         transformation = await self.serve_get_transformation(
             tf_checksum,
             remote_peer_id=peer_id
@@ -914,7 +892,6 @@ class TransformationCache:
         if "__hash_pattern__" in transformation:
             return -1, None
 
-        remote = communion_client_manager.remote_buffer_status
         for key, value in transformation.items():
             if key in ("__output__", "__as__", "__language__"):
                 continue
@@ -932,14 +909,6 @@ class TransformationCache:
             for syn_checksum in syn_checksums:
                 if buffer_cache.buffer_check(syn_checksum):
                     break
-                try:
-                    curr_sub_result = await remote(
-                        syn_checksum, peer_id=None
-                    )
-                except TimeoutError:
-                    raise CacheMissError(syn_checksum.hex()) from None
-                if curr_sub_result:
-                    break
             else:
                 return -2, None
 
@@ -950,7 +919,6 @@ class TransformationCache:
 
     def clear_exception(self, transformer=None, *, tf_checksum=None):
         from ..manager.tasks.transformer_update import TransformerUpdateTask
-        from ...communion_client import communion_client_manager
         from ..manager.unvoid import unvoid_transformer
         if transformer is None:
             assert tf_checksum is not None
@@ -963,11 +931,6 @@ class TransformationCache:
         exc = self.transformation_exceptions.pop(tf_checksum, None)
         if exc is None:
             return
-        clients = communion_client_manager.clients["transformation"]
-        for client in clients:
-            coro = client.clear_exception(tf_checksum)
-            fut = asyncio.ensure_future(coro)
-            client.future_clear_exception = fut
         for tf in self.transformations_to_transformers[tf_checksum]:
             if isinstance(tf, RemoteTransformer):
                 key = tf.tf_checksum, tf.peer_id
@@ -996,184 +959,127 @@ class TransformationCache:
             return
         self._hard_cancel(job)
 
-    async def run_transformation_async(self, tf_checksum, *, fingertip, metalike=None, fresh_event_loop=False):
+    async def run_transformation_async(self, tf_checksum, *, fingertip, metalike=None):
         from . import CacheMissError
-        from ... import communion_server
-        from ...communion_client import communion_client_manager
-        
-        if fresh_event_loop:
-            if communion_server.started:
-                raise NotImplementedError # TODO: rip communion
-                for peer in communion_server.futures:
-                    if len(communion_server.futures[peer]):
-                        raise RuntimeError("Communion server has outstanding requests in other event loop")
-                communion_server._init()
-                communion_client_manager._init()
-                await asyncio.sleep(0.1)
-                await communion_server.start_async()
-            else:                
-                if communion_server.future is not None:
-                    raise RuntimeError("Communion server is starting up in other event loop")            
-        
-        try:
-            result_checksum, prelim = self._get_transformation_result(tf_checksum)
-            if result_checksum is not None and not prelim and not fingertip:
-                return result_checksum
-            transformation = await self.serve_get_transformation(tf_checksum, None)
-            if transformation is None:
-                raise CacheMissError(tf_checksum.hex())
-            if metalike is not None:
-                transformation = transformation.copy()
-                for k in ("__compilers__", "__languages__", "__meta__"):
-                    if k in metalike:
-                        transformation[k] = metalike[k] 
-            for k,v in transformation.items():
-                if k in ("__language__", "__output__", "__as__",):
-                    continue
-                if k == "__env__":
-                    continue
-                if k in ("__compilers__", "__languages__", "__meta__"):
-                    continue
-                celltype, subcelltype, sem_checksum0 = v
-                sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
-                if syntactic_is_semantic(celltype, subcelltype):
-                    continue
-                await self.serve_semantic_to_syntactic(
-                    sem_checksum, celltype, subcelltype,
-                    None
-                )
-            transformer = DummyTransformer(tf_checksum)
-            async def incref_and_run():
-                result = await self.incref_transformation(
-                    transformation, transformer, 
-                    transformation_build_exception=None
-                )
-                if result is not None:
-                    tf_checksum, tf_exc, result_checksum, prelim = result
-                    if tf_exc is None and (result_checksum is None or prelim or fingertip):
-                        try:
-                            job = self.run_job(transformation, tf_checksum, fingertip=fingertip)
-                        except Exception as exc:
-                            self._set_exc([transformer], tf_checksum, exc)
-                            job = None                    
-                        if job is not None:
-                            await asyncio.shield(job.future)
-                    elif tf_exc is not None:                    
-                        self._set_exc([transformer], tf_checksum, tf_exc)
-
-            coro = incref_and_run()
-            fut = asyncio.ensure_future(coro)
-            last_result_checksum = None
-            last_progress = None
-            fut_done_time = None
-            while 1:
-                if fut.done():
-                    if fut_done_time is None:
-                        fut_done_time = time.time()
-                    else:
-                        if time.time() - fut_done_time > 2:
-                            fut.result()
-                            raise Exception("Transformation finished, but didn't trigger a result or exception")
-                if transformer._status_reason == StatusReasonEnum.EXECUTING:
-                    if self.transformation_jobs.get(tf_checksum) is None:
-                        break
-                if transformer.prelim != last_result_checksum \
-                or transformer.progress != last_progress:
-                    last_progress = transformer.progress
-                    last_result_checksum = transformer.prelim
-                    if last_result_checksum is None:
-                        log(last_progress)
-                    else:
-                        log(last_progress, last_result_checksum.hex())
-                await asyncio.sleep(0.05)
-            if tf_checksum in self.transformation_exceptions:
-                raise self.transformation_exceptions[tf_checksum]
-            result_checksum, prelim = self._get_transformation_result(tf_checksum)
-            assert not prelim
+                
+        result_checksum, prelim = self._get_transformation_result(tf_checksum)
+        if result_checksum is not None and not prelim and not fingertip:
             return result_checksum
-        finally:
-            if fresh_event_loop and threading.current_thread() == threading.main_thread():
-                if communion_server.started:
-                    raise NotImplementedError # TODO: rip communion
-                    communion_server._init()
-                    communion_client_manager._init()
-                    await asyncio.sleep(0.1)
-                    await communion_server.start_async()
+        transformation = await self.serve_get_transformation(tf_checksum, None)
+        if transformation is None:
+            raise CacheMissError(tf_checksum.hex())
+        if metalike is not None:
+            transformation = transformation.copy()
+            for k in ("__compilers__", "__languages__", "__meta__"):
+                if k in metalike:
+                    transformation[k] = metalike[k] 
+        for k,v in transformation.items():
+            if k in ("__language__", "__output__", "__as__",):
+                continue
+            if k == "__env__":
+                continue
+            if k in ("__compilers__", "__languages__", "__meta__"):
+                continue
+            celltype, subcelltype, sem_checksum0 = v
+            sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
+            if syntactic_is_semantic(celltype, subcelltype):
+                continue
+            await self.serve_semantic_to_syntactic(
+                sem_checksum, celltype, subcelltype,
+                None
+            )
+        transformer = DummyTransformer(tf_checksum)
+        async def incref_and_run():
+            result = await self.incref_transformation(
+                transformation, transformer, 
+                transformation_build_exception=None
+            )
+            if result is not None:
+                tf_checksum, tf_exc, result_checksum, prelim = result
+                if tf_exc is None and (result_checksum is None or prelim or fingertip):
+                    try:
+                        job = self.run_job(transformation, tf_checksum, fingertip=fingertip)
+                    except Exception as exc:
+                        self._set_exc([transformer], tf_checksum, exc)
+                        job = None                    
+                    if job is not None:
+                        await asyncio.shield(job.future)
+                elif tf_exc is not None:                    
+                    self._set_exc([transformer], tf_checksum, tf_exc)
 
-    def run_transformation(self, tf_checksum, *, fingertip, metalike=None, new_event_loop=False):        
-        from ...communion_client import communion_client_manager
-        from ... import communion_server
+        coro = incref_and_run()
+        fut = asyncio.ensure_future(coro)
+        last_result_checksum = None
+        last_progress = None
+        fut_done_time = None
+        while 1:
+            if fut.done():
+                if fut_done_time is None:
+                    fut_done_time = time.time()
+                else:
+                    if time.time() - fut_done_time > 2:
+                        fut.result()
+                        raise Exception("Transformation finished, but didn't trigger a result or exception")
+            if transformer._status_reason == StatusReasonEnum.EXECUTING:
+                if self.transformation_jobs.get(tf_checksum) is None:
+                    break
+            if transformer.prelim != last_result_checksum \
+            or transformer.progress != last_progress:
+                last_progress = transformer.progress
+                last_result_checksum = transformer.prelim
+                if last_result_checksum is None:
+                    log(last_progress)
+                else:
+                    log(last_progress, last_result_checksum.hex())
+            await asyncio.sleep(0.05)
+        if tf_checksum in self.transformation_exceptions:
+            raise self.transformation_exceptions[tf_checksum]
+        result_checksum, prelim = self._get_transformation_result(tf_checksum)
+        assert not prelim
+        return result_checksum
+
+    def run_transformation(self, tf_checksum, *, fingertip, metalike=None, new_event_loop=False):
         event_loop = asyncio.get_event_loop()
         if event_loop.is_running() or new_event_loop:
             # To support run_transformation inside transformer code
-            communion_server_restarted = False
-            if communion_server.started:
-                raise NotImplementedError # TODO: rip communion
-                for peer in communion_server.futures:
-                    if len(communion_server.futures[peer]):
-                        raise RuntimeError("Communion server has outstanding requests in other event loop")
-                    communion_server_restarted = True
-            try:
-                if event_loop.is_running():
-                    # This is potentially tricky.
-                    # The Seamless manager will be running in a different thread.
-                    # Therefore, we can't update the Seamless workflow graph, but we shouldn't have to
-                    # The use case is essentially: using the functional style under Jupyter
-                    def func():
-                        coro = self.run_transformation_async(tf_checksum, fingertip=fingertip, metalike=metalike)
-                        # The following hangs, even for a "dummy" coroutine:
-                        #  future = asyncio.run_coroutine_threadsafe(coro, event_loop)                        
-                        #  return future.result()
-                        return asyncio.run(coro)
+            if event_loop.is_running():
+                # This is potentially tricky.
+                # The Seamless manager will be running in a different thread.
+                # Therefore, we can't update the Seamless workflow graph, but we shouldn't have to
+                # The use case is essentially: using the functional style under Jupyter
+                def func():
+                    coro = self.run_transformation_async(tf_checksum, fingertip=fingertip, metalike=metalike)
+                    # The following hangs, even for a "dummy" coroutine:
+                    #  future = asyncio.run_coroutine_threadsafe(coro, event_loop)                        
+                    #  return future.result()
+                    return asyncio.run(coro)
 
-                    try:                        
-                        with ThreadPoolExecutor() as tp:
-                            return tp.submit(func).result()
-                    finally:
-                        assert threading.current_thread() == threading.main_thread()
-                        if communion_server.started:
-                            raise NotImplementedError # TODO: rip communion
-                            communion_server._init()
-                            communion_client_manager._init()
-                            if asyncio.get_event_loop().is_running():
-                                asyncio.ensure_future(communion_server.start_async())
-                            else:
-                                communion_server.start()
+                with ThreadPoolExecutor() as tp:
+                    return tp.submit(func).result()
 
-                else:
-                    loop = asyncio.new_event_loop()
-                    async def stop_loop(timeout):
-                        loop.stop()
-                        t = time.time()
-                        while 1:                            
-                            for task in asyncio.all_tasks(loop):
-                                if not task.done():
-                                    break
-                            else:
-                                break
-                            if time.time() - t > timeout:
-                                break
-                            await asyncio.sleep(0.01)
-                    try:
-                        return loop.run_until_complete(
-                            self.run_transformation_async(tf_checksum, fingertip=fingertip, metalike=metalike, fresh_event_loop=True)
-                        )
-                    finally:
-                        if communion_server.started:
-                            raise NotImplementedError # TODO: rip communion
-                            communion_server._init()
-                            communion_client_manager._init()
+            else:
+                loop = asyncio.new_event_loop()
+                async def stop_loop(timeout):
+                    loop.stop()
+                    t = time.time()
+                    while 1:                            
                         for task in asyncio.all_tasks(loop):
-                            task.cancel()
-                        asyncio.ensure_future(stop_loop(2))
+                            if not task.done():
+                                break
+                        else:
+                            break
+                        if time.time() - t > timeout:
+                            break
+                        await asyncio.sleep(0.01)
+                try:
+                    return loop.run_until_complete(
+                        self.run_transformation_async(tf_checksum, fingertip=fingertip, metalike=metalike, fresh_event_loop=True)
+                    )
+                finally:
+                    for task in asyncio.all_tasks(loop):
+                        task.cancel()
+                    asyncio.ensure_future(stop_loop(2))
 
-            finally:
-                if communion_server_restarted:
-                    raise NotImplementedError # TODO: rip communion
-                    if asyncio.get_event_loop().is_running():
-                        asyncio.ensure_future(communion_server.start_async())
-                    else:
-                        communion_server.start()
         else:
             fut = asyncio.ensure_future(
                 self.run_transformation_async(tf_checksum, fingertip=fingertip, metalike=metalike)
@@ -1201,7 +1107,7 @@ transformation_cache = TransformationCache()
 
 from .tempref import temprefmanager
 from .buffer_cache import buffer_cache
-from ..protocol.get_buffer import get_buffer, get_buffer_remote, CacheMissError
+from ..protocol.get_buffer import get_buffer, CacheMissError
 from ..protocol.deserialize import deserialize
 from ..protocol.calculate_checksum import calculate_checksum, calculate_checksum_sync
 from .database_client import database

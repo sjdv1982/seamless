@@ -1,8 +1,11 @@
+import sys
 import seamless
+from_vault = bool(int(sys.argv[1]))
+if from_vault:
+    seamless.load_vault(sys.argv[2])
 from requests import ConnectionError
 try:
-    seamless.database_cache.connect()
-    seamless.database_sink.connect()
+    seamless.config.database.connect()
     print("Database found")
 except ConnectionError:
     print("Database not found")
@@ -39,3 +42,6 @@ m.elision = True
 ctx.compute()
 print(ctx.result.value)
 print(m.status, m.exception)
+
+if not from_vault:
+    ctx.save_vault(sys.argv[2])
