@@ -185,6 +185,9 @@ class TransformationCache:
         self.syntactic_to_semantic_checksums = {} #(checksum,celltype,subcelltype)-to-checksum
         self.semantic_to_syntactic_checksums = {} #(checksum,celltype,subcelltype)-to-list-of-checksums
 
+        self.known_transformations = {}
+        self.known_transformations_rev = {}
+
     @staticmethod
     def syntactic_to_semantic(
         checksum, celltype, subcelltype, codename
@@ -196,6 +199,21 @@ class TransformationCache:
         )
         asyncio.get_event_loop().run_until_complete(future)
         return future.result()
+
+    def register_known_transformation(self, tf_checksum, result_checksum):
+        """For transformations that were launched imperatively"""
+        assert result_checksum is not None
+        curr_checksum = self.known_transformations.get(tf_checksum)
+        if curr_checksum is not None and curr_checksum == result_checksum:
+            return
+        self.known_transformations[tf_checksum] = result_checksum
+        try:
+            transformations = self.known_transformations_rev[result_checksum]
+        except KeyError:
+            transformations = []
+            self.known_transformations_rev[result_checksum] = transformations
+        transformations.append(tf_checksum)
+        
 
     def register_transformer(self, transformer):
         assert isinstance(transformer, Transformer)
@@ -964,6 +982,7 @@ class TransformationCache:
                 
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
         if result_checksum is not None and not prelim and not fingertip:
+            self.register_known_transformation(tf_checksum, result_checksum)
             return result_checksum
         transformation = await self.serve_get_transformation(tf_checksum, None)
         if transformation is None:
@@ -1036,6 +1055,7 @@ class TransformationCache:
             raise self.transformation_exceptions[tf_checksum]
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
         assert not prelim
+        self.register_known_transformation(tf_checksum, result_checksum)
         return result_checksum
 
     def run_transformation(self, tf_checksum, *, fingertip, metalike=None, new_event_loop=False):

@@ -54,4 +54,4 @@ python buffer_remote3.py
 echo ''
 
 
-#rm -rf /tmp/bufferdir
+rm -rf /tmp/bufferdir

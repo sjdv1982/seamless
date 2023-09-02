@@ -1,0 +1,33 @@
+Part 1
+Waiting for: Seamless transformer: .func.tf
+1ec587570668eb78b2449329ffd174fc38472f149811d9206814b741f0d7fc40
+*************************************************
+* Result
+*************************************************
+<checksum 1ec587570668eb78b2449329ffd174fc38472f149811d9206814b741f0d7fc40>
+*************************************************
+Execution time: 0.0 seconds
+*************************************************
+<Silk: 860 >
+5.2 seconds elapsed
+
+Part 2
+860
+0.0 seconds elapsed
+
+Part 3
+1ec587570668eb78b2449329ffd174fc38472f149811d9206814b741f0d7fc40
+None
+<Silk: 860 >
+0.1 seconds elapsed
+
+Part 4
+1ec587570668eb78b2449329ffd174fc38472f149811d9206814b741f0d7fc40
+None
+<Silk: 860 >
+5.3 seconds elapsed
+
+Part 5
+860
+5.0 seconds elapsed
+

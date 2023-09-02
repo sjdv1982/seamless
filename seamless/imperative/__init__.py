@@ -42,6 +42,8 @@ _has_lock = True
 _dummy_manager = None
 def set_dummy_manager():
     global _dummy_manager
+    if _dummy_manager is not None:
+        return
     from seamless.core.manager import Manager
     _dummy_manager = Manager()
 

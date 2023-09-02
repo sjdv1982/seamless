@@ -1,38 +1,9 @@
-raise NotImplementedError
-
 print("START")
 import os
-os.environ["SEAMLESS_COMMUNION_ID"] = "test-imperative-communion"
-
-''''
-import seamless
-seamless.config.block_local()
-
-from seamless import communion_server
-await communion_server.start_async()
-'''
-
-#MUST use full delegation, and so must the communion peer
-### seamless.config.delegate() ### TODO
+os.environ["SEAMLESS_ASSISTANT_ID"] = "test-imperative-communion"
 
 import seamless
-seamless.config.block_local()
-seamless.config.delegate(level=3)
-
-seamless.communion_server.configure_master({
-    "buffer": False,
-    "buffer_status": False,
-    "buffer_info": False,
-    "transformation_job": True,
-    "transformation_status": True,
-    "semantic_to_syntactic": True,
-})
-    
-from seamless import communion_server
-await communion_server.start_async()
-
-###
-
+seamless.config.delegate()
 
 from seamless.imperative import transformer_async
 
@@ -79,7 +50,7 @@ def func2(a, b):
         import time
         time.sleep(2)
         return 100 * a + b
-    func.local = False
+    ###func.local = False
     
     return func(a, b) + func(b, a)
 
@@ -95,6 +66,7 @@ print(ctx.tf.result.value)
 
 # transformer within transformer within transformer...
 
+@transformer_async
 def func3(a, b):
 
     @transformer
@@ -104,29 +76,15 @@ def func3(a, b):
             import time
             time.sleep(2)
             return 100 * a + b
-        func.local = False
+        ###func.local = False
         return func(a,b)
     func2b.local = True
 
     return func2b(a, b) + func2b(b, a)
 
-ctx.tf.code = func3
-ctx.tf.meta = {"local": True}
-await ctx.computation()
-print(ctx.tf.logs)
-print(ctx.tf.status)
-print(ctx.tf.result.value)
-
-ctx.tf.a = 33
-ctx.tf.b = 33
-await ctx.computation()
-print(ctx.tf.logs)
-print(ctx.tf.status)
-print(ctx.tf.result.value)
-
-ctx.tf.a = 7
-ctx.tf.b = 22
-await ctx.computation()
-print(ctx.tf.logs)
-print(ctx.tf.status)
-print(ctx.tf.result.value)
+result = await func3(21, 17)
+print(result)
+result = await func3(33, 33)
+print(result)
+result = await func3(7, 22)
+print(result)

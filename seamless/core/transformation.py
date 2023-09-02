@@ -725,7 +725,8 @@ class TransformationJob:
                                 logs[code] = content
                         elif status == 5:
                             if msg == "release lock":
-                                release_lock(lock)
+                                if lock is not None:
+                                    release_lock(lock)
                                 lock = None
                             else:
                                 raise Exception("Unknown return message '{}'".format(msg))

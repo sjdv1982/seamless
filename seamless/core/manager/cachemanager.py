@@ -306,6 +306,19 @@ class CacheManager:
             if buffer is not None:
                 return buffer
 
+        for tf_checksum in tf_cache.known_transformations_rev.get(checksum, []):
+            transformation = tf_cache.transformations.get(tf_checksum)
+            if transformation is None:
+                buffer = get_buffer(tf_checksum, remote=True)
+                if buffer is None:
+                    continue
+                transformation = await DeserializeBufferTask(
+                    manager, buffer, tf_checksum, "plain", copy=True
+                ).run()
+                if transformation is None:
+                    continue
+            coros.append(fingertip_transformation(transformation, tf_checksum))
+
         for refholder, result in self.checksum_refs.get(checksum, set()):
             if not result:
                 continue

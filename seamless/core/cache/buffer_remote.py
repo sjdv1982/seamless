@@ -127,21 +127,30 @@ def can_write():
 
 def set_read_buffer_folders(read_buffer_folders):
     global _read_folders
-    _read_folders = read_buffer_folders
+    if read_buffer_folders:
+        _read_folders = read_buffer_folders
+    else:
+        _read_folders = None
 
 def set_read_buffer_servers(read_buffer_servers):
     global _read_servers
-    _read_servers = read_buffer_servers
+    if read_buffer_servers:
+        _read_servers = read_buffer_servers
+    else:
+        _read_servers = None
 
 def set_write_buffer_server(write_buffer_server):
     global _write_server
-    try:
-        buffer_write_client.has(session, write_buffer_server, b'0' * 32)
-    except ValueError:
-        pass
-    except ConnectionError:
-        raise ConnectionError(write_buffer_server) from None
-    _write_server = write_buffer_server
+    if write_buffer_server:
+        try:
+            buffer_write_client.has(session, write_buffer_server, b'0' * 32)
+        except ValueError:
+            pass
+        except ConnectionError:
+            raise ConnectionError(write_buffer_server) from None
+        _write_server = write_buffer_server
+    else:
+        write_buffer_server = None
 
 def has_readwrite_servers():
     return _write_server is not None and len(_read_servers)

@@ -102,7 +102,7 @@ twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
 pin-filesystem.sh: run as i=pin-filesystem; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
   If not in the Docker image, set SEAMLESS_TOOLS_DIR to <seamless-tools-git>/tools
 reuse-compile.sh: run with Seamless database
-
+test-fingertip.sh: run with Seamless database
 load-graph.py
 load-graph2.py
 load-graph-static.py
@@ -124,17 +124,17 @@ imperative-async-parallel-jupyter.sh: can be run with delegation using "export D
 imperative-nested.py
 imperative-nested-jupyter.sh
 imperative-nested-async.sh
-
-imperative-celltypes.py
+# TODO: integrate imperative-celltypes.py
 imperative-jupyter.sh
 imperative-database.py: run with Seamless database and buffer dir, preferably in a clean setup
 imperative-database-async.sh: run with Seamless database and buffer dir, preferably in a clean setup
-imperative-communion-async.sh: run with a jobslave
-  
+imperative-delegated.py: run with delegation
+imperative-delegated-async.sh: run with delegation
+TODO: reintegrate the following
 imperative-nonblocking.py: run with Seamless database, preferably in a clean dir
 imperative-nonblocking-parallel.py: run with Seamless database, preferably in a clean dir
-imperative-communion.py: run with a jobslave
 imperative-module.py: run with Seamless database, DEFINITELY in a clean dir
+/TODO
 map-list.py
 channel.py
 environment3.py
