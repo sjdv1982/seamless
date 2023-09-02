@@ -119,6 +119,8 @@ library-schema.py
 imperative.py
 imperative-jupyter.sh
 imperative-async.sh
+imperative-async-parallel.py: can be run with delegation using "export DELEGATE=''"
+imperative-async-parallel-jupyter.sh: can be run with delegation using "export DELEGATE=''"
 imperative-nested.py
 imperative-nested-jupyter.sh
 imperative-nested-async.sh

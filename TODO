@@ -12,7 +12,7 @@ Random things TODO regarding integration:
 
   Pimp the protocol a bit so that "peer ID" (project information) is sent along in the request
   After that, support transformation meta (see old jobless), progress/prelim, hardcancel, etc.
-  Some kind of response-and-make-a-new-request? We really don't want websockets...
+  Some kind of response-and-make-a-new-request? We really don't want websockets... UPDATE: use long streaming response instead
   Finally, rename imperative-communion and split it into a re-entrant version 
   (local=False, currently commented out), and the all-local version.
   simple-assistant.py can't deal with re-entrant delegation.
