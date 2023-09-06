@@ -1,40 +1,42 @@
-"""Imperative transformers"""
+def transformer(func, **kwargs):
+    """Wraps a function in an imperative transformer
+    Imperative transformers can be called as normal functions, but
+    the source code of the function and the arguments are converted
+    into a Seamless transformation."""
+    raise NotImplementedError
+    result = DirectTransformer(func, is_async=False, **kwargs)
+    update_wrapper(result, func)
+    return result
 
-import inspect
-from copy import deepcopy
-import functools
-import multiprocessing
 
-class Transformer:
-    def __init__(self, func, *, direct_call=False, sync=False, local=None, meta=None):
-        """Transforms input values to a result value
+# raise NotImplementedError  # TODO: simplify, only support __call__
 
-Parameters:
+class DirectTransformer:
+    def __init__(self, func, is_async, **kwargs):
+        """Imperative transformer.
+Imperative transformers can be called as normal functions, but 
+the source code of the function and the arguments are converted
+into a Seamless transformation.
 
--
+The transformer may be asynchronous, which means that calling it
+creates a coroutine.
 
-- direct_call. If the Transformer is directly callable or not. 
-    If True, the Transformer is evaluated as `t = Transformer(...); result = t(...)`.
-    Otherwise, the Transformer 
-
-- sync. If True, calling the function executes it immediately,
-            returning its value.
-        If False, it returns an imperative Transformation object.
-        Imperative transformations can be queried for their .checksum, 
-        .value or .logs. Doing so forces their execution.
-        As of Seamless 0.12, forcing one transformation also forces 
-            all other transformations. 
-
+The following properties can be set:
+        
 - local. If True, transformations are executed in the local 
-        Seamless instance.
+            Seamless instance.
         If False, they are delegated to remote job servers.
         If None (default), remote job servers are tried first 
         and local execution is a fallback.
 
-- meta. Dict to set all metadata of the transformation (including "local").
-
-The "meta" and "local" parameters can also be set afterwards as properties.
-In addition, the following properties can be set:
+- blocking. Only for non-async transformers.
+        If True, calling the function executes it immediately,
+            returning its value.
+        If False, it returns an imperative Transformation object.
+        Imperative transformations can be queried for their .value
+        or .logs. Doing so forces their execution.
+        As of Seamless 0.11, forcing one transformation also forces 
+            all other transformations. 
 
 - celltypes. Returns a wrapper where you can set the celltypes
         of the individual transformer pins. 
@@ -47,12 +49,14 @@ In addition, the following properties can be set:
         codebuf = serialize(code, "python")
         code_checksum = calculate_checksum(codebuf)
         semantic_code_checksum = _get_semantic(code, code_checksum)
+        
         signature = inspect.signature(func)
 
         self._semantic_code_checksum = semantic_code_checksum
         self._signature = signature
         self._codebuf = codebuf
         self._code_checksum = code_checksum
+        self._is_async = is_async
         self._celltypes = {k: "mixed" for k in signature.parameters}
         self._celltypes["result"] = "mixed"
         self._modules = {}
@@ -83,7 +87,7 @@ In addition, the following properties can be set:
     def __call__(self, *args, **kwargs):
         from .Transformation import Transformation
         from .module import get_module_definition
-        from . import _run_transformer, _run_transformer_async
+        from . import run_direct_transformer, run_direct_transformer_async
         from ..core.cache.database_client import database
         from ..core.cache.buffer_remote import has_readwrite_servers
         self._signature.bind(*args, **kwargs)
@@ -93,7 +97,7 @@ In addition, the following properties can be set:
             if not database.active or not has_readwrite_servers():
                 #raise NotImplementedError # ALSO requires a buffer write server... unless it is non-local and a assistant is available
                 raise RuntimeError("Running @transformer inside a transformation requires a Seamless database and buffer servers")
-        runner = _run_transformer_async if self._is_async else _run_transformer
+        runner = run_direct_transformer_async if self._is_async else run_direct_transformer
         if not self._blocking:
             tr = Transformation()
             result_callback = tr._set

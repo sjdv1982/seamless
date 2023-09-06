@@ -162,38 +162,40 @@ def assign_transformer(ctx, path, func):
         existing_transformer.code = code
     else:
         tf = Transformer(
-            parent=ctx,
-            path=path,
             code=code,
             pins=parameters
-        ) #inserts itself as child
+        ) 
+        tf._init(parent=ctx, path=path, set_node=True)
+        #inserts itself as child
         assert ctx._children[path] is tf
         ctx._translate()
 
 
 def assign_transformer_copy(ctx, path, tf):
-    assert tf._parent() is ctx
+    parent = tf._parent()
+    assert parent is ctx or parent is None
     if path in ctx._children:
         ctx._destroy_path(path)
 
-    tf_path = tf._path
     tf_node = deepcopy(tf._get_htf())
     tf_node["path"] = path
     nodes, connections = ctx._graph[:2]
     nodes[path] = tf_node
-    lp = len(tf_path)
-    for con in list(connections):
-        if con["type"] != "connection":
-            continue
-        c = con["target"]
-        if c[:lp] == tf_path:
-            con2 = deepcopy(con)
-            con2["target"] = path + c[lp:]
-            connections.append(con2)
-    tf = Transformer(
-        parent=ctx,
-        path=path,
-    ) #inserts itself as child
+    
+    tf_path = tf._path
+    if tf_path is not None:
+        lp = len(tf_path)
+        for con in list(connections):
+            if con["type"] != "connection":
+                continue
+            c = con["target"]
+            if c[:lp] == tf_path:
+                con2 = deepcopy(con)
+                con2["target"] = path + c[lp:]
+                connections.append(con2)
+    tf = Transformer()
+    tf._init(parent=ctx, path=path, set_node=False)
+    #inserts itself as child
     assert ctx._children[path] is tf
     ctx._translate()
 
@@ -422,7 +424,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
                     remove_checksum.append("value")
         elif nodetype == "transformer":
             if not fast:
-                Transformer(parent=ctx, path=pp)
+                Transformer()._init(parent=ctx, path=pp, set_node=False)
             remove_checksum += ["input_temp", "input", "input_buffer", "result"]
             potential = ("code", "schema", "result_schema", "main_module")
             for pot in potential:
@@ -635,8 +637,9 @@ def assign(ctx, path, value, *, help_context=False):
         if help_context:
             raise TypeError(type(value))
         if value._path is None:
-            value._init(ctx, path)
+            value._init(ctx, path, set_node=True)
         else:
+            assert value._parent() is not None
             value._assign_to(ctx, path)
     elif isinstance(value, Macro):
         if help_context:
@@ -746,7 +749,6 @@ def assign(ctx, path, value, *, help_context=False):
         tf = value.transformer()
         if tf is None:
             raise Exception("Transformer no longer exists")
-        assert tf._parent() is ctx
         assign_transformer_copy(ctx, path, tf)
     elif isinstance(value, (Proxy, SchemaWrapper)):
         assert value._parent()._parent() is ctx

@@ -24,7 +24,10 @@ class Proxy:
 
     @property
     def _virtual_path(self):
-        return self._parent()._path + self._path
+        ppath = self._parent()._path
+        if ppath is None:
+            return self._path 
+        return ppath + self._path
 
     def pull(self):
         if self._pull_source is None:

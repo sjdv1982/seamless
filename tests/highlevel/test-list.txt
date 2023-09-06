@@ -38,6 +38,7 @@ simpler-tf-print.py
 function_like_error.py
 simplest.py
 simple-missing.py
+simple-unbound.py
 simpler-listpin.py
 simpler-result.py
 simpler-result-celltype.py
@@ -61,6 +62,7 @@ special-pins-bash.py
 multi-module.py: can also be run in interactive mode (see instructions in file)
 module-pyaccess.py: can also be run in interactive mode (mount /tmp/module.py)
 bash.py
+bash-unbound.py
 bash-slashpins.py
 bash-debug.py
 docker_.py

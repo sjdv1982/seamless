@@ -13,7 +13,7 @@ from typing import *
 
 def _add_webunit_instance(ctx, webunit_dict, **params):
     from seamless.highlevel import Cell
-    from seamless.highlevel.Base import Base
+    from seamless.highlevel import Base
     assert "@name" in webunit_dict
     name = webunit_dict["@name"]
 

@@ -1,5 +1,5 @@
 # Author: Sjoerd de Vries
-# Copyright (c) 2016-2022 INSERM, 2022 CNRS
+# Copyright (c) 2016-2022 INSERM, 2022-2023 CNRS
 
 # The MIT License (MIT)
 
@@ -27,6 +27,8 @@ and its helper functions."""
 # pylint: disable=too-many-lines
 
 from __future__ import annotations
+import asyncio
+import sys
 from typing import *
 
 import weakref
@@ -59,7 +61,6 @@ def new_transformer(
     # pylint: disable=dangerous-default-value
     ctx,
     path,
-    code,
     pins,
     hash_pattern={"*": "#"},
 ) -> dict[str, Any]:
@@ -89,10 +90,10 @@ def new_transformer(
         "SCHEMA": None,
         "UNTRANSLATED": True,
     }
-    if code is not None:
-        transformer["TEMP"] = {"code": code}
     ### json.dumps(transformer)
-    ctx._graph[0][path] = transformer
+    if ctx is not None:
+        assert path is not None
+        ctx._graph[0][path] = transformer
     return transformer
 
 
@@ -101,48 +102,109 @@ class Transformer(Base, HelpMixin):
 
     See http://sjdv1982.github.io/seamless/sphinx/html/transformer.html for documentation"""
 
-    _temp_code = None
-    _temp_pins = None
+    _node = None
 
     def __init__(
-        self, *, parent=None, path=None, code=None, pins=None, hash_pattern={"*": "#"}
-    ):  # pylint: disable=dangerous-default-value,super-init-not-called
+        self, code=None, *, pins=None, hash_pattern={"*": "#"}
+    ):  # pylint: disable=dangerous-default-value
         from ..metalevel.debugmode import DebugMode
 
-        pins = deepcopy(pins)
-        assert (parent is None) == (path is None)
-        if parent is not None:
-            self._init(parent, path, code, pins, hash_pattern)
-        else:
-            self._temp_code = code
-            self._temp_pins = pins
+        super().__init__(parent=None, path=None)
+        self._node = new_transformer(ctx=None, path=None, pins=pins, hash_pattern=hash_pattern)
+        if code is not None:
+            self.code = code # modifies self._node
+            
         self._debug = DebugMode(self)
-
-    def _init(
-        self, parent, path, code=None, pins=None, hash_pattern={"*": "#"}
-    ):  # pylint: disable=dangerous-default-value
-        super().__init__(parent, path)
-        if self._temp_code is not None:
-            assert code is None
-            code = self._temp_code
-        if self._temp_pins is not None:
-            assert pins is None
-            pins = self._temp_pins
-        parent._set_child(path, self)
-        try:
-            assert code is None
-            assert pins is None
-            assert hash_pattern == {"*": "#"}
-            node = self._get_htf()
-        except Exception:
-            node = None
         self._environment = Environment(self)
-        if node is None:
-            new_transformer(parent, path, code, pins)
-        elif "environment" in node:
-            self._environment._load(node["environment"])
-        self._temp_code = None
-        self._temp_pins = None
+
+    def _get_parent2(self):
+        parent = self._parent()
+        if parent is None:
+            raise AttributeError("Transformer must have been bound to a workflow context.")
+        return parent
+    
+    def _init(
+        self, parent, path, set_node
+    ):
+        assert parent is not None and path is not None
+        assert self._parent() is None
+
+        node = self._node
+
+        temp_connections = {}
+        dependencies = {}
+        if set_node:
+            node2 = deepcopy(node)
+            node2["path"] = path
+            parent._graph[0][path] = node2
+            temp = node.get("TEMP", {}).copy().get("input_auth", {})
+            has_temp = len(temp)
+            for pinname, value in temp.items():
+                if isinstance(value, Base):
+                    assert isinstance(value, (Cell, Module, DeepCellBase))
+                    temp_connections[pinname] = value
+                    continue
+            for pinname, value in temp_connections.items():
+                temp.pop(pinname)                
+                vparent = value._parent()
+                if vparent is None:
+                    try:
+                        value2 = value.value
+                    except Exception:
+                        msg = "WARNING: Cannot bind pin '{}'"
+                        print(msg.format(pinname), file=sys.stderr)
+                    temp[pinname] = value2
+                elif vparent is not parent:
+                    msg = "Pin '{}' is bound to a different context"
+                    raise RuntimeError(msg.format(pinname))
+                else:
+                    dependencies[pinname] = value
+            if has_temp:
+                if len(temp):
+                    node2["TEMP"]["input_auth"] = temp
+                else:
+                    node2["TEMP"].pop("input_auth")
+                    if not len(node2["TEMP"]):
+                        node2.pop("TEMP")
+        else:
+            hash_pattern = node["hash_pattern"].copy()
+            pins = node["pins"]
+            default_node = new_transformer(ctx=None, path=None, pins=pins, hash_pattern=hash_pattern)
+            is_default_node = (node == default_node)
+
+            assert is_default_node, path
+            parent_node = parent._get_node(path)
+            assert parent_node is not None
+            if "environment" in parent_node:
+                self._environment._load(parent_node["environment"])
+        
+        Base._init2(self, parent, path)
+        parent._set_child(path, self)
+        self._get_htf()
+        self._node = None
+        for pinname, value in dependencies.items():
+            setattr(self, pinname, value)
+        parent._translate()
+
+    def _set_temp(self, attr, value):
+        htf = self._get_htf()
+        htf["UNTRANSLATED"] = True
+        if "TEMP" not in htf or htf["TEMP"] is None:
+            htf["TEMP"] = {}
+        htf["TEMP"][attr] = value
+        if "checksum" in htf:
+            htf["checksum"].pop(attr, None)
+        
+    def _set_temp_checksum(self, attr, checksum):
+        from seamless import parse_checksum
+        checksum = parse_checksum(checksum, as_bytes=False)
+        htf = self._get_htf()
+        htf["UNTRANSLATED"] = True
+        if "checksum" not in htf or htf["checksum"] is None:
+            htf["checksum"] = {}
+        htf["checksum"][attr] = checksum
+        if "TEMP" in htf:
+            htf["checksum"].pop(attr, None)
 
     @property
     def environment(self) -> Optional[Environment]:
@@ -168,12 +230,11 @@ class Transformer(Base, HelpMixin):
     def meta(self, value: dict[str, Any] | Cell):
         from .assign import assign_connection
 
-        parent = self._parent()
-        assert parent is not None
         htf = self._get_htf()
         target_path = self._path + ("meta",)
         realtime_meta = False
         if isinstance(value, Cell):
+            parent = self._get_parent2()
             assert value._parent() is parent
             assign_connection(parent, value._path, target_path, False)
             htf.pop("meta", None)
@@ -203,6 +264,19 @@ class Transformer(Base, HelpMixin):
         if not realtime_meta:
             self._get_htf()["UNTRANSLATED"] = True
             parent._translate()
+
+    @property
+    def local(self) -> bool | None:
+        """Local execution.
+If True, transformations are executed in the local Seamless instance.
+If False, they are delegated to remote job servers.
+If None (default), remote job servers are tried first 
+and local execution is a fallback."""
+        return self.meta.get("local")
+
+    @local.setter
+    def local(self, value:bool):
+        self.meta["local"] = value
 
     @property
     def RESULT(self) -> str:
@@ -349,10 +423,15 @@ class Transformer(Base, HelpMixin):
                 FutureWarning,
             )
             value = "bash"
-        parent = self._parent()
-        lang, language, extension = parent.environment.find_language(value)
-        compiled = language["mode"] == "compiled"
         htf = self._get_htf()
+        parent = self._parent()
+        if parent is None:
+            if value not in ("python", "ipython", "bash"):
+                raise ValueError("Unbound transformers can only have 'python', 'ipython' or 'bash' as their language")
+            htf["language"] = value
+            return   
+        lang, language, extension = parent.environment.find_language(value)
+        compiled = language["mode"] == "compiled"        
         old_language = htf.get("language")
         htf["language"] = lang
         old_compiled = htf.get("compiled", False)
@@ -397,7 +476,8 @@ class Transformer(Base, HelpMixin):
     def header(self) -> Optional[str]:
         """For a compiled transformer, the generated C header"""
         htf = self._get_htf()
-        assert htf["compiled"]
+        if not htf.get("compiled"):
+            raise AttributeError("Only compiled transformers have a header")
         dirs = ["value", "mount", "mimetype", "celltype"]
         return HeaderProxy(
             self, ("header",), "w", getter=self._header_getter, dirs=dirs
@@ -436,6 +516,7 @@ class Transformer(Base, HelpMixin):
 
         See Cell.example for more details
         """
+        self._get_parent2()
         tf = self._get_tf(force=True)
         htf = self._get_htf()
         inputcell = getattr(tf, htf["INPUT"])
@@ -476,13 +557,14 @@ class Transformer(Base, HelpMixin):
         htf["pins"][pinname] = pin
         htf["UNTRANSLATED"] = True
         parent = self._parent()
-        parent._translate()
+        if parent is not None:
+            parent._translate()
 
     def _assign_to(self, hctx, path):
         from .assign import assign_connection
 
         htf = self._get_htf()
-        parent = self._parent()
+        parent = self._get_parent2()
         result_path = self._path + (htf["RESULT"],)
         assign_connection(parent, result_path, path, True)
         hctx._translate()
@@ -515,11 +597,18 @@ class Transformer(Base, HelpMixin):
                 "Cannot assign directly all module objects; assign individual elements"
             )
 
-        if (
+        assign_to_temp = False
+        if self._parent() is None and attr != htf["RESULT"]:
+            assign_to_temp = True
+        elif (
             not self._has_tf()
             and not isinstance(value, (Cell, Module, DeepCellBase))
             and attr != htf["RESULT"]
         ):
+            assign_to_temp = True
+        
+
+        if assign_to_temp:
             if attr.isupper():
                 if attr not in htf["pins"]:
                     raise AttributeError("Cannot define new special pins before translation")
@@ -533,39 +622,44 @@ class Transformer(Base, HelpMixin):
                     code, _, _ = parse_function_code(value)
                 htf["TEMP"]["code"] = code
             else:
-                if isinstance(value, Base):
-                    raise TypeError(type(value))
-                get_form(value)
+                if not isinstance(value, (Cell, Module, DeepCellBase)):
+                    get_form(value)
                 if "input_auth" not in htf["TEMP"]:
                     htf["TEMP"]["input_auth"] = {}
                 htf["TEMP"]["input_auth"][attr] = value
                 if attr not in htf["pins"]:
                     htf["pins"][attr] = default_pin.copy()
-            parent = self._parent()
-            parent.remove_connections(self._path + (attr,), endpoint="target")
             htf["UNTRANSLATED"] = True
-            parent._translate()
+            parent = self._parent()
+            if parent is not None:
+                parent.remove_connections(self._path + (attr,), endpoint="target")
+                parent._translate()
             return
 
         if attr == "code":
             if isinstance(value, Resource):
                 value = value.data
             if isinstance(value, Cell):
-                target_path = self._path + (attr,)
-                assert value._parent() is parent
-                assign_connection(parent, value._path, target_path, False)
-                translate = True
+                if parent is not None:
+                    target_path = self._path + (attr,)
+                    assert value._parent() is parent
+                    assign_connection(parent, value._path, target_path, False)
+                    translate = True
+                else:
+                    self._set_temp(attr, value)
             elif isinstance(value, Proxy):
                 raise AttributeError("".join(value._path))
             else:
                 tf = self._get_tf(force=True)
                 if callable(value):
                     value, _, _ = parse_function_code(value)
-                check_libinstance_subcontext_binding(parent, self._path)
-                removed = parent.remove_connections(
-                    self._path + (attr,), endpoint="target"
-                )
-                if removed:
+                removed = False
+                if parent is not None:
+                    check_libinstance_subcontext_binding(parent, self._path)
+                    removed = parent.remove_connections(
+                        self._path + (attr,), endpoint="target"
+                    )
+                if removed or (parent is None):
                     htf = self._get_htf()
                     htf["UNTRANSLATED"] = True
                     if "TEMP" not in htf or htf["TEMP"] is None:
@@ -697,7 +791,7 @@ class Transformer(Base, HelpMixin):
             return False
 
     def _get_tf(self, force=False):
-        parent = self._parent()
+        parent = self._get_parent2()
         if not self._has_tf():
             if force:
                 raise Exception("Transformer has not yet been translated")
@@ -714,8 +808,11 @@ class Transformer(Base, HelpMixin):
 
     def _get_htf(self):
         parent = self._parent()
-        assert parent is not None
-        return parent._get_node(self._path)
+        if parent is not None:
+            return parent._get_node(self._path)
+        else:
+            assert self._node is not None
+            return self._node
 
     def _get_debugmount(self):
         if not self.debug.enabled:
@@ -977,7 +1074,7 @@ class Transformer(Base, HelpMixin):
             return "Status: pending"
         return "Status: OK"
 
-    def get_transformation(self) -> Optional[str]:
+    def get_transformation_checksum(self) -> Optional[str]:
         """Return the checksum of the transformation dict.
         The transformation dict contains the checksums of all input pins,
         including the code.
@@ -1006,12 +1103,24 @@ class Transformer(Base, HelpMixin):
         With Transformation.get_transformation_dict(), you can obtain the full transformation dict,
         including __meta__, __compilers__ and __languages__.
         """
+        _ = self._get_parent2()
         htf = self._get_htf()
         tf = self._get_tf()
         if htf["compiled"]:
-            return tf.tf.executor.get_transformation()
+            return tf.tf.executor.get_transformation_checksum()
         else:
-            return tf.tf.get_transformation()
+            return tf.tf.get_transformation_checksum()
+
+    async def _get_transformation_checksum_async(self) -> Optional[str]:
+        """Async version of .get_transformation_checksum"""        
+        _ = self._get_parent2()
+        htf = self._get_htf()
+        tf = self._get_tf()
+        if htf["compiled"]:
+            coro = tf.tf.executor._get_transformation_checksum_async()
+        else:
+            coro = tf.tf._get_transformation_checksum_async()
+        return await coro
 
     def get_transformation_dict(self):
         """Return the full transformation dict.
@@ -1033,10 +1142,79 @@ class Transformer(Base, HelpMixin):
         - __languages__: context-wide language definition."""
         
         from seamless.core.cache.transformation_cache import transformation_cache
-        checksum = self.get_transformation()
+        checksum = self.get_transformation_checksum()
         if checksum is None:
             return None
         return transformation_cache.get_transformation_dict(checksum)
+
+    async def _dummy_run_async(self):
+        parent = self._parent()
+        await parent.translation()
+        while self.status == "Status: pending":
+            await parent.computation(0.05)
+        result = self.result.checksum
+        if result is None: # glitch
+            await parent.computation(0.1)
+            result = self.result.checksum
+        return result
+
+    def _dummy_run_sync(self):
+        parent = self._parent()
+        parent.translate()
+        while self.status == "Status: pending":
+            parent.compute(0.05)
+        result = self.result.checksum
+        if result is None: # glitch
+            parent.compute(0.1)
+            result = self.result.checksum
+        return result
+
+    def get_transformation(self) -> "Transformation":
+        from .direct import Transformation
+        from .direct.run import run_transformation_dict, run_transformation_dict_async, _get_node_transformation_dependencies, _node_to_transformation_dict, prepare_transformation_dict
+        from seamless.core.cache.transformation_cache import tf_get_buffer
+        from seamless import calculate_checksum
+
+        result_celltype = self._get_htf().get("result_celltype", "mixed")
+        if self._parent() is not None:
+            resolver_sync = self.get_transformation_checksum
+            resolver_async = self._get_transformation_checksum_async
+            evaluator_sync = self._dummy_run_sync
+            evaluator_async = self._dummy_run_async
+            upstream_dependencies = {}
+        else:
+            if self.code is None:
+                raise RuntimeError("This transformer has no code")
+            node = self._node.copy()
+            transformation_dict = None
+            def resolver_sync():
+                nonlocal transformation_dict
+                transformation_dict = _node_to_transformation_dict(node)
+                prepare_transformation_dict(transformation_dict)
+                transformation_buffer = tf_get_buffer(transformation_dict)
+                transformation = calculate_checksum(transformation_buffer)
+                return transformation
+            
+            async def resolver_async():
+                return resolver_sync()
+            
+            def evaluator_sync():
+                result_checksum = run_transformation_dict(transformation_dict)
+                return result_checksum
+
+            async def evaluator_async():
+                result_checksum = await run_transformation_dict_async(transformation_dict)
+                return result_checksum
+            
+            upstream_dependencies = _get_node_transformation_dependencies(node)
+        return Transformation(
+            result_celltype,
+            resolver_sync,
+            resolver_async,
+            evaluator_sync, 
+            evaluator_async,
+            upstream_dependencies
+        )
 
 
     def cancel(self) -> None:
@@ -1105,11 +1283,20 @@ class Transformer(Base, HelpMixin):
         self._parent()._translate()
 
     def copy(self):
-        """Returns a copy wrapper.
-        This wrapper can be assigned to a new Context attribute,
-        creating a copy of the current Transformer.
-        Input parameters and connections to input pins are all copied."""
-        return TransformerCopy(self)
+        """If not bound to a context, return a copy of the Transformer. 
+        
+If bound to a workflow, return a copy wrapper.
+This wrapper can be assigned to a new Context attribute,
+ creating a copy of the current Transformer,
+ where input parameters and connections to input pins are all copied."""
+        if self._parent() is None:
+            node = self._get_htf()
+            node = deepcopy(node)
+            tf = Transformer()
+            tf._node = node
+            return tf
+        else:
+            return TransformerCopy(self)
 
     @property
     def execution_metadata(self):

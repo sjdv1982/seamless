@@ -557,6 +557,7 @@ class TransformationJob:
     async def _execute_local(self,
         prelim_callback, progress_callback
     ):
+        from seamless.highlevel.direct import _set_parent_process_queue, _set_parent_process_response_queue
         from .cache.database_client import database
         if self.cannot_be_local:
             raise SeamlessTransformationError("Local computation has been disabled for this Seamless instance")
@@ -677,8 +678,8 @@ class TransformationJob:
                 # and "daemon" is a multiprocessing-only thing.
                 # Looking at the source, daemon = False should have no impact,
                 #  but we must make sure to kill all transformer children
-                imperative._set_parent_process_queue(queue)
-                imperative._set_parent_process_response_queue(rqueue)
+                _set_parent_process_queue(queue)
+                _set_parent_process_response_queue(rqueue)
                 self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=False)
                 self.executor.start()
             finally:
@@ -899,7 +900,6 @@ from .cache.transformation_cache import transformation_cache, syntactic_is_seman
 from .status import SeamlessInvalidValueError
 from .environment import validate_environment
 from ..subprocess_ import kill_children
-from .. import imperative
 from .. import run_transformation_async
 
 execution_metadata0 = {}

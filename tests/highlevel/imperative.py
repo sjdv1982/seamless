@@ -11,11 +11,13 @@ ctx.tf = func
 ctx.tf.a = 21
 ctx.tf.b = 17
 ctx.compute()
-transformation_checksum = ctx.tf.get_transformation()
+transformation_checksum = ctx.tf.get_transformation_checksum()
 transformation_dict = ctx.resolve(transformation_checksum, "plain")
 
 from seamless.imperative import run_transformation_dict
-result = run_transformation_dict(transformation_dict)
+result_checksum = run_transformation_dict(transformation_dict)
+raise NotImplementedError
+
 print(result)
 
 ##################################################

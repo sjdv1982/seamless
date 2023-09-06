@@ -82,18 +82,18 @@ ctx.tf["SPECIAL"] = "This must be printed"
 print("OK")
 ctx.compute()
 print(ctx.tf.logs)
-print(ctx.tf.get_transformation())
+print(ctx.tf.get_transformation_checksum())
 
 ctx.tf["SPECIAL"] = "This must NOT be printed"
 ctx.compute()
 print(ctx.tf.logs)
-print(ctx.tf.get_transformation())
+print(ctx.tf.get_transformation_checksum())
 
 print('Nothing printed')
 ctx.tf["SPECIAL"] = "This will be printed IN THE END"
 ctx.tf.debug.direct_print = True 
 ctx.compute()
-cs = ctx.tf.get_transformation()
+cs = ctx.tf.get_transformation_checksum()
 print('/Nothing printed')
 
 # remove transformation from cache

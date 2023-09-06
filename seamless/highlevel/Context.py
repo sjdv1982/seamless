@@ -153,7 +153,7 @@ def _get_status(
 
 
 def _destroy_contexts():
-    _cleanup()
+    _direct_cleanup()
     for context in _contexts:
         try:
             context._destroy()
@@ -317,8 +317,12 @@ class Context(Base, HelpMixin):
             nodetype = node["type"]
             if nodetype == "libinstance":
                 continue
-            nodecls = nodeclasses[nodetype]
-            child = nodecls(parent=self, path=p)
+            if nodetype == "transformer":
+                child = Transformer()
+                child._init(parent=self, path=p, set_node=True)
+            else:
+                nodecls = nodeclasses[nodetype]
+                child = nodecls(parent=self, path=p)
             if nodetype in ("cell", "transformer", "macro"):
                 node["UNTRANSLATED"] = True
         connections = graph["connections"]
@@ -436,7 +440,10 @@ class Context(Base, HelpMixin):
             if value._parent is None:
                 self._graph[0][attr2] = value
                 self._set_child(attr2, value)
-                value._init(self, attr2)
+                if isinstance(value, Transformer):
+                    value._init(self, attr2, set_node=False)
+                else:
+                    value._init(self, attr2)
                 self._translate()
             else:
                 assign(self, attr2, value)
@@ -825,7 +832,9 @@ class Context(Base, HelpMixin):
 
         """
         if self._gen_context is None:
-            self._do_translate(force=True)
+            with macro_mode_on():
+                ub_ctx = core_context(toplevel=True, manager=self._manager)
+            self._gen_context = ub_ctx._bound
         manager = self._manager
         if isinstance(zip, bytes):
             archive = BytesIO(zip)
@@ -838,7 +847,10 @@ class Context(Base, HelpMixin):
             zipfile = ZipFile(zip, "r")
         else:
             raise TypeError(type(zip))
-        return copying.add_zip(manager, zipfile, incref=incref)
+        result = copying.add_zip(manager, zipfile, incref=incref)
+        self._do_translate(force=True)
+        return result
+    
 
     def load_vault(self, vault_directory: str, incref: bool = False):
         """Load the contents of a vault directory in the checksum-to-buffer cache.
@@ -851,8 +863,12 @@ class Context(Base, HelpMixin):
 
         """
         if self._gen_context is None:
-            self._do_translate(force=True)
-        return load_vault(vault_directory, incref=incref)
+            with macro_mode_on():
+                ub_ctx = core_context(toplevel=True, manager=self._manager)
+            self._gen_context = ub_ctx._bound
+        result = load_vault(vault_directory, incref=incref)
+        self._do_translate(force=True)
+        return result
 
     def include(self, lib: Library, only_zip: bool = False, full_path: bool = False):
         """Include a library in the graph.
@@ -1607,4 +1623,4 @@ from .SubContext import SubContext
 from ..core.manager import Manager
 from .SeamlessTraitlet import SeamlessTraitlet
 from .library import Library
-from ..imperative import _cleanup
+from .direct import _cleanup as _direct_cleanup

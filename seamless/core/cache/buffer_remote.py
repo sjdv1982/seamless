@@ -11,6 +11,7 @@ _read_folders:Optional[list[str]] = None
 _write_server:Optional[str] = None
 
 _known_buffers = set()
+_written_buffers = set()
 
 session = requests.Session()
 
@@ -92,7 +93,9 @@ def write_buffer(checksum, buffer):
         return None
     if _write_server is None:
         return
-    _known_buffers.add(checksum)
+    if checksum in _written_buffers:
+        return
+    _written_buffers.add(checksum)
     if buffer_write_client.has(session, _write_server, checksum):
         return
     buffer_write_client.write(session, _write_server, checksum, buffer)
@@ -101,7 +104,7 @@ def is_known(checksum):
     checksum = parse_checksum(checksum, as_bytes=True)
     if checksum is None:
         return True
-    return checksum in _known_buffers
+    return checksum in _known_buffers or checksum in _written_buffers
     
 def _has_checksum(checksum):
     checksum = parse_checksum(checksum, as_bytes=True)
@@ -135,8 +138,14 @@ def set_read_buffer_folders(read_buffer_folders):
 def set_read_buffer_servers(read_buffer_servers):
     global _read_servers
     if read_buffer_servers:
+        if _read_servers:
+            for old_server in _read_servers:
+                if old_server not in read_buffer_servers:
+                    _known_buffers.clear()
+                    break
         _read_servers = read_buffer_servers
     else:
+        _known_buffers.clear()
         _read_servers = None
 
 def set_write_buffer_server(write_buffer_server):
@@ -148,6 +157,8 @@ def set_write_buffer_server(write_buffer_server):
             pass
         except ConnectionError:
             raise ConnectionError(write_buffer_server) from None
+        if _write_server is not None:
+            _written_buffers.clear()
         _write_server = write_buffer_server
     else:
         write_buffer_server = None

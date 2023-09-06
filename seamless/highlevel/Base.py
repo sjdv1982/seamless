@@ -47,7 +47,13 @@ class Base:
         assert result is not None
         return result
 
+
     def __init__(self, parent, path):
+        assert (parent is None) == (path is None or not len(path))
+        if parent is not None:
+            self._init2(parent, path)
+    
+    def _init2(self, parent, path):
         from .Context import Context
 
         if parent is not None:

@@ -17,7 +17,7 @@ ctx.func.result.celltype = "deepcell"
 ctx.result = DeepCell()
 ctx.result = ctx.func.result
 ctx.compute()
-transformation = ctx.resolve(ctx.func.get_transformation(), "plain")
+transformation = ctx.resolve(ctx.func.get_transformation_checksum(), "plain")
 print(json_dumps(transformation))
 print(ctx.d.data) 
 print(ctx.d.checksum)

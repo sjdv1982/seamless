@@ -2,7 +2,6 @@ import inspect
 import weakref
 from copy import deepcopy
 
-from numpy import isin
 import ruamel.yaml
 import subprocess
 import json
@@ -40,7 +39,9 @@ class Environment:
             state = self._save()
             if state is not None:
                 node["environment"] = state
-            parent._parent()._translate()
+            grandparent = parent._parent()
+            if grandparent is not None:
+                grandparent._translate()
         elif isinstance(parent, ImperativeTransformer):
             parent._environment_state = None
             state = self._save()
@@ -109,7 +110,7 @@ for transformers individually (Transformer.environment)"""
         result = yaml.load(conda)
         if not isinstance(result, dict):
             raise TypeError("Must be dict, not {}".format(type(result)))
-        result["dependencies"]
+        _ = result["dependencies"]
         self._conda = conda
         self._update()
 

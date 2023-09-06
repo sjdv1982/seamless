@@ -128,11 +128,12 @@ class Transformer(Worker):
                     return True
         return False
 
-    def get_transformation(self):
-        import asyncio
+    def get_transformation_checksum(self):
         from .manager.tasks.transformer_update import TransformerUpdateTask
+        from .. import verify_sync_compute
         manager = self._get_manager()
         taskmanager = manager.taskmanager
+        verify_sync_compute()
         tasks = taskmanager.transformer_to_task[self]
         if len(tasks) and not asyncio.get_event_loop().is_running():
             async def await_transformer():
@@ -147,6 +148,25 @@ class Transformer(Worker):
                     await asyncio.sleep(0.05)
             fut = asyncio.ensure_future(await_transformer())
             asyncio.get_event_loop().run_until_complete(fut)
+        tcache = manager.cachemanager.transformation_cache
+        checksum = tcache.transformer_to_transformations.get(self)
+        if checksum is not None:
+            checksum = checksum.hex()
+        return checksum
+
+    async def _get_transformation_checksum_async(self):
+        from .manager.tasks.transformer_update import TransformerUpdateTask
+        manager = self._get_manager()
+        taskmanager = manager.taskmanager
+        while 1:
+            for task in taskmanager.transformer_to_task[self]:
+                if not isinstance(task, TransformerUpdateTask):
+                    break
+                if not task.waiting_for_job:
+                    break
+            else:
+                break
+            await asyncio.sleep(0.05)
         tcache = manager.cachemanager.transformation_cache
         checksum = tcache.transformer_to_transformations.get(self)
         if checksum is not None:

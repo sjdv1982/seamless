@@ -31,7 +31,7 @@ with macro_mode_on():
     
 ctx.compute()
 man = ctx._get_manager()
-transformation = man.resolve(ctx.func.get_transformation(), "plain")
+transformation = man.resolve(ctx.func.get_transformation_checksum(), "plain")
 print(json_dumps(transformation))
 print(ctx.d.data) 
 print(ctx.d.checksum)

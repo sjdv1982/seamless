@@ -126,7 +126,21 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
             zip=zip
         )
 
+class Checksum:
+    def __init__(self, checksum):
+        from seamless import parse_checksum
+        self.value = parse_checksum(checksum, as_bytes=False)
+    
+    def bytes(self) -> bytes | None:
+        if self.value is None:
+            return None
+        return bytes.fromhex(self.value)
+    
+    def __str__(self):
+        return str(self.value)
+
 from .SubContext import SubContext
+from .Base import Base
 nodeclasses = {
     "cell": Cell,
     "transformer": Transformer,
@@ -141,7 +155,7 @@ nodeclasses = {
 __all__ = [
     "Context", "Transformer", "Macro",
     "Cell", "SimpleDeepCell", "FolderCell", "DeepCell", "DeepFolderCell",
-    "Link", "StaticContext", "Module",
+    "Link", "StaticContext", "Module", "Checksum",
     "Resource", "load_graph", "copy"
 ]
 

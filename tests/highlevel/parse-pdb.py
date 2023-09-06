@@ -20,7 +20,7 @@ ctx.count_atoms.environment.set_conda(
     "yaml"
 )
 ctx.compute()
-print(ctx.count_atoms.get_transformation())
+print(ctx.count_atoms.get_transformation_checksum())
 print(ctx.count_atoms.status)
 print(ctx.count_atoms.exception)
 print(ctx.count_atoms.logs)
