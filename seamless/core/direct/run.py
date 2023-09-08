@@ -128,11 +128,13 @@ def run_transformation_dict(transformation_dict, fingertip):
     """
     # TODO: add input schema and result schema validation...
     from ...core.cache.database_client import database
+    from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
     from seamless.util import is_forked
 
     transformation_buffer = tf_get_buffer(transformation_dict)
     transformation = calculate_checksum(transformation_buffer)
     cache_buffer(transformation, transformation_buffer)
+    remote_write_buffer(transformation, transformation_buffer)
     increfed = _register_transformation_dict(
         transformation, transformation_buffer, transformation_dict
     )
@@ -254,6 +256,7 @@ def prepare_code(semantic_code_checksum, codebuf, code_checksum):
 
 def prepare_transformation_pin_value(value, celltype):
     from seamless.highlevel import Checksum, Transformation
+    from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
 
     if isinstance(value, Checksum):
         pass
@@ -271,6 +274,7 @@ def prepare_transformation_pin_value(value, celltype):
             buf = serialize(value, celltype)
         checksum = calculate_checksum(buf, hex=False)
         assert isinstance(checksum, bytes)
+        remote_write_buffer(checksum, buf)
         cache_buffer(checksum, buf)
         value = Checksum(checksum)
     return value

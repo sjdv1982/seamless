@@ -1,0 +1,321 @@
+#!/usr/bin/env python3
+
+__version__ = "0.12"
+
+import argparse
+import sys
+import os
+from pathlib import Path
+import subprocess
+import glob
+import json
+import traceback
+import seamless
+from seamless.core.cache.buffer_cache import buffer_cache
+from seamless import CacheMissError
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-v",
+    dest="verbosity",
+    help="""Verbose mode.
+Multiple -v options increase the verbosity. The maximum is 3""",
+    action="count",
+    default=0,
+)
+parser.add_argument(
+    "-q", dest="verbosity", help="Quiet mode", action="store_const", const=-1
+)
+
+parser.add_argument(
+    "-g1",
+    help="""Disable file/value guess rule 1.
+This rule states that any argument with a file extension must exist as a file.""",
+    action="store_true",
+)
+
+parser.add_argument(
+    "-g2",
+    help="""Disable file/value guess rule 2.
+This rule states that any argument without file extension must not exist as a file.""",
+    action="store_true",
+)
+
+parser.add_argument(
+    "-w",
+    help="""Set the working directory to $HOME.
+This allows any file in $HOME to be specified as argument.""",
+    dest="workdir",
+    action="store_const",
+    const=os.path.expanduser("~"),
+)
+
+parser.add_argument(
+    "-W",
+    help="""Set the working directory to /.
+This allows any file to be specified as argument.""",
+    dest="workdir",
+    action="store_const",
+    const="/",
+)
+
+parser.add_argument(
+    "-ms",
+    help="""Set the file mapping mode to 'strip'.
+Strip directory names. After stripping, all files must be unique.""",
+    dest="file_mapping_mode",
+    action="store_const",
+    const="strip",
+)
+
+parser.add_argument(
+    "-mr",
+    help="""Set the file mapping mode to 'rename'.
+Rename to file1, file2, ....""",
+    dest="file_mapping_mode",
+    action="store_const",
+    const="rename",
+)
+
+parser.add_argument(
+    "-mx",
+    help="""Set the file mapping mode to 'rename_with_ext'.
+Rename to file1.txt, file2.py, ....""",
+    dest="file_mapping_mode",
+    action="store_const",
+    const="rename_with_ext",
+)
+
+parser.add_argument(
+    "-c", help="Unquote the command line", dest="unquote", action="store_true"
+)
+
+parser.add_argument(
+    "--wait",
+    help="Wait for earlier seamless commands",
+    dest="action",
+    action="store_const",
+    const="wait",
+)
+
+arguments = sys.argv[1:]
+command = []
+for n, arg in enumerate(sys.argv[1:]):
+    if not arg.startswith("-"):
+        arguments = sys.argv[1 : n + 1]
+        command = sys.argv[n + 1 :]
+        break
+
+reformat_wait = False
+if command == ["wait"]:
+    command = []
+    arguments.append("--wait")
+    reformat_wait = True
+
+args = parser.parse_args(arguments)
+
+from seamless.cmd.message import set_verbosity, message as msg
+from seamless.cmd.commandmode import guess_arguments
+from seamless.cmd.file_mapping import get_file_mapping
+from seamless.cmd.file_load import files_to_checksums
+
+from seamless.cmd.bash_transformation import run_bash_transformation
+
+verbosity = min(args.verbosity, 3)
+set_verbosity(verbosity)
+msg(1, "Verbosity set to {}".format(verbosity))
+
+msg(1, "seamless {}".format(__version__))
+
+if reformat_wait:
+    msg(1, "'seamless wait' reformatted to 'seamless --wait'")
+if args.action is not None:
+    assert args.action in ["wait"], args.action
+    if args.action == "wait":
+        msg(0, "Action set to WAIT")
+        raise NotImplementedError  # wait action
+
+if len(command) == 0:
+    # TODO: check for --wait and similar
+    parser.print_usage()  # TODO: add to usage message
+    sys.exit(0)
+
+workdir = os.getcwd()
+if args.workdir is not None:
+    workdir = args.workdir
+    msg(1, "set working directory to: {}".format(workdir))
+
+if args.unquote:
+    if len(command) != 1:
+        msg(-1, "Unquote requires a single argument")
+        sys.exit(1)
+    # TODO: better bash lexing
+    command = command[0].replace(";", " ; ").split()
+
+
+def _get_smlsfile(path: Path) -> Path or None:
+    smlsfiles = [Path(path.as_posix() + ".smls")]
+    stem, suffix = os.path.splitext(path.as_posix())
+    if stem != path.as_posix():
+        smlsfiles.append(Path(stem + ".smls"))
+    if len(suffix):
+        smlsfiles.append(Path(stem + ".smls" + suffix))
+    # TODO: special directory:  - /home/$USER/.seamless/stem.smls
+    #                           - /home/$USER/.seamless/full/path/stem.smls
+    for smlsfile in smlsfiles:
+        msg(3, "search smlsfile... : {}".format(smlsfile.as_posix()))
+        if smlsfile.exists():
+            msg(3, "smlsfile found")
+            return smlsfile
+        else:
+            msg(3, "smlsfile not found")
+    smlsfiles = glob.glob("{}.smls.*".format(stem))
+    msg(3, "glob search smlsfile... : {}.smls.*".format(stem))
+    if len(smlsfiles):
+        smlsfile = smlsfiles[0]
+        msg(3, "smlsfile '{}' found via glob search".format(smlsfile))
+        return Path(smlsfile)
+
+
+msg(1, "determine mode: COMMAND or WORKSPACE")
+
+smlsfile = None
+workspace_script_argindex = None
+
+arg1 = Path(command[0])
+if not arg1.exists():
+    execarg1 = subprocess.getoutput("which {}".format(arg1.as_posix())).strip()
+    if execarg1:
+        msg(
+            3,
+            "first argument '{}' is in PATH, map to '{}'".format(
+                arg1.as_posix(), execarg1
+            ),
+        )
+        arg1 = Path(execarg1)
+if arg1.exists():
+    smlsfile = _get_smlsfile(arg1)
+    if smlsfile is None:
+        msg(2, "first argument '{}' has no smlsfile".format(arg1.as_posix()))
+    else:
+        msg(
+            1,
+            "found smlsfile '{}' for first argument '{}'".format(
+                smlsfile, arg1.as_posix()
+            ),
+        )
+        msg(0, "select first argument as workspace script")
+        workspace_script_argindex = 1
+else:
+    msg(1, "first argument '{}' is not a file".format(arg1.as_posix()))
+
+if smlsfile is None and len(command) > 1 and not arg1.suffix:
+    msg(3, "first argument has no suffix, consider second argument for smlsfile")
+    arg2 = Path(command[1])
+    if len(arg2.suffix):
+        msg(
+            3,
+            "second argument '{}' has a suffix, look for smlsfile".format(
+                arg2.as_posix()
+            ),
+        )
+    if arg2.exists():
+        smlsfile = _get_smlsfile(arg2)
+        if smlsfile is None:
+            msg(2, "second argument '{}' has no smlsfile".format(arg2.as_posix()))
+        else:
+            msg(
+                1,
+                "found smlsfile '{}' for second argument '{}'".format(
+                    smlsfile, arg2.as_posix()
+                ),
+            )
+            msg(0, "select second argument as workspace script")
+            workspace_script_argindex = 2
+
+if smlsfile is None:
+    msg(2, "no smlsfile found")
+    msg(1, "select COMMAND mode")
+    command_mode = True
+    overrule_ext, overrule_no_ext = False, False
+    if args.g1:
+        msg(1, "disable file/value guess rule 1")
+        overrule_ext = True
+    if args.g2:
+        msg(1, "disable file/value guess rule 2")
+        overrule_no_ext = True
+    try:
+        argdict = guess_arguments(
+            command, overrule_ext=overrule_ext, overrule_no_ext=overrule_no_ext
+        )
+    except ValueError as exc:
+        msg(-1, *exc.args)
+        sys.exit(1)
+else:
+    assert workspace_script_argindex
+    msg(1, "select WORKSPACE mode")
+    command_mode = (
+        False  # TODO: may be set to true later, after running the smlsfile...
+    )
+    raise NotImplementedError  # workspace mode
+
+argdictstr = json.dumps(argdict, sort_keys=True, indent=2)
+msg(1, "argument dict:\n" + argdictstr)
+
+file_mapping_mode = args.file_mapping_mode
+if file_mapping_mode is None:
+    file_mapping_mode = "literal"
+try:
+    arg_mapping, file_mapping = get_file_mapping(
+        argdict, mapping_mode=file_mapping_mode, working_directory=workdir
+    )
+except ValueError as exc:
+    msg(-1, *exc.args)
+    sys.exit(1)
+
+seamless.config.delegate()
+
+# TODO: max_files, max_datasize option
+directories = [arg_mapping[arg] for arg in argdict if argdict[arg] == "directory"]
+
+file_checksum_dict = files_to_checksums(
+    file_mapping.values(), max_datasize=None, max_files=None, directories=directories
+)
+
+rev_file_mapping = {v: k for k, v in file_mapping.items()}
+checksum_dict = {rev_file_mapping[k]: v for k, v in file_checksum_dict.items()}
+checksum_dictstr = json.dumps(checksum_dict, sort_keys=True, indent=2)
+msg(2, "file/directory checksum dict:\n" + checksum_dictstr)
+if len(directories):
+    msg(2, "directories:", directories)
+
+if command_mode:
+    mapped_command = []
+    for arg in command:
+        if argdict[arg] == "value":
+            mapped_command.append(arg)
+        else:
+            mapped_command.append(arg_mapping[arg])
+    bash_command = " ".join(mapped_command)
+    msg(1, "bash command:\n", bash_command, "\n")
+    # TODO: result mode
+    result_mode = "stdout"
+    result_checksum = run_bash_transformation(
+        bash_command, checksum_dict, directories=directories, result_mode=result_mode
+    )
+    try:
+        result = buffer_cache.get_buffer(result_checksum)
+        if result is None:
+            raise CacheMissError(result_checksum)
+    except CacheMissError:
+        traceback.print_exc(limit=1)
+        exit(1)
+    try:
+        result = result.decode()
+    except UnicodeDecodeError:
+        pass
+
+else:
+    raise NotImplementedError  # workspace mode
+print(result)
+# TODO: result mode

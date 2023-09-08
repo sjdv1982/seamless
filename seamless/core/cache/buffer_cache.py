@@ -95,7 +95,7 @@ class BufferCache:
 
     def cache_buffer(self, checksum, buffer):
         """Caches a buffer locally for a short time, without incrementing its refcount
-        Does not write into the database.
+        Does not write it as remote server or buffer.
         The checksum can be incref'ed later, without the need to re-provide the buffer.
         """
         if checksum is None:

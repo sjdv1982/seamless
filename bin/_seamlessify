@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+
+import sys, os, re
+
+skipwords= "cd rm ls mv cp \
+exit source echo function set unset let export \
+conda mamba pip apt \
+more less \
+code nano vi emacs gedit"
+
+skipwords = skipwords.split()
+
+nonskipwords = "r"
+
+nonskipwords = nonskipwords.split()
+
+#print(sys.argv,file=sys.stderr)
+
+SENTINEL="@@@"
+
+args = sys.argv[1:]
+for n in range(len(args)-1, -1, -1):
+    if args[n] == SENTINEL:
+        words = args[:n]
+        seamless_opts = " ".join(args[n+1:])
+        break
+else:
+    print(" ".join(args))
+    exit(0) 
+
+if len(words) == 0:
+    print("")
+    exit(0)
+
+line = " ".join(words)
+
+if words[0].startswith("seamless"):
+    print(line)
+    exit(0)
+
+if words[0] in skipwords:
+    print(line)
+    exit(0)
+
+if len(words[0]) <= 2 and words[0] not in nonskipwords:
+    print(line)
+    exit(0)
+
+import os
+homedir = os.path.expanduser("~")
+for n in range(len(words)-1, 1, -1):
+    words[n] = words[n].replace("~", homedir)
+    words[n] = words[n].replace("$", "\$")
+
+for n in range(len(words)-1, 1, -1):
+    sep = words[n].strip()
+    if sep in ("\n", ";", "&&", "||"):
+        quotable_command = words
+        nonquotable_command = None
+        break
+    if sep in (">", ">>"):
+        quotable_command = words[:n]
+        nonquotable_command = words[n:]
+        break
+else:
+    quotable_command = words
+    nonquotable_command = None
+
+#print("QUOT", quotable_command, file=sys.stderr)
+#print("NQUOT", nonquotable_command, file=sys.stderr)
+result = "seamless " + seamless_opts + ' -c """' + " ".join(quotable_command) + '"""'
+if nonquotable_command:
+    result += " " + " ".join(nonquotable_command)
+print(result)    
