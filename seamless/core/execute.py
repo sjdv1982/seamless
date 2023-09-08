@@ -313,7 +313,7 @@ def execute(name, code,
     from seamless.util import is_forked
     if is_forked():
         import seamless
-        from seamless.highlevel.direct.run import TRANSFORMATION_STACK
+        from .direct.run import TRANSFORMATION_STACK
         if tf_checksum is not None:
             if isinstance(tf_checksum, bytes):
                 tf_checksum = tf_checksum.hex()

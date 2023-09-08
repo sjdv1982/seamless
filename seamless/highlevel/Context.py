@@ -1623,4 +1623,4 @@ from .SubContext import SubContext
 from ..core.manager import Manager
 from .SeamlessTraitlet import SeamlessTraitlet
 from .library import Library
-from .direct import _cleanup as _direct_cleanup
+from ..core.direct import cleanup as _direct_cleanup

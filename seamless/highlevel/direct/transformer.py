@@ -1,8 +1,9 @@
 from copy import deepcopy
 from functools import update_wrapper
 import inspect
-import multiprocessing
 from functools import partial
+import textwrap
+from types import LambdaType
 
 def transformer(func=None, *, local=None, return_transformation=False):
     """Wraps a function in a direct transformer
@@ -15,6 +16,21 @@ def transformer(func=None, *, local=None, return_transformation=False):
     update_wrapper(result, func)
     return result
 
+
+def getsource(func):
+    from seamless.util import strip_decorators
+    from seamless.core.lambdacode import lambdacode
+
+    if isinstance(func, LambdaType) and func.__name__ == "<lambda>":
+        code = lambdacode(func)
+        if code is None:
+            raise ValueError("Cannot extract source code from this lambda")
+        return code
+    else:
+        code = inspect.getsource(func)
+        code = textwrap.dedent(code)
+        code = strip_decorators(code)
+        return code
 
 class DirectTransformer:
     def __init__(self, func, local, return_transformation):
@@ -53,9 +69,9 @@ Attributes:
 - modules: Returns a wrapper where you can define Python modules
     to be imported into the transformation
 
-- environment    
+- environment    .
 """    
-        from .run import getsource, serialize        
+        from seamless.core.protocol.serialize import serialize_sync as serialize
         code = getsource(func)
         codebuf = serialize(code, "python")
         
@@ -87,13 +103,13 @@ Attributes:
 
     def __call__(self, *args, **kwargs):
         from .Transformation import Transformation, transformation_from_dict
-        from .run import run_transformation_dict, _direct_transformer_to_transformation_dict, prepare_transformation_dict
+        from ...core.direct.run import run_transformation_dict, _direct_transformer_to_transformation_dict, prepare_transformation_dict
         from ...core.cache.database_client import database
         from ...core.cache.buffer_remote import has_readwrite_servers
         from ...core.protocol.get_buffer import get_buffer
         from ...core.protocol.deserialize import deserialize_sync
-        from .run import fingertip
-        from .module import get_module_definition
+        from ...core.direct.run import fingertip
+        from ...core.direct.module import get_module_definition
         from seamless import CacheMissError
         from seamless.util import is_forked
 

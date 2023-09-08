@@ -557,9 +557,7 @@ class TransformationJob:
     async def _execute_local(self,
         prelim_callback, progress_callback
     ):
-        from seamless.highlevel.direct import _set_parent_process_queue, _set_parent_process_response_queue
-        from seamless.highlevel.direct.run import _parent_process_queue, _parent_process_response_queue
-        from .cache.database_client import database
+        from .direct import set_parent_process_queue, set_parent_process_response_queue
         from seamless.util import is_forked
         if self.cannot_be_local:
             raise SeamlessTransformationError("Local computation has been disabled for this Seamless instance")
@@ -683,12 +681,13 @@ class TransformationJob:
                 #  but we must make sure to kill all transformer children
 
                 #if is_forked():
+                #    from .direct.run import _parent_process_queue, _parent_process_response_queue
                 #    assert _parent_process_queue is not None
                 #    assert _parent_process_response_queue is not None
 
                 assert not is_forked()
-                _set_parent_process_queue(queue)
-                _set_parent_process_response_queue(rqueue)
+                set_parent_process_queue(queue)
+                set_parent_process_response_queue(rqueue)
 
                 print_info(f"Local execution of transformation job: {self.checksum.hex()}, forked = {is_forked()}")
                 self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=False)
@@ -927,7 +926,6 @@ if "DOCKER_IMAGE" in os.environ:
 
 _got_global_info = False
 def get_global_info():
-    from .cache.database_client import database
     global _got_global_info
     if _got_global_info:
         return

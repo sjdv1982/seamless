@@ -3,26 +3,15 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
-import inspect
-import textwrap
-import time
-from types import LambdaType
 import ast
+import time
 import multiprocessing
 
 from seamless.core.cache import CacheMissError
 
 from ...calculate_checksum import calculate_checksum
-from ...core.protocol.serialize import (
-    serialize_sync as serialize,
-    serialize as serialize_async,
-)
-from ...core.protocol.deserialize import (
-    deserialize_sync as deserialize,
-    deserialize as deserialize_async,
-)
+from ...core.protocol.serialize import serialize_sync as serialize
 from ...core.protocol.get_buffer import get_buffer as _get_buffer
-from ...core.lambdacode import lambdacode
 from ...core.cache.transformation_cache import (
     transformation_cache,
     tf_get_buffer,
@@ -55,29 +44,14 @@ def set_dummy_manager():
     from seamless.core.manager import Manager
     _dummy_manager = Manager()
 
-def _set_parent_process_queue(parent_process_queue):
+def set_parent_process_queue(parent_process_queue):
     global _parent_process_queue
     _parent_process_queue = parent_process_queue
 
 
-def _set_parent_process_response_queue(parent_process_response_queue):
+def set_parent_process_response_queue(parent_process_response_queue):
     global _parent_process_response_queue
     _parent_process_response_queue = parent_process_response_queue
-
-
-def getsource(func):
-    from seamless.util import strip_decorators
-
-    if isinstance(func, LambdaType) and func.__name__ == "<lambda>":
-        code = lambdacode(func)
-        if code is None:
-            raise ValueError("Cannot extract source code from this lambda")
-        return code
-    else:
-        code = inspect.getsource(func)
-        code = textwrap.dedent(code)
-        code = strip_decorators(code)
-        return code
 
 
 def cache_buffer(checksum, buf):
@@ -257,10 +231,9 @@ Replaced buffers or values are properly registered and cached
 (including their syntactic <=> semantic conversion).
 """
 
-    from .. import Checksum
     from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
     from ...core.cache.database_client import database
-    from .Transformation import Transformation
+    from seamless.highlevel import Transformation, Checksum
     
     non_checksum_items = ("__output__", "__language__", "__meta__", "__env__")    
 
@@ -340,10 +313,8 @@ def _direct_transformer_to_transformation_dict(
     arguments,
     env
 ):
-    from seamless.highlevel import Base, Cell, Module
+    from seamless.highlevel import Base, Cell, Module, Transformation, Checksum
     from seamless.highlevel.DeepCell import DeepCellBase
-    from .Transformation import Transformation
-    from .. import Checksum
 
     result_celltype = celltypes["result"]
     result_hash_pattern = None
@@ -483,7 +454,7 @@ def _get_semantic(code, code_checksum):
     return semantic_code_checksum
 
 def _get_node_transformation_dependencies(node):
-    from .Transformation import Transformation
+    from seamless.highlevel import Transformation
     deps = {}
     temp = node.get("TEMP", {}).get("input_auth", {})
     for pinname, value in temp.items():
@@ -499,10 +470,8 @@ def _node_to_transformation_dict(node):
     # - The result transformation dict cannot be submitted directly,
     #    it must still be prepared.
 
-    from seamless.highlevel import Base, Cell, Module
+    from seamless.highlevel import Base, Cell, Module, Transformation, Checksum
     from seamless.highlevel.DeepCell import DeepCellBase
-    from .Transformation import Transformation
-    from .. import Checksum
 
     language = node["language"]
     if language == "bash":
@@ -628,7 +597,6 @@ def _wait():
     from seamless.util import is_forked
     global _queued_transformations
     global _has_lock
-    from seamless import CacheMissError
     if not _queued_transformations:
         return None
     results = []
@@ -710,7 +678,7 @@ def _wait():
         result_callback(result_checksum)
 
 
-def _cleanup():
+def cleanup():
     """is registered atexit by seamless.core, because it must run first"""
     for (
         _,

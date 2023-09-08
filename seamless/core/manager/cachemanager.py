@@ -191,10 +191,10 @@ class CacheManager:
         from .tasks.evaluate_expression import evaluate_expression
         from .tasks.deserialize_buffer import DeserializeBufferTask
         from .tasks.serialize_buffer import SerializeToBufferTask
-        from seamless.highlevel.direct.run import run_transformation_dict
+        from ..direct.run import run_transformation_dict
         from seamless.config import database
         from seamless.util import is_forked
-        from seamless.highlevel.direct.run import TRANSFORMATION_STACK
+        from ..direct.run import TRANSFORMATION_STACK
 
         if checksum is None:
             return

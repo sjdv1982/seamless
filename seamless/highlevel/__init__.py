@@ -143,6 +143,7 @@ class Checksum:
 
 from .SubContext import SubContext
 from .Base import Base
+from .direct.Transformation import Transformation
 nodeclasses = {
     "cell": Cell,
     "transformer": Transformer,

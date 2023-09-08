@@ -255,7 +255,7 @@ class Transformation:
         except Exception:
             return "Status: unknown exception"
 def transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies = None) -> Transformation:
-    from .run import run_transformation_dict, run_transformation_dict_async, prepare_transformation_dict
+    from seamless.core.direct.run import run_transformation_dict, run_transformation_dict_async, prepare_transformation_dict
     from seamless.core.cache.transformation_cache import tf_get_buffer
     from seamless import calculate_checksum
 

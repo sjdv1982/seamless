@@ -4,15 +4,17 @@ Random things TODO regarding integration:
   threads and event loops and imperative mode.
   Make a seamless-micro-assistant that needs a database and a buffer read/write server.
   Use aiohttp requests to contact the assistant.
-  (DONE up to here)
   
   Check a nested/fingertip issue where imperative-delegated works if you restart the micro-assistant.py
   (after cleaning up database and buffer directory) but not otherwise. 
   UPDATE: happens even for simple functions in imperative-database if you delete buffers but not database
   UPDATE2: the simple problem has been fixed, but it still hangs sometimes for nested... restart micro-assistant regularly?
   Should happen so often since new jobs are normally sent to a different micro-assistant
+  UPDATE3: all fixed now.
 
-  Pimp the protocol a bit so that "peer ID" (project information) is sent along in the request
+  ***DONE up to here***
+
+  - Pimp the protocol a bit so that "peer ID" (project information) is sent along in the request
   After that, support transformation meta (see old jobless), progress/prelim, logs, hardcancel, etc.
   Some kind of response-and-make-a-new-request? We really don't want websockets... UPDATE: use long streaming response instead
   Finally, rename imperative-communion and split it into a re-entrant version 
