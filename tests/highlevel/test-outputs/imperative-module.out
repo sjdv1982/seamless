@@ -13,6 +13,7 @@ Execution time: 0.0 seconds
 /stage 1
 313
 Stage 2
+Waiting for: Seamless transformer: .tf.tf
 func RESULT LOGS *************************************************
 * Result
 *************************************************

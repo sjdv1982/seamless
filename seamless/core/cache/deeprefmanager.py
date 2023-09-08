@@ -1,11 +1,6 @@
 import asyncio
 import traceback
 from weakref import WeakSet
-from multiprocessing import current_process
-try:
-    from multiprocessing import parent_process
-except ImportError:
-    parent_process = None
 
 from ... import calculate_dict_checksum
 from ..status import StatusReasonEnum
@@ -193,12 +188,9 @@ class DeepRefManager:
             cells.add(cell)
 
     def decref_deep_buffer(self, checksum, hash_pattern, authoritative):
-        if parent_process is None:  # Python 3.7
-            if current_process().name != "MainProcess":  # forked process
-                return
-        else:
-            if parent_process() is not None:  # forked process
-                return
+        from seamless.util import is_forked
+        if is_forked():
+            return
         if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
             return
         if checksum in self.big_buffers:

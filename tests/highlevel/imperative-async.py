@@ -1,36 +1,16 @@
 print("START")
-from seamless.highlevel import Context
-import json
-ctx = Context()
-def func(a, b):
-    import time
-    time.sleep(0.5)
-    return 100 * a + b
-ctx.tf = func
-ctx.tf.a = 21
-ctx.tf.b = 17
-await ctx.computation()
-transformation_checksum = ctx.tf.get_transformation_checksum()
-transformation_dict = ctx.resolve(transformation_checksum, "plain")
 
-from seamless.imperative import run_transformation_dict_async
-result = await run_transformation_dict_async(transformation_dict)
-raise NotImplementedError
-print(result)
+from seamless import transformer
 
-##################################################
-
-from seamless.imperative import transformer_async
-
-@transformer_async
+@transformer(return_transformation=True)
 def func(a, b):
     import time
     time.sleep(0.5)
     return 100 * a + b
 
-result = await func(88, 17) # takes 0.5 sec
+result = await func(88, 17).task() # takes 0.5 sec
 print(result)
-result = await func(88, 17) # immediate
+result = await func(88, 17).task() # immediate
 print(result)
-result = await func(21, 17) # immediate
+result = await func(21, 17).task() # immediate
 print(result)

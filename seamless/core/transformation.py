@@ -558,7 +558,9 @@ class TransformationJob:
         prelim_callback, progress_callback
     ):
         from seamless.highlevel.direct import _set_parent_process_queue, _set_parent_process_response_queue
+        from seamless.highlevel.direct.run import _parent_process_queue, _parent_process_response_queue
         from .cache.database_client import database
+        from seamless.util import is_forked
         if self.cannot_be_local:
             raise SeamlessTransformationError("Local computation has been disabled for this Seamless instance")
         with_ipython_kernel = False
@@ -661,6 +663,7 @@ class TransformationJob:
                 if full_module_names:
                     debug["full_module_names"] = full_module_names
             kwargs = {}
+            kwargs["tf_checksum"] = self.checksum
             if debug is not None:
                 kwargs["debug"] = debug
 
@@ -678,8 +681,16 @@ class TransformationJob:
                 # and "daemon" is a multiprocessing-only thing.
                 # Looking at the source, daemon = False should have no impact,
                 #  but we must make sure to kill all transformer children
+
+                #if is_forked():
+                #    assert _parent_process_queue is not None
+                #    assert _parent_process_response_queue is not None
+
+                assert not is_forked()
                 _set_parent_process_queue(queue)
                 _set_parent_process_response_queue(rqueue)
+
+                print_info(f"Local execution of transformation job: {self.checksum.hex()}, forked = {is_forked()}")
                 self.executor = Process(target=execute,args=args, kwargs=kwargs, daemon=False)
                 self.executor.start()
             finally:
@@ -688,7 +699,7 @@ class TransformationJob:
             running = True
             result = None
             done = False
-            result_checksum = None            
+            result_checksum = None
             while 1:
                 while not queue.empty():
                     status, msg = queue.get()
@@ -739,7 +750,8 @@ class TransformationJob:
                                 raise Exception("Unknown return message '{}'".format(msg))
                         elif status == 7:
                             # run_transformation
-                            tf_checksum, metalike, syntactic_cache = msg
+                            tf_checksum, metalike, syntactic_cache, fingertip = msg
+                            assert not is_forked()
                             for celltype, subcelltype, buf in syntactic_cache:
                                 # TODO: create a transformation_cache method and invoke it, common with other code
                                 syn_checksum = await calculate_checksum(buf)
@@ -758,17 +770,20 @@ class TransformationJob:
                                 database.set_sem2syn(semkey, s2s[semkey])
                                 buffer_cache.cache_buffer(syn_checksum, buf)
                                 buffer_cache.decref(syn_checksum)
+                            print_info(f"Nested local transformation job`: {tf_checksum}, forked = {is_forked()}")
                             fut = asyncio.ensure_future(
-                                run_transformation_async(tf_checksum, metalike=metalike, fingertip=False)
+                                run_transformation_async(tf_checksum, metalike=metalike, fingertip=fingertip)
                             )
                             def fut_done(fut):
+                                print_info(f"Finished nested local transformation job: {tf_checksum}")
                                 try:
                                     checksum = fut.result()
-                                    logs = transformation_cache.transformation_logs.get(bytes.fromhex(tf_checksum))                                    
+                                    logs = transformation_cache.transformation_logs.get(bytes.fromhex(tf_checksum))
                                 except Exception:
                                     checksum = None
                                     logs = None
-                                rqueue.put((checksum, logs))
+                                rqueue.put((tf_checksum, checksum, logs))
+                                print_info(f"FINISHED nested local transformation job: {tf_checksum}")
                             fut.add_done_callback(fut_done)
                             run_transformation_futures.append(fut)
                         else:
@@ -828,6 +843,7 @@ class TransformationJob:
                     pass
             if lock is not None:
                 release_lock(lock)
+        print_info(f"Finished local execution of transformation job: {self.checksum.hex()}")
         if result_checksum is None:
             assert result_buffer is not None
             result_checksum = await get_result_checksum(result_buffer)
@@ -911,6 +927,7 @@ if "DOCKER_IMAGE" in os.environ:
 
 _got_global_info = False
 def get_global_info():
+    return ###
     from .cache.database_client import database
     global _got_global_info
     if _got_global_info:

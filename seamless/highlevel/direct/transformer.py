@@ -1,27 +1,29 @@
-def transformer(func, **kwargs):
-    """Wraps a function in an imperative transformer
-    Imperative transformers can be called as normal functions, but
+from copy import deepcopy
+from functools import update_wrapper
+import inspect
+import multiprocessing
+from functools import partial
+
+def transformer(func=None, *, local=None, return_transformation=False):
+    """Wraps a function in a direct transformer
+    Direct transformers can be called as normal functions, but
     the source code of the function and the arguments are converted
     into a Seamless transformation."""
-    raise NotImplementedError
-    result = DirectTransformer(func, is_async=False, **kwargs)
+    if func is None:
+        return partial(transformer, local=local, return_transformation=return_transformation)
+    result = DirectTransformer(func, local=local, return_transformation=return_transformation)
     update_wrapper(result, func)
     return result
 
 
-# raise NotImplementedError  # TODO: simplify, only support __call__
-
 class DirectTransformer:
-    def __init__(self, func, is_async, **kwargs):
-        """Imperative transformer.
-Imperative transformers can be called as normal functions, but 
+    def __init__(self, func, local, return_transformation):
+        """Direct transformer.
+Direct transformers can be called as normal functions, but
 the source code of the function and the arguments are converted
-into a Seamless transformation.
+into a Seamless transformation
 
-The transformer may be asynchronous, which means that calling it
-creates a coroutine.
-
-The following properties can be set:
+Parameters:
         
 - local. If True, transformations are executed in the local 
             Seamless instance.
@@ -29,47 +31,46 @@ The following properties can be set:
         If None (default), remote job servers are tried first 
         and local execution is a fallback.
 
-- blocking. Only for non-async transformers.
-        If True, calling the function executes it immediately,
+- return_transformation.
+        If False, calling the function executes it immediately,
             returning its value.
-        If False, it returns an imperative Transformation object.
+        If True, it returns a Transformation object.
         Imperative transformations can be queried for their .value
         or .logs. Doing so forces their execution.
-        As of Seamless 0.11, forcing one transformation also forces 
+        As of Seamless 0.12, forcing one transformation also forces 
             all other transformations. 
+
+Attributes:            
+
+- meta. Accesses all meta-information (including local)
 
 - celltypes. Returns a wrapper where you can set the celltypes
         of the individual transformer pins. 
     The syntax is: Transformer.celltypes.a = "text" 
     (or Transformer.celltypes["a"] = "text") 
-    for pin "a"."""
-        from ..highlevel.Environment import Environment
-        from . import getsource, serialize, calculate_checksum, _get_semantic
+    for pin "a".
+    
+- modules: Returns a wrapper where you can define Python modules
+    to be imported into the transformation
+
+- environment    
+"""    
+        from .run import getsource, serialize        
         code = getsource(func)
         codebuf = serialize(code, "python")
-        code_checksum = calculate_checksum(codebuf)
-        semantic_code_checksum = _get_semantic(code, code_checksum)
         
         signature = inspect.signature(func)
-
-        self._semantic_code_checksum = semantic_code_checksum
+        self._return_transformation = return_transformation
         self._signature = signature
         self._codebuf = codebuf
-        self._code_checksum = code_checksum
-        self._is_async = is_async
         self._celltypes = {k: "mixed" for k in signature.parameters}
         self._celltypes["result"] = "mixed"
         self._modules = {}
-        self._blocking = True
         self._environment = Environment(self)
         self._environment_state = None
 
-        if "meta" in kwargs:
-            self._meta = deepcopy(kwargs["meta"])
-        else:
-            self._meta = {"transformer_path": ["tf", "tf"]}
-        self._kwargs = kwargs
-        functools.update_wrapper(self, func)
+        self._meta = {"transformer_path": ["tf", "tf"], "local": local}
+        update_wrapper(self, func)
 
     @property
     def celltypes(self):
@@ -85,78 +86,84 @@ The following properties can be set:
         return self._environment
 
     def __call__(self, *args, **kwargs):
-        from .Transformation import Transformation
+        from .Transformation import Transformation, transformation_from_dict
+        from .run import run_transformation_dict, _direct_transformer_to_transformation_dict, prepare_transformation_dict
+        from ...core.cache.database_client import database
+        from ...core.cache.buffer_remote import has_readwrite_servers
+        from ...core.protocol.get_buffer import get_buffer
+        from ...core.protocol.deserialize import deserialize_sync
+        from .run import fingertip
         from .module import get_module_definition
-        from . import run_direct_transformer, run_direct_transformer_async
-        from ..core.cache.database_client import database
-        from ..core.cache.buffer_remote import has_readwrite_servers
-        self._signature.bind(*args, **kwargs)
-        if multiprocessing.current_process().name != "MainProcess":
-            if self._is_async:
-                raise NotImplementedError  # no plans to implement this...
+        from seamless import CacheMissError
+        from seamless.util import is_forked
+
+        if is_forked():
             if not database.active or not has_readwrite_servers():
-                #raise NotImplementedError # ALSO requires a buffer write server... unless it is non-local and a assistant is available
                 raise RuntimeError("Running @transformer inside a transformation requires a Seamless database and buffer servers")
-        runner = run_direct_transformer_async if self._is_async else run_direct_transformer
-        if not self._blocking:
-            tr = Transformation()
-            result_callback = tr._set
-        else:
-            result_callback = None
+
+        arguments = self._signature.bind(*args, **kwargs).arguments
+        deps = {}
+        for argname, arg in arguments.items():
+            if isinstance(arg, Transformation):
+                deps[argname] = arg
+
+        env = self._environment._to_lowlevel()
+        meta = deepcopy(self._meta)
+        result_celltype = self._celltypes["result"]
         modules = {}
         for module_name, module in self._modules.items():
             module_definition = get_module_definition(module)
             modules[module_name] = module_definition
-        result = runner(
-            self._semantic_code_checksum,
-            self._codebuf,
-            self._code_checksum,
-            self._signature,
-            self._meta,
-            self._celltypes,
-            modules,
-            result_callback,
-            args,
-            kwargs,
-            env=self._environment._to_lowlevel()
+
+        transformation_dict = _direct_transformer_to_transformation_dict(
+            self._codebuf, meta, self._celltypes, modules, arguments, env
         )
-        if self._blocking:
-            return result
+        if self._return_transformation:
+            return transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies = deps)
         else:
-            return tr
+            for depname, dep in deps.items():
+                dep.compute()
+                if dep.exception is not None:
+                    msg = "Dependency '{}' has an exception: {}"
+                    raise RuntimeError(msg.format(depname, dep.exception))
+                
+            prepare_transformation_dict(transformation_dict)
+            result_checksum = run_transformation_dict(transformation_dict, fingertip=False)
+            if result_checksum is None:
+                raise RuntimeError("Result is empty")
+            buf = get_buffer(result_checksum, remote=True)
+            if buf is None:
+                buf = fingertip(result_checksum)
+            if buf is None:
+                raise CacheMissError(result_checksum.hex())            
+            return deserialize_sync(buf, result_checksum, result_celltype, copy=True)
+
+
 
     @property
     def meta(self):
         return self._meta
 
     @meta.setter
-    def meta(self, meta):
+    def meta(self, meta:dict):
         self._meta[:] = meta
 
     @property
-    def local(self):
+    def local(self) -> bool | None:
         return self.meta.get("local")
 
     @local.setter
-    def local(self, value:bool):
+    def local(self, value:bool | None):
         self.meta["local"] = value
 
     @property
-    def blocking(self):
-        return self._blocking
+    def return_transformation(self) -> bool:
+        return self._return_transformation
 
-    @blocking.setter
-    def blocking(self, value:bool):
-        if not isinstance(value, bool):
-            raise TypeError(value)
-        if (not value) and self._is_async:
-            raise ValueError("non-blocking is meaningless for a coroutine")
-        self._blocking = value
+    @return_transformation.setter
+    def return_transformation(self, value:bool):
+        self._return_transformation = value
 
-    def __setattr__(self, attr, value):
-        if attr.startswith("_") or hasattr(type(self), attr):
-            return super().__setattr__(attr, value)
-        raise AttributeError(attr)
     
 class CelltypesWrapper:
     """Wrapper around an imperative transformer's celltypes."""
@@ -171,7 +178,7 @@ class CelltypesWrapper:
             return super().__setattr__(attr, value)
         return self.__setitem__(attr, value)
     def __setitem__(self, key, value):
-        from ..core.cell import celltypes
+        from ...core.cell import celltypes
         if key not in self._celltypes:
             raise AttributeError(key)
         pin_celltypes = list(celltypes.keys()) + ["silk"]
@@ -205,3 +212,4 @@ class ModulesWrapper:
     def __repr__(self):
         return str(self)
     
+from ..Environment import Environment

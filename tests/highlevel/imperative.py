@@ -14,15 +14,16 @@ ctx.compute()
 transformation_checksum = ctx.tf.get_transformation_checksum()
 transformation_dict = ctx.resolve(transformation_checksum, "plain")
 
-from seamless.imperative import run_transformation_dict
-result_checksum = run_transformation_dict(transformation_dict)
-raise NotImplementedError
+from seamless.highlevel.direct.run import run_transformation_dict
+from seamless.core.cache.buffer_cache import buffer_cache
+from seamless.core.protocol.deserialize import deserialize_sync as deserialize
+result_checksum = run_transformation_dict(transformation_dict, fingertip=False)
 
-print(result)
+print(deserialize(buffer_cache.get_buffer(result_checksum), result_checksum, "mixed", copy=True))
 
 ##################################################
 
-from seamless.imperative import transformer
+from seamless.highlevel.direct import transformer
 
 """
 @transformer

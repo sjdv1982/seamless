@@ -1,3 +1,5 @@
+raise NotImplementedError # TODO: use highlevel.direct.module
+
 from seamless.graphs.multi_module import mytestpackage
 from seamless.highlevel import Context, Cell, Module, Transformer, Resource, FolderCell
 

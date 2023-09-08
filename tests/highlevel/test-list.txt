@@ -123,25 +123,21 @@ imperative-jupyter.sh
 imperative-async.sh
 imperative-async-parallel.py: can be run with delegation using "export DELEGATE=''"
 imperative-async-parallel-jupyter.sh: can be run with delegation using "export DELEGATE=''"
-imperative-nested.py
-imperative-nested-jupyter.sh
-imperative-nested-async.sh
-# TODO: integrate imperative-celltypes.py
-imperative-jupyter.sh
+imperative-celltypes.py
+imperative-nested.py: requires delegation level 3.
+imperative-nested-jupyter.sh: requires delegation level 3.
+imperative-nested-async.sh: requires delegation level 3.
 imperative-database.py: run with Seamless database and buffer dir, preferably in a clean setup
 imperative-database-async.sh: run with Seamless database and buffer dir, preferably in a clean setup
-imperative-delegated.py: run with delegation
-imperative-delegated-async.sh: run with delegation
-TODO: reintegrate the following
-imperative-nonblocking.py: run with Seamless database, preferably in a clean dir
-imperative-nonblocking-parallel.py: run with Seamless database, preferably in a clean dir
-imperative-module.py: run with Seamless database, DEFINITELY in a clean dir
-/TODO
+
+imperative-delegated.py: requires full delegation
+imperative-delegated-async.sh: requires full delegation
+imperative-module.py: requires delegation level 3, definitely in a clean setup
 map-list.py
 channel.py
 environment3.py
-environment7.py: requires delegation (an assistant OR database+jobless) to be set up
-imperative-environment.py: requires delegation (an assistant OR database+jobless) to be set up
+environment7.py: requires full delegation. micro-. micro-assistant will not work out-of-the-boxassistant will not work out-of-the-box
+imperative-environment.py: Will take ~15 minutes to run (faster if GPU available). Requires full delegation. micro-assistant will not work out-of-the-box
 meta.py
 fallback.py
 eager.py: FAILS as of 0.7 (https://github.com/sjdv1982/seamless/issues/90)

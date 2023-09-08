@@ -133,7 +133,6 @@ class Transformer(Worker):
         from .. import verify_sync_compute
         manager = self._get_manager()
         taskmanager = manager.taskmanager
-        verify_sync_compute()
         tasks = taskmanager.transformer_to_task[self]
         if len(tasks) and not asyncio.get_event_loop().is_running():
             async def await_transformer():

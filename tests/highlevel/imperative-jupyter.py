@@ -1,6 +1,27 @@
-from seamless.imperative import transformer
+from seamless import transformer
+from seamless.highlevel import Context
 from seamless.core.transformation import SeamlessTransformationError
 import traceback
+
+ctx = Context()
+def func(a, b):
+    import time
+    time.sleep(0.5)
+    return 100 * a + b
+ctx.tf = func
+ctx.tf.a = 21
+ctx.tf.b = 17
+await ctx.computation()
+transformation_checksum = ctx.tf.get_transformation_checksum()
+transformation_dict = ctx.resolve(transformation_checksum, "plain")
+
+from seamless.highlevel.direct.run import run_transformation_dict_async
+from seamless.core.cache.buffer_cache import buffer_cache
+from seamless.core.protocol.deserialize import deserialize_sync as deserialize
+
+result_checksum = await run_transformation_dict_async(transformation_dict)
+result = deserialize(buffer_cache.get_buffer(result_checksum), result_checksum, "mixed", copy=True)
+print(result)
 
 @transformer
 def func(a, b):

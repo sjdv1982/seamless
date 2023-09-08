@@ -1,6 +1,6 @@
 import time
 
-from seamless.imperative import transformer
+from seamless import transformer
 import seamless
 seamless.config.delegate(level=3)
     

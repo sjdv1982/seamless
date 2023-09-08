@@ -5,20 +5,20 @@ os.environ["SEAMLESS_ASSISTANT_ID"] = "test-imperative-communion"
 import seamless
 seamless.config.delegate()
 
-from seamless.imperative import transformer_async
+from seamless import transformer
 
-@transformer_async
+@transformer(return_transformation=True)
 def func(a, b):
     import time
     time.sleep(0.5)
     return 100 * a + b
 func.local = False
 
-result = await func(88, 17) # takes 0.5 sec
+result = await func(88, 17).task() # takes 0.5 sec
 print(result)
-result = await func(88, 17) # immediate
+result = await func(88, 17).task() # immediate
 print(result)
-result = await func(21, 17) # takes 0.5 sec
+result = await func(21, 17).task() # takes 0.5 sec
 print(result)
 
 ######################
@@ -66,7 +66,7 @@ print(ctx.tf.result.value)
 
 # transformer within transformer within transformer...
 
-@transformer_async
+@transformer(return_transformation=True)
 def func3(a, b):
 
     @transformer
@@ -78,13 +78,13 @@ def func3(a, b):
             return 100 * a + b
         ###func.local = False
         return func(a,b)
-    func2b.local = True
+    ###func2b.local = True
 
     return func2b(a, b) + func2b(b, a)
 
-result = await func3(21, 17)
+result = await func3(21, 17).task()
 print(result)
-result = await func3(33, 33)
+result = await func3(33, 33).task()
 print(result)
-result = await func3(7, 22)
+result = await func3(7, 22).task()
 print(result)

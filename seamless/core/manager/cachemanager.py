@@ -1,3 +1,4 @@
+import traceback
 import weakref
 import copy
 import json
@@ -190,6 +191,10 @@ class CacheManager:
         from .tasks.evaluate_expression import evaluate_expression
         from .tasks.deserialize_buffer import DeserializeBufferTask
         from .tasks.serialize_buffer import SerializeToBufferTask
+        from seamless.highlevel.direct.run import run_transformation_dict
+        from seamless.config import database
+        from seamless.util import is_forked
+        from seamless.highlevel.direct.run import TRANSFORMATION_STACK
 
         if checksum is None:
             return
@@ -223,9 +228,13 @@ class CacheManager:
                 checksum2 = sem2syn.get(semkey, [sem_checksum])[0]
                 coros.append(self._fingertip(checksum2, must_have_cell=False, done=done))
             await asyncio.gather(*coros)
-            job = tf_cache.run_job(transformation, tf_checksum, fingertip=True)
-            if job is not None:
-                await asyncio.shield(job.future)
+            
+            if is_forked():                
+                run_transformation_dict(transformation, fingertip=True)
+            else:
+                job = tf_cache.run_job(transformation, tf_checksum, fingertip=True)
+                if job is not None:
+                    await asyncio.shield(job.future)
 
         async def fingertip_expression(expression):
             await self._fingertip(expression.checksum, must_have_cell=False, done=done)
@@ -234,7 +243,7 @@ class CacheManager:
             )
 
         async def fingertip_join(checksum, join_dict):
-            hash_pattern = join_dict["hash_pattern"]
+            hash_pattern = join_dict.get("hash_pattern")
             inchannels0 = join_dict["inchannels"]
             inchannels = {}
             for path0, cs in inchannels0.items():
@@ -307,6 +316,8 @@ class CacheManager:
                 return buffer
 
         for tf_checksum in tf_cache.known_transformations_rev.get(checksum, []):
+            if tf_checksum.hex() in TRANSFORMATION_STACK:
+                continue
             transformation = tf_cache.transformations.get(tf_checksum)
             if transformation is None:
                 buffer = get_buffer(tf_checksum, remote=True)
@@ -326,6 +337,8 @@ class CacheManager:
                 coros.append(fingertip_expression(refholder))
             elif isinstance(refholder, Transformer) and recompute:
                 tf_checksum = tf_cache.transformer_to_transformations[refholder]
+                if tf_checksum.hex() in TRANSFORMATION_STACK:
+                    continue
                 transformation = tf_cache.transformations[tf_checksum]
                 coros.append(fingertip_transformation(transformation, tf_checksum))
 
@@ -333,17 +346,34 @@ class CacheManager:
             await syntactic_to_semantic(syn_checksum, celltype, subcelltype, "fingertip")
             return get_buffer(checksum, remote=False)
 
-        sem2syn = self.transformation_cache.semantic_to_syntactic_checksums
-        for (semkey, celltype, subcelltype), syn_checksums in sem2syn.items():
-            if semkey == checksum:
-                for syn_checksum in syn_checksums:
-                    coro = buffer_from_syn2sem(checksum, syn_checksum, celltype, subcelltype)
-                    coros.append(coro)
-
         if checksum in self.rev_join_cache:
             join_dict = self.rev_join_cache[checksum]
             coro = fingertip_join(checksum, join_dict)
             coros.append(coro)
+
+        if not len(coros):
+
+            syn_checksums = None
+            semkeys = (checksum, "python", None), (checksum, "python", "transformer")
+            for semkey in semkeys:
+                syn_checksums = self.transformation_cache.semantic_to_syntactic_checksums.get(semkey)
+                if syn_checksums:
+                    break
+                syn_checksums = database.get_sem2syn(semkey)
+                if syn_checksums:
+                    break
+
+            if not syn_checksums:
+                sem2syn = self.transformation_cache.semantic_to_syntactic_checksums
+                for (sem_checksum, celltype, subcelltype), syn_checksums0 in sem2syn.items():
+                    if sem_checksum == checksum:
+                        syn_checksums = syn_checksums0
+                        break
+            
+            if syn_checksums:
+                for syn_checksum in syn_checksums:
+                    coro = buffer_from_syn2sem(checksum, syn_checksum, celltype, subcelltype)
+                    coros.append(coro)
 
         if not len(coros):
             # Heroic attempt to get a reverse conversion from any buffer_info
@@ -387,22 +417,15 @@ class CacheManager:
         if buffer is not None:
             return buffer
 
-        if remote > 0 and remote <= recompute:
-            try:
-                buffer = await get_buffer_remote(
-                    checksum,
-                    None
-                )
-                if buffer is not None:
-                    return buffer
-            except CacheMissError:
-                pass
-
         if remote:
             buffer = download_buffer_from_servers(checksum)
             if buffer is not None:
                 return buffer
-        raise CacheMissError(checksum.hex())
+        exc_list = ["\n".join(traceback.format_exception(task.exception())) for task in all_tasks if task.exception()]
+        exc_str = ""
+        if len(exc_list):
+            exc_str = "\nFingertip exceptions:\n\n" + "\n\n".join(exc_list)
+        raise CacheMissError(checksum.hex() + exc_str)
 
 
     def decref_checksum(self, checksum, refholder, authoritative, result, *, destroying=False):
@@ -539,6 +562,8 @@ is result checksum: {}
     def set_join_cache(self, join_dict, result_checksum):
         if isinstance(result_checksum, str):
             result_checksum = bytes.fromhex(result_checksum)
+        if join_dict == {'inchannels': {'[]': result_checksum.hex()}}:
+            return
         checksum = calculate_dict_checksum(join_dict)
         self.join_cache[checksum] = result_checksum
         self.rev_join_cache[result_checksum] = join_dict

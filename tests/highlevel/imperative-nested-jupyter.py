@@ -6,7 +6,7 @@ from seamless.core.transformation import SeamlessTransformationError
 import traceback
 ctx = Context()
 
-from seamless.imperative import transformer
+from seamless import transformer
 
 @transformer
 def func2(a, b):

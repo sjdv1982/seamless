@@ -21,7 +21,7 @@ import asyncio
 import time
 import traceback
 from copy import deepcopy
-import threading
+
 
 from ...calculate_checksum import calculate_checksum as calculate_checksum_func
 
@@ -168,6 +168,11 @@ class TransformationCache:
     _blocked = False
     _blocked_local = False
     _destroyed = False
+
+    # class singletons
+    known_transformations = {}
+    known_transformations_rev = {}  
+
     def __init__(self):
         self.transformations = {} # tf-checksum-to-transformation
         self.transformation_results = {} # tf-checksum-to-(result-checksum, prelim)
@@ -184,9 +189,6 @@ class TransformationCache:
 
         self.syntactic_to_semantic_checksums = {} #(checksum,celltype,subcelltype)-to-checksum
         self.semantic_to_syntactic_checksums = {} #(checksum,celltype,subcelltype)-to-list-of-checksums
-
-        self.known_transformations = {}
-        self.known_transformations_rev = {}
 
     @staticmethod
     def syntactic_to_semantic(
@@ -575,7 +577,11 @@ class TransformationCache:
         if not len(transformers):
             codename = "<Unknown>"
         else:
-            codename = str(transformers[-1])
+            last_tf = transformers[-1]
+            if isinstance(last_tf, DummyTransformer):
+                codename = "transformer"
+            else:
+                codename = str(last_tf)
 
         debug = None
         tfs = []
@@ -981,9 +987,10 @@ class TransformationCache:
         from . import CacheMissError
                 
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
-        if result_checksum is not None and not prelim and not fingertip:
+        if result_checksum is not None and not prelim:
             self.register_known_transformation(tf_checksum, result_checksum)
-            return result_checksum
+            if not fingertip:
+                return result_checksum
         transformation = await self.serve_get_transformation(tf_checksum, None)
         if transformation is None:
             raise CacheMissError(tf_checksum.hex())
@@ -1093,7 +1100,7 @@ class TransformationCache:
                         await asyncio.sleep(0.01)
                 try:
                     return loop.run_until_complete(
-                        self.run_transformation_async(tf_checksum, fingertip=fingertip, metalike=metalike, fresh_event_loop=True)
+                        self.run_transformation_async(tf_checksum, fingertip=fingertip, metalike=metalike)
                     )
                 finally:
                     for task in asyncio.all_tasks(loop):

@@ -244,7 +244,9 @@ class Transformer(Base, HelpMixin):
             if not isinstance(value, dict):
                 raise TypeError(value)
             json.dumps(value)
-            parent.remove_connections(target_path, endpoint="target")
+            parent = self._get_parent()
+            if parent is not None:
+                parent.remove_connections(target_path, endpoint="target")
             htf["meta"] = value
         try:
             self.cancel()
@@ -1170,10 +1172,8 @@ and local execution is a fallback."""
         return result
 
     def get_transformation(self) -> "Transformation":
-        from .direct import Transformation
-        from .direct.run import run_transformation_dict, run_transformation_dict_async, _get_node_transformation_dependencies, _node_to_transformation_dict, prepare_transformation_dict
-        from seamless.core.cache.transformation_cache import tf_get_buffer
-        from seamless import calculate_checksum
+        from .direct import Transformation, transformation_from_dict
+        from .direct.run import _get_node_transformation_dependencies, _node_to_transformation_dict
 
         result_celltype = self._get_htf().get("result_celltype", "mixed")
         if self._parent() is not None:
@@ -1182,40 +1182,23 @@ and local execution is a fallback."""
             evaluator_sync = self._dummy_run_sync
             evaluator_async = self._dummy_run_async
             upstream_dependencies = {}
+
+            return Transformation(
+                result_celltype,
+                resolver_sync,
+                resolver_async,
+                evaluator_sync, 
+                evaluator_async,
+                upstream_dependencies
+            )
+
         else:
             if self.code is None:
                 raise RuntimeError("This transformer has no code")
             node = self._node.copy()
-            transformation_dict = None
-            def resolver_sync():
-                nonlocal transformation_dict
-                transformation_dict = _node_to_transformation_dict(node)
-                prepare_transformation_dict(transformation_dict)
-                transformation_buffer = tf_get_buffer(transformation_dict)
-                transformation = calculate_checksum(transformation_buffer)
-                return transformation
-            
-            async def resolver_async():
-                return resolver_sync()
-            
-            def evaluator_sync():
-                result_checksum = run_transformation_dict(transformation_dict)
-                return result_checksum
-
-            async def evaluator_async():
-                result_checksum = await run_transformation_dict_async(transformation_dict)
-                return result_checksum
-            
+            transformation_dict = _node_to_transformation_dict(node)
             upstream_dependencies = _get_node_transformation_dependencies(node)
-        return Transformation(
-            result_celltype,
-            resolver_sync,
-            resolver_async,
-            evaluator_sync, 
-            evaluator_async,
-            upstream_dependencies
-        )
-
+            return transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies)
 
     def cancel(self) -> None:
         """Hard-cancels the transformer.

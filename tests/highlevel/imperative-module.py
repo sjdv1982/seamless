@@ -1,7 +1,5 @@
-raise NotImplementedError
-
 from seamless.highlevel import Context, Cell, Module
-from seamless.imperative import transformer
+from seamless import transformer
 
 ctx = Context()
 
@@ -40,21 +38,20 @@ func.modules.pypackage = pypackage
 print(func(12, 13))
 
 import seamless
-seamless.database_cache.connect()
-seamless.database_sink.connect()
+seamless.config.delegate(level=3)
 
-@transformer
+@transformer(return_transformation=True)
 def func2(a,b):
     
-    @transformer
+    @transformer(return_transformation=True)
     def func(a, b):
         from .pypackage2 import get_square
         aa = get_square(a)
         bb = get_square(b)
         return aa+bb
     func.modules.pypackage2 = pypackage
-    func.blocking = False
     result = func(a, b) 
+    result.compute()
     print("func RESULT LOGS", result.logs)
     print("func RESULT VALUE", result.value)
     return result.value
@@ -68,11 +65,12 @@ print("/stage 2")
 
 print("Stage 3")
 func2.modules.pypackage = pypackage
-func2.blocking = False
 result = func2(17, 18)
+result.compute()
 print(result.logs)
 print(result.value)
 result = func2(9, 10)
+result.compute()
 print(result.logs)
 print(result.value)
 print("/stage 3")
@@ -83,15 +81,15 @@ def func3(a,b,c):
     @transformer
     def func2(a,b):
         
-        @transformer
+        @transformer(return_transformation=True)
         def func(a, b):
             from .pypackage2 import get_square
             aa = get_square(a)
             bb = get_square(b)
             return aa+bb
-        func.modules.pypackage2 = pypackage
-        func.blocking = False
+        func.modules.pypackage2 = pypackage        
         result = func(a, b) 
+        result.compute()
         print("func RESULT LOGS", result.logs)
         print("func RESULT VALUE", result.value)
         return result.value

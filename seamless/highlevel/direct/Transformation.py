@@ -52,6 +52,7 @@ class Transformation:
             self._resolved = True
 
     def _evaluate_sync(self):
+        from .. import Checksum
         if self._evaluated:
             return
         self._resolve_sync()
@@ -61,6 +62,7 @@ class Transformation:
             result_checksum = self._evaluator_sync()
             if result_checksum is None:
                 raise ValueError("Result is empty")
+            Checksum(result_checksum)
             self._result_checksum = result_checksum
         except Exception:
             self._exception = traceback.format_exc()
@@ -68,6 +70,7 @@ class Transformation:
             self._evaluated = True
 
     async def _evaluate_async(self):
+        from .. import Checksum
         if self._evaluated:
             return
         await self._resolve_async()
@@ -77,6 +80,7 @@ class Transformation:
             result_checksum = await self._evaluator_async()
             if result_checksum is None:
                 raise ValueError("Result is empty")
+            Checksum(result_checksum)
             self._result_checksum = result_checksum
         except Exception:
             self._exception = traceback.format_exc()
@@ -84,9 +88,9 @@ class Transformation:
             self._evaluated = True
 
     def _run_dependencies(self):
-        for depname, dep in self._upstream_dependencies:
+        for depname, dep in self._upstream_dependencies.items():
             dep.start()
-        for depname, dep in self._upstream_dependencies:
+        for depname, dep in self._upstream_dependencies.items():
             dep.compute()
             if dep.exception is not None:
                 msg = "Dependency '{}' has an exception: {}"
@@ -94,10 +98,11 @@ class Transformation:
 
     async def _run_dependencies_async(self):
         tasks = {}
-        for depname, dep in self._upstream_dependencies:
+        for depname, dep in self._upstream_dependencies.items():
             tasks[depname] = asyncio.get_event_loop().create_task(dep.computation())
-        await asyncio.gather(tasks.values(), return_exceptions=True)
-        for depname, task in tasks:
+        if len(tasks):
+            await asyncio.gather(tasks.values(), return_exceptions=True)
+        for depname, _ in tasks.items():
             dep = self._upstream_dependencies[depname]
             if dep.exception is not None:
                 msg = "Dependency '{}' has an exception: {}"
@@ -109,6 +114,7 @@ class Transformation:
         if self._future is not None:
             self._future.cancel() # redundant
             self._future = None
+        return self
 
     async def computation(self):
         if self._future is not None:
@@ -117,7 +123,8 @@ class Transformation:
         else:
             await self._run_dependencies_async()
             await self._evaluate_async()
-
+        return self
+    
     def start(self):
         if self._future is not None:
             return
@@ -165,7 +172,17 @@ class Transformation:
         buf = self.buffer
         if buf is None:
             return None
-        return deserialize_sync(self.buffer, self.checksum.bytes(), self.celltype, copy=True)
+        return deserialize_sync(buf, self.checksum.bytes(), self.celltype, copy=True)
+
+    async def _run(self):
+        from ...core.protocol.deserialize import deserialize
+        await self.computation()
+        buf = self.buffer
+        return await deserialize(buf, self.checksum.bytes(), self.celltype, copy=True)
+
+    def task(self) -> asyncio.Task:
+        coro = self._run()
+        return asyncio.get_event_loop().create_task(coro)
 
     @property
     def celltype(self):
@@ -192,3 +209,34 @@ class Transformation:
         elif self._evaluated and self._result_checksum is None:
             self._evaluated = False
 
+
+def transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies = None) -> Transformation:
+    from .run import run_transformation_dict, run_transformation_dict_async, prepare_transformation_dict
+    from seamless.core.cache.transformation_cache import tf_get_buffer
+    from seamless import calculate_checksum
+
+    def resolver_sync():
+        prepare_transformation_dict(transformation_dict)
+        transformation_buffer = tf_get_buffer(transformation_dict)
+        transformation = calculate_checksum(transformation_buffer)
+        return transformation
+    
+    async def resolver_async():
+        return resolver_sync()
+    
+    def evaluator_sync():
+        result_checksum = run_transformation_dict(transformation_dict, fingertip=False)
+        return result_checksum
+
+    async def evaluator_async():
+        result_checksum = await run_transformation_dict_async(transformation_dict)
+        return result_checksum
+    
+    return Transformation(
+        result_celltype,
+        resolver_sync,
+        resolver_async,
+        evaluator_sync, 
+        evaluator_async,
+        upstream_dependencies
+    )

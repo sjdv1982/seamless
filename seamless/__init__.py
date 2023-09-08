@@ -85,10 +85,11 @@ def activate_transformations():
     transformation_cache.active = True
 
 def run_transformation(checksum, *, fingertip=False, metalike=None, new_event_loop=False):
+    from seamless.util import is_forked
     if running_in_jupyter and not new_event_loop:
         raise RuntimeError("'run_transformation' cannot be called from within Jupyter. Use 'await run_transformation_async' instead")
     elif asyncio.get_event_loop().is_running():
-        if multiprocessing.current_process().name != "MainProcess":
+        if is_forked():
             # Allow it for forked processes (a new event loop will be launched)
             pass
         elif new_event_loop:
@@ -124,3 +125,4 @@ from .util import parse_checksum
 from .vault import load_vault
 from . import config
 from .core.cache import CacheMissError
+from .highlevel.direct import transformer

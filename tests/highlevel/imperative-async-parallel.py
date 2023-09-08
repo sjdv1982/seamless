@@ -12,9 +12,9 @@ if "DELEGATE" in os.environ:
 else:
     seamless.config.delegate(level=0)
     
-from seamless.imperative import transformer_async
+from seamless import transformer
 
-@transformer_async
+@transformer(return_transformation=True)
 def func(a, delay):
     import time
     time.sleep(delay)
@@ -23,21 +23,17 @@ def func(a, delay):
 
 async def main():
     start_time = time.time()
-    coro1 = func(a=1, delay=1)
-    fut1 = asyncio.ensure_future(coro1)
-    coro2 = func(a=2, delay=1)
-    fut2 = asyncio.ensure_future(coro2)
-    coro3 = func(a=3, delay=1)
-    fut3 = asyncio.ensure_future(coro3)
-    coro4 = func(a=4, delay=2)
-    fut4 = asyncio.ensure_future(coro4)
-    result = await fut1
+    task1 = func(a=1, delay=1).task()
+    task2 = func(a=2, delay=1).task()
+    task3 = func(a=3, delay=1).task()
+    task4 = func(a=4, delay=2).task()
+    result = await task1
     print(result)
-    result = await fut2
+    result = await task2
     print(result)
-    result = await fut3
+    result = await task3
     print(result)
-    result = await fut4
+    result = await task4
     print(result)
     t = time.time() - start_time
     print("Time to complete: {:.1f} seconds".format(t))

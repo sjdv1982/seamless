@@ -27,7 +27,7 @@ class Environment:
     def _update(self):
         from .Context import Context
         from .Transformer import Transformer
-        from ..imperative import Transformer as ImperativeTransformer
+        from .direct.transformer import DirectTransformer
         parent = self._parent()
         if parent is None:
             return
@@ -42,7 +42,7 @@ class Environment:
             grandparent = parent._parent()
             if grandparent is not None:
                 grandparent._translate()
-        elif isinstance(parent, ImperativeTransformer):
+        elif isinstance(parent, DirectTransformer):
             parent._environment_state = None
             state = self._save()
             parent._environment_state = state
@@ -63,7 +63,7 @@ class Environment:
     def _sync(self):
         from .Context import Context
         from .Transformer import Transformer
-        from ..imperative import Transformer as ImperativeTransformer
+        from .direct.transformer import DirectTransformer
         parent = self._parent()
         if parent is None:
             return
@@ -74,7 +74,7 @@ class Environment:
             state = node.get("environment", None)
             if state is not None:
                 self._load(state)
-        elif isinstance(parent, ImperativeTransformer):
+        elif isinstance(parent, DirectTransformer):
             state = parent._environment_state
             if state is not None:
                 self._load(state)

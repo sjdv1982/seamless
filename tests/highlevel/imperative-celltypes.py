@@ -1,6 +1,4 @@
-raise NotImplementedError
-
-from seamless.imperative import transformer
+from seamless import transformer
 
 @transformer
 def func(a, b):

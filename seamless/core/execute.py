@@ -308,12 +308,20 @@ def execute(name, code,
       output_name, output_celltype, output_hash_pattern,
       result_queue,
       debug = None,
+      tf_checksum = None
     ):
-    if multiprocessing.current_process().name != "MainProcess":
+    from seamless.util import is_forked
+    if is_forked():
         import seamless
+        from seamless.highlevel.direct.run import TRANSFORMATION_STACK
+        if tf_checksum is not None:
+            if isinstance(tf_checksum, bytes):
+                tf_checksum = tf_checksum.hex()
+            TRANSFORMATION_STACK.append(tf_checksum)
         seamless.running_in_jupyter = False
         database_client.session = requests.Session()
         signal.signal(signal.SIGINT, signal.SIG_IGN)
+
     direct_print = False
     if debug is None:
         debug = {}

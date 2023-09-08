@@ -1,13 +1,8 @@
 from copy import deepcopy
 from types import ModuleType
-import inspect
 import sys
 import pathlib
 import ast
-import os
-
-# from graphs/multi_module code....
-# TODO: bring it to one place, since we are building only one Seamless package
 
 def get_pypackage_dependencies(pycode:str, package_name:str, is_init:bool):
     tree = ast.parse(pycode)
@@ -131,7 +126,7 @@ def _restore_dependencies(module_definition):
             _restore_dependencies(sub_def)
     
 def get_module_definition(module:ModuleType) -> dict[str]:
-    from ..core.build_module import module_definition_cache
+    from ...core.build_module import module_definition_cache
     if module in module_definition_cache:
         result0 = module_definition_cache[module]
         result = deepcopy(result0)

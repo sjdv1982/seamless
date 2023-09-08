@@ -5,7 +5,7 @@ PyTorch cannot be added to the Seamless Docker image using conda
 (the openmp versions are mutually exclusive).
 """
 import seamless
-seamless.delegate()
+seamless.config.delegate()
 
 from seamless.highlevel import Context, Transformer
 ctx = Context()

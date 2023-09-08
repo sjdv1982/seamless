@@ -1,7 +1,6 @@
-raise NotImplementedError
 import seamless
-seamless.delegate()
-from seamless.imperative import transformer
+seamless.config.delegate()
+from seamless import transformer
 '''
 # For code with an incompatible file name
 

@@ -1,3 +1,9 @@
+from multiprocessing import current_process
+try:
+    from multiprocessing import parent_process
+except ImportError:
+    parent_process = None
+
 def parse_checksum(checksum, as_bytes=False):
     """Parses checksum and returns it as string
 If as_bytes is True, return it as bytes instead."""
@@ -101,3 +107,13 @@ def ast_dump(node, annotate_fields=True, include_attributes=False, *, indent=Non
     if indent is not None and not isinstance(indent, str):
         indent = ' ' * indent
     return _format(node)[0]
+
+
+def is_forked():
+    if parent_process is None:  # Python 3.7
+        if current_process().name != "MainProcess":  # forked process
+            return True
+    else:
+        if parent_process() is not None:  # forked process
+            return True
+    return False

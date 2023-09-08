@@ -4,7 +4,7 @@ os.environ["SEAMLESS_ASSISTANT_ID"] = "test-imperative-communion"
 import seamless
 seamless.config.delegate()
 
-from seamless.imperative import transformer
+from seamless import transformer
 
 @transformer
 def func(a, b):
@@ -76,12 +76,12 @@ def func3(a, b):
             return 100 * a + b
         ###func.local = False
         return func(a,b)
-    func2b.local = True
+    ###func2b.local = True
 
     return func2b(a, b) + func2b(b, a)
 
 ctx.tf.code = func3
-ctx.tf.meta = {"local": True}
+#ctx.tf.meta = {"local": True}
 ctx.compute()
 print(ctx.tf.logs)
 print(ctx.tf.status)
