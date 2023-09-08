@@ -103,7 +103,7 @@ Attributes:
 
     def __call__(self, *args, **kwargs):
         from .Transformation import Transformation, transformation_from_dict
-        from ...core.direct.run import run_transformation_dict, _direct_transformer_to_transformation_dict, prepare_transformation_dict
+        from ...core.direct.run import run_transformation_dict, direct_transformer_to_transformation_dict, prepare_transformation_dict
         from ...core.cache.database_client import database
         from ...core.cache.buffer_remote import has_readwrite_servers
         from ...core.protocol.get_buffer import get_buffer
@@ -131,7 +131,7 @@ Attributes:
             module_definition = get_module_definition(module)
             modules[module_name] = module_definition
 
-        transformation_dict = _direct_transformer_to_transformation_dict(
+        transformation_dict = direct_transformer_to_transformation_dict(
             self._codebuf, meta, self._celltypes, modules, arguments, env
         )
         if self._return_transformation:

@@ -221,6 +221,60 @@ async def run_transformation_dict_async(transformation_dict):
     
     return result_checksum
 
+def prepare_code(semantic_code_checksum, codebuf, code_checksum):
+    from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
+    from ...core.cache.database_client import database
+    from seamless.highlevel import Checksum
+    if codebuf is not None:
+        assert isinstance(codebuf, bytes)
+    semantic_code_checksum = Checksum(semantic_code_checksum).bytes()
+    code_checksum = Checksum(code_checksum).bytes()
+    assert semantic_code_checksum is not None
+    try:
+        try:
+            semcode = _sem_code_cache[semantic_code_checksum]
+        except KeyError:
+            try:
+                semcode = fingertip(semantic_code_checksum)
+                _sem_code_cache[semantic_code_checksum] = semcode
+            except CacheMissError as exc:
+                raise exc from None
+        cache_buffer(semantic_code_checksum, semcode)
+    except KeyError:
+        semcode = get_buffer(semantic_code_checksum)
+        if semcode is None:
+            raise CacheMissError(semantic_code_checksum) from None
+    remote_write_buffer(semantic_code_checksum, semcode)
+    if codebuf is not None:
+        remote_write_buffer(code_checksum, codebuf)
+    semkey = (semantic_code_checksum, "python", "transformer")
+    database.set_sem2syn(semkey, [code_checksum])
+    value = Checksum(semantic_code_checksum)
+    return value
+
+def prepare_transformation_pin_value(value, celltype):
+    from seamless.highlevel import Checksum, Transformation
+
+    if isinstance(value, Checksum):
+        pass
+    elif value is None:
+        value = Checksum(value)
+    elif isinstance(value, Transformation):
+        assert value.status == "Status: OK", value.status  # must have been checked before
+        checksum = value.checksum
+        assert checksum is not None  # can't be true if status is OK
+        value = Checksum(checksum)
+    else:
+        if isinstance(value, bytes):
+            buf = value
+        else:
+            buf = serialize(value, celltype)
+        checksum = calculate_checksum(buf, hex=False)
+        assert isinstance(checksum, bytes)
+        cache_buffer(checksum, buf)
+        value = Checksum(checksum)
+    return value
+
 def prepare_transformation_dict(transformation_dict):
     """Prepares transformation dict for submission.
     
@@ -231,9 +285,7 @@ Replaced buffers or values are properly registered and cached
 (including their syntactic <=> semantic conversion).
 """
 
-    from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
-    from ...core.cache.database_client import database
-    from seamless.highlevel import Transformation, Checksum
+    from seamless.highlevel import Checksum
     
     non_checksum_items = ("__output__", "__language__", "__meta__", "__env__")    
 
@@ -246,55 +298,20 @@ Replaced buffers or values are properly registered and cached
         celltype, _, value = arg
 
         original_value = value
-        if isinstance(value, Checksum):
-            pass
-        elif value is None:
-            value = Checksum(value)
-        elif isinstance(value, Transformation):
-            assert value.status == "Status: OK", value.status  # must have been checked before
-            checksum = value.checksum
-            assert checksum is not None  # can't be true if status is OK
-            value = Checksum(checksum)
-        else:
-            if isinstance(value, bytes):
-                buf = value
-            else:
-                buf = serialize(value, celltype)
-            checksum = calculate_checksum(buf, hex=False)
-            assert isinstance(checksum, bytes)
-            cache_buffer(checksum, buf)
-            value = Checksum(checksum)
+        value = prepare_transformation_pin_value(value, celltype)
 
         if argname == "code":
             assert isinstance(value, Checksum), type(value)
             code = original_value if not isinstance(original_value, Checksum) else None
             code_checksum = value.bytes()
-            semantic_code_checksum2 = _get_semantic(code, code_checksum)
-            if semantic_code_checksum2 is None:
+            semantic_code_checksum = _get_semantic(code, code_checksum)
+            if semantic_code_checksum is None:
                 raise CacheMissError(code_checksum.hex())
-            assert isinstance(semantic_code_checksum2, bytes)
-            semantic_code_checksum = semantic_code_checksum2.hex()
-            try:
-                try:
-                    semcode = _sem_code_cache[semantic_code_checksum2]
-                except KeyError:
-                    try:
-                        semcode = fingertip(semantic_code_checksum2)
-                        _sem_code_cache[semantic_code_checksum2] = semcode
-                    except CacheMissError as exc:
-                        raise exc from None
-                cache_buffer(semantic_code_checksum2, semcode)
-            except KeyError:
-                semcode = get_buffer(semantic_code_checksum2)
-                if semcode is None:
-                    raise CacheMissError(semantic_code_checksum2) from None
-            remote_write_buffer(semantic_code_checksum2, semcode)
+            assert isinstance(semantic_code_checksum, bytes)
+            codebuf = None
             if code is not None:
                 codebuf = serialize(code, "python")
-                remote_write_buffer(code_checksum, codebuf)
-            semkey = (semantic_code_checksum2, "python", "transformer")
-            database.set_sem2syn(semkey, [code_checksum])
-            value = Checksum(semantic_code_checksum)
+            value = prepare_code(semantic_code_checksum, codebuf, code_checksum)
 
         assert isinstance(value, Checksum), (argname, value)
         value = value.value
@@ -305,7 +322,7 @@ Replaced buffers or values are properly registered and cached
     return transformation_dict
 
 
-def _direct_transformer_to_transformation_dict(
+def direct_transformer_to_transformation_dict(
     codebuf,
     meta,
     celltypes,

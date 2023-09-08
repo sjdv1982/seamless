@@ -137,7 +137,12 @@ class Checksum:
         if self.value is None:
             return None
         return bytes.fromhex(self.value)
-    
+
+    def hex(self) -> str | None:
+        if self.value is None:
+            return None
+        return self.value
+
     def __str__(self):
         return str(self.value)
 

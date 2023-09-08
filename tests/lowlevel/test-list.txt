@@ -57,6 +57,7 @@ simple-share.py
 transformation-checksum.sh: run with Seamless database. If not in the Docker image, set SEAMLESS_SCRIPT_DIR
 transformation-raw.py
 transformation-raw-ipython.py
+transformation-raw-bash.py
 meta.py
 simple-duplex.py
 simple-remote.py: run together with seamless-jobslave

@@ -134,7 +134,7 @@ def get_transformation_inputs_output(transformation):
         outputname, output_celltype, output_subcelltype, output_hash_pattern = outputpin
     return inputs, outputname, output_celltype, output_subcelltype, output_hash_pattern
 
-async def build_transformation_namespace(transformation, semantic_cache, codename):    
+async def build_transformation_namespace(transformation, semantic_cache, codename):        
     namespace = {
         "__name__": "transformer",
         "__package__": "transformer",
@@ -274,9 +274,12 @@ class TransformationJob:
         semantic_cache, *, debug, fingertip,
         cannot_be_local=False
     ):
+        from seamless.metalevel.unbashify import unbashify
         self.checksum = checksum
         assert codename is not None
         self.codename = codename
+        if transformation.get("__language__") == "bash":
+            transformation = unbashify(transformation, semantic_cache)
         assert transformation.get("__language__") == "python", transformation.get("__language__")
         assert "code" in transformation, transformation.keys()
         for pinname in transformation:

@@ -1,0 +1,25 @@
+{
+  "__language__": "bash",
+  "__output__": [
+    "result",
+    "bytes",
+    null
+  ],
+  "a": [
+    "int",
+    null,
+    "08d2d6aba49b53a764f897cf54cc0984e6568e3081d4dc31936eff54d90e79bd"
+  ],
+  "b": [
+    "int",
+    null,
+    "607ad8c0dbe89ff9463bf8a99a2224486a0c8e5c2171d49988a9af1a70175e0f"
+  ],
+  "code": [
+    "text",
+    null,
+    "705ce03beca8fe9c9c5555d28e3bf7c0bbd1ef4dd2ed3ebeb063308a9eda1328"
+  ]
+}
+
+OK? 12 7 19
