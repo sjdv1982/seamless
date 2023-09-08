@@ -13,6 +13,13 @@ import sys
 def log(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
 
+def clear_future_exception(future):
+    # To avoid "Task exception was never retrieved" messages
+    try:
+        future.result()
+    except Exception:
+        pass
+
 import datetime
 import json
 import ast
@@ -1035,6 +1042,7 @@ class TransformationCache:
 
         coro = incref_and_run()
         fut = asyncio.ensure_future(coro)
+        fut.add_done_callback(clear_future_exception)
         last_result_checksum = None
         last_progress = None
         fut_done_time = None

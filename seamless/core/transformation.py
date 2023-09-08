@@ -927,7 +927,6 @@ if "DOCKER_IMAGE" in os.environ:
 
 _got_global_info = False
 def get_global_info():
-    return ###
     from .cache.database_client import database
     global _got_global_info
     if _got_global_info:

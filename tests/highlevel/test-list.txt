@@ -124,6 +124,7 @@ imperative-async.sh
 imperative-async-parallel.py: can be run with delegation using "export DELEGATE=''"
 imperative-async-parallel-jupyter.sh: can be run with delegation using "export DELEGATE=''"
 imperative-celltypes.py
+imperative-workflow.py
 imperative-nested.py: requires delegation level 3.
 imperative-nested-jupyter.sh: requires delegation level 3.
 imperative-nested-async.sh: requires delegation level 3.

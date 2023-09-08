@@ -20,7 +20,7 @@ class Transformation:
         self._resolved = False
 
         self._evaluator_sync = evaluator_sync
-        self._evaluator_async = evaluator_async        
+        self._evaluator_async = evaluator_async
         self._result_checksum = None
         self._evaluated = False
         self._exception = None
@@ -34,7 +34,7 @@ class Transformation:
                 raise ValueError("Cannot obtain transformation checksum")
             self._transformation_checksum = tf_checksum
         except Exception:
-            self._exception = traceback.format_exc()
+            self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"
         finally:
             self._resolved = True
 
@@ -47,7 +47,7 @@ class Transformation:
                 raise ValueError("Cannot obtain transformation checksum")
             self._transformation_checksum = tf_checksum
         except Exception:
-            self._exception = traceback.format_exc()
+            self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"
         finally:
             self._resolved = True
 
@@ -65,7 +65,7 @@ class Transformation:
             Checksum(result_checksum)
             self._result_checksum = result_checksum
         except Exception:
-            self._exception = traceback.format_exc()
+            self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"
         finally:
             self._evaluated = True
 
@@ -83,52 +83,82 @@ class Transformation:
             Checksum(result_checksum)
             self._result_checksum = result_checksum
         except Exception:
-            self._exception = traceback.format_exc()
+            self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"
         finally:
             self._evaluated = True
 
     def _run_dependencies(self):
-        for depname, dep in self._upstream_dependencies.items():
-            dep.start()
-        for depname, dep in self._upstream_dependencies.items():
-            dep.compute()
-            if dep.exception is not None:
-                msg = "Dependency '{}' has an exception: {}"
-                raise RuntimeError(msg.format(depname, dep.exception))
+        try:
+            self.start()
+            for depname, dep in self._upstream_dependencies.items():
+                dep.compute()
+                if dep.exception is not None:
+                    msg = "Dependency '{}' has an exception:\n{}"
+                    raise RuntimeError(msg.format(depname, dep.exception))
+        except Exception:
+            self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"
 
     async def _run_dependencies_async(self):
         tasks = {}
         for depname, dep in self._upstream_dependencies.items():
             tasks[depname] = asyncio.get_event_loop().create_task(dep.computation())
         if len(tasks):
-            await asyncio.gather(tasks.values(), return_exceptions=True)
-        for depname, _ in tasks.items():
-            dep = self._upstream_dependencies[depname]
-            if dep.exception is not None:
-                msg = "Dependency '{}' has an exception: {}"
-                raise RuntimeError(msg.format(depname, dep.exception))
+            await asyncio.gather(*tasks.values(), return_exceptions=True)
+        for depname, task in tasks.items():
+            self._future_cleanup(task)
+        try:
+            for depname, _ in tasks.items():
+                dep = self._upstream_dependencies[depname]
+                if dep.exception is not None:
+                    msg = "Dependency '{}' has an exception:\n{}"
+                    raise RuntimeError(msg.format(depname, dep.exception))
+        except Exception:
+            self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"
 
     def compute(self):
-        self._run_dependencies()
-        self._evaluate_sync()
-        if self._future is not None:
-            self._future.cancel() # redundant
-            self._future = None
+        if self._evaluated:
+            return
+        loop = asyncio.get_event_loop()
+        if not loop.is_running():
+            self.start()
+            loop.run_until_complete(self._future)
+        else:
+            self._run_dependencies()            
+            if self._exception is None:      
+                self._evaluate_sync()
+            if self._future is not None:
+                self._future.cancel() # redundant
+                self._future = None
+        return self
+
+    async def _computation(self):
+        await self._run_dependencies_async()
+        if self._exception is None:  
+            await self._evaluate_async()
         return self
 
     async def computation(self):
         if self._future is not None:
             await self._future
-            self._future = None
         else:
-            await self._run_dependencies_async()
-            await self._evaluate_async()
+            await self._computation()
         return self
     
+    def _future_cleanup(self, fut):
+        # to avoid "Task exception was never retrieved" messages
+        # Is this currently triggered?
+        try:
+            fut.result()
+        except Exception:
+            pass
+
     def start(self):
+        for depname, dep in self._upstream_dependencies.items():
+            dep.start()
         if self._future is not None:
             return
-        self._future = asyncio.get_event_loop().create_task(self.computation())
+        self._future = asyncio.get_event_loop().create_task(self._computation())
+        self._future.add_done_callback(self._future_cleanup)
 
     def as_checksum(self):
         from .. import Checksum
@@ -210,6 +240,19 @@ class Transformation:
             self._evaluated = False
 
 
+    @property
+    def status(self):
+        try:
+            if self._exception is not None:
+                return "Status: exception"
+            if self._evaluated:
+                assert self._result_checksum is not None
+                return "Status: OK"
+            if self._future is not None:
+                return "Status: pending"
+            return "Status: ready"
+        except Exception:
+            return "Status: unknown exception"
 def transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies = None) -> Transformation:
     from .run import run_transformation_dict, run_transformation_dict_async, prepare_transformation_dict
     from seamless.core.cache.transformation_cache import tf_get_buffer

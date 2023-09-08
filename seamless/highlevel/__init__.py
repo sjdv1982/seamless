@@ -129,6 +129,8 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
 class Checksum:
     def __init__(self, checksum):
         from seamless import parse_checksum
+        if isinstance(checksum, Checksum):
+            checksum = checksum.value
         self.value = parse_checksum(checksum, as_bytes=False)
     
     def bytes(self) -> bytes | None:

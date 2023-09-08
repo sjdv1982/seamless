@@ -260,6 +260,8 @@ Replaced buffers or values are properly registered and cached
     from .. import Checksum
     from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
     from ...core.cache.database_client import database
+    from .Transformation import Transformation
+    
     non_checksum_items = ("__output__", "__language__", "__meta__", "__env__")    
 
     argnames = list(transformation_dict.keys())
@@ -275,6 +277,11 @@ Replaced buffers or values are properly registered and cached
             pass
         elif value is None:
             value = Checksum(value)
+        elif isinstance(value, Transformation):
+            assert value.status == "Status: OK", value.status  # must have been checked before
+            checksum = value.checksum
+            assert checksum is not None  # can't be true if status is OK
+            value = Checksum(checksum)
         else:
             if isinstance(value, bytes):
                 buf = value
@@ -440,10 +447,7 @@ def _direct_transformer_to_transformation_dict(
                 raise ValueError(f"Argument {pinname} (Cell {value}) has no checksum available")
             v = Checksum(checksum)
         elif isinstance(value, Transformation):
-            assert value.status == "Status: OK"  # must have been checked before
-            checksum = value.checksum
-            assert checksum is not None  # can't be true if status is OK
-            v = Checksum(checksum)
+            v = value
         else:
             v = value
 
@@ -491,7 +495,7 @@ def _get_node_transformation_dependencies(node):
 def _node_to_transformation_dict(node):
     # builds transformation dict from highlevel.Transformer node
     # - node must be unbound (inputs come from .TEMP and .checksum items).
-    # - Transformation dependencies inside .TEMP must have been resolved
+    # - Transformation dependencies inside .TEMP can be present
     # - The result transformation dict cannot be submitted directly,
     #    it must still be prepared.
 
@@ -608,10 +612,7 @@ def _node_to_transformation_dict(node):
                     raise ValueError(f"Argument {pinname} (Cell {value}) has no checksum available")
                 v = Checksum(checksum)
             elif isinstance(value, Transformation):
-                assert value.status == "Status: OK"  # must have been checked before
-                checksum = value.checksum
-                assert checksum is not None  # can't be true if status is OK
-                v = Checksum(checksum)
+                v = value
             else:
                 v = value
 
