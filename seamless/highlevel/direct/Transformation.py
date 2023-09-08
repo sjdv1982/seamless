@@ -146,9 +146,10 @@ class Transformation:
     
     def _future_cleanup(self, fut):
         # to avoid "Task exception was never retrieved" messages
-        # Is this currently triggered?
         try:
             fut.result()
+        except asyncio.exceptions.CancelledError as exc:
+            pass
         except Exception:
             pass
 

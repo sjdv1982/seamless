@@ -17,6 +17,8 @@ def clear_future_exception(future):
     # To avoid "Task exception was never retrieved" messages
     try:
         future.result()
+    except asyncio.exceptions.CancelledError as exc:
+        pass
     except Exception:
         pass
 
