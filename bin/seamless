@@ -291,7 +291,7 @@ if len(directories):
 
 if command_mode:
     mapped_command = []
-    for arg in command:
+    for arg in argdict["@order"]:
         if argdict[arg] == "value":
             mapped_command.append(arg)
         else:

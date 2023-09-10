@@ -48,21 +48,25 @@ def guess_arguments_with_custom_error_messages(
     - overrule_ext: if True, rule 1. does not apply.
 
     - overrule_no_ext: if True, rule 2. does not apply.
+    
+    Output:
+    dict of argname -> mode
+    where mode is "file", "directory" or "value"
     """
 
     order = []
 
     result = {"@order": order}
     for argindex0, arg in enumerate(args):
+        arg2 = arg
         argindex = argindex0 + 1
-        path = Path(arg)
-        order.append(arg)
+        path = Path(arg)        
         extension = path.suffix
         msg(3, "Argument #{} '{}', extension: '{}'".format(argindex, arg, extension))
-        exists = path.exists()
+        exists = path.exists() or path.expanduser().exists()
         is_dir = False
         if exists:
-            is_dir = path.is_dir()
+            is_dir = path.is_dir() or path.expanduser().is_dir()
 
         # Rule 1.: Any argument with extension must exist as a file, but not as a directory.
 
@@ -94,11 +98,15 @@ def guess_arguments_with_custom_error_messages(
 
         if exists:
             if is_dir:
-                result[arg] = "directory"
+                result_mode = "directory"
+                arg2 = os.path.expanduser(arg)
             else:
-                result[arg] = "file"
+                result_mode = "file"
+                arg2 = os.path.expanduser(arg)
         else:
-            result[arg] = "value"
+            result_mode = "value"
+        result[arg2] = result_mode
+        order.append(arg2)
 
     return result
 
