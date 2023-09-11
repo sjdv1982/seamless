@@ -16,7 +16,7 @@ async def run_job(checksum):
         while 1:
             async with session.put(assistant, data=checksum) as response:
                 content = await response.read()
-                if response.status == 204:
+                if response.status == 202:
                     await asyncio.sleep(0.1)
                     continue
                 try:
