@@ -20,11 +20,13 @@ from silk import Silk
 from silk.validation import _allowed_types
 from ..core.lambdacode import lambdacode
 from ..core.cached_compile import cached_compile
+from .Checksum import Checksum
 
 ConstantTypes = _allowed_types + (Silk, MixedBase, tuple)
 
 import inspect
 import os
+
 
 def set_resource(f):
     caller_frame = inspect.currentframe().f_back
@@ -125,26 +127,6 @@ def load_graph(graph, *, zip=None, cache_ctx=None, static=False, mounts=True, sh
             mounts=mounts, shares=shares,
             zip=zip
         )
-
-class Checksum:
-    def __init__(self, checksum):
-        from seamless import parse_checksum
-        if isinstance(checksum, Checksum):
-            checksum = checksum.value
-        self.value = parse_checksum(checksum, as_bytes=False)
-    
-    def bytes(self) -> bytes | None:
-        if self.value is None:
-            return None
-        return bytes.fromhex(self.value)
-
-    def hex(self) -> str | None:
-        if self.value is None:
-            return None
-        return self.value
-
-    def __str__(self):
-        return str(self.value)
 
 from .SubContext import SubContext
 from .Base import Base

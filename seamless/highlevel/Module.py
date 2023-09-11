@@ -1,6 +1,7 @@
 import os
 import traceback
 from .Base import Base
+from . import Checksum
 
 def get_new_module(path):
     return {
@@ -288,7 +289,7 @@ Or, it could use an internal package name like "spamalot" and do
             hnode.pop("fingertip_no_recompute", None)
 
     @property
-    def checksum(self):
+    def checksum(self) -> Checksum:
         """Contains the checksum of the module code, as SHA3-256 hash.
 
         The checksum defines the value of the module code.
@@ -303,18 +304,19 @@ Or, it could use an internal package name like "spamalot" and do
                     return codecell.checksum
                 except Exception:
                     raise AttributeError("TEMP value with unknown checksum")
-            return hnode.get("checksum")
+            return Checksum(hnode.get("checksum"))
         else:
             try:
                 codecell = self._get_codecell()
             except Exception:
                 traceback.print_exc()
                 raise
-            return codecell.checksum
+            return Checksum(codecell.checksum)
 
     @checksum.setter
-    def checksum(self, checksum):
+    def checksum(self, checksum: Checksum | str):
         """Sets the checksum of the cell, as SHA3-256 hash"""
+        checksum = Checksum(checksum).hex()
         hnode = self._get_hnode2()
         if hnode.get("UNTRANSLATED"):
             hnode.pop("TEMP", None)
@@ -336,8 +338,8 @@ Or, it could use an internal package name like "spamalot" and do
             raise
         codecell.set(value)
 
-    def set_checksum(self, checksum):
-        self.checksum = checksum
+    def set_checksum(self, checksum: Checksum | str):
+        self.checksum = Checksum(checksum).hex()
 
     def __setitem__(self, filename, value):
         if not self.multi:

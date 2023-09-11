@@ -1,6 +1,8 @@
 import asyncio
 import traceback
 
+from .. import Checksum
+
 class Transformation:
     _future = None
     
@@ -179,8 +181,7 @@ class Transformation:
         return deserialize_sync(buf, tf_checksum, "plain", copy=True)
         
     @property
-    def checksum(self):
-        from .. import Checksum
+    def checksum(self) -> Checksum:
         return Checksum(self._result_checksum)
 
     @property

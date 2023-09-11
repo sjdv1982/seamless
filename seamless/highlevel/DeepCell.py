@@ -1,6 +1,8 @@
 from copy import deepcopy
 from functools import partial
 
+from . import Checksum
+
 def get_new_deepcell(path):
     from ..core.cache.buffer_cache import empty_list_checksum, empty_dict_checksum
     return {
@@ -64,7 +66,7 @@ class DeepCellBase(Base, HelpMixin):
                     return "*" + k + "*: " + exception
     
     @property
-    def checksum(self):
+    def checksum(self) -> Checksum:
         """Contains the checksum of the cell, as SHA3-256 hash.
 
 The checksum defines the value of the cell.
@@ -82,13 +84,14 @@ the value may not be.
         return origin.checksum
 
     @checksum.setter
-    def checksum(self, checksum):
+    def checksum(self, checksum: Checksum | str):
         """Sets the checksum of the cell, as SHA3-256 hash"""
+        checksum = Checksum(checksum)
         self.set_checksum(checksum)
     
-    def set_checksum(self, checksum):
+    def set_checksum(self, checksum: Checksum | str):
         from ..core.cache.buffer_cache import empty_dict_checksum
-        checksum = parse_checksum(checksum)
+        checksum = Checksum(checksum).hex()
         hcell = self._get_hcell2()
         hcell.pop("metadata", None)
         if hcell.get("UNTRANSLATED"):
@@ -144,7 +147,7 @@ the value may not be.
         from ..core.cache.buffer_cache import empty_list_checksum
         hcell = self._get_hcell2()
         hcell.pop("metadata", None)
-        checksum = parse_checksum(checksum)
+        checksum = Checksum(checksum).hex()
         if hcell.get("UNTRANSLATED"):
             if hcell.get("checksum") is None:
                 hcell["checksum"] = {}
@@ -336,7 +339,7 @@ Use cell.data instead."""
             value2 = {}
             for subkey, subvalue in value.items():
                 try:
-                    subvalue = parse_checksum(subvalue)
+                    subvalue = Checksum(subvalue).hex()
                 except ValueError:
                     raise ValueError((subkey,subvalue)) from None
                 value2[subkey] = subvalue
@@ -593,4 +596,3 @@ OR:
 
 from .synth_context import SynthContext
 from .SubCell import DeepSubCell
-from ..util import parse_checksum

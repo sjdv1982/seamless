@@ -39,6 +39,7 @@ from .Resource import Resource
 from .SelfWrapper import SelfWrapper
 from ..mime import get_mime, language_to_mime, ext_to_mime
 from .HelpMixin import HelpMixin
+from . import Checksum
 
 celltypes = (
     "structured",
@@ -541,7 +542,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
         return cell.exception
 
     @property
-    def checksum(self) -> Optional[str]:
+    def checksum(self) -> Checksum:
         """Contains the checksum of the cell, as SHA3-256 hash.
 
         The checksum defines the value of the cell.
@@ -558,7 +559,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
             return hcell.get("checksum")
         else:
             cell = self._get_cell()
-            return cell.checksum
+            return Checksum(cell.checksum)
 
     def observe(
         self,
@@ -611,8 +612,9 @@ This cell is not fully independent, i.e. it has incoming connections"""
         await cachemanager.fingertip(checksum)
 
     @checksum.setter
-    def checksum(self, checksum:Optional[str]):
+    def checksum(self, checksum: Checksum | str):
         """Set the checksum of the cell, as SHA3-256 hash"""
+        checksum = Checksum(checksum)
         self.set_checksum(checksum)
 
     @property
@@ -670,20 +672,21 @@ This cell is not fully independent, i.e. it has incoming connections"""
         cell.set_buffer(value)
         return self
 
-    def set_checksum(self, checksum:str):
+    def set_checksum(self, checksum: Checksum | str):
         """Set the cell's checksum from a SHA256 checksum"""
         from ..core.structured_cell import StructuredCell
 
+        checksum = Checksum(checksum)
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
             raise NotImplementedError
         cell = self._get_cell()
         if isinstance(cell, StructuredCell):
-            cell.set_auth_checksum(checksum)
+            cell.set_auth_checksum(checksum.hex())
         else:
             if not self.independent:
                 raise TypeError("Cannot set the checksum of a cell that is not independent")
-            cell.set_checksum(checksum)
+            cell.set_checksum(checksum.hex())
 
     @property
     def status(self):

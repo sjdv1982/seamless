@@ -79,6 +79,7 @@ from .assign import assign
 from .proxy import Pull
 from .. import copying
 from ..vault import save_vault, load_vault
+from . import Checksum
 
 Graph = namedtuple("Graph", ("nodes", "connections", "params", "lib"))
 
@@ -1348,12 +1349,15 @@ These modifications have been CANCELED.""" % (
             libroot = self
         return IncludedLibraryContainer(libroot, ())
 
-    def resolve(self, checksum, celltype=None):
+    def resolve(self, checksum: Checksum, celltype=None):
         """Returns the data buffer that corresponds to the checksum.
         If celltype is provided, a value is returned instead
 
         The checksum must be a SHA3-256 hash, as hex string or as bytes"""
-        return self._manager.resolve(checksum, celltype=celltype, copy=True)
+        checksum = Checksum(checksum)
+        if celltype in (float, str, int, bool):
+            celltype = celltype.__name__
+        return self._manager.resolve(checksum.hex(), celltype=celltype, copy=True)
 
     def observe(
         self, path, callback, polling_interval, observe_none=False, params=None

@@ -196,8 +196,8 @@ class Transformer(Base, HelpMixin):
             htf["checksum"].pop(attr, None)
         
     def _set_temp_checksum(self, attr, checksum):
-        from seamless import parse_checksum
-        checksum = parse_checksum(checksum, as_bytes=False)
+        from . import Checksum
+        checksum = Checksum(checksum).hex()
         htf = self._get_htf()
         htf["UNTRANSLATED"] = True
         if "checksum" not in htf or htf["checksum"] is None:

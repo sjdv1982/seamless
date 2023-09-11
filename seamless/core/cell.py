@@ -266,7 +266,7 @@ class Cell(SeamlessBase):
             )
         return self
 
-    def set_checksum(self, checksum):
+    def set_checksum(self, checksum:str):
         """Specifies the checksum of the data (hex format), from authority"""
         self._set_checksum(checksum)
         return self

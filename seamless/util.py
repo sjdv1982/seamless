@@ -13,7 +13,8 @@ If as_bytes is True, return it as bytes instead."""
         checksum = bytes.fromhex(checksum)
 
     if isinstance(checksum, bytes):
-        assert len(checksum) == 32, len(checksum)
+        if len(checksum) != 32:
+            raise ValueError(f"Incorrect length: {len(checksum)}, must be 32")
         if as_bytes:
             return checksum
         else:
