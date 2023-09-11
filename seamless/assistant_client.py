@@ -1,3 +1,4 @@
+import asyncio
 import aiohttp
 import atexit
 #session = aiohttp.ClientSession()
@@ -12,21 +13,20 @@ async def run_job(checksum):
 
     # One session per request is really bad... but what can we do?
     async with aiohttp.ClientSession() as session:
-        async with session.put(assistant, data=checksum) as response:
-            content = await response.read()
-            try:
-                content = content.decode()
-            except Exception:
-                pass                
-            if response.status != 200:
-                raise RuntimeError(content)
+        while 1:
+            async with session.put(assistant, data=checksum) as response:
+                content = await response.read()
+                if response.status == 204:
+                    await asyncio.sleep(0.1)
+                    continue
+                try:
+                    content = content.decode()
+                except UnicodeDecodeError:
+                    pass                
+                if response.status != 200:
+                    raise RuntimeError(f"Error {response.status} from assistant:" + content)
+                break
 
-    '''       
-    async with session.put(assistant, data=checksum) as response:
-        content = await response.read()
-        if response.status != 200:
-            raise RuntimeError(content)
-    '''
     result_checksum = parse_checksum(content)
     return result_checksum
     
