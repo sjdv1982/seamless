@@ -43,8 +43,15 @@ class Base:
     _path: Optional[tuple[str, ...]] = None
 
     def _get_path(self) -> tuple[str, ...]:
+        from .Context import Context
         result = self._path
-        assert result is not None
+        if self._parent() is None:
+            return result
+        elif isinstance(self, Context):
+            if result is None:
+                result = ()
+        else:
+            assert result is not None
         return result
 
 
@@ -78,6 +85,7 @@ class Base:
     @property
     def path(self) -> str:
         """Return path as a string"""
-        if self._path is None:
+        path = self._get_path()
+        if path is None:
             return "<None>"
-        return "." + ".".join(self._path)
+        return "." + ".".join(path)
