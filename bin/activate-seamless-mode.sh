@@ -11,7 +11,11 @@ function _seamless_complete() {
     if [ "$SEAMLESS_READLINE_LINE" == "$PREV_READLINE_LINE" ]; then
         # seamlessify did nothing. Undo the previous shell-expand-line
         READLINE_LINE=$UNEXPANDED_READLINE_LINE
-    fi    
+    else
+        history -s $READLINE_LINE
+        READLINE_LINE=""
+    fi
+
 }
 
 function seamless-mode() {
@@ -29,7 +33,7 @@ function seamless-mode() {
     bind '"\C-u8": shell-expand-line'
     bind -x '"\C-u1":_seamless_complete'
     bind '"\C-u2": accept-line'
-    bind '"\C-M":"\C-u9\C-u8\C-u1\C-u2"'
+    bind '"\C-M":"\C-u9\C-u8\C-u1\C-u2\e[A"'
 }
 
 
