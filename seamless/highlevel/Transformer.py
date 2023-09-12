@@ -1173,7 +1173,7 @@ and local execution is a fallback."""
 
     def get_transformation(self) -> "Transformation":
         from .direct import Transformation, transformation_from_dict
-        from .direct.run import _get_node_transformation_dependencies, _node_to_transformation_dict
+        from ..core.direct.run import _get_node_transformation_dependencies, _node_to_transformation_dict
 
         result_celltype = self._get_htf().get("result_celltype", "mixed")
         if self._parent() is not None:
