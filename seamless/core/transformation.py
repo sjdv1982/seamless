@@ -432,8 +432,17 @@ class TransformationJob:
         prelim_callback, progress_callback
     ):
         from seamless.assistant_client import run_job
+        tf_dunder = {}
+        tf = self.transformation
+        for k in ("__compilers__", "__languages__", "__meta__", "__env__"):
+            if k in tf:
+                tf_dunder[k] = tf[k]
+        if tf_dunder.get("__meta__", {}).get("local", OverflowError) != OverflowError:
+            meta = tf_dunder["__meta__"].copy()
+            meta.pop("local")
+            tf_dunder["__meta__"] = meta
         try:
-            result = await run_job(self.checksum)
+            result = await run_job(self.checksum, tf_dunder)
         except RuntimeError as exc:
             raise RemoteJobError(str(exc)) from None
         if result is None:
@@ -753,7 +762,7 @@ class TransformationJob:
                                 raise Exception("Unknown return message '{}'".format(msg))
                         elif status == 7:
                             # run_transformation
-                            tf_checksum, metalike, syntactic_cache, fingertip = msg
+                            tf_checksum, tf_dunder, syntactic_cache, fingertip = msg
                             assert not is_forked()
                             for celltype, subcelltype, buf in syntactic_cache:
                                 # TODO: create a transformation_cache method and invoke it, common with other code
@@ -775,7 +784,7 @@ class TransformationJob:
                                 buffer_cache.decref(syn_checksum)
                             print_info(f"Nested local transformation job`: {tf_checksum}, forked = {is_forked()}")
                             fut = asyncio.ensure_future(
-                                run_transformation_async(tf_checksum, metalike=metalike, fingertip=fingertip)
+                                run_transformation_async(tf_checksum, tf_dunder=tf_dunder, fingertip=fingertip)
                             )
                             def fut_done(fut):
                                 print_info(f"Finished nested local transformation job: {tf_checksum}")

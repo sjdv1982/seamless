@@ -144,17 +144,17 @@ def run_transformation_dict(transformation_dict, fingertip):
             transformation
         )
         if result_checksum is not None and not prelim:
-            metalike, syntactic_cache = None, []
+            tf_dunder, syntactic_cache = None, []
         else:
             assert _parent_process_queue is not None
-            metalike = {}
-            for k in ("__compilers__", "__languages__", "__meta__"):
+            tf_dunder = {}
+            for k in ("__compilers__", "__languages__", "__meta__", "__env__"):
                 if k in transformation_dict:
-                    metalike[k] = transformation_dict[k]
-            meta = metalike.get("__meta__")
+                    tf_dunder[k] = transformation_dict[k]
+            meta = tf_dunder.get("__meta__")
             if meta is None:
                 meta = {}
-                metalike["__meta__"] = meta
+                tf_dunder["__meta__"] = meta
             if meta.get("local") is None:
                 # local (fat) by default
                 meta["local"] = True
@@ -173,7 +173,7 @@ def run_transformation_dict(transformation_dict, fingertip):
                 assert syn_buffer is not None
                 syntactic_cache.append((celltype, subcelltype, syn_buffer))
     else:
-        metalike, syntactic_cache = None, []
+        tf_dunder, syntactic_cache = None, []
     
     result = None
     def result_callback(result2):
@@ -185,7 +185,7 @@ def run_transformation_dict(transformation_dict, fingertip):
             result_callback,
             transformation.hex(),
             transformation_dict,
-            metalike,
+            tf_dunder,
             syntactic_cache,
             increfed,
             fingertip
@@ -634,7 +634,7 @@ def _wait():
             result_callback,
             transformation,
             transformation_dict,
-            metalike,
+            tf_dunder,
             syntactic_cache,
             increfed,
             fingertip
@@ -643,13 +643,13 @@ def _wait():
                 #print(f"Delegate to parent: {transformation}, fingertip = {fingertip}, stack = {TRANSFORMATION_STACK}")
                 assert transformation not in TRANSFORMATION_STACK
                 _parent_process_queue.put(
-                    (7, (transformation, metalike, syntactic_cache, fingertip))
+                    (7, (transformation, tf_dunder, syntactic_cache, fingertip))
                 )
         for (
             result_callback,
             transformation,
             transformation_dict,
-            metalike,
+            tf_dunder,
             syntactic_cache,
             increfed,
             fingertip

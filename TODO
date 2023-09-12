@@ -1,8 +1,3 @@
-
-
-The database PUT "contest" method takes a checksum of a transformation that has been solved already. It is *moved* to the table of contested transformation, meaning that 
-
-
 Random things TODO regarding integration:
 
 - Rip the entire communion protocol, too much trouble with websockets,

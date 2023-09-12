@@ -1084,13 +1084,13 @@ and local execution is a fallback."""
         In addition, it may contain the following special keys:
         - __output__: the name (usually "result") and (sub)celltype of the output pin
           If it has a hash pattern, this is appended as the fourth element. 
-        - __env__: the checksum of the environment description
         - __as__: a dictionary of pin-to-variable renames (pins.pinname.as_ attribute)
         - __format__: a dictionary that contains deepcell and filesystem attributes
 
         Finally, it may contain additional information that is not reflected
         in this checksum:
 
+        - __env__: the checksum of the environment description
         - __meta__: meta information (Transformer.meta).
         - __compilers__: context-wide compiler definitions.
         - __languages__: context-wide language definition.
@@ -1099,11 +1099,11 @@ and local execution is a fallback."""
         `seamless.run_transformation(checksum)`.
 
         `ctx.resolve(checksum, "plain")` will return the transformation dict,
-        minus __meta__, __compilers__ and __languages__. The checksum is
+        minus __env__, __meta__, __compilers__ and __languages__. The checksum is
         treated like any other buffer, i.e. including database, assistant etc.
 
         With Transformation.get_transformation_dict(), you can obtain the full transformation dict,
-        including __meta__, __compilers__ and __languages__.
+        including __env__, __meta__, __compilers__ and __languages__.
         """
         _ = self._get_parent2()
         htf = self._get_htf()

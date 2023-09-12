@@ -3,7 +3,7 @@ import aiohttp
 import atexit
 #session = aiohttp.ClientSession()
     
-async def run_job(checksum):
+async def run_job(checksum, tf_dunder):
     from . import parse_checksum
     from .config import get_assistant
     checksum = parse_checksum(checksum)
@@ -13,8 +13,9 @@ async def run_job(checksum):
 
     # One session per request is really bad... but what can we do?
     async with aiohttp.ClientSession() as session:
+        data={"checksum":checksum, "dunder":tf_dunder}
         while 1:
-            async with session.put(assistant, data=checksum) as response:
+            async with session.put(assistant, json=data) as response:
                 content = await response.read()
                 if response.status == 202:
                     await asyncio.sleep(0.1)

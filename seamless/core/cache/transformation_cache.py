@@ -127,15 +127,11 @@ def tf_get_buffer(transformation):
     for k in transformation:
         if k.isupper():
             continue
-        if k in ("__compilers__", "__languages__", "__meta__"):
+        if k in ("__compilers__", "__languages__", "__meta__", "__env__"):
             continue
         v = transformation[k]
         if k in ("__language__", "__output__", "__as__", "__format__"):
             d[k] = v
-            continue
-        elif k == "__env__":
-            checksum = v
-            d[k] = checksum
             continue
         celltype, subcelltype, checksum = v
         d[k] = celltype, subcelltype, checksum
@@ -191,7 +187,11 @@ class TransformationCache:
         self.rev_transformation_jobs = {} # job-to-tf-checksum
         self.job_progress = {}
 
-        self.transformer_to_transformations = {} # 1:1, transformations as tf-checksums
+        # 1:1, transformations as tf-checksums.
+        # Note that tf_checksum does not exactly correspond to the serialized transformation dict,
+        # (see Transformer.get_transformation_checksum)
+        self.transformer_to_transformations = {} 
+                                                 
         self.transformations_to_transformers = {} # 1:list, transformations as tf-checksums
 
         self.remote_transformers = {}
@@ -404,7 +404,7 @@ class TransformationCache:
                 buffer_cache.incref(result_checksum, False)
             incref_transformation(tf_checksum, tf_buffer, transformation)
         else:
-            # Just to reflect updates in __meta__ etc.
+            # Just to reflect updates in __meta__, __env__ etc.
             self.transformations[tf_checksum] = transformation
 
         tf = self.transformations_to_transformers[tf_checksum]
@@ -450,7 +450,7 @@ class TransformationCache:
         if result_checksum is not None:
             if isinstance(transformer, Transformer):
                 #print("CACHE HIT", transformer, result_checksum.hex())
-                from ...metalevel.debugmount import debugmountmanager        
+                from ...metalevel.debugmount import debugmountmanager
                 if debugmountmanager.is_mounted(transformer):
                     debugmountmanager.debug_result(transformer, result_checksum)
                     return
@@ -992,7 +992,7 @@ class TransformationCache:
             return
         self._hard_cancel(job)
 
-    async def run_transformation_async(self, tf_checksum, *, fingertip, metalike=None):
+    async def run_transformation_async(self, tf_checksum, *, fingertip, tf_dunder=None):
         from . import CacheMissError
                 
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
@@ -1003,11 +1003,11 @@ class TransformationCache:
         transformation = await self.serve_get_transformation(tf_checksum, None)
         if transformation is None:
             raise CacheMissError(tf_checksum.hex())
-        if metalike is not None:
+        if tf_dunder is not None:
             transformation = transformation.copy()
-            for k in ("__compilers__", "__languages__", "__meta__"):
-                if k in metalike:
-                    transformation[k] = metalike[k] 
+            for k in ("__compilers__", "__languages__", "__meta__", "__env__"):
+                if k in tf_dunder:
+                    transformation[k] = tf_dunder[k] 
         for k,v in transformation.items():
             if k in ("__language__", "__output__", "__as__",):
                 continue
@@ -1026,7 +1026,7 @@ class TransformationCache:
         transformer = DummyTransformer(tf_checksum)
         async def incref_and_run():
             result = await self.incref_transformation(
-                transformation, transformer, 
+                transformation, transformer,
                 transformation_build_exception=None
             )
             if result is not None:
@@ -1075,7 +1075,7 @@ class TransformationCache:
         self.register_known_transformation(tf_checksum, result_checksum)
         return result_checksum
 
-    def run_transformation(self, tf_checksum, *, fingertip, metalike=None, new_event_loop=False):
+    def run_transformation(self, tf_checksum, *, fingertip, tf_dunder=None, new_event_loop=False):
         event_loop = asyncio.get_event_loop()
         if event_loop.is_running() or new_event_loop:
             # To support run_transformation inside transformer code
@@ -1085,7 +1085,7 @@ class TransformationCache:
                 # Therefore, we can't update the Seamless workflow graph, but we shouldn't have to
                 # The use case is essentially: using the functional style under Jupyter
                 def func():
-                    coro = self.run_transformation_async(tf_checksum, fingertip=fingertip, metalike=metalike)
+                    coro = self.run_transformation_async(tf_checksum, fingertip=fingertip, tf_dunder=tf_dunder)
                     # The following hangs, even for a "dummy" coroutine:
                     #  future = asyncio.run_coroutine_threadsafe(coro, event_loop)                        
                     #  return future.result()
@@ -1110,7 +1110,7 @@ class TransformationCache:
                         await asyncio.sleep(0.01)
                 try:
                     return loop.run_until_complete(
-                        self.run_transformation_async(tf_checksum, fingertip=fingertip, metalike=metalike)
+                        self.run_transformation_async(tf_checksum, fingertip=fingertip, tf_dunder=tf_dunder)
                     )
                 finally:
                     for task in asyncio.all_tasks(loop):
@@ -1119,7 +1119,7 @@ class TransformationCache:
 
         else:
             fut = asyncio.ensure_future(
-                self.run_transformation_async(tf_checksum, fingertip=fingertip, metalike=metalike)
+                self.run_transformation_async(tf_checksum, fingertip=fingertip, tf_dunder=tf_dunder)
             )
             asyncio.get_event_loop().run_until_complete(fut)
             return fut.result()
@@ -1132,7 +1132,6 @@ class TransformationCache:
             raise ValueError("transformation_checksum")
         
         result_checksum, _ = self._get_transformation_result(transformation_checksum)
-        print("RES", result_checksum.hex())
         result_checksum2 = self.known_transformations.pop(transformation_checksum, None)
         assert result_checksum is None or result_checksum2 is None or (result_checksum == result_checksum2)
 
