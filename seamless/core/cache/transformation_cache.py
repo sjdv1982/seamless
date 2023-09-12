@@ -1124,6 +1124,36 @@ class TransformationCache:
             asyncio.get_event_loop().run_until_complete(fut)
             return fut.result()
 
+    def contest(self, transformation_checksum:bytes | str):
+        """Contests a previously calculated transformation result"""
+        from seamless.util import parse_checksum
+        transformation_checksum = parse_checksum(transformation_checksum, as_bytes=True)
+        if transformation_checksum is None:
+            raise ValueError("transformation_checksum")
+        
+        result_checksum, _ = self._get_transformation_result(transformation_checksum)
+        print("RES", result_checksum.hex())
+        result_checksum2 = self.known_transformations.pop(transformation_checksum, None)
+        assert result_checksum is None or result_checksum2 is None or (result_checksum == result_checksum2)
+
+        if transformation_checksum in self.transformation_results:
+            self.transformation_results.pop(transformation_checksum, None)
+            if result_checksum is not None:
+                buffer_cache.decref(result_checksum)
+        self.transformation_logs.pop(transformation_checksum, None)
+        
+        if result_checksum2 is not None:
+            self.known_transformations_rev[result_checksum2].remove(transformation_checksum)
+            result_checksum = result_checksum2
+        
+        if result_checksum is None:
+            raise RuntimeError("Unknown transformation result")
+        status, response = database.contest(transformation_checksum, result_checksum)
+        if status == 200:
+            return None
+        else:
+            return response
+            
     def destroy(self):
         # only called when Seamless shuts down
         a = self.transformer_to_transformations

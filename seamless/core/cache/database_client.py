@@ -60,34 +60,7 @@ class Database:
 
         self.active = True
 
-    def delete_key(self, key_type, checksum):
-        assert key_type in [
-            "buffer_info",
-            "compilation",
-            "transformation",
-            "elision",
-            "metadata",
-            "expression",
-            "structured_cell_join",
-        ]
-
-        if not self.active:
-            return
-        url = "http://" + self.host + ":" + str(self.port)
-        request = {
-            "type": "delete_key",
-            "key_type": key_type,
-            "checksum": parse_checksum(checksum)
-        }
-        response = session.put(url, data=json.dumps(request))
-        if response.status_code != 200:
-            raise Exception((response.status_code, response.text))
-        return response.json() == True
-
-    def delete_syntactic_to_semantic(self, *, semantic, syntactic, celltype, subcelltype):
-        raise NotImplementedError
-
-    def send_put_request(self, request):
+    def send_put_request(self, request, *, raise_exception=True):
         if not self.active:
             return
         url = "http://" + self.host + ":" + str(self.port)
@@ -96,7 +69,7 @@ class Database:
         else:
             rqbuf = json.dumps(request)
         response = session.put(url, data=rqbuf)
-        if response.status_code != 200:
+        if raise_exception and response.status_code != 200:
             raise Exception((response.status_code, response.text))
         return response
 
@@ -185,6 +158,20 @@ class Database:
         }
         self._log("SET", request["type"], request["type"])
         self.send_put_request(request)
+
+    def contest(self, transformation_checksum:bytes, result_checksum:bytes):
+        """Contests a previously calculated transformation result"""
+        transformation_checksum = parse_checksum(transformation_checksum, as_bytes=False)
+        assert transformation_checksum is not None
+        result_checksum = parse_checksum(result_checksum, as_bytes=False)
+        assert result_checksum is not None
+        request = {
+            "type": "contest",
+            "checksum": transformation_checksum,
+            "result": result_checksum,
+        }
+        response = self.send_put_request(request, raise_exception=False)
+        return response.status_code, response.text
 
     def send_get_request(self, request):
         if not self.active:

@@ -1222,6 +1222,31 @@ and local execution is a fallback."""
         else:
             tf.tf.hard_cancel()
 
+    def contest(self) -> str | None:
+        """Contest the result of a finished transformer.
+        
+        This may be useful in the case of non-reproducible transformers.
+        
+        While the correct solution is to make them deterministic, this method
+        will allow repeated execution under various conditions, in order to 
+        investigate the issue.
+
+        If the transformer has no associated transformation (e.g. undefined inputs)
+        or the transformation result is not known, an exception is raised.
+        
+        Otherwise, if the database returns an error message, that is returned as string.
+
+        """
+        from seamless.core.cache.transformation_cache import transformation_cache
+        if self._parent() is not None:
+            tcache = self._parent()._manager.cachemanager.transformation_cache
+        else:
+            tcache = transformation_cache
+        tf_checksum = self.get_transformation_checksum()
+        if tf_checksum is None:
+            raise RuntimeError("Transformer has no defined transformation")        
+        return tcache.contest(tf_checksum)
+        
     @property
     def self(self):
         """Returns a wrapper where the pins are not directly accessible.

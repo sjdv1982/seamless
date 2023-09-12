@@ -1,3 +1,8 @@
+
+
+The database PUT "contest" method takes a checksum of a transformation that has been solved already. It is *moved* to the table of contested transformation, meaning that 
+
+
 Random things TODO regarding integration:
 
 - Rip the entire communion protocol, too much trouble with websockets,
@@ -18,6 +23,9 @@ Random things TODO regarding integration:
   After that, support transformation meta (see old jobless), progress/prelim, logs, hardcancel, etc.
   Some kind of response-and-make-a-new-request? We really don't want websockets... UPDATE: use repeated PUTs instead
   In general, assistant protocol cannot deal with streaming logs/results, would be nice if it could. 
+  UPDATE: Make a mini-assistant that has meta but also env arguments. 
+  ***Dogma: env (recipe) != Transformation.__env__ (schema) !!!***
+  In addition, implement "contest" API for mini-assistant (tests/highlevel/contest.py can't work without).
 
   Finally, rename imperative-communion and split it into a re-entrant version 
   (local=False, currently commented out), and the all-local version.
