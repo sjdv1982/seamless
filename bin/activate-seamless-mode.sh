@@ -1,5 +1,17 @@
-function _seamless_complete() {
+function _add_history () {
+    UNEXPANDED_READLINE_LINE=$READLINE_LINE
+    history -s $READLINE_LINE
+}
+
+
+function _seamless_complete() {    
+    PREV_READLINE_LINE=$READLINE_LINE
     READLINE_LINE=$(_seamlessify $READLINE_LINE @@@ $SEAMLESS_MODE_OPTS)
+    SEAMLESS_READLINE_LINE=$READLINE_LINE
+    if [ "$SEAMLESS_READLINE_LINE" == "$PREV_READLINE_LINE" ]; then
+        # seamlessify did nothing. Undo the previous shell-expand-line
+        READLINE_LINE=$UNEXPANDED_READLINE_LINE
+    fi    
 }
 
 function seamless-mode() {
@@ -13,9 +25,11 @@ function seamless-mode() {
     fi
     echo 'seamless mode ON'
     echo "seamless mode options: $SEAMLESS_MODE_OPTS"
-    bind -x '"\C-t1":_seamless_complete'
-    bind '"\C-t2": accept-line'
-    bind '"\C-M":"\C-t1\C-t2"'
+    bind -x '"\C-u9":_add_history'
+    bind '"\C-u8": shell-expand-line'
+    bind -x '"\C-u1":_seamless_complete'
+    bind '"\C-u2": accept-line'
+    bind '"\C-M":"\C-u9\C-u8\C-u1\C-u2"'
 }
 
 
@@ -41,6 +55,8 @@ function seamless-mode-toggle() {
     fi 
 }    
 
-bind -x '"\C-uu":seamless-mode-toggle'
+bind -x '"\C-u3":seamless-mode-toggle'
+bind '"\C-u4": accept-line'
+bind '"\C-uu":"\C-u3\C-u4"'
 echo 'seamless-mode-toggle: Press Ctrl-U, then U '
 

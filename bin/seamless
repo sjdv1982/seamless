@@ -153,33 +153,33 @@ if args.unquote:
     command = command[0].replace(";", " ; ").split()
 
 
-def _get_smlsfile(path: Path) -> Path or None:
-    smlsfiles = [Path(path.as_posix() + ".smls")]
+def _get_smfile(path: Path) -> Path or None:
+    smfiles = [Path(path.as_posix() + ".seamless-mode")]
     stem, suffix = os.path.splitext(path.as_posix())
     if stem != path.as_posix():
-        smlsfiles.append(Path(stem + ".smls"))
+        smfiles.append(Path(stem + ".seamless-mode"))
     if len(suffix):
-        smlsfiles.append(Path(stem + ".smls" + suffix))
-    # TODO: special directory:  - /home/$USER/.seamless/stem.smls
-    #                           - /home/$USER/.seamless/full/path/stem.smls
-    for smlsfile in smlsfiles:
-        msg(3, "search smlsfile... : {}".format(smlsfile.as_posix()))
-        if smlsfile.exists():
-            msg(3, "smlsfile found")
-            return smlsfile
+        smfiles.append(Path(stem + ".seamless-mode" + suffix))
+    # TODO: special directory:  - /home/$USER/.seamless/stem.seamless-mode
+    #                           - /home/$USER/.seamless/full/path/stem.seamless-mode
+    for smfile in smfiles:
+        msg(3, "search .seamless-mode file... : {}".format(smfile.as_posix()))
+        if smfile.exists():
+            msg(3, ".seamless-mode file found")
+            return smfile
         else:
-            msg(3, "smlsfile not found")
-    smlsfiles = glob.glob("{}.smls.*".format(stem))
-    msg(3, "glob search smlsfile... : {}.smls.*".format(stem))
-    if len(smlsfiles):
-        smlsfile = smlsfiles[0]
-        msg(3, "smlsfile '{}' found via glob search".format(smlsfile))
-        return Path(smlsfile)
+            msg(3, ".seamless-mode file not found")
+    smfiles = glob.glob("{}.seamless-mode.*".format(stem))
+    msg(3, "glob search .seamless-mode file... : {}.seamless-mode.*".format(stem))
+    if len(smfiles):
+        smfile = smfiles[0]
+        msg(3, ".seamless-mode file '{}' found via glob search".format(smfile))
+        return Path(smfile)
 
 
 msg(1, "determine mode: COMMAND or WORKSPACE")
 
-smlsfile = None
+smfile = None
 workspace_script_argindex = None
 
 arg1 = Path(command[0])
@@ -194,14 +194,14 @@ if not arg1.exists():
         )
         arg1 = Path(execarg1)
 if arg1.exists():
-    smlsfile = _get_smlsfile(arg1)
-    if smlsfile is None:
-        msg(2, "first argument '{}' has no smlsfile".format(arg1.as_posix()))
+    smfile = _get_smfile(arg1)
+    if smfile is None:
+        msg(2, "first argument '{}' has no .seamless-mode file".format(arg1.as_posix()))
     else:
         msg(
             1,
-            "found smlsfile '{}' for first argument '{}'".format(
-                smlsfile, arg1.as_posix()
+            "found smfile '{}' for first argument '{}'".format(
+                smfile, arg1.as_posix()
             ),
         )
         msg(0, "select first argument as workspace script")
@@ -209,32 +209,32 @@ if arg1.exists():
 else:
     msg(1, "first argument '{}' is not a file".format(arg1.as_posix()))
 
-if smlsfile is None and len(command) > 1 and not arg1.suffix:
-    msg(3, "first argument has no suffix, consider second argument for smlsfile")
+if smfile is None and len(command) > 1 and not arg1.suffix:
+    msg(3, "first argument has no suffix, consider second argument for .seamless-mode file")
     arg2 = Path(command[1])
     if len(arg2.suffix):
         msg(
             3,
-            "second argument '{}' has a suffix, look for smlsfile".format(
+            "second argument '{}' has a suffix, look for .seamless-mode file".format(
                 arg2.as_posix()
             ),
         )
     if arg2.exists():
-        smlsfile = _get_smlsfile(arg2)
-        if smlsfile is None:
-            msg(2, "second argument '{}' has no smlsfile".format(arg2.as_posix()))
+        smfile = _get_smfile(arg2)
+        if smfile is None:
+            msg(2, "second argument '{}' has no .seamless-mode file".format(arg2.as_posix()))
         else:
             msg(
                 1,
-                "found smlsfile '{}' for second argument '{}'".format(
-                    smlsfile, arg2.as_posix()
+                "found .seamless-mode file '{}' for second argument '{}'".format(
+                    smfile, arg2.as_posix()
                 ),
             )
             msg(0, "select second argument as workspace script")
             workspace_script_argindex = 2
 
-if smlsfile is None:
-    msg(2, "no smlsfile found")
+if smfile is None:
+    msg(2, "no .seamless-mode file found")
     msg(1, "select COMMAND mode")
     command_mode = True
     overrule_ext, overrule_no_ext = False, False
@@ -255,11 +255,11 @@ else:
     assert workspace_script_argindex
     msg(1, "select WORKSPACE mode")
     command_mode = (
-        False  # TODO: may be set to true later, after running the smlsfile...
+        False  # TODO: may be set to true later, after running the smfile...
     )
     raise NotImplementedError  # workspace mode
 
-argdictstr = json.dumps(argdict, sort_keys=True, indent=2)
+argdictstr = json.dumps(argdict, sort_keys=False, indent=2)
 msg(1, "argument dict:\n" + argdictstr)
 
 file_mapping_mode = args.file_mapping_mode

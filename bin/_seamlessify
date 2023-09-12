@@ -46,10 +46,15 @@ if len(words[0]) <= 2 and words[0] not in nonskipwords:
     print(line)
     exit(0)
 
+if len(words) == 1:
+    ww = words[0].split("=")
+    if len(ww) == 2 and ww[0].isalnum() and ww[1].isalnum():
+        print(line)
+        exit(0)
+
 import os
 homedir = os.path.expanduser("~")
 for n in range(len(words)-1, 1, -1):
-    words[n] = words[n].replace("~", homedir)
     words[n] = words[n].replace("$", "\$")
 
 for n in range(len(words)-1, 1, -1):
@@ -68,7 +73,7 @@ else:
 
 #print("QUOT", quotable_command, file=sys.stderr)
 #print("NQUOT", nonquotable_command, file=sys.stderr)
-result = "seamless " + seamless_opts + ' -c """' + " ".join(quotable_command) + '"""'
+result = "seamless " + seamless_opts + " -c '''" + " ".join(quotable_command) + "'''"
 if nonquotable_command:
     result += " " + " ".join(nonquotable_command)
 print(result)    
