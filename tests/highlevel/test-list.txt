@@ -120,6 +120,7 @@ library-in-library.py
 library-schema.py
 contest.py: requires delegation level 3. Can be run with full delegation using "export DELEGATE=''", but this requires the mini-assistant or better.
 imperative.py
+imperative-contest.py: requires delegation level 3
 imperative-jupyter.sh
 imperative-async.sh
 imperative-async-parallel.py: can be run with delegation using "export DELEGATE=''"

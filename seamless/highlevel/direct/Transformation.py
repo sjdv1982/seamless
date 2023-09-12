@@ -116,7 +116,7 @@ class Transformation:
                     raise RuntimeError(msg.format(depname, dep.exception))
         except Exception:
             self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"
-
+    
     def compute(self):
         if self._evaluated:
             return
@@ -255,6 +255,48 @@ class Transformation:
             return "Status: ready"
         except Exception:
             return "Status: unknown exception"
+        
+    def cancel(self) -> None:
+        """Hard-cancels the transformation.
+
+        This will send a cancel signal that will kill the transformation if
+        it is running.
+
+        The transformation is killed with a HardCancelError exception.
+        Clearing the exception using Transformer.clear_exception
+        will restart the transformation.
+
+        This affects both local and remote execution.
+        """
+        from ...core.cache.transformation_cache import transformation_cache
+        tf_checksum = self._transformation_checksum
+        
+        if tf_checksum is None:
+            return
+
+        transformation_cache.hard_cancel(tf_checksum=tf_checksum)
+
+    def contest(self) -> str | None:
+        """Contest the result of a finished transformation.
+        
+        This may be useful in the case of non-reproducible transformations.
+        
+        While the correct solution is to make them deterministic, this method
+        will allow repeated execution under various conditions, in order to 
+        investigate the issue.
+        
+        If the database returns an error message, that is returned as string.
+        """
+        from seamless.core.cache.transformation_cache import transformation_cache
+        result_checksum = self.checksum
+        if result_checksum is None:
+            raise RuntimeError("Not a completed transformation")
+        self._evaluated = False
+        self._result_checksum = None 
+        self._future = None
+        return transformation_cache.contest(self.as_checksum().bytes())
+
+
 def transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies = None) -> Transformation:
     from seamless.core.direct.run import run_transformation_dict, run_transformation_dict_async, prepare_transformation_dict
     from seamless.core.cache.transformation_cache import tf_get_buffer

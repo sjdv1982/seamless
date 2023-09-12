@@ -1138,7 +1138,8 @@ class TransformationCache:
         if transformation_checksum in self.transformation_results:
             self.transformation_results.pop(transformation_checksum, None)
             if result_checksum is not None:
-                buffer_cache.decref(result_checksum)
+                if result_checksum2 is None:
+                    buffer_cache.decref(result_checksum)
         self.transformation_logs.pop(transformation_checksum, None)
         
         if result_checksum2 is not None:
