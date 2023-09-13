@@ -1,7 +1,7 @@
 class Checksum:
     _value = None
     def __init__(self, checksum):
-        from seamless import parse_checksum
+        from seamless.util import parse_checksum
         if isinstance(checksum, Checksum):
             checksum = checksum.value
         self._value = parse_checksum(checksum, as_bytes=False)
