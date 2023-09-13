@@ -80,7 +80,7 @@ def get_file_mapping(
             fullpath = Path(argname).resolve().as_posix()
             if mapping_mode == "literal":
                 argname2 = argname
-                if not fullpath.startswith(cwd):
+                if not fullpath.startswith(cwd + os.sep):
                     errmsg = """Argument {} is not under the current working directory.
 This is required under 'literal' file mapping. 
 To solve this problem:

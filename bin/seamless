@@ -135,6 +135,8 @@ if args.action is not None:
         msg(0, "Action set to WAIT")
         raise NotImplementedError  # wait action
 
+msg(3, "Command:", json.dumps(command, indent=4))
+
 if len(command) == 0:
     # TODO: check for --wait and similar
     parser.print_usage()  # TODO: add to usage message

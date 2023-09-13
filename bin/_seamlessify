@@ -4,6 +4,7 @@ import sys, os, re
 
 skipwords= "cd rm ls mv cp \
 exit source echo function set unset let export \
+man printenv \
 conda mamba pip apt \
 more less \
 code nano vi emacs gedit"
@@ -52,10 +53,6 @@ if len(words) == 1:
         print(line)
         exit(0)
 
-import os
-homedir = os.path.expanduser("~")
-for n in range(len(words)-1, 1, -1):
-    words[n] = words[n].replace("$", "\$")
 
 for n in range(len(words)-1, 1, -1):
     sep = words[n].strip()
@@ -73,7 +70,13 @@ else:
 
 #print("QUOT", quotable_command, file=sys.stderr)
 #print("NQUOT", nonquotable_command, file=sys.stderr)
-result = "seamless " + seamless_opts + " -c '''" + " ".join(quotable_command) + "'''"
+quotable_command = " ".join(quotable_command)
+quotable_command = quotable_command.replace("'", "'\\\''")
+quote = "'"
+
+if quotable_command[-1].endswith("'"):
+    quotable_command += " "
+result = "seamless " + seamless_opts + " -c " + quote + quotable_command + quote
 if nonquotable_command:
     result += " " + " ".join(nonquotable_command)
 print(result)    
