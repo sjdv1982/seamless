@@ -1124,7 +1124,7 @@ class TransformationCache:
             asyncio.get_event_loop().run_until_complete(fut)
             return fut.result()
 
-    def contest(self, transformation_checksum:bytes | str):
+    def undo(self, transformation_checksum:bytes | str):
         """Contests a previously calculated transformation result"""
         from seamless.util import parse_checksum
         transformation_checksum = parse_checksum(transformation_checksum, as_bytes=True)

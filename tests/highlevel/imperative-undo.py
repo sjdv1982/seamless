@@ -16,7 +16,7 @@ t2.compute()
 print(f"2 + 2 = {t2.value}")
 
 t2cs = t2.as_checksum()
-t2.contest()
+t2.undo()
 
 from seamless.config import database
 database.set_transformation_result(t2cs.bytes(), five.bytes())
@@ -28,4 +28,4 @@ t2 = add(2, 2)
 t2.compute()
 print(f"2 + 2 = {t2.value}")
 
-t2.contest()
+t2.undo()

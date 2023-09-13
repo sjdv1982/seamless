@@ -276,8 +276,8 @@ class Transformation:
 
         transformation_cache.hard_cancel(tf_checksum=tf_checksum)
 
-    def contest(self) -> str | None:
-        """Contest the result of a finished transformation.
+    def undo(self) -> str | None:
+        """Attempt to undo a finished transformation.        
         
         This may be useful in the case of non-reproducible transformations.
         
@@ -285,6 +285,7 @@ class Transformation:
         will allow repeated execution under various conditions, in order to 
         investigate the issue.
         
+        The database is contacted in order to contest the result.
         If the database returns an error message, that is returned as string.
         """
         from seamless.core.cache.transformation_cache import transformation_cache
@@ -294,7 +295,7 @@ class Transformation:
         self._evaluated = False
         self._result_checksum = None 
         self._future = None
-        return transformation_cache.contest(self.as_checksum().bytes())
+        return transformation_cache.undo(self.as_checksum().bytes())
 
 
 def transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies = None) -> Transformation:

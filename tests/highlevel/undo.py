@@ -32,7 +32,7 @@ print("Transformation:", tf_checksum)
 result_checksum = tf.result.checksum
 print("Result:", result_checksum)
 
-error_msg = tf.contest()
+error_msg = tf.undo()
 print("Error:", error_msg)
 print()
 
@@ -42,6 +42,6 @@ ctx.compute()
 print("{:.1f} seconds".format(time.time() - t))
 print(tf.result.value)
 
-error_msg = tf.contest()
+error_msg = tf.undo()
 print("Error:", error_msg)
 print()

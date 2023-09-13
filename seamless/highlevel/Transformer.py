@@ -1222,8 +1222,8 @@ and local execution is a fallback."""
         else:
             tf.tf.hard_cancel()
 
-    def contest(self) -> str | None:
-        """Contest the result of a finished transformer.
+    def undo(self) -> str | None:
+        """Attempt to undo a finished transformer.        
         
         This may be useful in the case of non-reproducible transformers.
         
@@ -1234,9 +1234,10 @@ and local execution is a fallback."""
         If the transformer has no associated transformation (e.g. undefined inputs)
         or the transformation result is not known, an exception is raised.
         
-        Otherwise, if the database returns an error message, that is returned as string.
-
+        Otherwise, the database is contacted in order to contest the result.
+        If the database returns an error message, that is returned as string.
         """
+
         from seamless.core.cache.transformation_cache import transformation_cache
         if self._parent() is not None:
             tcache = self._parent()._manager.cachemanager.transformation_cache
@@ -1245,7 +1246,7 @@ and local execution is a fallback."""
         tf_checksum = self.get_transformation_checksum()
         if tf_checksum is None:
             raise RuntimeError("Transformer has no defined transformation")        
-        return tcache.contest(tf_checksum)
+        return tcache.undo(tf_checksum)
         
     @property
     def self(self):
