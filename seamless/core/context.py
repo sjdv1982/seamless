@@ -72,6 +72,7 @@ compilers: dict or None
 languages: dict or None
     Languages specification. If None, workers will use seamless.core.compiler.languages
 """
+        from seamless.config import check_delegation
         global Macro
         if Macro is None:
             from .macro import Macro
@@ -79,6 +80,7 @@ languages: dict or None
         if manager is not None:
             assert toplevel
         if toplevel:
+            check_delegation()
             self._toplevel = True
             if manager is None:
                 manager = Manager()

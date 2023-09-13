@@ -353,6 +353,8 @@ class Context(Base, HelpMixin):
         "manager": re-use the manager of a previous context.
         The manager controls caching and execution.
         """
+        from seamless.config import check_delegation
+        check_delegation()
         super().__init__(None, ())
 
         if manager is not None:

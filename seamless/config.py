@@ -1,4 +1,5 @@
 import os
+import sys
 from urllib.parse import urlparse
 
 import logging
@@ -146,6 +147,20 @@ Delegate some or all buffers and results.
     if level == 3:
         _init_database_from_env()
     _delegate_level = level
+
+_checked_delegation = False
+def check_delegation():
+    global _checked_delegation
+    if _checked_delegation:
+        return
+    if _delegate_level is None:
+        msg = """WARNING: Seamless delegation level was not set.
+
+Use seamless.delegate() to enable delegation, or seamless.delegate(False)
+to disable it. Continuing without delegation.
+"""
+        print(msg, file=sys.stderr)
+    _checked_delegation = True
 
 from .core.cache.database_client import database
 from .core.manager import block, unblock, block_local, unblock_local

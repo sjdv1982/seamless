@@ -1,7 +1,7 @@
-"""Seamless: a cell-based interactive workflow framework
+"""Seamless: a framework for reproducible computing and interactive workflows
 
 Author: Sjoerd de Vries
-Copyright 2016-2022, INSERM and project contributors
+Copyright 2016-2023, INSERM, CNRS and project contributors
 """
 import sys
 import traceback
@@ -9,7 +9,6 @@ import asyncio
 import logging
 import subprocess
 import sys
-import multiprocessing
 sys.modules["seamless.subprocess"] = subprocess  # pre-0.7 compat
 logger = logging.getLogger("seamless")
 
@@ -85,7 +84,9 @@ def activate_transformations():
     transformation_cache.active = True
 
 def run_transformation(checksum, *, fingertip=False, tf_dunder=None, new_event_loop=False):
+    from seamless.config import check_delegation
     from seamless.util import is_forked
+    check_delegation()
     if running_in_jupyter and not new_event_loop:
         raise RuntimeError("'run_transformation' cannot be called from within Jupyter. Use 'await run_transformation_async' instead")
     elif asyncio.get_event_loop().is_running():
@@ -103,7 +104,9 @@ def run_transformation(checksum, *, fingertip=False, tf_dunder=None, new_event_l
     return transformation_cache.run_transformation(checksum, fingertip=fingertip, tf_dunder=tf_dunder, new_event_loop=new_event_loop)
 
 async def run_transformation_async(checksum, *, fingertip, tf_dunder=None):
+    from seamless.config import check_delegation
     from .core.cache.transformation_cache import transformation_cache
+    check_delegation()
     checksum = parse_checksum(checksum, as_bytes=True)
     transformation_cache.transformation_exceptions.pop(checksum, None)
     return await transformation_cache.run_transformation_async(checksum,tf_dunder=tf_dunder, fingertip=fingertip)
@@ -126,4 +129,9 @@ from .core.cache import CacheMissError
 from .highlevel.direct import transformer
 from .util import parse_checksum
 from .config import delegate
-__all__ = ["calculate_checksum", "calculate_dict_checksum", "load_vault", "config", "CacheMissError", "transformer", "delegate"]
+__all__ = [
+    "calculate_checksum", "calculate_dict_checksum", "load_vault", "config", 
+    "CacheMissError", "transformer", "delegate",
+    "check_original_event_loop", "run_transformation", "run_transformation_async",
+    "activate_transformations", "deactivate_transformations"
+]
