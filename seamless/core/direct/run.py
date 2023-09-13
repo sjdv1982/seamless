@@ -22,6 +22,7 @@ from ...core.cache.transformation_cache import (
 from ...core.cache.tempref import temprefmanager
 from ...util import parse_checksum
 from ... import run_transformation, run_transformation_async
+from ...core.cache.buffer_remote import write_buffer
 
 _queued_transformations = []
 
@@ -56,8 +57,10 @@ def set_parent_process_response_queue(parent_process_response_queue):
 
 def cache_buffer(checksum, buf):
     from ...core.cache.buffer_cache import buffer_cache
-
+    from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
+    
     buffer_cache.cache_buffer(checksum, buf)
+    remote_write_buffer(checksum, buf)
 
 
 def get_buffer(checksum):
@@ -128,13 +131,11 @@ def run_transformation_dict(transformation_dict, fingertip):
     """
     # TODO: add input schema and result schema validation...
     from ...core.cache.database_client import database
-    from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
     from seamless.util import is_forked
 
     transformation_buffer = tf_get_buffer(transformation_dict)
     transformation = calculate_checksum(transformation_buffer)
     cache_buffer(transformation, transformation_buffer)
-    remote_write_buffer(transformation, transformation_buffer)
     increfed = _register_transformation_dict(
         transformation, transformation_buffer, transformation_dict
     )
@@ -224,7 +225,6 @@ async def run_transformation_dict_async(transformation_dict):
     return result_checksum
 
 def prepare_code(semantic_code_checksum, codebuf, code_checksum):
-    from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
     from ...core.cache.database_client import database
     from seamless.highlevel import Checksum
     if codebuf is not None:
@@ -246,9 +246,7 @@ def prepare_code(semantic_code_checksum, codebuf, code_checksum):
         semcode = get_buffer(semantic_code_checksum)
         if semcode is None:
             raise CacheMissError(semantic_code_checksum) from None
-    remote_write_buffer(semantic_code_checksum, semcode)
-    if codebuf is not None:
-        remote_write_buffer(code_checksum, codebuf)
+    cache_buffer(code_checksum, codebuf)
     semkey = (semantic_code_checksum, "python", "transformer")
     database.set_sem2syn(semkey, [code_checksum])
     value = Checksum(semantic_code_checksum)
@@ -274,7 +272,6 @@ def prepare_transformation_pin_value(value, celltype):
             buf = serialize(value, celltype)
         checksum = calculate_checksum(buf, hex=False)
         assert isinstance(checksum, bytes)
-        remote_write_buffer(checksum, buf)
         cache_buffer(checksum, buf)
         value = Checksum(checksum)
     return value
@@ -291,7 +288,7 @@ Replaced buffers or values are properly registered and cached
 
     from seamless.highlevel import Checksum
     
-    non_checksum_items = ("__output__", "__language__", "__meta__", "__env__")    
+    non_checksum_items = ("__output__", "__language__", "__meta__", "__env__")
 
     argnames = list(transformation_dict.keys())
     for argname in argnames:
