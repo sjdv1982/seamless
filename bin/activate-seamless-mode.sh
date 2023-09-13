@@ -70,8 +70,9 @@ function _restore_line() {
         READLINE_LINE="$BLOCKED_READLINE_LINE"
     fi    
 }
-function seamless-mode() {
-    _export_variables
+function seamless-mode-on() {
+    SEAMLESS_MODE_ON=1
+    ###_export_variables # does not work properly...
     if [ -z "$_SEAMLESS_MODE_OLD_PS1" ]; then
         _SEAMLESS_MODE_OLD_PS1=$PS1
         PS1='\[\e[32;95m\][seamless-mode]\[\e[0m\] \u@\h:\w$ '
@@ -93,6 +94,7 @@ function seamless-mode() {
 
 function seamless-mode-off() {
     echo 'seamless mode OFF'
+    unset SEAMLESS_MODE_ON
     bind '"\C-M": accept-line'
     if [ -n "$_SEAMLESS_MODE_OLD_PS1" ]; then
         PS1=$_SEAMLESS_MODE_OLD_PS1
@@ -103,20 +105,28 @@ function seamless-mode-off() {
 
 function seamless-mode-toggle() {
     if [ -n "$SEAMLESS_MODE_ON" ]; then
-        unset SEAMLESS_MODE_ON
         READLINE_LINE=""
         echo seamless-mode-off
         seamless-mode-off
-    else
-        SEAMLESS_MODE_ON=1
-        echo seamless-mode '-v'
-        seamless-mode '-v'
+    else        
+        echo seamless-mode-on '-v'
+        seamless-mode-on '-v'
     fi 
 }    
 
-set -a
-bind -x '"\C-u3":seamless-mode-toggle'
-bind '"\C-u4": accept-line'
-bind '"\C-uu":"\C-u3\C-u4"'
-echo 'seamless-mode-toggle: Press Ctrl-U, then U '
-
+function seamless-mode() {    
+    bind -x '"\C-u3":seamless-mode-toggle'
+    bind '"\C-u4": accept-line'
+    bind '"\C-uu":"\C-u3\C-u4"'
+    echo 'seamless mode is now available'
+    echo 'You can enable it or disable it with the following commands:'
+    echo ''
+    echo 'seamless-mode-on, seamless-mode-off, seamless-mode-toggle'
+    echo 'seamless-mode-toggle has been bound to a hotkey: Press Ctrl-U, then U'
+    echo ''
+    echo 'When seamless-mode is on, all commands will be executed using /bin/seamless'
+    echo '/bin/seamless has only access to environment variables (e.g. "export a=1"),'
+    echo '  not to local shell variables (e.g. "a=1") '
+    echo 'From now on, new local shell variables will be exported.'
+    set -a
+}

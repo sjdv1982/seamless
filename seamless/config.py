@@ -15,10 +15,14 @@ def _contact_assistant():
     env = os.environ
     host = env.get("SEAMLESS_ASSISTANT_IP")
     if host is None:
-        raise ValueError("environment variable SEAMLESS_ASSISTANT_IP not defined")
+        host = env.get("SEAMLESS_DEFAULT_ASSISTANT_IP")
+        if host is None:
+            raise ValueError("environment variable SEAMLESS_ASSISTANT_IP not defined")
     port = env.get("SEAMLESS_ASSISTANT_PORT")
     if port is None:
-        raise ValueError("environment variable SEAMLESS_ASSISTANT_PORT not defined")
+        port = env.get("SEAMLESS_DEFAULT_ASSISTANT_PORT")
+        if port is None:
+            raise ValueError("environment variable SEAMLESS_ASSISTANT_PORT not defined")
     port = int(port)
     if not (host.startswith("http://") or host.startswith("https://")):
         host = "http://" + host
