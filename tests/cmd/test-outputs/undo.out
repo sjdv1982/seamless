@@ -1,0 +1,47 @@
+seamless: Verbosity set to 1
+seamless: seamless 0.12
+seamless: determine mode: COMMAND or WORKSPACE
+seamless: select COMMAND mode
+seamless: argument dict:
+{
+  "@order": [
+    "date"
+  ],
+  "date": "value"
+}
+seamless: bash command:
+ date 
+
+seamless: Cannot undo: Unknown transformation result
+buffer cache, 2 buffers undestroyed
+seamless: Verbosity set to 1
+seamless: seamless 0.12
+seamless: determine mode: COMMAND or WORKSPACE
+seamless: select COMMAND mode
+seamless: argument dict:
+{
+  "@order": [
+    "date"
+  ],
+  "date": "value"
+}
+seamless: bash command:
+ date 
+
+Wed Sep 13 08:24:58 PM UTC 2023
+seamless: Verbosity set to 1
+seamless: seamless 0.12
+seamless: determine mode: COMMAND or WORKSPACE
+seamless: select COMMAND mode
+seamless: argument dict:
+{
+  "@order": [
+    "date"
+  ],
+  "date": "value"
+}
+seamless: bash command:
+ date 
+
+seamless: Undo transformation be0d4757898c109a29109e72030650593948c1dfc5f7e933b7def98ee8dbef4f => 939603efdf8f905f23197c18660eb1f5b62a2b0681ef1315209b1966b54dbb97
+buffer cache, 2 buffers undestroyed
