@@ -1,14 +1,17 @@
+import sys
 from ..core.protocol.serialize import serialize_sync as serialize
 from ..calculate_checksum import calculate_checksum
 from ..core.cache.buffer_remote import write_buffer as remote_write_buffer
-from ..core.direct.run import run_transformation_dict
+from ..core.direct.run import run_transformation_dict, register_transformation_dict
+from ..core.cache.transformation_cache import transformation_cache
 
 def run_bash_transformation(
     code: str,
     checksum_dict: dict[str, str],
     *,
     directories: list[str],
-    result_mode: str
+    result_mode: str,
+    undo: bool,
 ) -> str:
     """Runs a bash transformation.
 
@@ -56,7 +59,22 @@ def run_bash_transformation(
         vv = celltype, subcelltype, checksum.hex()
         transformation_dict[k] = vv
 
-    result_checksum = run_transformation_dict(transformation_dict, fingertip=False)
-    return result_checksum
+    if undo:
+        _, transformation_checksum = register_transformation_dict(transformation_dict)
+        try:
+            result = transformation_cache.undo(transformation_checksum)
+        except RuntimeError as exc:
+            result = "Cannot undo: " + " ".join(exc.args)
+        if isinstance(result, str):
+            msg(0, result)
+            return None
+        elif isinstance(result, bytes):
+            msg(1, f"Undo transformation {transformation_checksum.hex()} => {result.hex()}")
+            return result.hex()
+    else:
+        result_checksum = run_transformation_dict(transformation_dict, fingertip=False)
+        return result_checksum
 
     # TODO: add support for filesystem __format__ annotation
+
+from seamless.cmd.message import message as msg

@@ -124,6 +124,14 @@ def _register_transformation_dict(
     transformation_cache.transformations[transformation_checksum] = transformation_dict
     return result
 
+def register_transformation_dict(transformation_dict):
+    transformation_buffer = tf_get_buffer(transformation_dict)
+    transformation = calculate_checksum(transformation_buffer)
+    cache_buffer(transformation, transformation_buffer)
+    increfed = _register_transformation_dict(
+        transformation, transformation_buffer, transformation_dict
+    )
+    return increfed, transformation
 
 def run_transformation_dict(transformation_dict, fingertip):
     """Runs a transformation that is specified as a dict of checksums,
@@ -133,12 +141,7 @@ def run_transformation_dict(transformation_dict, fingertip):
     from ...core.cache.database_client import database
     from seamless.util import is_forked
 
-    transformation_buffer = tf_get_buffer(transformation_dict)
-    transformation = calculate_checksum(transformation_buffer)
-    cache_buffer(transformation, transformation_buffer)
-    increfed = _register_transformation_dict(
-        transformation, transformation_buffer, transformation_dict
-    )
+    increfed, transformation = register_transformation_dict(transformation_dict)
     if is_forked():
         assert database.active
         result_checksum, prelim = transformation_cache._get_transformation_result(

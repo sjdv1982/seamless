@@ -295,7 +295,9 @@ class Transformation:
         self._evaluated = False
         self._result_checksum = None 
         self._future = None
-        return transformation_cache.undo(self.as_checksum().bytes())
+        result = transformation_cache.undo(self.as_checksum().bytes())
+        if not isinstance(result, bytes):
+            return result
 
 
 def transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies = None) -> Transformation:

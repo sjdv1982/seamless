@@ -91,6 +91,12 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--undo",
+    help="Undo this seamless command",
+    action="store_true"
+)
+
+parser.add_argument(
     "--wait",
     help="Wait for earlier seamless commands",
     dest="action",
@@ -213,8 +219,14 @@ else:
 
 if smfile is None and len(command) > 1 and not arg1.suffix:
     msg(3, "first argument has no suffix, consider second argument for .seamless-mode file")
-    arg2 = Path(command[1])
-    if len(arg2.suffix):
+    arg2 = None
+    for n in range(1, len(command)):
+        arg = command[n]
+        if arg.startswith("-"):
+            continue
+        arg2 = Path(arg)
+        break
+    if arg2 is not None and len(arg2.suffix):
         msg(
             3,
             "second argument '{}' has a suffix, look for .seamless-mode file".format(
@@ -233,6 +245,7 @@ if smfile is None and len(command) > 1 and not arg1.suffix:
                 ),
             )
             msg(0, "select second argument as workspace script")
+            raise NotImplementedError
             workspace_script_argindex = 2
 
 if smfile is None:
@@ -303,8 +316,13 @@ if command_mode:
     # TODO: result mode
     result_mode = "stdout"
     result_checksum = run_bash_transformation(
-        bash_command, checksum_dict, directories=directories, result_mode=result_mode
+        bash_command, checksum_dict, directories=directories, result_mode=result_mode, undo=args.undo
     )
+    if args.undo:
+        if result_checksum is None:
+            exit(1)
+        else:
+            exit(0)
     try:
         result = buffer_cache.get_buffer(result_checksum)
         if result is None:

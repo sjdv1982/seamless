@@ -1246,7 +1246,9 @@ and local execution is a fallback."""
         tf_checksum = self.get_transformation_checksum()
         if tf_checksum is None:
             raise RuntimeError("Transformer has no defined transformation")        
-        return tcache.undo(tf_checksum)
+        result = tcache.undo(tf_checksum)
+        if not isinstance(result, bytes):
+            return result
         
     @property
     def self(self):

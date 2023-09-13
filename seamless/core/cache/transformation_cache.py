@@ -173,7 +173,8 @@ class TransformationCache:
     _blocked = False
     _blocked_local = False
     _destroyed = False
-
+    stateless = False   # if True, don't keep transformation results after
+                        #  writing them to a database
     # class singletons
     known_transformations = {}
     known_transformations_rev = {}  
@@ -822,6 +823,8 @@ class TransformationCache:
         buffer_cache.incref(result_checksum, False)
         if not prelim:
             database.set_transformation_result(tf_checksum, result_checksum)
+            if self.stateless:
+                self.transformation_results.pop(tf_checksum)
         transformers = self.transformations_to_transformers[tf_checksum]
         for transformer in transformers:
             if not update:
@@ -1150,7 +1153,7 @@ class TransformationCache:
             raise RuntimeError("Unknown transformation result")
         status, response = database.contest(transformation_checksum, result_checksum)
         if status == 200:
-            return None
+            return result_checksum
         else:
             return response
             
