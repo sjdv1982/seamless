@@ -58,7 +58,7 @@ transformation-checksum.sh: run with Seamless database. If not in the Docker ima
 transformation-raw.py
 transformation-raw-ipython.py
 transformation-raw-bash.py
-transformation-raw-bashdocker.py
+transformation-raw-bashdocker.py: can be run with delegation using "export DELEGATE=''"
 meta.py
 simple-duplex.py
 simple-remote.py: run together with seamless-jobslave
