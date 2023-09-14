@@ -821,7 +821,7 @@ class TransformationCache:
             buffer_cache.decref(old_result_checksum)
         self.transformation_results[tf_checksum] = result_checksum, prelim
         buffer_cache.incref(result_checksum, False)
-        if not prelim:
+        if not prelim:            
             database.set_transformation_result(tf_checksum, result_checksum)
             if self.stateless:
                 self.transformation_results.pop(tf_checksum)

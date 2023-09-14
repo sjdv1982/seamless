@@ -25,6 +25,14 @@ def get_bash_checksums():
         executor_code_checksum = sctx.executor_code.checksum
         executor_code_buffer = sctx.executor_code.buffer
         executor_code = sctx.executor_code.value
+        '''
+        ### for debugging
+        import os, seamless
+        executor_code = open(os.path.join(os.path.dirname(__file__), "../graphs/bashdocker_transformer/executor.py")).read()
+        executor_code_buffer = executor_code.encode()
+        executor_code_checksum = seamless.calculate_checksum(executor_code_buffer, hex=True)
+        ###
+        '''            
         semantic_code_checksum = _get_semantic(
             executor_code, bytes.fromhex(executor_code_checksum)
         )
@@ -34,7 +42,7 @@ def get_bash_checksums():
 
     return _bash_checksums.copy()
 
-def unbashify_docker(transformation_dict, semantic_cache, env: dict):
+def unbashify_docker(transformation_dict, semantic_cache, env: dict, execution_metadata:dict):
     from seamless.core.direct.run import prepare_code, prepare_transformation_pin_value
     tdict = deepcopy(transformation_dict)
     tdict["__language__"] = "python"
@@ -73,9 +81,17 @@ def unbashify_docker(transformation_dict, semantic_cache, env: dict):
     tdict["code"] = ("python", "transformer", semantic_code_checksum.hex())
     semkey = (semantic_code_checksum.bytes(), "python", "transformer")
     semantic_cache[semkey] = [bytes.fromhex(bash_checksums["docker_executor_code_checksum"])]
+
+    execution_metadata["Language bridge"] = {
+        "Source language": "bash",
+        "Executor language": "python",
+        "Executor": "Seamless standard graph: bashdocker_transformer",
+        "Executor checksum": bash_checksums["docker_executor_code_checksum"],
+    }
+
     return tdict
 
-def unbashify(transformation_dict, semantic_cache):
+def unbashify(transformation_dict:dict, semantic_cache, execution_metadata:dict):
     from seamless.core.direct.run import prepare_code, prepare_transformation_pin_value
     from seamless.core.manager import Manager
     from ..core.environment import (
@@ -99,7 +115,7 @@ def unbashify(transformation_dict, semantic_cache):
         ok2 = validate_conda_environment(env)[0]
         ok3 = validate_docker(env)[0]
         if not (ok1 or ok2 or ok3):
-            return unbashify_docker(transformation_dict, semantic_cache, env)
+            return unbashify_docker(transformation_dict, semantic_cache, env, execution_metadata)
 
     tdict = deepcopy(transformation_dict)
     tdict["__language__"] = "python"
@@ -120,4 +136,12 @@ def unbashify(transformation_dict, semantic_cache):
     tdict["code"] = ("python", "transformer", semantic_code_checksum.hex())
     semkey = (semantic_code_checksum.bytes(), "python", "transformer")
     semantic_cache[semkey] = [bytes.fromhex(bash_checksums["executor_code_checksum"])]
+
+    execution_metadata["Language bridge"] = {
+        "Source language": "bash",
+        "Executor language": "python",
+        "Executor": "Seamless standard graph: bash_transformer",
+        "Executor checksum": bash_checksums["executor_code_checksum"],
+    }
+
     return tdict

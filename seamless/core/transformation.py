@@ -273,14 +273,11 @@ class TransformationJob:
         transformation,
         semantic_cache, *, debug, fingertip,
         cannot_be_local=False
-    ):
-        from seamless.metalevel.unbashify import unbashify
+    ):        
         self.checksum = checksum
         assert codename is not None
         self.codename = codename
-        if transformation.get("__language__") == "bash":
-            transformation = unbashify(transformation, semantic_cache)
-        assert transformation.get("__language__") == "python", transformation.get("__language__")
+        assert transformation.get("__language__") in ("python", "bash"), transformation.get("__language__")
         assert "code" in transformation, transformation.keys()
         for pinname in transformation:
             if pinname in ("__compilers__", "__languages__", "__as__", "__meta__", "__format__"):
@@ -571,6 +568,7 @@ class TransformationJob:
     ):
         from .direct import set_parent_process_queue, set_parent_process_response_queue
         from seamless.util import is_forked
+        from seamless.metalevel.unbashify import unbashify
         if self.cannot_be_local:
             raise SeamlessTransformationError("Local computation has been disabled for this Seamless instance")
         with_ipython_kernel = False
@@ -579,13 +577,17 @@ class TransformationJob:
         self.execution_metadata = deepcopy(execution_metadata0)
         if "Executor" not in self.execution_metadata:
             self.execution_metadata["Executor"] = "seamless-internal"
+
+        transformation = self.transformation
+        if transformation.get("__language__") == "bash":
+            transformation = unbashify(transformation, self.semantic_cache, self.execution_metadata)
  
-        meta = self.transformation.get("__meta__")
+        meta = transformation.get("__meta__")
         meta = deepcopy(meta)
         if meta is not None and meta.get("local") == False:
             raise RuntimeError("Local execution has been disabled for this transformation")
 
-        env_checksum0 = self.transformation.get("__env__")
+        env_checksum0 = transformation.get("__env__")
         if env_checksum0 is not None:
             env_checksum = bytes.fromhex(env_checksum0)
             env = get_buffer(env_checksum, remote=True)
@@ -600,10 +602,10 @@ class TransformationJob:
         logs = [None, None, None]
         lock = await acquire_lock(self.checksum)
 
-        io = get_transformation_inputs_output(self.transformation)
+        io = get_transformation_inputs_output(transformation)
         inputs, outputname, output_celltype, output_subcelltype, output_hash_pattern = io
         tf_namespace = await build_transformation_namespace(
-            self.transformation, self.semantic_cache, self.codename
+            transformation, self.semantic_cache, self.codename
         )
         code, namespace, modules_to_build, deep_structures_to_unpack = tf_namespace
 
@@ -612,8 +614,8 @@ class TransformationJob:
             debug = deepcopy(self.debug)
 
         module_workspace = {}
-        compilers = self.transformation.get("__compilers__", default_compilers)
-        languages = self.transformation.get("__languages__", default_languages)
+        compilers = transformation.get("__compilers__", default_compilers)
+        languages = transformation.get("__languages__", default_languages)
         module_debug_mounts = None
         if debug is not None:
             module_debug_mounts = debug.get("module_mounts")
@@ -932,9 +934,9 @@ from .. import run_transformation_async
 
 execution_metadata0 = {}
 
-if "DOCKER_IMAGE" in os.environ:
+if os.environ.get("DOCKER_IMAGE"):
     execution_metadata0["Docker image"] = os.environ["DOCKER_IMAGE"]
-    if "DOCKER_VERSION" in os.environ:
+    if os.environ.get("DOCKER_VERSION"):
         execution_metadata0["Docker version"] = os.environ["DOCKER_VERSION"]
 
 _got_global_info = False
