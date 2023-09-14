@@ -32,6 +32,6 @@ Random things TODO regarding integration:
   Make a test that shows the memory savings of delegation, e.g. deep cell with many 50MB members, (disable lru cache? like --no-lru in serve-graph?)
 - For seamless-cli, when distributing, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile.
 - Make sure the examples can function without RPBS buffer server, or add it in the notebook
-- Re-review new-project, add delegation? probably not...
+- Re-review new-project, add delegation? UPDATE: read it from a project.yaml...
 - Clean up seamless-tools database tools and revise database-run-actions
 - Document: buffer read servers/folders fail silently, the buffer write server must succeed

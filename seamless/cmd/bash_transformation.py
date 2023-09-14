@@ -4,6 +4,7 @@ from ..calculate_checksum import calculate_checksum
 from ..core.cache.buffer_remote import write_buffer as remote_write_buffer
 from ..core.direct.run import run_transformation_dict, register_transformation_dict
 from ..core.cache.transformation_cache import transformation_cache
+from seamless.cmd.register import register_dict
 
 def run_bash_transformation(
     code: str,
@@ -12,6 +13,7 @@ def run_bash_transformation(
     directories: list[str],
     result_mode: str,
     undo: bool,
+    environment: dict
 ) -> str:
     """Runs a bash transformation.
 
@@ -23,6 +25,7 @@ def run_bash_transformation(
         - or: to a directory called RESULT, if result_mode is "directory"
     - checksum_dict: checksums of the files/directories to be injected in the workspace
     - directories: list of the keys in checksum_dict that are directories
+    - environment
     """
     if result_mode not in ("file", "directory", "stdout"):
         raise TypeError(result_mode)
@@ -48,6 +51,9 @@ def run_bash_transformation(
         "__language__": "bash",
         "__output__": ("result", "bytes", None)
     }
+    if environment:
+        env_checksum = register_dict(environment)
+        transformation_dict["__env__"] = env_checksum
     for k,v in checksum_dict.items():
         transformation_dict[k] = "bytes", None, v
 

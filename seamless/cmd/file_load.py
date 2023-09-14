@@ -1,34 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 
-from ..calculate_checksum import calculate_checksum
 from .message import message as msg
-from ..core.cache.buffer_remote import write_buffer as remote_write_buffer, can_read_buffer as remote_can_read
-
-def calculate_file_checksum(filename: str) -> str:
-    """Calculate a file checksum"""
-    with open(filename, "rb") as f:
-        buffer = f.read()
-    checksum = calculate_checksum(buffer, hex=True)
-    return checksum
-
-
-def register_file(filename: str) -> str:
-    """Calculate a file checksum and register its contents."""
-    with open(filename, "rb") as f:
-        buffer = f.read()
-    checksum = calculate_checksum(buffer)
-    remote_write_buffer(checksum, buffer)
-    return checksum.hex()
-
-
-def check_file(filename: str) -> tuple[bool, int]:
-    """Check if a file needs to be written remotely
-    Return the result, the checksum, and the length of the file buffer"""
-    with open(filename, "rb") as f:
-        buffer = f.read()
-    checksum = calculate_checksum(buffer)
-    result = remote_can_read(checksum)
-    return result, checksum.hex(), len(buffer)
+from .register import register_file, check_file, calculate_file_checksum
 
 
 def files_to_checksums(
