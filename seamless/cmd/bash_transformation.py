@@ -69,7 +69,7 @@ def run_bash_transformation(
             msg(0, result)
             return None
         elif isinstance(result, bytes):
-            msg(1, f"Undo transformation {transformation_checksum.hex()} => {result.hex()}")
+            msg(2, f"Undo transformation {transformation_checksum.hex()} => {result.hex()}")
             return result.hex()
     else:
         result_checksum = run_transformation_dict(transformation_dict, fingertip=False)

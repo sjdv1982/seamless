@@ -319,9 +319,14 @@ if command_mode:
         bash_command, checksum_dict, directories=directories, result_mode=result_mode, undo=args.undo
     )
     if args.undo:
+        # kludge to hide spurious "buffers undestroyed" warnings
+        import logging
+        logger = logging.getLogger("seamless")
+        logger.setLevel(logging.ERROR)
         if result_checksum is None:
             exit(1)
         else:
+            msg(1, "Transformation undone")
             exit(0)
     try:
         result = buffer_cache.get_buffer(result_checksum)
