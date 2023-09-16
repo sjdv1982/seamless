@@ -25,7 +25,10 @@ In case of failure:
 In all cases:
 - TARGET.LOG will contain the transformation log (if not empty). NOTE: the log will be empty if micro-assistant is being used.
 
-TODO: in a separate thread, touch TARGET.JOB  
+TODO: write TARGET.JOB for each result target. In a separate thread, touch them every 30 secs or so.
+
+TODO: seamlessify: strip the final & from the quoted section, add it at the end.
+seamlessify: don't quote at all if there is a single command node and no redirection.
 
 TODO: In the command, if a FILE.ext is named where FILE.ext does not exist... 
 - ... but FILE.ext.CHECKSUM does, take the checksum. If both exist, verify that the checksum is correct.
@@ -34,8 +37,6 @@ TODO: In the command, if a FILE.ext is named where FILE.ext does not exist...
 TODO: support directories
 
 TODO: support name-of-conda-environment. Most assistants should be able to deal with that, if only by preprending "conda activate" (even the micro-assistant could do that).
-
-TODO mid term: for FILE=the first/second argument in the command, read FILE.SEAMLESS.yaml not only for the entire command, but for each tokenized bash command. Unify the results. Unification is trivial in cases of "files", not so easy for "environment". Remember dogma: environments are validations, not recipes! If all Docker image names are the same, no problem, otherwise non-trivial. 
 
 TODO long term: for the non-trivial environments, collate all environments in to a "multi" field, and give it to the assistant to handle. micro-assistant will flat-out refuse.
 
