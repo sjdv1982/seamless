@@ -61,26 +61,16 @@ if len(words) == 1:
 for n in range(len(words)-1, 1, -1):
     sep = words[n].strip()
     if sep in ("\n", ";", "&&", "||"):
-        quotable_command = words
-        nonquotable_command = None
-        break
-    if sep in (">", ">>"):
-        quotable_command = words[:n]
-        nonquotable_command = words[n:]
+        command = words
         break
 else:
-    quotable_command = words
-    nonquotable_command = None
+    command = words
 
-#print("QUOT", quotable_command, file=sys.stderr)
-#print("NQUOT", nonquotable_command, file=sys.stderr)
-quotable_command = " ".join(quotable_command)
-quotable_command = quotable_command.replace("'", "'\\\''")
+command = " ".join(command)
+command = command.replace("'", "'\\\''")
 quote = "'"
 
-if quotable_command[-1].endswith("'"):
-    quotable_command += " "
-result = "seamless" + seamless_opts + " -c " + quote + quotable_command + quote
-if nonquotable_command:
-    result += " " + " ".join(nonquotable_command)
+if command[-1].endswith("'"):
+    command += " "
+result = "seamless" + seamless_opts + " -c " + quote + command + quote
 print(result)    

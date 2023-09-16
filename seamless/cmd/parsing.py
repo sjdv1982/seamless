@@ -1,6 +1,8 @@
 from typing import Any
 from pathlib import Path
 import os
+import bashlex
+from collections import namedtuple
 
 from .message import message as msg
 
@@ -54,9 +56,7 @@ def guess_arguments_with_custom_error_messages(
     where mode is "file", "directory" or "value"
     """
 
-    order = []
-
-    result = {"@order": order}
+    result = {"@order": args}
     for argindex0, arg in enumerate(args):
         arg2 = arg
         argindex = argindex0 + 1
@@ -103,10 +103,12 @@ def guess_arguments_with_custom_error_messages(
             else:
                 result_mode = "file"
                 arg2 = os.path.expanduser(arg)
+            item = {"type": result_mode}
+            if arg2 != arg:
+                item["mapping"] = arg2
         else:
-            result_mode = "value"
-        result[arg2] = result_mode
-        order.append(arg2)
+            item = "value"
+        result[arg] = item
 
     return result
 
@@ -155,3 +157,92 @@ Therefore, it must be a directory."""
         rule_no_ext_error_message=rule_no_ext_error_message,
         rule_no_slash_error_message=rule_no_slash_error_message,
     )
+
+Command = namedtuple("Command", ("start", "end", "main_node", "wordnodes", "words", "commandstring"))
+
+class WordVisitor(bashlex.ast.nodevisitor):
+    def __init__(self):
+        self.words = []
+        self.nodes = []
+        # barrier *should* be redundant, but you never know.
+        # The words must be the correct ones for the interface .py file to get the correct arguments
+        self.barrier = None
+        super().__init__()
+    def visitword(self, node, _):
+        self.nodes.append(node)
+        self.words.append(node.word)
+        return True
+    def visitredirect(self, node, *args):
+        start = node.pos[0]
+        if self.barrier is None or self.barrier < start:
+            self.barrier = start
+        return False
+    def filter(self):
+        if self.barrier is None:
+            return
+        self.nodes[:] = [node for node in self.nodes if node.pos[1] < self.barrier]
+        self.words[:] = [node.word for node in self.nodes]
+
+class CommandVisitor(bashlex.ast.nodevisitor):
+    def __init__(self, full_commandstring):
+        self.commands = []
+        self.full_commandstring = full_commandstring
+        super().__init__()
+    def visitcommand(self, node, _):
+        wordvisitor = WordVisitor()
+        wordvisitor.visit(node)
+        wordvisitor.filter()
+        start, end = node.pos        
+        cmd = Command (
+            main_node = node,
+            start = start,
+            end = end,
+            wordnodes = wordvisitor.nodes,
+            words = wordvisitor.words,
+            commandstring = self.full_commandstring[start:end]
+        )
+        self.commands.append(cmd)
+        return True
+    
+def get_commands(commandstring):
+    try:
+        bashtrees = bashlex.parse(commandstring)
+    except Exception:
+        raise ValueError("Unrecognized bash syntax") from None
+    visitor = CommandVisitor(commandstring)
+    for bashtree in bashtrees:
+        visitor.visit(bashtree)
+    return sorted(visitor.commands, key= lambda command: command.start)
+
+class RedirectionVisitor(bashlex.ast.nodevisitor):
+    def __init__(self):
+        self.redirect = None
+        self.maybe_redirect = None
+        super().__init__()
+    def visitredirect(self, node, *args):
+        maybe = False
+        if node.output.word.startswith("<"):
+            return
+        if isinstance(node.input, int) and node.input == 2:
+            return
+        if isinstance(node.input, int) and node.input != 1:
+            maybe = True
+        if maybe:
+            self.maybe_redirect = node
+        else:
+            if self.redirect is not None:
+                msg(-1, "Multiple redirects in the last command")
+                exit(1)
+            self.redirect = node
+        
+
+def get_redirection(command: Command):
+    visitor = RedirectionVisitor()
+    visitor.visit(command.main_node)
+    redirect = visitor.redirect
+    if redirect is None:
+        redirect = visitor.maybe_redirect
+    if redirect is None:
+        return None
+    return redirect.output
+

@@ -7,49 +7,44 @@ from .message import message as msg
 
 
 def get_file_mapping(
-    argdict: dict[str, Any],
+    argtypes: dict[str, Any],
     mapping_mode: str,
     working_directory: str,
 ) -> tuple[dict[str, str], dict[str, str]]:
     """Map files inside the transformation to files on disk.
-    Also evaluates file patterns
 
     Arguments:
 
-    - argdict:
-    A dict of argument names and their types ("file", "directory", ...)
-      obtained using `guess_arguments` or using an rprodfile.
+    - argtypes:
+    A dict of argument names and their types ("file" or "directory")
+      obtained using `guess_arguments` or from interface files.
 
     - mapping_mode:
     Must be one of:
     "literal": Files are mapped to their relative paths within the current working directory.
     "strip": Strip directory names. After stripping, all files must be unique.
-    "rename": Rename to file1, file2, ...
-    "rename_with_ext": Same, but add the file extensions (file1.py, file2.txt. ...).
+    "extension": Rename and keep only the file extensions (file1.py, file2.txt. ...).
 
     - working_directory
     The current working directory for "literal" mapping
 
     Returns:
 
-    - Arg mapping dict:
-    Maps the files and file patterns in argdict to the files and file patterns that
-    are to be provided to the transformation command
-
-    - File mapping dict:
-    a dict where the key is the filename/dirname (pin name)
-    inside the transformation and the value is the filename to be read from disk
-
+    Updated argtypes dict where every "file" entry has been replaced.
+    The new key will be the filename/dirname (pin name) inside the transformation, 
+     which will also be the target file name on the server.
+    The filename to be read from disk becomes the "mapping" field in the entry value.
+    The "@order" field is updated accordingly.
     """
 
-    if mapping_mode not in ("literal", "strip", "rename", "rename_with_ext"):
+    if mapping_mode not in ("literal", "strip", "extension"):
         raise ValueError(mapping_mode)
 
-    arg_mapping = {}
-    file_mapping = {}
+    order = argtypes["@order"]
+    new_order = []
+    result = {"@order": new_order}
     nfiles = 0
     ndirectories = 0
-    nfilepatterns = 0
     cwd = Path(working_directory).resolve().as_posix()
     if cwd != os.sep:
         cwd = cwd.rstrip(os.sep)
@@ -57,29 +52,39 @@ def get_file_mapping(
     def get_argdescr(argname):
         argdescr = "'{}'".format(argname)
         try:
-            pos = argdict.get("@order", []).index(argname) + 1
+            pos = order.index(argname) + 1
         except IndexError:
             pass
         else:
             argdescr = "#{} '{}'".format(pos, argname)
         return argdescr
 
-    for argname, argtype in argdict.items():
+    order_map = {}
+    for argname, argtype in argtypes.items():
+        path = argname
         if argname == "@order":
             continue
         argdescr = get_argdescr(argname)
 
+        if isinstance(argtype, dict):
+            if argtype.get("type") not in ("file", "directory"):
+                raise TypeError((argname, argtype))
+            if argtype.get("mapping"):
+                path = argtype["mapping"]
+            argtype = argtype["type"]
+
         if argtype == "value":
-            continue
+            order_map[argname] = argname
+            result[argname] = argtype
 
         elif argtype in ("file", "directory"):
             if argtype == "file":
                 nfiles += 1
             else:
                 ndirectories += 1
-            fullpath = Path(argname).resolve().as_posix()
+            fullpath = Path(path).resolve().as_posix()
             if mapping_mode == "literal":
-                argname2 = argname
+                path2 = path
                 cwd0 = "" if cwd == os.sep else cwd
                 if not fullpath.startswith(cwd0 + os.sep):
                     errmsg = """Argument {} is not under the current working directory.
@@ -94,58 +99,62 @@ or:
                     relpath = "."
                 elif cwd == os.sep:
                     relpath = fullpath
-                    argname2 = fullpath[1:]
+                    path2 = fullpath[1:]
                 elif cwd == os.getcwd():
                     relpath = fullpath[len(cwd) + 1 :]
                 else:
                     relpath = fullpath
-                    argname2 = fullpath[len(cwd) + 1 :]
-                if argname != relpath:
+                    path2 = fullpath[len(cwd) + 1 :]
+                if path != relpath:
                     msg(
                         3,
                         "Resolve {} to relative path '{}'".format(argdescr, relpath),
                     )
-                arg_mapping[argname] = argname2
-                file_mapping[argname2] = relpath
+                new_path = path2
+                new_entry = {"type": argtype, "mapping": relpath}
 
             elif mapping_mode == "strip":
-                path = argname
-                pin_name = os.path.split(path)[1]
-                if not pin_name:
+                spath = path
+                path2 = os.path.split(spath)[1]
+                if not path2:
                     assert argtype == "directory", (argdescr, argtype)
                     # Take the last element of the parent directory as name
-                    pin_name = os.path.split(path)[0].split(os.sep)[-1]
-                assert len(pin_name), (argdescr, path)
-                if pin_name in arg_mapping:
-                    errmsg = "Argument {} argument {} are both mapped to {}"
-                    raise ValueError(
-                        argdescr, get_argdescr(arg_mapping[pin_name]), pin_name
-                    )
+                    path2 = os.path.split(path)[0].split(os.sep)[-1]
+                assert len(path2), (argdescr, path)
 
                 msg(3, "Resolve {} to '{}'".format(argdescr, fullpath))
-                msg(2, "Map {} to '{}'".format(argdescr, pin_name))
-                arg_mapping[argname] = pin_name
-                file_mapping[pin_name] = fullpath
+                msg(2, "Map {} to '{}'".format(argdescr, path2))
 
-            else:  # rename, rename_with_ext
+                new_path = path2
+                new_entry = {"type": argtype, "mapping": fullpath}
+
+            else:  # extension
                 if argtype == "file":
-                    pin_name = f"file{nfiles}"
-                    if mapping_mode == "rename_with_ext":
-                        extension = os.path.splitext(argname)[1]
-                        if len(extension):
-                            pin_name += extension
+                    path2 = f"file{nfiles}"
+                    extension = os.path.splitext(path)[1]
+                    if len(extension):
+                        path2 += extension
                 else:
-                    pin_name = f"file{ndirectories}"
+                    path2 = f"file{ndirectories}"
                 msg(3, "Resolve {} to '{}'".format(argdescr, fullpath))
-                msg(2, "Map {} to '{}'".format(argdescr, pin_name))
-                arg_mapping[argname] = pin_name
-                file_mapping[pin_name] = fullpath
+                msg(2, "Map {} to '{}'".format(argdescr, path2))
+                new_path = path2
+                new_entry = {"type": argtype, "mapping": fullpath}
 
-        elif argtype == "filepattern":
-            # glob.glob...
-            raise NotImplementedError
+            if new_path in result and result[new_path] != new_entry:
+                errmsg = f"""Two different mappings for argument "{new_path}": 
+{result[new_path]} and {new_entry}"""
+                raise ValueError(errmsg)
+
+            order_map[argname] = new_path            
+            result[new_path] = new_entry 
+
         else:
-            # TODO: nicer error message, either here or at the end of the rprodfile interpretation
-            raise TypeError((argname, argtype))
+            raise TypeError((path, argtype))
 
-    return arg_mapping, file_mapping
+    for arg in order:
+        if arg in order_map:
+            new_order.append(order_map[arg])
+        else:
+            new_order.append(arg)
+    return result

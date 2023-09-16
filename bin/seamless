@@ -7,13 +7,21 @@ import sys
 import os
 from pathlib import Path
 import subprocess
-import glob
 import json
 import traceback
 import seamless
+
 from seamless.core.cache.buffer_cache import buffer_cache
+from seamless.core.protocol.deserialize import deserialize_sync as deserialize
 from seamless import CacheMissError
-from seamless.cmd import yaml_load
+from seamless.cmd.message import set_verbosity, message as msg
+from seamless.cmd import parsing
+from seamless.cmd.parsing import get_commands, guess_arguments
+from seamless.cmd.file_mapping import get_file_mapping
+from seamless.cmd.file_load import files_to_checksums
+from seamless.cmd.bash_transformation import prepare_bash_transformation, run_transformation
+from seamless.cmd import interface
+from seamless.highlevel import Checksum
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -30,21 +38,21 @@ parser.add_argument(
 
 parser.add_argument(
     "-g1",
-    help="""Disable file/value guess rule 1.
+    help="""Disable argtyping guess rule 1.
 This rule states that any argument with a file extension must exist as a file.""",
     action="store_true",
 )
 
 parser.add_argument(
     "-g2",
-    help="""Disable file/value guess rule 2.
+    help="""Disable argtyping guess rule 2.
 This rule states that any argument without file extension must not exist as a file.""",
     action="store_true",
 )
 
 parser.add_argument(
     "-w",
-    help="""Set the working directory to $HOME.
+    help="""Set the argtyping working directory to $HOME.
 This allows any file in $HOME to be specified as argument.""",
     dest="workdir",
     action="store_const",
@@ -53,7 +61,7 @@ This allows any file in $HOME to be specified as argument.""",
 
 parser.add_argument(
     "-W",
-    help="""Set the working directory to /.
+    help="""Set the argtyping working directory to /.
 This allows any file to be specified as argument.""",
     dest="workdir",
     action="store_const",
@@ -62,29 +70,25 @@ This allows any file to be specified as argument.""",
 
 parser.add_argument(
     "-ms",
-    help="""Set the file mapping mode to 'strip'.
+    help="""Set the argtyping file mapping mode to 'strip'.
 Strip directory names. After stripping, all files must be unique.""",
     dest="file_mapping_mode",
     action="store_const",
     const="strip",
 )
 
-parser.add_argument(
-    "-mr",
-    help="""Set the file mapping mode to 'rename'.
-Rename to file1, file2, ....""",
-    dest="file_mapping_mode",
-    action="store_const",
-    const="rename",
-)
 
 parser.add_argument(
     "-mx",
-    help="""Set the file mapping mode to 'rename_with_ext'.
-Rename to file1.txt, file2.py, ....""",
+    help="""Set the argtyping file mapping mode to 'extension'.
+Keep only file extensions. Rename the file name body to file1, file2, ...
+Example: 
+  python script.py data.txt 
+  => 
+  python file1.py file2.txt""",
     dest="file_mapping_mode",
     action="store_const",
-    const="rename_with_ext",
+    const="extension",
 )
 
 parser.add_argument(
@@ -97,14 +101,6 @@ parser.add_argument(
     action="store_true"
 )
 
-parser.add_argument(
-    "--wait",
-    help="Wait for earlier seamless commands",
-    dest="action",
-    action="store_const",
-    const="wait",
-)
-
 arguments = sys.argv[1:]
 command = []
 for n, arg in enumerate(sys.argv[1:]):
@@ -113,175 +109,191 @@ for n, arg in enumerate(sys.argv[1:]):
         command = sys.argv[n + 1 :]
         break
 
-reformat_wait = False
-if command == ["wait"]:
-    command = []
-    arguments.append("--wait")
-    reformat_wait = True
-
 args = parser.parse_args(arguments)
 
-from seamless.cmd.message import set_verbosity, message as msg
-from seamless.cmd.commandmode import guess_arguments
-from seamless.cmd.file_mapping import get_file_mapping
-from seamless.cmd.file_load import files_to_checksums
-
-from seamless.cmd.bash_transformation import run_bash_transformation
 
 verbosity = min(args.verbosity, 3)
 set_verbosity(verbosity)
 msg(1, "Verbosity set to {}".format(verbosity))
-
 msg(1, "seamless {}".format(__version__))
-
-if reformat_wait:
-    msg(1, "'seamless wait' reformatted to 'seamless --wait'")
-if args.action is not None:
-    assert args.action in ["wait"], args.action
-    if args.action == "wait":
-        msg(0, "Action set to WAIT")
-        raise NotImplementedError  # wait action
-
 msg(3, "Command:", json.dumps(command, indent=4))
 
 if len(command) == 0:
-    # TODO: check for --wait and similar
     parser.print_usage()  # TODO: add to usage message
     sys.exit(0)
 
-workdir = os.getcwd()
-if args.workdir is not None:
-    workdir = args.workdir
-    msg(1, "set working directory to: {}".format(workdir))
+################################################################
 
 if args.unquote:
     if len(command) != 1:
         msg(-1, "Unquote requires a single argument")
         sys.exit(1)
-    # TODO: better bash lexing
-    command = command[0].replace(";", " ; ").split()
-
-
-def _get_smfile(path: Path) -> Path or None:
-    smfiles = [Path(path.as_posix() + ".SEAMLESS.yaml")]
-    # TODO: special directory:  - /home/$USER/.seamless/bin-interface/path.SEAMLESS.yaml
-    for smfile in smfiles:
-        msg(3, "search .SEAMLESS.yaml file... : {}".format(smfile.as_posix()))
-        if smfile.exists():
-            msg(3, ".SEAMLESS.yaml file found")
-            return smfile
-        else:
-            msg(3, ".SEAMLESS.yaml file not found")
-    #smfiles = glob.glob("{}.SEAMLESS.yaml.*".format(stem))
-    #msg(3, "glob search .SEAMLESS.yaml file... : {}.SEAMLESS.yaml.*".format(stem))
-    smfiles = []
-    if len(smfiles):
-        smfile = smfiles[0]
-        msg(3, ".SEAMLESS.yaml file '{}' found via glob search".format(smfile))
-        return Path(smfile)
-
-
-smfile = None
-
-arg1 = Path(command[0])
-if not arg1.exists():
-    execarg1 = subprocess.getoutput("which {}".format(arg1.as_posix())).strip()
-    if execarg1:
-        msg(
-            3,
-            "first argument '{}' is in PATH, map to '{}'".format(
-                arg1.as_posix(), execarg1
-            ),
-        )
-        arg1 = Path(execarg1)
-if arg1.exists():
-    smfile = _get_smfile(arg1)
-    sm_argindex = 0
-    if smfile is None:
-        msg(2, "first argument '{}' has no .SEAMLESS.yaml file".format(arg1.as_posix()))
-    else:
-        msg(
-            1,
-            "found smfile '{}' for first argument '{}'".format(
-                smfile, arg1.as_posix()
-            ),
-        )
+    commandstring = command[0]
 else:
-    msg(1, "first argument '{}' is not a file".format(arg1.as_posix()))
+    commandstring = " ".join(command)
 
-if smfile is None and len(command) > 1 and not arg1.suffix:
-    msg(3, "first argument has no suffix, consider second argument for .SEAMLESS.yaml file")
-    arg2 = None
-    for n in range(1, len(command)):
-        arg = command[n]
-        if arg.startswith("-"):
-            continue
-        arg2 = Path(arg)        
-        break
-    if arg2 is not None and len(arg2.suffix):
-        msg(
-            3,
-            "second argument '{}' has a suffix, look for .SEAMLESS.yaml file".format(
-                arg2.as_posix()
-            ),
+commands = get_commands(commandstring)
+
+first_command = commands[0]
+
+interface_argindex, interface_file, interface_py_file = interface.locate_files(first_command.words)
+
+msg(1, f"First command: {first_command.commandstring}")
+
+argtypes_initial = None
+if interface_py_file is not None:
+    msg(2, "Try to obtain argtypes from interface py file...")
+    argtypes_initial = interface.argtypes_from_py_file(first_command.words, interface_argindex, interface_py_file)
+    if argtypes_initial is not None:
+        msg(2, "...success")
+    else:
+        msg(2, "...failure")
+
+if argtypes_initial is None:
+    msg(2, "Try to obtain argtypes from rules")
+
+    overrule_ext, overrule_no_ext = False, False
+    if args.g1:
+        msg(1, "disable argtyping guess rule 1")
+        overrule_ext = True
+    if args.g2:
+        msg(1, "disable argtyping guess rule 2")
+        overrule_no_ext = True
+
+    try:
+        argtypes_initial = guess_arguments(
+            first_command.words, overrule_ext=overrule_ext, overrule_no_ext=overrule_no_ext
         )
-    if arg2.exists():
-        smfile = _get_smfile(arg2)
-        sm_argindex = n
-        if smfile is None:
-            msg(2, "second argument '{}' has no .SEAMLESS.yaml file".format(arg2.as_posix()))
-        else:
-            msg(
-                1,
-                "found .SEAMLESS.yaml file '{}' for second argument '{}'".format(
-                    smfile, arg2.as_posix()
-                ),
-            )
+    except ValueError as exc:
+        msg(-1, *exc.args)
+        sys.exit(1)
 
-if smfile is None:
-    msg(2, "no .SEAMLESS.yaml file found")
-overrule_ext, overrule_no_ext = False, False
-if args.g1:
-    msg(1, "disable file/value guess rule 1")
-    overrule_ext = True
-if args.g2:
-    msg(1, "disable file/value guess rule 2")
-    overrule_no_ext = True
-try:
-    argdict = guess_arguments(
-        command, overrule_ext=overrule_ext, overrule_no_ext=overrule_no_ext
-    )
-except ValueError as exc:
-    msg(-1, *exc.args)
-    sys.exit(1)
+argtypesstr = json.dumps(argtypes_initial, sort_keys=False, indent=2)
+msg(1, "initial argtypes dict:\n" + argtypesstr)
 
-argdictstr = json.dumps(argdict, sort_keys=False, indent=2)
-msg(1, "argument dict:\n" + argdictstr)
+workdir = os.getcwd()
+if args.workdir is not None:
+    workdir = args.workdir
+    msg(1, "set argtyping working directory to: {}".format(workdir))
 
 file_mapping_mode = args.file_mapping_mode
 if file_mapping_mode is None:
     file_mapping_mode = "literal"
+    
 try:
-    arg_mapping, file_mapping = get_file_mapping(
-        argdict, mapping_mode=file_mapping_mode, working_directory=workdir
+    argtypes = get_file_mapping(
+        argtypes_initial, mapping_mode=file_mapping_mode, working_directory=workdir
     )
 except ValueError as exc:
     msg(-1, *exc.args)
     sys.exit(1)
 
-docker_image = None
-if smfile is not None:
-    msg(2, f"loading {smfile}")
-    smdata = yaml_load.load(smfile)
-    shim = smdata.get("shim")
-    if shim:
-        sm_old_argname = argdict["@order"][sm_argindex]
-        argdict["@order"][sm_argindex] = shim
-        argdict.pop(sm_old_argname)
-        argdict[shim] = "value"
-    docker_image = smdata.get("environment", {}).get("docker_image")
-    argdictstr = json.dumps(argdict, sort_keys=False, indent=2)      
-    msg(2, "updated argument dict:\n" + argdictstr)
+argtypesstr = json.dumps(argtypes, sort_keys=False, indent=2)
+msg(1, "argtypes dict:\n" + argtypesstr)
+
+mapped_first_command = argtypes["@order"]
+
+################################################################
+assert len(mapped_first_command) == len(first_command.words)
+word_substitutions = {}
+for wordnr, word in enumerate(mapped_first_command):
+    old_word = first_command.words[wordnr]
+    if word != old_word:
+        node = first_command.wordnodes[wordnr]
+        word_substitutions[node] = word
+
+################################################################
+interface_data = {}
+
+def update_interface_data(new_interface_data):
+    changed = False
+    for k,v in new_interface_data.items():
+        if k in ("argtypes", "files", "directories", "shim"):
+            continue
+        curr = interface_data.get(k)
+        if k == "environment":
+            if curr is None:
+                interface_data[k] = v
+                continue
+            if curr == v:
+                continue
+            raise NotImplementedError("Multiple environments")
+        
+        changed = True
+        if curr is None:
+            interface_data[k] = v            
+        else:
+            if isinstance(v, list) != isinstance(curr, list):
+                interface_data[k] = v
+            elif isinstance(curr, list):
+                interface_data[k] += v
+            else:
+                interface_data[k] = v
+    if changed:
+        msg(3, f"Updated interface data: {json.dumps(interface_data, indent=2)}")
+
+for commandnr, command in enumerate(commands):
+    if commandnr > 0:
+        msg(1, f"Command #{commandnr+1}: {command.commandstring}")
+        interface_argindex, interface_file, interface_py_file = interface.locate_files(command.words)        
+    if interface_file is not None or interface_py_file is not None:
+        if commandnr > 0:
+            msg(1, f"Interface files found for command #{commandnr+1}: {command.commandstring}")
+    
+    shim = None
+    if interface_file is not None:
+        msg(2, f"loading {interface_file}")
+        new_interface_data = interface.load(interface_file.as_posix())
+        msg(3, f"{interface_file} content: {json.dumps(new_interface_data, indent=2)}")
+        new_shim = new_interface_data.get("shim")
+        if new_shim is not None:
+            shim = new_shim
+        update_interface_data(new_interface_data)
+
+    if interface_py_file is not None:
+        if commandnr == 0:
+            commandwords = mapped_first_command
+        else:
+            commandwords = command.words
+        arguments = commandwords[interface_argindex+1:]
+        new_interface_data = interface.interface_from_py_file(interface_py_file, arguments)
+        msg(3, f"{interface_py_file} result: {json.dumps(new_interface_data, indent=2)}")
+        new_shim = new_interface_data.get("shim")
+        if new_shim is not None:
+            shim = new_shim
+        update_interface_data(new_interface_data)
+
+        if shim:
+            wordnode = command.wordnodes[interface_argindex]
+            word_substitutions[wordnode] = shim
+
+################################################################
+
+redirection = None
+redirection_node = parsing.get_redirection(commands[-1])
+if redirection_node is not None:
+    redirection = redirection_node.word
+    redirection = os.path.expanduser(redirection)
+    if workdir is not None and redirection.startswith(workdir):
+        redirection = redirection[len(workdir):]
+    if redirection != redirection_node.word:
+        word_substitutions[redirection_node] = redirection
+
+results = interface_data.get("results")
+if not results and not redirection:
+    capture_stdout = True
+    result_targets = None
+else:
+    capture_stdout = False
+    result_targets = []
+    if results:
+        result_targets[:] = results
+    if redirection:
+        result_targets.append(redirection)
+    msg(1, f"Identify result targets: {result_targets}")
+################################################################
+
+docker_image = interface_data.get("environment", {}).get("docker_image")
 
 env = {}
 
@@ -292,52 +304,121 @@ if docker_image is not None:
 seamless.config.delegate()
 
 # TODO: max_files, max_datasize option
-directories = [arg_mapping[arg] for arg in argdict if argdict[arg] == "directory"]
+paths = set()
+directories = set()
+mapping = {}
+for argname, arg in argtypes.items():
+    if isinstance(arg, dict):
+        argtype = arg.get("type")
+        path = arg.get("mapping", argname)
+    else:
+        argtype = arg
+        path = argname
+    if argtype in ("file", "directory"):
+        paths.add(path)
+        if argtype == "directory":
+            directories.add(path)
+        mapping[argname] = path
 
 file_checksum_dict = files_to_checksums(
-    file_mapping.values(), max_datasize=None, max_files=None, directories=directories
-)    
-rev_file_mapping = {v: k for k, v in file_mapping.items()}
-checksum_dict = {rev_file_mapping[k]: v for k, v in file_checksum_dict.items()}
+    paths, max_datasize=None, max_files=None, directories=directories
+)
+checksum_dict = {}
+checksum_dict = {k: file_checksum_dict[v] for k,v in mapping.items()}
 checksum_dictstr = json.dumps(checksum_dict, sort_keys=True, indent=2)
 msg(2, "file/directory checksum dict:\n" + checksum_dictstr)
 if len(directories):
     msg(2, "directories:", directories)
 
-mapped_command = []
-for arg in argdict["@order"]:
-    if argdict[arg] == "value":
-        mapped_command.append(arg)
-    else:
-        mapped_command.append(arg_mapping[arg])
-bash_command = " ".join(mapped_command)
-msg(1, "bash command:\n", bash_command, "\n")
-# TODO: result mode
-result_mode = "stdout"
-result_checksum = run_bash_transformation(
-    bash_command, checksum_dict, directories=directories, result_mode=result_mode, undo=args.undo, environment=env
+################################################################
+
+for node in sorted(word_substitutions.keys(), key=lambda node: -node.pos[0]):
+    word = word_substitutions[node]
+    commandstring = commandstring[:node.pos[0]] + word + commandstring[node.pos[1]:]
+
+msg(1, "bash command:\n", commandstring, "\n")
+
+################################################################
+
+#def write_pending(filename, )
+
+transformation_checksum, transformation_dict = prepare_bash_transformation(
+    commandstring, checksum_dict, directories=directories, 
+    capture_stdout=capture_stdout, result_targets=result_targets,
+    environment=env
 )
+result_checksum = run_transformation(transformation_dict, undo=args.undo)
+if not args.undo:
+    msg(1, "Transformation finished")
+    msg(2, "Result checksum: {}".format(result_checksum))
+
+def write_result(filename, file_checksum):
+    if workdir is not None and not os.path.dirname(filename):
+        # File was created in the server workdir: grandfather it in
+        pass
+    else:
+        filename = os.path.join(workdir, filename)
+    file_checksum = Checksum(file_checksum)
+    if file_checksum.value is None:
+        return
+    try:
+        with open(filename + ".CHECKSUM", "w") as f:
+            f.write(file_checksum.hex()+"\n")
+    except Exception:
+        msg(0, f"Cannot write checksum to result file '{filename}.CHECKSUM'")
+        return
+    try:
+        file_buffer = buffer_cache.get_buffer(file_checksum.bytes())
+        if file_buffer is None:
+            raise CacheMissError(file_checksum)
+    except CacheMissError:
+        msg(0, f"Cannot obtain contents of result file '{filename}', CacheMissError")
+    try:
+        with open(filename, "wb") as f:
+            f.write(file_buffer)
+    except Exception:
+        msg(0, f"Cannot write to result file '{filename}'")
+        return
+
+# kludge to hide spurious "buffers undestroyed" warnings
+import logging
+logger = logging.getLogger("seamless")
+logger.setLevel(logging.ERROR)
+
+
 if args.undo:
-    # kludge to hide spurious "buffers undestroyed" warnings
-    import logging
-    logger = logging.getLogger("seamless")
-    logger.setLevel(logging.ERROR)
     if result_checksum is None:
         exit(1)
     else:
         msg(1, "Transformation undone")
         exit(0)
-try:
-    result = buffer_cache.get_buffer(result_checksum)
-    if result is None:
-        raise CacheMissError(result_checksum)
-except CacheMissError:
-    traceback.print_exc(limit=1)
-    exit(1)
-try:
-    result = result.decode()
-except UnicodeDecodeError:
-    pass
 
-print(result)
-# TODO: result mode
+else:
+    try:
+        result_buffer = buffer_cache.get_buffer(result_checksum.bytes())
+        if result_buffer is None:
+            raise CacheMissError(result_checksum)
+    except CacheMissError:
+        traceback.print_exc(limit=1)
+        exit(1)
+
+    if (not capture_stdout) and len(result_targets) > 1:
+        result_checksum_dict = deserialize(result_buffer, result_checksum.bytes(), "plain", copy=False)
+        for filename in result_checksum_dict:
+            assert filename in result_targets, (filename, result_targets)
+            try:
+                file_checksum = result_checksum_dict[filename]
+            except KeyError:
+                msg(0, "No result for '{filename}' was returned")
+                continue
+            write_result(filename, file_checksum)
+    elif len(result_targets) == 1:
+        write_result(result_targets[0], result_checksum)
+    elif capture_stdout:
+        try:
+            result = result_buffer.decode()
+        except UnicodeDecodeError:
+            result = result_buffer
+
+        print(result)
+

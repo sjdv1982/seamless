@@ -88,7 +88,8 @@ def _fast_pack(value, buffer, celltype, database):
         # shouldn't ever happen
         return None
     if database.active:
-        buffer_cache.guarantee_buffer_info(checksum, celltype, buffer=buffer, sync_to_remote=True)
+        if celltype is not None:
+            buffer_cache.guarantee_buffer_info(checksum, celltype, buffer=buffer, sync_to_remote=True)
         buffer_remote.write_buffer(checksum, buffer)
     return checksum
 
@@ -118,7 +119,7 @@ def fast_pack(unpacked_values, hash_pattern):
             else:
                 buffer, _ = serialize_cache.get((id(value), celltype), (None, None))
             if buffer is not None:
-                checksum, _ = calculate_checksum_cache(id(buffer))
+                checksum, _ = calculate_checksum_cache.get(id(buffer), (None, None))
                 if checksum is not None:
                     packing_checksums.append(checksum)
                     continue
@@ -250,7 +251,7 @@ or
                             result = deep_structure
                             output_celltype = "mixed"
                         result_buffer = serialize(result, output_celltype)
-                        if buffer_remote.can_write():                            
+                        if buffer_remote.can_write():
                             result_checksum = calculate_checksum(result_buffer)
                             result_checksum2 = result_checksum.hex()
                             buffer_cache.guarantee_buffer_info(result_checksum, output_celltype, sync_to_remote=True)

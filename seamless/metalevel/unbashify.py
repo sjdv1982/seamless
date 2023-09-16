@@ -46,8 +46,7 @@ def unbashify_docker(transformation_dict, semantic_cache, env: dict, execution_m
     from seamless.core.direct.run import prepare_code, prepare_transformation_pin_value
     tdict = deepcopy(transformation_dict)
     tdict["__language__"] = "python"
-    # TODO: will this work directly with different return types / hash patterns?
-    tdict["__output__"] = ("result", "bytes", None)
+    tdict["__output__"] = ("result",) + tuple(transformation_dict["__output__"][1:])
     bash_checksums = get_bash_checksums()
     
     pins = [p for p in sorted(tdict.keys()) if p != "code" and not p.startswith("__")]
@@ -119,8 +118,7 @@ def unbashify(transformation_dict:dict, semantic_cache, execution_metadata:dict)
 
     tdict = deepcopy(transformation_dict)
     tdict["__language__"] = "python"
-    # TODO: will this work directly with different return types / hash patterns?
-    tdict["__output__"] = ("result", "bytes", None)
+    tdict["__output__"] = ("result",) + tuple(transformation_dict["__output__"][1:])
     bash_checksums = get_bash_checksums()
     
     pins = [p for p in sorted(tdict.keys()) if p != "code" and not p.startswith("__")]
