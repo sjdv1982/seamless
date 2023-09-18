@@ -1,0 +1,11 @@
+files: ["./headify_lib.py"]
+canonical:
+-
+  cmd: headify infile
+  
+-
+  cmd: headify --lines $lines infile
+  vars:        
+    -
+      name: lines
+      celltype: int

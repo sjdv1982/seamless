@@ -53,8 +53,8 @@ def get_file_mapping(
         argdescr = "'{}'".format(argname)
         try:
             pos = order.index(argname) + 1
-        except IndexError:
-            pass
+        except ValueError:
+            return argname
         else:
             argdescr = "#{} '{}'".format(pos, argname)
         return argdescr
@@ -66,11 +66,13 @@ def get_file_mapping(
             continue
         argdescr = get_argdescr(argname)
 
+        fixed_mapping = False
         if isinstance(argtype, dict):
             if argtype.get("type") not in ("file", "directory"):
-                raise TypeError((argname, argtype))
+                raise TypeError((argname, argtype))            
             if argtype.get("mapping"):
                 path = argtype["mapping"]
+                fixed_mapping = argtype.get("fixed_mapping")
             argtype = argtype["type"]
 
         if argtype == "value":
@@ -98,20 +100,16 @@ or:
                 if fullpath == cwd:
                     relpath = "."
                 elif cwd == os.sep:
-                    relpath = fullpath
-                    path2 = fullpath[1:]
-                elif cwd == os.getcwd():
-                    relpath = fullpath[len(cwd) + 1 :]
+                    relpath = fullpath[1:]
                 else:
-                    relpath = fullpath
-                    path2 = fullpath[len(cwd) + 1 :]
+                    relpath = fullpath[len(cwd) + 1 :]
                 if path != relpath:
                     msg(
                         3,
                         "Resolve {} to relative path '{}'".format(argdescr, relpath),
                     )
-                new_path = path2
-                new_entry = {"type": argtype, "mapping": relpath}
+                new_path = relpath
+                new_entry = {"type": argtype, "mapping": fullpath}
 
             elif mapping_mode == "strip":
                 spath = path
@@ -145,9 +143,12 @@ or:
                 errmsg = f"""Two different mappings for argument "{new_path}": 
 {result[new_path]} and {new_entry}"""
                 raise ValueError(errmsg)
-
-            order_map[argname] = new_path            
-            result[new_path] = new_entry 
+        
+            if fixed_mapping:
+                result[argname] = new_entry
+            else:
+                order_map[argname] = new_path            
+                result[new_path] = new_entry 
 
         else:
             raise TypeError((path, argtype))

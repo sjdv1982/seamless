@@ -129,9 +129,10 @@ from .core.cache import CacheMissError
 from .highlevel.direct import transformer
 from .util import parse_checksum
 from .config import delegate
+from .core.transformation import SeamlessTransformationError
 __all__ = [
     "calculate_checksum", "calculate_dict_checksum", "load_vault", "config", 
     "CacheMissError", "transformer", "delegate",
     "check_original_event_loop", "run_transformation", "run_transformation_async",
-    "activate_transformations", "deactivate_transformations"
+    "activate_transformations", "deactivate_transformations", "SeamlessTransformationError"
 ]

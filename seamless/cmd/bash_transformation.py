@@ -13,7 +13,7 @@ def prepare_bash_transformation(
     *,
     directories: list[str],
     make_executables: list[str],
-    result_targets: list[str] | None,
+    result_targets: dict | None,
     capture_stdout: bool,
     environment: dict
 ) -> str:
@@ -39,10 +39,15 @@ def prepare_bash_transformation(
 
     bashcode = ""
     if make_executables:
+        has_cwd_executable = False
         make_executables_str = ""
         for make_executable in make_executables:
+            if not os.path.dirname(make_executable):
+                has_cwd_executable = True
             make_executables_str += f" '{make_executable}'"
-        bashcode += f"chmod +x{make_executables_str}; "
+        if has_cwd_executable:
+            bashcode += "export PATH=./:$PATH\n"
+        bashcode += f"chmod +x{make_executables_str}\n"
 
     if capture_stdout:
         assert not result_targets
@@ -50,19 +55,19 @@ def prepare_bash_transformation(
     else:
         assert len(result_targets)
         if len(result_targets) == 1:
-            bashcode += code  
-            bashcode += f"; mv -f {result_targets[0]} RESULT"
+            bashcode += code
+            bashcode += f"\nmv -f {list(result_targets.keys())[0]} RESULT"
         else:
             mvcode = ""
             result_target_dirs = []
             for tar in result_targets:
                 tardir = os.path.join("RESULT", os.path.dirname(tar))
-                mvcode += f"mv {tar} {tardir}; "
+                mvcode += f"mv {tar} {tardir}\n"
                 if tardir not in result_target_dirs:
                     result_target_dirs.append(tardir)                 
             bashcode += f"mkdir -p {' '.join(result_target_dirs)}\n"
             bashcode += code + "\n"
-            bashcode += mvcode[:-2]
+            bashcode += mvcode
 
     new_args = {
         "code": ("text", None, bashcode),

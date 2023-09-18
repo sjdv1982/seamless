@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+"""headify. Writes out the first lines of an input file in an evil manner.
+
+Reads input_file.ext, takes the first N lines, and writes input_file-head.ext
+
+This command line tool is evil because: 
+
+- it has an implicit output file
+- In the case of --batch, it has implicit input and output files
+"""
+
+import argparse
+import os
+import time
+
+import headify_lib
+
+parser = argparse.ArgumentParser(
+    description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+)
+parser.add_argument("input", help="Input file to headify")
+parser.add_argument(
+    "-n", "--lines", help="Select the first n lines", type=int, default=10, dest="lines"
+)
+parser.add_argument(
+    "--batch", help="Interpret the input as a list of files", action="store_true"
+)
+
+parser.add_argument(
+    "--sleep",
+    help="Sleep for X seconds after execution",
+    type=float,
+)
+
+
+def headify(input_file, n, output_file):
+    """Writes out the first lines of an input file in an evil manner."""
+    with open(output_file, "w") as outf:
+        with open(input_file, "r") as inpf:
+            for lnr, l in enumerate(inpf):
+                if lnr == n:
+                    break
+                outf.write(l)
+
+
+def get_output_file(input_file):
+    root, ext = os.path.splitext(input_file)
+    return root + "-head" + ext
+
+
+args = parser.parse_args()
+if args.batch:
+    input_dir = os.path.dirname(args.input)
+    with open(args.input) as inpf:
+        for input_file0 in inpf:
+            input_file = os.path.join(input_dir, input_file0.strip())
+            output_file = get_output_file(input_file)
+            headify(input_file, args.lines, output_file)
+else:
+    output_file = get_output_file(args.input)
+    headify(args.input, args.lines, output_file)
+
+if args.sleep:
+    time.sleep(args.sleep)

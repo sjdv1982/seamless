@@ -23,25 +23,27 @@ def locate_files(command):
 
     args1 = [Path(command[0]), Path(command[0]).expanduser()]
     for arg1 in args1:
-        if not arg1.exists():
-            execarg1 = subprocess.getoutput("which {}".format(arg1.as_posix())).strip()
-            if execarg1:
+        execarg1 = subprocess.getoutput("which {}".format(arg1.as_posix())).strip()
+        if execarg1:
+            msg(
+                2,
+                "first argument '{}' is in PATH, map to '{}'".format(
+                    arg1.as_posix(), execarg1
+                ),
+            )
+            if not execarg1.startswith("/bin") and not execarg1.startswith("/sbin") and not execarg1.startswith("/usr"):
                 msg(
-                    2,
-                    "first argument '{}' is in PATH, map to '{}'".format(
+                    1,
+                    "first argument '{}' does not seem a POSIX tool. Explicitly upload it as '{}'".format(
                         arg1.as_posix(), execarg1
                     ),
                 )
-                if not execarg1.startswith("/bin") and not execarg1.startswith("/sbin") and not execarg1.startswith("/usr"):
-                    msg(
-                        1,
-                        "first argument '{}' does not seem a POSIX tool. Explicitly upload it as '{}'".format(
-                            arg1.as_posix(), execarg1
-                        ),
-                    )
-                    mapped_execarg = execarg1
+                mapped_execarg = execarg1
 
-                arg1 = Path(execarg1)
+            arg1 = Path(execarg1)
+        else:
+            mapped_execarg = arg1.as_posix()
+
         if arg1.exists():
             interface_file0 = Path(arg1.as_posix() + ".SEAMLESS.yaml")
             interface_file = interface_file0 if interface_file0.exists() else None
@@ -79,10 +81,11 @@ def locate_files(command):
                         interface_file0 = Path(arg2.as_posix() + ".SEAMLESS.yaml")
                 
                         interface_file = interface_file0 if interface_file0.exists() else None
-                        interface_argindex = n
+                        interface_argindex2 = n
                         if interface_file is None:
                             msg(2, "second argument '{}' has no .SEAMLESS.yaml file".format(arg2.as_posix()))
                         else:
+                            interface_argindex = interface_argindex2
                             msg(
                                 1,
                                 "found interface YAML file '{}' for second argument '{}'".format(
@@ -93,23 +96,32 @@ def locate_files(command):
             else:
                 continue
             break
+    
+    interface_py_file0 = None
     if interface_file is None:
         msg(2, "no .SEAMLESS.yaml file found")
-    else:    
+        if arg1.exists():
+            interface_argindex = 0
+            interface_py_file0 = Path(os.path.splitext(arg1.as_posix())[0] + ".SEAMLESS.py")
+        elif arg2.exists():
+            interface_argindex = interface_argindex2
+            interface_py_file0 = Path(os.path.splitext(arg2.as_posix())[0] + ".SEAMLESS.py")
+    else:
         interface_py_file0 = Path(os.path.splitext(interface_file)[0] + ".py")
-        interface_py_file = interface_py_file0 if interface_py_file0.exists() else None
-        if interface_py_file:
-            msg(
-                1,
-                "found interface Python file '{}'".format(
-                    interface_py_file
-                ),
-            )
+    interface_py_file = interface_py_file0 if interface_py_file0 and interface_py_file0.exists() else None
+    if interface_py_file:
+        msg(
+            1,
+            "found interface Python file '{}'".format(
+                interface_py_file
+            ),
+        )
+    else:
+        msg(2, "no .SEAMLESS.py file found")
 
     return interface_argindex, interface_file, interface_py_file, mapped_execarg
 
 def _execute_py_file(command, interface_argindex, interface_py_file):
-    interface_py_cmd = f'{sys.executable} {interface_py_file} {" ".join(command[interface_argindex+1:])}'
     interface_py_cmd = [sys.executable,  interface_py_file.as_posix()] + command[interface_argindex+1:]
     msg(2, f"running .SEAMLESS.py command:\n  {' '.join(interface_py_cmd)}" )
     proc = subprocess.run(interface_py_cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -126,38 +138,100 @@ def _execute_py_file(command, interface_argindex, interface_py_file):
         exit(1)
     return interface_py_data
 
-def argtypes_from_py_file(command, interface_argindex, interface_py_file):
-    interface_py_data = _execute_py_file(command, interface_argindex, interface_py_file)
-    # TODO: validation
+def get_argtypes_and_results(interface_file, interface_py_file, interface_argindex, command, original_binary):
+    interface_data = None
+    interface_py_done = False
+    if interface_file is not None:
+        msg(2, "Try to obtain argtypes from interface YAML file...")
+        interface_data = load(interface_file)
+
+    interface_py_data = {}
+    if interface_py_file is not None:
+        msg(2, "Try to obtain argtypes from interface py file...")
+        interface_py_data = _execute_py_file(command, interface_argindex, interface_py_file)
+        if interface_py_data is not None:
+            msg(2, "...success")
+        else:
+            msg(2, "...failure")
+            interface_py_data = {}
+    
+    if not interface_data and not interface_py_data:
+        return None, None, False
+
     order = []
-    order[:] = command
-    argtypes = interface_py_data.get("argtypes", {}).copy()
-    argtypes["@order"] = order
-    files = interface_py_data.get("files", [])
-    directories = interface_py_data.get("directories", [])
-    shim = interface_py_data.get("shim")
-    for flist, ftype in ((files, "file"), (directories, "directory")):
-        for f in flist:
-            mapping = None
-            if isinstance(f, dict):
-                fname = f["name"]
-                mapping = f.get("mapping")
+    order[:] = [original_binary]  + command[1:]
+    argtypes = {"@order": order}
+    argtypes.update(interface_data.get("argtypes", {}))
+    argtypes.update(interface_py_data.get("argtypes", {}))
+    interface_py_done = bool(interface_py_data.get("@@done", False))
+    argtypes[original_binary] = {
+        "type": "file",
+        "mapping": command[0],
+    }
+    def resolve_dot(f, fdir):
+        if f.startswith("." + os.sep):
+            if not fdir:
+                f = f[2:]
             else:
-                fname = f
-                f2 = os.path.expanduser(f)
-                if f2 != f:
-                    mapping = f2
-            pos = order.index(fname)
-            order[pos] = fname
-            if mapping:
-                mapping = os.path.expanduser(mapping)
-                argtypes[fname] = {"type": ftype, "mapping": mapping}
+                f = fdir + f[1:]
+        return f
+
+    initial_results = {}
+    for if_data, if_filename in ((interface_data, interface_file), (interface_py_data,interface_py_file)):
+        files = if_data.get("files", [])
+        if files:
+            msg(3, f"Read 'files' from {if_filename}:\n  {files}")
+        directories = if_data.get("directories", [])
+        shim = if_data.get("shim")
+        fdir = os.path.split(command[0])[0]
+        results = if_data.get("results", [])
+        if results:
+            msg(3, f"Read 'results' from {if_filename}:\n  {results}")
+            if isinstance(results, dict):
+                resolved_results = {}
+                for k, v in results.items():
+                    kk = resolve_dot(k, fdir)
+                    resolved_results[kk] = v
+                if resolved_results != results:
+                    msg(3, f"Resolved results:\n  {resolved_results}")
             else:
-                argtypes[fname] = ftype
-    if shim is not None:
-        argtypes["@shim"] = shim
-    return argtypes
-5
+                resolved_results = {resolve_dot(f, fdir): None for f in results}
+                if resolved_results != {f: None for f in results}:
+                    msg(3, f"Resolved results:\n  {resolved_results}")
+            initial_results.update(resolved_results)
+        for flist, ftype in ((files, "file"), (directories, "directory")):
+            for f in flist:
+                mapping = None
+                if isinstance(f, dict):
+                    fname = f["name"]
+                    mapping = f.get("mapping")
+                    fixed_mapping = True
+                else:
+                    fname = f
+                    f2 = os.path.expanduser(f)
+                    if f2 != f:
+                        mapping = f2
+                        fixed_mapping = False
+                fname = resolve_dot(fname, fdir)
+                try:
+                    pos = order.index(fname)
+                    order[pos] = fname
+                except ValueError:
+                    pass
+                if mapping:
+                    try:
+                        pos = order.index(mapping)
+                        order[pos] = fname
+                    except ValueError:
+                        pass
+                    mapping = os.path.expanduser(mapping)
+                    argtypes[fname] = {"type": ftype, "mapping": mapping, "fixed_mapping": fixed_mapping}
+                else:
+                    argtypes[fname] = ftype
+        if shim is not None:
+            argtypes["@shim"] = shim
+    return argtypes, initial_results, interface_py_done
+
 def interface_from_py_file(interface_py_file, arguments):
     interface_py_data = _execute_py_file(arguments, -1, interface_py_file)
     # TODO: validation

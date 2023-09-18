@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S python3 -u
 
 __version__ = "0.12"
 
@@ -137,16 +137,11 @@ first_command_words = copy(first_command.words)
 if mapped_execarg:
     first_command_words[0] = mapped_execarg
 
-argtypes_initial = None
-if interface_py_file is not None:
-    msg(2, "Try to obtain argtypes from interface py file...")
-    argtypes_initial = interface.argtypes_from_py_file(first_command_words, interface_argindex, interface_py_file)
-    if argtypes_initial is not None:
-        msg(2, "...success")
-    else:
-        msg(2, "...failure")
+argtypes_initial, results_initial, first_interface_py_done = interface.get_argtypes_and_results(
+    interface_file, interface_py_file, interface_argindex, first_command_words, first_command.words[0]   
+)
 
-if argtypes_initial is None:
+if interface_py_file is None:
     msg(2, "Try to obtain argtypes from rules")
 
     overrule_ext, overrule_no_ext = False, False
@@ -158,12 +153,19 @@ if argtypes_initial is None:
         overrule_no_ext = True
 
     try:
-        argtypes_initial = guess_arguments(
+        argtypes_guess = guess_arguments(
             first_command_words, overrule_ext=overrule_ext, overrule_no_ext=overrule_no_ext
         )
     except ValueError as exc:
         msg(-1, *exc.args)
         sys.exit(1)
+    if argtypes_initial is None:
+        argtypes_initial = argtypes_guess
+    else:
+        argtypes_temp = argtypes_initial
+        argtypes_initial = {}
+        argtypes_initial.update(argtypes_guess)
+        argtypes_initial.update(argtypes_temp)
 
 argtypesstr = json.dumps(argtypes_initial, sort_keys=False, indent=2)
 msg(1, "initial argtypes dict:\n" + argtypesstr)
@@ -203,12 +205,17 @@ for wordnr, word in enumerate(mapped_first_command):
 interface_data = {}
 make_executables = []
 
-def update_interface_data(new_interface_data):
+def update_interface_data(new_interface_data, first):
     changed = False
     for k,v in new_interface_data.items():
         if k in ("argtypes", "files", "directories", "shim"):
             continue
         curr = interface_data.get(k)
+        if k == "results":
+            if first:
+                continue
+            if isinstance(curr, list):
+                curr = {k:None for k in curr}
         if k == "environment":
             if curr is None:
                 interface_data[k] = v
@@ -219,7 +226,7 @@ def update_interface_data(new_interface_data):
         
         changed = True
         if curr is None:
-            interface_data[k] = v            
+            interface_data[k] = v
         else:
             if isinstance(v, list) != isinstance(curr, list):
                 interface_data[k] = v
@@ -246,8 +253,10 @@ for commandnr, command in enumerate(commands):
         new_shim = new_interface_data.get("shim")
         if new_shim is not None:
             shim = new_shim
-        update_interface_data(new_interface_data)
+        update_interface_data(new_interface_data, first=(commandnr==0))
 
+    if commandnr == 0 and first_interface_py_done:
+        interface_py_file = None
     if interface_py_file is not None:
         if commandnr == 0:
             command_words = mapped_first_command
@@ -262,7 +271,7 @@ for commandnr, command in enumerate(commands):
         new_shim = new_interface_data.get("shim")
         if new_shim is not None:
             shim = new_shim
-        update_interface_data(new_interface_data)
+        update_interface_data(new_interface_data, first=(commandnr==0))
 
         if shim:
             wordnode = command.wordnodes[interface_argindex]
@@ -286,17 +295,22 @@ if redirection_node is not None:
     if redirection != redirection_node.word:
         word_substitutions[redirection_node] = redirection
 
-results = interface_data.get("results")
+if results_initial is None:
+    results_initial = {}
+else:
+    msg(2, f"Initial result targets from first command: {results_initial}")
+results = results_initial.copy()
+results.update(interface_data.get("results", {}))
 if not results and not redirection:
     capture_stdout = True
     result_targets = None
 else:
     capture_stdout = False
-    result_targets = []
+    result_targets = {}
     if results:
-        result_targets[:] = results
+        result_targets.update(results)
     if redirection:
-        result_targets.append(redirection)
+        result_targets[redirection] = None
     msg(1, f"Identify result targets: {result_targets}")
 ################################################################
 
@@ -357,8 +371,16 @@ transformation_checksum, transformation_dict = prepare_bash_transformation(
 )
 if make_executables:
     msg(2, "The following files will be made executable inside the transformer\n:\n  {}".format('\n  '.join(make_executables)))
+else:
+    msg(3, "No files will be made executable inside the transformer")
 
-result_checksum = run_transformation(transformation_dict, undo=args.undo)
+from seamless import SeamlessTransformationError
+try:
+    result_checksum = run_transformation(transformation_dict, undo=args.undo)
+except SeamlessTransformationError as exc:
+    traceback.print_exc(limit=0)
+    exit(1)
+
 if not args.undo:
     msg(1, "Transformation finished")
     msg(2, "Result checksum: {}".format(result_checksum))
@@ -415,16 +437,24 @@ else:
 
     if (not capture_stdout) and len(result_targets) > 1:
         result_checksum_dict = deserialize(result_buffer, result_checksum.bytes(), "plain", copy=False)
+        filenames = []
+        for k, v in result_targets.items():
+            filename = v if v is not None else k
+            filenames.append(filename)      
         for filename in result_checksum_dict:
-            assert filename in result_targets, (filename, result_targets)
+            assert filename in filenames, (filename, result_targets)
+        for k, v in result_targets.items():
+            filename = v if v is not None else k
             try:
-                file_checksum = result_checksum_dict[filename]
+                file_checksum = result_checksum_dict[k]
             except KeyError:
                 msg(0, "No result for '{filename}' was returned")
                 continue
             write_result(filename, file_checksum)
-    elif len(result_targets) == 1:
-        write_result(result_targets[0], result_checksum)
+    elif result_targets and len(result_targets) == 1:
+        k, v = list(result_targets.items())[0]
+        filename = v if v is not None else k
+        write_result(filename, result_checksum)
     elif capture_stdout:
         try:
             result = result_buffer.decode()

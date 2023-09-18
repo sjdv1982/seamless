@@ -1,0 +1,72 @@
+seamless.core.transformation.SeamlessTransformationError: Error 400 from assistant:ERROR: 
+Bash transformer exception
+==========================
+
+Error: Return code 1
+
+*************************************************
+* Command
+*************************************************
+chmod +x 'bin/headify'
+(
+bin/headify workfiles/text.txt -n 3
+) > RESULT
+*************************************************
+
+
+*************************************************
+* Standard output
+*************************************************
+Traceback (most recent call last):
+  File "/tmp/seamless-bash-transformern6bt54v0/bin/headify", line 16, in <module>
+    import headify_lib
+ModuleNotFoundError: No module named 'headify_lib'
+
+*************************************************
+*************************************************
+Execution time: 0.0 seconds
+
+filelist.txt
+numbers.dat
+table.csv
+text.txt
+
+cat: workfiles/text-head.txt: No such file or directory
+
+seamless.core.transformation.SeamlessTransformationError: Error 400 from assistant:ERROR: 
+Bash transformer exception
+==========================
+
+Error: Return code 1
+
+*************************************************
+* Command
+*************************************************
+chmod +x 'bin/headify'
+(
+bin/headify workfiles/filelist.txt -n 3 --batch
+) > RESULT
+*************************************************
+
+
+*************************************************
+* Standard output
+*************************************************
+Traceback (most recent call last):
+  File "/tmp/seamless-bash-transformer5b8nw8p4/bin/headify", line 16, in <module>
+    import headify_lib
+ModuleNotFoundError: No module named 'headify_lib'
+
+*************************************************
+*************************************************
+Execution time: 0.0 seconds
+
+filelist.txt
+numbers.dat
+table.csv
+text.txt
+
+cat: numbers-head.dat: No such file or directory
+
+cat: table-head.csv: No such file or directory
+
