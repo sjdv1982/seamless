@@ -1,0 +1,53 @@
+Run 1 (no seamless)...
+
+Run 2 (seamless, no interface)...
+
+Run 3 (seamless, partial interface)...
+
+Run 4 (seamless, inferior interface)...
+
+Run 5 (seamless, inferior interface, 2x5 sec sleep)...
+
+real	0m11.531s
+user	0m1.883s
+sys	0m1.740s
+
+Run 5a (seamless, inferior interface, 2x5 sec sleep, repeat)...
+
+real	0m1.196s
+user	0m1.757s
+sys	0m1.763s
+
+Run 6 (seamless, inferior interface, 2x5 sec sleep, rename)...
+
+real	0m11.631s
+user	0m1.807s
+sys	0m1.875s
+
+Run 999 (seamless, inferior interface, multi-command)...
+
+Run 7 (seamless, superior interface)...
+
+Run 1000 (seamless, superior interface, multi-command)...
+FAILS because superior interface is for single-command only
+
+Run 8 (seamless, superior interface, 2x5 sec sleep)...
+
+real	0m11.613s
+user	0m1.780s
+sys	0m1.803s
+
+Run 8a (seamless, superior interface, 2x5 sec sleep, repeat)...
+
+real	0m1.267s
+user	0m1.718s
+sys	0m1.809s
+
+Run 9 (seamless, inferior interface, 2x5 sec sleep, rename)...
+Time should be around 5+2 secs instead of 10+2
+The first command of run() is now canonical and federates upon rename
+
+real	0m6.455s
+user	0m1.747s
+sys	0m1.877s
+

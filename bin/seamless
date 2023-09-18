@@ -137,7 +137,7 @@ first_command_words = copy(first_command.words)
 if mapped_execarg:
     first_command_words[0] = mapped_execarg
 
-argtypes_initial, results_initial, first_interface_py_done = interface.get_argtypes_and_results(
+argtypes_initial, results_initial = interface.get_argtypes_and_results(
     interface_file, interface_py_file, interface_argindex, first_command_words, first_command.words[0]   
 )
 
@@ -214,8 +214,14 @@ def update_interface_data(new_interface_data, first):
         if k == "results":
             if first:
                 continue
-            if isinstance(curr, list):
-                curr = {k:None for k in curr}
+            if isinstance(v, list):
+                v = {kk:None for kk in v}
+            if k not in interface_data:
+                interface_data[k] = {}
+            if v:
+                interface_data[k].update(v)
+                changed = True
+            continue
         if k == "environment":
             if curr is None:
                 interface_data[k] = v
@@ -255,7 +261,7 @@ for commandnr, command in enumerate(commands):
             shim = new_shim
         update_interface_data(new_interface_data, first=(commandnr==0))
 
-    if commandnr == 0 and first_interface_py_done:
+    if commandnr == 0:
         interface_py_file = None
     if interface_py_file is not None:
         if commandnr == 0:
@@ -298,7 +304,17 @@ if redirection_node is not None:
 if results_initial is None:
     results_initial = {}
 else:
-    msg(2, f"Initial result targets from first command: {results_initial}")
+    msg(2, f"Initial result targets from first command: {results_initial}")    
+    decal = os.path.relpath(os.getcwd(), workdir)
+    if decal != ".":
+        results_initial2 = results_initial.copy()
+        for k, v in results_initial.items():
+            if v is None:
+                kk = os.path.join(decal, k)
+                results_initial2.pop(k)
+                results_initial2[kk] = v
+        results_initial = results_initial2
+
 results = results_initial.copy()
 results.update(interface_data.get("results", {}))
 if not results and not redirection:

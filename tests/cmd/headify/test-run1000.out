@@ -1,0 +1,38 @@
+seamless.core.transformation.SeamlessTransformationError: Error 400 from assistant:ERROR: 
+Bash transformer exception
+==========================
+
+Error: Return code 1
+
+*************************************************
+* Command
+*************************************************
+chmod +x 'superior-interface/headify' 'superior-interface/headify'
+
+touch workfiles/text.txt superior-interface/headify superior-interface/headify_lib.py
+cp workfiles/text.txt TEST.txt
+superior-interface/headify TEST.txt -n 4
+superior-interface/headify workfiles/text.txt -n 3
+
+mv -f infile-head RESULT
+*************************************************
+
+
+*************************************************
+* Standard output
+*************************************************
+mv: cannot stat 'infile-head': No such file or directory
+
+*************************************************
+*************************************************
+Execution time: 0.1 seconds
+
+mv: cannot stat 'TEST*': No such file or directory
+filelist.txt
+numbers.dat
+table.csv
+text.txt
+
+cat: workfiles/TEST-head.txt: No such file or directory
+
+cat: workfiles/text-head.txt: No such file or directory

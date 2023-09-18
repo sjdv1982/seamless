@@ -54,7 +54,6 @@ else:
 interface = {
     "files": input_files,
     "results": result_files,
-    "@@done": True,
 }
 
 import json

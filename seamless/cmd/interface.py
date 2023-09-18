@@ -140,7 +140,6 @@ def _execute_py_file(command, interface_argindex, interface_py_file):
 
 def get_argtypes_and_results(interface_file, interface_py_file, interface_argindex, command, original_binary):
     interface_data = None
-    interface_py_done = False
     if interface_file is not None:
         msg(2, "Try to obtain argtypes from interface YAML file...")
         interface_data = load(interface_file)
@@ -156,14 +155,13 @@ def get_argtypes_and_results(interface_file, interface_py_file, interface_argind
             interface_py_data = {}
     
     if not interface_data and not interface_py_data:
-        return None, None, False
+        return None, None
 
     order = []
     order[:] = [original_binary]  + command[1:]
     argtypes = {"@order": order}
     argtypes.update(interface_data.get("argtypes", {}))
     argtypes.update(interface_py_data.get("argtypes", {}))
-    interface_py_done = bool(interface_py_data.get("@@done", False))
     argtypes[original_binary] = {
         "type": "file",
         "mapping": command[0],
@@ -191,7 +189,7 @@ def get_argtypes_and_results(interface_file, interface_py_file, interface_argind
                 resolved_results = {}
                 for k, v in results.items():
                     kk = resolve_dot(k, fdir)
-                    resolved_results[kk] = v
+                    resolved_results[kk] = v                    
                 if resolved_results != results:
                     msg(3, f"Resolved results:\n  {resolved_results}")
             else:
@@ -230,7 +228,7 @@ def get_argtypes_and_results(interface_file, interface_py_file, interface_argind
                     argtypes[fname] = ftype
         if shim is not None:
             argtypes["@shim"] = shim
-    return argtypes, initial_results, interface_py_done
+    return argtypes, initial_results
 
 def interface_from_py_file(interface_py_file, arguments):
     interface_py_data = _execute_py_file(arguments, -1, interface_py_file)

@@ -84,7 +84,7 @@ def get_file_mapping(
                 nfiles += 1
             else:
                 ndirectories += 1
-            fullpath = Path(path).resolve().as_posix()
+            fullpath = Path(path).absolute().as_posix()
             if mapping_mode == "literal":
                 path2 = path
                 cwd0 = "" if cwd == os.sep else cwd
