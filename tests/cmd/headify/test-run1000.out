@@ -7,12 +7,12 @@ Error: Return code 1
 *************************************************
 * Command
 *************************************************
-chmod +x 'superior-interface/headify' 'superior-interface/headify'
+chmod +x 'canonical-interface/headify' 'canonical-interface/headify'
 
-touch workfiles/text.txt superior-interface/headify superior-interface/headify_lib.py
+touch workfiles/text.txt canonical-interface/headify canonical-interface/headify_lib.py
 cp workfiles/text.txt TEST.txt
-superior-interface/headify TEST.txt -n 4
-superior-interface/headify workfiles/text.txt -n 3
+canonical-interface/headify TEST.txt -n 4
+canonical-interface/headify workfiles/text.txt -n 3
 
 mv -f infile-head RESULT
 *************************************************

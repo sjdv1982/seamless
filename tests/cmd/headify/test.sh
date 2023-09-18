@@ -49,10 +49,10 @@ function run1000() {
     rm -rf workfiles
     cp -r files/ workfiles
     seamless -g2 -c '
-touch workfiles/text.txt superior-interface/headify superior-interface/headify_lib.py
+touch workfiles/text.txt canonical-interface/headify canonical-interface/headify_lib.py
 cp workfiles/text.txt TEST.txt
-superior-interface/headify TEST.txt -n 4
-superior-interface/headify workfiles/text.txt -n 3
+canonical-interface/headify TEST.txt -n 4
+canonical-interface/headify workfiles/text.txt -n 3
 '
     mv TEST* workfiles/ 
     ls workfiles/
@@ -107,26 +107,26 @@ echo 'Run 999 (seamless, inferior interface, multi-command)...'
 run999  >& test-run999.out
 echo
 
-echo 'Run 7 (seamless, superior interface)...'
-export PATH=$(pwd)/superior-interface:$OLD_PATH
+echo 'Run 7 (seamless, canonical interface)...'
+export PATH=$(pwd)/canonical-interface:$OLD_PATH
 run "seamless -w $(pwd) headify" workfiles >& test-run7.out
 echo
 
-echo 'Run 1000 (seamless, superior interface, multi-command)...'
-echo 'FAILS because superior interface is for single-command only'
+echo 'Run 1000 (seamless, canonical interface, multi-command)...'
+echo 'FAILS because canonical interface is for single-command only'
 run1000  >& test-run1000.out
 echo
 
 time (
-echo 'Run 8 (seamless, superior interface, 2x5 sec sleep)...'
-export PATH=$(pwd)/superior-interface:$OLD_PATH
+echo 'Run 8 (seamless, canonical interface, 2x5 sec sleep)...'
+export PATH=$(pwd)/canonical-interface:$OLD_PATH
 run "seamless -w $(pwd) headify" workfiles --sleep 5 >& test-run8.out
 )
 echo
 
 time (
-echo 'Run 8a (seamless, superior interface, 2x5 sec sleep, repeat)...'
-export PATH=$(pwd)/superior-interface:$OLD_PATH
+echo 'Run 8a (seamless, canonical interface, 2x5 sec sleep, repeat)...'
+export PATH=$(pwd)/canonical-interface:$OLD_PATH
 run "seamless -w $(pwd) headify" workfiles --sleep 5 >& test-run8a.out
 )
 echo
@@ -135,7 +135,7 @@ time (
 echo 'Run 9 (seamless, inferior interface, 2x5 sec sleep, rename)...'
 echo 'Time should be around 5+2 secs instead of 10+2'
 echo 'The first command of run() is now canonical and federates upon rename'
-export PATH=$(pwd)/superior-interface:$OLD_PATH
+export PATH=$(pwd)/canonical-interface:$OLD_PATH
 run "seamless -w $(pwd) headify" new-workfiles --sleep 5 >& test-run9.out
 )
 echo

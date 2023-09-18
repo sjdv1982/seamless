@@ -8,46 +8,46 @@ Run 4 (seamless, inferior interface)...
 
 Run 5 (seamless, inferior interface, 2x5 sec sleep)...
 
-real	0m11.531s
-user	0m1.883s
-sys	0m1.740s
+real	0m11.580s
+user	0m1.747s
+sys	0m1.908s
 
 Run 5a (seamless, inferior interface, 2x5 sec sleep, repeat)...
 
-real	0m1.196s
-user	0m1.757s
-sys	0m1.763s
+real	0m1.219s
+user	0m1.747s
+sys	0m1.767s
 
 Run 6 (seamless, inferior interface, 2x5 sec sleep, rename)...
 
-real	0m11.631s
-user	0m1.807s
-sys	0m1.875s
+real	0m11.592s
+user	0m1.865s
+sys	0m1.749s
 
 Run 999 (seamless, inferior interface, multi-command)...
 
-Run 7 (seamless, superior interface)...
+Run 7 (seamless, canonical interface)...
 
-Run 1000 (seamless, superior interface, multi-command)...
-FAILS because superior interface is for single-command only
+Run 1000 (seamless, canonical interface, multi-command)...
+FAILS because canonical interface is for single-command only
 
-Run 8 (seamless, superior interface, 2x5 sec sleep)...
+Run 8 (seamless, canonical interface, 2x5 sec sleep)...
 
-real	0m11.613s
-user	0m1.780s
-sys	0m1.803s
+real	0m11.615s
+user	0m1.878s
+sys	0m1.773s
 
-Run 8a (seamless, superior interface, 2x5 sec sleep, repeat)...
+Run 8a (seamless, canonical interface, 2x5 sec sleep, repeat)...
 
-real	0m1.267s
-user	0m1.718s
-sys	0m1.809s
+real	0m1.259s
+user	0m1.787s
+sys	0m1.729s
 
 Run 9 (seamless, inferior interface, 2x5 sec sleep, rename)...
 Time should be around 5+2 secs instead of 10+2
 The first command of run() is now canonical and federates upon rename
 
-real	0m6.455s
-user	0m1.747s
-sys	0m1.877s
+real	0m6.484s
+user	0m1.818s
+sys	0m1.783s
 
