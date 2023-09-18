@@ -19,6 +19,7 @@ def locate_files(command):
     interface_file = None
     interface_py_file = None
     interface_argindex = None
+    mapped_execarg = None
 
     args1 = [Path(command[0]), Path(command[0]).expanduser()]
     for arg1 in args1:
@@ -26,11 +27,20 @@ def locate_files(command):
             execarg1 = subprocess.getoutput("which {}".format(arg1.as_posix())).strip()
             if execarg1:
                 msg(
-                    3,
+                    2,
                     "first argument '{}' is in PATH, map to '{}'".format(
                         arg1.as_posix(), execarg1
                     ),
                 )
+                if not execarg1.startswith("/bin") and not execarg1.startswith("/sbin") and not execarg1.startswith("/usr"):
+                    msg(
+                        1,
+                        "first argument '{}' does not seem a POSIX tool. Explicitly upload it as '{}'".format(
+                            arg1.as_posix(), execarg1
+                        ),
+                    )
+                    mapped_execarg = execarg1
+
                 arg1 = Path(execarg1)
         if arg1.exists():
             interface_file0 = Path(arg1.as_posix() + ".SEAMLESS.yaml")
@@ -96,7 +106,7 @@ def locate_files(command):
                 ),
             )
 
-    return interface_argindex, interface_file, interface_py_file
+    return interface_argindex, interface_file, interface_py_file, mapped_execarg
 
 def _execute_py_file(command, interface_argindex, interface_py_file):
     interface_py_cmd = f'{sys.executable} {interface_py_file} {" ".join(command[interface_argindex+1:])}'

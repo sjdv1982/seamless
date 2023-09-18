@@ -12,6 +12,7 @@ def prepare_bash_transformation(
     checksum_dict: dict[str, str],
     *,
     directories: list[str],
+    make_executables: list[str],
     result_targets: list[str] | None,
     capture_stdout: bool,
     environment: dict
@@ -26,6 +27,7 @@ def prepare_bash_transformation(
         - or: to a directory called RESULT, if result_mode is "directory"
     - checksum_dict: checksums of the files/directories to be injected in the workspace
     - directories: list of the keys in checksum_dict that are directories
+    - make_executables: list of paths where the executable bit must be set
     - capture_stdout
     - result_targets: server files containing results
     - environment
@@ -35,13 +37,21 @@ def prepare_bash_transformation(
     if len(directories):
         raise NotImplementedError
 
+    bashcode = ""
+    if make_executables:
+        make_executables_str = ""
+        for make_executable in make_executables:
+            make_executables_str += f" '{make_executable}'"
+        bashcode += f"chmod +x{make_executables_str}; "
+
     if capture_stdout:
         assert not result_targets
-        bashcode = "(\n" + code + "\n) > RESULT"
+        bashcode += "(\n" + code + "\n) > RESULT"
     else:
         assert len(result_targets)
         if len(result_targets) == 1:
-            bashcode = code + f"; mv -f {result_targets[0]} RESULT"
+            bashcode += code  
+            bashcode += f"; mv -f {result_targets[0]} RESULT"
         else:
             mvcode = ""
             result_target_dirs = []
@@ -50,7 +60,7 @@ def prepare_bash_transformation(
                 mvcode += f"mv {tar} {tardir}; "
                 if tardir not in result_target_dirs:
                     result_target_dirs.append(tardir)                 
-            bashcode = f"mkdir -p {' '.join(result_target_dirs)}\n"
+            bashcode += f"mkdir -p {' '.join(result_target_dirs)}\n"
             bashcode += code + "\n"
             bashcode += mvcode[:-2]
 
