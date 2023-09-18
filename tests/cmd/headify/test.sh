@@ -63,7 +63,6 @@ canonical-interface/headify workfiles/text.txt -n 3
     rm -rf workfiles
 }
 
-
 export PATH=$(pwd)/bin:$OLD_PATH
 
 echo 'Run 1 (no seamless)...'
@@ -120,14 +119,14 @@ echo
 time (
 echo 'Run 8 (seamless, canonical interface, 2x5 sec sleep)...'
 export PATH=$(pwd)/canonical-interface:$OLD_PATH
-run "seamless -w $(pwd) headify" workfiles --sleep 5 >& test-run8.out
+run "seamless headify" workfiles --sleep 5 >& test-run8.out
 )
 echo
 
 time (
 echo 'Run 8a (seamless, canonical interface, 2x5 sec sleep, repeat)...'
 export PATH=$(pwd)/canonical-interface:$OLD_PATH
-run "seamless -w $(pwd) headify" workfiles --sleep 5 >& test-run8a.out
+run "seamless headify" workfiles --sleep 5 >& test-run8a.out
 )
 echo
 
@@ -136,6 +135,7 @@ echo 'Run 9 (seamless, inferior interface, 2x5 sec sleep, rename)...'
 echo 'Time should be around 5+2 secs instead of 10+2'
 echo 'The first command of run() is now canonical and federates upon rename'
 export PATH=$(pwd)/canonical-interface:$OLD_PATH
-run "seamless -w $(pwd) headify" new-workfiles --sleep 5 >& test-run9.out
+run "seamless headify" new-workfiles --sleep 5 >& test-run9.out
 )
 echo
+

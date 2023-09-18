@@ -1,11 +1,24 @@
-files: ["./headify_lib.py"]
 canonical:
 -
-  cmd: headify infile
-  
+  command: headify infile
+  add_to_path: true
+
 -
-  cmd: headify --lines $lines infile
-  vars:        
+  command: headify --lines $lines infile
+  add_to_path: true
+  variables:        
     -
       name: lines
+      celltype: int
+
+-
+  command: headify infile -n $lines --sleep $sleep
+  add_to_path: true
+  variables:        
+    -
+      name: lines
+      celltype: int      
+
+    -
+      name: sleep
       celltype: int
