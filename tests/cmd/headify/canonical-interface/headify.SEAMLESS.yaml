@@ -1,11 +1,12 @@
 canonical:
 -
   command: headify infile
-  add_to_path: true
+  executable: true
 
 -
   command: headify --lines $lines infile
-  add_to_path: true
+  dummy_command: headify --lines 1 infile
+  executable: true
   variables:        
     -
       name: lines
@@ -13,7 +14,8 @@ canonical:
 
 -
   command: headify infile -n $lines --sleep $sleep
-  add_to_path: true
+  dummy_command: headify infile -n 1 --sleep 0
+  executable: true
   variables:        
     -
       name: lines

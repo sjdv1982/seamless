@@ -112,7 +112,9 @@ def translate_bash_transformer(
     pins = node_pins.copy()
     pins["bashcode"] = {"celltype": "text"}
     pins["pins_"] = {"celltype": "plain"}
-    ctx.pins = cell("plain").set(list(pins.keys()) + list(deep_pins.keys()))
+    pins_ = set(list(pins.keys()) + list(deep_pins.keys()))
+    pins_ = sorted([pin for pin in pins_ if pin not in ("pins_", "bashcode")])
+    ctx.pins = cell("plain").set(pins_)
 
     interchannels = [as_tuple(pin) for pin in pins]
     mount = node.get("mount", {})

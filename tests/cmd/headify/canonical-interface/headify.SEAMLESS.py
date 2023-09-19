@@ -17,7 +17,7 @@ parser.add_argument(
 parser.add_argument(
     "--sleep",
     help="Sleep for X seconds after execution",
-    type=float,
+    type=int,
 )
 
 args = parser.parse_args()

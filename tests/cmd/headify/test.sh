@@ -14,7 +14,8 @@ function run() {
     ls $workfiles/
     echo
     cat $workfiles/text-head.txt
-    echo    
+    echo
+
     $cmd $workfiles/filelist.txt -n 3 --batch $*
     cd $workfiles
     ls
@@ -139,3 +140,5 @@ run "seamless headify" new-workfiles --sleep 5 >& test-run9.out
 )
 echo
 
+echo 'headify workflow version: should federate and return immediately'
+python3 headify-workflow.py files/text.txt -n 3 --sleep 5

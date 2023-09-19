@@ -186,6 +186,24 @@ class Transformer(Base, HelpMixin):
             setattr(self, pinname, value)
         parent._translate()
 
+    @classmethod
+    def from_canonical_interface(cls, tool, command=None):
+        """TODO: document"""
+        from ..cmd.canonical import build_transformer_dict
+        tf_dict, result_celltype, buffers, bashcode = build_transformer_dict(tool, command=command)
+        self = cls()
+        self.language = "bash"
+        for pin, celltype in tf_dict.items():
+            setattr(self, pin, None)
+            getattr(self.pins, pin).celltype = celltype
+        self.result.celltype = result_celltype
+        for pin, buffer in buffers.items():
+            setattr(self, pin, None)
+            getattr(self.pins, pin).celltype = "bytes"
+            setattr(self, pin, buffer)
+        self.code = bashcode
+        return self
+
     def _set_temp(self, attr, value):
         htf = self._get_htf()
         htf["UNTRANSLATED"] = True

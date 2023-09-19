@@ -48,7 +48,9 @@ class PinWrapper:
             raise TypeError(value)
         hpin = self._get_hpin()
         hpin["celltype"] = value
-        self._parent()._parent()._translate()
+        parent = self._parent()._parent()
+        if parent is not None:
+            parent._translate()
 
     @property
     def io(self):

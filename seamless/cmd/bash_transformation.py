@@ -7,33 +7,14 @@ from ..core.direct.run import run_transformation_dict, register_transformation_d
 from ..core.cache.transformation_cache import transformation_cache
 from seamless.cmd.register import register_dict
 
-def prepare_bash_transformation(
+def prepare_bash_code(
     code: str,
-    checksum_dict: dict[str, str],
     *,
     directories: list[str],
     make_executables: list[str],
     result_targets: dict | None,
     capture_stdout: bool,
-    environment: dict
-) -> str:
-    """Prepared a bash transformation for execution.
-
-    Input:
-
-    - code: bash code to execute inside a workspace. The code must write its result:
-        - to /dev/stdout if result_mode is "stdout"
-        - or: to a file called RESULT, if result_mode is "file"
-        - or: to a directory called RESULT, if result_mode is "directory"
-    - checksum_dict: checksums of the files/directories to be injected in the workspace
-    - directories: list of the keys in checksum_dict that are directories
-    - make_executables: list of paths where the executable bit must be set
-    - capture_stdout
-    - result_targets: server files containing results
-    - environment
-
-    Returns: transformation checksum, transformation dict
-    """
+):
     if len(directories):
         raise NotImplementedError
 
@@ -68,6 +49,47 @@ def prepare_bash_transformation(
             bashcode += f"mkdir -p {' '.join(result_target_dirs)}\n"
             bashcode += code + "\n"
             bashcode += mvcode
+    return bashcode    
+
+def prepare_bash_transformation(
+    code: str,
+    checksum_dict: dict[str, str],
+    *,
+    directories: list[str],
+    make_executables: list[str],
+    result_targets: dict | None,
+    capture_stdout: bool,
+    environment: dict,
+    variables: dict,
+) -> str:
+    """Prepared a bash transformation for execution.
+
+    Input:
+
+    - code: bash code to execute inside a workspace. The code must write its result:
+        - to /dev/stdout if result_mode is "stdout"
+        - or: to a file called RESULT, if result_mode is "file"
+        - or: to a directory called RESULT, if result_mode is "directory"
+    - checksum_dict: checksums of the files/directories to be injected in the workspace
+    - directories: list of the keys in checksum_dict that are directories
+    - make_executables: list of paths where the executable bit must be set
+    - capture_stdout
+    - result_targets: server files containing results
+    - environment
+    - variables: ....
+
+    Returns: transformation checksum, transformation dict
+    """
+    if len(directories):
+        raise NotImplementedError
+
+    bashcode = prepare_bash_code(
+        code,
+        directories = directories,
+        make_executables = make_executables,
+        result_targets = result_targets,
+        capture_stdout = capture_stdout
+    )
 
     new_args = {
         "code": ("text", None, bashcode),
@@ -88,6 +110,14 @@ def prepare_bash_transformation(
     for k,v in checksum_dict.items():
         transformation_dict[k] = "bytes", None, v
 
+    if variables:
+        for k, (v, celltype) in variables.items():
+            if celltype in ("int", "float", "bool", "str"):
+                value = eval(celltype)(v)
+            else:
+                raise TypeError(celltype)
+            new_args[k] = celltype, None, value
+
     for k,v in new_args.items():
         celltype, subcelltype, value = v
         buffer = serialize(value, celltype)
@@ -102,6 +132,11 @@ def prepare_bash_transformation(
     return Checksum(transformation_checksum), transformation_dict
 
 def run_transformation(transformation_dict, *, undo):
+    transformation_dict_py = unbashify(transformation_dict, {}, {})
+    _, transformation_checksum_py = register_transformation_dict(transformation_dict_py)
+    result_py = database.get_transformation_result(transformation_checksum_py)
+    if result_py is not None:
+        return Checksum(result_py)
     _, transformation_checksum = register_transformation_dict(transformation_dict)
     if undo:
         try:
@@ -116,8 +151,12 @@ def run_transformation(transformation_dict, *, undo):
             return Checksum(result)
     else:
         result_checksum = run_transformation_dict(transformation_dict, fingertip=False)
+        if result_checksum is not None:
+            database.set_transformation_result(transformation_checksum_py, result_checksum)
         return Checksum(result_checksum)
 
 
 from seamless.cmd.message import message as msg
 from seamless.highlevel import Checksum
+from seamless.metalevel.unbashify import unbashify
+from seamless.config import database

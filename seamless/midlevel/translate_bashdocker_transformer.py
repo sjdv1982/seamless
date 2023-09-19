@@ -37,7 +37,9 @@ def translate_bashdocker_transformer(
     pins["docker_options"] = {"celltype": "plain"}
     pins["pins_"] = {"celltype": "plain"}
     pins0 = list(pins.keys())
-    ctx.pins = cell("plain").set(pins0 + list(deep_pins.keys()))
+    pins_ = set(pins0 + list(deep_pins.keys()))
+    pins_ = sorted([pin for pin in pins_ if pin not in ("pins_", "bashcode")])
+    ctx.pins = cell("plain").set(pins_)
 
     interchannels = [as_tuple(pin) for pin in pins]
     mount = node.get("mount", {})

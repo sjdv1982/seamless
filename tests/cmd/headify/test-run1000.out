@@ -27,6 +27,7 @@ mv: cannot stat 'infile-head': No such file or directory
 *************************************************
 Execution time: 0.1 seconds
 
+buffer cache, 7 buffers undestroyed
 mv: cannot stat 'TEST*': No such file or directory
 filelist.txt
 numbers.dat
