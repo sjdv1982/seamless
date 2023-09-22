@@ -1096,32 +1096,33 @@ and local execution is a fallback."""
 
     def get_transformation_checksum(self) -> Optional[str]:
         """Return the checksum of the transformation dict.
+        
         The transformation dict contains the checksums of all input pins,
-        including the code.
-
-        In addition, it may contain the following special keys:
+        including the code, as well as the following special keys:
         - __output__: the name (usually "result") and (sub)celltype of the output pin
-          If it has a hash pattern, this is appended as the fourth element. 
-        - __as__: a dictionary of pin-to-variable renames (pins.pinname.as_ attribute)
-        - __format__: a dictionary that contains deepcell and filesystem attributes
+          If it has a hash pattern, this is appended as the fourth element.
+        - __as__ (optional): a dictionary of pin-to-variable renames (pins.pinname.as_ attribute)
+        - __format__ (optional): a dictionary that contains deepcell and filesystem attributes
 
-        Finally, it may contain additional information that is not reflected
-        in this checksum:
+        The transformation checksum is the checksum of this dict.
+
+        Note that in addition, a transformation dict may contain extra information 
+        that is not reflected in this checksum:
 
         - __env__: the checksum of the environment description
         - __meta__: meta information (Transformer.meta).
         - __compilers__: context-wide compiler definitions.
         - __languages__: context-wide language definition.
 
-        You can run a transformation with:
-        `seamless.run_transformation(checksum)`.
+        Because of the double underscores, this extra information is called
+        "dunder.
 
         `ctx.resolve(checksum, "plain")` will return the transformation dict,
-        minus __env__, __meta__, __compilers__ and __languages__. The checksum is
+        minus the dunder information. The checksum is
         treated like any other buffer, i.e. including database, assistant etc.
 
-        With Transformation.get_transformation_dict(), you can obtain the full transformation dict,
-        including __env__, __meta__, __compilers__ and __languages__.
+        With Transformer.get_transformation_dict(), you will obtain the full 
+        transformation dict, including the dunder.
         """
         _ = self._get_parent2()
         htf = self._get_htf()

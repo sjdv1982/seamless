@@ -13,13 +13,14 @@ from ..core.environment import validate_conda_environment
 from ..compiler import languages_cson as languages_default, compilers_cson as compilers_default
 
 class Environment:
-    _props = ["_conda", "_which", "_powers", "_docker"]
+    _props = ["_conda", "_conda_env_name", "_which", "_powers", "_docker"]
     def __init__(self, parent=None):
         if parent is None:
             self._parent = lambda: None
         else:
             self._parent = weakref.ref(parent)
         self._conda = None
+        self._conda_env_name = None
         self._which = None
         self._powers = None
         self._docker = None
@@ -91,11 +92,11 @@ class Environment:
     def set_conda(self, conda, format="yaml"):
         """Definition of the conda environment.
         
-This is for the context as a whole, e.g. conda packages to support
-particular programming languages.
+        This is for the context as a whole, e.g. conda packages to support
+        particular programming languages.
 
-For transformer execution, please define the conda environment 
-for transformers individually (Transformer.environment)"""
+        For transformer execution, please define the conda environment 
+        for transformers individually (Transformer.environment)"""
         self._sync()
         if format != "yaml":
             raise NotImplementedError(format)  # must be yaml for now
@@ -112,6 +113,29 @@ for transformers individually (Transformer.environment)"""
             raise TypeError("Must be dict, not {}".format(type(result)))
         _ = result["dependencies"]
         self._conda = conda
+        self._update()
+
+    def set_conda_file(self, conda_file):
+        """Definition of the conda environment from a .yaml file name.
+                
+        This is for the context as a whole, e.g. conda packages to support
+        particular programming languages.
+
+        For transformer execution, please define the conda environment 
+        for transformers individually (Transformer.environment)"""
+        with open(conda_file) as f:
+            conda = f.read()
+        return self.set_conda(conda, format="yaml")
+
+    def set_conda_env(self, conda_env_name):
+        """An existing conda environment where the transformation could run.
+        This will be ignored in case local execution. It is primarily meant
+        as a hint for assistants.
+        
+        Note that transformers must have Seamless installed in the environment,
+        unless their language is bash."""
+        self._sync()
+        self._conda_env_name  = conda_env_name
         self._update()
 
     def get_conda(self, format):
@@ -154,10 +178,14 @@ for transformers individually (Transformer.environment)"""
     def set_powers(self, powers):
         """List of abstract powers that must be available
 Currently supported: 
-- "docker": run Docker containers (or Singularity)
+- "docker": run Docker containers.
 - "ipython": have get_ipython available
 - "conda": have conda available to install new packages dynamically
-        """
+
+Assistants may have the ability to modify these powers, for example
+by using Singularity to run specified Docker options.
+
+"""
         self._sync()
         if powers is None:
             self._powers = None
@@ -174,7 +202,7 @@ Currently supported:
     def get_powers(self):
         """List of abstract powers that must be available
 Currently supported: 
-- "docker": run Docker containers (or Singularity)
+- "docker": run Docker containers
 - "ipython": have get_ipython available
 - "conda": have conda available to install new packages dynamically
         """
@@ -182,14 +210,20 @@ Currently supported:
         return deepcopy(self._powers)
 
     def set_docker(self, docker: dict):
-        """Dict of the Docker (or Singularity) options
+        """Dict of the Docker options
 that defines the environment
 
 The dict must at least contain "name" 
 and potentially "checksum", "version" and "options". 
 
 "options" corresponds to the parameters of the function
-client.containers.run of the Docker SDK for Python"""
+client.containers.run of the Docker SDK for Python.
+
+Assistants may be able to modify or re-interpret this dict, 
+for example: by using Singularity instead of Docker.
+
+Note that transformers must have Seamless installed in the container,
+unless their language is bash."""
         self._sync()
         if docker is not None:
             if not isinstance(docker, dict):
@@ -200,7 +234,7 @@ client.containers.run of the Docker SDK for Python"""
         self._update()
 
     def get_docker(self):
-        """Name of the Docker (or Singularity) config 
+        """Name of the Docker config 
         that defines the environment"""
         self._sync()
         return deepcopy(self._docker)
@@ -212,6 +246,8 @@ client.containers.run of the Docker SDK for Python"""
         if self._conda is not None:
             conda_env = yaml.load(self._conda)
             result["conda"] = conda_env
+        if self._conda_env_name is not None:
+            result["conda_env_name"] = self._conda_env_name
         if self._powers is not None:
             result["powers"] = deepcopy(self._powers)
         if self._docker is not None:

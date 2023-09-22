@@ -65,7 +65,7 @@ bash.py
 bash-unbound.py
 bash-slashpins.py
 bash-debug.py
-docker_.py
+docker_.py: can be run with delegation using "export DELEGATE=''"
 docker2.py
 docker_gpu.py: run only on a machine with nvidia-docker2 installed
 docker-debug.py
@@ -139,9 +139,11 @@ imperative-module.py: requires delegation level 3, definitely in a clean setup
 map-list.py
 channel.py
 environment3.py
-environment7.py: requires full delegation. micro-. micro-assistant will not work out-of-the-boxassistant will not work out-of-the-box
+environment7.py: requires full delegation. micro-assistant will not work out-of-the-box. Can also be run non-automatically, see below.
 imperative-environment.py: Will take ~15 minutes to run (faster if GPU available). Requires full delegation. micro-assistant will not work out-of-the-box
 meta.py
+environment7a.py: version of environment7 where the conda environment name is specified. Will work with the mini-assistant if the environment "pytorch-seamless" is present 
+
 fallback.py
 eager.py: FAILS as of 0.7 (https://github.com/sjdv1982/seamless/issues/90)
 help.py: Can also be run interactively with IPython. See the source code for mounts and shares
@@ -261,7 +263,18 @@ r.py
    http://localhost:5813/ctx/result.png
   edit plot.R
   The PNG should update, the SVG should not
-   
+
+environment7.py: This will fail if executed without delegation or with the micro-assistant,
+because pytorch is required. Regardless, the transformation checksum is printed out, and
+the dunder is written to file. In a standard Seamless environment, 
+"run-transformation.py <checksum>" will return an error: 
+"ModuleNotFoundError: No module named 'torch'"
+In contrast, "run-transformation.py <checksum> environment7-dunder.json" 
+will validate the environment and give the same error message as the main script
+("Conda package 'pytorch' not installed"). 
+Either syntax will succeed inside a proper environment 
+(where both Seamless and PyTorch are available).
+
 compute-ctrl-c.py: open with ipython, type "ctx.compute()" and press ctrl+c
 delay-direct-print-file: open with ipython, monitor /tmp/direct-print.out, change ctx.tf1.a and ctx.tf1.delay
 debugmode-py-light.py

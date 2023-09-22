@@ -16,19 +16,10 @@ ctx.tf.datapoints = 2000
 ctx.tf.iterations = 2000
 ctx.tf.learning_rate = 1e-03
 ctx.tf.environment.set_conda("pytorch-environment.yml")
+ctx.tf.environment.set_conda_env("pytorch-seamless-devel")
+ctx.tf.environment.set_docker({"name": "pytorch-seamless"})
 ctx.result = ctx.tf
 ctx.result.celltype = "str"
 ctx.compute()
-print("Transformation:", ctx.tf.get_transformation_checksum())
-tf_dict = ctx.tf.get_transformation_dict()
-tf_dunder = {}
-for k in "env", "meta", "compilers", "languages":
-    key = "__" + k + "__"
-    v = tf_dict.get(key)
-    if v is not None:
-          tf_dunder[key] = v
-with open("environment7-dunder.json", "w") as f:
-    json.dump(tf_dunder, f, sort_keys=True, indent=2)
-print("Transformation dunder stored in environment7-dunder.json")
 print(ctx.tf.logs)
 print(ctx.result.value)
