@@ -1,3 +1,10 @@
+TODO: transformation.py: acquire multiple locks if meta requires it.
+Give an instant error if there are not enough locks in total.
+If you can require some, but not all, release those periodically to avoid deadlock.
+TODO: mini-assistant: have an internal lock system just like transformation.py
+(in fact, re-use it). Acquire locks before launching run-transformation, and release them
+afterwards.
+
 Random things TODO regarding integration:
 
 - Rip the entire communion protocol, too much trouble with websockets,
@@ -16,11 +23,15 @@ Random things TODO regarding integration:
 
   - Pimp the protocol a bit so that "peer ID" (project information) is sent along in the request
   After that, support transformation meta (see old jobless), progress/prelim, logs, hardcancel, etc.
-  Some kind of response-and-make-a-new-request? We really don't want websockets... UPDATE: use repeated PUTs instead
-  In general, assistant protocol cannot deal with streaming logs/results, would be nice if it could. 
   UPDATE: Make a mini-assistant that has meta but also env arguments. 
+  First add this as a stdout stream to run-transformation, then store these things in mini-assistant,
+   then create an API to return these things. Finally, have some "delegated direct print"
+   causing the assistant to be polled for stream/log updates continuously, 
+   and display them correctly with tqdm.
   ***Dogma: env (recipe) != Transformation.__env__ (schema) !!!***
-  In addition, implement "contest" API for mini-assistant (tests/highlevel/contest.py can't work without).
+  __env__ (and __meta__, __compilers__, etc... generally known as "dunder") give hints to make
+  the transformation work. They do *not* modify the result value.
+  DONE: In addition, implement "contest" API for mini-assistant (tests/highlevel/contest.py can't work without).
 
   Finally, rename imperative-communion and split it into a re-entrant version 
   (local=False, currently commented out), and the all-local version.

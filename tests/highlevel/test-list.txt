@@ -143,6 +143,7 @@ environment7.py: requires full delegation. micro-assistant will not work out-of-
 imperative-environment.py: Will take ~15 minutes to run (faster if GPU available). Requires full delegation. micro-assistant will not work out-of-the-box
 meta.py
 environment7a.py: version of environment7 where the conda environment name is specified. Will work with the mini-assistant if the environment "pytorch-seamless" is present 
+environment7b.py: version of environment7 where the Docker image name is specified. Will work with the mini-assistant if the Docker image "seamless-devel-pytorch" is present, which can be built using environment7b.Dockerfile
 
 fallback.py
 eager.py: FAILS as of 0.7 (https://github.com/sjdv1982/seamless/issues/90)

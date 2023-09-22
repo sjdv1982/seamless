@@ -16,7 +16,7 @@ ctx.tf.datapoints = 2000
 ctx.tf.iterations = 2000
 ctx.tf.learning_rate = 1e-03
 ctx.tf.environment.set_conda("pytorch-environment.yml")
-ctx.tf.environment.set_conda_env("pytorch-seamless-devel")
+ctx.tf.environment.set_docker({"name": "seamless-devel-pytorch"})
 ctx.result = ctx.tf
 ctx.result.celltype = "str"
 ctx.compute()
