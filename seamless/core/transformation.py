@@ -940,12 +940,16 @@ if os.environ.get("DOCKER_IMAGE"):
         execution_metadata0["Docker version"] = os.environ["DOCKER_VERSION"]
 
 _got_global_info = False
-def get_global_info():
+def get_global_info(global_info=None):
     global _got_global_info
     if _got_global_info:
-        return
+        return execution_metadata0.copy()
     if not database.active:
-        return
+        return {}
+    if global_info is not None:
+        execution_metadata0.update(global_info)
+        _got_global_info = True
+        return execution_metadata0.copy()
 
     seamless_version = "development"
     try:
@@ -997,6 +1001,7 @@ def get_global_info():
         result[field] = proc.stdout.decode()
     execution_metadata0.update(result)
     _got_global_info = True
+    return execution_metadata0.copy()
 
 from .cache import buffer_remote
 from .cache.database_client import database
