@@ -16,20 +16,17 @@ requirements:
   build:
     - python {{ python }}
     - numpy
-    - pip
     - setuptools
   run:
     - python>=3.8
-    - pip
+    - jsonschema=4.17.*
     - conda
     - numpy
     - ruamel.yaml
     - psutil
-    - jinja2
     - orjson
     - requests
     - aiohttp
-    - traitlets
     - rpbs::silk
 
 about:

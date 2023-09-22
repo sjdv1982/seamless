@@ -13,6 +13,3 @@ dependencies:
     - cson
     - speg
     - aiohttp_cors
-
-variables:
-    RPY2_CFFI_MODE: ABI

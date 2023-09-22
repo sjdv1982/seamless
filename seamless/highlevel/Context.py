@@ -239,7 +239,7 @@ class Context(Base, HelpMixin):
     _children: dict[tuple[str, ...], Base]
     _needs_translation: bool
     _parent: Any  # weakref.ref or lambda returning None
-    _traitlets: dict[tuple[str, ...], SeamlessTraitlet]
+    _traitlets: dict[tuple[str, ...], "SeamlessTraitlet"]
     _observers: set
     _unbound_context: Any = None  # Optional[core.Context]
     _runtime_indices = {}
@@ -461,6 +461,7 @@ class Context(Base, HelpMixin):
         self._destroy_path((attr,))
 
     def _add_traitlet(self, path, trigger):
+        from .SeamlessTraitlet import SeamlessTraitlet
         traitlet = self._traitlets.get(path)
         if traitlet is not None:
             return traitlet
@@ -1627,6 +1628,5 @@ from .Environment import ContextEnvironment
 from ..core.cache.buffer_cache import buffer_cache
 from .SubContext import SubContext
 from ..core.manager import Manager
-from .SeamlessTraitlet import SeamlessTraitlet
 from .library import Library
 from ..core.direct import cleanup as _direct_cleanup

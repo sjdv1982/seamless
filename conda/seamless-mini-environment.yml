@@ -12,6 +12,7 @@ dependencies:
   - ipykernel
 
   - cffi
+  - jinja2
   - traitlets
   - ipywidgets
   - debugpy

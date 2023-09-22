@@ -1,0 +1,17 @@
+channels:
+  - conda-forge
+  - rpbs
+dependencies:
+  - python>=3.8
+  - conda
+  - numpy
+  - ruamel.yaml
+  - psutil
+  - jsonschema=4.17.*
+  - orjson
+  - requests
+  - aiohttp
+  - rpbs::silk
+  - pip:
+    - speg
+    - cson

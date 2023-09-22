@@ -401,7 +401,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
         else:
             raise TypeError(item)
 
-    def traitlet(self) -> SeamlessTraitlet:
+    def traitlet(self) -> "SeamlessTraitlet":
         """Creates an traitlet object with its value linked to the cell.
 
         A traitlet is derived from ``traitlets.HasTraits``,
@@ -1220,5 +1220,4 @@ from .proxy import Proxy
 from .synth_context import SynthContext
 from .Fallback import Fallback
 from .OutputWidget import OutputWidget
-from .SeamlessTraitlet import SeamlessTraitlet
 from .Transformer import Transformer
