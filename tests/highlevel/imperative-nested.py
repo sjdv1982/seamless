@@ -35,7 +35,6 @@ def func2a(a, b):
         import time
         time.sleep(2)
         return 100 * a + b
-    #func.local = False
     
     return func(a, b) + func(b, a)
 
@@ -53,9 +52,7 @@ def func3(a, b):
             import time
             time.sleep(2)
             return 100 * a + b
-        #func.local = False
         return func(a,b)
-    func2b.local = True
 
     return func2b(a, b) + func2b(b, a)
 

@@ -135,6 +135,8 @@ imperative-database-async.sh: run with Seamless database and buffer dir, prefera
 
 imperative-delegated.py: requires full delegation
 imperative-delegated-async.sh: requires full delegation
+imperative-delegated-nonlocal.py: requires nested delegation. Does not currently work, see (https://github.com/sjdv1982/seamless/issues/217)
+
 imperative-module.py: requires delegation level 3, definitely in a clean setup
 map-list.py
 channel.py
