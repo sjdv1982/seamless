@@ -4,12 +4,17 @@ import atexit
 #session = aiohttp.ClientSession()
     
 async def run_job(checksum, tf_dunder):
+    from seamless.highlevel import Checksum
     from . import parse_checksum
-    from .config import get_assistant
+    from .config import get_assistant, InProcessAssistant
     checksum = parse_checksum(checksum)
     assistant = get_assistant()
     if assistant is None:
         return None
+    if isinstance(assistant, InProcessAssistant):
+        result = await assistant.run_job(checksum, tf_dunder)
+        result = Checksum(result).hex()
+        return result
 
     # One session per request is really bad... but what can we do?
     async with aiohttp.ClientSession() as session:

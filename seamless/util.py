@@ -110,8 +110,17 @@ def ast_dump(node, annotate_fields=True, include_attributes=False, *, indent=Non
     return _format(node)[0]
 
 
+_unforked_process_name = None
+def set_unforked_process():
+    """Sets the current process as the unforked Seamless process"""
+    global _unforked_process_name
+    _unforked_process_name = current_process().name
+
 def is_forked():
-    if parent_process is None:  # Python 3.7
+    if _unforked_process_name:
+        if current_process().name != _unforked_process_name:
+            return True
+    elif parent_process is None:  # Python 3.7
         if current_process().name != "MainProcess":  # forked process
             return True
     else:

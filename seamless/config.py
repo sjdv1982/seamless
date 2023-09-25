@@ -1,6 +1,7 @@
 import os
 import sys
 from urllib.parse import urlparse
+from abc import ABC, abstractmethod
 
 import logging
 logger = logging.getLogger("seamless")
@@ -135,7 +136,7 @@ Delegate some or all buffers and results.
     SEAMLESS_DATABASE_PORT."""
 
     global _delegate_level
-    if _delegate_level is not None:
+    if _delegate_level is not None and _delegate_level != level:
         raise NotImplementedError
 
     assert level in (0,1,2,3,4), level
@@ -162,6 +163,19 @@ to disable it. Continuing without delegation.
         print(msg, file=sys.stderr)
     _checked_delegation = True
 
+class InProcessAssistant(ABC):
+    @abstractmethod
+    async def run_job(self, checksum, tf_dunder):
+        raise NotImplementedError
+
+def set_inprocess_assistant(assistant: InProcessAssistant):
+    global _assistant, _delegate_level
+    assert _delegate_level in (3,4)
+    if not isinstance(assistant, InProcessAssistant):
+        raise TypeError(type(assistant))
+    _assistant = assistant
+    _delegate_level = 4
+    
 from .core.cache.database_client import database
 from .core.manager import block, unblock, block_local, unblock_local
 from .core.manager.tasks import set_parallel_evaluations
