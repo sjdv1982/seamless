@@ -289,9 +289,9 @@ class Transformer(Base, HelpMixin):
     def local(self) -> bool | None:
         """Local execution.
 If True, transformations are executed in the local Seamless instance.
-If False, they are delegated to remote job servers.
-If None (default), remote job servers are tried first 
-and local execution is a fallback."""
+If False, they are delegated to an assistant.
+If None (default), 
+an assistant is tried first and local execution is a fallback."""
         return self.meta.get("local")
 
     @local.setter

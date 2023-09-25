@@ -313,6 +313,7 @@ def execute(name, code,
     ):
     from seamless.util import is_forked
     if is_forked():
+        # This is in principle always True
         import seamless
         from .direct.run import TRANSFORMATION_STACK
         if tf_checksum is not None:

@@ -166,6 +166,11 @@ Attributes:
 
     @property
     def local(self) -> bool | None:
+        """Local execution.
+If True, transformations are executed in the local Seamless instance.
+If False, they are delegated to an assistant.
+If None (default), 
+an assistant is tried first and local execution is a fallback."""
         return self.meta.get("local")
 
     @local.setter
