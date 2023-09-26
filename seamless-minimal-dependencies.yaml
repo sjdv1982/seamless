@@ -12,6 +12,7 @@ dependencies:
   - requests
   - aiohttp
   - rpbs::silk
+  - pip
   - pip:
     - speg
     - cson
