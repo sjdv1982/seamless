@@ -1,5 +1,9 @@
 import seamless
-seamless.config.delegate(level=3)
+import os
+if "DELEGATE" in os.environ:
+    seamless.config.delegate()
+else:
+    seamless.config.delegate(level=3)
 
 from seamless.highlevel import Context
 ctx = Context()
