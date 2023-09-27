@@ -61,9 +61,9 @@ def locate_files(command):
     else:
         msg(1, "first argument '{}' is not a file".format(arg1.as_posix()))
 
+    arg2 = None
     if interface_file is None and len(command) > 1 and not arg1.suffix:
         msg(3, "first argument has no suffix, considering second argument for .SEAMLESS.yaml file")
-        arg2 = None
         for n in range(1, len(command)):
             arg = command[n]
             if arg.startswith("-"):
@@ -103,7 +103,7 @@ def locate_files(command):
         if arg1.exists():
             interface_argindex = 0
             interface_py_file0 = Path(os.path.splitext(arg1.as_posix())[0] + ".SEAMLESS.py")
-        elif arg2.exists():
+        elif arg2 and arg2.exists():
             interface_argindex = interface_argindex2
             interface_py_file0 = Path(os.path.splitext(arg2.as_posix())[0] + ".SEAMLESS.py")
     else:
