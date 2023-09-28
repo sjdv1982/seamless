@@ -92,7 +92,7 @@ def get_file_mapping(
                     errmsg = """Argument {} is not under the current working directory.
 This is required under 'literal' file mapping. 
 To solve this problem:
-- Select a different file mapping mode (-ms, -mr, or -mx)
+- Select a different file mapping mode (-ms or -mx)
 or:
 - Specify a different working directory (-w or -W)
 """
