@@ -203,7 +203,7 @@ class CommandVisitor(bashlex.ast.nodevisitor):
         )
         self.commands.append(cmd)
         return True
-    
+
 def get_commands(commandstring):
     try:
         bashtrees = bashlex.parse(commandstring)
@@ -212,7 +212,23 @@ def get_commands(commandstring):
     visitor = CommandVisitor(commandstring)
     for bashtree in bashtrees:
         visitor.visit(bashtree)
-    return sorted(visitor.commands, key= lambda command: command.start)
+    commands = sorted(visitor.commands, key= lambda command: command.start)
+    first_pipeline = None
+    if len(bashtrees):
+        first = bashtrees[0]
+        if first.kind == "list" and len(first.parts):
+            first = first.parts[0]
+        if first.kind == "command":
+            first_pipeline = 1
+        elif first.kind == "pipeline":
+            end = first.pos[1]
+            for comnr, com in enumerate(commands):
+                if com.start > end:
+                    first_pipeline = comnr
+                    break
+            else:
+                first_pipeline = len(commands)
+    return commands, first_pipeline
 
 class RedirectionVisitor(bashlex.ast.nodevisitor):
     def __init__(self):

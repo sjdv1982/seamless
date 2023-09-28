@@ -125,7 +125,7 @@ if args.unquote:
 else:
     commandstring = " ".join(command)
 
-commands = get_commands(commandstring)
+commands, first_pipeline = get_commands(commandstring)
 
 first_command = commands[0]
 
@@ -136,6 +136,7 @@ msg(1, f"First command: {first_command.commandstring}")
 first_command_words = copy(first_command.words)
 if mapped_execarg:
     first_command_words[0] = mapped_execarg
+first_pipeline_words = copy(first_command_words)
 
 argtypes_initial, results_initial = interface.get_argtypes_and_results(
     interface_file, interface_py_file, interface_argindex, first_command_words, first_command.words[0]   
@@ -152,9 +153,12 @@ if interface_py_file is None:
         msg(1, "disable argtyping guess rule 2")
         overrule_no_ext = True
 
-    try:
+    try:        
+        if first_pipeline:
+            for com in commands[1:first_pipeline]:
+                first_pipeline_words += com.words
         argtypes_guess = guess_arguments(
-            first_command_words, overrule_ext=overrule_ext, overrule_no_ext=overrule_no_ext
+            first_pipeline_words, overrule_ext=overrule_ext, overrule_no_ext=overrule_no_ext
         )
     except ValueError as exc:
         msg(-1, *exc.args)
@@ -190,15 +194,22 @@ except ValueError as exc:
 argtypesstr = json.dumps(argtypes, sort_keys=False, indent=2)
 msg(1, "argtypes dict:\n" + argtypesstr)
 
-mapped_first_command = argtypes["@order"]
+mapped_first_pipeline = argtypes["@order"]
 
 ################################################################
-assert len(mapped_first_command) == len(first_command.words)
+assert len(mapped_first_pipeline) == len(first_pipeline_words)
 word_substitutions = {}
-for wordnr, word in enumerate(mapped_first_command):
-    old_word = first_command.words[wordnr]
+for wordnr, word in enumerate(mapped_first_pipeline):
+    offset = 0
+    for com in commands:
+        if wordnr >= len(com.words) + offset:
+            offset += len(com.words)
+            continue
+        else:
+            break
+    old_word = com.words[wordnr-offset]
     if word != old_word:
-        node = first_command.wordnodes[wordnr]
+        node = com.wordnodes[wordnr-offset]
         word_substitutions[node] = word
 
 ################################################################
