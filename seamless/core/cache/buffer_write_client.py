@@ -25,9 +25,9 @@ def has(session, url, checksum):
         break
 
     if not isinstance(result, list) or len(result) != 1:
-            raise ValueError(result)
+        raise ValueError(result)
     if not isinstance(result[0], bool):
-            raise ValueError(result)
+        raise ValueError(result)
     return result[0]
 
 def write(session, url, checksum, buffer:bytes):
