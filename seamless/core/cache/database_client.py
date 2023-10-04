@@ -43,20 +43,21 @@ class Database:
         url = "http://" + self.host + ":" + str(self.port)
         request = {
             "type": "protocol",
-        }
+        }        
         try:
-            response = session.get(url, data=json.dumps(request))
+            with session.get(url, data=json.dumps(request)) as response:
+                if response.status_code != 200:
+                    raise Exception(response.text)
+
+                try:
+                    protocol = response.json()
+                    assert protocol in [list(p) for p in self.PROTOCOLS]                
+                except (AssertionError, ValueError, json.JSONDecodeError):
+                    raise Exception("Incorrect Seamless database protocol") from None
+                
         except requests.ConnectionError:
             raise requests.ConnectionError("Cannot connect to Seamless database: host {}, port {}".format(self.host, self.port))
 
-        if response.status_code != 200:
-            raise Exception(response.text)
-
-        try:
-            protocol = response.json()
-            assert protocol in [list(p) for p in self.PROTOCOLS]                
-        except (AssertionError, ValueError, json.JSONDecodeError):
-            raise Exception("Incorrect Seamless database protocol") from None
 
         self.active = True
 
@@ -68,10 +69,10 @@ class Database:
             rqbuf = request
         else:
             rqbuf = json.dumps(request)
-        response = session.put(url, data=rqbuf)
-        if raise_exception and response.status_code != 200:
-            raise Exception((response.status_code, response.text))
-        return response
+        with session.put(url, data=rqbuf) as response:
+            if raise_exception and response.status_code != 200:
+                raise Exception((response.status_code, response.text))
+            return response.status_code, response.text
 
     def set_transformation_result(self, tf_checksum, checksum):   
         request = {
@@ -170,8 +171,8 @@ class Database:
             "checksum": transformation_checksum,
             "result": result_checksum,
         }
-        response = self.send_put_request(request, raise_exception=False)
-        return response.status_code, response.text
+        status_code, response_text = self.send_put_request(request, raise_exception=False)
+        return status_code, response_text
 
     def send_get_request(self, request):
         if not self.active:
@@ -181,12 +182,12 @@ class Database:
             rqbuf = request
         else:
             rqbuf = json.dumps(request)
-        response = session.get(url, data=rqbuf)
-        if response.status_code == 404:
-            return None
-        elif response.status_code >= 400:
-            raise Exception(response.text)
-        return response
+        with session.get(url, data=rqbuf) as response:
+            if response.status_code == 404:
+                return None
+            elif response.status_code >= 400:
+                raise Exception(response.text)
+            return response
 
     def get_transformation_result(self, checksum):
         request = {

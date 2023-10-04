@@ -7,10 +7,10 @@ def has(session, url, checksum):
     assert checksum is not None
     try:
         path = url + "/has"
-        response = session.get(path, json=[checksum])        
-        if int(response.status_code/100) in (4,5):
-            raise ConnectionError()
-        result = response.json()
+        with session.get(path, json=[checksum]) as response:
+            if int(response.status_code/100) in (4,5):
+                raise ConnectionError()
+            result = response.json()
         if not isinstance(result, list) or len(result) != 1:
              raise ValueError(result)
         if not isinstance(result[0], bool):
@@ -28,12 +28,12 @@ def get(session, url, checksum):
     assert checksum is not None
     try:
         path = url + "/" + checksum
-        response = session.get(path, stream=True, timeout=3)        
-        if int(response.status_code/100) in (4,5):
-            raise ConnectionError()
-        result = []
-        for chunk in response.iter_content(100000):
-            result.append(chunk)
+        with session.get(path, stream=True, timeout=3) as response:
+            if int(response.status_code/100) in (4,5):
+                raise ConnectionError()
+            result = []
+            for chunk in response.iter_content(100000):
+                result.append(chunk)
         buf = b"".join(result)
         from seamless import calculate_checksum
         buf_checksum = calculate_checksum(buf, hex=True)
