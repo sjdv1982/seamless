@@ -17,8 +17,11 @@ def has(session, url, checksum):
         except JSONDecodeError:
              continue
         except ConnectionError as exc:
-             if exc.args[0] != 'Connection aborted.':
-                  raise exc from None
+             if not exc.args or not isinstance(exc.args[0], Exception):
+                raise exc from None
+             if not exc.args[0].args or exc.args[0].args[0] != 'Connection aborted.':
+                raise exc from None
+             continue
         break
 
     if not isinstance(result, list) or len(result) != 1:
@@ -37,6 +40,11 @@ def write(session, url, checksum, buffer:bytes):
                 if int(response.status_code/100) in (4,5):
                     raise ConnectionError()
             break
+        except ChunkedEncodingError:
+             continue
         except ConnectionError as exc:
-             if exc.args[0] != 'Connection aborted.':
-                  raise exc from None
+             if not exc.args or not isinstance(exc.args[0], Exception):
+                raise exc from None
+             if exc.args[0].args or exc.args[0].args[0] != 'Connection aborted.':
+                raise exc from None
+             continue
