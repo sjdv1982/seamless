@@ -45,6 +45,6 @@ def write(session, url, checksum, buffer:bytes):
         except ConnectionError as exc:
              if not exc.args or not isinstance(exc.args[0], Exception):
                 raise exc from None
-             if exc.args[0].args or exc.args[0].args[0] != 'Connection aborted.':
+             if not exc.args[0].args or exc.args[0].args[0] != 'Connection aborted.':
                 raise exc from None
              continue
