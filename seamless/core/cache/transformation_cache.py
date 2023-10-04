@@ -1056,7 +1056,7 @@ class TransformationCache:
                 if fut_done_time is None:
                     fut_done_time = time.time()
                 else:
-                    if time.time() - fut_done_time > 2:
+                    if time.time() - fut_done_time > 5:
                         fut.result()
                         raise Exception("Transformation finished, but didn't trigger a result or exception")
             if transformer._status_reason == StatusReasonEnum.EXECUTING:
