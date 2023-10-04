@@ -26,6 +26,12 @@ def write(session, url, checksum, buffer:bytes):
     checksum = parse_checksum(checksum)
     assert checksum is not None
     path = url + "/" + checksum
-    with session.put(path, data=buffer) as response:
-        if int(response.status_code/100) in (4,5):
-            raise ConnectionError()
+    for trial in range(10):
+        try:
+            with session.put(path, data=buffer) as response:
+                if int(response.status_code/100) in (4,5):
+                    raise ConnectionError()
+            break
+        except ConnectionError as exc:
+             if exc.args[0] != 'Connection aborted.':
+                  raise exc from None
