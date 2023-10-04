@@ -14,6 +14,9 @@ def has(session, url, checksum):
                 result = response.json()
         except ChunkedEncodingError:
              continue
+        except ConnectionError as exc:
+             if exc.args[0] != 'Connection aborted.':
+                  raise exc from None
         break
 
     if not isinstance(result, list) or len(result) != 1:
