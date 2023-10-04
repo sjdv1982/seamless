@@ -1,4 +1,4 @@
-from requests.exceptions import ConnectionError, ChunkedEncodingError
+from requests.exceptions import ConnectionError, ChunkedEncodingError, JSONDecodeError
 
 from seamless.util import parse_checksum
 
@@ -13,6 +13,8 @@ def has(session, url, checksum):
                     raise ConnectionError()
                 result = response.json()
         except ChunkedEncodingError:
+             continue
+        except JSONDecodeError:
              continue
         except ConnectionError as exc:
              if exc.args[0] != 'Connection aborted.':
