@@ -1,3 +1,10 @@
+import seamless
+import os
+if "DELEGATE" in os.environ:
+    seamless.config.delegate()
+else:
+    seamless.config.delegate(level=3)
+
 from seamless.highlevel import Context, Cell, Module
 from seamless import transformer
 
@@ -36,9 +43,6 @@ import pypackage
 func.modules.pypackage = pypackage
 
 print(func(12, 13))
-
-import seamless
-seamless.config.delegate(level=3)
 
 @transformer(return_transformation=True)
 def func2(a,b):

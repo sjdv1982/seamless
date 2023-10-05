@@ -1,12 +1,16 @@
 import asyncio
 import aiohttp
-import atexit
+import os
 #session = aiohttp.ClientSession()
     
 async def run_job(checksum, tf_dunder):
     from seamless.highlevel import Checksum
     from . import parse_checksum
     from .config import get_assistant, InProcessAssistant
+
+    timeout = os.environ.get("SEAMLESS_ASSISTANT_JOB_TIMEOUT", None)
+    if timeout is not None:
+        timeout = float(timeout)
     checksum = parse_checksum(checksum)
     assistant = get_assistant()
     if assistant is None:
@@ -20,7 +24,7 @@ async def run_job(checksum, tf_dunder):
     async with aiohttp.ClientSession() as session:
         data={"checksum":checksum, "dunder":tf_dunder}
         while 1:
-            async with session.put(assistant, json=data) as response:
+            async with session.put(assistant, json=data,timeout=timeout) as response:
                 content = await response.read()
                 if response.status == 202:
                     await asyncio.sleep(0.1)

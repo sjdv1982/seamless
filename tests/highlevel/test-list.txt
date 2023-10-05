@@ -134,15 +134,17 @@ imperative-database.py: run with Seamless database and buffer dir, preferably in
 imperative-database-async.sh: run with Seamless database and buffer dir, preferably in a clean setup
 
 imperative-delegated.py: requires full delegation
+imperative-delegated-slow.py: requires full delegation. Set SEAMLESS_ASSISTANT_JOB_TIMEOUT to 15 in order to test client 202 capacity.
 imperative-delegated-async.sh: requires full delegation
 imperative-delegated-nonlocal.py: requires nested delegation. Does not currently work, see (https://github.com/sjdv1982/seamless/issues/217)
 
-imperative-module.py: requires delegation level 3, definitely in a clean setup
+imperative-module.py: requires delegation level 3, definitely in a clean setup. Can be run with full delegation using "export DELEGATE=''"
 map-list.py
 channel.py
 environment3.py
 environment7.py: requires full delegation. micro-assistant will not work out-of-the-box. Can also be run non-automatically, see below.
 imperative-environment.py: Will take ~15 minutes to run (faster if GPU available). Requires full delegation. micro-assistant will not work out-of-the-box
+imperative-manyjobs.py. Needs to be run with a Dask cluster, 1000x ~20 sec jobs. Submitting 1000 jobs may take a few minutes. Will calculate pi to 6 digits. Expected results: 3.141593805644 5.116277454745302e-05 3.141592653589793
 meta.py
 environment7a.py: version of environment7 where the conda environment name is specified. Will work with the mini-assistant if the environment "pytorch-seamless" is present 
 environment7b.py: version of environment7 where the Docker image name is specified. Will work with the mini-assistant if the Docker image "seamless-devel-pytorch" is present, which can be built using environment7b.Dockerfile
