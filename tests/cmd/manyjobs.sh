@@ -12,6 +12,7 @@ print(" ".join([str(seed) for seed in seeds]))
 )
 seeds=($seeds)
 rm -f calc_pi.job-*
+trap 'kill -1 $(jobs -p); kill $(jobs -p); kill -9 $(jobs -p)' EXIT
 for i in $(seq $ntrials); do
     i2=$((i-1))
     export seed="${seeds[$i2]}"    
