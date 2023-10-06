@@ -31,7 +31,8 @@ def locate_files(command):
                     arg1.as_posix(), execarg1
                 ),
             )
-            if not execarg1.startswith("/bin") and not execarg1.startswith("/sbin") and not execarg1.startswith("/usr"):
+            execarg1dir = os.path.split(execarg1)[0] 
+            if not execarg1dir.endswith("/bin") and not execarg1dir.endswith("/sbin") and not execarg1dir.endswith("/usr"):
                 msg(
                     1,
                     "first argument '{}' does not seem a POSIX tool. Explicitly upload it as '{}'".format(
