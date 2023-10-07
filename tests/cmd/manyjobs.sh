@@ -1,6 +1,6 @@
 #!/bin/bash
 set -u -e
-export ntrials=$1
+export ntrials=${1:-1000}
 seeds=$(python -c '
 import sys
 import numpy as np
@@ -17,7 +17,8 @@ for i in $(seq $ntrials); do
     i2=$((i-1))
     export seed="${seeds[$i2]}"    
     seamless python3 calc_pi.py --seed $seed --ndots 1000000000 > calc_pi.job-$i &
-    while [ $(jobs -r | wc -l) -gt 100 ]; do
+    sleep 0.2  # bin/seamless needs 0.5-1s to start up, at full CPU, accessing hard disk
+    while [ $(jobs -r | wc -l) -gt 300 ]; do  # limiting factor is memory (~50 MB per process)
         echo WAIT... $i
         wait -n
     done

@@ -2,12 +2,5 @@ undo.sh
 manyjobs.sh. 
     /bin/seamless version of highlevel/imperative-manyjobs.py
     Needs to be run with a Dask cluster, 1000x ~20 sec jobs. 
-    Submitting 1000 jobs may take a few minutes. Will calculate pi to 6 digits. 
+    Submitting 1000 jobs will take 200s. Will calculate pi to 6 digits. 
     Expected results: 3.141593805644 5.116277454745302e-05 3.141592653589793
-    NOTE: currently, submitting 1000 jobs takes several minutes, even if already
-    calculated. This is because 1) just "import seamless" takes ~500 ms (100+ ms of CPU time).
-    Making /bin/seamless not dependent on "import seamless" is not an option for now.
-    2) /bin/seamless takes about 10-20% of a core, even when just polling
-    for the assistant to return a value.  Profiling shows that CPU usage can be reduced to 5 %
-    by incrementing the asyncio.sleep of the macromanager, further improvement can be made.
-    Because of 1) and 2), only ~100 /bin/seamless processes can be run in parallel.
