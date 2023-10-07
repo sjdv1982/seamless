@@ -151,12 +151,16 @@ def set_read_buffer_servers(read_buffer_servers):
 def set_write_buffer_server(write_buffer_server):
     global _write_server
     if write_buffer_server:
-        try:
-            buffer_write_client.has(session, write_buffer_server, b'0' * 32)
-        except ValueError:
-            pass
-        except ConnectionError:
-            raise ConnectionError(write_buffer_server) from None
+        ntrials = 5
+        for trials in range(ntrials):
+            try:
+                buffer_write_client.has(session, write_buffer_server, b'0' * 32, timeout=3)
+            except ValueError:
+                pass
+            except ConnectionError:
+                if trials < ntrials - 1:
+                    continue
+                raise ConnectionError(write_buffer_server) from None
         if _write_server is not None:
             _written_buffers.clear()
         _write_server = write_buffer_server

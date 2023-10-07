@@ -2,13 +2,13 @@ from requests.exceptions import ConnectionError, ChunkedEncodingError, JSONDecod
 
 from seamless.util import parse_checksum
 
-def has(session, url, checksum):
+def has(session, url, checksum, *, timeout=None):
     checksum = parse_checksum(checksum)
     assert checksum is not None
     path = url + "/has"
     for trial in range(10):
         try:
-            with session.get(path, json=[checksum]) as response:
+            with session.get(path, json=[checksum],timeout=timeout) as response:
                 if int(response.status_code/100) in (4,5):
                     raise ConnectionError()
                 result = response.json()

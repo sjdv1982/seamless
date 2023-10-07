@@ -43,20 +43,24 @@ class Database:
         url = "http://" + self.host + ":" + str(self.port)
         request = {
             "type": "protocol",
-        }        
-        try:
-            with session.get(url, data=json.dumps(request)) as response:
-                if response.status_code != 200:
-                    raise Exception(response.text)
+        }   
+        ntrials=5
+        for trial in range(ntrials):     
+            try:
+                with session.get(url, data=json.dumps(request)) as response:
+                    if response.status_code != 200:
+                        raise Exception(response.text)
 
-                try:
-                    protocol = response.json()
-                    assert protocol in [list(p) for p in self.PROTOCOLS]                
-                except (AssertionError, ValueError, json.JSONDecodeError):
-                    raise Exception("Incorrect Seamless database protocol") from None
-                
-        except requests.ConnectionError:
-            raise requests.ConnectionError("Cannot connect to Seamless database: host {}, port {}".format(self.host, self.port))
+                    try:
+                        protocol = response.json()
+                        assert protocol in [list(p) for p in self.PROTOCOLS]                
+                    except (AssertionError, ValueError, json.JSONDecodeError):
+                        raise Exception("Incorrect Seamless database protocol") from None
+                    
+            except requests.ConnectionError:
+                if trial < ntrials - 1:
+                    continue
+                raise requests.ConnectionError("Cannot connect to Seamless database: host {}, port {}".format(self.host, self.port))
 
 
         self.active = True
