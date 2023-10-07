@@ -8,7 +8,10 @@ import traceback
 import asyncio
 import logging
 import subprocess
-import sys
+import os
+
+SEAMLESS_FRUGAL = bool(os.environ.get("__SEAMLESS_FRUGAL", False))
+
 sys.modules["seamless.subprocess"] = subprocess  # pre-0.7 compat
 logger = logging.getLogger("seamless")
 
@@ -26,29 +29,30 @@ class Wrapper:
 # 1. hard dependencies; without these, "import seamless" will fail.
 # Still, if necessary, some of these dependencies could be removed, but seamless would have to be more minimalist in loading its lib
 
-import numpy as np
-
-if np.dtype(object).itemsize != 8:
-    raise ImportError("Seamless requires a 64-bit system")
+if not SEAMLESS_FRUGAL:
+    import numpy as np
+    if np.dtype(object).itemsize != 8:
+        raise ImportError("Seamless requires a 64-bit system")
 
 ipython_instance = None
 running_in_jupyter = False
-try:
-    from IPython import get_ipython
-except ImportError:
-    pass
-else:
-    ipython_instance = get_ipython()
-    if ipython_instance is not None:
-        TerminalInteractiveShell = type(None)
-        try:
-            from IPython.terminal.interactiveshell import TerminalInteractiveShell
-        except ImportError:
-            pass
-        if isinstance(ipython_instance, TerminalInteractiveShell):
-            ipython_instance.enable_gui("asyncio")
-        elif asyncio.get_event_loop().is_running(): # Jupyter notebook
-            running_in_jupyter = True
+if not SEAMLESS_FRUGAL:
+    try:
+        from IPython import get_ipython
+    except ImportError:
+        pass
+    else:
+        ipython_instance = get_ipython()
+        if ipython_instance is not None:
+            TerminalInteractiveShell = type(None)
+            try:
+                from IPython.terminal.interactiveshell import TerminalInteractiveShell
+            except ImportError:
+                pass
+            if isinstance(ipython_instance, TerminalInteractiveShell):
+                ipython_instance.enable_gui("asyncio")
+            elif asyncio.get_event_loop().is_running(): # Jupyter notebook
+                running_in_jupyter = True
 
 def verify_sync_translate():
     if running_in_jupyter:

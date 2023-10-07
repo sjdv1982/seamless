@@ -224,12 +224,16 @@ class MacroManager:
             self.update_macro(m)
 
     async def run(self):
+        from seamless import SEAMLESS_FRUGAL
         while not self._destroyed:
             try:
                 self._update_next_macro()
             except Exception:
                 traceback.print_exc()
-            await asyncio.sleep(0.001)
+            if SEAMLESS_FRUGAL:
+                await asyncio.sleep(0.2)
+            else:
+                await asyncio.sleep(0.001)
 
     def register_macro(self, macro):
         assert macro not in self.macros

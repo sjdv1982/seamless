@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 import json
 import traceback
+
+os.environ["__SEAMLESS_FRUGAL"] = "1"
 import seamless
 
 from seamless.core.cache.buffer_cache import buffer_cache

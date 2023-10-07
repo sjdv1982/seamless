@@ -137,6 +137,7 @@ class DeepRefManager:
 
 
     async def run(self):
+        from seamless import SEAMLESS_FRUGAL
         exc_count = 0
         while not self._destroyed:
             try:
@@ -145,7 +146,10 @@ class DeepRefManager:
                 exc_count += 1
                 if exc_count <= 5:
                     traceback.print_exc()
-            await asyncio.sleep(0.001)
+            if SEAMLESS_FRUGAL:
+                await asyncio.sleep(0.2)
+            else:
+                await asyncio.sleep(0.001)
 
     @property
     def busy(self):
