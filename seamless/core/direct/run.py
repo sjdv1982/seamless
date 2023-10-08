@@ -133,7 +133,7 @@ def register_transformation_dict(transformation_dict):
     )
     return increfed, transformation
 
-def run_transformation_dict(transformation_dict, fingertip):
+def run_transformation_dict(transformation_dict, *, fingertip):
     """Runs a transformation that is specified as a dict of checksums,
     such as returned by highlevel.Transformer.get_transformation_dict.
     """

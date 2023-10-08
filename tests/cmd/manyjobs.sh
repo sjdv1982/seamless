@@ -15,8 +15,9 @@ rm -f calc_pi.job-*
 trap 'kill -1 $(jobs -p); kill $(jobs -p); kill -9 $(jobs -p)' EXIT
 for i in $(seq $ntrials); do
     i2=$((i-1))
-    export seed="${seeds[$i2]}"    
-    seamless python3 calc_pi.py --seed $seed --ndots 1000000000 > calc_pi.job-$i &
+    export seed="${seeds[$i2]}"
+    cmd="python3 calc_pi.py --seed $seed --ndots 1000000000 > calc_pi.job-$i"
+    seamless --fingertip -c "$cmd" &
     sleep 0.2  # bin/seamless needs 0.5-1s to start up, at full CPU, accessing hard disk
     while [ $(jobs -r | wc -l) -gt 300 ]; do  # limiting factor is memory (~50 MB per process)
         echo WAIT... $i

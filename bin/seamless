@@ -96,6 +96,12 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--fingertip",
+    help="If the result checksum is known but the result unavailable: force evaluation",
+    action="store_true"
+)
+
+parser.add_argument(
     "--undo",
     help="Undo this seamless command",
     action="store_true"
@@ -434,7 +440,7 @@ else:
 
 from seamless import SeamlessTransformationError
 try:
-    result_checksum = run_transformation(transformation_dict, undo=args.undo)
+    result_checksum = run_transformation(transformation_dict, undo=args.undo, fingertip=args.fingertip)
 except SeamlessTransformationError as exc:
     traceback.print_exc(limit=0)
     exit(1)
@@ -443,7 +449,7 @@ if not args.undo:
     msg(1, "Transformation finished")
     msg(2, "Result checksum: {}".format(result_checksum))
 
-def write_result(filename, file_checksum):
+def write_result(filename, file_checksum, *, try_write_buffer):
     if workdir is not None and not os.path.dirname(filename):
         # File was created in the server workdir: grandfather it in
         pass
@@ -457,6 +463,8 @@ def write_result(filename, file_checksum):
             f.write(file_checksum.hex()+"\n")
     except Exception:
         msg(0, f"Cannot write checksum to result file '{filename}.CHECKSUM'")
+        return
+    if not try_write_buffer:
         return
     try:
         file_buffer = buffer_cache.get_buffer(file_checksum.bytes())
@@ -484,16 +492,22 @@ if args.undo:
         msg(1, "Transformation undone")
         exit(0)
 
-else:
+else:    
     try:
         result_buffer = buffer_cache.get_buffer(result_checksum.bytes())
         if result_buffer is None:
             raise CacheMissError(result_checksum)
+        cannot_download = False
     except CacheMissError:
-        traceback.print_exc(limit=1)
-        exit(1)
+        #traceback.print_exc(limit=1)
+        #exit(1)
+        cannot_download = True
 
     if (not capture_stdout) and len(result_targets) > 1:
+        if cannot_download:
+            print("Cannot download result. Cannot write checksum for multiple result targets")
+            exit(1)
+
         result_checksum_dict = deserialize(result_buffer, result_checksum.bytes(), "plain", copy=False)
         filenames = []
         for k, v in result_targets.items():
@@ -508,12 +522,16 @@ else:
             except KeyError:
                 msg(0, "No result for '{filename}' was returned")
                 continue
-            write_result(filename, file_checksum)
+            write_result(filename, file_checksum, try_write_buffer=True)
     elif result_targets and len(result_targets) == 1:
         k, v = list(result_targets.items())[0]
         filename = v if v is not None else k
-        write_result(filename, result_checksum)
+        write_result(filename, result_checksum, try_write_buffer=(not cannot_download))
     elif capture_stdout:
+        if cannot_download:
+            print("Cannot download result")
+            exit(1)
+
         try:
             result = result_buffer.decode()
         except UnicodeDecodeError:

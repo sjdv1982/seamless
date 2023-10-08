@@ -2,7 +2,7 @@ import os
 import sys
 from ..core.protocol.serialize import serialize_sync as serialize
 from ..calculate_checksum import calculate_checksum
-from ..core.cache.buffer_remote import write_buffer as remote_write_buffer
+from ..core.cache.buffer_remote import write_buffer as remote_write_buffer, can_read_buffer
 from ..core.direct.run import run_transformation_dict, register_transformation_dict
 from ..core.cache.transformation_cache import transformation_cache
 from seamless.cmd.register import register_dict
@@ -131,12 +131,15 @@ def prepare_bash_transformation(
     # TODO: add support for filesystem __format__ annotation
     return Checksum(transformation_checksum), transformation_dict
 
-def run_transformation(transformation_dict, *, undo):
+def run_transformation(transformation_dict, *, undo, fingertip=False):
+    if not fingertip:
+        fingertip = False
     transformation_dict_py = unbashify(transformation_dict, {}, {})
     _, transformation_checksum_py = register_transformation_dict(transformation_dict_py)
     result_py = database.get_transformation_result(transformation_checksum_py)
     if result_py is not None:
-        return Checksum(result_py)
+        if not fingertip or can_read_buffer(result_py):
+            return Checksum(result_py)
     _, transformation_checksum = register_transformation_dict(transformation_dict)
     if undo:
         try:
@@ -150,7 +153,7 @@ def run_transformation(transformation_dict, *, undo):
             msg(2, f"Undo transformation {transformation_checksum.hex()} => {result.hex()}")
             return Checksum(result)
     else:
-        result_checksum = run_transformation_dict(transformation_dict, fingertip=False)
+        result_checksum = run_transformation_dict(transformation_dict, fingertip=fingertip)
         if result_checksum is not None:
             database.set_transformation_result(transformation_checksum_py, result_checksum)
         return Checksum(result_checksum)
