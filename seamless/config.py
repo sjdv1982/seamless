@@ -182,3 +182,4 @@ from .core.manager.tasks import set_parallel_evaluations
 from .core.cache.buffer_remote import (
     set_read_buffer_folders, set_read_buffer_servers, set_write_buffer_server
 )
+from .core.transformation import set_ncores
