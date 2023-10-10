@@ -85,19 +85,31 @@ def set_ncores(ncores):
         else:
             _locks[:] = [None] * ncores
 
-async def acquire_lock(tf_checksum):
+async def acquire_lock(tf_checksum, ncores):
+    assert ncores == -1 or ncores > 0
+    import random
     if not len(_locks):
         raise SeamlessTransformationError("Local computation has been disabled for this Seamless instance (deprecated)")
+    if ncores == -1:
+        ncores = len(_locks)
+    elif ncores > len(_locks):
+        raise SeamlessTransformationError(f"Transformation requires {ncores} cores, but only {len(_locks)} are available")
     while 1:
+        result = []
         for locknr, lock in enumerate(_locks):
             if lock is None:
-                _locks[locknr] = tf_checksum
-                return locknr
-        await asyncio.sleep(0.01)
+                result.append(locknr)
+                if len(result) == ncores:
+                    for locknr in result:
+                        _locks[locknr] = tf_checksum
+                    return result
+        
+        await asyncio.sleep(0.02 * random.random())
 
-def release_lock(locknr):
-    assert _locks[locknr] is not None
-    _locks[locknr] = None
+def release_lock(lock):
+    for locknr in lock:
+        assert _locks[locknr] is not None
+        _locks[locknr] = None
 
 async def acquire_python_attach_port(tf_checksum):
     while 1:
@@ -582,10 +594,11 @@ class TransformationJob:
         if transformation.get("__language__") == "bash":
             transformation = unbashify(transformation, self.semantic_cache, self.execution_metadata)
  
-        meta = transformation.get("__meta__")
+        meta = transformation.get("__meta__", {})
         meta = deepcopy(meta)
-        if meta is not None and meta.get("local") == False:
+        if meta.get("local") == False:
             raise RuntimeError("Local execution has been disabled for this transformation")
+        job_ncores = meta.get("ncores", 1)
 
         env_checksum0 = transformation.get("__env__")
         if env_checksum0 is not None:
@@ -600,7 +613,7 @@ class TransformationJob:
                 with_ipython_kernel = True
 
         logs = [None, None, None]
-        lock = await acquire_lock(self.checksum)
+        lock = await acquire_lock(self.checksum, job_ncores)    
 
         io = get_transformation_inputs_output(transformation)
         inputs, outputname, output_celltype, output_subcelltype, output_hash_pattern = io
@@ -759,7 +772,7 @@ class TransformationJob:
                         elif status == 6:
                             if msg == "acquire lock":
                                 assert lock is None
-                                lock = await acquire_lock(self.checksum)
+                                lock = await acquire_lock(self.checksum, job_ncores)
                             else:
                                 raise Exception("Unknown return message '{}'".format(msg))
                         elif status == 7:

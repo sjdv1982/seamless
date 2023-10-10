@@ -265,7 +265,12 @@ class Transformer(Base, HelpMixin):
             parent = self._get_parent()
             if parent is not None:
                 parent.remove_connections(target_path, endpoint="target")
-            htf["meta"] = value
+            meta = htf.get("meta", {}).copy()
+            meta.update(value)
+            for k in list(meta.keys()):
+                if meta[k] is None:
+                    meta.pop(k)
+            htf["meta"] = meta
         try:
             self.cancel()
         except Exception:

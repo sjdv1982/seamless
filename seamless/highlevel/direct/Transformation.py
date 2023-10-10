@@ -1,4 +1,5 @@
 import asyncio
+from copy import deepcopy
 import traceback
 
 from .. import Checksum
@@ -12,7 +13,9 @@ class Transformation:
         resolver_async,
         evaluator_sync,
         evaluator_async,
-        upstream_dependencies:dict[str, "Transformation"]={}
+        upstream_dependencies:dict[str, "Transformation"]={},
+        *,
+        meta=None
     ):                 
         self._result_celltype = result_celltype
         self._upstream_dependencies = upstream_dependencies.copy()
@@ -26,6 +29,7 @@ class Transformation:
         self._result_checksum = None
         self._evaluated = False
         self._exception = None
+        self._meta = meta
 
     def _resolve_sync(self):
         if self._resolved:
@@ -117,6 +121,18 @@ class Transformation:
         except Exception:
             self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"
     
+    @property
+    def meta(self):
+        return self._meta
+    
+    @meta.setter
+    def meta(self, meta):
+        self._meta.update(meta)
+        for k in list(self._meta.keys()):
+            if self._meta[k] is None:
+                self._meta.pop(k)
+        return self._meta
+
     def compute(self):
         if self._evaluated:
             return
@@ -305,6 +321,10 @@ def transformation_from_dict(transformation_dict, result_celltype, upstream_depe
     from seamless.core.cache.transformation_cache import tf_get_buffer
     from seamless import calculate_checksum
 
+    transformation_dict = deepcopy(transformation_dict)
+    if "__meta__" not in transformation_dict:
+        transformation_dict["__meta__"] = {}
+
     def resolver_sync():
         prepare_transformation_dict(transformation_dict)
         transformation_buffer = tf_get_buffer(transformation_dict)
@@ -328,5 +348,6 @@ def transformation_from_dict(transformation_dict, result_celltype, upstream_depe
         resolver_async,
         evaluator_sync, 
         evaluator_async,
-        upstream_dependencies
+        upstream_dependencies,
+        meta = transformation_dict["__meta__"]
     )

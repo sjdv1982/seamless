@@ -133,6 +133,16 @@ def register_transformation_dict(transformation_dict):
     )
     return increfed, transformation
 
+def extract_dunder(transformation_dict):
+    tf_dunder = {}
+    for k in ("__compilers__", "__languages__", "__meta__", "__env__"):
+        if k in transformation_dict:
+            tf_dunder[k] = transformation_dict[k]
+    if not len(tf_dunder):
+        return None
+
+    return tf_dunder
+
 def run_transformation_dict(transformation_dict, *, fingertip):
     """Runs a transformation that is specified as a dict of checksums,
     such as returned by highlevel.Transformer.get_transformation_dict.
@@ -142,6 +152,7 @@ def run_transformation_dict(transformation_dict, *, fingertip):
     from seamless.util import is_forked
 
     increfed, transformation = register_transformation_dict(transformation_dict)
+    tf_dunder = extract_dunder(transformation_dict)
     if is_forked():
         assert database.active
         result_checksum, prelim = transformation_cache._get_transformation_result(
@@ -151,17 +162,6 @@ def run_transformation_dict(transformation_dict, *, fingertip):
             tf_dunder, syntactic_cache = None, []
         else:
             assert _parent_process_queue is not None
-            tf_dunder = {}
-            for k in ("__compilers__", "__languages__", "__meta__", "__env__"):
-                if k in transformation_dict:
-                    tf_dunder[k] = transformation_dict[k]
-            meta = tf_dunder.get("__meta__")
-            if meta is None:
-                meta = {}
-                tf_dunder["__meta__"] = meta
-            if meta.get("local") is None:
-                # local (fat) by default
-                meta["local"] = True
             syntactic_cache = []
             for k in transformation_dict:
                 if k.startswith("__"):
@@ -176,9 +176,20 @@ def run_transformation_dict(transformation_dict, *, fingertip):
                 syn_buffer = get_buffer(syn_checksum)
                 assert syn_buffer is not None
                 syntactic_cache.append((celltype, subcelltype, syn_buffer))
+                
+                if tf_dunder is None:
+                    tf_dunder = {}
+                meta = tf_dunder.get("__meta__")
+                if meta is None:
+                    meta = {}
+                    tf_dunder["__meta__"] = meta
+                if meta.get("local") is None:
+                    # local (fat) by default
+                    meta["local"] = True
+
     else:
-        tf_dunder, syntactic_cache = None, []
-    
+        syntactic_cache = []
+
     result = None
     def result_callback(result2):
         nonlocal result
@@ -208,11 +219,12 @@ async def run_transformation_dict_async(transformation_dict):
     transformation_buffer = tf_get_buffer(transformation_dict)
     transformation = calculate_checksum(transformation_buffer)
     cache_buffer(transformation, transformation_buffer)
+    tf_dunder = extract_dunder(transformation_dict)
     increfed = _register_transformation_dict(
         transformation, transformation_buffer, transformation_dict
     )
     try:
-        result_checksum = await run_transformation_async(transformation, fingertip=False)
+        result_checksum = await run_transformation_async(transformation, fingertip=False, tf_dunder=tf_dunder)
     finally:
         # For some reason, the logic here is different than for the sync version (see _wait())
         if (

@@ -596,13 +596,13 @@ class TransformationCache:
         debug = None
         tfs = []
         for transformer in transformers:
+            if debug is None and hasattr(transformer, "_debug") and transformer._debug is not None:
+                debug = deepcopy(transformer._debug)
             if isinstance(transformer,
-            (RemoteTransformer, DummyTransformer)
+                (RemoteTransformer, DummyTransformer)
             ):
                 continue
             tfs.append(transformer._format_path())
-            if debug is None and transformer._debug is not None:
-                debug = deepcopy(transformer._debug)
         if len(tfs):
             tftxt = ",".join(tfs)
             print_info("Executing transformer: {}".format(tftxt))
@@ -1026,7 +1026,12 @@ class TransformationCache:
                 sem_checksum, celltype, subcelltype,
                 None
             )
+        meta = {}
+        if tf_dunder:
+            meta = tf_dunder.get("__meta__", {})
         transformer = DummyTransformer(tf_checksum)
+        if meta.get("__direct_print__"):
+            transformer._debug = {"direct_print": True}
         async def incref_and_run():
             result = await self.incref_transformation(
                 transformation, transformer,

@@ -162,7 +162,24 @@ Attributes:
 
     @meta.setter
     def meta(self, meta:dict):
-        self._meta[:] = meta
+        self._meta.update(meta)
+        for k in list(self._meta.keys()):
+            if self._meta[k] is None:
+                self._meta.pop(k)
+
+    @property
+    def direct_print(self):
+        """Causes the transformer to directly print any messages,
+instead of buffering them and storing them in Transformer.logs.
+If this value is None, direct print is True if debugging is enabled."""
+        return self._meta.get("__direct_print__", False)
+
+    @direct_print.setter
+    def direct_print(self, value):
+        if not isinstance(value, bool) and value is not None:
+            raise TypeError(type(value))
+        self.meta = {"__direct_print__": True}
+
 
     @property
     def local(self) -> bool | None:
