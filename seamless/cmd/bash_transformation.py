@@ -60,6 +60,7 @@ def prepare_bash_transformation(
     result_targets: dict | None,
     capture_stdout: bool,
     environment: dict,
+    meta: dict,
     variables: dict,
 ) -> str:
     """Prepared a bash transformation for execution.
@@ -76,6 +77,7 @@ def prepare_bash_transformation(
     - capture_stdout
     - result_targets: server files containing results
     - environment
+    - meta
     - variables: ....
 
     Returns: transformation checksum, transformation dict
@@ -104,6 +106,8 @@ def prepare_bash_transformation(
         transformation_dict["__output__"] = ("result", "bytes", None)
     else:
         transformation_dict["__output__"] = ("result", "mixed", None, {"*": "##"})
+    if meta:
+        transformation_dict["__meta__"] = meta
     if environment:
         env_checksum = register_dict(environment)
         transformation_dict["__env__"] = env_checksum

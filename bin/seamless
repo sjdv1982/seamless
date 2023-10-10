@@ -96,6 +96,10 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--ncores", help="Number of cores required. -1 means all available cores", type=int
+)
+
+parser.add_argument(
     "--fingertip",
     help="If the result checksum is known but the result unavailable: force evaluation",
     action="store_true"
@@ -106,6 +110,14 @@ parser.add_argument(
     help="Undo this seamless command",
     action="store_true"
 )
+
+parser.add_argument(
+    "--direct-print",
+    dest="direct_print",
+    help="Attempt to print out stderr messages directly in the executor log",
+    action="store_true"
+)
+
 
 parser.add_argument('command', nargs=argparse.REMAINDER)
 
@@ -122,6 +134,19 @@ msg(3, "Command:", json.dumps(command, indent=4))
 if len(command) == 0:
     parser.print_usage()  # TODO: add to usage message
     sys.exit(0)
+
+################################################################
+
+meta = None
+if args.direct_print:
+    if meta is None:
+        meta = {}
+    meta["__direct_print__"] = True
+
+if args.ncores:
+    if meta is None:
+        meta = {}
+    meta["ncores"] = args.ncores
 
 ################################################################
 
@@ -431,7 +456,7 @@ transformation_checksum, transformation_dict = prepare_bash_transformation(
     commandstring, checksum_dict, directories=directories, 
     make_executables=make_executables,
     capture_stdout=capture_stdout, result_targets=result_targets,
-    environment=env, variables=variables
+    environment=env, variables=variables, meta=meta
 )
 if make_executables:
     msg(2, "The following files will be made executable inside the transformer\n:\n  {}".format('\n  '.join(make_executables)))
