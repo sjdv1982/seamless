@@ -34,6 +34,7 @@ t = time.time()
 loop.run_until_complete(asyncio.sleep(0.5))
 
 tf2 = func(2, 2, random.random())
+tf2.meta = {"ncores": 1}
 t2 = tf2.task()
 
 loop.run_until_complete(t2)
