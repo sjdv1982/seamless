@@ -20,9 +20,11 @@ See also [seamless/bin/README], which will be documentation also.
 
 - When bin/seamless operates on a file "file.ext", be able to load its checksum from "file.ext.CHECKSUM" (if both exist, verify checksum).
 
-- In addition, in bash mode, create "file.ext.FUTURE" so that "file.ext" (or file.ext.CHECKSUM, or file.ext.FUTURE) can be referred to in a follow-up job.
+- Create "file.ext.FUTURE" so that "file.ext" (or file.ext.CHECKSUM, or file.ext.FUTURE) can be referred to in a follow-up job.
 
-- Download of job/transformer results (in both bash and Python) can be enforced or prevented. Otherwise, a heuristic based on result size (and possibly, connection speed). Manual command "seamless-download file.ext" that inspects file.ext.CHECKSUM (or block until file.ext.FUTURE has disappeared) and downloads it.
+- Download of job/transformer results can be enforced or prevented. Otherwise, a heuristic based on result size (and possibly, connection speed). Manual command "seamless-download file.ext" that inspects file.ext.CHECKSUM and downloads it.
+
+- Tool "seamless-upload" for files (a). Optional "move" flag that replaces "file"
 
 - Document (can be after)
 

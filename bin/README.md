@@ -27,9 +27,6 @@ In all cases:
 
 TODO: write TARGET.JOB for each result target. In a separate thread, touch them every 30 secs or so.
 
-TODO: seamlessify: strip the final & from the quoted section, add it at the end.
-seamlessify: don't quote at all if there is a single command node and no redirection.
-
 TODO: In the command, if a FILE.ext is named where FILE.ext does not exist... 
 - ... but FILE.ext.CHECKSUM does, take the checksum. If both exist, verify that the checksum is correct.
 - ... but FILE.ext.JOB does, sleep until FILE.ext and/or FILE.ext.CHECKSUM and/or FILE.ext.ERROR exist. Fail whenever FILE.ext.JOB gets stale (not updated for a minute) or deleted.
