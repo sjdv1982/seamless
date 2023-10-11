@@ -1,16 +1,10 @@
-TODO: transformation.py: acquire multiple locks if meta requires it.
-Give an instant error if there are not enough locks in total.
-If you can require some, but not all, release those periodically to avoid deadlock.
-TODO: mini-assistant: have an internal lock system just like transformation.py
-(in fact, re-use it). Acquire locks before launching run-transformation, and release them
-afterwards.
-
-Random things TODO regarding integration:
+Things TODO regarding integration:
 
 - Rip the entire communion protocol, too much trouble with websockets,
   threads and event loops and imperative mode.
   Make a seamless-micro-assistant that needs a database and a buffer read/write server.
   Use aiohttp requests to contact the assistant.
+  DONE
   
   Check a nested/fingertip issue where imperative-delegated works if you restart the micro-assistant.py
   (after cleaning up database and buffer directory) but not otherwise. 
@@ -18,31 +12,55 @@ Random things TODO regarding integration:
   UPDATE2: the simple problem has been fixed, but it still hangs sometimes for nested... restart micro-assistant regularly?
   Should happen so often since new jobs are normally sent to a different micro-assistant
   UPDATE3: all fixed now.
+  DONE
 
-  ***DONE up to here***
+Stage 1:
 
-  - Pimp the protocol a bit so that "peer ID" (project information) is sent along in the request
-  After that, support transformation meta (see old jobless), progress/prelim, logs, hardcancel, etc.
-  UPDATE: Make a mini-assistant that has meta but also env arguments. 
-  First add this as a stdout stream to run-transformation, then store these things in mini-assistant,
-   then create an API to return these things. Finally, have some "delegated direct print"
-   causing the assistant to be polled for stream/log updates continuously, 
-   and display them correctly with tqdm.
-  ***Dogma: env (recipe) != Transformation.__env__ (schema) !!!***
+- mini-assistant: have an internal lock system just like transformation.py
+(in fact, re-use it). Acquire locks before launching run-transformation, and release them
+afterwards.
+
+- Support transformation meta (see old jobless), progress/prelim, logs, hardcancel, etc.  First add this as a stdout stream to run-transformation, then store these things in mini-assistant (YAGNI?), then create an API to return these things. (TODO, see https://github.com/sjdv1982/seamless/issues/219)
+   
+- ***Dogma: env (recipe) != Transformation.__env__ (schema) !!!***
   __env__ (and __meta__, __compilers__, etc... generally known as "dunder") give hints to make
-  the transformation work. They do *not* modify the result value.
-  DONE: In addition, implement "contest" API for mini-assistant (tests/highlevel/contest.py can't work without).
+  the transformation work. They do *not* modify the result value. TO DOCUMENT.
+  
+- In addition, implement "contest" API for mini-assistant (tests/highlevel/contest.py can't work without). TO DOCUMENT
 
-  Finally, rename imperative-communion and split it into a re-entrant version 
-  (local=False, currently commented out), and the all-local version.
-  micro-assistant.py can't deal with re-entrant delegation. Start a jobless successor.
-- Make sure that bash jobs with a buffer read folder have get_filename/get_directory working directory. Rip filezones.
-- Run tests/examples requiring serve-graph, add seamless.config.delegate if needed
-- Make sure that buffer_cache eviction works correctly in the light of buffer_remote known buffers, is_readable, etc.
-  Support dynamic modification of the delegate config, poll the assistant regularly for this.
-  Make a test that shows the memory savings of delegation, e.g. deep cell with many 50MB members, (disable lru cache? like --no-lru in serve-graph?)
-- For seamless-cli, when distributing, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile.
-- Make sure the examples can function without RPBS buffer server, or add it in the notebook
+- Micro-assistant.py can't deal with re-entrant delegation, mini-dask assistant should. TODO: See https://github.com/sjdv1982/seamless/issues/217
+
+- Make sure that bash jobs with a buffer read folder have get_filename/get_directory working directory. Rip filezones. TODO.
+
+- Run tests/examples requiring serve-graph, add seamless.config.delegate if needed. TODO.
+
+- Make sure that buffer_cache eviction works correctly in the light of buffer_remote known buffers, is_readable, etc. TODO.
+
+- Make a test that shows the memory savings of delegation, e.g. deep cell with many 50MB members, (disable lru cache? like --no-lru in serve-graph?)
+
+Stage 2: distribution
+
+- Clean up and re-run all tests.
+
 - Re-review new-project, add delegation? UPDATE: read it from a project.yaml...
 - Clean up seamless-tools database tools and revise database-run-actions
+
+- For seamless-cli, when distributing, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile.
+
+- Make sure the examples can function without RPBS buffer server, or add it in the notebook
+
 - Document: buffer read servers/folders fail silently, the buffer write server must succeed
+
+- General documentation, describing the three styles.
+
+Stage 3:
+
+Start a jobless successor, i.e. "*the* assistant".
+
+- Pimp the protocol a bit so that "peer ID" (project information) is sent along in the request. TODO.
+
+- Support dynamic modification of the delegate config, poll the assistant regularly for this. Alternative: special redirect code upon job submission. Another alternative (in addition): assistant migrates between buffer folders / databases.
+
+- NOTE: previously, Seamless could try remote execution but fall back on local if that failed (see transformation.py around line 460). Probably rip this.
+
+- The assistant will have many configurable scripts and parts. One important one is the Singularity rewriter, to rewrite bashdocker transformations as Singularity commands.

@@ -459,7 +459,7 @@ class TransformationJob:
             return
         return bytes.fromhex(result)
         '''
-        TODO, see TODO document
+        # TODO, see TODO document. Probably rip this. 
         meta = self.transformation.get("__meta__")
         meta = deepcopy(meta)
         if meta is not None and meta.get("local") == False:
