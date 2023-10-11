@@ -14,6 +14,18 @@ Things TODO regarding integration:
   UPDATE3: all fixed now.
   DONE
 
+Stage 0: /bin/seamless
+
+See also [seamless/bin/README], which will be documentation also.
+
+- When bin/seamless operates on a file "file.ext", be able to load its checksum from "file.ext.CHECKSUM" (if both exist, verify checksum).
+
+- In addition, in bash mode, create "file.ext.FUTURE" so that "file.ext" (or file.ext.CHECKSUM, or file.ext.FUTURE) can be referred to in a follow-up job.
+
+- Download of job/transformer results (in both bash and Python) can be enforced or prevented. Otherwise, a heuristic based on result size (and possibly, connection speed). Manual command "seamless-download file.ext" that inspects file.ext.CHECKSUM (or block until file.ext.FUTURE has disappeared) and downloads it.
+
+- Document (can be after)
+
 Stage 1:
 
 - mini-assistant: have an internal lock system just like transformation.py
@@ -64,3 +76,26 @@ Start a jobless successor, i.e. "*the* assistant".
 - NOTE: previously, Seamless could try remote execution but fall back on local if that failed (see transformation.py around line 460). Probably rip this.
 
 - The assistant will have many configurable scripts and parts. One important one is the Singularity rewriter, to rewrite bashdocker transformations as Singularity commands.
+
+- Long term: operation to create an index file of a buffer folder, so that the assistant can inspect the index file to see if a buffer exists (index file can be copied around; buffer folder might be on a node scratch).
+
+- Long term: Annotation mechanism for job duration and result size. Either as string ("10s", "10MB") or as number with units specified (25.0, time_unit="minutes"). Job duration is enforced with a hard maximum of 2x the specified duration. The job duration can be specified as "approximate" (approximate_duration=True, or "~0.5h"), in which case the hard maximum is an order of magnitude (10x) larger. Result size is not enforced, but is used to decide if the result is automatically downloaded or not.
+
+Old design text for the assistant:
+
+Replaces jobless. Has its own database for:
+
+- exceptions (for transformation/compilation)
+- stdout/stderr logs (for transformation/compilation)
+- project-to-transformation/elision/compilation-checksum (recorded upon submission; also for transformations/compilations that give an exception).
+- project-to-graph (clients submit their current graph regularly)
+- graph-to-buffer/expression/join-checksum (whenever graph is registered). Store celltype and hash pattern, so that a database refcounting operation becomes possible (think of checksums of conda environments too). Store if buffers are dependent or not.
+
+New supervisor protocol replaces communion protocol. Supervisor protocol will take the contacter's ID (includes the real working directory; seamless-load-project will give the project name, too) and give it a database URL and one or more buffer read/write URLs/folders.
+On certain circumstances, the supervisor will return a job status "supervision action required". Some example scenarios:
+
+- The idea is that if a supervisor is found, there will be no more Seamless-instance execution or held buffers. The supervisor will need to map the client to a global project name (to be configured by the user). The supervisor can spin up local job executors and project-specific buffer providers (to be configured). The local Seamless database can probably re-used globally for every project.
+- Jobs can specify remote execution. The supervisor follows this by default, but more precise supervisor policies can be configured. For example, if a large buffer can be found elsewhere than where the execution is to take place, the supervisor may ask you if the data is to be downloaded or if the computation is to be relocated. If there are multiple remotes, or if "local" or "remote" is not specified, this needs to be arbitrated too.
+- In particular, on a HPC cluster, there should be a buffer folder (or more than one) on every node /scratch, with an index file in a publicly accessible location (network partition). When /scratch gets deleted, the index file *should* be deleted too. If this doesn't happen, a special error message should be generated. Using the index, the supervisor can decide to send a job to that particular node (in essence, setting up a new remote that includes only that node).
+- There are "manual" actions in the supervisor GUI to spin up buffer write servers and then send particular buffers to particular buffer write servers, or to delete them.
+
