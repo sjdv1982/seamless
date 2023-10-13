@@ -70,7 +70,6 @@ Please choose one and provide it as the "command" argument.
 
     bashcode = prepare_bash_code(
         code = command,
-        directories = directories,
         make_executables = make_executables,
         result_targets = result_targets,
         capture_stdout = not result_targets

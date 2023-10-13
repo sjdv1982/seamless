@@ -1012,7 +1012,7 @@ class TransformationCache:
                 if k in tf_dunder:
                     transformation[k] = tf_dunder[k] 
         for k,v in transformation.items():
-            if k in ("__language__", "__output__", "__as__",):
+            if k in ("__language__", "__output__", "__as__", "__format__"):
                 continue
             if k == "__env__":
                 continue

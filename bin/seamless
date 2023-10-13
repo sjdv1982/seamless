@@ -402,7 +402,7 @@ max_upload_size = os.environ.get("SEAMLESS_MAX_UPLOAD_SIZE", "100 MB")
 max_upload_size = human2bytes(max_upload_size)
 
 paths = set()
-directories = set()
+directories = {}
 mapping = {}
 for argname, arg in argtypes.items():
     if isinstance(arg, dict):
@@ -414,7 +414,7 @@ for argname, arg in argtypes.items():
     if argtype in ("file", "directory"):
         paths.add(path)
         if argtype == "directory":
-            directories.add(path)
+            directories[path] = argname
         mapping[argname] = path
 
 try:
@@ -476,7 +476,7 @@ if len(commands) == 1:
 ################################################################
 
 transformation_checksum, transformation_dict = prepare_bash_transformation(
-    commandstring, checksum_dict, directories=directories, 
+    commandstring, checksum_dict, directories=list(directories.values()),
     make_executables=make_executables,
     capture_stdout=capture_stdout, result_targets=result_targets,
     environment=env, variables=variables, meta=meta

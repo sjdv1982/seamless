@@ -10,13 +10,10 @@ from seamless.cmd.register import register_dict
 def prepare_bash_code(
     code: str,
     *,
-    directories: list[str],
     make_executables: list[str],
     result_targets: dict | None,
     capture_stdout: bool,
 ):
-    if len(directories):
-        raise NotImplementedError
 
     bashcode = ""
     if make_executables:
@@ -82,12 +79,9 @@ def prepare_bash_transformation(
 
     Returns: transformation checksum, transformation dict
     """
-    if len(directories):
-        raise NotImplementedError
 
     bashcode = prepare_bash_code(
         code,
-        directories = directories,
         make_executables = make_executables,
         result_targets = result_targets,
         capture_stdout = capture_stdout
@@ -102,6 +96,7 @@ def prepare_bash_transformation(
     transformation_dict = {
         "__language__": "bash"
     }
+    format = {}
     if capture_stdout or len(result_targets) == 1:
         transformation_dict["__output__"] = ("result", "bytes", None)
     else:
@@ -112,8 +107,27 @@ def prepare_bash_transformation(
         env_checksum = register_dict(environment)
         transformation_dict["__env__"] = env_checksum
     for k,v in checksum_dict.items():
-        transformation_dict[k] = "bytes", None, v
+        if k in directories:
+            fmt = {
+                "filesystem": {
+                    "optional": True,
+                    "mode": "directory"
+                },
+                "hash_pattern": {"*": "##"}
+            }
+            transformation_dict[k] = "mixed", None, v
+        else:
+            fmt = {
+                "filesystem": {
+                    "optional": True,
+                    "mode": "file"
+                }
+            }
+            transformation_dict[k] = "bytes", None, v
+        format[k] = fmt
 
+    if format:
+        transformation_dict["__format__"] = format
     if variables:
         for k, (v, celltype) in variables.items():
             if celltype in ("int", "float", "bool", "str"):

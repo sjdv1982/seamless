@@ -32,7 +32,7 @@ def register_file(filename: str) -> str:
         buffer = f.read()
     return register_buffer(buffer)
 
-def check_buffer(buffer: bytes) -> tuple[bool, int]:
+def check_buffer(buffer: bytes) -> tuple[bool, str]:
     """Check if a buffer needs to be written remotely
     Return the result and the checksum"""
     checksum = calculate_checksum(buffer)

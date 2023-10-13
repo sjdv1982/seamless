@@ -168,6 +168,11 @@ def translate_bash_transformer(
         if celltype == "checksum":
             celltype = "plain"
         p["celltype"] = celltype
+        if celltype == "bytes":
+            p["filesystem"] = {
+                "mode": "file",
+                "optional": True
+            }            
         all_pins[pinname] = p
     result_pin = {
         "io": "output", 

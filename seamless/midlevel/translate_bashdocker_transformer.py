@@ -115,6 +115,11 @@ def translate_bashdocker_transformer(
         if celltype == "checksum":
             celltype = "plain"
         p["celltype"] = celltype
+        if celltype == "bytes":
+            p["filesystem"] = {
+                "mode": "file",
+                "optional": True
+            }            
         all_pins[pinname] = p
     all_pins[result_name] = {"io": "output"}
     if node["SCHEMA"]:
