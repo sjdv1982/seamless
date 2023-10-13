@@ -1,0 +1,2 @@
+class SeamlessSystemExit(Exception):
+    pass

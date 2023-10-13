@@ -23,6 +23,8 @@ from seamless.cmd.file_mapping import get_file_mapping
 from seamless.cmd.file_load import files_to_checksums
 from seamless.cmd.bash_transformation import prepare_bash_transformation, run_transformation
 from seamless.cmd import interface
+from seamless.cmd.exceptions import SeamlessSystemExit
+from seamless.cmd.bytes2human import human2bytes
 from seamless.highlevel import Checksum
 
 parser = argparse.ArgumentParser()
@@ -93,6 +95,13 @@ Example:
 
 parser.add_argument(
     "-c", help="Unquote the command line", dest="unquote", action="store_true"
+)
+
+parser.add_argument(
+    "-y", "--yes", 
+    dest="always_yes",
+    help="Sets any confirmation values to 'yes' automatically. Users will not be asked to confirm any file upload, download, etc.", 
+    action="store_true"
 )
 
 parser.add_argument(
@@ -309,7 +318,7 @@ for commandnr, command in enumerate(commands):
         interface_py_file = None
     if interface_py_file is not None:
         if commandnr == 0:
-            command_words = mapped_first_command
+            command_words = mapped_first_pipeline
         else:
             command_words = copy(command.words)
             if mapped_execarg:
@@ -384,7 +393,14 @@ if docker_image is not None:
 
 seamless.config.delegate()
 
-# TODO: max_files, max_datasize option
+# TODO: max_upload_files, max_upload_size:
+#   modify the assistant protocol so that the assistant can provide it.
+
+max_upload_files = os.environ.get("SEAMLESS_MAX_UPLOAD_FILES", "1000")
+max_upload_files = int(max_upload_files)
+max_upload_size = os.environ.get("SEAMLESS_MAX_UPLOAD_SIZE", "100 MB")
+max_upload_size = human2bytes(max_upload_size)
+
 paths = set()
 directories = set()
 mapping = {}
@@ -401,9 +417,18 @@ for argname, arg in argtypes.items():
             directories.add(path)
         mapping[argname] = path
 
-file_checksum_dict = files_to_checksums(
-    paths, max_datasize=None, max_files=None, directories=directories
-)
+try:
+    file_checksum_dict = files_to_checksums(
+        paths, 
+        max_upload_size=max_upload_size, 
+        max_upload_files=max_upload_files, 
+        directories=directories,
+        always_yes=args.always_yes
+    )
+except SeamlessSystemExit as exc:
+    print("\nERROR:", *exc.args, file=sys.stderr)
+    exit(1)
+
 checksum_dict = {}
 checksum_dict = {k: file_checksum_dict[v] for k,v in mapping.items()}
 checksum_dictstr = json.dumps(checksum_dict, sort_keys=True, indent=2)
@@ -449,8 +474,6 @@ if len(commands) == 1:
             commandstring = canon["command"]
 
 ################################################################
-
-#def write_pending(filename, )
 
 transformation_checksum, transformation_dict = prepare_bash_transformation(
     commandstring, checksum_dict, directories=directories, 
