@@ -88,8 +88,7 @@ def _fast_pack(value, buffer, celltype, database):
         # shouldn't ever happen
         return None
     if database.active:
-        if celltype is not None:
-            buffer_cache.guarantee_buffer_info(checksum, celltype, buffer=buffer, sync_to_remote=True)
+        buffer_cache.guarantee_buffer_info(checksum, celltype, buffer=buffer, sync_to_remote=True)
         buffer_remote.write_buffer(checksum, buffer)
     return checksum
 

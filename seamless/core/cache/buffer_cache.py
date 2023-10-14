@@ -349,6 +349,9 @@ class BufferCache:
         if celltype in ("ipython", "python", "cson", "yaml"):
             # parsability as IPython/python/cson/yaml is out-of-scope for buffer info
             celltype = "text"
+        
+        if buffer is not None and checksum not in self.buffer_info:
+            self.buffer_info[checksum] = BufferInfo(checksum, {"length": len(buffer)})
 
         if celltype == "mixed":
             if buffer is None:
@@ -360,8 +363,6 @@ class BufferCache:
                     self.update_buffer_info(checksum, "is_seamless_mixed", True, sync_remote=False)
                 else:
                     self.update_buffer_info(checksum, "is_json", True, sync_remote=False)
-            elif checksum not in self.buffer_info:
-                self.buffer_info[checksum] = BufferInfo(checksum)
         elif celltype == "binary":
             self.update_buffer_info(checksum, "is_numpy", True, sync_remote=False)
         elif celltype == "plain":
@@ -370,6 +371,8 @@ class BufferCache:
             self.update_buffer_info(checksum, "is_utf8", True, sync_remote=False)
         elif celltype in ("str", "int", "float", "bool"):
             self.update_buffer_info(checksum, "json_type", celltype, sync_remote=False)
+        elif celltype is None:
+            pass
         else:
             raise TypeError(celltype)
 
