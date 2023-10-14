@@ -1,7 +1,6 @@
 import os,shutil
 import tempfile
 import numpy as np
-import tarfile
 import json
 from io import BytesIO
 from silk import Silk
@@ -10,7 +9,6 @@ from seamless.core.mount_directory import write_to_directory
 from silk.mixed.get_form import get_form
 from seamless import subprocess_ as subprocess
 from subprocess import PIPE
-import psutil
 import signal
 
 env = os.environ.copy()
@@ -25,6 +23,8 @@ def sighandler(signal, frame):
     raise SystemExit()
 
 def read_data(data):
+    if OUTPUTPIN[0] == "bytes" or OUTPUTPIN == ("mixed", {"*": "##"}):
+        return data
     try:
         npdata = BytesIO(data)
         return np.load(npdata)
@@ -158,17 +158,9 @@ Error: Result file/folder RESULT does not exist
             result[k] = result0[k]
             del result0[k]
     else:
-        try:
-            tar = tarfile.open(resultfile)
-            result = {}
-            for member in tar.getnames():
-                data = tar.extractfile(member).read()
-                rdata = read_data(data)
-                result[member] = rdata
-        except (ValueError, tarfile.CompressionError, tarfile.ReadError):
-            with open(resultfile, "rb") as f:
-                resultdata = f.read()
-            result = read_data(resultdata)
+        with open(resultfile, "rb") as f:
+            resultdata = f.read()
+        result = read_data(resultdata)
 finally:
     if process is not None:
         subprocess.kill_children(process)

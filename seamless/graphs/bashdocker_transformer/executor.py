@@ -19,6 +19,8 @@ _to_exit = False
 _sys_exit = False
 
 def read_data(data):
+    if OUTPUTPIN[0] == "bytes" or OUTPUTPIN == ("mixed", {"*": "##"}):
+        return data
     try:
         npdata = BytesIO(data)
         return np.load(npdata)
