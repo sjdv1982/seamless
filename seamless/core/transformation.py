@@ -155,6 +155,8 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
     deep_structures_to_unpack = {}
     inputs = []
     namespace["PINS"] = {}
+    output_hash_pattern = transformation["__output__"][3] if len(transformation["__output__"]) == 4 else None
+    namespace["OUTPUTPIN"] = transformation["__output__"][1], output_hash_pattern
     modules_to_build = {}
     as_ = transformation.get("__as__", {})
     FILESYSTEM = {}
