@@ -1,0 +1,21 @@
+3f867913288aa9ca64bee82fa754229a  testfolder/test.txt
+4b368c4b34bc9067e2c81dc6a09a7042  testfolder/test.dat
+b73936aa05f29a2b15586debce4ae796  testfolder/sub/test2.txt
+d8d6aa6543ad66e6252306184b40c7a3  testfolder/sub/test3.npy
+052764c3aaa2fd3c49b3d87e7eaa657f  testfolder/test2.dat
+c387529f18f0943fc0629f36c0d8a1ab  testfolder/test.json
+c2fdc52401bd4540c469645448a0c89a  testfolder/test.npy
+RESULT
+STDOUT
+testfolder
+test-list.txt
+5f2d08caf46aaf3316edf1cefdcecd41e04dfadb8b63f79cdaedb7c25315807f
+{
+  "sub/test2.txt": "4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4",
+  "sub/test3.npy": "ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862",
+  "test.dat": "7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea",
+  "test.json": "6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22",
+  "test.npy": "cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3",
+  "test.txt": "c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c",
+  "test2.dat": "c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c"
+}

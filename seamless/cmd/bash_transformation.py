@@ -27,25 +27,23 @@ def prepare_bash_code(
             bashcode += "export PATH=./:$PATH\n"
         bashcode += f"chmod +x{make_executables_str}\n"
 
-    if capture_stdout:
-        assert not result_targets
+    if not result_targets:
+        assert capture_stdout
         bashcode += "(\n" + code + "\n) > RESULT"
     else:
-        assert len(result_targets)
-        if len(result_targets) == 1:
-            bashcode += code
-            bashcode += f"\nmv -f {list(result_targets.keys())[0]} RESULT"
-        else:
-            mvcode = ""
-            result_target_dirs = []
-            for tar in result_targets:
-                tardir = os.path.join("RESULT", os.path.dirname(tar))
-                mvcode += f"mv {tar} {tardir}\n"
-                if tardir not in result_target_dirs:
-                    result_target_dirs.append(tardir)                 
-            bashcode += f"mkdir -p {' '.join(result_target_dirs)}\n"
-            bashcode += code + "\n"
-            bashcode += mvcode
+        code2 = code
+        if capture_stdout:
+            code2 = "(\n" + code + "\n) > STDOUT"
+        mvcode = ""
+        result_target_dirs = []
+        for tar in result_targets:
+            tardir = os.path.join("RESULT", os.path.dirname(tar))
+            mvcode += f"mv {tar} {tardir}\n"
+            if tardir not in result_target_dirs:
+                result_target_dirs.append(tardir)                 
+        bashcode += f"mkdir -p {' '.join(result_target_dirs)}\n"
+        bashcode += code2 + "\n"
+        bashcode += mvcode
     return bashcode    
 
 def prepare_bash_transformation(
@@ -96,16 +94,18 @@ def prepare_bash_transformation(
     transformation_dict = {
         "__language__": "bash"
     }
-    format = {}
-    if capture_stdout or len(result_targets) == 1:
+
+    if not result_targets:
         transformation_dict["__output__"] = ("result", "bytes", None)
     else:
         transformation_dict["__output__"] = ("result", "mixed", None, {"*": "##"})
+
     if meta:
         transformation_dict["__meta__"] = meta
     if environment:
         env_checksum = register_dict(environment)
         transformation_dict["__env__"] = env_checksum
+    format = {}
     for k,v in checksum_dict.items():
         if k in directories:
             fmt = {

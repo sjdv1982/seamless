@@ -6,9 +6,12 @@ import argparse
 from copy import copy
 import sys
 import os
-from pathlib import Path
 import json
 import traceback
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
+stdout_lock = threading.Lock()
 
 os.environ["__SEAMLESS_FRUGAL"] = "1"
 import seamless
@@ -21,11 +24,17 @@ from seamless.cmd import parsing
 from seamless.cmd.parsing import get_commands, guess_arguments
 from seamless.cmd.file_mapping import get_file_mapping
 from seamless.cmd.file_load import files_to_checksums
-from seamless.cmd.bash_transformation import prepare_bash_transformation, run_transformation
+from seamless.cmd.bash_transformation import (
+    prepare_bash_transformation,
+    run_transformation,
+)
 from seamless.cmd import interface
 from seamless.cmd.exceptions import SeamlessSystemExit
-from seamless.cmd.bytes2human import human2bytes
+from seamless.cmd.bytes2human import bytes2human, human2bytes
+from seamless.cmd.confirm import confirm_yna
 from seamless.highlevel import Checksum
+from seamless.core.cache.database_client import database
+from seamless.core.protocol.json import json_dumps
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -98,9 +107,52 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-y", "--yes", 
-    dest="always_yes",
-    help="Sets any confirmation values to 'yes' automatically. Users will not be asked to confirm any file upload, download, etc.", 
+    "-cp",
+    "--capture",
+    help="""Add a file or directory to the result capture.
+
+After the command line has completed, this file (or directory) will checksummed,
+ added to the result, and (potentially) downloaded.
+You can use ":" if the file is named differently on the server 
+than the download target file. For example, "-cp foo:bar" will download
+the result file "foo" on the server to the local file "bar".
+An empty server file name captures stdout, e.g. "-cp :bar"
+""",
+    action="append",
+    dest="extra_results",
+)
+
+parser.add_argument(
+    "-y",
+    "--yes",
+    dest="auto_confirm",
+    help="""Sets any confirmation values to 'yes' automatically. Users will not be asked to confirm any file upload or download.
+Uploads will happen without confirmation for up to 400 files and up to 100 MB in total.
+Downloads will happen without confirmation for up to 2000 files and up to 500 MB in total.
+These thresholds can be controlled by the environment variables:
+SEAMLESS_MAX_UPLOAD_FILES, SEAMLESS_MAX_UPLOAD_SIZE, SEAMLESS_MAX_DOWNLOAD_FILES, SEAMLESS_MAX_DOWNLOAD_SIZE.""",
+    action="store_const",
+    const="yes",
+)
+
+parser.add_argument(
+    "-n",
+    "--no",
+    dest="auto_confirm",
+    help="""Sets any confirmation values to 'no' automatically. Users will not be asked to confirm any file upload or download.
+Uploads will happen without confirmation for up to 400 files and up to 100 MB in total.
+Downloads will happen without confirmation for up to 2000 files and up to 500 MB in total.
+These thresholds can be controlled by the environment variables:
+SEAMLESS_MAX_UPLOAD_FILES, SEAMLESS_MAX_UPLOAD_SIZE, SEAMLESS_MAX_DOWNLOAD_FILES, SEAMLESS_MAX_DOWNLOAD_SIZE.""",
+    action="store_const",
+    const="no",
+)
+
+parser.add_argument(
+    "-nd",
+    "--no-download",
+    dest="no_download",
+    help="Do not download any result files or directories, only their checksums",
     action="store_true"
 )
 
@@ -111,24 +163,20 @@ parser.add_argument(
 parser.add_argument(
     "--fingertip",
     help="If the result checksum is known but the result unavailable: force evaluation",
-    action="store_true"
+    action="store_true",
 )
 
-parser.add_argument(
-    "--undo",
-    help="Undo this seamless command",
-    action="store_true"
-)
+parser.add_argument("--undo", help="Undo this seamless command", action="store_true")
 
 parser.add_argument(
     "--direct-print",
     dest="direct_print",
     help="Attempt to print out stderr messages directly in the executor log",
-    action="store_true"
+    action="store_true",
 )
 
 
-parser.add_argument('command', nargs=argparse.REMAINDER)
+parser.add_argument("command", nargs=argparse.REMAINDER)
 
 args = parser.parse_args()
 command = args.command
@@ -171,7 +219,12 @@ commands, first_pipeline = get_commands(commandstring)
 
 first_command = commands[0]
 
-interface_argindex, interface_file, interface_py_file, mapped_execarg = interface.locate_files(first_command.words)
+(
+    interface_argindex,
+    interface_file,
+    interface_py_file,
+    mapped_execarg,
+) = interface.locate_files(first_command.words)
 
 msg(1, f"First command: {first_command.commandstring}")
 
@@ -181,7 +234,11 @@ if mapped_execarg:
 first_pipeline_words = copy(first_command_words)
 
 argtypes_initial, results_initial = interface.get_argtypes_and_results(
-    interface_file, interface_py_file, interface_argindex, first_command_words, first_command.words[0]   
+    interface_file,
+    interface_py_file,
+    interface_argindex,
+    first_command_words,
+    first_command.words[0],
 )
 
 if interface_py_file is None:
@@ -195,12 +252,14 @@ if interface_py_file is None:
         msg(1, "disable argtyping guess rule 2")
         overrule_no_ext = True
 
-    try:        
+    try:
         if first_pipeline:
             for com in commands[1:first_pipeline]:
                 first_pipeline_words += com.words
         argtypes_guess = guess_arguments(
-            first_pipeline_words, overrule_ext=overrule_ext, overrule_no_ext=overrule_no_ext
+            first_pipeline_words,
+            overrule_ext=overrule_ext,
+            overrule_no_ext=overrule_no_ext,
         )
     except ValueError as exc:
         msg(-1, *exc.args)
@@ -224,7 +283,7 @@ if args.workdir is not None:
 file_mapping_mode = args.file_mapping_mode
 if file_mapping_mode is None:
     file_mapping_mode = "literal"
-    
+
 try:
     argtypes = get_file_mapping(
         argtypes_initial, mapping_mode=file_mapping_mode, working_directory=workdir
@@ -249,18 +308,19 @@ for wordnr, word in enumerate(mapped_first_pipeline):
             continue
         else:
             break
-    old_word = com.words[wordnr-offset]
+    old_word = com.words[wordnr - offset]
     if word != old_word:
-        node = com.wordnodes[wordnr-offset]
+        node = com.wordnodes[wordnr - offset]
         word_substitutions[node] = word
 
 ################################################################
 interface_data = {}
 make_executables = []
 
+
 def update_interface_data(new_interface_data, first):
     changed = False
-    for k,v in new_interface_data.items():
+    for k, v in new_interface_data.items():
         if k in ("argtypes", "files", "directories", "shim"):
             continue
         curr = interface_data.get(k)
@@ -268,7 +328,7 @@ def update_interface_data(new_interface_data, first):
             if first:
                 continue
             if isinstance(v, list):
-                v = {kk:None for kk in v}
+                v = {kk: None for kk in v}
             if k not in interface_data:
                 interface_data[k] = {}
             if v:
@@ -282,7 +342,7 @@ def update_interface_data(new_interface_data, first):
             if curr == v:
                 continue
             raise NotImplementedError("Multiple environments")
-        
+
         changed = True
         if curr is None:
             interface_data[k] = v
@@ -296,14 +356,23 @@ def update_interface_data(new_interface_data, first):
     if changed:
         msg(3, f"Updated interface data: {json.dumps(interface_data, indent=2)}")
 
+
 for commandnr, command in enumerate(commands):
     if commandnr > 0:
         msg(1, f"Command #{commandnr+1}: {command.commandstring}")
-        interface_argindex, interface_file, interface_py_file, mapped_execarg = interface.locate_files(command.words)        
+        (
+            interface_argindex,
+            interface_file,
+            interface_py_file,
+            mapped_execarg,
+        ) = interface.locate_files(command.words)
     if interface_file is not None or interface_py_file is not None:
         if commandnr > 0:
-            msg(1, f"Interface files found for command #{commandnr+1}: {command.commandstring}")
-    
+            msg(
+                1,
+                f"Interface files found for command #{commandnr+1}: {command.commandstring}",
+            )
+
     shim = None
     if interface_file is not None:
         msg(2, f"loading {interface_file}")
@@ -312,7 +381,7 @@ for commandnr, command in enumerate(commands):
         new_shim = new_interface_data.get("shim")
         if new_shim is not None:
             shim = new_shim
-        update_interface_data(new_interface_data, first=(commandnr==0))
+        update_interface_data(new_interface_data, first=(commandnr == 0))
 
     if commandnr == 0:
         interface_py_file = None
@@ -324,18 +393,22 @@ for commandnr, command in enumerate(commands):
             if mapped_execarg:
                 command_words[0] = mapped_execarg
 
-        arguments = command_words[interface_argindex+1:]
-        new_interface_data = interface.interface_from_py_file(interface_py_file, arguments)
-        msg(3, f"{interface_py_file} result: {json.dumps(new_interface_data, indent=2)}")
+        arguments = command_words[interface_argindex + 1 :]
+        new_interface_data = interface.interface_from_py_file(
+            interface_py_file, arguments
+        )
+        msg(
+            3, f"{interface_py_file} result: {json.dumps(new_interface_data, indent=2)}"
+        )
         new_shim = new_interface_data.get("shim")
         if new_shim is not None:
             shim = new_shim
-        update_interface_data(new_interface_data, first=(commandnr==0))
+        update_interface_data(new_interface_data, first=(commandnr == 0))
 
         if shim:
             wordnode = command.wordnodes[interface_argindex]
             word_substitutions[wordnode] = shim
-    
+
     if mapped_execarg and not shim:
         wordnode = command.wordnodes[0]
         word = command.words[0]
@@ -357,7 +430,7 @@ if redirection_node is not None:
 if results_initial is None:
     results_initial = {}
 else:
-    msg(2, f"Initial result targets from first command: {results_initial}")    
+    msg(2, f"Initial result targets from first command: {results_initial}")
     decal = os.path.relpath(os.getcwd(), workdir)
     if decal != ".":
         results_initial2 = results_initial.copy()
@@ -370,14 +443,29 @@ else:
 
 results = results_initial.copy()
 results.update(interface_data.get("results", {}))
+
+if args.extra_results:
+    for extra_result in args.extra_results:
+        pos = extra_result.find(":")
+        if pos == -1:
+            results[extra_result] = None
+        elif pos == 0:
+            results["STDOUT"] = extra_result[1:]
+        else:
+            results[extra_result[:pos]] = extra_result[pos + 1 :]
+
 if not results and not redirection:
+    if args.no_download:
+        print("Download disabled. Refuse to print output to screen.", file=sys.stderr)
+        exit(1)
     capture_stdout = True
     result_targets = None
 else:
-    capture_stdout = False
-    result_targets = {}
-    if results:
-        result_targets.update(results)
+    if "STDOUT" in results:
+        capture_stdout = True
+    else:
+        capture_stdout = False
+    result_targets = results.copy()
     if redirection:
         result_targets[redirection] = None
     msg(1, f"Identify result targets: {result_targets}")
@@ -388,18 +476,25 @@ docker_image = interface_data.get("environment", {}).get("docker_image")
 env = {}
 
 if docker_image is not None:
-    msg(1, f'Set Docker image to "{docker_image}"')    
+    msg(1, f'Set Docker image to "{docker_image}"')
     env["docker"] = {"name": docker_image}
 
 seamless.config.delegate()
 
 # TODO: max_upload_files, max_upload_size:
+# TODO: max_download_files, max_download_size:
+
 #   modify the assistant protocol so that the assistant can provide it.
 
-max_upload_files = os.environ.get("SEAMLESS_MAX_UPLOAD_FILES", "1000")
+max_upload_files = os.environ.get("SEAMLESS_MAX_UPLOAD_FILES", "400")
 max_upload_files = int(max_upload_files)
 max_upload_size = os.environ.get("SEAMLESS_MAX_UPLOAD_SIZE", "100 MB")
 max_upload_size = human2bytes(max_upload_size)
+
+max_download_files = os.environ.get("SEAMLESS_MAX_DOWNLOAD_FILES", "2000")
+max_download_files = int(max_download_files)
+max_download_size = os.environ.get("SEAMLESS_MAX_DOWNLOAD_SIZE", "500 MB")
+max_download_size = human2bytes(max_download_size)
 
 paths = set()
 directories = {}
@@ -419,18 +514,18 @@ for argname, arg in argtypes.items():
 
 try:
     file_checksum_dict = files_to_checksums(
-        paths, 
-        max_upload_size=max_upload_size, 
-        max_upload_files=max_upload_files, 
+        paths,
+        max_upload_size=max_upload_size,
+        max_upload_files=max_upload_files,
         directories=directories,
-        always_yes=args.always_yes
+        auto_confirm=args.auto_confirm,
     )
 except SeamlessSystemExit as exc:
     print("\nERROR:", *exc.args, file=sys.stderr)
     exit(1)
 
 checksum_dict = {}
-checksum_dict = {k: file_checksum_dict[v] for k,v in mapping.items()}
+checksum_dict = {k: file_checksum_dict[v] for k, v in mapping.items()}
 checksum_dictstr = json.dumps(checksum_dict, sort_keys=True, indent=2)
 msg(2, "file/directory checksum dict:\n" + checksum_dictstr)
 if len(directories):
@@ -440,7 +535,7 @@ if len(directories):
 
 for node in sorted(word_substitutions.keys(), key=lambda node: -node.pos[0]):
     word = word_substitutions[node]
-    commandstring = commandstring[:node.pos[0]] + word + commandstring[node.pos[1]:]
+    commandstring = commandstring[: node.pos[0]] + word + commandstring[node.pos[1] :]
 
 msg(1, "bash command:\n", commandstring, "\n")
 
@@ -453,7 +548,7 @@ if len(commands) == 1:
     for canon in canonical:
         vars = canon.get("variables", [])
         varnames = [var["name"] for var in vars]
-        vartypes = {var["name"]:var["celltype"] for var in vars}
+        vartypes = {var["name"]: var["celltype"] for var in vars}
         canon_cmd = canon["command"].split()
         if len(canon_cmd) != len(command):
             continue
@@ -476,19 +571,34 @@ if len(commands) == 1:
 ################################################################
 
 transformation_checksum, transformation_dict = prepare_bash_transformation(
-    commandstring, checksum_dict, directories=list(directories.values()),
+    commandstring,
+    checksum_dict,
+    directories=list(directories.values()),
     make_executables=make_executables,
-    capture_stdout=capture_stdout, result_targets=result_targets,
-    environment=env, variables=variables, meta=meta
+    capture_stdout=capture_stdout,
+    result_targets=result_targets,
+    environment=env,
+    variables=variables,
+    meta=meta,
 )
 if make_executables:
-    msg(2, "The following files will be made executable inside the transformer\n:\n  {}".format('\n  '.join(make_executables)))
+    msg(
+        2,
+        "The following files will be made executable inside the transformer\n:\n  {}".format(
+            "\n  ".join(make_executables)
+        ),
+    )
 else:
     msg(3, "No files will be made executable inside the transformer")
 
 from seamless import SeamlessTransformationError
+
+msg(3, "Transformation checksum: {}".format(transformation_checksum))
+
 try:
-    result_checksum = run_transformation(transformation_dict, undo=args.undo, fingertip=args.fingertip)
+    result_checksum = run_transformation(
+        transformation_dict, undo=args.undo, fingertip=args.fingertip
+    )
 except SeamlessTransformationError as exc:
     traceback.print_exc(limit=0)
     exit(1)
@@ -497,38 +607,39 @@ if not args.undo:
     msg(1, "Transformation finished")
     msg(2, "Result checksum: {}".format(result_checksum))
 
-def write_result(filename, file_checksum, *, try_write_buffer):
-    if workdir is not None and not os.path.dirname(filename):
-        # File was created in the server workdir: grandfather it in
-        pass
-    else:
-        filename = os.path.join(workdir, filename)
-    file_checksum = Checksum(file_checksum)
-    if file_checksum.value is None:
-        return
+
+def write_result_checksum(filename, file_checksum):
+    filename = os.path.join(workdir, filename)
     try:
         with open(filename + ".CHECKSUM", "w") as f:
-            f.write(file_checksum.hex()+"\n")
+            f.write(file_checksum + "\n")
     except Exception:
         msg(0, f"Cannot write checksum to result file '{filename}.CHECKSUM'")
         return
-    if not try_write_buffer:
+
+def write_result(filename, file_checksum):
+    file_checksum = Checksum(file_checksum)
+    if file_checksum.value is None:
         return
     try:
         file_buffer = buffer_cache.get_buffer(file_checksum.bytes())
         if file_buffer is None:
             raise CacheMissError(file_checksum)
     except CacheMissError:
-        msg(0, f"Cannot obtain contents of result file '{filename}', CacheMissError")
+        with stdout_lock:
+            msg(0, f"Cannot obtain contents of result file '{filename}', CacheMissError")
     try:
         with open(filename, "wb") as f:
             f.write(file_buffer)
     except Exception:
-        msg(0, f"Cannot write to result file '{filename}'")
+        with stdout_lock:
+            msg(0, f"Cannot write to result file '{filename}'")
         return
+
 
 # kludge to hide spurious "buffers undestroyed" warnings
 import logging
+
 logger = logging.getLogger("seamless")
 logger.setLevel(logging.ERROR)
 
@@ -540,42 +651,118 @@ if args.undo:
         msg(1, "Transformation undone")
         exit(0)
 
-else:    
+else:
     try:
         result_buffer = buffer_cache.get_buffer(result_checksum.bytes())
         if result_buffer is None:
             raise CacheMissError(result_checksum)
         cannot_download = False
     except CacheMissError:
-        #traceback.print_exc(limit=1)
-        #exit(1)
+        # traceback.print_exc(limit=1)
+        # exit(1)
         cannot_download = True
 
-    if (not capture_stdout) and len(result_targets) > 1:
+    if result_targets:
         if cannot_download:
-            print("Cannot download result. Cannot write checksum for multiple result targets")
+            print(
+                "Cannot download result. Cannot write checksum for multiple result targets"
+            )
             exit(1)
 
-        result_checksum_dict = deserialize(result_buffer, result_checksum.bytes(), "plain", copy=False)
-        filenames = []
-        for k, v in result_targets.items():
-            filename = v if v is not None else k
-            filenames.append(filename)      
-        for filename in result_checksum_dict:
-            assert filename in filenames, (filename, result_targets)
-        for k, v in result_targets.items():
-            filename = v if v is not None else k
-            try:
-                file_checksum = result_checksum_dict[k]
-            except KeyError:
-                msg(0, "No result for '{filename}' was returned")
-                continue
-            write_result(filename, file_checksum, try_write_buffer=True)
-    elif result_targets and len(result_targets) == 1:
-        k, v = list(result_targets.items())[0]
-        filename = v if v is not None else k
-        write_result(filename, result_checksum, try_write_buffer=(not cannot_download))
-    elif capture_stdout:
+        result_checksum_dict = deserialize(
+            result_buffer, result_checksum.bytes(), "plain", copy=False
+        )
+
+        nparallel = 100
+
+        def get_buffer_length(buffer_name):
+            checksum = result_checksum_dict[buffer_name]
+            buffer_info = database.get_buffer_info(checksum)
+            if buffer_info is None:
+                return None
+            return buffer_info.get("length", None)
+
+        with ThreadPoolExecutor(max_workers=nparallel) as executor:
+            buffer_lengths = {
+                k: v
+                for k, v in zip(
+                    result_checksum_dict.keys(),
+                    executor.map(get_buffer_length, result_checksum_dict.keys()),
+                )
+            }
+        
+        size_load_per_file = 100000
+        processed_results = {}
+        for result_target, download_target in result_targets.items():
+            if download_target is None:
+                download_target = result_target
+            if result_target in result_checksum_dict: # file
+                buffer_length = buffer_lengths[result_target]
+                size_load = size_load_per_file + buffer_length
+                result = result_checksum_dict[result_target]
+                processed_results[result_target] = size_load, buffer_length, result
+            else:
+                curr_files = [f for f in result_checksum_dict if f.startswith(result_target + "/")]
+                if not len(curr_files):
+                    msg(0, f"No result for '{download_target}' was returned")
+                    continue
+                buffer_length = sum([buffer_lengths[f] for f in curr_files])
+                size_load = size_load_per_file * len(curr_files) + buffer_length
+                striplen = len(result_target) + 1
+                result = {f[striplen:]:result_checksum_dict[f] for f in curr_files}
+                processed_results[result_target] = size_load, buffer_length, result
+            
+            if isinstance(result, dict):
+                result_str = json_dumps(result)
+            else:
+                result_str = result
+            write_result_checksum(download_target, result_str)
+
+
+        if not args.no_download:
+            confirm_all = False
+            if args.auto_confirm == "yes":
+                confirm_all = True
+            for result_target in sorted(processed_results, key=lambda k: -processed_results[k][0]):
+                size_load, buffer_length, result = processed_results[result_target]
+                buffer_length_str = bytes2human(buffer_length)
+                download_target = result_targets[result_target]
+                if download_target is None:
+                    download_target = result_target
+                need_confirm = False
+                if buffer_length > max_download_size:
+                    need_confirm = True
+                if isinstance(result, dict):
+                    nfiles = len(result)
+                    result_msg = f"'{download_target}', {nfiles} files, {buffer_length_str}"
+                else:
+                    nfiles = 1
+                    result_msg = f"'{download_target}', {buffer_length_str}"
+                if nfiles > max_download_files:
+                    need_confirm = True
+                if confirm_all:
+                    need_confirm = False
+                if need_confirm:
+                    if args.auto_confirm == "no":
+                        msg(1, f"Skip download of {result_msg}")
+                    confirmation = confirm_yna(f"Confirm download of {result_msg}?")
+                    if confirmation == "no":
+                        msg(1, f"Skip download of {result_msg}")
+                    if confirmation == "all":
+                        confirm_all = True
+                if isinstance(result, dict):                    
+                    os.makedirs(download_target,exist_ok=True)
+                    subdirs = {os.path.dirname(k) for k in result}
+                    for subdir in subdirs:
+                        os.makedirs(os.path.join(download_target, subdir),exist_ok=True)
+                    to_download = {os.path.join(download_target,k): v for k,v in result.items()}
+                    with ThreadPoolExecutor(max_workers=nparallel) as executor:
+                        executor.map(write_result, to_download.keys(), to_download.values()),
+                else:
+                    write_result(download_target, result)
+            
+    else:
+        assert capture_stdout
         if cannot_download:
             print("Cannot download result")
             exit(1)
@@ -586,4 +773,3 @@ else:
             result = result_buffer
 
         print(result)
-

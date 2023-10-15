@@ -6,3 +6,4 @@ manyjobs.sh
     Expected results: 3.141593805644 5.116277454745302e-05 3.141592653589793
 multi-core-transformations.sh
     See the tests/highlevel version
+testfolder.sh    

@@ -1,9 +1,12 @@
 from ..calculate_checksum import calculate_checksum
 from seamless.core.protocol.json import json_dumps
 from ..core.cache.buffer_remote import write_buffer as remote_write_buffer, can_read_buffer as remote_can_read
+from ..core.cache.database_client import database
+from ..core.buffer_info import BufferInfo
 
 def calculate_file_checksum(filename: str) -> str:
     """Calculate a file checksum"""
+    # TODO: streaming?
     with open(filename, "rb") as f:
         buffer = f.read()
     checksum = calculate_checksum(buffer, hex=True)
@@ -11,6 +14,16 @@ def calculate_file_checksum(filename: str) -> str:
 
 def register_buffer(buffer: bytes) -> str:
     checksum = calculate_checksum(buffer)
+    buffer_info = database.get_buffer_info(checksum)
+    write_buffer_info = False
+    if buffer_info is None:
+        buffer_info = BufferInfo(checksum)
+        write_buffer_info = True
+    if buffer_info.length != len(buffer):
+        buffer_info.length = len(buffer)
+        write_buffer_info = True
+    if write_buffer_info:
+        database.set_buffer_info(checksum, buffer_info)
     remote_write_buffer(checksum, buffer)
     return checksum.hex()
 

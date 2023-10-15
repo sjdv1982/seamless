@@ -16,7 +16,7 @@ def files_to_checksums(
     max_upload_files: int | None,
     max_upload_size: int | None,
     nparallel: int = 20,
-    always_yes : bool = False
+    auto_confirm: str | None
 ):
     """Convert a list of filenames to a dict of filename-to-checksum items
     In addition, each file buffer is added to the database.
@@ -120,16 +120,19 @@ def files_to_checksums(
         ask_confirmation = True
     elif max_upload_size is not None and datasize > max_upload_size:
         ask_confirmation = True
-    if always_yes:
+    if auto_confirm == "yes":
         ask_confirmation = False
     if ask_confirmation:
+        if auto_confirm == "no":
+            err = "Cannot confirm upload of {} files, total {}. Exiting.".format(len(upload_filelist), size)
+            raise SeamlessSystemExit(err)
         confirmation = confirm_yn("Confirm upload of {} files, total {}?".format(len(upload_filelist), size), default="no")
         if not confirmation:
             raise SeamlessSystemExit("Exiting.")
     if len(upload_buffer_lengths):
         msg(0, "Upload {} files, total {}".format(len(upload_buffer_lengths), size))
     else:
-        msg(0, "Upload no files")
+        msg(1, "Upload no files")
 
     if upload_filelist:
         with ThreadPoolExecutor(max_workers=nparallel) as executor:

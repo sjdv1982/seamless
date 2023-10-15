@@ -46,3 +46,18 @@ def confirm_yn(message="Proceed", default="yes"):
 
         raise SeamlessSystemExit("Exiting.")
     return True
+
+def confirm_yna(message="Proceed", default="yes"):
+    try:
+        choice = confirm(
+            message=message, choices=("yes", "no", "all"), default=default
+        )
+    except KeyboardInterrupt:  # pragma: no cover
+        from .exceptions import SeamlessSystemExit
+
+        raise SeamlessSystemExit("\nOperation aborted.  Exiting.")
+    if choice == "no":
+        from .exceptions import SeamlessSystemExit
+
+        raise SeamlessSystemExit("Exiting.")
+    return choice
