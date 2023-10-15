@@ -42,9 +42,7 @@ def confirm_yn(message="Proceed", default="yes"):
 
         raise SeamlessSystemExit("\nOperation aborted.  Exiting.")
     if choice == "no":
-        from .exceptions import SeamlessSystemExit
-
-        raise SeamlessSystemExit("Exiting.")
+        return False
     return True
 
 def confirm_yna(message="Proceed", default="yes"):
@@ -56,8 +54,5 @@ def confirm_yna(message="Proceed", default="yes"):
         from .exceptions import SeamlessSystemExit
 
         raise SeamlessSystemExit("\nOperation aborted.  Exiting.")
-    if choice == "no":
-        from .exceptions import SeamlessSystemExit
 
-        raise SeamlessSystemExit("Exiting.")
     return choice

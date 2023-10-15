@@ -617,7 +617,7 @@ def write_result_checksum(filename, file_checksum):
         msg(0, f"Cannot write checksum to result file '{filename}.CHECKSUM'")
         return
 
-def write_result(filename, file_checksum):
+def download_result(filename, file_checksum):
     file_checksum = Checksum(file_checksum)
     if file_checksum.value is None:
         return
@@ -745,9 +745,11 @@ else:
                 if need_confirm:
                     if args.auto_confirm == "no":
                         msg(1, f"Skip download of {result_msg}")
+                        continue
                     confirmation = confirm_yna(f"Confirm download of {result_msg}?")
                     if confirmation == "no":
-                        msg(1, f"Skip download of {result_msg}")
+                        msg(1, f"Skip download of {download_target}")
+                        continue
                     if confirmation == "all":
                         confirm_all = True
                 if isinstance(result, dict):                    
@@ -757,7 +759,7 @@ else:
                         os.makedirs(os.path.join(download_target, subdir),exist_ok=True)
                     to_download = {os.path.join(download_target,k): v for k,v in result.items()}
                     with ThreadPoolExecutor(max_workers=nparallel) as executor:
-                        executor.map(write_result, to_download.keys(), to_download.values()),
+                        executor.map(download_result, to_download.keys(), to_download.values()),
                 else:
                     write_result(download_target, result)
             
