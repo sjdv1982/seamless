@@ -50,7 +50,9 @@ afterwards.
 
 - Make sure that buffer_cache eviction works correctly in the light of buffer_remote known buffers, is_readable, etc. TODO.
 
-- Make a test that shows the memory savings of delegation, e.g. deep cell with many 50MB members, (disable lru cache? like --no-lru in serve-graph?)
+- Make a test that shows the memory savings of delegation, e.g. deep cell with many 50MB members, (disable lru cache? like --no-lru in serve-graph?) TODO
+
+- Expand the assistant protocol to include canceling. Add bin/seamless --cancel flag to cancel a running transformer (like --undo). 
 
 Stage 2: distribution
 

@@ -593,7 +593,7 @@ else:
 
 from seamless import SeamlessTransformationError
 
-msg(3, "Transformation checksum: {}".format(transformation_checksum))
+msg(0, "Transformation checksum: {}".format(transformation_checksum))
 
 try:
     result_checksum = run_transformation(
@@ -758,10 +758,10 @@ else:
                     for subdir in subdirs:
                         os.makedirs(os.path.join(download_target, subdir),exist_ok=True)
                     to_download = {os.path.join(download_target,k): v for k,v in result.items()}
-                    with ThreadPoolExecutor(max_workers=nparallel) as executor:
+                    with ThreadPoolExecutor(max_workers=20) as executor:
                         executor.map(download_result, to_download.keys(), to_download.values()),
                 else:
-                    write_result(download_target, result)
+                    download_result(download_target, result)
             
     else:
         assert capture_stdout
