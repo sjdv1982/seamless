@@ -31,7 +31,7 @@ def files_to_checksums(
 
     all_filelist = [f for f in filelist if f not in directories]
     directory_files = {}
-    for dirname, mapped_dirname in directories.items():
+    for dirname in directories:
         directory_files[dirname] = []
         for dirpath, _, filenames in os.walk(dirname):
             assert dirpath.startswith(dirname), (dirpath, dirname)
@@ -80,12 +80,14 @@ def files_to_checksums(
         deepfolder = {d[1]:all_result[d[0]] for d in directory_files[dirname]}
         deepfolder_buffers[dirname] = serialize(deepfolder, "plain")
 
+    directory_indices = {}
     upload_buffers = {}
     if directories:
         with ThreadPoolExecutor(max_workers=nparallel) as executor:
             for dirname, curr_result in zip(deepfolder_buffers.keys(), executor.map(check_buffer, deepfolder_buffers.values())):
                 has_buffer, checksum = curr_result
                 buffer = deepfolder_buffers[dirname]
+                directory_indices[dirname] = buffer, checksum
                 buffer_length = len(buffer)
                 all_result[dirname] = checksum
                 if not has_buffer:
@@ -124,9 +126,9 @@ def files_to_checksums(
         ask_confirmation = False
     if ask_confirmation:
         if auto_confirm == "no":
-            err = "Cannot confirm upload of {} files, total {}. Exiting.".format(len(upload_filelist), size)
+            err = "Cannot confirm upload of {} files, total {}. Exiting.".format(len(upload_buffer_lengths), size)
             raise SeamlessSystemExit(err)
-        confirmation = confirm_yn("Confirm upload of {} files, total {}?".format(len(upload_filelist), size), default="no")
+        confirmation = confirm_yn("Confirm upload of {} files, total {}?".format(len(upload_buffer_lengths), size), default="no")
         if not confirmation:
             raise SeamlessSystemExit("Exiting.")
     if len(upload_buffer_lengths):
@@ -145,4 +147,4 @@ def files_to_checksums(
 
     result = {filename: all_result[filename] for filename in filelist}
 
-    return result
+    return result, directory_indices

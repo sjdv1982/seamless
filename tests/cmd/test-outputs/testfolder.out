@@ -1,15 +1,15 @@
+052764c3aaa2fd3c49b3d87e7eaa657f  testfolder/test2.dat
 3f867913288aa9ca64bee82fa754229a  testfolder/test.txt
 4b368c4b34bc9067e2c81dc6a09a7042  testfolder/test.dat
 b73936aa05f29a2b15586debce4ae796  testfolder/sub/test2.txt
-d8d6aa6543ad66e6252306184b40c7a3  testfolder/sub/test3.npy
-052764c3aaa2fd3c49b3d87e7eaa657f  testfolder/test2.dat
-c387529f18f0943fc0629f36c0d8a1ab  testfolder/test.json
 c2fdc52401bd4540c469645448a0c89a  testfolder/test.npy
+c387529f18f0943fc0629f36c0d8a1ab  testfolder/test.json
+d8d6aa6543ad66e6252306184b40c7a3  testfolder/sub/test3.npy
 RESULT
 STDOUT
 testfolder
 test-list.txt
-5f2d08caf46aaf3316edf1cefdcecd41e04dfadb8b63f79cdaedb7c25315807f
+70d73f5dd407df51f8bde2b4fa9d0e2923132a07f2b37c56a2ae133d08d357d1
 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 {
   "sub/test2.txt": "4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4",
