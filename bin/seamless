@@ -35,6 +35,7 @@ from seamless.cmd.confirm import confirm_yna
 from seamless.highlevel import Checksum
 from seamless.core.cache.database_client import database
 from seamless.core.protocol.json import json_dumps
+from seamless import calculate_checksum
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -591,9 +592,26 @@ if make_executables:
 else:
     msg(3, "No files will be made executable inside the transformer")
 
-from seamless import SeamlessTransformationError
+################################################################
 
-msg(0, "Transformation checksum: {}".format(transformation_checksum))
+transformation_checksum = Checksum(transformation_checksum).hex()
+
+def write_future(filename, result_target):
+    filename = os.path.join(workdir, filename)
+    try:
+        with open(filename + ".FUTURE", "w") as f:
+            f.write(f"{transformation_checksum}.{result_target}\n")
+    except Exception:
+        msg(0, f"Cannot write future file '{filename}.FUTURE'")
+        return
+
+if result_targets:
+    for result_target, download_target in result_targets.items():
+        if download_target is None:
+            download_target = result_target
+        write_future(download_target, result_target)
+        
+from seamless import SeamlessTransformationError
 
 try:
     result_checksum = run_transformation(
@@ -608,11 +626,26 @@ if not args.undo:
     msg(2, "Result checksum: {}".format(result_checksum))
 
 
+def write_result_index(dirname, index):
+    dirname = os.path.join(workdir, dirname)
+    try:
+        index_buffer = json_dumps(index, as_bytes=True) + b"\n"
+        with open(dirname + ".INDEX", "wb") as f:            
+            f.write(index_buffer)        
+    except Exception:
+        msg(0, f"Cannot write directory result index to file '{dirname}.INDEX'")
+        return
+    index_checksum = calculate_checksum(index_buffer)
+    return index_checksum
+
 def write_result_checksum(filename, file_checksum):
+    file_checksum = Checksum(file_checksum)
+    if file_checksum.value is None:
+        return
     filename = os.path.join(workdir, filename)
     try:
         with open(filename + ".CHECKSUM", "w") as f:
-            f.write(file_checksum + "\n")
+            f.write(file_checksum.hex() + "\n")
     except Exception:
         msg(0, f"Cannot write checksum to result file '{filename}.CHECKSUM'")
         return
@@ -713,10 +746,11 @@ else:
                 processed_results[result_target] = size_load, buffer_length, result
             
             if isinstance(result, dict):
-                result_str = json_dumps(result)
+                index_checksum = write_result_index(download_target, result)
+                if index_checksum is not None:
+                    write_result_checksum(download_target, index_checksum)
             else:
-                result_str = result
-            write_result_checksum(download_target, result_str)
+                write_result_checksum(download_target, result)
 
 
         if not args.no_download:
