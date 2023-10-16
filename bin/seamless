@@ -4,9 +4,11 @@ __version__ = "0.12"
 
 import argparse
 from copy import copy
+import pathlib
 import sys
 import os
 import json
+import time
 import traceback
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -154,7 +156,7 @@ parser.add_argument(
     "--no-download",
     dest="no_download",
     help="Do not download any result files or directories, only their checksums",
-    action="store_true"
+    action="store_true",
 )
 
 parser.add_argument(
@@ -424,7 +426,7 @@ if redirection_node is not None:
     redirection = redirection_node.word
     redirection = os.path.expanduser(redirection)
     if workdir is not None and redirection.startswith(workdir):
-        redirection = redirection[len(workdir):]
+        redirection = redirection[len(workdir) :]
     if redirection != redirection_node.word:
         word_substitutions[redirection_node] = redirection
 
@@ -596,6 +598,7 @@ else:
 
 transformation_checksum = Checksum(transformation_checksum).hex()
 
+
 def write_future(filename, result_target):
     filename = os.path.join(workdir, filename)
     try:
@@ -605,12 +608,56 @@ def write_future(filename, result_target):
         msg(0, f"Cannot write future file '{filename}.FUTURE'")
         return
 
-if result_targets:
+
+def touch_future(filename):
+    filename = os.path.join(workdir, filename)
+    try:
+        pathlib.Path(filename + ".FUTURE").touch()
+    except Exception:
+        msg(0, f"Cannot touch future file '{filename}.FUTURE'")
+        return
+
+
+def remove_future(filename, result_target):
+    filename = os.path.join(workdir, filename)
+    try:
+        os.unlink(filename + ".FUTURE")
+    except Exception:
+        msg(0, f"Cannot remove future file '{filename}.FUTURE'")
+        return
+
+
+delete_futures = threading.Event()
+
+
+def maintain_futures():
     for result_target, download_target in result_targets.items():
         if download_target is None:
             download_target = result_target
         write_future(download_target, result_target)
-        
+
+    count = 0
+    while not delete_futures.is_set():
+        time.sleep(1)
+        count += 1
+        if count == 30:
+            count = 0
+            for result_target, download_target in result_targets.items():
+                if download_target is None:
+                    download_target = result_target
+                touch_future(download_target)
+
+    for result_target, download_target in result_targets.items():
+        if download_target is None:
+            download_target = result_target
+        remove_future(download_target, result_target)
+
+
+if result_targets:
+    maintain_futures_thread = threading.Thread(
+        target=maintain_futures, name=maintain_futures
+    )
+    maintain_futures_thread.start()
 from seamless import SeamlessTransformationError
 
 try:
@@ -620,6 +667,9 @@ try:
 except SeamlessTransformationError as exc:
     traceback.print_exc(limit=0)
     exit(1)
+finally:
+    delete_futures.set()
+################################################################
 
 if not args.undo:
     msg(1, "Transformation finished")
@@ -630,13 +680,14 @@ def write_result_index(dirname, index):
     dirname = os.path.join(workdir, dirname)
     try:
         index_buffer = json_dumps(index, as_bytes=True) + b"\n"
-        with open(dirname + ".INDEX", "wb") as f:            
-            f.write(index_buffer)        
+        with open(dirname + ".INDEX", "wb") as f:
+            f.write(index_buffer)
     except Exception:
         msg(0, f"Cannot write directory result index to file '{dirname}.INDEX'")
         return
     index_checksum = calculate_checksum(index_buffer)
     return index_checksum
+
 
 def write_result_checksum(filename, file_checksum):
     file_checksum = Checksum(file_checksum)
@@ -650,6 +701,7 @@ def write_result_checksum(filename, file_checksum):
         msg(0, f"Cannot write checksum to result file '{filename}.CHECKSUM'")
         return
 
+
 def download_result(filename, file_checksum):
     file_checksum = Checksum(file_checksum)
     if file_checksum.value is None:
@@ -660,7 +712,9 @@ def download_result(filename, file_checksum):
             raise CacheMissError(file_checksum)
     except CacheMissError:
         with stdout_lock:
-            msg(0, f"Cannot obtain contents of result file '{filename}', CacheMissError")
+            msg(
+                0, f"Cannot obtain contents of result file '{filename}', CacheMissError"
+            )
     try:
         with open(filename, "wb") as f:
             f.write(file_buffer)
@@ -723,28 +777,30 @@ else:
                     executor.map(get_buffer_length, result_checksum_dict.keys()),
                 )
             }
-        
+
         size_load_per_file = 100000
         processed_results = {}
         for result_target, download_target in result_targets.items():
             if download_target is None:
                 download_target = result_target
-            if result_target in result_checksum_dict: # file
+            if result_target in result_checksum_dict:  # file
                 buffer_length = buffer_lengths[result_target]
                 size_load = size_load_per_file + buffer_length
                 result = result_checksum_dict[result_target]
                 processed_results[result_target] = size_load, buffer_length, result
             else:
-                curr_files = [f for f in result_checksum_dict if f.startswith(result_target + "/")]
+                curr_files = [
+                    f for f in result_checksum_dict if f.startswith(result_target + "/")
+                ]
                 if not len(curr_files):
                     msg(0, f"No result for '{download_target}' was returned")
                     continue
                 buffer_length = sum([buffer_lengths[f] for f in curr_files])
                 size_load = size_load_per_file * len(curr_files) + buffer_length
                 striplen = len(result_target) + 1
-                result = {f[striplen:]:result_checksum_dict[f] for f in curr_files}
+                result = {f[striplen:]: result_checksum_dict[f] for f in curr_files}
                 processed_results[result_target] = size_load, buffer_length, result
-            
+
             if isinstance(result, dict):
                 index_checksum = write_result_index(download_target, result)
                 if index_checksum is not None:
@@ -752,12 +808,13 @@ else:
             else:
                 write_result_checksum(download_target, result)
 
-
         if not args.no_download:
             confirm_all = False
             if args.auto_confirm == "yes":
                 confirm_all = True
-            for result_target in sorted(processed_results, key=lambda k: -processed_results[k][0]):
+            for result_target in sorted(
+                processed_results, key=lambda k: -processed_results[k][0]
+            ):
                 size_load, buffer_length, result = processed_results[result_target]
                 buffer_length_str = bytes2human(buffer_length)
                 download_target = result_targets[result_target]
@@ -768,7 +825,9 @@ else:
                     need_confirm = True
                 if isinstance(result, dict):
                     nfiles = len(result)
-                    result_msg = f"'{download_target}', {nfiles} files, {buffer_length_str}"
+                    result_msg = (
+                        f"'{download_target}', {nfiles} files, {buffer_length_str}"
+                    )
                 else:
                     nfiles = 1
                     result_msg = f"'{download_target}', {buffer_length_str}"
@@ -786,17 +845,23 @@ else:
                         continue
                     if confirmation == "all":
                         confirm_all = True
-                if isinstance(result, dict):                    
-                    os.makedirs(download_target,exist_ok=True)
+                if isinstance(result, dict):
+                    os.makedirs(download_target, exist_ok=True)
                     subdirs = {os.path.dirname(k) for k in result}
                     for subdir in subdirs:
-                        os.makedirs(os.path.join(download_target, subdir),exist_ok=True)
-                    to_download = {os.path.join(download_target,k): v for k,v in result.items()}
+                        os.makedirs(
+                            os.path.join(download_target, subdir), exist_ok=True
+                        )
+                    to_download = {
+                        os.path.join(download_target, k): v for k, v in result.items()
+                    }
                     with ThreadPoolExecutor(max_workers=20) as executor:
-                        executor.map(download_result, to_download.keys(), to_download.values()),
+                        executor.map(
+                            download_result, to_download.keys(), to_download.values()
+                        ),
                 else:
                     download_result(download_target, result)
-            
+
     else:
         assert capture_stdout
         if cannot_download:
