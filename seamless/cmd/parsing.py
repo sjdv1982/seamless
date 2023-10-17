@@ -6,7 +6,7 @@ import bashlex
 from collections import namedtuple
 
 from .message import message as msg, message_and_exit as err
-
+from .file_load import read_checksum_file
 
 def guess_arguments_with_custom_error_messages(
     args: list[str],
@@ -59,7 +59,12 @@ def guess_arguments_with_custom_error_messages(
     """
 
     result = {"@order": args}
-    for argindex0, arg in enumerate(args):
+    for argindex0, arg in enumerate(args.copy()):
+        if arg.endswith(".CHECKSUM") or arg.endswith(".INDEX"):
+            arg2 = os.path.splitext(arg)[0]
+            msg(3, "Argument #{} '{}' => '{}'".format(argindex, arg, arg2))
+            arg = arg2
+            args[argindex0] = arg
         arg2 = arg
         argindex = argindex0 + 1
         path = Path(arg)
@@ -68,11 +73,29 @@ def guess_arguments_with_custom_error_messages(
             msg(0, f"Waiting for future '{future_path}'...")
             while 1:
                 age = time.time() - future_path.stat().st_atime
-                if age > 60:
+                if age > 120:
                     err("Stale future {future_path}")
                 time.sleep(0.5)
                 if not future_path.exists():
                     break
+
+        checksum_path = Path(arg + ".CHECKSUM")
+        index_path = Path(arg + ".INDEX")
+        if checksum_path.exists():
+            item = {}
+            if index_path.exists():
+                item["type"] = "directory"
+                msg(3, "Argument #{} '{}', .CHECKSUM and .INDEX file exist, read directory checksum".format(argindex, arg))
+            else:
+                item["type"] = "file"
+                msg(3, "Argument #{} '{}', .CHECKSUM file exists, read file checksum".format(argindex, arg))
+            checksum = read_checksum_file(checksum_path.as_posix())
+            if checksum is None:
+                err("Argument #{} '{}', .CHECKSUM file exists, but does not contain a valid checksum".format(argindex, arg))
+            item["checksum"] = checksum
+            result[arg] = item
+            continue
+
         extension = path.suffix
         msg(3, "Argument #{} '{}', extension: '{}'".format(argindex, arg, extension))
         exists = path.exists() or path.expanduser().exists()
@@ -80,7 +103,7 @@ def guess_arguments_with_custom_error_messages(
         if exists:
             is_dir = path.is_dir() or path.expanduser().is_dir()
         is_float = False
-        if extension:             
+        if extension:
             try:
                 float(arg)
                 is_float = True
@@ -153,6 +176,11 @@ def guess_arguments(
     2. Any argument (beyond the first) without extension must not exist as a file
        (directories are fine)
     3. Any argument ending with a slash must be a directory
+
+    Special case: if argument.CHECKSUM exists, the checksum is read directly 
+    from argument.CHECKSUM. In that case, if argument.INDEX exists as well, 
+    (regardless of its contents). the argument is considered as a directory, 
+    else as a file.
 
     Input:
     - args: list of arguments

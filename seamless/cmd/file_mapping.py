@@ -67,12 +67,14 @@ def get_file_mapping(
         argdescr = get_argdescr(argname)
 
         fixed_mapping = False
+        checksum = None
         if isinstance(argtype, dict):
             if argtype.get("type") not in ("file", "directory"):
                 raise TypeError((argname, argtype))            
             if argtype.get("mapping"):
                 path = argtype["mapping"]
                 fixed_mapping = argtype.get("fixed_mapping")
+            checksum = argtype.get("checksum")
             argtype = argtype["type"]
 
         if argtype == "value":
@@ -144,11 +146,14 @@ or:
 {result[new_path]} and {new_entry}"""
                 raise ValueError(errmsg)
         
+            if checksum is not None:
+                new_entry["checksum"] = checksum
+
             if fixed_mapping:
                 result[argname] = new_entry
             else:
                 order_map[argname] = new_path            
-                result[new_path] = new_entry 
+                result[new_path] = new_entry
 
         else:
             raise TypeError((path, argtype))

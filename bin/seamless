@@ -499,22 +499,34 @@ max_download_size = human2bytes(max_download_size)
 paths = set()
 directories = {}
 mapping = {}
+direct_checksums = {}
+direct_checksum_directories = {}
 for argname, arg in argtypes.items():
+    direct_checksum = None
     if isinstance(arg, dict):
         argtype = arg.get("type")
         path = arg.get("mapping", argname)
+        direct_checksum = arg.get("checksum")
     else:
         argtype = arg
         path = argname
     if argtype in ("file", "directory"):
-        paths.add(path)
-        if argtype == "directory":
-            directories[path] = argname
-        mapping[argname] = path
+        if direct_checksum:
+            if argtype == "directory":
+                direct_checksum_directories[path] = (direct_checksum, argname)
+            else:
+                direct_checksums[path] = direct_checksum
+                mapping[argname] = path
+        else:
+            paths.add(path)
+            if argtype == "directory":
+                directories[path] = argname
+            mapping[argname] = path
 
 try:
-    file_checksum_dict, _ = files_to_checksums(
+    file_checksum_dict, direct_dir_checksum_dict, _ = files_to_checksums(
         paths,
+        direct_checksum_directories=direct_checksum_directories,
         max_upload_size=max_upload_size,
         max_upload_files=max_upload_files,
         directories=directories,
@@ -523,12 +535,18 @@ try:
 except SeamlessSystemExit as exc:
     err(*exc.args)
 
+file_checksum_dict.update(direct_checksums)
+
 checksum_dict = {}
 checksum_dict = {k: file_checksum_dict[v] for k, v in mapping.items()}
+checksum_dict.update(direct_dir_checksum_dict)
 checksum_dictstr = json.dumps(checksum_dict, sort_keys=True, indent=2)
 msg(2, "file/directory checksum dict:\n" + checksum_dictstr)
-if len(directories):
-    msg(2, "directories:", directories)
+directories2 = list(directories.keys())
+if direct_checksum_directories:
+    directories2 += list(direct_checksum_directories)
+if len(directories2):
+    msg(2, "directories:", directories2)
 
 ################################################################
 

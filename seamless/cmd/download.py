@@ -1,3 +1,4 @@
+import json
 import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -44,6 +45,19 @@ def download_file(filename, file_checksum):
             msg(0, f"Cannot write to file '{filename}'")
         return
 
+def download_index(index_checksum, dirname):
+    index_buffer = buffer_cache.get_buffer(bytes.fromhex(index_checksum))
+    if index_buffer is None:
+        err(
+            f"Cannot download directory '{dirname}' index '{index_checksum}', CacheMissError"
+        )
+    try:
+        index_data = json.loads(index_buffer.decode())
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        err(
+            f"Cannot load directory '{dirname}' index from '{index_checksum}': invalid index"
+        )
+    return index_data, index_buffer
 
 def download(
     files,

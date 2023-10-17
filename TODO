@@ -18,13 +18,18 @@ Stage 0: /bin/seamless
 
 See also [seamless/bin/README], which will be documentation also.
 
-- When bin/seamless operates on a file "file.ext", be able to load its checksum from "file.ext.CHECKSUM" (if both exist, verify checksum).
+- When bin/seamless operates on a file "file.ext", be able to load its checksum from "file.ext.CHECKSUM" (if both exist, use checksum). DONE
 
-- Create "file.ext.FUTURE" so that "file.ext" (or file.ext.CHECKSUM, or file.ext.FUTURE) can be referred to in a follow-up job.
+- Create "file.ext.FUTURE" so that "file.ext" (or file.ext.CHECKSUM, or file.ext.FUTURE) can be referred to in a follow-up job. DONE
 
-- Download of job/transformer results can be enforced or prevented. Otherwise, a heuristic based on result size (and possibly, connection speed). Manual command "seamless-download file.ext" that inspects file.ext.CHECKSUM and downloads it.
+- Download of job/transformer results can be enforced or prevented. Otherwise, a heuristic based on result size (and possibly, connection speed). Manual command "seamless-download file.ext" that inspects file.ext.CHECKSUM and downloads it. DONE
 
-- Tool "seamless-upload" for files (a). Optional "move" flag that replaces "file"
+- Tool "seamless-upload" for files and directories. Optional "move" flag that replaces "file". DONE
+
+- Make sure that bash jobs with a buffer read folder have get_filename/get_directory working directory. Rip filezones. TODO.
+
+- Clean up seamless-tools database tools and revise database-run-actions.
+Make sure it is usable from both bin/seamless and workflow seamless.
 
 - Document (can be after)
 
@@ -44,8 +49,6 @@ afterwards.
 
 - Micro-assistant.py can't deal with re-entrant delegation, mini-dask assistant should. TODO: See https://github.com/sjdv1982/seamless/issues/217
 
-- Make sure that bash jobs with a buffer read folder have get_filename/get_directory working directory. Rip filezones. TODO.
-
 - Run tests/examples requiring serve-graph, add seamless.config.delegate if needed. TODO.
 
 - Make sure that buffer_cache eviction works correctly in the light of buffer_remote known buffers, is_readable, etc. TODO.
@@ -56,10 +59,13 @@ afterwards.
 
 Stage 2: distribution
 
+- Make a separate conda package for bin/seamless. 
+Add seamless-upload, seamless-upload-zip, seamless-upload-vault and seamless-download as copies of seamless-tools/scripts/upload.py etc.,
+rather than the Docker wrappers of seamless-cli/seamless-upload etc.
+
 - Clean up and re-run all tests.
 
 - Re-review new-project, add delegation? UPDATE: read it from a project.yaml...
-- Clean up seamless-tools database tools and revise database-run-actions
 
 - For seamless-cli, when distributing, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile.
 
