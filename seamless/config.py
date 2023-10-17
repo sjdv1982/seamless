@@ -12,6 +12,9 @@ _assistant = None
 def get_assistant():
     return _assistant
 
+class AssistantConnectionError(ConnectionError):
+    pass
+
 def _contact_assistant():
     global _assistant, _delegate_level
     env = os.environ
@@ -29,7 +32,10 @@ def _contact_assistant():
     if not (host.startswith("http://") or host.startswith("https://")):
         host = "http://" + host
     assistant = host + ":" + str(port)
-    response = requests.get(assistant + "/config")
+    try:
+        response = requests.get(assistant + "/config", timeout=3)
+    except requests.exceptions.ConnectionError:
+        raise AssistantConnectionError("Cannot contact assistant") from None
     assert response.status_code == 200
     
     _assistant = assistant

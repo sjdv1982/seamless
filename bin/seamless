@@ -21,7 +21,7 @@ import seamless
 from seamless.core.cache.buffer_cache import buffer_cache
 from seamless.core.protocol.deserialize import deserialize_sync as deserialize
 from seamless import CacheMissError
-from seamless.cmd.message import set_verbosity, message as msg
+from seamless.cmd.message import set_verbosity, message as msg, message_and_exit as err
 from seamless.cmd import parsing
 from seamless.cmd.parsing import get_commands, guess_arguments
 from seamless.cmd.file_mapping import get_file_mapping
@@ -34,6 +34,7 @@ from seamless.cmd import interface
 from seamless.cmd.exceptions import SeamlessSystemExit
 from seamless.cmd.bytes2human import bytes2human, human2bytes
 from seamless.cmd.confirm import confirm_yna
+from seamless.cmd.download import download
 from seamless.highlevel import Checksum
 from seamless.core.cache.database_client import database
 from seamless.core.protocol.json import json_dumps
@@ -193,7 +194,7 @@ msg(3, "Command:", json.dumps(command, indent=4))
 
 if len(command) == 0:
     parser.print_usage()  # TODO: add to usage message
-    sys.exit(0)
+    sys.exit(1)
 
 ################################################################
 
@@ -212,8 +213,7 @@ if args.ncores:
 
 if args.unquote:
     if len(command) != 1:
-        msg(-1, "Unquote requires a single argument")
-        sys.exit(1)
+        err(-1, "Unquote requires a single argument")
     commandstring = command[0]
 else:
     commandstring = " ".join(command)
@@ -265,8 +265,7 @@ if interface_py_file is None:
             overrule_no_ext=overrule_no_ext,
         )
     except ValueError as exc:
-        msg(-1, *exc.args)
-        sys.exit(1)
+        err(*exc.args)
     if argtypes_initial is None:
         argtypes_initial = argtypes_guess
     else:
@@ -292,8 +291,7 @@ try:
         argtypes_initial, mapping_mode=file_mapping_mode, working_directory=workdir
     )
 except ValueError as exc:
-    msg(-1, *exc.args)
-    sys.exit(1)
+    err(*exc.args)
 
 argtypesstr = json.dumps(argtypes, sort_keys=False, indent=2)
 msg(1, "argtypes dict:\n" + argtypesstr)
@@ -459,8 +457,7 @@ if args.extra_results:
 
 if not results and not redirection:
     if args.no_download:
-        print("Download disabled. Refuse to print output to screen.", file=sys.stderr)
-        exit(1)
+        err("Download disabled. Refuse to print output to screen.")
     capture_stdout = True
     result_targets = None
 else:
@@ -524,8 +521,7 @@ try:
         auto_confirm=args.auto_confirm,
     )
 except SeamlessSystemExit as exc:
-    print("\nERROR:", *exc.args, file=sys.stderr)
-    exit(1)
+    err(*exc.args)
 
 checksum_dict = {}
 checksum_dict = {k: file_checksum_dict[v] for k, v in mapping.items()}
@@ -666,7 +662,7 @@ try:
     )
 except SeamlessTransformationError as exc:
     traceback.print_exc(limit=0)
-    exit(1)
+    sys.exit(1)
 finally:
     delete_futures.set()
 ################################################################
@@ -751,35 +747,47 @@ else:
 
     if result_targets:
         if cannot_download:
-            print(
+            err(
                 "Cannot download result. Cannot write checksum for multiple result targets"
             )
-            exit(1)
 
         result_checksum_dict = deserialize(
             result_buffer, result_checksum.bytes(), "plain", copy=False
         )
 
-        nparallel = 100
+        files_to_download = []
+        directories_to_download = []
+        download_checksum_dict = {}
 
-        def get_buffer_length(buffer_name):
-            checksum = result_checksum_dict[buffer_name]
-            buffer_info = database.get_buffer_info(checksum)
-            if buffer_info is None:
-                return None
-            return buffer_info.get("length", None)
+        for result_target, download_target in result_targets.items():
+            if download_target is None:
+                download_target = result_target
+            if result_target in result_checksum_dict:  # file
+                result = result_checksum_dict[result_target]
+                download_checksum_dict[download_target] = result
+                write_result_checksum(download_target, result)                
+                files_to_download.append(download_target)
+            else:
+                curr_files = [
+                    f for f in result_checksum_dict if f.startswith(result_target + "/")
+                ]
+                if not len(curr_files):
+                    msg(0, f"No result for '{download_target}' was returned")
+                    continue
+                striplen = len(result_target) + 1
+                result = {f[striplen:]: result_checksum_dict[f] for f in curr_files}
 
-        with ThreadPoolExecutor(max_workers=nparallel) as executor:
-            buffer_lengths = {
-                k: v
-                for k, v in zip(
-                    result_checksum_dict.keys(),
-                    executor.map(get_buffer_length, result_checksum_dict.keys()),
-                )
-            }
+                index_checksum = write_result_index(download_target, result)
+                if index_checksum is not None:
+                    write_result_checksum(download_target, index_checksum)
 
-        size_load_per_file = 100000
-        processed_results = {}
+                for f in result:
+                    ff = download_target + "/" + f
+                    download_checksum_dict[ff] = result[f]
+                directories_to_download.append(download_target)
+
+                
+        """
         for result_target, download_target in result_targets.items():
             if download_target is None:
                 download_target = result_target
@@ -807,6 +815,37 @@ else:
                     write_result_checksum(download_target, index_checksum)
             else:
                 write_result_checksum(download_target, result)
+        """
+        download(
+            files_to_download,
+            directories_to_download,
+            checksum_dict=download_checksum_dict,
+            max_download_size=max_download_size,
+            max_download_files=max_download_files,
+            auto_confirm=args.auto_confirm,
+        )
+
+        """
+        nparallel = 100
+
+        def get_buffer_length(buffer_name):
+            checksum = result_checksum_dict[buffer_name]
+            buffer_info = database.get_buffer_info(checksum)
+            if buffer_info is None:
+                return None
+            return buffer_info.get("length", None)
+
+        with ThreadPoolExecutor(max_workers=nparallel) as executor:
+            buffer_lengths = {
+                k: v
+                for k, v in zip(
+                    result_checksum_dict.keys(),
+                    executor.map(get_buffer_length, result_checksum_dict.keys()),
+                )
+            }
+
+        size_load_per_file = 100000
+        processed_results = {}
 
         if not args.no_download:
             confirm_all = False
@@ -839,7 +878,10 @@ else:
                     if args.auto_confirm == "no":
                         msg(1, f"Skip download of {result_msg}")
                         continue
-                    confirmation = confirm_yna(f"Confirm download of {result_msg}?")
+                    try:
+                        confirmation = confirm_yna(f"Confirm download of {result_msg}?")
+                    except SeamlessSystemExit as exc:
+                        err(*exc.args)
                     if confirmation == "no":
                         msg(1, f"Skip download of {download_target}")
                         continue
@@ -861,12 +903,11 @@ else:
                         ),
                 else:
                     download_result(download_target, result)
-
+        """
     else:
         assert capture_stdout
         if cannot_download:
-            print("Cannot download result")
-            exit(1)
+            err("Cannot download result")
 
         try:
             result = result_buffer.decode()

@@ -1,0 +1,3 @@
+#!/bin/bash
+
+$SEAMLESS_TOOLS_DIR/scripts/upload.py $*

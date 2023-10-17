@@ -7,7 +7,28 @@ from .bytes2human import bytes2human
 from .confirm import confirm_yn
 from .exceptions import SeamlessSystemExit
 from ..core.protocol.serialize import serialize_sync as serialize
-from ..calculate_checksum import calculate_checksum
+from ..highlevel import Checksum
+
+def strip_textdata(data):
+    while 1:
+        old_len = len(data)
+        data = data.strip("\n")
+        data = data.strip()
+        if len(data) == old_len:
+            break
+    lines = [l for l in data.splitlines() if not l.lstrip().startswith("#")]
+    return "\n".join(lines)
+
+
+def read_checksum_file(filename):
+    with open(filename) as f:
+        checksum = f.read()
+    checksum = strip_textdata(checksum)
+    try:
+        checksum = Checksum(checksum)
+        return checksum.hex()
+    except Exception:
+        return None
 
 def files_to_checksums(
     filelist: list[str],

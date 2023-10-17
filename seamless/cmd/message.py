@@ -28,3 +28,7 @@ def message(verbosity: int, *args) -> None:
             print(HEADER, "*" * 60, file=sys.stderr)
         else:
             print(HEADER, *args, file=sys.stderr)
+
+def message_and_exit(*args):
+    print("\nERROR:", *args, file=sys.stderr)
+    sys.exit(1)

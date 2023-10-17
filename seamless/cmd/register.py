@@ -12,8 +12,7 @@ def calculate_file_checksum(filename: str) -> str:
     checksum = calculate_checksum(buffer, hex=True)
     return checksum
 
-def register_buffer(buffer: bytes) -> str:
-    checksum = calculate_checksum(buffer)
+def register_buffer_length(buffer: bytes, checksum: bytes) -> str:
     buffer_info = database.get_buffer_info(checksum)
     write_buffer_info = False
     if buffer_info is None:
@@ -24,6 +23,10 @@ def register_buffer(buffer: bytes) -> str:
         write_buffer_info = True
     if write_buffer_info:
         database.set_buffer_info(checksum, buffer_info)
+
+def register_buffer(buffer: bytes) -> str:
+    checksum = calculate_checksum(buffer)
+    register_buffer_length(buffer, checksum)
     remote_write_buffer(checksum, buffer)
     return checksum.hex()
 
@@ -46,8 +49,11 @@ def register_file(filename: str) -> str:
     return register_buffer(buffer)
 
 def check_buffer(buffer: bytes) -> tuple[bool, str]:
-    """Check if a buffer needs to be written remotely
+    """Check if a buffer is present remotely
+    If so, make sure its length is in the database
     Return the result and the checksum"""
     checksum = calculate_checksum(buffer)
     result = remote_can_read(checksum)
+    if result:
+        register_buffer_length(buffer, checksum)
     return result, checksum.hex()
