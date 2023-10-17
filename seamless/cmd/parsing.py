@@ -24,6 +24,7 @@ def guess_arguments_with_custom_error_messages(
     But there are three rules that must be respected, else an exception is raised.
 
     1. Any argument with extension must exist as a file, but not as a directory.
+       However, numeric arguments such as "0.1" are always interpreted as value.
     2. Any argument (beyond the first) without extension must not exist as a file
        (directories are fine)
     3. Any argument ending with a slash must be a directory
@@ -67,11 +68,19 @@ def guess_arguments_with_custom_error_messages(
         is_dir = False
         if exists:
             is_dir = path.is_dir() or path.expanduser().is_dir()
+        is_float = False
+        if extension:             
+            try:
+                float(arg)
+                is_float = True
+            except ValueError:
+                pass
 
         # Rule 1.: Any argument with extension must exist as a file, but not as a directory.
+        # However, numeric arguments such as "0.1" are always interpreted as numeric.
 
         if not overrule_ext:
-            if extension and not arg.endswith(os.sep):
+            if extension and not is_float and not arg.endswith(os.sep):
                 if not exists:
                     errmsg = "Argument does not exist.\n" + rule_ext_error_message
                     raise ValueError(errmsg.format(argindex=argindex, arg=arg))
@@ -96,7 +105,9 @@ def guess_arguments_with_custom_error_messages(
                 errmsg = "Argument is not a directory.\n" + rule_no_slash_error_message
                 raise ValueError(errmsg.format(argindex=argindex, arg=arg))
 
-        if exists:
+        if is_float:
+            item = "value"
+        elif exists:
             if is_dir:
                 result_mode = "directory"
                 arg2 = os.path.expanduser(arg)
@@ -127,6 +138,7 @@ def guess_arguments(
     But there are three rules that must be respected, else an exception is raised.
 
     1. Any argument with extension must exist as a file, but not as a directory.
+       However, numeric arguments such as "0.1" are always interpreted as value.
     2. Any argument (beyond the first) without extension must not exist as a file
        (directories are fine)
     3. Any argument ending with a slash must be a directory
