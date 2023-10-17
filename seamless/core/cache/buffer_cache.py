@@ -350,8 +350,11 @@ class BufferCache:
             # parsability as IPython/python/cson/yaml is out-of-scope for buffer info
             celltype = "text"
         
-        if buffer is not None and checksum not in self.buffer_info:
-            self.buffer_info[checksum] = BufferInfo(checksum, {"length": len(buffer)})
+        if checksum not in self.buffer_info:
+            if buffer is None:
+                buffer = self.get_buffer(checksum, remote=False)
+            if buffer is not None:
+                self.buffer_info[checksum] = BufferInfo(checksum, {"length": len(buffer)})
 
         if celltype == "mixed":
             if buffer is None:
