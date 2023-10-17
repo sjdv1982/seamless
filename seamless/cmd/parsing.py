@@ -1,10 +1,11 @@
+import time
 from typing import Any
 from pathlib import Path
 import os
 import bashlex
 from collections import namedtuple
 
-from .message import message as msg
+from .message import message as msg, message_and_exit as err
 
 
 def guess_arguments_with_custom_error_messages(
@@ -61,7 +62,17 @@ def guess_arguments_with_custom_error_messages(
     for argindex0, arg in enumerate(args):
         arg2 = arg
         argindex = argindex0 + 1
-        path = Path(arg)        
+        path = Path(arg)
+        future_path = Path(arg + ".FUTURE")
+        if future_path.exists():
+            msg(0, f"Waiting for future '{future_path}'...")
+            while 1:
+                age = time.time() - future_path.stat().st_atime
+                if age > 60:
+                    err("Stale future {future_path}")
+                time.sleep(0.5)
+                if not future_path.exists():
+                    break
         extension = path.suffix
         msg(3, "Argument #{} '{}', extension: '{}'".format(argindex, arg, extension))
         exists = path.exists() or path.expanduser().exists()
