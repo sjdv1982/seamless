@@ -8,7 +8,6 @@ from .confirm import confirm_yn
 from .exceptions import SeamlessSystemExit
 from ..core.protocol.serialize import serialize_sync as serialize
 from ..highlevel import Checksum
-from .download import download_index
 
 def strip_textdata(data):
     while 1:
@@ -35,7 +34,6 @@ def files_to_checksums(
     filelist: list[str],
     *,
     directories = dict[str, str],
-    direct_checksum_directories = dict[str, str] | None,
     max_upload_files: int | None,
     max_upload_size: int | None,
     nparallel: int = 20,
@@ -53,8 +51,6 @@ def files_to_checksums(
     """
 
     all_filelist = [f for f in filelist if f not in directories]
-    if direct_checksum_directories:
-        all_filelist = [f for f in all_filelist if f not in direct_checksum_directories]
     directory_files = {}
     for dirname in directories:
         directory_files[dirname] = []
@@ -66,22 +62,9 @@ def files_to_checksums(
                 mapped_filename = os.path.join(dirtail, filename)
                 directory_files[dirname].append((full_filename, mapped_filename))
                 all_filelist.append(full_filename)
-    
-    upload_buffer_lengths = {}
-    deepfolder_buffers = {}
-    all_result = {}
-    direct_result = {}
 
-    if direct_checksum_directories:
-        for dirname, key in direct_checksum_directories.items():
-            index_checksum, argname = key
-            directory_files[dirname] = []
-            index_data, index_buffer = download_index(index_checksum, dirname)
-            deepfolder_buffers[dirname] = index_buffer
-            for filename, checksum in index_data.items():
-                full_filename = os.path.join(argname, filename)
-                direct_result[full_filename] = checksum
-    
+    upload_buffer_lengths = {}
+    all_result = {}
     with ThreadPoolExecutor(max_workers=nparallel) as executor:
         upload_filelist = []
         datasize = 0
@@ -112,7 +95,8 @@ def files_to_checksums(
                         filename, checksum, buffer_length
                     ),
                 )
-    
+
+    deepfolder_buffers = {}
     for dirname in directories:
         deepfolder = {d[1]:all_result[d[0]] for d in directory_files[dirname]}
         deepfolder_buffers[dirname] = serialize(deepfolder, "plain")
@@ -184,4 +168,4 @@ def files_to_checksums(
 
     result = {filename: all_result[filename] for filename in filelist}
 
-    return result, direct_result, directory_indices
+    return result, directory_indices
