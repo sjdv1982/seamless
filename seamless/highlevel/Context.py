@@ -1179,7 +1179,7 @@ These modifications have been CANCELED.""" % (
         from ..core import StructuredCell, Cell as core_cell
 
         global shareserver
-        from .. import shareserver as shareserver_
+        from ..shareserver import shareserver as shareserver_
 
         shareserver = shareserver_
         from ..core.share import sharemanager
