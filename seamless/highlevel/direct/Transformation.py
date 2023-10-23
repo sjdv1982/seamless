@@ -188,12 +188,13 @@ class Transformation:
         from seamless import CacheMissError
         from ...core.protocol.get_buffer import get_buffer
         from ...core.protocol.deserialize import deserialize_sync
+        self._resolve_sync()
         tf_checksum = self._transformation_checksum
         if tf_checksum is None:
             return None
         buf = get_buffer(tf_checksum, remote=True)
         if buf is None:
-            raise CacheMissError(tf_checksum)
+            raise CacheMissError(tf_checksum.hex())
         return deserialize_sync(buf, tf_checksum, "plain", copy=True)
         
     @property
@@ -326,9 +327,11 @@ def transformation_from_dict(transformation_dict, result_celltype, upstream_depe
         transformation_dict["__meta__"] = {}
 
     def resolver_sync():
+        from seamless.core.cache.buffer_cache import buffer_cache
         prepare_transformation_dict(transformation_dict)
         transformation_buffer = tf_get_buffer(transformation_dict)
         transformation = calculate_checksum(transformation_buffer)
+        buffer_cache.cache_buffer(transformation, transformation_buffer)
         return transformation
     
     async def resolver_async():

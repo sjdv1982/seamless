@@ -325,4 +325,5 @@ multi-core-transformations.py
   Change ncores to 4 to have the first job fail, for a total duration of 2 seconds
   Change ncores to 6 to have both jobs execute in parallel. Job 2 will finish after 2.5 seconds,
    and job 1 will still be running.
-  
+slow-buffer.py
+  To detect suspected slowness issues with buffer upload, but hasn't given an error yet.

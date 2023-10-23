@@ -1,3 +1,4 @@
+import sys
 from requests.exceptions import ConnectionError, ReadTimeout
 
 from seamless.util import parse_checksum
@@ -28,7 +29,7 @@ def get(session, url, checksum):
     assert checksum is not None
     try:
         path = url + "/" + checksum
-        with session.get(path, stream=True, timeout=3) as response:
+        with session.get(path, stream=True, timeout=10) as response:
             if int(response.status_code/100) in (4,5):
                 raise ConnectionError()
             result = []
@@ -38,7 +39,7 @@ def get(session, url, checksum):
         from seamless import calculate_checksum
         buf_checksum = calculate_checksum(buf, hex=True)
         if buf_checksum != checksum:
-            #print("WARNING: '{}' has the wrong checksum".format(url))
+            print("WARNING: '{}' has the wrong checksum".format(url), file=sys.stderr)
             return
     except (ConnectionError, ReadTimeout):
         #import traceback; traceback.print_exc()
