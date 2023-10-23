@@ -36,13 +36,17 @@ print(ctx.tf.result.value)
 print(ctx.tf.logs)
 print("/stage 1")
 
+func.modules.pypackage = ctx.pypackage
+
+print(func(12, 13))
+
 import sys
 sys.path.append("debugmount")
 import pypackage
 
 func.modules.pypackage = pypackage
 
-print(func(12, 13))
+print(func(14, 15))
 
 @transformer(return_transformation=True)
 def func2(a,b):
@@ -54,7 +58,7 @@ def func2(a,b):
         bb = get_square(b)
         return aa+bb
     func.modules.pypackage2 = pypackage
-    result = func(a, b) 
+    result = func(a, b)
     result.compute()
     print("func RESULT LOGS", result.logs)
     print("func RESULT VALUE", result.value)

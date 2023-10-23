@@ -128,7 +128,10 @@ Attributes:
         result_celltype = self._celltypes["result"]
         modules = {}
         for module_name, module in self._modules.items():
-            module_definition = get_module_definition(module)
+            if isinstance(module, dict):
+                module_definition = module
+            else:
+                module_definition = get_module_definition(module)
             modules[module_name] = module_definition
 
         transformation_dict = direct_transformer_to_transformation_dict(
@@ -238,11 +241,18 @@ class ModulesWrapper:
         return self._modules[attr]
     def __setattr__(self, attr, value):
         from types import ModuleType
+        from seamless.highlevel import Module
         if attr.startswith("_"):
             return super().__setattr__(attr, value)
-        if not isinstance(value, ModuleType):
-            raise TypeError(type(value))
-        self._modules[attr] = value
+        if isinstance(value, Module):
+            module_definition = value.module_definition
+            if module_definition is None:
+                raise RuntimeError("Seamless Module has not been translated yet")
+            self._modules[attr] = module_definition
+        else:
+            if not isinstance(value, ModuleType):
+                raise TypeError(type(value))
+            self._modules[attr] = value
     def __dir__(self):
         return sorted(self._modules.keys())
     def __str__(self):

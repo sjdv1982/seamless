@@ -1,3 +1,4 @@
+Waiting for: Seamless transformer: .pypackage.gen_moduledict_helper
 {'__init__.py': 'from .submodule import get_square', 'submodule.py': '\ndef get_square(value):\n    return value**2'}
 {'code': {'__init__': {'code': 'from .submodule import get_square', 'dependencies': ['.submodule'], 'language': 'python'}, 'submodule': {'code': '\ndef get_square(value):\n    return value**2', 'dependencies': [], 'language': 'python'}}, 'language': 'python', 'type': 'interpreted'}
 
@@ -6,14 +7,14 @@ Stage 1
 *************************************************
 * Result
 *************************************************
-145
+<checksum 0b9fdf50adc38426b71f3a2919086df4a23632b67a0239f1410ea3edcbc2a694>
 *************************************************
 Execution time: 0.0 seconds
 *************************************************
 /stage 1
 313
+421
 Stage 2
-Waiting for: Seamless transformer: .tf.tf
 func RESULT LOGS *************************************************
 * Result
 *************************************************

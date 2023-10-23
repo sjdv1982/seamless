@@ -457,6 +457,11 @@ Or, it could use an internal package name like "spamalot" and do
             self._parent()._translate()
 
     @property
+    def module_definition(self):
+        module_cell = self._get_ctx().module_cell
+        return module_cell.value
+
+    @property
     def module(self):
         """Returns the current Python module object"""
         from ..core.build_module import build_module

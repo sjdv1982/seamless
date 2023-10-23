@@ -45,7 +45,7 @@ afterwards.
   __env__ (and __meta__, __compilers__, etc... generally known as "dunder") give hints to make
   the transformation work. They do *not* modify the result value. TO DOCUMENT.
   
-- In addition, implement "contest" API for mini-assistant (tests/highlevel/contest.py can't work without). TO DOCUMENT
+- In addition, implement "contest" API for mini-assistant (tests/highlevel/contest.py can't work without). DONE
 
 - Micro-assistant.py can't deal with re-entrant delegation, mini-dask assistant should. TODO: See https://github.com/sjdv1982/seamless/issues/217
 

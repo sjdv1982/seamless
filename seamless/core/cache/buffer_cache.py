@@ -379,7 +379,7 @@ class BufferCache:
         else:
             raise TypeError(celltype)
 
-        if sync_to_remote:
+        if sync_to_remote and checksum in self.buffer_info:
             self._sync_buffer_info_to_remote(checksum)
 
     def buffer_check(self, checksum):
