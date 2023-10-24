@@ -109,7 +109,7 @@ If there is no connected Seamless database, Seamless will hold all file buffers 
                 # #  to a Seamless database, if one is configured. cache_buffer doesn't do that.
                 # # Use incref + decref instead. 
                 # # This will trigger cache_buffer anyway, if there is no DB
-                buffer_cache.incref_buffer(checksum, buf, True)
+                buffer_cache.incref_buffer(checksum, buf, persistent=True)
                 buffer_cache.decref(checksum)
             result[key] = checksum.hex()
     result_buf = serialize_sync(result, "plain")

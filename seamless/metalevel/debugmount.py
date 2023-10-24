@@ -233,7 +233,7 @@ class DebugMount:
                             pinname_to_cells[pinname].append(cellname)
                             mod_cs = integrate_compiled_module(mod_lang, mod_rest, self._object_codes)
                         if mod_cs is not None:
-                            buffer_cache.incref(mod_cs, True)
+                            buffer_cache.incref(mod_cs, persistent=True)
                         self.modules[pinname] = mod_type, mod_lang, mod_rest, mod_cs
                         continue
                     if mod_lang is None:
@@ -244,7 +244,7 @@ class DebugMount:
                         ext = "." + language_to_extension(mod_lang, "txt")
                     mod_code = analyze_mod_code(mod_code, pinname)
                     if mod_cs is not None:
-                        buffer_cache.incref(mod_cs, True)
+                        buffer_cache.incref(mod_cs, persistent=True)
                     self.modules[pinname] = mod_type, mod_lang, mod_rest, mod_cs
                     c = core_cell("text")
                 else:
@@ -299,7 +299,7 @@ class DebugMount:
             code = checksum_to_code(checksum)
             self._object_codes[cellname] = code
             new_checksum = integrate_compiled_module(mod_lang, mod_rest, self._object_codes)
-            buffer_cache.incref(new_checksum, True)
+            buffer_cache.incref(new_checksum, persistent=True)
             if old_mod_cs is not None:
                 buffer_cache.decref(old_mod_cs)
             self.modules[module_name] = mod_type, mod_lang, mod_rest, new_checksum            
@@ -314,7 +314,7 @@ class DebugMount:
                 new_value["code"] = code
             new_value_buffer = serialize_sync(new_value, "plain")
             new_checksum = calculate_checksum_sync(new_value_buffer)
-            buffer_cache.incref_buffer(new_checksum, new_value_buffer, True)
+            buffer_cache.incref_buffer(new_checksum, new_value_buffer, persistent=True)
             if old_mod_cs is not None:
                 buffer_cache.decref(old_mod_cs)
             self.modules[cellname] = mod_type, mod_lang, mod_rest, new_checksum
@@ -360,14 +360,14 @@ class DebugMount:
                         if old_mod_cs is not None:
                             buffer_cache.decref(old_mod_cs)
                         if mod_cs is not None:
-                            buffer_cache.incref(mod_cs, True)
+                            buffer_cache.incref(mod_cs, persistent=True)
                         self.modules[pinname] = mod_type, mod_lang, mod_rest, mod_cs
                         continue
                     mod_code = analyze_mod_code(mod_code, pinname)
                     if old_mod_cs is not None:
                         buffer_cache.decref(old_mod_cs)
                     if mod_cs is not None:
-                        buffer_cache.incref(mod_cs, True)
+                        buffer_cache.incref(mod_cs, persistent=True)
                     self.modules[pinname] = mod_type, mod_lang, mod_rest, mod_cs
                     if mod_code is not None:
                         c = getattr(self.mount_ctx, pinname)

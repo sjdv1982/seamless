@@ -786,7 +786,7 @@ class TransformationJob:
                             for celltype, subcelltype, buf in syntactic_cache:
                                 # TODO: create a transformation_cache method and invoke it, common with other code
                                 syn_checksum = await calculate_checksum(buf)
-                                buffer_cache.incref_buffer(syn_checksum, buf, False)
+                                buffer_cache.incref_buffer(syn_checksum, buf, persistent=False)
                                 sem_checksum = await syntactic_to_semantic(
                                     syn_checksum, celltype, subcelltype, 
                                     self.codename + ":@transformer"

@@ -98,6 +98,7 @@ def write_buffer(checksum, buffer):
     _written_buffers.add(checksum)
     if buffer_write_client.has(session, _write_server, checksum):
         return
+    print("WRITE BUFFER", checksum.hex())
     buffer_write_client.write(session, _write_server, checksum, buffer)
 
 def is_known(checksum):

@@ -14,7 +14,7 @@ class DeepRefManager:
     MAX_DEEP_BUFFER_MEMBERS = 100000   # Don't incref member buffers inside a deep buffer with more members than this
 
     def __init__(self):
-        self.buffers_to_incref = {}
+        self.buffers_to_incref = set()
         self.checksum_to_cell = {}
         self.checksum_to_subchecksums = {}
         self.refcount = {}
@@ -41,7 +41,7 @@ class DeepRefManager:
                 manager.structured_cell_trigger(sc, void=True)
 
 
-    def _do_incref(self, checksum, deep_structure, hash_pattern, authoritative):
+    def _do_incref(self, checksum, deep_structure, hash_pattern):
         try:
             sub_checksums = deep_structure_to_checksums(
                 deep_structure, hash_pattern
@@ -52,7 +52,7 @@ class DeepRefManager:
                 return
             sub_checksums2 = [bytes.fromhex(cs) for cs in sub_checksums]
             #print("INC DEEP", checksum.hex(), len(sub_checksums))
-            buffer_cache._incref(sub_checksums2, authoritative, None)
+            buffer_cache._incref(sub_checksums2, persistent=True, buffers=None)
             refcount = self.refcount.get(checksum, 0)
             if refcount > 0:
                 assert checksum in self.checksum_to_subchecksums, checksum.hex()
@@ -87,7 +87,7 @@ class DeepRefManager:
             new_coro_2(key, deep_buffer)
             
         def invalidate(checksum, exc):
-            for key in list(self.buffers_to_incref.keys()):
+            for key in list(self.buffers_to_incref):
                 if key[0] == checksum:
                     hash_pattern = _rev_cs_hashpattern[key[1]]
                     self._invalidate(checksum, hash_pattern, exc)
@@ -121,17 +121,16 @@ class DeepRefManager:
                             invalidate(checksum, exc)
                         else:
                             deep_structure = coro.result()
-                            for key in list(self.buffers_to_incref.keys()):
+                            for key in list(self.buffers_to_incref):
                                 if key[0] == checksum:
-                                    hash_pattern = _rev_cs_hashpattern[key[1]]                                    
-                                    queue = self.buffers_to_incref.pop(key)
+                                    hash_pattern = _rev_cs_hashpattern[key[1]]
+                                    self.buffers_to_incref.remove(key)
                                     hpcs = calculate_dict_checksum(hash_pattern)
                                     _rev_cs_hashpattern[hpcs] = hash_pattern
                                     e = (checksum, hpcs)
                                     if e in self.invalid_deep_buffers:
                                         continue
-                                    for authoritative in queue:
-                                        self._do_incref(checksum, deep_structure,hash_pattern,authoritative)
+                                    self._do_incref(checksum, deep_structure,hash_pattern)
 
                     break
 
@@ -153,12 +152,12 @@ class DeepRefManager:
 
     @property
     def busy(self):
-        result = (len(self.buffers_to_incref) > 0)
+        return (len(self.buffers_to_incref) > 0)
 
     def destroy(self):
         self._destroyed = True
 
-    def incref_deep_buffer(self, checksum, hash_pattern, authoritative, cell=None):
+    def incref_deep_buffer(self, checksum, hash_pattern, *, cell=None):
         if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
             return
         if checksum in self.big_buffers:
@@ -167,8 +166,7 @@ class DeepRefManager:
         _rev_cs_hashpattern[hpcs] = hash_pattern
         key = (checksum, hpcs)
         
-        queue = self.buffers_to_incref.get(key)
-        if queue is None:
+        if key not in self.buffers_to_incref:
             try:
                 deep_buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=False, force_length=False)
                 if deep_buffer_info.members is not None and deep_buffer_info.members > self.MAX_DEEP_BUFFER_MEMBERS:
@@ -181,9 +179,7 @@ class DeepRefManager:
             except CacheMissError as exc:
                 self._invalidate(checksum, hash_pattern, exc)
                 return
-            queue = []
-            self.buffers_to_incref[key] = queue
-        queue.append(authoritative)
+            self.buffers_to_incref.add(key)
         if cell is not None:
             cells = self.checksum_to_cell.get(checksum)
             if cells is None:
@@ -191,7 +187,7 @@ class DeepRefManager:
                 self.checksum_to_cell[checksum] = cells
             cells.add(cell)
 
-    def decref_deep_buffer(self, checksum, hash_pattern, authoritative):
+    def decref_deep_buffer(self, checksum, hash_pattern):
         from seamless.util import is_forked
         if is_forked():
             return
@@ -205,13 +201,8 @@ class DeepRefManager:
         _rev_cs_hashpattern[hpcs] = hash_pattern
         key = (checksum, hpcs)
         if key in self.buffers_to_incref:
-            queue = self.buffers_to_incref[key]
-            for auth in queue:
-                if auth == authoritative:
-                    queue.remove(auth)
-                    if not len(queue):
-                        self.buffers_to_incref.pop(key)
-                    return
+            self.buffers_to_incref.remove(key)
+            return
 
         if checksum not in self.missing_deep_buffers:
             assert checksum in self.checksum_to_subchecksums, checksum.hex()

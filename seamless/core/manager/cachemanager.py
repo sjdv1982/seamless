@@ -38,6 +38,7 @@ class CacheManager:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
         self.checksum_refs = {}
+        self.persistent_checksums = set()
 
         self.cell_to_ref = {}
         self.inactive_expressions = set()
@@ -73,7 +74,6 @@ class CacheManager:
                 self.incref_checksum(
                     checksum,
                     expression,
-                    authoritative=False,
                     result=False
                 )
             checksum = self.expression_to_result_checksum.get(expression)
@@ -81,7 +81,6 @@ class CacheManager:
                 self.incref_checksum(
                     checksum,
                     expression,
-                    authoritative=False,
                     result=True
                 )
             return True
@@ -110,7 +109,7 @@ class CacheManager:
         self.reactor_to_refs[reactor] = refs
         self.reactor_exceptions[reactor] = None
 
-    def incref_checksum(self, checksum, refholder, authoritative, result):
+    def incref_checksum(self, checksum, refholder, *, result):
         """
         NOTE: incref/decref must happen within one async step
         Therefore, the direct or indirect call of _sync versions of coroutines
@@ -124,14 +123,15 @@ class CacheManager:
         if isinstance(refholder, Cell):
             assert not result
             assert self.cell_to_ref[refholder] is None
-            self.cell_to_ref[refholder] = (checksum, authoritative)
+            persistent = not refholder._scratch
+            self.cell_to_ref[refholder] = checksum
             cell = refholder
             if cell._hash_pattern is not None:
                 incref_hash_pattern = True
         elif isinstance(refholder, Expression):
-            #print("INCREF EXPRESSION", refholder, result)
-            assert not authoritative
+            #print("INCREF EXPRESSION", refholder, result)            
             assert refholder not in self.inactive_expressions
+            persistent = False
             if not result:
                 v = self.expression_to_ref[refholder]
                 assert v is None or v == checksum, refholder
@@ -142,14 +142,14 @@ class CacheManager:
                 assert v is None or v == checksum, refholder
                 self.expression_to_result_checksum[refholder] = checksum
         elif isinstance(refholder, Transformer):
-            assert not authoritative
             assert result
             assert self.transformer_to_result_checksum[refholder] is None
+            persistent = not refholder._scratch
             self.transformer_to_result_checksum[refholder] = checksum
         elif isinstance(refholder, Inchannel):
-            assert not authoritative
             assert not result
             assert self.inchannel_to_ref[refholder] is None
+            persistent = False
             self.inchannel_to_ref[refholder] = checksum
         #elif isinstance(refholder, Library): # yagni??
         #    pass
@@ -160,7 +160,18 @@ class CacheManager:
         if checksum not in self.checksum_refs:
             self.checksum_refs[checksum] = set()
             try:
-                buffer_cache.incref(checksum, authoritative)
+                buffer_cache.incref(checksum, persistent=persistent)
+            finally:
+                item = (refh, result)
+                self.checksum_refs[checksum].add(item)
+            if persistent:
+                self.persistent_checksums.add(checksum)
+        elif persistent and checksum not in self.persistent_checksums:
+            self.persistent_checksums.add(checksum)
+            # change the buffer_cache ref from non-persistent to persistent
+            try:
+                buffer_cache.incref(checksum, persistent=True)
+                buffer_cache.decref(checksum)
             finally:
                 item = (refh, result)
                 self.checksum_refs[checksum].add(item)
@@ -170,7 +181,7 @@ class CacheManager:
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if incref_hash_pattern:
             cell = refholder
-            deeprefmanager.incref_deep_buffer(checksum, cell._hash_pattern, authoritative, cell=cell)
+            deeprefmanager.incref_deep_buffer(checksum, cell._hash_pattern, cell=cell)
     
     async def fingertip(self, checksum, *, must_have_cell=False):
         """Tries to put the checksum's corresponding buffer 'at your fingertips'
@@ -186,7 +197,7 @@ class CacheManager:
         """
         return await self._fingertip(checksum, must_have_cell=must_have_cell, done=set())
 
-    async def _fingertip(self, checksum, *, must_have_cell, done):
+    async def _fingertip(self, checksum, *, must_have_cell, done, mine_database=False):
         from ..cache import CacheMissError
         from .tasks.evaluate_expression import evaluate_expression
         from .tasks.deserialize_buffer import DeserializeBufferTask
@@ -428,7 +439,7 @@ class CacheManager:
         raise CacheMissError(checksum.hex() + exc_str)
 
 
-    def decref_checksum(self, checksum, refholder, authoritative, result, *, destroying=False):
+    def decref_checksum(self, checksum, refholder, result, *, destroying=False):
         """
         NOTE: incref/decref must happen within one async step
         Therefore, the direct or indirect call of _sync versions of coroutines
@@ -444,11 +455,11 @@ class CacheManager:
             print_warning("cachemanager: cannot decref unknown checksum {}".format(cs))
             return
         if isinstance(refholder, Cell):
-            assert self.cell_to_ref[refholder] is not None, refholder
+            assert self.cell_to_ref[refholder] is not None, refholder      
             self.cell_to_ref[refholder] = None
             cell = refholder
             if cell._hash_pattern is not None:
-                deeprefmanager.decref_deep_buffer(checksum, cell._hash_pattern, authoritative)
+                deeprefmanager.decref_deep_buffer(checksum, cell._hash_pattern)
 
         elif isinstance(refholder, Expression):
             # Special case, since we never actually clear expression caches,
@@ -475,20 +486,20 @@ class CacheManager:
             print_warning("""cachemanager: cannot remove unknown checksum ref:
 checksum: {}
 refholder: {}
-is authoritative: {}
 is result checksum: {}
-""".format(checksum.hex(), refholder, authoritative, result))
+""".format(checksum.hex(), refholder, result))
             return
         #print("cachemanager DECREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if len(self.checksum_refs[checksum]) == 0:
             buffer_cache.decref(checksum)
             self.checksum_refs.pop(checksum)
+            if checksum in self.persistent_checksums:
+                self.persistent_checksums.remove(checksum)
         
     def destroy_cell(self, cell):
-        ref = self.cell_to_ref[cell]
-        if ref is not None:
-            checksum, authoritative = ref
-            self.decref_checksum(checksum, cell, authoritative, False, destroying=True)
+        checksum = self.cell_to_ref[cell]
+        if checksum is not None:
+            self.decref_checksum(checksum, cell, False, destroying=True)
         self.cell_to_ref.pop(cell)
 
     def destroy_structured_cell(self, sc):
@@ -496,14 +507,14 @@ is result checksum: {}
             ref = self.inchannel_to_ref[inchannel]
             if ref is not None:
                 checksum = ref
-                self.decref_checksum(checksum, inchannel, False, False)
+                self.decref_checksum(checksum, inchannel, False)
             self.inchannel_to_ref.pop(inchannel)
 
     def destroy_transformer(self, transformer):
         ref = self.transformer_to_result_checksum[transformer]
         if ref is not None:
             checksum = ref
-            self.decref_checksum(checksum, transformer, False, True)
+            self.decref_checksum(checksum, transformer, True)
         self.transformer_to_result_checksum.pop(transformer)
         self.transformation_cache.destroy_transformer(transformer)
 
@@ -517,7 +528,7 @@ is result checksum: {}
                 ref = refs[pinname]
                 if ref is not None:
                     checksum = ref
-                    self.decref_checksum(checksum, reactor, False, False)
+                    self.decref_checksum(checksum, reactor, False)
         self.reactor_exceptions.pop(reactor)
 
     def destroy_expression(self, expression):
@@ -527,11 +538,11 @@ is result checksum: {}
         ref = self.expression_to_ref[expression]
         if ref is not None:
             checksum = ref
-            self.decref_checksum(checksum, expression, False, False)
+            self.decref_checksum(checksum, expression, False)
         ref = self.expression_to_result_checksum[expression]
         if ref is not None and ref != expression.checksum:
             checksum = ref
-            self.decref_checksum(checksum, expression, False, True)
+            self.decref_checksum(checksum, expression, True)
         self.inactive_expressions.add(expression)
 
     def check_destroyed(self):

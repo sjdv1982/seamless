@@ -37,6 +37,7 @@ class Cell(SeamlessBase):
     _traitlets = None
     _share = None
     _structured_cell = None
+    _scratch = False
 
     """Parameters for putting the checksum 'at your fingertips':
     If "fingertip_recompute" is None or True:
@@ -66,6 +67,10 @@ class Cell(SeamlessBase):
         self._paths = WeakSet()
         self._traitlets = []
 
+    @property
+    def scratch(self):
+        return self._scratch
+    
     @property
     def _in_structured_cell(self):
         if self._structured_cell is None:

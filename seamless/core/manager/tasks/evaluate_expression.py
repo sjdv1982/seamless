@@ -139,7 +139,7 @@ async def value_conversion(
         full_msg = msg + "\n\nOriginal exception:\n\n" + str(exc)
         raise SeamlessConversionError(full_msg) from None
     target_buffer = await SerializeToBufferTask(
-        manager, target_value, target_celltype
+        manager, target_value, target_celltype, use_cache=True
     ).run()
     target_checksum = await CalculateChecksumTask(manager, buffer).run()
     if target_checksum is None:
@@ -407,7 +407,6 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 cachemanager.incref_checksum(
                     result_checksum,
                     expression,
-                    authoritative=False,
                     result=True
                 )
 
@@ -486,7 +485,6 @@ async def evaluate_expression(expression, fingertip_mode=False, manager=None):
             manager.cachemanager.incref_checksum(
                 result,
                 expression,
-                authoritative=False,
                 result=True
             )
 

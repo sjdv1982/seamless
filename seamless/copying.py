@@ -146,7 +146,7 @@ def add_zip(manager, zipfile, incref=False):
             raise ValueError("Incorrect checksum for zipped file '{}'".format(checksum))
         buffer_cache.cache_buffer(checksum2, buffer)
         if incref:
-            buffer_cache.incref(checksum2, authoritative=False)
+            buffer_cache.incref(checksum2, persistent=False)
         result.append(checksum)
     return result
 

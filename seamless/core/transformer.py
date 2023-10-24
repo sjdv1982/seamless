@@ -14,6 +14,7 @@ class Transformer(Worker):
     _meta = None
     _exception_to_clear = False
     _debug = None
+    _scratch = False
 
     def __init__(self, transformer_params, *,  stream_params=None):
         self.code = InputPin(self, "code", "python", "transformer")
@@ -79,6 +80,10 @@ class Transformer(Worker):
         super()._set_context(ctx, name)
         if not has_ctx:
             self._get_manager().register_transformer(self)
+
+    @property
+    def scratch(self):
+        return self._scratch
 
     @property
     def env(self):

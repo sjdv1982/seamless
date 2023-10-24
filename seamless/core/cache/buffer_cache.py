@@ -55,10 +55,10 @@ class BufferCache:
         # Buffer info cache (never expire)
         self.buffer_info = {} #checksum-to-buffer-info
         self.synced_buffer_info = set()  #set of bufferinfo checksums that are in-sync with the database
-        self.missing = set()
+        self.missing = {} # key: checksum, value: persistent (bool)
 
-        self.incref_buffer(bytes.fromhex(empty_dict_checksum), b'{}\n', True)
-        self.incref_buffer(bytes.fromhex(empty_list_checksum), b'[]\n', True)
+        self.incref_buffer(bytes.fromhex(empty_dict_checksum), b'{}\n', persistent=True)
+        self.incref_buffer(bytes.fromhex(empty_list_checksum), b'[]\n', persistent=True)
 
     def _check_delete_buffer(self, checksum):
         if checksum not in self.last_time:
@@ -111,10 +111,11 @@ class BufferCache:
             self.buffer_cache[checksum] = buffer
         if checksum in self.missing:
             print_debug("Found missing buffer (1): {}".format(checksum.hex()))
-            self.missing.discard(checksum)
-            buffer_remote.write_buffer(checksum, buffer)
+            persistent = self.missing.pop(checksum)
+            if persistent:
+                buffer_remote.write_buffer(checksum, buffer)
 
-    def incref_buffer(self, checksum, buffer, authoritative):
+    def incref_buffer(self, checksum, buffer, *, persistent):
         """Increments the refcount of a known buffer.
         See the documentation of self.incref.
         """
@@ -124,48 +125,59 @@ class BufferCache:
         assert isinstance(buffer, bytes)
         l = len(buffer)
         self.update_buffer_info(checksum, "length", l, sync_remote=False)
-        return self._incref([checksum], authoritative, [buffer])
+        return self._incref([checksum], persistent, [buffer])
 
-    def _incref(self, checksums, authoritative, buffers):
+    def _incref(self, checksums, persistent, buffers):
         for n, checksum in enumerate(checksums):
             if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
                 continue
             buffer = None
             if buffers is not None:
                 buffer = buffers[n]
-            #print("INCREF     ", checksum.hex(), buffer is None)
+            # print("INCREF     ", checksum.hex(), buffer is None)
             if checksum in self.buffer_refcount:
                 self.buffer_refcount[checksum] += 1
                 if buffer is not None and checksum in self.missing:
                     assert isinstance(buffer, bytes)
                     print_debug("Found missing buffer (2): {}".format(checksum.hex()))
-                    self.missing.discard(checksum)
-                    if not buffer_remote.is_known(checksum):
+                    if self.missing.pop(checksum):
+                        persistent = True
+                    if persistent and not buffer_remote.is_known(checksum):
                         self.buffer_cache[checksum] = buffer
-                    buffer_remote.write_buffer(checksum, buffer)
+                    else:
+                        self.cache_buffer(checksum, buffer)
             else:
                 self.buffer_refcount[checksum] = 1
                 if buffer is None:
                     buffer = self.buffer_cache.get(checksum)
                 caching = False
                 if buffer is not None:
-                    if not buffer_remote.is_known(checksum):
+                    caching = True
+                    if persistent and not buffer_remote.is_known(checksum):
                         self.buffer_cache[checksum] = buffer
-                        caching = True
-                    buffer_remote.write_buffer(checksum, buffer)
+                    else:
+                        self.cache_buffer(checksum, buffer)
                 else:
                     if not buffer_remote.is_known(checksum):
                         if n < 10:
                             print_debug("Incref checksum of missing buffer: {}".format(checksum.hex()))
                         elif n == 10:
                             print_debug("... ({} more buffers)".format(len(checksums) - 10))
-                        self.missing.add(checksum)
+                        if persistent:
+                            self.missing[checksum] = True
+                        elif checksum not in self.missing:
+                            self.missing[checksum] = False
                 if checksum in self.last_time:
                     self.last_time.pop(checksum)
                     if not caching:
                         self.buffer_cache.pop(checksum, None)
 
-    def incref(self, checksum, authoritative):
+            if buffer is None:
+                buffer = self.buffer_cache.get(checksum)
+            if persistent and buffer is not None:
+                buffer_remote.write_buffer(checksum, buffer)
+
+    def incref(self, checksum, *, persistent):
         """Increments the refcount of a buffer checksum.
 
         If the buffer cannot be retrieved, it is registered as missing.
@@ -177,7 +189,7 @@ class BufferCache:
         buffer = None
         if checksum not in self.buffer_refcount:
             buffer = self.buffer_cache.get(checksum)
-        self._incref([checksum], authoritative, [buffer])
+        self._incref([checksum], persistent, [buffer])
 
     def _decref(self, checksums):
         for checksum in checksums:
@@ -189,7 +201,7 @@ class BufferCache:
             self.buffer_refcount[checksum] -= 1
             if self.buffer_refcount[checksum] == 0:
                 self.buffer_refcount.pop(checksum)
-                self.missing.discard(checksum)
+                self.missing.pop(checksum, None)
                 can_delete = buffer_remote.can_read_buffer(checksum)
                 #print("DESTROY", checksum.hex(), can_delete, checksum in self.buffer_cache)
                 if can_delete and checksum in self.buffer_cache:

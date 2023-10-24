@@ -106,7 +106,7 @@ class DummyTransformer:
         self.prelim = None
 
 def incref_transformation(tf_checksum, tf_buffer, transformation):
-    buffer_cache.incref_buffer(tf_checksum, tf_buffer, False)
+    buffer_cache.incref_buffer(tf_checksum, tf_buffer, persistent=False)
     for pinname in transformation:
         if pinname in ("__compilers__", "__languages__", "__as__",  "__format__", "__meta__"):
             continue
@@ -118,7 +118,7 @@ def incref_transformation(tf_checksum, tf_buffer, transformation):
             _, _, sem_checksum0 = transformation[pinname]
             sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
         if sem_checksum is not None:
-            buffer_cache.incref(sem_checksum, pinname == "__env__")
+            buffer_cache.incref(sem_checksum, persistent=(pinname == "__env__"))
 
 def tf_get_buffer(transformation):
     from seamless.core.protocol.json import json_dumps
@@ -402,7 +402,7 @@ class TransformationCache:
             self.transformations[tf_checksum] = transformation
             if tf_checksum in self.transformation_results:
                 result_checksum, prelim = self.transformation_results[tf_checksum]
-                buffer_cache.incref(result_checksum, False)
+                buffer_cache.incref(result_checksum, persistent=False)
             incref_transformation(tf_checksum, tf_buffer, transformation)
         else:
             # Just to reflect updates in __meta__, __env__ etc.
@@ -820,7 +820,7 @@ class TransformationCache:
                 return  # transformation result was already set by something else
             buffer_cache.decref(old_result_checksum)
         self.transformation_results[tf_checksum] = result_checksum, prelim
-        buffer_cache.incref(result_checksum, False)
+        buffer_cache.incref(result_checksum, persistent=False)
         if not prelim:            
             database.set_transformation_result(tf_checksum, result_checksum)
             if self.stateless:

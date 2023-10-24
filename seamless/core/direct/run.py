@@ -113,7 +113,7 @@ def _register_transformation_dict(
             result_checksum, _ = transformation_cache.transformation_results[
                 transformation_checksum
             ]
-            buffer_cache.incref(result_checksum, False)
+            buffer_cache.incref(result_checksum, persistent=False)
         incref_transformation(
             transformation_checksum, transformation_buffer, transformation_dict
         )

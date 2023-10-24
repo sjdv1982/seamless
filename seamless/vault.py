@@ -105,7 +105,7 @@ def load_vault_flat(dirname, incref):
                 raise ValueError("Incorrect checksum for vault file '{}'".format(filename2))
             buffer_cache.cache_buffer(checksum2, buffer)
             if incref:
-                buffer_cache.incref(checksum2, authoritative=False)
+                buffer_cache.incref(checksum2, persistent=False)
             result.append(checksum)
     return result
 

@@ -813,7 +813,7 @@ class Context(Base, HelpMixin):
                 with_annotations=False,
             )
             for checksum in checksums:
-                buffer_cache.incref(bytes.fromhex(checksum), True)
+                buffer_cache.incref(bytes.fromhex(checksum), persistent=True)
         else:
             if old_lib is not None:
                 self._graph.lib.pop(path)

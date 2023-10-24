@@ -184,7 +184,7 @@ class LiveGraph:
             manager.taskmanager.register_expression(expression)
             exists = manager.cachemanager.register_expression(expression)
             if not exists:
-                manager.cachemanager.incref_checksum(expression.checksum, expression, False, False)
+                manager.cachemanager.incref_checksum(expression.checksum, expression, result=False)
         #print("INCREF", expression.celltype, expression.target_celltype)
         self.expression_to_accessors[expression].append(accessor)
 
