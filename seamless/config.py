@@ -2,17 +2,27 @@ import os
 import sys
 from urllib.parse import urlparse
 from abc import ABC, abstractmethod
+import requests
+from traceback import print_exc
 
 import logging
 logger = logging.getLogger("seamless")
 
-import requests
 
 _assistant = None
 def get_assistant():
     return _assistant
 
-class AssistantConnectionError(ConnectionError):
+class ConfigurationError(Exception):
+    pass
+
+class AssistantConnectionError(ConnectionError, ConfigurationError):
+    pass
+
+class BufferServerConnectionError(ConnectionError, ConfigurationError):
+    pass
+
+class DatabaseConnectionError(ConnectionError, ConfigurationError):
     pass
 
 def _contact_assistant():
@@ -35,7 +45,7 @@ def _contact_assistant():
     try:
         response = requests.get(assistant + "/config", timeout=3)
     except requests.exceptions.ConnectionError:
-        raise AssistantConnectionError("Cannot contact assistant") from None
+        raise AssistantConnectionError(f"Cannot contact assistant: host {host}, port {port}") from None
     assert response.status_code == 200
     
     _assistant = assistant
@@ -66,7 +76,10 @@ def _init_database_from_env():
         port = int(port)
     except Exception:
         raise TypeError("environment variable SEAMLESS_DATABASE_PORT must be integer") from None
-    database.connect(host, port)
+    try:
+        database.connect(host, port)
+    except requests.exceptions.ConnectionError as exc:
+        raise DatabaseConnectionError(*exc.args) from None
 
 def _init_buffer_remote_from_env(only_level_1=False):
     def _split_env(var, mode):
@@ -98,7 +111,10 @@ def _init_buffer_remote_from_env(only_level_1=False):
 
     set_read_buffer_folders(read_buffer_folders)
     set_read_buffer_servers(read_buffer_servers)
-    set_write_buffer_server(write_buffer_server)
+    try:
+        set_write_buffer_server(write_buffer_server)
+    except (ConnectionError, requests.exceptions.ConnectionError):
+        raise BufferServerConnectionError(f"Cannot connect to write buffer server {write_buffer_server}") from None
     
 
 def delegate(level=4):
@@ -146,13 +162,18 @@ Delegate some or all buffers and results.
         raise NotImplementedError
 
     assert level in (0,1,2,3,4), level
-    if level == 4:
-        _contact_assistant()
-        return
-    if level >= 1:
-        _init_buffer_remote_from_env(only_level_1=(level==1))
-    if level == 3:
-        _init_database_from_env()
+    try:
+        if level == 4:
+            _contact_assistant()
+            return
+        if level >= 1:
+            _init_buffer_remote_from_env(only_level_1=(level==1))
+        if level == 3:
+            _init_database_from_env()
+    except ConfigurationError:
+        print_exc(limit=0,file=sys.stderr)
+        exit(1)
+
     _delegate_level = level
 
 _checked_delegation = False
