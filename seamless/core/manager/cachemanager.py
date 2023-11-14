@@ -1,13 +1,11 @@
-import traceback
 import weakref
 import copy
-import asyncio
 
 import logging
 
 from ...download_buffer import download_buffer_from_servers
 from ..cache.buffer_cache import buffer_cache
-from ... import calculate_dict_checksum
+from ... import calculate_checksum, calculate_dict_checksum
 
 
 logger = logging.getLogger("seamless")
@@ -198,20 +196,24 @@ class CacheManager:
 
     def _mine_database(self, checksum):
         from seamless.config import database
+        from seamless import parse_checksum
 
         result_expressions = []
         result_joins = []
 
         expressions = database.get_rev_expression(checksum)
-        for expression in expressions:
-            result = expression.pop("result")
-            assert result == checksum.hex(), (result, checksum.hex())
-            expression["target_subcelltype"] = expression.get("target_subcelltype")
-            expression["checksum"] = bytes.fromhex(expression["checksum"])
-            expr = Expression(**expression)
-            result_expressions.append(expr)
-        
-        print("TODO: result_joins (checksum, join_dict)")
+        if expressions is not None:
+            for expression in expressions:
+                result = expression.pop("result")
+                assert result == checksum.hex(), (result, checksum.hex())
+                expression["target_subcelltype"] = expression.get("target_subcelltype")
+                expression["checksum"] = parse_checksum(expression["checksum"], as_bytes=True)
+                expr = Expression(**expression)
+                result_expressions.append(expr)
+
+        joins = database.get_rev_join(checksum)
+        if joins is not None:
+            result_joins = [parse_checksum(join, as_bytes=True) for join in joins]
 
         return result_expressions, result_joins
 
@@ -356,21 +358,15 @@ class CacheManager:
 
         if database.active:
             # Extremely heroic effort to mine a database for expressions and transformations
-            #  for buffers larger than 10k
-            buffer_length = None
-            buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=False, force_length=False)
-            if buffer_info is not None:
-                buffer_length = buffer_info.length
-            if buffer_length and buffer_length > 10000:
-                fingertipper.clear()
-                mined_expressions, mined_joins = self._mine_database(checksum)
-                fingertipper.expressions += mined_expressions
-                fingertipper.joins += mined_joins
-                exc_str = await fingertipper.run()
+            fingertipper.clear()
+            mined_expressions, mined_joins = self._mine_database(checksum)
+            fingertipper.expressions += mined_expressions
+            fingertipper.joins2 += mined_joins
+            exc_str = await fingertipper.run()
 
-                buffer = get_buffer(checksum,remote=True)
-                if buffer is not None:
-                    return buffer
+            buffer = get_buffer(checksum,remote=True)
+            if buffer is not None:
+                return buffer
 
         if exc_str is None:
             exc_str = ""
@@ -509,13 +505,19 @@ is result checksum: {}
         return copy.deepcopy(self.join_cache.get(checksum))
 
     def set_join_cache(self, join_dict, result_checksum):
+        from ..protocol.serialize import serialize_sync as serialize
         if isinstance(result_checksum, str):
             result_checksum = bytes.fromhex(result_checksum)
         if join_dict == {'inchannels': {'[]': result_checksum.hex()}}:
             return
-        checksum = calculate_dict_checksum(join_dict)
+        join_dict_buf = serialize(join_dict, "plain", use_cache=True)
+        checksum = calculate_checksum(join_dict_buf)
         self.join_cache[checksum] = result_checksum
         self.rev_join_cache[result_checksum] = join_dict
+        buffer_cache.cache_buffer(checksum, join_dict_buf)
+        buffer_cache.guarantee_buffer_info(checksum, "plain", buffer=join_dict_buf, sync_to_remote=True)        
+        buffer_cache.incref(checksum, persistent=True)
+        buffer_cache.decref(checksum)
 
 
 from ..cell import Cell

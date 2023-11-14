@@ -270,6 +270,23 @@ class Database:
                 return None
             return rj
 
+    def get_rev_join(self, checksum):
+        request = {
+            "type": "rev_join",
+            "checksum": parse_checksum(checksum),
+        }
+        response = self.send_get_request(request)
+        if response is not None:
+            self._log("GET", request["type"], request["checksum"])
+            try:
+                rj = response.json()
+            except requests.exceptions.JSONDecodeError as exc:
+                print(str(response.text())[:1000], file=sys.stderr)
+                raise exc from None
+            if not rj:
+                return None
+            return rj
+
     def get_expression(self, expression: "Expression"):
         request = {
             "type": "expression",

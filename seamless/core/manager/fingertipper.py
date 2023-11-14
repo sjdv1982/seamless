@@ -21,11 +21,12 @@ class FingerTipper:
         self.transformations = []
         self.expressions = []
         self.joins = []
+        self.joins2 = []   # by checksum
         self.syn2sem = []
 
     @property
     def empty(self):
-        return (not self.transformations) and (not self.expressions) and (not self.joins) and (not self.syn2sem)
+        return (not self.transformations) and (not self.expressions) and (not self.joins) and (not self.joins2) and (not self.syn2sem)
 
     async def fingertip_upstream(self, checksum):
         return await self.cachemanager._fingertip(checksum, must_have_cell=False, done=self.done)
@@ -118,6 +119,15 @@ class FingerTipper:
         ).run()
         self._register(buf)
 
+    async def fingertip_join2(self, join_dict_checksum):
+        join_buf = await self.fingertip_upstream(join_dict_checksum)
+        if join_buf is None:
+            return
+        join_dict = json.loads(join_buf.decode())
+        if not isinstance(join_dict, dict):
+            raise TypeError(type(join_dict))
+        return await self.fingertip_join(join_dict)
+
     async def fingertip_syn2sem(self, syn_checksum, celltype, subcelltype):
         await syntactic_to_semantic(syn_checksum, celltype, subcelltype, "fingertip")
         buf = get_buffer(self.checksum, remote=False)
@@ -138,6 +148,9 @@ class FingerTipper:
             coros.append(coro)
         for join_dict in self.joins:
             coro = self.fingertip_join(join_dict)
+            coros.append(coro)
+        for join_dict_checksum in self.joins2:
+            coro = self.fingertip_join2(join_dict_checksum)
             coros.append(coro)
         for syn_checksum, celltype, subcelltype in self.syn2sem:
             coro = self.fingertip_syn2sem(syn_checksum, celltype, subcelltype)

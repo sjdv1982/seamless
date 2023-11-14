@@ -1,5 +1,5 @@
 import seamless
-from seamless.core import context, cell, transformer, StructuredCell
+from seamless.core import context, cell, StructuredCell
 
 seamless.delegate(level=3)
 
@@ -31,19 +31,3 @@ print(ctx.data.checksum, ctx.data.buffer)
 print(ctx.result.checksum)
 v = ctx.result.value
 print(v["a"][:20], v["b"][:20], v["c"][:20])
-'''
-ctx.code = cell("transformer").set('v["a"] + v["b"]')
-ctx.c = cell("bytes")
-ctx.c._scratch = True
-ctx.tf = transformer({
-    "v": ("input", "bytes"),
-    "c": ("output", "bytes"),
-})
-ctx.tf._scratch = True
-ctx.result.connect(ctx.tf.v)
-ctx.tf.c.connect(ctx.c)
-ctx.compute()
-print(ctx.c.checksum)
-c = ctx.c.value
-print(c[:20], c[-20:])
-'''
