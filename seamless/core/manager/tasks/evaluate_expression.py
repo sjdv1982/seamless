@@ -480,7 +480,7 @@ async def evaluate_expression(expression, fingertip_mode=False, manager=None):
         if result is not None:
             database.set_expression(expression, result)
 
-    if result and not from_task:
+    if result and not from_task and not fingertip_mode:
         if result != expression.checksum:
             manager.cachemanager.incref_checksum(
                 result,

@@ -1,7 +1,6 @@
 import traceback
 import weakref
 import copy
-import json
 import asyncio
 
 import logging
@@ -197,15 +196,31 @@ class CacheManager:
         """
         return await self._fingertip(checksum, must_have_cell=must_have_cell, done=set())
 
-    async def _fingertip(self, checksum, *, must_have_cell, done, mine_database=False):
-        from ..cache import CacheMissError
-        from .tasks.evaluate_expression import evaluate_expression
-        from .tasks.deserialize_buffer import DeserializeBufferTask
-        from .tasks.serialize_buffer import SerializeToBufferTask
-        from ..direct.run import run_transformation_dict
+    def _mine_database(self, checksum):
         from seamless.config import database
-        from seamless.util import is_forked
+
+        result_expressions = []
+        result_joins = []
+
+        expressions = database.get_rev_expression(checksum)
+        for expression in expressions:
+            result = expression.pop("result")
+            assert result == checksum.hex(), (result, checksum.hex())
+            expression["target_subcelltype"] = expression.get("target_subcelltype")
+            expression["checksum"] = bytes.fromhex(expression["checksum"])
+            expr = Expression(**expression)
+            result_expressions.append(expr)
+        
+        print("TODO: result_joins (checksum, join_dict)")
+
+        return result_expressions, result_joins
+
+    async def _fingertip(self, checksum, *, must_have_cell, done):
+        from ..cache import CacheMissError
+        from .tasks.deserialize_buffer import DeserializeBufferTask
+        from seamless.config import database
         from ..direct.run import TRANSFORMATION_STACK
+        from .fingertipper import FingerTipper
 
         if checksum is None:
             return
@@ -219,83 +234,9 @@ class CacheManager:
             return
 
         done.add(checksum)
-        coros = []
         manager = self.manager()
         tf_cache = self.transformation_cache
 
-        async def fingertip_transformation(transformation, tf_checksum):
-            coros = []
-            for pinname in transformation:
-                if pinname == "__env__":
-                    cs = bytes.fromhex(transformation[pinname])
-                    coros.append(self._fingertip(cs, must_have_cell=False, done=done))
-                    continue
-                if pinname.startswith("__"):
-                    continue
-                celltype, subcelltype, sem_checksum0 = transformation[pinname]
-                sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
-                sem2syn = tf_cache.semantic_to_syntactic_checksums
-                semkey = (sem_checksum, celltype, subcelltype)
-                checksum2 = sem2syn.get(semkey, [sem_checksum])[0]
-                coros.append(self._fingertip(checksum2, must_have_cell=False, done=done))
-            await asyncio.gather(*coros)
-            
-            if is_forked():                
-                run_transformation_dict(transformation, fingertip=True)
-            else:
-                job = tf_cache.run_job(transformation, tf_checksum, fingertip=True)
-                if job is not None:
-                    await asyncio.shield(job.future)
-
-        async def fingertip_expression(expression):
-            await self._fingertip(expression.checksum, must_have_cell=False, done=done)
-            await evaluate_expression(
-                expression, manager=manager, fingertip_mode=True
-            )
-
-        async def fingertip_join(checksum, join_dict):
-            hash_pattern = join_dict.get("hash_pattern")
-            inchannels0 = join_dict["inchannels"]
-            inchannels = {}
-            for path0, cs in inchannels0.items():
-                path = json.loads(path0)
-                if isinstance(path, list):
-                    path = tuple(path)
-                inchannels[path] = cs
-            paths = sorted(list(inchannels.keys()))
-            if "auth" in join_dict:
-                auth_checksum = bytes.fromhex(join_dict["auth"])
-                auth_buffer = await self._fingertip(auth_checksum, must_have_cell=False, done=done)
-                value = await DeserializeBufferTask(
-                    manager, auth_buffer, auth_checksum, "mixed", copy=True
-                ).run()
-            else:
-                if isinstance(paths[0], int):
-                    value = []
-                elif isinstance(paths[0], (list, tuple)) and len(paths[0]) and isinstance(paths[0][0], int):
-                    value = []
-                else:
-                    value = None
-                    if hash_pattern is not None:
-                        if isinstance(hash_pattern, dict):
-                            for k in hash_pattern:
-                                if k.startswith("!"):
-                                    value = []
-                                    break
-                    if value is None:
-                        value = {}
-            for path in paths:
-                subchecksum = bytes.fromhex(inchannels[path])
-                sub_buffer = None
-                if hash_pattern is None or access_hash_pattern(hash_pattern, path) not in ("#", '##'):
-                    sub_buffer = await self._fingertip(subchecksum, must_have_cell=False, done=done)
-                await set_subpath_checksum(value, hash_pattern, path, subchecksum, sub_buffer)
-            buf = await SerializeToBufferTask(
-                manager, value, "mixed",
-                use_cache=True
-            ).run()
-            buffer_cache.cache_buffer(checksum, buf)
-            return
 
         rmap = {True: 2, None: 1, False: 0}
         remote, recompute= 2, 2 # True, True
@@ -326,6 +267,8 @@ class CacheManager:
             if buffer is not None:
                 return buffer
 
+        fingertipper = FingerTipper(checksum, self, done=done)
+
         for tf_checksum in tf_cache.known_transformations_rev.get(checksum, []):
             if tf_checksum.hex() in TRANSFORMATION_STACK:
                 continue
@@ -339,30 +282,26 @@ class CacheManager:
                 ).run()
                 if transformation is None:
                     continue
-            coros.append(fingertip_transformation(transformation, tf_checksum))
+            fingertipper.transformations.append((transformation, tf_checksum))
 
         for refholder, result in self.checksum_refs.get(checksum, set()):
             if not result:
                 continue
             if isinstance(refholder, Expression):
-                coros.append(fingertip_expression(refholder))
+                expression = refholder
+                fingertipper.expressions.append(expression)
             elif isinstance(refholder, Transformer) and recompute:
                 tf_checksum = tf_cache.transformer_to_transformations[refholder]
                 if tf_checksum.hex() in TRANSFORMATION_STACK:
                     continue
                 transformation = tf_cache.transformations[tf_checksum]
-                coros.append(fingertip_transformation(transformation, tf_checksum))
-
-        async def buffer_from_syn2sem(checksum, syn_checksum, celltype, subcelltype):
-            await syntactic_to_semantic(syn_checksum, celltype, subcelltype, "fingertip")
-            return get_buffer(checksum, remote=False)
+                fingertipper.transformations.append((transformation, tf_checksum))
 
         if checksum in self.rev_join_cache:
             join_dict = self.rev_join_cache[checksum]
-            coro = fingertip_join(checksum, join_dict)
-            coros.append(coro)
+            fingertipper.joins.append(join_dict)
 
-        if not len(coros):
+        if fingertipper.empty:
 
             syn_checksums = None
             semkeys = (checksum, "python", None), (checksum, "python", "transformer")
@@ -383,10 +322,9 @@ class CacheManager:
             
             if syn_checksums:
                 for syn_checksum in syn_checksums:
-                    coro = buffer_from_syn2sem(checksum, syn_checksum, celltype, subcelltype)
-                    coros.append(coro)
+                    fingertipper.syn2sem.append((syn_checksum, celltype, subcelltype))
 
-        if not len(coros):
+        if fingertipper.empty:
             # Heroic attempt to get a reverse conversion from any buffer_info
             # This extends a much simpler buffer_info effort in get_buffer.py
             attr_list = (
@@ -398,31 +336,14 @@ class CacheManager:
                 for attr in attr_list:
                     if getattr(buffer_info, attr) == checksum_hex:
                         expr_celltype, expr_target_celltype = attr.replace("json", "plain").split("2")
-                        expr = Expression(
+                        expression = Expression(
                             source_checksum, None, expr_celltype, expr_target_celltype, None,
                             hash_pattern=None, target_hash_pattern=None
                         )
-                        coros.append(fingertip_expression(expr))
+                        fingertipper.expressions.append(expression)
 
-
-        all_tasks = [asyncio.ensure_future(c) for c in coros]
-        try:
-            tasks = all_tasks
-            while len(tasks):
-                _, tasks  = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-                buffer = get_buffer(checksum, remote=False)
-                if buffer is not None:
-                    return buffer
-        finally:
-            for task in all_tasks:
-                if task.done():
-                    try:
-                        task.result()
-                    except Exception:
-                        #import traceback; traceback.print_exc()
-                        pass
-                else:
-                    task.cancel()
+        
+        exc_str = await fingertipper.run()
 
         buffer = get_buffer(checksum,remote=True)
         if buffer is not None:
@@ -432,10 +353,27 @@ class CacheManager:
             buffer = download_buffer_from_servers(checksum)
             if buffer is not None:
                 return buffer
-        exc_list = ["\n".join(traceback.format_exception(task.exception())) for task in all_tasks if task.exception()]
-        exc_str = ""
-        if len(exc_list):
-            exc_str = "\nFingertip exceptions:\n\n" + "\n\n".join(exc_list)
+
+        if database.active:
+            # Extremely heroic effort to mine a database for expressions and transformations
+            #  for buffers larger than 10k
+            buffer_length = None
+            buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=False, force_length=False)
+            if buffer_info is not None:
+                buffer_length = buffer_info.length
+            if buffer_length and buffer_length > 10000:
+                fingertipper.clear()
+                mined_expressions, mined_joins = self._mine_database(checksum)
+                fingertipper.expressions += mined_expressions
+                fingertipper.joins += mined_joins
+                exc_str = await fingertipper.run()
+
+                buffer = get_buffer(checksum,remote=True)
+                if buffer is not None:
+                    return buffer
+
+        if exc_str is None:
+            exc_str = ""
         raise CacheMissError(checksum.hex() + exc_str)
 
 
@@ -585,6 +523,4 @@ from ..transformer import Transformer
 from ..structured_cell import Inchannel
 from .expression import Expression
 from ..protocol.get_buffer import get_buffer
-from ..cache.transformation_cache import syntactic_to_semantic
-from ..protocol.expression import set_subpath_checksum, access_hash_pattern
 from ..cache.deeprefmanager import deeprefmanager

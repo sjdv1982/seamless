@@ -1,0 +1,17 @@
+8643002a41c874e22124d5abbc2fac3d5153ec3b5012672d6e81c6e5dca475a1
+Buffer CANNOT be read from buffer server
+
+b'First text First tex' b'Second text Second t' b'Third text Third tex'
+14502e7aeca24a5e434ad0e2bcea555501a10ec6d6b6d377e3f7056fda7ee46d 9deba4601ac0ccf0cac49b2971be08a853c87d49d13d8596b8047c41265fb513 9dbf02b124b0af94560e438e9a456748d37a7d4ef700a222968bbb7662a6cad7
+2899c358f833b07693ff24331f2d0ade6de87224a6475c07b32123eec0f49525 b'{\n  "a": "14502e7aeca24a5e434ad0e2bcea555501a10ec6d6b6d377e3f7056fda7ee46d",\n  "b": "9deba4601ac0ccf0cac49b2971be08a853c87d49d13d8596b8047c41265fb513",\n  "c": "9dbf02b124b0af94560e438e9a456748d37a7d4ef700a222968bbb7662a6cad7"\n}\n'
+8643002a41c874e22124d5abbc2fac3d5153ec3b5012672d6e81c6e5dca475a1
+First text First tex Second text Second t Third text Third tex
+
+8643002a41c874e22124d5abbc2fac3d5153ec3b5012672d6e81c6e5dca475a1
+Buffer CANNOT be read from buffer server
+
+8643002a41c874e22124d5abbc2fac3d5153ec3b5012672d6e81c6e5dca475a1
+First text First tex Second text Second t Third text Third tex
+
+8643002a41c874e22124d5abbc2fac3d5153ec3b5012672d6e81c6e5dca475a1
+Buffer CAN be read from buffer server

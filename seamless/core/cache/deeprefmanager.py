@@ -72,7 +72,7 @@ class DeepRefManager:
             new_coro_entry = 2, key, new_coro 
             self.coros[key] = new_coro_entry
 
-        for key in self.buffers_to_incref:
+        for key in list(self.buffers_to_incref):
             if key in self.coros:
                 continue
             checksum, _ = key
@@ -82,7 +82,8 @@ class DeepRefManager:
             deep_buffer = get_buffer(checksum, remote=True)
             if deep_buffer is None:
                 self.missing_deep_buffers.add(checksum)
-                return
+                self.buffers_to_incref.remove(key)
+                continue
             self.missing_deep_buffers.discard(checksum)
             new_coro_2(key, deep_buffer)
             

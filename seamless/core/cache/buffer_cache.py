@@ -174,8 +174,9 @@ class BufferCache:
 
             if buffer is None:
                 buffer = self.buffer_cache.get(checksum)
-            if persistent and buffer is not None:
-                buffer_remote.write_buffer(checksum, buffer)
+            else:
+                if persistent:
+                    buffer_remote.write_buffer(checksum, buffer)
 
     def incref(self, checksum, *, persistent):
         """Increments the refcount of a buffer checksum.
