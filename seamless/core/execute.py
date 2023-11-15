@@ -180,6 +180,7 @@ def _execute(name, code,
       injector, module_workspace,
       identifier, namespace, deep_structures_to_unpack,
       inputs, output_name, output_celltype, output_hash_pattern,
+      scratch,
       result_queue
     ):        
         from .transformation import SeamlessTransformationError, SeamlessStreamTransformationError
@@ -250,7 +251,7 @@ or
                             result = deep_structure
                             output_celltype = "mixed"
                         result_buffer = serialize(result, output_celltype)
-                        if buffer_remote.can_write():
+                        if buffer_remote.can_write() and not scratch:
                             result_checksum = calculate_checksum(result_buffer)
                             result_checksum2 = result_checksum.hex()
                             buffer_cache.guarantee_buffer_info(result_checksum, output_celltype, sync_to_remote=True)
@@ -306,6 +307,7 @@ def execute(name, code,
       identifier, namespace,
       deep_structures_to_unpack, inputs,
       output_name, output_celltype, output_hash_pattern,
+      scratch,
       result_queue,
       debug = None,
       tf_checksum = None
@@ -405,6 +407,7 @@ def execute(name, code,
                 identifier, namespace,
                 deep_structures_to_unpack,
                 inputs, output_name, output_celltype, output_hash_pattern,
+                scratch,
                 result_queue
             )
         else:
@@ -426,6 +429,7 @@ def execute(name, code,
                 identifier, namespace,
                 deep_structures_to_unpack,
                 inputs, output_name, output_celltype, output_hash_pattern,
+                scratch,
                 result_queue
             )
         execution_time = time.time() - start_time

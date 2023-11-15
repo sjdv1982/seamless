@@ -288,6 +288,7 @@ class TransformationJob:
         checksum, codename,
         transformation,
         semantic_cache, *, debug, fingertip,
+        scratch=False,
         cannot_be_local=False
     ):        
         self.checksum = checksum
@@ -311,6 +312,7 @@ class TransformationJob:
         self.remote = False
         self.restart = False
         self.n_restarted = 0
+        self.scratch = scratch
         self.cannot_be_local = cannot_be_local
 
     async def _probe_remote(self, clients, meta):
@@ -684,6 +686,7 @@ class TransformationJob:
                 self.codename,
                 namespace, deep_structures_to_unpack,
                 inputs, outputname, output_celltype, output_hash_pattern,
+                self.scratch,
                 queue,
             )
             if debug is not None:
@@ -879,6 +882,7 @@ class TransformationJob:
             assert result_buffer is not None
             result_checksum = await get_result_checksum(result_buffer)
             assert result_checksum is not None
+        if result_buffer is not None:
             buffer_cache.cache_buffer(result_checksum, result_buffer)
             try:
                 result_str = result_buffer.decode()

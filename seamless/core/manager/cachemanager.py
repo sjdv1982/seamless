@@ -154,25 +154,17 @@ class CacheManager:
             raise TypeError(type(refholder))
 
         refh = refholder
-        if checksum not in self.checksum_refs:
-            self.checksum_refs[checksum] = set()
-            try:
+        try:
+            if checksum not in self.checksum_refs:
+                self.checksum_refs[checksum] = set()
                 buffer_cache.incref(checksum, persistent=persistent)
-            finally:
-                item = (refh, result)
-                self.checksum_refs[checksum].add(item)
-            if persistent:
+                if persistent:
+                    self.persistent_checksums.add(checksum)
+            elif persistent and checksum not in self.persistent_checksums:
                 self.persistent_checksums.add(checksum)
-        elif persistent and checksum not in self.persistent_checksums:
-            self.persistent_checksums.add(checksum)
-            # change the buffer_cache ref from non-persistent to persistent
-            try:
                 buffer_cache.incref(checksum, persistent=True)
                 buffer_cache.decref(checksum)
-            finally:
-                item = (refh, result)
-                self.checksum_refs[checksum].add(item)
-        else:
+        finally:
             item = (refh, result)
             self.checksum_refs[checksum].add(item)
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
@@ -271,7 +263,9 @@ class CacheManager:
 
         fingertipper = FingerTipper(checksum, self, done=done)
 
-        for tf_checksum in tf_cache.known_transformations_rev.get(checksum, []):
+        tf_checksums = tf_cache.known_transformations_rev.get(checksum, [])
+        tf_checksums += tf_cache.transformation_results_rev.get(checksum, [])
+        for tf_checksum in tf_checksums:            
             if tf_checksum.hex() in TRANSFORMATION_STACK:
                 continue
             transformation = tf_cache.transformations.get(tf_checksum)

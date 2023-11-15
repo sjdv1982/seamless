@@ -1,0 +1,15 @@
+ac79945235c31685e289ad9b6f4aa0c78a09d54815d516eb2f735348c851c347
+Buffer CANNOT be read from buffer server
+
+b'this is text 1 this ' b'this is text 2 this ' b'this is text 3 this '
+ac79945235c31685e289ad9b6f4aa0c78a09d54815d516eb2f735348c851c347
+{'a': 'this is text 1 this is text 1 this is text 1 this is text 1 ', 'b': 'this is text 2 this is text 2 this is text 2 this is text 2 ', 'c': 'this is text 3 this is text 3 this is text 3 this is text 3 '}
+
+ac79945235c31685e289ad9b6f4aa0c78a09d54815d516eb2f735348c851c347
+Buffer CANNOT be read from buffer server
+
+ac79945235c31685e289ad9b6f4aa0c78a09d54815d516eb2f735348c851c347
+{'a': 'this is text 1 this is text 1 this is text 1 this is text 1 ', 'b': 'this is text 2 this is text 2 this is text 2 this is text 2 ', 'c': 'this is text 3 this is text 3 this is text 3 this is text 3 '}
+
+ac79945235c31685e289ad9b6f4aa0c78a09d54815d516eb2f735348c851c347
+Buffer CAN be read from buffer server

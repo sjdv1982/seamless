@@ -57,7 +57,7 @@ class FingerTipper:
         if self.is_forked:
             run_transformation_dict(transformation, fingertip=True)
         else:
-            job = self.tf_cache.run_job(transformation, tf_checksum, fingertip=True)
+            job = self.tf_cache.run_job(transformation, tf_checksum, scratch=True, fingertip=True)
             if job is not None:
                 await asyncio.shield(job.future)
 

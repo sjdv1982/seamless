@@ -34,6 +34,8 @@ Else, return None
     transformation = transformation_cache.transformations.get(checksum)
     if transformation is not None:
         buffer = tf_get_buffer(transformation)
+        if buffer is not None:
+            buffer_cache.find_missing(checksum, buffer)
         return buffer
     
     buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=remote, buffer_from_remote=False, force_length=False)
@@ -58,6 +60,8 @@ Else, return None
                     pass
                 buffer = buffer_cache.get_buffer(checksum, remote=remote)
                 if buffer is not None:
+                    if buffer is not None:
+                        buffer_cache.find_missing(checksum, buffer)
                     return buffer
 
     return None

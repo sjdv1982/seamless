@@ -1,10 +1,11 @@
 import seamless
 from seamless.core import context, cell, transformer, unilink
+import os
 
-try:
-    seamless.config.database.connect()
-except Exception:
-    pass
+if "DELEGATE" in os.environ:
+    seamless.config.delegate(level=3)
+else:
+    seamless.config.delegate(level=0)
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)

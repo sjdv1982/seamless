@@ -186,7 +186,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
         trivial_path = (expression.path is None or expression.path == [] or expression.path == ())
         result_hash_pattern = expression.result_hash_pattern
         target_hash_pattern = expression.target_hash_pattern
-
+        
         if result_hash_pattern not in (None, "#", "##") and target_celltype == "checksum":
             # Special case. Deep cells converted to "checksum" remain unchanged
             result_hash_pattern = None
@@ -215,7 +215,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 hash_pattern_equivalent = (result_hash_pattern == target_hash_pattern)
 
             ### /Hash pattern equivalence
-
+                        
             if result_hash_pattern in ("#", "##"):
                 if fingertip_mode:
                     source_buffer = await GetBufferTask(manager, source_checksum).run()
@@ -478,7 +478,12 @@ async def evaluate_expression(expression, fingertip_mode=False, manager=None):
             from_task = True
 
         if result is not None:
-            database.set_expression(expression, result)
+            trivial = False
+            if expression.path is None or expression.path == [] or expression.path == ():
+                if expression.hash_pattern == expression.target_hash_pattern:
+                    trivial = True
+            if not trivial:
+                database.set_expression(expression, result)
 
     if result and not from_task and not fingertip_mode:
         if result != expression.checksum:

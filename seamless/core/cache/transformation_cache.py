@@ -182,6 +182,7 @@ class TransformationCache:
     def __init__(self):
         self.transformations = {} # tf-checksum-to-transformation
         self.transformation_results = {} # tf-checksum-to-(result-checksum, prelim)
+        self.transformation_results_rev = {} # result-checksum-to-list-of-tf-checksums (only for non-prelim)
         self.transformation_exceptions = {} # tf-checksum-to-exception
         self.transformation_logs = {} # tf-checksum-to-stdout/stderr-logs (max 10k each)
         self.transformation_jobs = {} # tf-checksum-to-job
@@ -361,15 +362,14 @@ class TransformationCache:
             tf_checksum, tf_exc, result_checksum, prelim = result
             if tf_exc is None and (result_checksum is None or prelim):
                 try:
-                    job = self.run_job(transformation, tf_checksum)
+                    job = self.run_job(transformation, tf_checksum, scratch=transformer._scratch)
                 except Exception as exc:                    
                     self._set_exc([transformer], tf_checksum, exc)                    
                     job = None
                 if job is not None:
                     await asyncio.shield(job.future)
             elif tf_exc is not None:
-                self._set_exc([transformer], tf_checksum, tf_exc)
-
+                self._set_exc([transformer], tf_checksum, tf_exc)            
 
     async def remote_wait(self, tf_checksum, peer_id):
         key = tf_checksum, peer_id
@@ -396,6 +396,11 @@ class TransformationCache:
         tf_buffer = tf_get_buffer(transformation)
         tf_checksum = await calculate_checksum(tf_buffer)
         #print("INCREF", tf_checksum.hex(), transformer)
+        
+        # Force tf_buffer to be written persistently to a buffer write server        
+        buffer_cache.cache_buffer(tf_checksum, tf_buffer)
+        buffer_cache.incref(tf_checksum, persistent=True)
+        buffer_cache.decref(tf_checksum)
 
         if tf_checksum not in self.transformations:
             self.transformations_to_transformers[tf_checksum] = []
@@ -571,7 +576,7 @@ class TransformationCache:
             semantic_cache[semkey] = checksums
         return semantic_cache
 
-    def run_job(self, transformation, tf_checksum, *, fingertip=False):
+    def run_job(self, transformation, tf_checksum, *, scratch, fingertip=False):
         if self._blocked:
             raise SeamlessTransformationError("All transformation jobs are blocked")
         transformers = self.transformations_to_transformers[tf_checksum]
@@ -613,6 +618,7 @@ class TransformationCache:
             transformation, semantic_cache,
             fingertip=fingertip,
             debug=debug,
+            scratch=scratch,
             cannot_be_local=self._blocked_local,
         )
         job.execute(
@@ -821,7 +827,11 @@ class TransformationCache:
             buffer_cache.decref(old_result_checksum)
         self.transformation_results[tf_checksum] = result_checksum, prelim
         buffer_cache.incref(result_checksum, persistent=False)
-        if not prelim:            
+        if not prelim:
+            if not self.stateless:
+                if result_checksum not in self.transformation_results_rev:
+                    self.transformation_results_rev[result_checksum] = []
+                self.transformation_results_rev[result_checksum].append(tf_checksum)
             database.set_transformation_result(tf_checksum, result_checksum)
             if self.stateless:
                 self.transformation_results.pop(tf_checksum)
@@ -854,6 +864,13 @@ class TransformationCache:
         if result_checksum is None:
             result_checksum = database.get_transformation_result(tf_checksum)
             prelim = False
+            if not self.stateless and result_checksum is not None:
+                self.transformation_results[tf_checksum] = result_checksum, False
+                buffer_cache.incref(result_checksum, persistent=False)
+                if result_checksum not in self.transformation_results_rev:
+                    self.transformation_results_rev[result_checksum] = []
+                self.transformation_results_rev[result_checksum].append(tf_checksum)
+
         return result_checksum, prelim
 
     async def serve_semantic_to_syntactic(self, sem_checksum, celltype, subcelltype, peer_id):
@@ -1041,7 +1058,7 @@ class TransformationCache:
                 tf_checksum, tf_exc, result_checksum, prelim = result
                 if tf_exc is None and (result_checksum is None or prelim or fingertip):
                     try:
-                        job = self.run_job(transformation, tf_checksum, fingertip=fingertip)
+                        job = self.run_job(transformation, tf_checksum, scratch=transformer._scratch, fingertip=fingertip)
                     except Exception as exc:
                         self._set_exc([transformer], tf_checksum, exc)
                         job = None                    

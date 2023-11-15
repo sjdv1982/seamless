@@ -33,7 +33,3 @@ ctx.tf.result.connect(ctx.result)
 ctx.compute()
 print(ctx.result.checksum)
 print(ctx.result.value)
-
-from seamless.core.cache.buffer_remote import _write_server
-import requests
-requests.put(_write_server + "/B:AHAH", "X")
