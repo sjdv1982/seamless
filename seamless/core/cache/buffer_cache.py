@@ -134,18 +134,25 @@ class BufferCache:
             buffer = None
             if buffers is not None:
                 buffer = buffers[n]
+
             # print("INCREF     ", checksum.hex(), buffer is None)
             if checksum in self.buffer_refcount:
                 self.buffer_refcount[checksum] += 1
-                if buffer is not None and checksum in self.missing:
-                    assert isinstance(buffer, bytes)
-                    print_debug("Found missing buffer (2): {}".format(checksum.hex()))
-                    if self.missing.pop(checksum):
-                        persistent = True
-                    if persistent and not buffer_remote.is_known(checksum):
-                        self.buffer_cache[checksum] = buffer
-                    else:
-                        self.cache_buffer(checksum, buffer)
+                if checksum in self.missing:
+                    if buffer is None:
+                        buffer = self.buffer_cache.get(checksum)
+                    if buffer is not None:
+                        assert isinstance(buffer, bytes)
+                        print_debug("Found missing buffer (2): {}".format(checksum.hex()))
+                        if self.missing.pop(checksum):
+                            persistent = True
+                        if persistent and not buffer_remote.is_known(checksum):
+                            if buffer_remote.can_write():
+                                buffer_remote.write_buffer(checksum, buffer)
+                            else:
+                                self.buffer_cache[checksum] = buffer
+                        else:
+                            self.cache_buffer(checksum, buffer)
             else:
                 self.buffer_refcount[checksum] = 1
                 if buffer is None:
@@ -154,7 +161,10 @@ class BufferCache:
                 if buffer is not None:
                     caching = True
                     if persistent and not buffer_remote.is_known(checksum):
-                        self.buffer_cache[checksum] = buffer
+                        if buffer_remote.can_write():
+                            buffer_remote.write_buffer(checksum, buffer)
+                        else:
+                            self.buffer_cache[checksum] = buffer
                     else:
                         self.cache_buffer(checksum, buffer)
                 else:
@@ -171,12 +181,6 @@ class BufferCache:
                     self.last_time.pop(checksum)
                     if not caching:
                         self.buffer_cache.pop(checksum, None)
-
-            if buffer is None:
-                buffer = self.buffer_cache.get(checksum)
-            else:
-                if persistent:
-                    buffer_remote.write_buffer(checksum, buffer)
 
     def incref(self, checksum, *, persistent):
         """Increments the refcount of a buffer checksum.
