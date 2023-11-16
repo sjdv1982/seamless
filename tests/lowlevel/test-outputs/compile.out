@@ -1,6 +1,13 @@
 
-g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_07ac28967dc673c73d17970c819db32845aab0f0b7f6c7baae4cc359cea5bff7_testmodule/main.o /tmp/seamless-extensions/seamless_module_07ac28967dc673c73d17970c819db32845aab0f0b7f6c7baae4cc359cea5bff7_testmodule/main.cpp
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_7f1fa146da98241e1da74829bb4305fb6ba7fd5199979639fd2cb1280c0034f8/main.o /tmp/seamless-extensions/seamless_module_7f1fa146da98241e1da74829bb4305fb6ba7fd5199979639fd2cb1280c0034f8/main.cpp
+
+
+8.141592979431152
+
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_bda718eecdca5766a64bd5ac2a844e63fdab4a59e67a2ad403e24f90c2704a28_testmodule/main.o /tmp/seamless-extensions/seamless_module_bda718eecdca5766a64bd5ac2a844e63fdab4a59e67a2ad403e24f90c2704a28_testmodule/main.cpp
 
 
 ADD 8.141592979431152
 8.141592979431152
+Status: OK
+None

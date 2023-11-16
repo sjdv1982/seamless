@@ -304,7 +304,11 @@ def build_module(module_definition, module_workspace={}, *,
         assert module_definition.get("type", mtype) == mtype
     assert mtype in ("interpreted", "compiled"), mtype
     json.dumps(module_definition)
-    checksum = calculate_dict_checksum(module_definition)
+    module_definition2 = module_definition
+    if mtype == "compiled":
+        module_definition2 = module_definition.copy()
+        module_definition2["@NAME"] = module_error_name
+    checksum = calculate_dict_checksum(module_definition2)
     dependencies = module_definition.get("dependencies")
     full_module_name = "seamless_module_" + checksum.hex()
     if module_error_name is not None:

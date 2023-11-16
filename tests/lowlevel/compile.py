@@ -1,6 +1,12 @@
 import seamless
 seamless.delegate(False)
 
+from seamless.core.build_module import build_module
+
+######################################################################
+# 1: set up compiled module
+######################################################################
+
 code = """
 #include <cmath>
 
@@ -8,7 +14,7 @@ extern "C" float add(int a, int b){
     return a + b + M_PI;
 }
 """
-testmodule = {
+module = {
     "type": "compiled",
     "objects": {
         "main": {
@@ -23,11 +29,28 @@ testmodule = {
     }
 }
 
+######################################################################
+# 2: compile it to binary module
+######################################################################
+
+from seamless.compiler import compilers, languages
+testmodule = build_module(
+    module, module_error_name=None,
+    compilers=compilers,
+    languages=languages,
+    module_debug_mounts=None
+)[1].lib
+print(testmodule.add(2,3))
+
+######################################################################
+# 3: test it in a context
+######################################################################
+
 from seamless.core import context, cell, transformer, macro_mode_on
 with macro_mode_on():
     ctx = context(toplevel=True)
     ctx.testmodule = cell("plain")
-    ctx.testmodule.set(testmodule)
+    ctx.testmodule.set(module)
     tf = ctx.tf = transformer({
         "a": ("input", "plain"),
         "b": ("input", "plain"),
@@ -50,3 +73,5 @@ result = testmodule.lib.add(a,b)
 
 ctx.compute()
 print(ctx.result.value)
+print(ctx.status)
+print(tf.exception)

@@ -75,3 +75,5 @@ result = testmodule.lib.add(a,b)
 
 ctx.compute()
 print(ctx.result.value)
+print(ctx.status)
+print(tf.exception)
