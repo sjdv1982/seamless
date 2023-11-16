@@ -6,6 +6,7 @@ import seamless
 import seamless.core.execute
 seamless.core.execute.DIRECT_PRINT = True
 
+raise NotImplementedError
 seamless.database_sink.connect()
 seamless.database_cache.connect()
 seamless.set_ncores(2)

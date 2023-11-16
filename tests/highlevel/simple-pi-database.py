@@ -3,6 +3,7 @@ from seamless.highlevel import Context, Cell
 import json
 
 import seamless
+raise NotImplementedError
 seamless.database_sink.connect()
 
 ctx = Context()

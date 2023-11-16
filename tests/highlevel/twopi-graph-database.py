@@ -1,4 +1,5 @@
 import seamless
+raise NotImplementedError
 seamless.database_cache.connect()
 
 import json

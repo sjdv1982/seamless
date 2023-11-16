@@ -1,5 +1,6 @@
 import seamless
-seamless.database_sink.connect()
+raise NotImplementedError
+# seamless.database_sink.connect()
 from seamless.highlevel import Context
 
 def count_atoms(pdbdata):

@@ -8,7 +8,7 @@ from seamless.core import context, cell, transformer, unilink
 
 seamless.set_ncores(0) # Forbids Seamless to add 1 and 2 by itself
 
-seamless.database_cache.connect()
+seamless.delegate(level=3)
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set_checksum(

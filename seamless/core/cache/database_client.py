@@ -332,44 +332,8 @@ class Database:
             self._log("GET", request["type"], request["checksum"])
             return result
 
-class Dummy:
-    _connected = False    
-    
-    @property
-    def active(self):
-        if not self._connected:
-            return False
-        return database.active
-
-    def _get_host_port(self):
-        env = os.environ
-        host = env.get("SEAMLESS_DATABASE_IP")
-        if host is None:
-            raise ValueError("environment variable SEAMLESS_DATABASE_IP not defined")
-        port = env.get("SEAMLESS_DATABASE_PORT")
-        if port is None:
-            raise ValueError("environment variable SEAMLESS_DATABASE_PORT not defined")
-        try:
-            port = int(port)
-        except Exception:
-            raise TypeError("environment variable SEAMLESS_DATABASE_PORT must be integer") from None
-        return host, port
-
-    def connect(self):
-        if not self._connected:
-            print(DeprecationWarning("""'database_sink' and 'database_cache' are deprecated.
-                                     Use 'database' instead"""))
-            
-            host, port = self._get_host_port()
-            database.connect(host, port)
-            self._connected = True
-
-    def __getattr__(self, attr):
-        return getattr(database, attr)
 
 database = Database()
-database_sink = Dummy()
-database_cache = Dummy()
 
 from ...util import parse_checksum
 from ...calculate_checksum import calculate_dict_checksum

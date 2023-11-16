@@ -8,6 +8,7 @@ ctx.a = "testvalue"
 ctx.compute()
 cs = ctx.a.checksum
 
+raise NotImplementedError
 print(seamless.database_cache.get_buffer(cs))
 print(seamless.database_cache.get_filename(cs))
 seamless.database_cache.set_filezones(["local"])  # default zone 

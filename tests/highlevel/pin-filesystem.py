@@ -10,6 +10,7 @@ subprocess.run("docker build -t openssl -", shell=True,input=docker_file.encode(
 
 import seamless
 from seamless.highlevel.Cell import FolderCell
+raise NotImplementedError
 try:
     seamless.database_cache.connect()
     print("Database found")

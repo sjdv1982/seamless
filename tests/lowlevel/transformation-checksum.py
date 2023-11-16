@@ -1,11 +1,10 @@
 import seamless
 seamless.deactivate_transformations()
 
-from seamless import communion_server
 
 from seamless.core import context, cell, transformer
 
-seamless.database_sink.connect()
+seamless.delegate(level=2)
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)

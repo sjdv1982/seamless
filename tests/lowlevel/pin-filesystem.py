@@ -6,8 +6,7 @@ import seamless
 from requests import ConnectionError
 
 try:
-    seamless.database_cache.connect()
-    seamless.database_sink.connect()
+    seamless.delegate(level=3)
     print("Database found")
 except ConnectionError:
     print("Database not found")

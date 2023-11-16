@@ -6,6 +6,7 @@ import seamless
 
 currdir=os.path.dirname(os.path.abspath(__file__))
 
+raise NotImplementedError
 if "--database" in sys.argv[1:]:
     seamless.database_sink.connect()
     seamless.database_cache.connect()

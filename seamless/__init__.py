@@ -126,7 +126,6 @@ def check_original_event_loop():
 from silk import Silk
 from .core.transformation import set_ncores
 from .calculate_checksum import calculate_checksum, calculate_dict_checksum
-from .core.cache.database_client import database_sink, database_cache
 from .vault import load_vault
 from . import config
 from .core.cache import CacheMissError
