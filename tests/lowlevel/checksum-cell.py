@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 from seamless.core import cell, context
 
 ctx = context(toplevel=True)

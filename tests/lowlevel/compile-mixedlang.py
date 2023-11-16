@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 from seamless.core.build_module import build_module
 
 ######################################################################

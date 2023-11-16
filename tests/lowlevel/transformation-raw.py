@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 import inspect, textwrap
 
 from seamless import calculate_checksum

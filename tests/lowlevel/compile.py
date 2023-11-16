@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 code = """
 #include <cmath>
 

@@ -1,4 +1,6 @@
 import seamless
+seamless.delegate(False)
+
 from seamless.core import cell, transformer, context
 ctx = context(toplevel=True)
 ctx.cell1 = cell("cson").set("a: 10")

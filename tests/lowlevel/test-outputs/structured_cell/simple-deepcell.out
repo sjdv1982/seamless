@@ -1,5 +1,5 @@
 Traceback (most recent call last):
-  File "/cwd/tests/lowlevel/structured_cell/simple-deepcell.py", line 16, in <module>
+  File "/cwd/tests/lowlevel/structured_cell/simple-deepcell.py", line 19, in <module>
     data.set(20)
   File "/silk/silk/Silk.py", line 536, in set
     self._set(value, lowlevel=False)

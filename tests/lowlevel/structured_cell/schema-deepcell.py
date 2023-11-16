@@ -5,6 +5,10 @@
 
 import sys
 from pprint import pprint
+
+import seamless
+seamless.delegate(False)
+
 from silk import Silk, ValidationError
 from seamless.core import context, cell, StructuredCell
 

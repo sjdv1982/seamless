@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 from seamless.core import macro_mode, context, cell, macro
 
 with macro_mode.macro_mode_on(None):

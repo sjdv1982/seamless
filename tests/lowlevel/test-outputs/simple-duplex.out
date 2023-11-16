@@ -67,16 +67,11 @@ TF DUPLEX Status: executing, 40.0 %
 RESULT        0.900 Status: preliminary
 RESULT DUPLEX 0.900 Status: preliminary
 
+PROGRESS 5
 TF        Status: executing, 40.0 %
 TF DUPLEX Status: executing, 40.0 %
 RESULT        0.900 Status: preliminary
 RESULT DUPLEX 0.900 Status: preliminary
-
-PROGRESS 5
-TF        Status: executing, 50.0 %
-TF DUPLEX Status: executing, 50.0 %
-RESULT        1.500 Status: preliminary
-RESULT DUPLEX 1.500 Status: preliminary
 
 TF        Status: executing, 50.0 %
 TF DUPLEX Status: executing, 50.0 %
@@ -84,14 +79,19 @@ RESULT        1.500 Status: preliminary
 RESULT DUPLEX 1.500 Status: preliminary
 
 PROGRESS 6
-TF        Status: executing, 60.0 %
-TF DUPLEX Status: executing, 60.0 %
+TF        Status: executing, 50.0 %
+TF DUPLEX Status: executing, 50.0 %
 RESULT        1.500 Status: preliminary
 RESULT DUPLEX 1.500 Status: preliminary
 
 TF        Status: executing, 60.0 %
 TF DUPLEX Status: executing, 60.0 %
+RESULT        1.500 Status: preliminary
+RESULT DUPLEX 1.500 Status: preliminary
+
 PROGRESS 7
+TF        Status: executing, 60.0 %
+TF DUPLEX Status: executing, 60.0 %
 RESULT        1.500 Status: preliminary
 RESULT DUPLEX 1.500 Status: preliminary
 
@@ -101,8 +101,8 @@ RESULT        2.100 Status: preliminary
 RESULT DUPLEX 2.100 Status: preliminary
 
 PROGRESS 8
-TF        Status: executing, 70.0 %
-TF DUPLEX Status: executing, 70.0 %
+TF        Status: executing, 80.0 %
+TF DUPLEX Status: executing, 80.0 %
 RESULT        2.100 Status: preliminary
 RESULT DUPLEX 2.100 Status: preliminary
 

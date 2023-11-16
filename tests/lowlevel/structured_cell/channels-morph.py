@@ -1,4 +1,7 @@
 # adapted from simple-channels.py
+import seamless
+seamless.delegate(False)
+
 from seamless.core import context, cell, StructuredCell
 
 ctx = context(toplevel=True)

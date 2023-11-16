@@ -1,4 +1,6 @@
 import seamless
+seamless.delegate(False)
+
 from seamless.core import context, cell, reactor, unilink
 
 ctx = context(toplevel=True)

@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 from seamless.core import context, transformer, cell
 from seamless.core.protocol.get_buffer import get_buffer
 import json

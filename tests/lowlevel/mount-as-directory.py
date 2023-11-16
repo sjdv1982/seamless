@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 import shutil
 shutil.rmtree("/tmp/mount-test1",ignore_errors=True)
 shutil.rmtree("/tmp/mount-test2",ignore_errors=True)

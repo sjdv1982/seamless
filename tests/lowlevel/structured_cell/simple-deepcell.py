@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 from seamless.core import context, cell, StructuredCell
 from seamless.core.protocol.deep_structure import DeepStructureError
 import traceback

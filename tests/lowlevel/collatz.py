@@ -7,6 +7,9 @@ Overhead is terrible and space requirements are atrocious, but there could be
  a scenario where this could be useful.
 """
 
+import seamless
+seamless.delegate(False)
+
 from seamless.core import context, cell, macro, macro_mode_on
 import time
 ctx = context(toplevel=True)

@@ -11,7 +11,7 @@ bytecell3.py
 buffer_remote.sh
 cachehit-semantic.py
 conversions.py: the output is approximate, depends on exact timings
-simple.py: can be run with Seamless database (fresh), in which case the execution metadata is printed
+TODO?: simple.py: can be run with Seamless database (fresh), in which case the execution metadata is printed
 simple-async.py
 simple-indirect.py
 simple-ipython.py
@@ -20,7 +20,7 @@ subcontext.py
 simple-reactor.py
 downstream-reactor.py
 reactor-edit.py
-simple-cache.py: see instructions in file
+TODO: simple-cache.py: see instructions in file
 plain.py
 mixedcell.py
 preliminary.py: the output is approximate, depends on exact timings
@@ -42,8 +42,8 @@ compile-fortran.py
 compile-mixedlang.py
 schema.py
 fingertip.py
-reuse.sh: run with Seamless database (fresh db file).
-reuse-compile.sh: run with Seamless database (fresh db file).
+TODO?: reuse.sh: run with Seamless database (fresh db file).
+TODO?: reuse-compile.sh: run with Seamless database (fresh db file).
 injection.py
 dependent-modules.py
 module-package.py
@@ -54,31 +54,37 @@ injection3.py
 injection4.py: the output is approximate, depends on exact timings, see also [1]
 injection5.py: see above
 simple-share.py
-transformation-checksum.sh: run with Seamless database. If not in the Docker image, set SEAMLESS_SCRIPT_DIR
+TODO?: transformation-checksum.sh: run with Seamless database. If not in the Docker image, set SEAMLESS_SCRIPT_DIR
 transformation-raw.py
 transformation-raw-ipython.py
 transformation-raw-bash.py
 transformation-raw-bashdocker.py: can be run with delegation using "export DELEGATE=''"
 meta.py
 simple-duplex.py
-simple-remote.py: run together with seamless-jobslave
-simple-remote2.py: run together with:
+TODO: simple-remote.py: run together with seamless-jobslave
+TODO: simple-remote2.py: run together with:
      seamless-jobslave jobslave --direct-print
      after the run:
      docker logs jobslave > test-outputs/simple-remote2-jobslave.out 2>&1
-simple-duplex-remote.py: run together with:
+TODO: simple-duplex-remote.py: run together with:
      seamless-jobslave jobslave --direct-print
      after the run:
      docker logs jobslave > test-outputs/simple-duplex-remote-jobslave.out 2>&1
-compile-run-remote.py: 
+TODO: compile-run-remote.py: 
      seamless-jobslave jobslave --direct-print
      after the run:
      docker logs jobslave, should include "ADD 8.141592979431152"
+structured_cell/scratch.sh: run as i=structured_cell/scratch; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
+     make sure that level 3 delegation is available inside a clean buffer directory and database.
+structured_cell/scratch2.sh: run as i=structured_cell/scratch2; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
+     make sure that level 3 delegation is available inside a clean buffer directory and database.
+scratch-transformer.sh: run as i=scratch-transformer; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
+     make sure that level 3 delegation is available inside a clean buffer directory and database.
 macro.py
 macro2.py
 macro3.py
 pin-as.py
-pin-filesystem.sh: run as i=pin-filesystem; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
+TODO?: pin-filesystem.sh: run as i=pin-filesystem; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
   Make sure that the database is not running
   If not in the Docker image, set SEAMLESS_TOOLS_DIR to <seamless-tools-git>/tools
 checksum-cell.py
@@ -105,7 +111,7 @@ mount-cson.py:
      - then open /tmp/test.cson and /tmp/test.json, manipulate resp. monitor them
 mount-plain.py: see above, minus the .cson
 
-simple-communion: 
+TODO: simple-communion: 
      do 
      In one terminal, run:
      export SEAMLESS_DOCKER_PUBLISH_SHARESERVER_PORTS='-p 8602:8602'
@@ -120,7 +126,7 @@ simple-debug.py: Run in Visual Studio Code
   Will work only under bare metal (not in Docker).
   Can't set breakpoints.
 mount.ipynb
-communion-peer[12].sh: 
+TODO: communion-peer[12].sh: 
      In one terminal, run:
      export SEAMLESS_DOCKER_PUBLISH_SHARESERVER_PORTS='-p 8601:8601'
      seamless-bash

@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 from seamless.core import context, cell, StructuredCell
 from seamless.core import macro_mode_on 
 with macro_mode_on():

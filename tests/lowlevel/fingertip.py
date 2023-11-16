@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 import asyncio, traceback
 loop = asyncio.get_event_loop()
 

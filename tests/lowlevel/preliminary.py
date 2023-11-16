@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 from seamless.core import context, cell, transformer, macro_mode_on
 from pprint import pprint
 import time

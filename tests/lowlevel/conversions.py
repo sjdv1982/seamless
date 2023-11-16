@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 import asyncio
 import json
 from seamless.core import context, cell

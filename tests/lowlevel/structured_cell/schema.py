@@ -1,5 +1,9 @@
 # adapted from tests/mixed/silk.py and tests/silk/test-complex.py
 # (and should give almost the same output)
+
+import seamless
+seamless.delegate(False)
+
 import sys
 from pprint import pprint
 from silk import Silk, ValidationError
