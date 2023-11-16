@@ -1012,7 +1012,7 @@ class TransformationCache:
             return
         self._hard_cancel(job)
 
-    async def run_transformation_async(self, tf_checksum, *, fingertip, tf_dunder=None):
+    async def run_transformation_async(self, tf_checksum, *, fingertip, scratch, tf_dunder=None):
         from . import CacheMissError
                 
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
@@ -1047,6 +1047,7 @@ class TransformationCache:
         if tf_dunder:
             meta = tf_dunder.get("__meta__", {})
         transformer = DummyTransformer(tf_checksum)
+        transformer._scratch = scratch
         if meta.get("__direct_print__"):
             transformer._debug = {"direct_print": True}
         async def incref_and_run():
@@ -1074,15 +1075,9 @@ class TransformationCache:
         last_progress = None
         fut_done_time = None
         while 1:
-            if fut.done():
-                if fut_done_time is None:
-                    fut_done_time = time.time()
-                else:
-                    if time.time() - fut_done_time > 5:
-                        fut.result()
-                        raise Exception("Transformation finished, but didn't trigger a result or exception")
             if transformer._status_reason == StatusReasonEnum.EXECUTING:
                 if self.transformation_jobs.get(tf_checksum) is None:
+                    # job has finished
                     break
             if transformer.prelim != last_result_checksum \
             or transformer.progress != last_progress:
@@ -1092,15 +1087,30 @@ class TransformationCache:
                     log(last_progress)
                 else:
                     log(last_progress, last_result_checksum.hex())
+
+            if tf_checksum in self.transformation_exceptions:
+                raise self.transformation_exceptions[tf_checksum]
+
+            if fut.done():
+                # future is done, but the done callback has not yet been triggered
+                # - tf_checksum has not been cleared from self.transformation_jobs
+                # - tf_checksum is not in self.transformation_exceptions
+                # If this situation lasts for more than 5 seconds, raise an exception
+                if fut_done_time is None:
+                    fut_done_time = time.time()
+                else:
+                    if time.time() - fut_done_time > 5:
+                        fut.result()
+                        raise Exception("Transformation finished, but didn't trigger a result or exception")
+
             await asyncio.sleep(0.05)
-        if tf_checksum in self.transformation_exceptions:
-            raise self.transformation_exceptions[tf_checksum]
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
         assert not prelim
-        self.register_known_transformation(tf_checksum, result_checksum)
+        if result_checksum is not None:
+            self.register_known_transformation(tf_checksum, result_checksum)
         return result_checksum
 
-    def run_transformation(self, tf_checksum, *, fingertip, tf_dunder=None, new_event_loop=False):
+    def run_transformation(self, tf_checksum, *, fingertip, scratch, tf_dunder=None, new_event_loop=False):
         event_loop = asyncio.get_event_loop()
         if event_loop.is_running() or new_event_loop:
             # To support run_transformation inside transformer code
@@ -1110,7 +1120,7 @@ class TransformationCache:
                 # Therefore, we can't update the Seamless workflow graph, but we shouldn't have to
                 # The use case is essentially: using the functional style under Jupyter
                 def func():
-                    coro = self.run_transformation_async(tf_checksum, fingertip=fingertip, tf_dunder=tf_dunder)
+                    coro = self.run_transformation_async(tf_checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder)
                     # The following hangs, even for a "dummy" coroutine:
                     #  future = asyncio.run_coroutine_threadsafe(coro, event_loop)                        
                     #  return future.result()
@@ -1135,7 +1145,7 @@ class TransformationCache:
                         await asyncio.sleep(0.01)
                 try:
                     return loop.run_until_complete(
-                        self.run_transformation_async(tf_checksum, fingertip=fingertip, tf_dunder=tf_dunder)
+                        self.run_transformation_async(tf_checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder)
                     )
                 finally:
                     for task in asyncio.all_tasks(loop):
@@ -1144,7 +1154,7 @@ class TransformationCache:
 
         else:
             fut = asyncio.ensure_future(
-                self.run_transformation_async(tf_checksum, fingertip=fingertip, tf_dunder=tf_dunder)
+                self.run_transformation_async(tf_checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder)
             )
             asyncio.get_event_loop().run_until_complete(fut)
             return fut.result()

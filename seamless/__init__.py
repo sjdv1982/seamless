@@ -87,7 +87,7 @@ def activate_transformations():
     from .core.cache.transformation_cache import transformation_cache
     transformation_cache.active = True
 
-def run_transformation(checksum, *, fingertip=False, tf_dunder=None, new_event_loop=False):
+def run_transformation(checksum, *, fingertip=False, scratch=False, tf_dunder=None, new_event_loop=False):
     from seamless.config import check_delegation
     from seamless.util import is_forked
     check_delegation()
@@ -105,15 +105,15 @@ def run_transformation(checksum, *, fingertip=False, tf_dunder=None, new_event_l
 
     from .core.cache.transformation_cache import transformation_cache
     checksum = parse_checksum(checksum, as_bytes=True)
-    return transformation_cache.run_transformation(checksum, fingertip=fingertip, tf_dunder=tf_dunder, new_event_loop=new_event_loop)
+    return transformation_cache.run_transformation(checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, new_event_loop=new_event_loop)
 
-async def run_transformation_async(checksum, *, fingertip, tf_dunder=None):
+async def run_transformation_async(checksum, *, fingertip, scratch, tf_dunder=None):
     from seamless.config import check_delegation
     from .core.cache.transformation_cache import transformation_cache
     check_delegation()
     checksum = parse_checksum(checksum, as_bytes=True)
     transformation_cache.transformation_exceptions.pop(checksum, None)
-    return await transformation_cache.run_transformation_async(checksum,tf_dunder=tf_dunder, fingertip=fingertip)
+    return await transformation_cache.run_transformation_async(checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder)
 
 _original_event_loop = asyncio.get_event_loop()
 def check_original_event_loop():

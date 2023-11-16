@@ -43,7 +43,8 @@ async def build_transformation():
     tf_checksum = calculate_checksum(tf_buf)
     buffer_cache.cache_buffer(tf_checksum, tf_buf)
     
-    result_checksum = await transformation_cache.run_transformation_async(tf_checksum, tf_dunder=tf_dunder, fingertip=False)
+    result = None
+    result_checksum = await transformation_cache.run_transformation_async(tf_checksum, tf_dunder=tf_dunder, fingertip=False, scratch=False)
     if result_checksum is not None:
         result = buffer_cache.get_buffer(result_checksum, remote=(delegation==True))
         if delegation:

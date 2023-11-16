@@ -1,12 +1,11 @@
+import json
 import seamless
 seamless.delegate(False)
-
-import inspect, textwrap
 
 from seamless import calculate_checksum
 from seamless.core.cache.buffer_cache import buffer_cache
 from seamless.core.cache.transformation_cache import (
-    transformation_cache, DummyTransformer, tf_get_buffer, 
+    transformation_cache, tf_get_buffer, 
     syntactic_is_semantic, syntactic_to_semantic, 
     transformation_cache
 )
@@ -47,6 +46,12 @@ async def build_transformation():
         "b": ("int", 7,),
         "code": ("python", func_buf),
     }
+    tf_dunder = {}
+    transformation = {
+        "__language__": "bash",
+        "__output__": ("result", "bytes", None),
+    }
+
     transformation = {
         "__language__": "python",
         "__output__": ("result", "int", None)
@@ -63,17 +68,18 @@ async def build_transformation():
         transformation[k] = celltype, None, sem_checksum.hex()
 
     envbuf = await serialize(environment, "plain")
-    checksum = calculate_checksum(envbuf)
-    buffer_cache.cache_buffer(checksum, envbuf)
-    transformation["__env__"] = checksum.hex()
+    env_checksum = calculate_checksum(envbuf)
+    buffer_cache.cache_buffer(env_checksum, envbuf)
+    transformation["__env__"] = env_checksum.hex()  # will be ignored; tf_dunder is needed
+    tf_dunder["__env__"] = env_checksum.hex()
 
     tf_buf = tf_get_buffer(transformation)
     print(tf_buf.decode())
+    print(json.dumps(tf_dunder, sort_keys=True, indent=2))
     tf_checksum = calculate_checksum(tf_buf)
     buffer_cache.cache_buffer(tf_checksum, tf_buf)
     
-    tf = DummyTransformer(tf_checksum)
-    result = await transformation_cache.run_transformation_async(tf_checksum, fingertip=False)
+    result = await transformation_cache.run_transformation_async(tf_checksum, tf_dunder=tf_dunder, fingertip=False, scratch=False)
     print(buffer_cache.get_buffer(result, remote=False))
     print(transformation_cache.transformation_logs[tf_checksum])
 

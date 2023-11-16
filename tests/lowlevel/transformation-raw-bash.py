@@ -37,7 +37,7 @@ async def build_transformation():
     buffer_cache.cache_buffer(tf_checksum, tf_buf)
     
     tf = DummyTransformer(tf_checksum)
-    result = await transformation_cache.run_transformation_async(tf_checksum, fingertip=False)
+    result = await transformation_cache.run_transformation_async(tf_checksum, fingertip=False, scratch=False)
     if result is not None:
         result = buffer_cache.get_buffer(result, remote=False)
     if result is not None:
