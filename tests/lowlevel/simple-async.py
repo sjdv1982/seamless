@@ -2,13 +2,7 @@ import seamless
 seamless.delegate(False)
 
 from seamless.core import context, cell, transformer, unilink
-import traceback
 
-try:
-    seamless.database_sink.connect()
-    seamless.database_cache.connect()
-except Exception:
-    pass
 
 async def main():
     ctx = context(toplevel=True)

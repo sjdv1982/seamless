@@ -734,6 +734,7 @@ class TransformationJob:
             result = None
             done = False
             result_checksum = None
+            result_buffer = None
             while 1:
                 while not queue.empty():
                     status, msg = queue.get()

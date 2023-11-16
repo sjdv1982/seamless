@@ -512,8 +512,6 @@ class Manager:
     def _get_buffer(self, checksum, deep):
         if asyncio.get_event_loop().is_running():
             buffer = get_buffer(checksum, remote=True, deep=deep)
-            if buffer is None:
-                raise CacheMissError(checksum.hex())
             return buffer
         if checksum is None:
             return None
