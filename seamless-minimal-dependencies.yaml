@@ -13,6 +13,7 @@ dependencies:
   - aiohttp
   - rpbs::silk
   - pip
+  - ipykernel
   - pip:
     - speg
     - cson
