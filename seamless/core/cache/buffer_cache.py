@@ -47,6 +47,7 @@ class BufferCache:
     SMALL_BUFFER_LIMIT = 100000
     LIFETIME_TEMP = 20.0 # buffer_cache keeps unreferenced buffer values alive for 20 secs
     LIFETIME_TEMP_SMALL = 600.0 # buffer_cache keeps unreferenced small buffer values (< SMALL_BUFFER_LIMIT bytes) alive for 10 minutes
+    LOCAL_MODE_FULL_PERSISTENCE = True # in local mode (no delegation), buffer_cache keeps non-persistent buffers alive as long as they are referenced
 
     def __init__(self):
         self.buffer_cache = {} #local cache, checksum-to-buffer
@@ -56,6 +57,7 @@ class BufferCache:
         self.buffer_info = {} #checksum-to-buffer-info
         self.synced_buffer_info = set()  #set of bufferinfo checksums that are in-sync with the database
         self.missing = {} # key: checksum, value: persistent (bool)
+        self.persistent_buffers = set()  # only used if LOCAL_MODE_FULL_PERSISTENCE is False
 
         self.incref_buffer(bytes.fromhex(empty_dict_checksum), b'{}\n', persistent=True)
         self.incref_buffer(bytes.fromhex(empty_list_checksum), b'[]\n', persistent=True)
@@ -76,10 +78,13 @@ class BufferCache:
         self._uncache_buffer(checksum)
 
     def _uncache_buffer(self, checksum):
-        self.last_time.pop(checksum, None)
         if checksum in self.buffer_refcount:
-            if not buffer_remote.can_delete_buffer(checksum):
+            can_delete = True
+            if self.LOCAL_MODE_FULL_PERSISTENCE or checksum in self.persistent_buffers:
+                can_delete = buffer_remote.can_read_buffer(checksum)
+            if not can_delete:
                 return
+        self.last_time.pop(checksum, None)
         self.buffer_cache.pop(checksum, None)
 
 
@@ -104,8 +109,7 @@ class BufferCache:
         assert len(checksum) == 32
         assert isinstance(buffer, bytes)
         #print("LOCAL CACHE", checksum.hex())
-        if checksum not in self.buffer_refcount:
-            self._update_time(checksum, len(buffer))
+        self._update_time(checksum, len(buffer))
         self.update_buffer_info(checksum, "length", len(buffer), sync_remote=False)
         if not buffer_remote.is_known(checksum):
             self.buffer_cache[checksum] = buffer
@@ -150,6 +154,8 @@ class BufferCache:
                 buffer = buffers[n]
 
             # print("INCREF     ", checksum.hex(), persistent, buffer is None, checksum in self.missing)
+            if persistent and not self.LOCAL_MODE_FULL_PERSISTENCE:
+                self.persistent_buffers.add(checksum)
             if checksum in self.buffer_refcount:
                 self.buffer_refcount[checksum] += 1
             else:
@@ -175,7 +181,7 @@ class BufferCache:
                         self.missing[checksum] = True
                     elif checksum not in self.missing:
                         self.missing[checksum] = False
-
+            # print("/INCREF")
     def incref(self, checksum, *, persistent):
         """Increments the refcount of a buffer checksum.
 

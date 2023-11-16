@@ -40,24 +40,18 @@ class Cell(SeamlessBase):
     _scratch = False
 
     """Parameters for putting the checksum 'at your fingertips':
-    If "fingertip_recompute" is None or True:
+    If "fingertip_recompute":
     - If not available, try to re-compute it using its provenance,
         i.e. re-evaluating any transformation or expression that produced it
     - Such recomputation is done in "fingertip" mode, i.e. disallowing
         use of expression-to-checksum or transformation-to-checksum caches
-    If "fingertip_remote" is None or True:
+    If "fingertip_remote":
     - Verify that the buffer is locally or remotely available;
         if remotely, download it.
-    If "fingertip_recompute" is True and "fingertip_remote" is None, recomputation will
-        be tried before recomputation.
-    If both values are True or None, recomputation is tried first
-
-    But there is a buffer size lower limit RECOMPUTE_OVER_REMOTE;
-      below the limit, remote download is preferred
     """
 
-    _fingertip_remote = None
-    _fingertip_recompute = None
+    _fingertip_remote = True
+    _fingertip_recompute = True
 
     def __init__(self):
         global cell_counter

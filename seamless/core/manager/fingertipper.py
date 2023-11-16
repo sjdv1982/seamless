@@ -139,6 +139,7 @@ class FingerTipper:
         if self.empty:
             return
 
+        self.transformations[:] = list({v:(k,v) for k,v in self.transformations}.values())
         coros = []
         for transformation, tf_checksum in self.transformations:
             coro = self.fingertip_transformation(transformation, tf_checksum)

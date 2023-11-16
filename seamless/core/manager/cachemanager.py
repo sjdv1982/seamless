@@ -26,11 +26,6 @@ def print_error(*args):
     msg = " ".join([str(arg) for arg in args])
     logger.error(msg)
 
-RECOMPUTE_OVER_REMOTE = int(100e6) # after this threshold, better to recompute than to download remotely
-                                # TODO: have some dynamic component based on:
-                                # - stored recomputation time from provenance server
-                                # - internet connection speed
-
 class CacheManager:
     def __init__(self, manager):
         self.manager = weakref.ref(manager)
@@ -242,43 +237,37 @@ class CacheManager:
                 has_cell = True
                 if cell._hash_pattern:
                     is_deep = True
-                c_remote = rmap[cell._fingertip_remote]
-                remote = min(remote, c_remote)
-                c_recompute = rmap[cell._fingertip_recompute]
-                recompute = min(recompute, c_recompute)
+                remote = cell._fingertip_remote
+                recompute = cell._fingertip_recompute
                 break
 
         if must_have_cell and not has_cell:
             raise CacheMissError(checksum.hex())
 
-        if recompute - remote in (0, 1) and remote > 0:
-            buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=False, force_length=False)
-            if buffer_info.get("length", 0) <= RECOMPUTE_OVER_REMOTE:
-                remote = recompute + 1
-
-        if remote > recompute:
+        if remote:
             buffer = get_buffer(checksum, remote=True, deep=is_deep)
             if buffer is not None:
                 return buffer
 
         fingertipper = FingerTipper(checksum, self, done=done)
 
-        tf_checksums = tf_cache.known_transformations_rev.get(checksum, [])
-        tf_checksums += tf_cache.transformation_results_rev.get(checksum, [])
-        for tf_checksum in tf_checksums:            
-            if tf_checksum.hex() in TRANSFORMATION_STACK:
-                continue
-            transformation = tf_cache.transformations.get(tf_checksum)
-            if transformation is None:
-                buffer = get_buffer(tf_checksum, remote=True)
-                if buffer is None:
+        if recompute:
+            tf_checksums = tf_cache.known_transformations_rev.get(checksum, [])
+            tf_checksums += tf_cache.transformation_results_rev.get(checksum, [])
+            for tf_checksum in tf_checksums:            
+                if tf_checksum.hex() in TRANSFORMATION_STACK:
                     continue
-                transformation = await DeserializeBufferTask(
-                    manager, buffer, tf_checksum, "plain", copy=True
-                ).run()
+                transformation = tf_cache.transformations.get(tf_checksum)
                 if transformation is None:
-                    continue
-            fingertipper.transformations.append((transformation, tf_checksum))
+                    buffer = get_buffer(tf_checksum, remote=True)
+                    if buffer is None:
+                        continue
+                    transformation = await DeserializeBufferTask(
+                        manager, buffer, tf_checksum, "plain", copy=True
+                    ).run()
+                    if transformation is None:
+                        continue
+                fingertipper.transformations.append((transformation, tf_checksum))
 
         for refholder, result in self.checksum_refs.get(checksum, set()):
             if not result:
@@ -313,11 +302,11 @@ class CacheManager:
                 sem2syn = self.transformation_cache.semantic_to_syntactic_checksums
                 for (sem_checksum, celltype, subcelltype), syn_checksums0 in sem2syn.items():
                     if sem_checksum == checksum:
-                        syn_checksums = syn_checksums0
+                        syn_checksums = [(cs, celltype, subcelltype) for cs in syn_checksums0]
                         break
             
             if syn_checksums:
-                for syn_checksum in syn_checksums:
+                for syn_checksum, celltype, subcelltype in syn_checksums:
                     fingertipper.syn2sem.append((syn_checksum, celltype, subcelltype))
 
         if fingertipper.empty:
@@ -341,7 +330,7 @@ class CacheManager:
         
         exc_str = await fingertipper.run()
 
-        buffer = get_buffer(checksum,remote=True)
+        buffer = get_buffer(checksum,remote=remote)
         if buffer is not None:
             return buffer
 
@@ -351,14 +340,14 @@ class CacheManager:
                 return buffer
 
         if database.active:
-            # Extremely heroic effort to mine a database for expressions and transformations
+            # Extremely heroic effort to mine a database for expressions and structured cell joins
             fingertipper.clear()
             mined_expressions, mined_joins = self._mine_database(checksum)
             fingertipper.expressions += mined_expressions
             fingertipper.joins2 += mined_joins
             exc_str = await fingertipper.run()
 
-            buffer = get_buffer(checksum,remote=True)
+            buffer = get_buffer(checksum,remote=remote)
             if buffer is not None:
                 return buffer
 
