@@ -1,11 +1,14 @@
 import os, sys, io, tempfile
 try:
-    from cffi import FFI
-    from cffi.ffiplatform import _hack_at_distutils
+    from cffi import FFI    
     from cffi.recompiler import Recompiler
 except ImportError:
     FFI = None
     Recompiler = None
+try:
+    from cffi.ffiplatform import _hack_at_distutils
+except ImportError:
+    pass    
 import distutils
 
 import json

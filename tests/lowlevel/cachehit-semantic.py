@@ -28,7 +28,7 @@ ctx.tf.result.connect(ctx.result)
 ctx.compute()
 print(ctx.result.value)
 
-seamless.set_ncores(0) # no more local computations
+seamless.config.block_local()
 ctx.ttf = transformer(params)
 ctx.code.connect(ctx.ttf.code)
 ctx.cell1a.connect(ctx.ttf.v)
