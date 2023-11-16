@@ -1,11 +1,11 @@
 import seamless
-seamless.delegate(False)
-
 from seamless.core import context, cell, transformer, unilink
 import os
 
 if "DELEGATE" in os.environ:
     seamless.config.delegate(level=3)
+    from seamless.core.transformation import get_global_info
+    get_global_info()  # avoid timing errors
 else:
     seamless.config.delegate(level=0)
 
