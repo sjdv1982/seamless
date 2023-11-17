@@ -2,7 +2,7 @@ import seamless
 from seamless.core import context, cell, transformer
 
 seamless.load_vault("./reuse-vault")
-seamless.config.database.connect()
+seamless.config.init_database_from_env()
 
 ctx = context(toplevel=True)
 

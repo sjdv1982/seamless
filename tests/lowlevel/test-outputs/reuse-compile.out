@@ -1,25 +1,23 @@
 + rm -rf reuse-vault
-+ python3 reuse1.py
++ python3 reuse-compile1.py
 WARNING: init_database_from_env is called directly.
 
 You are bypassing seamless.delegate(...)
 You are now responsible yourself for saving buffers, e.g. using ctx.save_vault(...)
 
+
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_bda718eecdca5766a64bd5ac2a844e63fdab4a59e67a2ad403e24f90c2704a28_testmodule/main.o /tmp/seamless-extensions/seamless_module_bda718eecdca5766a64bd5ac2a844e63fdab4a59e67a2ad403e24f90c2704a28_testmodule/main.cpp
+
+
 Waiting for: Seamless transformer: .tf
-Waiting for: Seamless transformer: .tf
-Status: OK
-None
-+ python3 reuse2.py
-1
-2
-3.5
-+ python3 reuse3.py
+8.141592979431152
++ python3 reuse-compile2.py
 WARNING: init_database_from_env is called directly.
 
 You are bypassing seamless.delegate(...)
 You are now responsible yourself for saving buffers, e.g. using ctx.save_vault(...)
 
 Status: OK
-3.5
 None
+8.141592979431152
 + rm -rf reuse-vault

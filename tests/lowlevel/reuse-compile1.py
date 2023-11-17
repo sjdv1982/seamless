@@ -1,5 +1,6 @@
 import seamless
-seamless.config.database.connect()
+
+seamless.config.init_database_from_env()
 
 code = """
 #include <cmath>

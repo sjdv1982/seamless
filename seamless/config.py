@@ -55,16 +55,28 @@ def _contact_assistant():
         raise NotImplementedError
     else:
         _init_buffer_remote_from_env(only_level_1=False)
-        _init_database_from_env()
+        init_database_from_env()
 
 
+_delegating = False
 _delegate_level = None
 
 def get_delegate_level():
     return _delegate_level
 
-def _init_database_from_env():
-    """Configure database and buffer remote folders/servers based on environment variables"""
+def init_database_from_env():
+    """Configure database based on environment variables"""
+    global _delegate_level
+    if not _delegating:
+        assert _delegate_level is None
+        msg = """WARNING: init_database_from_env is called directly.
+
+You are bypassing seamless.delegate(...)
+You are now responsible yourself for saving buffers, e.g. using ctx.save_vault(...)
+"""
+        print(msg, file=sys.stderr)
+        _delegate_level = 0
+
     env = os.environ
     host = env.get("SEAMLESS_DATABASE_IP")
     if host is None:
@@ -82,6 +94,7 @@ def _init_database_from_env():
         raise DatabaseConnectionError(*exc.args) from None
 
 def _init_buffer_remote_from_env(only_level_1=False):
+    """Configure buffer remote folders/servers based on environment variables"""
     def _split_env(var, mode):
         assert mode in ("folder", "url"), mode
         if var:
@@ -157,11 +170,12 @@ Delegate some or all buffers and results.
     The environment variables are: SEAMLESS_DATABASE_IP and 
     SEAMLESS_DATABASE_PORT."""
 
-    global _delegate_level
+    global _delegate_level, _delegating
     if _delegate_level is not None and _delegate_level != level:
         raise NotImplementedError
 
     assert level in (0,1,2,3,4), level
+    _delegating = True
     try:
         if level == 4:
             _contact_assistant()
@@ -169,10 +183,12 @@ Delegate some or all buffers and results.
         if level >= 1:
             _init_buffer_remote_from_env(only_level_1=(level==1))
         if level == 3:
-            _init_database_from_env()
+            init_database_from_env()
     except ConfigurationError:
         print_exc(limit=0,file=sys.stderr)
         exit(1)
+    finally:
+        _delegating = False
 
     _delegate_level = level
 

@@ -1,12 +1,12 @@
 """
 Retrieval of buffers and computation results from database cache
-First run simple.py with Seamless database running
+First run simple.py with Seamless delegation on
 """
 
 import seamless
 from seamless.core import context, cell, transformer, unilink
 
-seamless.set_ncores(0) # Forbids Seamless to add 1 and 2 by itself
+seamless.config.block_local() # Forbids Seamless to add 1 and 2 by itself
 
 seamless.delegate(level=3)
 

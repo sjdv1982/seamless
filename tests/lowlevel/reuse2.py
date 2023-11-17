@@ -1,9 +1,9 @@
 import seamless
+seamless.delegate(False)
 from seamless.core import context, cell
 
 ctx = context(toplevel=True)
-seamless.vault.load_vault("./reuse-vault") ###
-###seamless.load_vault("./reuse-vault")
+seamless.vault.load_vault("./reuse-vault")
 
 ctx.a = cell().set_checksum("bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d")
 ctx.b = cell().set_checksum("191fb5fc4a9bf2ded9a09a0a2c4eb3eb90f15ee96deb1eec1a970df0a79d09ba")
