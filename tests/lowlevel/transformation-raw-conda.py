@@ -73,7 +73,8 @@ async def build_transformation():
     buffer_cache.cache_buffer(tf_checksum, tf_buf)
     
     tf = DummyTransformer(tf_checksum)
-    result = await transformation_cache.run_transformation_async(tf_checksum, fingertip=False)
+    result = await transformation_cache.run_transformation_async(tf_checksum, scratch=False, fingertip=False)
+    print(transformation_cache.transformation_exceptions.get(tf_checksum))
     print(buffer_cache.get_buffer(result, remote=False))
 
 import asyncio
