@@ -100,31 +100,10 @@ mount-cson.py:
      - then open /tmp/test.cson and /tmp/test.json, manipulate resp. monitor them
 mount-plain.py: see above, minus the .cson
 
-TODO: simple-communion: 
-     do 
-     In one terminal, run:
-     export SEAMLESS_DOCKER_PUBLISH_SHARESERVER_PORTS='-p 8602:8602'
-     seamless-bash
-     python3 -u simple-communion-slave.py > test-outputs/simple-communion-slave.out 2>&1
-     then, in a different terminal, run:
-     seamless-bash
-     python3 -u simple-communion-master.py > test-outputs/simple-communion-master.out 2>&1
-     then Ctrl-C simple-communion-slave.py
-     The output is available in simple-communion-[master/slave].out
 simple-debug.py: Run in Visual Studio Code 
   Will work only under bare metal (not in Docker).
   Can't set breakpoints.
 mount.ipynb
-TODO: communion-peer[12].sh: 
-     In one terminal, run:
-     export SEAMLESS_DOCKER_PUBLISH_SHARESERVER_PORTS='-p 8601:8601'
-     seamless-bash
-     ./communion-peer1.sh > test-outputs/communion-peer1.out 2>&1
-     In another seamless-bash terminal, run:
-     (if not inside Docker, first do "export SEAMLESS_DOCKER_HOST_IP=localhost")"
-     ./communion-peer2.sh > test-outputs/communion-peer2.out 2>&1
-     then Ctrl-C communion-peer1.sh
-     The output is available in communion-peer[12].out
 compile-debug.py
      - Run with ipython3 -i . 
        Run gdb from a second shell into the container. 
