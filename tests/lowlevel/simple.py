@@ -7,7 +7,7 @@ if "DELEGATE" in os.environ:
     from seamless.core.transformation import get_global_info
     get_global_info()  # avoid timing errors
 else:
-    seamless.config.delegate(level=0)
+    seamless.config.delegate(False)
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)

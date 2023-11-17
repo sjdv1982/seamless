@@ -10,7 +10,7 @@ get_global_info()
 if "DELEGATE" in os.environ:
     seamless.config.delegate()
 else:
-    seamless.config.delegate(level=0)
+    seamless.config.delegate(False)
     
 from seamless import transformer
 
