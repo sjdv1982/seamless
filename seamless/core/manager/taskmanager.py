@@ -417,7 +417,7 @@ class TaskManager:
             try:
                 self.loop.run_until_complete(asyncio.sleep(0.001))
             except KeyboardInterrupt:
-                return
+                return [], False
             ptasks = select_pending_tasks()
             if curr_timeout is not None:
                 curr_time = time.time()
@@ -536,7 +536,7 @@ class TaskManager:
                 else:
                     await asyncio.sleep(0.001)
             except KeyboardInterrupt:
-                return
+                return [], False
             ptasks = select_pending_tasks()
             if curr_timeout is not None:
                 curr_time = time.time()
