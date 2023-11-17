@@ -8,9 +8,9 @@ from seamless.core.transformation import get_global_info
 get_global_info()
     
 if "DELEGATE" in os.environ:
-    seamless.config.delegate()
+    seamless.delegate()
 else:
-    seamless.config.delegate(False)
+    seamless.delegate(False)
     
 from seamless import transformer
 

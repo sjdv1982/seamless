@@ -1,5 +1,5 @@
 import seamless
-seamless.config.delegate(False)
+seamless.delegate(False)
 
 from seamless.core import (
     context, cell, transformer, macro_mode_on

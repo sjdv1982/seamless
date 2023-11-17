@@ -1,6 +1,6 @@
 print("START")
 import seamless
-seamless.config.delegate(level=3)
+seamless.delegate(level=3)
 
 from seamless.highlevel import Context
 ctx = Context()

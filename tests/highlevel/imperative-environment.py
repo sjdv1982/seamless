@@ -1,5 +1,5 @@
 import seamless
-seamless.config.delegate()
+seamless.delegate()
 from seamless import transformer
 '''
 # For code with an incompatible file name

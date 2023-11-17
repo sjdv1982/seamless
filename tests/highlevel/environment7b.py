@@ -6,7 +6,7 @@ PyTorch cannot be added to the Seamless Docker image using conda
 """
 import json
 import seamless
-seamless.config.delegate()
+seamless.delegate()
 
 from seamless.highlevel import Context, Transformer
 ctx = Context()

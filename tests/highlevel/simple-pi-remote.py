@@ -4,7 +4,7 @@ import os
 os.environ["SEAMLESS_ASSISTANT_ID"] = "simple-pi-remote"
 
 import seamless
-seamless.config.delegate()
+seamless.delegate()
 import math
 from seamless.highlevel import Context, Cell
 import json

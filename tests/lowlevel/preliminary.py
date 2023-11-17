@@ -1,9 +1,9 @@
 import seamless
 import os
 if "DELEGATE" in os.environ:
-    seamless.config.delegate()
+    seamless.delegate()
 else:
-    seamless.config.delegate(False)
+    seamless.delegate(False)
 
 from seamless.core import context, cell, transformer, macro_mode_on
 from pprint import pprint

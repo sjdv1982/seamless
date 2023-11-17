@@ -5,9 +5,9 @@ import seamless
 import asyncio
     
 if "DELEGATE" in os.environ:
-    seamless.config.delegate()
+    seamless.delegate()
 else:
-    seamless.config.delegate(False)
+    seamless.delegate(False)
     seamless.config.set_ncores(5)
 
 from seamless import transformer

@@ -3,7 +3,7 @@ import os
 os.environ["SEAMLESS_ASSISTANT_ID"] = "test-imperative-communion"
 
 import seamless
-seamless.config.delegate()
+seamless.delegate()
 
 from seamless import transformer
 

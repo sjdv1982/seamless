@@ -1,9 +1,9 @@
 import os
 import seamless
 if "DELEGATE" in os.environ:
-    seamless.config.delegate()
+    seamless.delegate()
 else:
-    seamless.config.delegate(False)
+    seamless.delegate(False)
 
 from seamless.highlevel import Context
 

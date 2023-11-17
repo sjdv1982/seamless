@@ -46,7 +46,7 @@ Stage 1:
 
 - Micro-assistant.py can't deal with re-entrant delegation, mini-dask assistant should. TODO: See https://github.com/sjdv1982/seamless/issues/217
 
-- Run tests/examples requiring serve-graph, add seamless.config.delegate if needed. TODO.
+- Run tests/examples requiring serve-graph, add seamless.delegate if needed. TODO.
 
 - Make sure that buffer_cache eviction works correctly in the light of buffer_remote known buffers, is_readable, etc. DONE.
 

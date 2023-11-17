@@ -7,7 +7,7 @@ You can run Seamless in *delegated* or *embedded* mode. Embedded mode does its o
 ### How to set up delegation
 
 ***TODO: Update (jobslave has been ripped)***
-*Delegated* mode is activated using `seamless.config.delegate(...)`.  This will block local execution and then contact a Seamless assistant via the communion protocol, which will provide a Seamless database URL and buffer config (buffer read folder, buffer read server, buffer write server). There is also a dummy assistant `seamless-jobslave`, which will provide an empty config. This will cause the database + buffer config to be read from environment variables.
+*Delegated* mode is activated using `seamless.delegate(...)`.  This will block local execution and then contact a Seamless assistant via the communion protocol, which will provide a Seamless database URL and buffer config (buffer read folder, buffer read server, buffer write server). There is also a dummy assistant `seamless-jobslave`, which will provide an empty config. This will cause the database + buffer config to be read from environment variables.
 The easiest way to set it all up in a local/dummy config:
 ```
 seamless-database
@@ -35,7 +35,7 @@ As for embedded mode, Seamless inside the Docker container always supports it. S
 
 ## Seamless syntax styles
 
-TODO: Make something like "seamless.embedded_mode()" or "seamless.config.delegate(False)" obligatory? Or give a warning when you didn't do it?
+TODO: Make something like "seamless.embedded_mode()" or "seamless.delegate(False)" obligatory? Or give a warning when you didn't do it?
 
 Bash syntax requires delegated mode. All other syntaxes work in either mode, but embedded mode requires more dependencies and does not run under Windows (only Docker).
 - Bash syntax (bash script, delegated mode). TODO: describe "file.ext.TRANSFORMATION"

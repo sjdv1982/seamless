@@ -2,7 +2,7 @@ import time
 
 from seamless import transformer
 import seamless
-seamless.config.delegate(level=3)
+seamless.delegate(level=3)
     
 @transformer    
 def func(a,b):

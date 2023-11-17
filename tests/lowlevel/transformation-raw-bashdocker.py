@@ -4,10 +4,10 @@ import seamless
 
 if "DELEGATE" in os.environ:
     delegation = True
-    seamless.config.delegate()
+    seamless.delegate()
 else:
     delegation = False
-    seamless.config.delegate(False)
+    seamless.delegate(False)
 
 from seamless import calculate_checksum
 from seamless.core.cache.buffer_cache import buffer_cache

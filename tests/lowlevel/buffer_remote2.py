@@ -1,6 +1,6 @@
 import seamless
 from seamless.core import context, cell
-seamless.config.delegate(level=2)()
+seamless.delegate(level=2)()
 
 ctx = context(toplevel=True)
 ctx.d = cell("mixed").set("This is another buffer")

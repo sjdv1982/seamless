@@ -1,5 +1,5 @@
 import seamless
-seamless.config.delegate(level=3)
+seamless.delegate(level=3)
 
 from seamless.highlevel import Context
 from seamless.core.transformation import SeamlessTransformationError

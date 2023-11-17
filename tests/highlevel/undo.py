@@ -2,9 +2,9 @@ import os
 import seamless
 
 if "DELEGATE" in os.environ:
-    seamless.config.delegate()
+    seamless.delegate()
 else:
-    seamless.config.delegate(level=3)
+    seamless.delegate(level=3)
     from seamless.core.transformation import get_global_info
     get_global_info()  # avoid timing errors
 

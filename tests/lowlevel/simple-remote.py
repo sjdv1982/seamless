@@ -2,7 +2,7 @@ import seamless
 from seamless.core import context, cell, transformer, unilink
 import os
 
-seamless.config.delegate()
+seamless.delegate()
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)

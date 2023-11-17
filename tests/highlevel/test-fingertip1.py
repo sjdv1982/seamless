@@ -2,7 +2,7 @@ import time
 from seamless.highlevel import Context
 
 import seamless
-seamless.config.delegate(level=3)
+seamless.delegate(level=3)
     
 def func(a,b):
     return 201 * a + 7 * b
