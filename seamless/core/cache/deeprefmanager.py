@@ -14,7 +14,7 @@ class DeepRefManager:
     MAX_DEEP_BUFFER_MEMBERS = 100000   # Don't incref member buffers inside a deep buffer with more members than this
 
     def __init__(self):
-        self.buffers_to_incref = set()
+        self.buffers_to_incref = {}
         self.checksum_to_cell = {}
         self.checksum_to_subchecksums = {}
         self.refcount = {}
@@ -41,7 +41,7 @@ class DeepRefManager:
                 manager.structured_cell_trigger(sc, void=True)
 
 
-    def _do_incref(self, checksum, deep_structure, hash_pattern):
+    def _do_incref(self, checksum, deep_structure, hash_pattern, nrefs):
         try:
             sub_checksums = deep_structure_to_checksums(
                 deep_structure, hash_pattern
@@ -51,14 +51,15 @@ class DeepRefManager:
                 self.big_buffers.add(checksum)
                 return
             sub_checksums2 = [bytes.fromhex(cs) for cs in sub_checksums]
-            #print("INC DEEP", checksum.hex(), len(sub_checksums))
-            buffer_cache._incref(sub_checksums2, persistent=True, buffers=None)
+            for n in range(nrefs):
+                buffer_cache._incref(sub_checksums2, persistent=True, buffers=None)
             refcount = self.refcount.get(checksum, 0)
+            #print("INC DEEP", checksum.hex(), len(sub_checksums), refcount, nrefs)
             if refcount > 0:
                 assert checksum in self.checksum_to_subchecksums, checksum.hex()
             else:
                 self.checksum_to_subchecksums[checksum] = sub_checksums2
-            self.refcount[checksum] = refcount + 1
+            self.refcount[checksum] = refcount + nrefs
         except Exception as exc:
             self._invalidate(checksum, hash_pattern, exc)
         finally:
@@ -72,7 +73,7 @@ class DeepRefManager:
             new_coro_entry = 2, key, new_coro 
             self.coros[key] = new_coro_entry
 
-        for key in list(self.buffers_to_incref):
+        for key in list(self.buffers_to_incref.keys()):
             if key in self.coros:
                 continue
             checksum, _ = key
@@ -82,13 +83,13 @@ class DeepRefManager:
             deep_buffer = get_buffer(checksum, remote=True)
             if deep_buffer is None:
                 self.missing_deep_buffers.add(checksum)
-                self.buffers_to_incref.remove(key)
+                self.buffers_to_incref.pop(key)
                 continue
             self.missing_deep_buffers.discard(checksum)
             new_coro_2(key, deep_buffer)
             
         def invalidate(checksum, exc):
-            for key in list(self.buffers_to_incref):
+            for key in list(self.buffers_to_incref.keys()):
                 if key[0] == checksum:
                     hash_pattern = _rev_cs_hashpattern[key[1]]
                     self._invalidate(checksum, hash_pattern, exc)
@@ -109,7 +110,7 @@ class DeepRefManager:
                         raise exc from None
                     checksum, _ = key
                     if mode == 1:
-                        # mode == 1 is not being useed at the time
+                        # mode == 1 is not being used at the time
                         if exc is not None:
                             invalidate(checksum, exc)
                         else:
@@ -122,16 +123,16 @@ class DeepRefManager:
                             invalidate(checksum, exc)
                         else:
                             deep_structure = coro.result()
-                            for key in list(self.buffers_to_incref):
+                            for key, nrefs in list(self.buffers_to_incref.items()):
                                 if key[0] == checksum:
                                     hash_pattern = _rev_cs_hashpattern[key[1]]
-                                    self.buffers_to_incref.remove(key)
+                                    self.buffers_to_incref.pop(key)
                                     hpcs = calculate_dict_checksum(hash_pattern)
                                     _rev_cs_hashpattern[hpcs] = hash_pattern
                                     e = (checksum, hpcs)
                                     if e in self.invalid_deep_buffers:
                                         continue
-                                    self._do_incref(checksum, deep_structure,hash_pattern)
+                                    self._do_incref(checksum, deep_structure,hash_pattern, nrefs)
 
                     break
 
@@ -167,7 +168,9 @@ class DeepRefManager:
         _rev_cs_hashpattern[hpcs] = hash_pattern
         key = (checksum, hpcs)
         
-        if key not in self.buffers_to_incref:
+        if key in self.buffers_to_incref:
+            self.buffers_to_incref[key] += 1
+        else:
             try:
                 deep_buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=False, force_length=False)
                 if deep_buffer_info.members is not None and deep_buffer_info.members > self.MAX_DEEP_BUFFER_MEMBERS:
@@ -180,7 +183,7 @@ class DeepRefManager:
             except CacheMissError as exc:
                 self._invalidate(checksum, hash_pattern, exc)
                 return
-            self.buffers_to_incref.add(key)
+            self.buffers_to_incref[key] = 1
         if cell is not None:
             cells = self.checksum_to_cell.get(checksum)
             if cells is None:
@@ -196,23 +199,37 @@ class DeepRefManager:
             return
         if checksum in self.big_buffers:
             return
-        if (checksum, calculate_dict_checksum(hash_pattern)) in self.invalid_deep_buffers:
-            return
+        
         hpcs = calculate_dict_checksum(hash_pattern)
-        _rev_cs_hashpattern[hpcs] = hash_pattern
         key = (checksum, hpcs)
+        _rev_cs_hashpattern[hpcs] = hash_pattern
+        
+        if key in self.invalid_deep_buffers:
+            return
         if key in self.buffers_to_incref:
-            self.buffers_to_incref.remove(key)
+            v = self.buffers_to_incref[key]
+            if v == 1:
+                self.buffers_to_incref.pop(key)
+            else:
+                self.buffers_to_incref[key] = v - 1
             return
 
         if checksum not in self.missing_deep_buffers:
-            assert checksum in self.checksum_to_subchecksums, checksum.hex()
+            try:
+                assert checksum in self.refcount
+                refcount = self.refcount[checksum] - 1
+                assert refcount >= 0
+                assert checksum in self.checksum_to_subchecksums, checksum.hex()
+            except AssertionError:
+                import traceback
+                traceback.print_exc()
+                return
             sub_checksums = self.checksum_to_subchecksums[checksum]
             buffer_cache._decref(sub_checksums)
-            refcount = self.refcount.pop(checksum) - 1
             if refcount > 0:
                 self.refcount[checksum] = refcount
             else:
+                self.refcount.pop(checksum)
                 self.checksum_to_subchecksums.pop(checksum)
 
 deeprefmanager = DeepRefManager()
