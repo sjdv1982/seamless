@@ -28,18 +28,15 @@ See also [seamless/bin/README], which will be documentation also.
 
 - Make sure that bash jobs with a buffer read folder have get_filename/get_directory working directory. Rip filezones. TODO.
 
-- Clean up seamless-tools database tools and revise database-run-actions.
-Make sure it is usable from both bin/seamless and workflow seamless.
+- seamless-runner and seamless-parallel-runner for workflow graphs. 
+Primary use case: non-Python non-bash transformations (esp. compiled ones).
 
 - Document (can be after)
 
 Stage 1:
 
 - mini-assistant: have an internal lock system just like transformation.py
-(in fact, re-use it). Acquire locks before launching run-transformation, and release them
-afterwards.
-
-- Support transformation meta (see old jobless), progress/prelim, logs, hardcancel, etc.  First add this as a stdout stream to run-transformation, then store these things in mini-assistant (YAGNI?), then create an API to return these things. (TODO, see https://github.com/sjdv1982/seamless/issues/219)
+(in fact, re-use it). Acquire locks before launching run-transformation, and release them afterwards. TODO
    
 - ***Dogma: env (recipe) != Transformation.__env__ (schema) !!!***
   __env__ (and __meta__, __compilers__, etc... generally known as "dunder") give hints to make
@@ -51,11 +48,7 @@ afterwards.
 
 - Run tests/examples requiring serve-graph, add seamless.config.delegate if needed. TODO.
 
-- Make sure that buffer_cache eviction works correctly in the light of buffer_remote known buffers, is_readable, etc. TODO.
-
-- Make a test that shows the memory savings of delegation, e.g. deep cell with many 50MB members, (disable lru cache? like --no-lru in serve-graph?) TODO
-
-- Expand the assistant protocol to include canceling. Add bin/seamless --cancel flag to cancel a running transformer (like --undo). 
+- Make sure that buffer_cache eviction works correctly in the light of buffer_remote known buffers, is_readable, etc. DONE.
 
 Stage 2: distribution
 
@@ -63,7 +56,7 @@ Stage 2: distribution
 Add seamless-upload, seamless-upload-zip, seamless-upload-vault and seamless-download as copies of seamless-tools/scripts/upload.py etc.,
 rather than the Docker wrappers of seamless-cli/seamless-upload etc.
 
-- Clean up and re-run all tests.
+- Clean up and re-run all tests. (DONE for low-level)
 
 - Re-review new-project, add delegation? UPDATE: read it from a project.yaml...
 
@@ -76,6 +69,18 @@ rather than the Docker wrappers of seamless-cli/seamless-upload etc.
 - General documentation, describing the three styles.
 
 Stage 3:
+
+- Expand the assistant protocol to include canceling. Add bin/seamless --cancel flag to cancel a running transformer (like --undo). 
+
+- Support transformation meta (see old jobless), progress/prelim, logs, hardcancel, etc.  First add this as a stdout stream to run-transformation, then store these things in mini-assistant (YAGNI?), then create an API to return these things. (TODO, see https://github.com/sjdv1982/seamless/issues/219).
+
+- Make a test that shows the memory savings of delegation, e.g. deep cell with many 50MB members, (disable lru cache? like --no-lru in serve-graph?) TODO
+
+- Clean up seamless-tools database tools and revive database-run-actions.
+Make sure it is usable from both bin/seamless and workflow seamless.
+Re-run pin-filesystem.sh tests.
+
+Stage 4:
 
 Start a jobless successor, i.e. "*the* assistant".
 

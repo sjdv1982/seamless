@@ -11,7 +11,7 @@ bytecell3.py
 buffer_remote.sh
 cachehit-semantic.py
 conversions.py: the output is approximate, depends on exact timings
-TODO?: simple.py: can be run with Seamless database (fresh), in which case the execution metadata is printed
+simple.py: can be run with level 3 delegation (export DELEGATE=""), in which case the execution metadata is printed
 simple-async.py
 simple-indirect.py
 simple-ipython.py
@@ -20,30 +20,28 @@ subcontext.py
 simple-reactor.py
 downstream-reactor.py
 reactor-edit.py
-TODO: simple-cache.py: see instructions in file
+simple-cache.py: see instructions in file
 plain.py
 mixedcell.py
-preliminary.py: the output is approximate, depends on exact timings
+preliminary.py: the output is approximate, depends on exact timings. 
+                Can be run with delegation (export DELEGATE="").
+                As of 0.12, no assistant can give progress/preliminary results
 cached.py
 mount-as-directory.py
 structured_cell/simple-auth.py
 structured_cell/simple-macro-mode.py
 structured_cell/simple-channels.py
 structured_cell/iadd.py
-dummy-remote-buffercache.py
-dummy-remote-result1.py
-dummy-remote-result2.py
-dummy-remote-result3.py
-dummy-remote-result4.py
 simplest-macro.py
 simple-macro.py
-compile.py
+compile.py: Can be run with delegation (export DELEGATE="").
 compile-fortran.py
 compile-mixedlang.py
 schema.py
-fingertip.py
-TODO?: reuse.sh: run with Seamless database (fresh db file).
-TODO?: reuse-compile.sh: run with Seamless database (fresh db file).
+reuse.sh: run as i=reuse; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
+  run with Seamless database (fresh db file).
+reuse-compile.sh: run as i=reuse-compile; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
+  run with Seamless database (fresh db file).
 injection.py
 dependent-modules.py
 module-package.py
@@ -54,37 +52,28 @@ injection3.py
 injection4.py: the output is approximate, depends on exact timings, see also [1]
 injection5.py: see above
 simple-share.py
-TODO?: transformation-checksum.sh: run with Seamless database. If not in the Docker image, set SEAMLESS_SCRIPT_DIR
 transformation-raw.py
 transformation-raw-ipython.py
 transformation-raw-bash.py
 transformation-raw-bashdocker.py: can be run with delegation using "export DELEGATE=''"
 meta.py
-simple-duplex.py
-TODO: simple-remote.py: run together with seamless-jobslave
-TODO: simple-remote2.py: run together with:
-     seamless-jobslave jobslave --direct-print
-     after the run:
-     docker logs jobslave > test-outputs/simple-remote2-jobslave.out 2>&1
-TODO: simple-duplex-remote.py: run together with:
-     seamless-jobslave jobslave --direct-print
-     after the run:
-     docker logs jobslave > test-outputs/simple-duplex-remote-jobslave.out 2>&1
-TODO: compile-run-remote.py: 
-     seamless-jobslave jobslave --direct-print
-     after the run:
-     docker logs jobslave, should include "ADD 8.141592979431152"
+simple-duplex.py:
+     Can be run with delegation (export DELEGATE="").
+     As of 0.12, no assistant can give progress/preliminary results or hardcancel
+simple-remote.py: version of simple.py with full delegation
 structured_cell/scratch.sh: run as i=structured_cell/scratch; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
      make sure that level 3 delegation is available inside a clean buffer directory and database.
 structured_cell/scratch2.sh: run as i=structured_cell/scratch2; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
      make sure that level 3 delegation is available inside a clean buffer directory and database.
 scratch-transformer.sh: run as i=scratch-transformer; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
      make sure that level 3 delegation is available inside a clean buffer directory and database.
+fingertip.py
 macro.py
 macro2.py
 macro3.py
 pin-as.py
-TODO?: pin-filesystem.sh: run as i=pin-filesystem; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
+pin-filesystem.sh: NOT WORKING AS OF SEAMLESS 0.12
+  run as i=pin-filesystem; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
   Make sure that the database is not running
   If not in the Docker image, set SEAMLESS_TOOLS_DIR to <seamless-tools-git>/tools
 checksum-cell.py

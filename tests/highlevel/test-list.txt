@@ -31,7 +31,7 @@ folder2.py : assumes that folder.py has been run
 filesystemlike.py
 context.py
 context2.py
-scratch.py
+TODO: scratch.py
 conversion-transformer.py
 transformer-bracket.py
 simpler-tf-print.py
@@ -77,7 +77,7 @@ test-copy.py
 test-copy-tf-assign.py
 traitlet.py
 traitlet2.py: The exact output is dependent on random memory locations
-simple.py: can be run with Seamless database (fresh), in which case the execution metadata is printed
+simple.py: can be run with level 3 delegation using "export DELEGATE=''"
 simple-deepcell.py
 simple-pi.py: Also creates twopi.seamless, twopi-result.seamless, twopi-result.zip
 simple-pi-deepcell.py: Also creates twopi-deepcell.seamless, twopi-deepcell-result.seamless, twopi-deepcell-result.zip
@@ -101,7 +101,8 @@ twopi-graph-database.sh: run with Seamless database
                       then: seamless-database twopi-graph-database.yaml
                       run as i=twopi-graph-database; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
-pin-filesystem.sh: run as i=pin-filesystem; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
+pin-filesystem.sh: NOT WORKING AS OF SEAMLESS 0.12
+  run as i=pin-filesystem; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
   If not in the Docker image, set SEAMLESS_TOOLS_DIR to <seamless-tools-git>/tools
 reuse-compile.sh: run with Seamless database
 test-fingertip.sh: run with Seamless database

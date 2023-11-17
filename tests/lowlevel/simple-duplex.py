@@ -1,7 +1,11 @@
 import seamless
-seamless.delegate(False)
+import os
+if "DELEGATE" in os.environ:
+    seamless.config.delegate()
+else:
+    seamless.config.delegate(False)
 
-from seamless.core import context, cell, transformer, unilink
+from seamless.core import context, cell, transformer
 
 ctx = context(toplevel=True)
 ctx.cell1 = cell("int").set(1)

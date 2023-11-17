@@ -1,5 +1,9 @@
 import seamless
-seamless.delegate(False)
+import os
+if "DELEGATE" in os.environ:
+    seamless.config.delegate()
+else:
+    seamless.config.delegate(False)
 
 from seamless.core import context, cell, transformer, macro_mode_on
 from pprint import pprint
@@ -77,6 +81,12 @@ while 1:
     state["status"]["tf2-result"] = ctx.tf2_result.status
     state["status"]["tf3-result"] = ctx.tf3_result.status
     state["status"]["tf4-result"] = ctx.tf4_result.status
+    if state["status"]["tf1"] == "Status: error":
+        print("TF1", ctx.tf1.exception)
+        exit(0)
+    if state["status"]["tf4"] == "Status: error":
+        print("TF4", ctx.tf4.exception)
+        exit(0)
 
     state["tf1"] = ctx.tf1.value
     state["tf1-result"] = ctx.tf1_result.value

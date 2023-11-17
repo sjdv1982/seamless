@@ -1,6 +1,3 @@
-import seamless
-seamless.delegate(False)
-
 from seamless.core.build_module import build_module
 
 ######################################################################
@@ -45,6 +42,15 @@ print(testmodule.add(2,3))
 ######################################################################
 # 3: test it in a context
 ######################################################################
+
+import seamless
+import os
+if "DELEGATE" in os.environ:
+    seamless.delegate()
+    from seamless.core.cache.buffer_cache import buffer_cache
+    buffer_cache.buffer_cache.clear()
+else:
+    seamless.delegate(False)
 
 from seamless.core import context, cell, transformer, macro_mode_on
 with macro_mode_on():

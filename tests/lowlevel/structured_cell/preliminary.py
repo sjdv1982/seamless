@@ -1,11 +1,10 @@
 import seamless
-seamless.delegate(False)
+seamless.config.delegate(False)
 
 from seamless.core import (
     context, cell, transformer, macro_mode_on
 )
 from seamless.core.structured_cell import StructuredCell
-from silk import Silk
 from pprint import pprint
 import time
 

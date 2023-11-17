@@ -6,6 +6,7 @@ You can run Seamless in *delegated* or *embedded* mode. Embedded mode does its o
 
 ### How to set up delegation
 
+***TODO: Update (jobslave has been ripped)***
 *Delegated* mode is activated using `seamless.config.delegate(...)`.  This will block local execution and then contact a Seamless assistant via the communion protocol, which will provide a Seamless database URL and buffer config (buffer read folder, buffer read server, buffer write server). There is also a dummy assistant `seamless-jobslave`, which will provide an empty config. This will cause the database + buffer config to be read from environment variables.
 The easiest way to set it all up in a local/dummy config:
 ```
