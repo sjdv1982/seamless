@@ -99,7 +99,8 @@ def build_structured_cell(
   *, fingertip_no_remote, fingertip_no_recompute,
   return_context=False,
   hash_pattern=None,
-  validate_inchannels=True
+  validate_inchannels=True,
+  scratch=False
 ):
     #print("build_structured_cell", name)
     name2 = name + STRUC_ID
@@ -107,11 +108,17 @@ def build_structured_cell(
     setattr(ctx, name2, c)
     c.data = core_cell("mixed")
     c.data._hash_pattern = hash_pattern
+    if scratch:
+        c.data._scratch = True
     c.auth = core_cell("mixed")
     c.auth._hash_pattern = hash_pattern
+    if scratch:
+        c.auth._scratch = True
     c.schema = core_cell("plain")
     c.buffer = core_cell("mixed")
     c.buffer._hash_pattern = hash_pattern
+    if scratch:
+        c.buffer._scratch = True
 
     sc = StructuredCell(
         data=c.data,

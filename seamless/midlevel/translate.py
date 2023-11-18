@@ -110,6 +110,7 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
     path = node["path"]
     parent = get_path(root, path[:-1], None, None)
     name = path[-1]
+    scratch = node.get("scratch", False)
     if node["type"] == "foldercell":
         ct = "structured"
     else:
@@ -140,7 +141,8 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
           fingertip_no_remote=node.get("fingertip_no_remote", False),
           fingertip_no_recompute=node.get("fingertip_no_recompute", False),
           hash_pattern=hash_pattern,
-          return_context=True
+          return_context=True,
+          scratch=scratch
         )
         for inchannel in inchannels:
             cname = child.inchannels[inchannel].subpath
@@ -192,6 +194,8 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
             child._fingertip_recompute = False
         if node.get("fingertip_no_remote"):
             child._fingertip_remote = False
+        if scratch:
+            child._scratch = True
     setattr(parent, name, child)
     checksum = node.get("checksum")    
     if checksum is not None:
@@ -268,6 +272,7 @@ def translate_connection(node, namespace, ctx):
             intermediate = core_cell("bytes")
         else:
             intermediate = core_cell("mixed", hash_pattern=hash_pattern)
+        intermediate._scratch = True
         setattr(ctx, con_name, intermediate)
         source.connect(intermediate)
         intermediate.connect(target)

@@ -16,6 +16,8 @@ def translate_py_transformer(
     env0._load(node.get("environment"))
     env = env0._to_lowlevel()
 
+    scratch = node.get("scratch", False)
+
     node_pins = deepcopy(node["pins"])
     deep_pins = {}
     for pinname,pin in list(node_pins.items()):
@@ -90,6 +92,7 @@ def translate_py_transformer(
         assert pin_cell_name not in all_inchannels
         assert pin_cell_name not in node_pins
         pin_cell = cell(celltype)
+        pin_cell._scratch = True
         pin_cell._hash_pattern = hash_pattern
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pin] = pin_cell
@@ -101,7 +104,8 @@ def translate_py_transformer(
       fingertip_no_remote=node.get("fingertip_no_remote", False),
       fingertip_no_recompute=node.get("fingertip_no_recompute", False),
       hash_pattern= node.get("hash_pattern"),
-      return_context=True
+      return_context=True,
+      scratch=True
     )
 
     setattr(ctx, input_name, inp)
@@ -118,8 +122,10 @@ def translate_py_transformer(
                 is_checksum = True
         if is_checksum:
             pin_cell2 = cell("checksum")
+            pin_cell2._scratch = True
             cell_setattr(node, ctx, pinname + "_CHECKSUM", pin_cell2)
             pin_cell3 = cell("plain")
+            pin_cell3._scratch = True
             cell_setattr(node, ctx, pinname + "_CHECKSUM2", pin_cell3)
             pin_cell2.connect(pin_cell3)
             pin_cell3.connect(inp.inchannels[inchannel])
@@ -189,6 +195,7 @@ def translate_py_transformer(
         })
     all_pins.update(deep_pins)
     ctx.tf = transformer(all_pins)
+    ctx.tf._scratch = scratch
     if node["language"] == "ipython" or ipy_template is not None:
         if env is None:
             env = {}
@@ -331,7 +338,8 @@ def translate_py_transformer(
             outchannels,
             fingertip_no_remote=node.get("fingertip_no_remote", False),
             fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-            return_context=True
+            return_context=True,
+            scratch=scratch
         )
 
         namespace[node["path"] + ("RESULTSCHEMA",), "source"] = result.schema, node
@@ -342,6 +350,7 @@ def translate_py_transformer(
 
         result_pin = ctx.tf.get_pin(result_name)
         result_cell = cell("mixed")
+        result_cell._scratch = scratch
         cell_setattr(node, ctx, result_cell_name, result_cell)
         result_pin.connect(result_cell)
         result_cell.connect(result.inchannels[()])
@@ -359,6 +368,7 @@ def translate_py_transformer(
         result_pin = ctx.tf.get_pin(result_name)
         result_cell = cell(result_celltype2)
         result_cell._hash_pattern = result_hash_pattern
+        result_cell._scratch = scratch
         cell_setattr(node, ctx, result_name, result_cell)
         result_pin.connect(result_cell)
         result = result_cell

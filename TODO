@@ -50,6 +50,11 @@ Stage 1:
 
 - Make sure that buffer_cache eviction works correctly in the light of buffer_remote known buffers, is_readable, etc. DONE.
 
+- TO DOCUMENT: for now, deep buffers do not persistently incref their subchecksums,
+i.e. you can't "fill up" a deep cell/deep folder from Seamless and expect the content
+to be written to a database. Might need a cell property and/or manual API for this,
+in particular for transformers that return a deep cell/folder.
+
 Stage 2: distribution
 
 - Make a separate conda package for bin/seamless. 
