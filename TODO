@@ -28,12 +28,11 @@ See also [seamless/bin/README], which will be documentation also.
 
 - Make sure that bash jobs with a buffer read folder have get_filename/get_directory working directory. Rip filezones. TODO.
 
-- seamless-runner and seamless-parallel-runner for workflow graphs. 
-Primary use case: non-Python non-bash transformations (esp. compiled ones).
-
 - Document (can be after)
 
 Stage 1:
+
+- Make sure that save_vault respects scratch (i.e. make it behave the same as buffer_remote.write). Document the vault + database path as a valid (advanced-use) setup. Rip the warning in init_database_from_env, refactor/document API. 
 
 - mini-assistant: have an internal lock system just like transformation.py
 (in fact, re-use it). Acquire locks before launching run-transformation, and release them afterwards. TODO
@@ -74,6 +73,9 @@ rather than the Docker wrappers of seamless-cli/seamless-upload etc.
 - General documentation, describing the three styles.
 
 Stage 3:
+
+- seamless-runner and seamless-parallel-runner for workflow graphs. 
+Primary use case: non-Python non-bash transformations (esp. compiled ones).
 
 - Expand the assistant protocol to include canceling. Add bin/seamless --cancel flag to cancel a running transformer (like --undo). 
 
