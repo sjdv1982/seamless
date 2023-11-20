@@ -1,11 +1,14 @@
 import json
+import os
 import seamless
 from seamless.highlevel import Context
 
-try:
-    seamless.config.database.connect()
-except Exception:
-    pass
+if "DELEGATE" in os.environ:
+    seamless.delegate(level=3)
+    from seamless.core.transformation import get_global_info
+    get_global_info()  # avoid timing errors
+else:
+    seamless.delegate(False)
 
 # 0
 ctx = Context()

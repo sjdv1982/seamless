@@ -1,4 +1,7 @@
-from seamless.highlevel import Context, Cell, Transformer
+import seamless
+seamless.delegate(False)
+
+from seamless.highlevel import Context, Cell
 ctx = Context()
 
 ctx.v = lambda a: 42

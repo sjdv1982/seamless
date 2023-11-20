@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 import traceback
 from seamless.highlevel import Context, Cell
 ctx = Context()

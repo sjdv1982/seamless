@@ -1,6 +1,8 @@
 """
 Version of high-in-low6 with nested invocation and elision
 """
+import seamless
+seamless.delegate(False)
 
 from seamless.highlevel import Context, Cell, Macro
 from seamless.highlevel.library import LibraryContainer

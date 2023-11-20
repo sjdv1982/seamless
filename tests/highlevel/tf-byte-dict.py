@@ -1,4 +1,7 @@
 from __future__ import annotations
+import seamless
+seamless.delegate(False)
+
 from seamless.highlevel import Context
 import numpy as np
 

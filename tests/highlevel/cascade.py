@@ -1,6 +1,9 @@
 # two cascading Docker transformers, similar to share-pdb
 # Making the first one invalid, and then valid again, shouldn't disable docker_image on the second
 
+import seamless
+seamless.delegate(False)
+
 from seamless.highlevel import Context
 ctx = Context()
 ctx.tf1 = lambda a: None

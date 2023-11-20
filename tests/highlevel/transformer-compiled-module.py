@@ -1,4 +1,6 @@
-import os, tempfile
+import seamless
+seamless.delegate(False)
+
 from seamless.highlevel import Context, Cell
 
 ctx = Context()

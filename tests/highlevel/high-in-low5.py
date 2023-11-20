@@ -2,6 +2,8 @@
 Library version of high-in-low4
 
 """
+import seamless
+seamless.delegate(False)
 
 from seamless.highlevel import Context, Cell, Macro
 from seamless.highlevel.library import LibraryContainer

@@ -1,5 +1,8 @@
+import seamless
+seamless.delegate(False)
+
 import math
-from seamless.highlevel import Context, Cell
+from seamless.highlevel import Context
 import json
 ctx = Context()
 ctx.pi = math.pi

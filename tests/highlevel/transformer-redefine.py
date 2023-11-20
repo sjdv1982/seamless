@@ -1,7 +1,7 @@
-import os, tempfile
-from seamless.highlevel import Context, Cell
+import seamless
+seamless.delegate(False)
 
-import json
+from seamless.highlevel import Context
 
 ctx = Context()
 

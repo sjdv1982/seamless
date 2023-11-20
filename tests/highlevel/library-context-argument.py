@@ -1,4 +1,7 @@
-from seamless.highlevel import Context, Cell
+import seamless
+seamless.delegate(False)
+
+from seamless.highlevel import Context
 from seamless.highlevel.library import LibraryContainer
 from pprint import pprint
 

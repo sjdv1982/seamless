@@ -1,4 +1,7 @@
-from seamless.highlevel import Context, Cell, SimpleDeepCell, DeepCell
+import seamless
+seamless.delegate(False)
+
+from seamless.highlevel import Context, SimpleDeepCell, DeepCell
 from seamless.core.protocol.json import json_dumps
 ctx = Context()
 ctx.d = SimpleDeepCell()

@@ -3,10 +3,12 @@ adding direct Cython support via an ipy template
 
 The graph is then saved and re-loaded
 """
+import seamless
+seamless.delegate(False)
 
 import traceback
 
-from seamless.highlevel import Context, Cell, Transformer
+from seamless.highlevel import Context, Transformer
 ctx = Context()
 env = ctx.environment
 

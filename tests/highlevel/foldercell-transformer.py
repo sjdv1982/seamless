@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 import os
 import numpy as np
 from seamless.highlevel import Context, FolderCell

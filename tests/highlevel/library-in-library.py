@@ -1,4 +1,6 @@
-from textwrap import indent
+import seamless
+seamless.delegate(False)
+
 from seamless.highlevel import Context, Cell
 from seamless.highlevel.library import LibraryContainer
 

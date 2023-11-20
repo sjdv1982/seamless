@@ -3,6 +3,9 @@
 This is a simplified test for modules, treating the module as a structured Cell.
 """
 
+import seamless
+seamless.delegate(False)
+
 tf_code = '''
 print(__name__)
 print(testmodule)

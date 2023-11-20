@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 tf_code = '''
 print(__name__)
 from .testmodule import q
@@ -9,7 +12,7 @@ print(q)
 result = q
 '''
 
-from seamless.highlevel import Transformer, Cell, Context, Module
+from seamless.highlevel import Transformer, Context, Module
 ctx = Context()
 ctx.testmodule = Module()
 ctx.testmodule.multi = True

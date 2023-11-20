@@ -224,7 +224,7 @@ async def run_transformation_dict_async(transformation_dict):
         transformation, transformation_buffer, transformation_dict
     )
     try:
-        result_checksum = await run_transformation_async(transformation, fingertip=False, tf_dunder=tf_dunder)
+        result_checksum = await run_transformation_async(transformation, scratch=False, fingertip=False, tf_dunder=tf_dunder)
     finally:
         # For some reason, the logic here is different than for the sync version (see _wait())
         if (

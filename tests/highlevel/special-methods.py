@@ -1,4 +1,7 @@
-from seamless.highlevel import Context, Cell
+import seamless
+seamless.delegate(False)
+
+from seamless.highlevel import Context
 
 ctx = Context()
 ctx.a = 0

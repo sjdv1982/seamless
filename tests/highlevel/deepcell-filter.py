@@ -1,4 +1,6 @@
-import traceback
+import seamless
+seamless.delegate(False)
+
 from seamless.highlevel import Context, Cell, DeepCell
 
 ctx = Context()

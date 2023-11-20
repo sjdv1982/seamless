@@ -7,6 +7,9 @@ checksum_cache.disable()
 deserialize_cache.disable()
 serialize_cache.disable()
 
+import seamless
+seamless.delegate(False)
+
 from seamless.core.cache.buffer_cache import buffer_cache
 from seamless.core.cache import CacheMissError
 

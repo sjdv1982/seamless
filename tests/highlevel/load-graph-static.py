@@ -1,5 +1,7 @@
-import json
 import seamless
+seamless.delegate(False)
+
+import json
 from seamless.highlevel import load_graph
 
 graph = json.load(open("twopi-result.seamless"))

@@ -1,4 +1,7 @@
 # Adapted from /seamless/highlevel/stdlib/switch-select/switch-select.py
+import seamless
+seamless.delegate(False)
+
 from seamless.highlevel import Context, Cell
 from seamless.highlevel import stdlib
 

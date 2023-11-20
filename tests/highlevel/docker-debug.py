@@ -1,4 +1,6 @@
-from traitlets.traitlets import CRegExp
+import seamless
+seamless.delegate(False)
+
 from seamless.highlevel import Context
 
 ctx = Context()

@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 tf_code = '''
 print(__name__)
 print(testmodule)

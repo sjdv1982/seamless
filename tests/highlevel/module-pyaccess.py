@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 module_code = """
 a = 20
 def func(x,y):

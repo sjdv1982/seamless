@@ -4,7 +4,11 @@
 # Therefore, they are assumed not to influence the computation result
 
 import traceback
-from seamless.highlevel import Context, Transformer
+
+import seamless
+seamless.delegate(False)
+
+from seamless.highlevel import Context
 
 ctx = Context()
 

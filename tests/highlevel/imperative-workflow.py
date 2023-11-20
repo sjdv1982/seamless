@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 from seamless import transformer
 
 @transformer(return_transformation=True)

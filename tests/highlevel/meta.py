@@ -1,5 +1,7 @@
+import seamless
+seamless.delegate(False)
+
 from seamless.highlevel import Context
-import json
 
 def get_meta(tf):
     from seamless.core.protocol.get_buffer import get_buffer

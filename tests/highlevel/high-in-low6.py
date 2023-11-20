@@ -2,6 +2,9 @@
 Version of high-in-low5 that maps over N inputs, zipped
 """
 
+import seamless
+seamless.delegate(False)
+
 from seamless.highlevel import Context, Cell, Macro
 from seamless.highlevel.library import LibraryContainer
 

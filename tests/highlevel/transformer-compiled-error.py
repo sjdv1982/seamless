@@ -1,5 +1,7 @@
-import os, tempfile
-from seamless.highlevel import Context, Cell
+import seamless
+seamless.delegate(False)
+
+from seamless.highlevel import Context
 
 ctx = Context()
 ctx.transform = lambda a,b: a + b

@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 from seamless.highlevel import Context, Transformer
 ctx = Context()
 ctx.a = 123

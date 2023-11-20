@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 from seamless.highlevel import Context
 def func(a):
     return a+100

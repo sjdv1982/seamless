@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 import inspect
 
 from seamless.highlevel import Context
