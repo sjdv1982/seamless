@@ -2,7 +2,8 @@ class HelpMixin:
     @property
     def help(self):
         from .Help import HelpCell
-        if self._path[:1] == ("HELP",):
+        path = self._path
+        if path is not None and path[:1] == ("HELP",):
             raise AttributeError("Help cells can't have help")
         return HelpCell(self)
 

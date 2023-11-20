@@ -34,7 +34,10 @@ class HelpWrapper:
     @property
     def _path(self):
         wrapped = self._get_wrapped()
-        return wrapped._path
+        path = wrapped._path
+        if path is None:
+            path = ()
+        return path
 
     @property
     def _help_path(self):

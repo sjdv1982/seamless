@@ -1845,7 +1845,11 @@ This wrapper can be assigned to a new Context attribute,
         htf["checksum"]["main_module"] = checksum
 
     def _set_observers(self):
-        htf = self._get_htf()
+        try:
+            htf = self._get_htf()
+        except KeyError:
+            # fail silently, as we are probably part of a macro
+            return
         """
         # Disable the code below.
         # for now, assume that the internal structure of foreign transformers

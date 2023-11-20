@@ -31,7 +31,7 @@ ctx.cell.a = ctx.a
 print("START")
 ctx.compute()
 print(ctx.cell.value)
-cs = bytes.fromhex(ctx.cell.checksum)
+cs = ctx.cell.checksum.bytes()
 print("RE-TRANSLATE 1")
 ctx.translate(force=True)
 ctx.compute() # "SERIALIZE TO BUFFER" must NOT be printed

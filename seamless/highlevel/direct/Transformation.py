@@ -40,7 +40,7 @@ class Transformation:
                 raise ValueError("Cannot obtain transformation checksum")
             self._transformation_checksum = tf_checksum
         except Exception:
-            self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"
+            self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"            
         finally:
             self._resolved = True
 
@@ -141,7 +141,7 @@ class Transformation:
             self.start()
             loop.run_until_complete(self._future)
         else:
-            self._run_dependencies()            
+            self._run_dependencies()
             if self._exception is None:      
                 self._evaluate_sync()
             if self._future is not None:
@@ -151,7 +151,7 @@ class Transformation:
 
     async def _computation(self):
         await self._run_dependencies_async()
-        if self._exception is None:  
+        if self._exception is None:
             await self._evaluate_async()
         return self
 
@@ -322,7 +322,12 @@ def transformation_from_dict(transformation_dict, result_celltype, upstream_depe
     from seamless.core.cache.transformation_cache import tf_get_buffer
     from seamless import calculate_checksum
 
+    transformation_dict_original = transformation_dict
     transformation_dict = deepcopy(transformation_dict)
+    for k, v in list(transformation_dict.items()):
+        if isinstance(v, tuple) and len(v) == 3 and isinstance(v[2], Transformation):
+            transformation_dict[k] = transformation_dict_original[k]
+            
     if "__meta__" not in transformation_dict:
         transformation_dict["__meta__"] = {}
 
@@ -334,7 +339,7 @@ def transformation_from_dict(transformation_dict, result_celltype, upstream_depe
         buffer_cache.cache_buffer(transformation, transformation_buffer)
         return transformation
     
-    async def resolver_async():
+    async def resolver_async():        
         return resolver_sync()
     
     def evaluator_sync():

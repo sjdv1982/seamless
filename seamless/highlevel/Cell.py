@@ -1043,7 +1043,11 @@ This cell is not fully independent, i.e. it has incoming connections"""
         from ..core.cell import Cell as CoreCell
         from ..core.structured_cell import StructuredCell
 
-        cell = self._get_cell()
+        try:
+            cell = self._get_cell()
+        except AttributeError:
+            # fail silently, as we are probably part of a macro
+            return
         if not isinstance(cell, (CoreCell, StructuredCell)):
             raise Exception(cell)
         if self.celltype == "structured":

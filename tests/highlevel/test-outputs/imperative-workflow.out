@@ -21,7 +21,7 @@ run() result 780
 
 Error run 1
 Traceback (most recent call last):
-  File "/cwd/seamless/tests/highlevel/imperative-workflow.py", line 66, in <module>
+  File "/cwd/tests/highlevel/imperative-workflow.py", line 69, in <module>
     run("p","q",4,"y",6) # errors in xy_z, propagating to result
 RuntimeError: Something went wrong.
 
@@ -52,7 +52,7 @@ Execution time: 1.0 seconds
 
 Error run 2
 Traceback (most recent call last):
-  File "/cwd/seamless/tests/highlevel/imperative-workflow.py", line 73, in <module>
+  File "/cwd/tests/highlevel/imperative-workflow.py", line 76, in <module>
     run("pp", "qq","x","y", "z") # errors in pq_z and xy, propagating to xy_z and result
 RuntimeError: Something went wrong.
 

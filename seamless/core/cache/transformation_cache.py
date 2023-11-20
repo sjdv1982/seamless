@@ -364,7 +364,7 @@ class TransformationCache:
                 try:
                     job = self.run_job(transformation, tf_checksum, scratch=transformer._scratch)
                 except Exception as exc:                    
-                    self._set_exc([transformer], tf_checksum, exc)                    
+                    self._set_exc([transformer], tf_checksum, exc)
                     job = None
                 if job is not None:
                     await asyncio.shield(job.future)
@@ -1088,9 +1088,6 @@ class TransformationCache:
                 else:
                     log(last_progress, last_result_checksum.hex())
 
-            if tf_checksum in self.transformation_exceptions:
-                raise self.transformation_exceptions[tf_checksum]
-
             if fut.done():
                 # future is done, but the done callback has not yet been triggered
                 # - tf_checksum has not been cleared from self.transformation_jobs
@@ -1105,9 +1102,14 @@ class TransformationCache:
 
             await asyncio.sleep(0.05)
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
+        if tf_checksum in self.transformation_exceptions:
+            raise self.transformation_exceptions[tf_checksum]
+
         assert not prelim
-        if result_checksum is not None:
-            self.register_known_transformation(tf_checksum, result_checksum)
+        if result_checksum is None:
+            raise Exception("Transformation finished, but didn't trigger a result or exception")
+
+        self.register_known_transformation(tf_checksum, result_checksum)
         return result_checksum
 
     def run_transformation(self, tf_checksum, *, fingertip, scratch, tf_dunder=None, new_event_loop=False):
@@ -1134,7 +1136,7 @@ class TransformationCache:
                 async def stop_loop(timeout):
                     loop.stop()
                     t = time.time()
-                    while 1:                            
+                    while 1:
                         for task in asyncio.all_tasks(loop):
                             if not task.done():
                                 break

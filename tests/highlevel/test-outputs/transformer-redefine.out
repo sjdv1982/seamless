@@ -1,19 +1,19 @@
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 407, in _execute
+  File "/seamless/seamless/core/transformation.py", line 433, in _execute
     result, logs = await self._execute_local(
-  File "/seamless/seamless/core/transformation.py", line 581, in _execute_local
+  File "/seamless/seamless/core/transformation.py", line 642, in _execute_local
     full_module_names = build_all_modules(
-  File "/seamless/seamless/core/build_module.py", line 366, in build_all_modules
+  File "/seamless/seamless/core/build_module.py", line 383, in build_all_modules
     mod = build_module(
-  File "/seamless/seamless/core/build_module.py", line 326, in build_module
+  File "/seamless/seamless/core/build_module.py", line 342, in build_module
     mod = build_compiled_module(
-  File "/seamless/seamless/core/build_module.py", line 254, in build_compiled_module
+  File "/seamless/seamless/core/build_module.py", line 264, in build_compiled_module
     raise BuildModuleError(stderr)
 seamless.core.build_module.BuildModuleError: 
-g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_834025c276fbf5fc7e04a238fe9f51e2395b3ae1ee021a175aa00eb33b6fcb0a_module/main.o /tmp/seamless-extensions/seamless_module_834025c276fbf5fc7e04a238fe9f51e2395b3ae1ee021a175aa00eb33b6fcb0a_module/main.cpp
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_90f164879eda80c1b13228d14616a0e48735fa72938364f99171f6ddd2059743_module/main.o /tmp/seamless-extensions/seamless_module_90f164879eda80c1b13228d14616a0e48735fa72938364f99171f6ddd2059743_module/main.cpp
 ******************** ERROR ********************
-/tmp/seamless-extensions/seamless_module_834025c276fbf5fc7e04a238fe9f51e2395b3ae1ee021a175aa00eb33b6fcb0a_module/main.cpp:1:1: error: ‘lambda’ does not name a type
+/tmp/seamless-extensions/seamless_module_90f164879eda80c1b13228d14616a0e48735fa72938364f99171f6ddd2059743_module/main.cpp:1:1: error: ‘lambda’ does not name a type
     1 | lambda a,b: a + b
       | ^~~~~~
 
@@ -35,7 +35,7 @@ If your transform() function is written in C++, don't forget to add 'extern "C" 
 int transform(int a, int b, double *result);
 ********************************************************************************
 
-g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_ddc81e9dc953985e1e54c944bbd1fefd8cd899621c7e31e780268559d6997082_module/main.o /tmp/seamless-extensions/seamless_module_ddc81e9dc953985e1e54c944bbd1fefd8cd899621c7e31e780268559d6997082_module/main.cpp
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_96768b70fa19baed926181b8a8816a17ce57ccae650bace69d90119a65a36776_module/main.o /tmp/seamless-extensions/seamless_module_96768b70fa19baed926181b8a8816a17ce57ccae650bace69d90119a65a36776_module/main.cpp
 
 
 5.0
