@@ -86,6 +86,7 @@ Attributes:
         self._environment_state = None
 
         self._meta = {"transformer_path": ["tf", "tf"], "local": local}
+        self._scratch = False
         update_wrapper(self, func)
 
     @property
@@ -138,7 +139,9 @@ Attributes:
             self._codebuf, meta, self._celltypes, modules, arguments, env
         )
         if self._return_transformation:
-            return transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies = deps)
+            tf = transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies = deps)
+            tf.scratch = self.scratch
+            return tf
         else:
             for depname, dep in deps.items():
                 dep.compute()
@@ -147,7 +150,7 @@ Attributes:
                     raise RuntimeError(msg.format(depname, dep.exception))
                 
             prepare_transformation_dict(transformation_dict)
-            result_checksum = run_transformation_dict(transformation_dict, fingertip=False)
+            result_checksum = run_transformation_dict(transformation_dict, fingertip=False, scratch=self.scratch)
             if result_checksum is None:
                 raise RuntimeError("Result is empty")
             buf = get_buffer(result_checksum, remote=True)
@@ -169,6 +172,14 @@ Attributes:
         for k in list(self._meta.keys()):
             if self._meta[k] is None:
                 self._meta.pop(k)
+
+    @property
+    def scratch(self) -> bool:
+        return self._scratch
+    
+    @scratch.setter
+    def scratch(self, value:bool):
+        self._scratch = value
 
     @property
     def direct_print(self):

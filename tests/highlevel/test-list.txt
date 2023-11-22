@@ -139,6 +139,7 @@ imperative-delegated-async.sh: requires full delegation
 imperative-delegated-nonlocal.py: requires nested delegation. Does not currently work, see (https://github.com/sjdv1982/seamless/issues/217)
 
 imperative-module.py: requires delegation level 3, definitely in a clean setup. Can be run with full delegation using "export DELEGATE=''"
+imperative-scratch.py: requires delegation level 3, definitely in a clean setup
 map-list.py
 channel.py
 environment3.py

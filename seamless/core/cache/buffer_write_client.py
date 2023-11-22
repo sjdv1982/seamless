@@ -1,16 +1,19 @@
+import requests
 from requests.exceptions import ConnectionError, ChunkedEncodingError, JSONDecodeError
 
 from seamless.util import parse_checksum, is_forked
 
 def has(session, url, checksum, *, timeout=None):
-    assert not is_forked()
+    sess = session
+    if is_forked():
+        sess = requests
     checksum = parse_checksum(checksum)
     assert checksum is not None
     path = url + "/has"
     result = None
     for trial in range(10):
         try:
-            with session.get(path, json=[checksum],timeout=timeout) as response:
+            with sess.get(path, json=[checksum],timeout=timeout) as response:
                 if int(response.status_code/100) in (4,5):
                     raise ConnectionError()
                 result = response.json()
@@ -33,13 +36,15 @@ def has(session, url, checksum, *, timeout=None):
     return result[0]
 
 def write(session, url, checksum, buffer:bytes):
-    assert not is_forked()
+    sess = session
+    if is_forked():
+        sess = requests
     checksum = parse_checksum(checksum)
     assert checksum is not None
     path = url + "/" + checksum
     for trial in range(10):
         try:
-            with session.put(path, data=buffer) as response:
+            with sess.put(path, data=buffer) as response:
                 if int(response.status_code/100) in (4,5):
                     raise ConnectionError(f'Error {response.status_code}: {response.text}')
             break

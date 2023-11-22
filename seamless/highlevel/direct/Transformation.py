@@ -23,6 +23,7 @@ class Transformation:
         self._resolver_async = resolver_async
         self._transformation_checksum = None
         self._resolved = False
+        self._scratch = False
 
         self._evaluator_sync = evaluator_sync
         self._evaluator_async = evaluator_async
@@ -31,16 +32,24 @@ class Transformation:
         self._exception = None
         self._meta = meta
 
+    @property
+    def scratch(self) -> bool:
+        return self._scratch
+    
+    @scratch.setter
+    def scratch(self, value:bool):
+        self._scratch = value
+
     def _resolve_sync(self):
         if self._resolved:
             return
         try:
-            tf_checksum = self._resolver_sync()
+            tf_checksum = self._resolver_sync(self)
             if tf_checksum is None:
                 raise ValueError("Cannot obtain transformation checksum")
             self._transformation_checksum = tf_checksum
         except Exception:
-            self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"            
+            self._exception = traceback.format_exc(limit=0).strip("\n") + "\n"
         finally:
             self._resolved = True
 
@@ -48,7 +57,7 @@ class Transformation:
         if self._resolved:
             return
         try:
-            tf_checksum = await self._resolver_async()
+            tf_checksum = await self._resolver_async(self)
             if tf_checksum is None:
                 raise ValueError("Cannot obtain transformation checksum")
             self._transformation_checksum = tf_checksum
@@ -65,7 +74,7 @@ class Transformation:
         if self._exception is not None:
             return
         try:
-            result_checksum = self._evaluator_sync()
+            result_checksum = self._evaluator_sync(self)
             if result_checksum is None:
                 raise ValueError("Result is empty")
             Checksum(result_checksum)
@@ -83,7 +92,7 @@ class Transformation:
         if self._exception is not None:
             return
         try:
-            result_checksum = await self._evaluator_async()
+            result_checksum = await self._evaluator_async(self)
             if result_checksum is None:
                 raise ValueError("Result is empty")
             Checksum(result_checksum)
@@ -204,11 +213,11 @@ class Transformation:
     @property
     def buffer(self):
         from seamless import CacheMissError
-        from ...core.protocol.get_buffer import get_buffer
+        from ...core.direct.run import fingertip
         result_checksum = self.checksum
         if result_checksum.value is None:
             return None
-        buf = get_buffer(result_checksum.bytes(), remote=True)
+        buf = fingertip(result_checksum.hex())
         if buf is None:
             raise CacheMissError(result_checksum)
         return buf
@@ -317,7 +326,7 @@ class Transformation:
             return result
 
 
-def transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies = None) -> Transformation:
+def transformation_from_dict(transformation_dict, result_celltype, upstream_dependencies = None) -> Transformation:    
     from seamless.core.direct.run import run_transformation_dict, run_transformation_dict_async, prepare_transformation_dict
     from seamless.core.cache.transformation_cache import tf_get_buffer
     from seamless import calculate_checksum
@@ -331,7 +340,7 @@ def transformation_from_dict(transformation_dict, result_celltype, upstream_depe
     if "__meta__" not in transformation_dict:
         transformation_dict["__meta__"] = {}
 
-    def resolver_sync():
+    def resolver_sync(transformation_obj):
         from seamless.core.cache.buffer_cache import buffer_cache
         prepare_transformation_dict(transformation_dict)
         transformation_buffer = tf_get_buffer(transformation_dict)
@@ -339,15 +348,17 @@ def transformation_from_dict(transformation_dict, result_celltype, upstream_depe
         buffer_cache.cache_buffer(transformation, transformation_buffer)
         return transformation
     
-    async def resolver_async():        
-        return resolver_sync()
+    async def resolver_async(transformation_obj):
+        return resolver_sync(transformation_obj)
     
-    def evaluator_sync():
-        result_checksum = run_transformation_dict(transformation_dict, fingertip=False)
+    def evaluator_sync(transformation_obj):
+        scratch = transformation_obj.scratch
+        result_checksum = run_transformation_dict(transformation_dict, fingertip=False, scratch=scratch)
         return result_checksum
 
-    async def evaluator_async():
-        result_checksum = await run_transformation_dict_async(transformation_dict)
+    async def evaluator_async(transformation_obj):
+        scratch = transformation_obj.scratch
+        result_checksum = await run_transformation_dict_async(transformation_dict, fingertip=False, scratch=scratch)
         return result_checksum
     
     return Transformation(

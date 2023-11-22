@@ -1017,7 +1017,6 @@ class TransformationCache:
 
     async def run_transformation_async(self, tf_checksum, *, fingertip, scratch, tf_dunder=None):
         from . import CacheMissError
-                
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
         if result_checksum is not None and not prelim:
             self.register_known_transformation(tf_checksum, result_checksum)

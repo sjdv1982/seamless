@@ -143,7 +143,7 @@ def extract_dunder(transformation_dict):
 
     return tf_dunder
 
-def run_transformation_dict(transformation_dict, *, fingertip):
+def run_transformation_dict(transformation_dict, *, fingertip, scratch=False):
     """Runs a transformation that is specified as a dict of checksums,
     such as returned by highlevel.Transformer.get_transformation_dict.
     """
@@ -203,13 +203,14 @@ def run_transformation_dict(transformation_dict, *, fingertip):
             tf_dunder,
             syntactic_cache,
             increfed,
-            fingertip
+            fingertip,
+            scratch
         )
     )
     _wait()
     return result
 
-async def run_transformation_dict_async(transformation_dict):
+async def run_transformation_dict_async(transformation_dict, *, fingertip, scratch=False):
     """Runs a transformation that is specified as a dict of checksums,
     such as returned by highlevel.Transformer.get_transformation_dict"""
     # TODO: add input schema and result schema validation...
@@ -224,7 +225,7 @@ async def run_transformation_dict_async(transformation_dict):
         transformation, transformation_buffer, transformation_dict
     )
     try:
-        result_checksum = await run_transformation_async(transformation, scratch=False, fingertip=False, tf_dunder=tf_dunder)
+        result_checksum = await run_transformation_async(transformation, scratch=scratch, fingertip=fingertip, tf_dunder=tf_dunder)
     finally:
         # For some reason, the logic here is different than for the sync version (see _wait())
         if (
@@ -649,13 +650,14 @@ def _wait():
             tf_dunder,
             syntactic_cache,
             increfed,
-            fingertip
+            fingertip,
+            scratch
         ) in queued_transformations:
             if is_forked():
                 #print(f"Delegate to parent: {transformation}, fingertip = {fingertip}, stack = {TRANSFORMATION_STACK}")
                 assert transformation not in TRANSFORMATION_STACK
                 _parent_process_queue.put(
-                    (7, (transformation, tf_dunder, syntactic_cache, fingertip))
+                    (7, (transformation, tf_dunder, syntactic_cache, fingertip, scratch))
                 )
         for (
             result_callback,
@@ -664,7 +666,8 @@ def _wait():
             tf_dunder,
             syntactic_cache,
             increfed,
-            fingertip
+            fingertip,
+            scratch
         ) in queued_transformations:
             try:
                 tf_checksum = bytes.fromhex(transformation)
@@ -684,7 +687,7 @@ def _wait():
                     transformation_cache.transformation_logs[tf_checksum] = logs
                 else:
                     running_event_loop = asyncio.get_event_loop().is_running()
-                    result_checksum = run_transformation(transformation, fingertip=fingertip, new_event_loop=running_event_loop)  # new_event_loop used to be True...
+                    result_checksum = run_transformation(transformation, fingertip=fingertip, new_event_loop=running_event_loop, scratch=scratch)
                     if result_checksum is not None:
                         assert isinstance(result_checksum, bytes)                        
 
@@ -720,6 +723,7 @@ def cleanup():
         _,
         _,
         increfed,
+        _,
         _,
     ) in _queued_transformations:
         # For some reason, the logic here is different than for the async version

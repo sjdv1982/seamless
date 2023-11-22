@@ -1,15 +1,18 @@
 import sys
+import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 
 from seamless.util import parse_checksum, is_forked
 
 def has(session, url, checksum):
-    assert not is_forked()
+    sess = session
+    if is_forked():
+        sess = requests
     checksum = parse_checksum(checksum)
     assert checksum is not None
     try:
         path = url + "/has"
-        with session.get(path, json=[checksum]) as response:
+        with sess.get(path, json=[checksum]) as response:
             if int(response.status_code/100) in (4,5):
                 raise ConnectionError()
             result = response.json()
@@ -26,14 +29,16 @@ def has(session, url, checksum):
         return
 
 def get(session, url, checksum):
-    assert not is_forked()
+    sess = session
+    if is_forked():
+        sess = requests
     checksum = parse_checksum(checksum)
     assert checksum is not None
     curr_buf_checksum = None
     while 1:
         try:
             path = url + "/" + checksum
-            with session.get(path, stream=True, timeout=10) as response:
+            with sess.get(path, stream=True, timeout=10) as response:
                 if int(response.status_code/100) in (4,5):
                     raise ConnectionError()
                 result = []

@@ -1173,7 +1173,7 @@ an assistant is tried first and local execution is a fallback."""
             return None
         return transformation_cache.get_transformation_dict(checksum)
 
-    async def _dummy_run_async(self):
+    async def _dummy_run_async(self, _):
         parent = self._parent()
         await parent.translation()
         while self.status == "Status: pending":
@@ -1184,7 +1184,7 @@ an assistant is tried first and local execution is a fallback."""
             result = self.result.checksum
         return result
 
-    def _dummy_run_sync(self):
+    def _dummy_run_sync(self, _):
         parent = self._parent()
         parent.translate()
         while self.status == "Status: pending":
@@ -1201,8 +1201,8 @@ an assistant is tried first and local execution is a fallback."""
 
         result_celltype = self._get_htf().get("result_celltype", "mixed")
         if self._parent() is not None:
-            resolver_sync = self.get_transformation_checksum
-            resolver_async = self._get_transformation_checksum_async
+            resolver_sync = lambda _: self.get_transformation_checksum()
+            resolver_async = lambda _: self._get_transformation_checksum_async
             evaluator_sync = self._dummy_run_sync
             evaluator_async = self._dummy_run_async
             upstream_dependencies = {}

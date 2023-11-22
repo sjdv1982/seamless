@@ -785,7 +785,7 @@ class TransformationJob:
                                 raise Exception("Unknown return message '{}'".format(msg))
                         elif status == 7:
                             # run_transformation
-                            tf_checksum, tf_dunder, syntactic_cache, fingertip = msg
+                            tf_checksum, tf_dunder, syntactic_cache, fingertip, scratch = msg
                             assert not is_forked()
                             for celltype, subcelltype, buf in syntactic_cache:
                                 # TODO: create a transformation_cache method and invoke it, common with other code
@@ -807,7 +807,7 @@ class TransformationJob:
                                 buffer_cache.decref(syn_checksum)
                             print_info(f"Nested local transformation job`: {tf_checksum}, forked = {is_forked()}")
                             fut = asyncio.ensure_future(
-                                run_transformation_async(tf_checksum, tf_dunder=tf_dunder, fingertip=fingertip)
+                                run_transformation_async(tf_checksum, tf_dunder=tf_dunder, fingertip=fingertip, scratch=scratch)
                             )
                             def fut_done(fut):
                                 print_info(f"Finished nested local transformation job: {tf_checksum}")
