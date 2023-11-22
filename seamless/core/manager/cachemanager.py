@@ -187,6 +187,7 @@ class CacheManager:
 
         result_expressions = []
         result_joins = []
+        result_transformations = []
 
         expressions = database.get_rev_expression(checksum)
         if expressions is not None:
@@ -202,7 +203,11 @@ class CacheManager:
         if joins is not None:
             result_joins = [parse_checksum(join, as_bytes=True) for join in joins]
 
-        return result_expressions, result_joins
+        tfs = database.get_rev_transformations(checksum)
+        if tfs is not None:
+            result_transformations = [parse_checksum(tf, as_bytes=True) for tf in tfs]
+
+        return result_expressions, result_joins, result_transformations
 
     async def _fingertip(self, checksum, *, must_have_cell, done):
         from ..cache import CacheMissError
@@ -251,10 +256,8 @@ class CacheManager:
 
         fingertipper = FingerTipper(checksum, self, done=done)
 
-        if recompute:
-            tf_checksums = tf_cache.known_transformations_rev.get(checksum, [])
-            tf_checksums += tf_cache.transformation_results_rev.get(checksum, [])
-            for tf_checksum in tf_checksums:            
+        async def add_transformations(tf_checksums):
+            for tf_checksum in tf_checksums:
                 if tf_checksum.hex() in TRANSFORMATION_STACK:
                     continue
                 transformation = tf_cache.transformations.get(tf_checksum)
@@ -268,6 +271,11 @@ class CacheManager:
                     if transformation is None:
                         continue
                 fingertipper.transformations.append((transformation, tf_checksum))
+            
+        if recompute:
+            tf_checksums = tf_cache.known_transformations_rev.get(checksum, [])
+            tf_checksums += tf_cache.transformation_results_rev.get(checksum, [])
+            await add_transformations(tf_checksums)
 
         for refholder, result in self.checksum_refs.get(checksum, set()):
             if not result:
@@ -342,9 +350,11 @@ class CacheManager:
         if database.active:
             # Extremely heroic effort to mine a database for expressions and structured cell joins
             fingertipper.clear()
-            mined_expressions, mined_joins = self._mine_database(checksum)
+            mined_expressions, mined_joins, mined_transformations = self._mine_database(checksum)
             fingertipper.expressions += mined_expressions
             fingertipper.joins2 += mined_joins
+            await add_transformations(mined_transformations)
+
             exc_str = await fingertipper.run()
 
             buffer = get_buffer(checksum,remote=remote)
