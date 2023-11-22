@@ -6,7 +6,7 @@
 #   - under seamless-framework (bare-metal conda)
 #   Docker tests require continuumio/anaconda3 to be pulled
 # Tests ending with .sh, run with:
-#   ./TEST.py > test-outputs/TEST.out 2>&1
+#   ./TEST.sh > test-outputs/TEST.out 2>&1
 
 bytes-conversion.py
 set-python-invalid.py: can also be run in interactive mode (mount /tmp/code.py)
@@ -31,7 +31,6 @@ folder2.py : assumes that folder.py has been run
 filesystemlike.py
 context.py
 context2.py
-TODO: scratch.py
 conversion-transformer.py
 transformer-bracket.py
 simpler-tf-print.py
@@ -213,6 +212,8 @@ mount.py:         Run with ipython -i, then continue in interactive mode.
 cython_.py        Run with ipython -i                 
 
 imperative-*-async.py: Run with ipython -i -c '%load '$i'.py' and press enter
+scratch.sh: make sure that level 3 delegation is available inside a clean buffer directory and database.
+
 observe-graph.ipynb: Run "seamless-jupyter" and then open /cwd in the browser
 traitlets.ipynb: same as above
 share-subcontext.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/sub/b
