@@ -1,9 +1,10 @@
 import sys
 from requests.exceptions import ConnectionError, ReadTimeout
 
-from seamless.util import parse_checksum
+from seamless.util import parse_checksum, is_forked
 
 def has(session, url, checksum):
+    assert not is_forked()
     checksum = parse_checksum(checksum)
     assert checksum is not None
     try:
@@ -25,6 +26,7 @@ def has(session, url, checksum):
         return
 
 def get(session, url, checksum):
+    assert not is_forked()
     checksum = parse_checksum(checksum)
     assert checksum is not None
     curr_buf_checksum = None
