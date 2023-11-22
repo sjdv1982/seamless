@@ -31,11 +31,15 @@ class Expression:
         *, hash_pattern, target_hash_pattern
     ):
         assert checksum is None or isinstance(checksum, bytes)
+        if hash_pattern in ("", "#"):
+            hash_pattern = None
         if hash_pattern is not None:
-            assert celltype == "mixed"
+            assert celltype == "mixed", (hash_pattern, celltype)
         self._hash_pattern = hash_pattern
+        if target_hash_pattern in ("", "#"):
+            target_hash_pattern = None
         if target_hash_pattern is not None:
-            assert target_celltype == "mixed"
+            assert target_celltype == "mixed", (hash_pattern, celltype)
         self._target_hash_pattern = target_hash_pattern
         self._checksum = checksum
         if path is None:

@@ -316,6 +316,36 @@ class BufferCache:
         
         return buffer_info
 
+    def update_buffer_info_conversion(self, checksum, source_celltype, target_checksum, target_celltype, *, sync_remote):
+        field = None
+        if source_celltype == "str" and target_celltype == "text":
+            field = "str2text"
+        elif source_celltype == "text" and target_celltype == "str":
+            field = "text2str"
+        elif source_celltype == "binary" and target_celltype == "bytes":
+            field = "binary2bytes"
+        elif source_celltype == "bytes" and target_celltype == "binary":
+            field = "bytes2binary"
+        elif source_celltype == "binary" and target_celltype == "plain":
+            field = "binary2json"
+        elif source_celltype == "plain" and target_celltype == "binary":
+            field = "json2binary"
+        
+        if field is None:
+            return
+        
+        buffer_info = self.buffer_info.get(checksum)
+        if buffer_info is None:
+            buffer_info = BufferInfo(checksum)
+            self.buffer_info[checksum] = buffer_info
+        if sync_remote and checksum not in self.synced_buffer_info:
+            self._sync_buffer_info_from_remote(checksum)
+        if buffer_info[field] == target_checksum:
+            return
+        self.synced_buffer_info.discard(checksum)
+        buffer_info[field] = target_checksum
+        if sync_remote:
+            self._sync_buffer_info_to_remote(checksum)
 
     def update_buffer_info(self, checksum, attr, value, *, sync_remote, no_sync_from_remote=False):
         co_flags = {

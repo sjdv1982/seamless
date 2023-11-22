@@ -277,7 +277,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                         value_conversion,
                         manager=manager,
                         fingertip_mode=fingertip_mode
-                    )            
+                    )
                     result_checksum = await conversion(
                         source_checksum, source_celltype,
                         target_celltype, fingertip_mode=fingertip_mode,
@@ -481,7 +481,8 @@ async def evaluate_expression(expression, fingertip_mode=False, manager=None):
             trivial = False
             if expression.path is None or expression.path == [] or expression.path == ():
                 if expression.hash_pattern == expression.target_hash_pattern:
-                    trivial = True
+                    if result == expression.checksum:
+                        trivial = True
             if not trivial:
                 database.set_expression(expression, result)
 

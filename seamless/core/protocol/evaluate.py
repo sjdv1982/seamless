@@ -75,9 +75,11 @@ async def conversion(
     if buffer is not None:
         buffer_cache.cache_buffer(checksum, buffer)
     result = try_convert(checksum, celltype, target_celltype)
+    
     if result == True:
         return checksum
     elif isinstance(result, bytes):
+        buffer_cache.update_buffer_info_conversion(checksum, celltype, result, target_celltype, sync_remote=True)
         return result
     elif result == False:
         raise SeamlessConversionError("Checksum cannot be converted")
@@ -98,14 +100,18 @@ async def conversion(
         if result == True:
             pass
         elif isinstance(result, bytes):
-            curr_checksum = result
+            pass
         elif (result is None or result == -1):
             if conv in conversion_values:
-                result = await value_conversion_callback(curr_checksum, curr_celltype, next_celltype)
+                result = await value_conversion_callback(curr_checksum, curr_celltype, next_celltype)                
             else:
                 raise CacheMissError(curr_checksum.hex())
         else:
             raise SeamlessConversionError("Unexpected conversion error")
+
+        if isinstance(result, bytes):
+            buffer_cache.update_buffer_info_conversion(curr_checksum, curr_celltype, result, next_celltype, sync_remote=True)
+            curr_checksum = result
 
         curr_celltype = next_celltype
 
