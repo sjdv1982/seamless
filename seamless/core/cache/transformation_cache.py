@@ -146,6 +146,7 @@ async def syntactic_to_semantic(
     checksum, celltype, subcelltype, codename
 ):
     from ...util import ast_dump
+    from ..cache.buffer_remote import write_buffer
     assert checksum is None or isinstance(checksum, bytes)
     if syntactic_is_semantic(celltype, subcelltype):
         return checksum
@@ -164,6 +165,7 @@ async def syntactic_to_semantic(
         dump = ast_dump(tree).encode()
         semantic_checksum = await calculate_checksum(dump)
         buffer_cache.cache_buffer(semantic_checksum, dump)
+        write_buffer(semantic_checksum, dump)
     else:
         raise TypeError(celltype)
     return semantic_checksum
@@ -570,6 +572,7 @@ class TransformationCache:
             except KeyError:
                 semsyn = database.get_sem2syn(semkey)
                 if semsyn is not None:
+                    checksums = semsyn
                     self.semantic_to_syntactic_checksums[semkey] = semsyn
                 else:
                     raise KeyError(sem_checksum0, celltype, subcelltype) from None
