@@ -105,8 +105,7 @@ def translate_py_transformer(
       fingertip_no_remote=node.get("fingertip_no_remote", False),
       fingertip_no_recompute=node.get("fingertip_no_recompute", False),
       hash_pattern= node.get("hash_pattern"),
-      return_context=True,
-      scratch=True
+      return_context=True
     )
 
     setattr(ctx, input_name, inp)

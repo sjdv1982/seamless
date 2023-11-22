@@ -30,6 +30,7 @@ def translate_bash_transformer(
         if not (ok1 or ok2 or ok3):
             is_docker_transformer = True
 
+    scratch = node.get("scratch", False)
 
     node_pins = deepcopy(node["pins"])
     deep_pins = {}
@@ -139,8 +140,10 @@ def translate_bash_transformer(
                 is_checksum = True
         if is_checksum:
             pin_cell2 = cell("checksum")
+            pin_cell2._scratch = True            
             cell_setattr(node, ctx, pinname + "_CHECKSUM", pin_cell2)
             pin_cell3 = cell("plain")
+            pin_cell3._scratch = True
             cell_setattr(node, ctx, pinname + "_CHECKSUM2", pin_cell3)
             pin_cell2.connect(pin_cell3)
             pin_cell3.connect(inp.inchannels[inchannel])
@@ -194,6 +197,7 @@ def translate_bash_transformer(
         }
     all_pins.update(deep_pins)
     ctx.tf = transformer(all_pins)
+    ctx.tf._scratch = scratch
     if node.get("debug"):
         ctx.tf.debug = True
     ctx.code = cell("text")
@@ -244,6 +248,8 @@ def translate_bash_transformer(
             if celltype == "code":
                 celltype = "text"
         pin_cell = cell(celltype)
+        if celltype != "plain" or node_pins[pin].get("subcelltype") != "module":
+            pin_cell._scratch = True        
         pin_cell._hash_pattern = hash_pattern
         cell_setattr(node, ctx, pin_intermediate[pin], pin_cell)
         pin_cells[pin] = pin_cell
@@ -268,7 +274,8 @@ def translate_bash_transformer(
             outchannels,
             fingertip_no_remote=node.get("fingertip_no_remote", False),
             fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-            return_context=True
+            return_context=True,
+            scratch=True
         )
         namespace[node["path"] + ("RESULTSCHEMA",), "source"] = result.schema, node
         if "result_schema" in mount:
@@ -278,6 +285,7 @@ def translate_bash_transformer(
 
         result_pin = ctx.tf.get_pin(result_name)
         result_cell = cell("mixed")
+        result_cell._scratch = True
         cell_setattr(node, ctx, result_cell_name, result_cell)
         result_pin.connect(result_cell)
         result_cell.connect(result.inchannels[()])
@@ -294,6 +302,7 @@ def translate_bash_transformer(
     else:
         result_pin = ctx.tf.get_pin(result_name)
         result_cell = cell(result_celltype2)
+        result_cell._scratch = True
         result_cell._hash_pattern = result_hash_pattern
         cell_setattr(node, ctx, result_name, result_cell)
         result_pin.connect(result_cell)

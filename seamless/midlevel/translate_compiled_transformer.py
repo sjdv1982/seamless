@@ -23,6 +23,7 @@ def _init_from_graph(ctf, sctx):
 def _finalize(
         ctx, ctf, inp, c_inp, result, c_result,
         input_name, result_name, inchannels, node):
+
     result_cell_name1 = result_name + "_CELL1"
     result_cell_name2 = result_name + "_CELL2"
     input_cell_name = input_name + "_CELL"
@@ -38,8 +39,10 @@ def _finalize(
         assert (not len(c)) or c[0] not in forbidden #should have been checked by highlevel
 
     result_cell1 = cell("mixed")
+    result_cell1._scratch = True
     cell_setattr(node, ctx, result_cell_name1, result_cell1)
     result_cell2 = cell("mixed")
+    result_cell2._scratch = True
     cell_setattr(node, ctx, result_cell_name2, result_cell2)
     input_cell = cell("mixed")
     input_cell._scratch = True
@@ -93,6 +96,8 @@ def translate_compiled_transformer(
     from .translate import set_structured_cell_from_checksum
     from ..highlevel.Environment import Environment
     
+    scratch = node.get("scratch", False)
+
     env0 = Environment(None)
     env0._load(node.get("environment"))
     env = env0._to_lowlevel()
@@ -130,6 +135,7 @@ def translate_compiled_transformer(
         assert pin_cell_name not in all_inchannels
         assert pin_cell_name not in node["pins"]
         pin_cell = cell("mixed")
+        pin_cell._scratch = True        
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pin] = pin_cell
 
@@ -185,6 +191,7 @@ def translate_compiled_transformer(
     ctf = ctx.tf = context()
     sctx = load_stdgraph("compiled_transformer")
     _init_from_graph(ctf, sctx)
+    ctf.executor._scratch = scratch
     ctf.integrator.debug_.cell().set(False)
 
     if has_meta_connection:
@@ -226,7 +233,8 @@ def translate_compiled_transformer(
         outchannels,
         fingertip_no_remote=node.get("fingertip_no_remote", False),
         fingertip_no_recompute=node.get("fingertip_no_recompute", False),
-        return_context=True
+        return_context=True,
+        scratch=scratch
     )
     namespace[node["path"] + ("RESULTSCHEMA",), "source"] = result.schema, node
     if "result_schema" in mount:
