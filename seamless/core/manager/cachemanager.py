@@ -299,12 +299,14 @@ class CacheManager:
             syn_checksums = None
             semkeys = (checksum, "python", None), (checksum, "python", "transformer")
             for semkey in semkeys:
-                syn_checksums = self.transformation_cache.semantic_to_syntactic_checksums.get(semkey)
-                if syn_checksums:
+                syn_checksums0 = self.transformation_cache.semantic_to_syntactic_checksums.get(semkey)
+                if syn_checksums0:                    
                     break
-                syn_checksums = database.get_sem2syn(semkey)
-                if syn_checksums:
+                syn_checksums0 = database.get_sem2syn(semkey)
+                if syn_checksums0:
                     break
+            if syn_checksums0:
+                syn_checksums = [(cs, semkey[0], semkey[1]) for cs in syn_checksums0]
 
             if not syn_checksums:
                 sem2syn = self.transformation_cache.semantic_to_syntactic_checksums
