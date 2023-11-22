@@ -92,7 +92,8 @@ def translate_py_transformer(
         assert pin_cell_name not in all_inchannels
         assert pin_cell_name not in node_pins
         pin_cell = cell(celltype)
-        pin_cell._scratch = True
+        if celltype != "plain" or node_pins[pin].get("subcelltype") != "module":
+            pin_cell._scratch = True
         pin_cell._hash_pattern = hash_pattern
         cell_setattr(node, ctx, pin_cell_name, pin_cell)
         pin_cells[pin] = pin_cell

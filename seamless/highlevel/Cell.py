@@ -679,7 +679,7 @@ This cell is not fully independent, i.e. it has incoming connections"""
         checksum = Checksum(checksum)
         hcell = self._get_hcell2()
         if hcell.get("UNTRANSLATED"):
-            raise NotImplementedError
+            raise Exception("You can set a cell's checksum only after translation")
         cell = self._get_cell()
         if isinstance(cell, StructuredCell):
             cell.set_auth_checksum(checksum.hex())
