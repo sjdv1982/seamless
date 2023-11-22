@@ -14,6 +14,9 @@ Things TODO regarding integration:
   UPDATE3: all fixed now.
   DONE
 
+- Finish the scratch Seamless issue: TODO
+- Finish the non-automatic high-level tests (tests/highlevel/q)
+
 Stage 0: /bin/seamless
 
 See also [seamless/bin/README], which will be documentation also.
