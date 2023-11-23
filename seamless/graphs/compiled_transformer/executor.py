@@ -8,9 +8,9 @@ import wurlitzer
 ffi = module.ffi
 
 try:
-    DIRECT_PRINT
+    SPECIAL__DIRECT_PRINT
 except NameError:
-    DIRECT_PRINT = False
+    SPECIAL__DIRECT_PRINT = False
 
 ARRAYS = [] #a list of Numpy arrays whose references must be kept alive
 FFI_OBJS = [] #a list of FFI objects whose references must be kept alive
@@ -272,7 +272,7 @@ def run():
         result = args[-1][0]
     return 0, result
 
-if DIRECT_PRINT:
+if SPECIAL__DIRECT_PRINT:
     error_code, result = run()
 else:
     with wurlitzer.pipes() as (stdout, stderr):

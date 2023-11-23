@@ -152,6 +152,8 @@ def prepare_bash_transformation(
 def run_transformation(transformation_dict, *, undo, fingertip=False):
     if not fingertip:
         fingertip = False
+    for k in transformation_dict:
+        assert not k.startswith("SPECIAL__")
     transformation_dict_py = unbashify(transformation_dict, {}, {})
     _, transformation_checksum_py = register_transformation_dict(transformation_dict_py)
     result_py = database.get_transformation_result(transformation_checksum_py)

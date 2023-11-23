@@ -145,8 +145,8 @@ def assign_transformer(ctx, path, func):
     parameters = []
     for pname, p in inspect.signature(func).parameters.items():
         #TODO: look at default parameters, make them optional
-        if pname.isupper():
-            raise TypeError("Pin name '{}' must not be all uppercase".format(pname))
+        if pname.startswith("SPECIAL__"):
+            raise TypeError("Pin name '{}' must not be like a special pin name".format(pname))
         if p.kind not in (p.VAR_KEYWORD, p.VAR_POSITIONAL):
             parameters.append(pname)
     if existing_transformer is not None:

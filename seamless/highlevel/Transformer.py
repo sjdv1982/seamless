@@ -570,8 +570,8 @@ an assistant is tried first and local execution is a fallback."""
 
     def add_special_pin(self, pinname, celltype):
         from .Cell import celltypes
-        if not pinname.isupper():
-            raise ValueError("Special pinname must be all uppercase")
+        if not pinname.startswith("SPECIAL__"):
+            raise ValueError("Special pinname must start with SPECIAL__")
         if celltype not in celltypes and celltype not in ("deepcell", "folder"):
             raise TypeError(celltype)
         htf = self._get_htf()
@@ -634,7 +634,7 @@ an assistant is tried first and local execution is a fallback."""
         
 
         if assign_to_temp:
-            if attr.isupper():
+            if attr.startswith("SPECIAL__"):
                 if attr not in htf["pins"]:
                     raise AttributeError("Cannot define new special pins before translation")
             if isinstance(value, Resource):
@@ -720,7 +720,7 @@ an assistant is tried first and local execution is a fallback."""
             # TODO: suppress inchannel warning
             result.handle_no_inference.set(value)
         else:
-            if attr.isupper():
+            if attr.startswith("SPECIAL__"):
                 if attr not in htf["pins"]:
                     raise AttributeError("Cannot define new special pins like this, use add_special_pin")
                 if not from_setitem:

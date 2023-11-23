@@ -34,7 +34,7 @@ def func(module, pins, input_schema, result_schema, input_name, result_name, kwa
     None
 
 ctx.executor = func
-ctx.executor.add_special_pin("DIRECT_PRINT", "bool")
+ctx.executor.add_special_pin("SPECIAL__DIRECT_PRINT", "bool")
 ctx.executor.code = set_resource(executor_file)
 pins = ctx.executor.pins
 pins["module"]["celltype"] =  "module"
@@ -90,7 +90,7 @@ ctf.input_schema = ctx.input_schema
 ctf.result_schema = ctx.result_schema
 ctf.input_name = ctx.input_name
 ctf.result_name = ctx.result_name
-ctf["DIRECT_PRINT"] = False
+ctf["SPECIAL__DIRECT_PRINT"] = False
 ctx.result = ctx.executor
 ctx.result.celltype = "float"
 

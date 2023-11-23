@@ -26,14 +26,14 @@ ctx.tf.language = "bash"
 ctx.tf.code = bashcode
 
 try:
-    ctx.tf.WRONG = 12
+    ctx.tf.SPECIAL__WRONG = 12
     print("WRONG, should be an error! (1)")
     exit(1)
 except Exception:
     traceback.print_exc(limit=1)
 
 try:
-    ctx.tf["WRONG"] = 12
+    ctx.tf["SPECIAL__WRONG"] = 12
     print("WRONG, should be an error! (2)")
     exit(1)
 except Exception:
@@ -41,14 +41,14 @@ except Exception:
 
 ctx.translate()
 try:
-    ctx.tf.WRONG = 12
+    ctx.tf.SPECIAL__WRONG = 12
     print("WRONG, should be an error! (3)")
     exit(1)
 except Exception:
     traceback.print_exc(limit=1)
 
 try:
-    ctx.tf["WRONG"] = 12
+    ctx.tf["SPECIAL__WRONG"] = 12
     print("WRONG, should be an error! (4)")
     exit(1)
 except Exception:
@@ -63,11 +63,11 @@ except Exception:
 ctx.compute()
 print(ctx.tf.logs)
 
-ctx.tf.add_special_pin("SPECIAL", "str")
+ctx.tf.add_special_pin("SPECIAL__X", "str")
 bashcode = """
 echo $a
 echo $b
-echo SPECIAL $SPECIAL
+echo SPECIAL__X ${SPECIAL__X}
 echo 42 > RESULT
 """
 ctx.tf.code = bashcode
@@ -76,25 +76,25 @@ ctx.tf.b = 4
 ctx.compute()
 print(ctx.status)
 try:
-    ctx.tf.SPECIAL = 12
+    ctx.tf.SPECIAL__X = 12
     print("WRONG, should be an error! (6)")
     exit(1)
 except Exception:
     traceback.print_exc(limit=1)
 
-ctx.tf["SPECIAL"] = "This must be printed"
+ctx.tf["SPECIAL__X"] = "This must be printed"
 print("OK")
 ctx.compute()
 print(ctx.tf.logs)
 print(ctx.tf.get_transformation_checksum())
 
-ctx.tf["SPECIAL"] = "This must NOT be printed"
+ctx.tf["SPECIAL__X"] = "This must NOT be printed"
 ctx.compute()
 print(ctx.tf.logs)
 print(ctx.tf.get_transformation_checksum())
 
 print('Nothing printed')
-ctx.tf["SPECIAL"] = "This will be printed IN THE END"
+ctx.tf["SPECIAL__X"] = "This will be printed IN THE END"
 ctx.tf.debug.direct_print = True 
 ctx.compute()
 cs = ctx.tf.get_transformation_checksum()

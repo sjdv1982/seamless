@@ -146,10 +146,10 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "160e9dae5af7fd8569de279a9cffc2f82ea71ef82cb7f8c40f7311490a905fd8",
-        "input": "9ea657406ce275a4ef62a6984d1ebf9a49c341c758ad97ea541ba204b23ddb4d",
-        "input_auth": "9ea657406ce275a4ef62a6984d1ebf9a49c341c758ad97ea541ba204b23ddb4d",
-        "input_buffer": "9ea657406ce275a4ef62a6984d1ebf9a49c341c758ad97ea541ba204b23ddb4d",
+        "code": "fd5b80baff6084c6dc75e7be456ac86d564f1964f0c08db5713f89a5e02df7d9",
+        "input": "ab215b3ab84969e8e0062fc797a09f0137f2f294f1aea3cd4957abe86f869d7c",
+        "input_auth": "ab215b3ab84969e8e0062fc797a09f0137f2f294f1aea3cd4957abe86f869d7c",
+        "input_buffer": "ab215b3ab84969e8e0062fc797a09f0137f2f294f1aea3cd4957abe86f869d7c",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -170,7 +170,7 @@
         "executor"
       ],
       "pins": {
-        "DIRECT_PRINT": {
+        "SPECIAL__DIRECT_PRINT": {
           "celltype": "bool"
         },
         "input_name": {
@@ -200,7 +200,7 @@
     {
       "celltype": "plain",
       "checksum": {
-        "value": "659f2289982f8b71819571a07ce980f4b7bd09dac163c9fe114e5a2fb1bf6bd6"
+        "value": "e362a885d95e8ae7fe206599fad6c9f1d2800a07bf2650b9d482d6f6c341203d"
       },
       "datatype": "mixed",
       "path": [

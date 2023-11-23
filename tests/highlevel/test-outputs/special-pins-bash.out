@@ -1,29 +1,29 @@
 Traceback (most recent call last):
   File "/cwd/tests/highlevel/special-pins-bash.py", line 29, in <module>
-    ctx.tf.WRONG = 12
+    ctx.tf.SPECIAL__WRONG = 12
 AttributeError: Cannot define new special pins before translation
 Traceback (most recent call last):
   File "/cwd/tests/highlevel/special-pins-bash.py", line 36, in <module>
-    ctx.tf["WRONG"] = 12
+    ctx.tf["SPECIAL__WRONG"] = 12
 AttributeError: Cannot define new special pins before translation
 Traceback (most recent call last):
   File "/cwd/tests/highlevel/special-pins-bash.py", line 44, in <module>
-    ctx.tf.WRONG = 12
+    ctx.tf.SPECIAL__WRONG = 12
 AttributeError: Cannot define new special pins like this, use add_special_pin
 Traceback (most recent call last):
   File "/cwd/tests/highlevel/special-pins-bash.py", line 51, in <module>
-    ctx.tf["WRONG"] = 12
+    ctx.tf["SPECIAL__WRONG"] = 12
 AttributeError: Cannot define new special pins like this, use add_special_pin
 Traceback (most recent call last):
   File "/cwd/tests/highlevel/special-pins-bash.py", line 58, in <module>
     ctx.tf.add_special_pin("nonsense", "bool")
-ValueError: Special pinname must be all uppercase
-None
-Status: {'tf': '*tf*: Status: upstream => SPECIAL undefined'}
+ValueError: Special pinname must start with SPECIAL__
 Traceback (most recent call last):
   File "/cwd/tests/highlevel/special-pins-bash.py", line 79, in <module>
-    ctx.tf.SPECIAL = 12
+    ctx.tf.SPECIAL__X = 12
 AttributeError: Special pins must be set using bracket syntax
+None
+Status: {'tf': '*tf*: Status: upstream => SPECIAL__X undefined'}
 OK
 *************************************************
 * Result
@@ -34,12 +34,12 @@ OK
 *************************************************
 3
 4
-SPECIAL This must be printed
+SPECIAL__X This must be printed
 
 *************************************************
-Execution time: 0.0 seconds
+Execution time: 0.1 seconds
 *************************************************
-9713f4bf49c96285c5d4d5c62bba357f8c3eb055d5451bbe951d3ad6d1b7486e
+31d402bbd701bd25404526fa2118a1b689ec0a356c8dfc0b914cf7180aab2570
 *************************************************
 * Result
 *************************************************
@@ -49,17 +49,17 @@ Execution time: 0.0 seconds
 *************************************************
 3
 4
-SPECIAL This must be printed
+SPECIAL__X This must be printed
 
 *************************************************
-Execution time: 0.0 seconds
+Execution time: 0.1 seconds
 *************************************************
-9713f4bf49c96285c5d4d5c62bba357f8c3eb055d5451bbe951d3ad6d1b7486e
+31d402bbd701bd25404526fa2118a1b689ec0a356c8dfc0b914cf7180aab2570
 Nothing printed
 /Nothing printed
 3
 4
-SPECIAL This will be printed IN THE END
+SPECIAL__X This will be printed IN THE END
 *************************************************
 * Result
 *************************************************
@@ -69,7 +69,7 @@ SPECIAL This will be printed IN THE END
 *************************************************
 3
 4
-SPECIAL This will be printed IN THE END
+SPECIAL__X This will be printed IN THE END
 
 *************************************************
 Execution time: 0.0 seconds

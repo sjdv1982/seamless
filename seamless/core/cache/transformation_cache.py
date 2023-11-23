@@ -125,13 +125,13 @@ def tf_get_buffer(transformation):
     assert isinstance(transformation, dict)
     d = {}
     for k in transformation:
-        if k.isupper():
-            continue
         if k in ("__compilers__", "__languages__", "__meta__", "__env__"):
             continue
         v = transformation[k]
         if k in ("__language__", "__output__", "__as__", "__format__"):
             d[k] = v
+            continue
+        if k.startswith("SPECIAL__"):
             continue
         celltype, subcelltype, checksum = v
         d[k] = celltype, subcelltype, checksum
