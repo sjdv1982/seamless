@@ -796,14 +796,15 @@ else:
                     download_checksum_dict[ff] = result[f]
                 directories_to_download.append(download_target)
 
-        download(
-            files_to_download,
-            directories_to_download,
-            checksum_dict=download_checksum_dict,
-            max_download_size=max_download_size,
-            max_download_files=max_download_files,
-            auto_confirm=args.auto_confirm,
-        )
+        if not args.no_download:
+            download(
+                files_to_download,
+                directories_to_download,
+                checksum_dict=download_checksum_dict,
+                max_download_size=max_download_size,
+                max_download_files=max_download_files,
+                auto_confirm=args.auto_confirm,
+            )
     else:
         assert capture_stdout
         if cannot_download:
