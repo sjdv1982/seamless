@@ -290,7 +290,11 @@ class TransformationJob:
         semantic_cache, *, debug, fingertip,
         scratch=False,
         cannot_be_local=False
-    ):        
+    ):
+        """
+        Note: fingertip applies to the *result* checksum,
+        not to the inputs!
+        """
         self.checksum = checksum
         assert codename is not None
         self.codename = codename
@@ -457,7 +461,7 @@ class TransformationJob:
             meta.pop("local")
             tf_dunder["__meta__"] = meta
         try:
-            result = await run_job(self.checksum, tf_dunder)
+            result = await run_job(self.checksum, tf_dunder, fingertip=self.fingertip, scratch=self.scratch)
         except RuntimeError as exc:
             raise RemoteJobError(str(exc)) from None
         if result is None:
@@ -821,6 +825,10 @@ class TransformationJob:
                                 print_info(f"FINISHED nested local transformation job: {tf_checksum}")
                             fut.add_done_callback(fut_done)
                             run_transformation_futures.append(fut)
+                        elif status == 8:
+                            # sub-buffer of a deep buffer calculated by scratch
+                            sub_checksum, sub_buffer = msg
+                            buffer_cache.cache_buffer(sub_checksum, sub_buffer)
                         else:
                             raise Exception("Unknown return status {}".format(status))
                     elif isinstance(status, tuple) and len(status) == 2 and status[1] == "checksum":

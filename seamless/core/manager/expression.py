@@ -46,6 +46,7 @@ class Expression:
             path = ()
         if len(path):
             assert celltype in ("mixed", "plain", "binary")
+            path = tuple(path)
         self._path = path
         self._celltype = celltype
         self._target_celltype = target_celltype

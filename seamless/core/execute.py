@@ -76,11 +76,11 @@ def fast_unpack(deep_structure, hash_pattern):
         return {k:v for k,v in zip(deep_structure.keys(), unpacked_values)}
 
 
-def _fast_pack(value, buffer, celltype, database):
+def _fast_pack(value, buffer, celltype, database, scratch, result_queue):
     if celltype is None:
         buffer = value
     if buffer is None:        
-        buffer = serialize_sync(value, celltype, use_cache=False)        
+        buffer = serialize_sync(value, celltype, use_cache=False)
         if buffer is None:
             return None
     checksum = calculate_checksum_func(buffer)
@@ -89,10 +89,14 @@ def _fast_pack(value, buffer, celltype, database):
         return None
     if database.active:
         buffer_cache.guarantee_buffer_info(checksum, celltype, buffer=buffer, sync_to_remote=True)
+    
+    if scratch:
+        result_queue.put((8, (checksum, buffer)))
+    else:
         buffer_remote.write_buffer(checksum, buffer)
     return checksum
 
-def fast_pack(unpacked_values, hash_pattern):
+def fast_pack(unpacked_values, hash_pattern, *, scratch, result_queue):
     from .protocol.serialize import serialize_cache
     if hash_pattern == {"*": "#"}:
         values = unpacked_values.values()  
@@ -122,7 +126,7 @@ def fast_pack(unpacked_values, hash_pattern):
                 if checksum is not None:
                     packing_checksums.append(checksum)
                     continue
-            packing_checksum = pool.apply_async(func=_fast_pack, args = (value, buffer, celltype, database))
+            packing_checksum = pool.apply_async(func=_fast_pack, args = (value, buffer, celltype, database, scratch, result_queue))
             packing_checksums.append(packing_checksum)
         if hash_pattern in ({"*": "#"}, {"*": "##"}):
             keys = unpacked_values.keys()
@@ -141,6 +145,7 @@ def fast_pack(unpacked_values, hash_pattern):
                 result_checksum = packing_checksum.get()
                 if result_checksum is None:                
                     raise Exception(key)
+                
             result[key] = result_checksum.hex()
     return result
 
@@ -185,6 +190,7 @@ def _execute(name, code,
     ):        
         from .transformation import SeamlessTransformationError, SeamlessStreamTransformationError
         from seamless.highlevel.direct import transformer
+        from .manager.expression import Expression
         assert identifier is not None
         namespace["return_preliminary"] = functools.partial(
             return_preliminary, result_queue, output_celltype
@@ -247,7 +253,7 @@ or
                         if database.active:
                             result_queue.put((5, "release lock"))
                         if output_hash_pattern is not None:
-                            deep_structure = fast_pack(result, output_hash_pattern)
+                            deep_structure = fast_pack(result, output_hash_pattern, scratch=scratch, result_queue=result_queue)
                             result = deep_structure
                             output_celltype = "mixed"
                         result_buffer = serialize(result, output_celltype)
@@ -258,6 +264,30 @@ or
                             buffer_remote.write_buffer(result_checksum, result_buffer)
                             return ((0, "checksum"), result_checksum2)
                         else:
+                            result_checksum = calculate_checksum(result_buffer)
+                            if output_hash_pattern is not None and scratch:
+                                if isinstance(result, list):
+                                    deep_keys = list(range(len(result)))
+                                elif isinstance(result, dict):
+                                    deep_keys = list(result.keys())
+                                else:
+                                    raise TypeError(result)
+                                if output_hash_pattern == {"*": "#"}:
+                                    target_celltype = "mixed"
+                                elif output_hash_pattern == {"*": "##"}:
+                                    target_celltype = "bytes"
+                                elif output_hash_pattern == {"!": "#"}:
+                                    target_celltype = "mixed"
+                                
+                                for deep_key in deep_keys:
+                                    deep_subchecksum = result[deep_key]
+                                    expr = Expression(
+                                        result_checksum, [deep_key],
+                                        "mixed", target_celltype,
+                                        None, hash_pattern=output_hash_pattern,
+                                        target_hash_pattern=None                                     
+                                    )
+                                    database.set_expression(expr, deep_subchecksum)
                             return (0, result_buffer)
                     except Exception as exc:
                         exc = traceback.format_exc()

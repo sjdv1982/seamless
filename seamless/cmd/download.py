@@ -42,7 +42,7 @@ def download_file(filename, file_checksum):
             f.write(file_buffer)
     except Exception:
         with stdout_lock:
-            msg(0, f"Cannot write to file '{filename}'")
+            msg(0, f"Cannot download file '{filename}'")
         return
 
 def download_index(index_checksum, dirname):

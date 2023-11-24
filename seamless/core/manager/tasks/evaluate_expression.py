@@ -398,12 +398,12 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                         else:
                             fexc = traceback.format_exc()
                             expression.exception = fexc
-                        return None  
+                        return None
 
             if result_buffer is not None:
                 buffer_cache.cache_buffer(result_checksum, result_buffer)
 
-            if result_checksum != expression.checksum:
+            if result_checksum != expression.checksum and not fingertip_mode:
                 cachemanager.incref_checksum(
                     result_checksum,
                     expression,

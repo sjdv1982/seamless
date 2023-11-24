@@ -4,9 +4,11 @@ import os
 #session = aiohttp.ClientSession()
 from aiohttp.client_exceptions import ServerDisconnectedError
     
-async def run_job(checksum, tf_dunder):
+async def run_job(checksum, tf_dunder, *, fingertip, scratch):
     from seamless.highlevel import Checksum
     from . import parse_checksum
+    from seamless import calculate_checksum
+    from seamless.core.cache.buffer_cache import buffer_cache
     from .config import get_assistant, InProcessAssistant
 
     timeout = os.environ.get("SEAMLESS_ASSISTANT_JOB_TIMEOUT", None)
@@ -22,8 +24,8 @@ async def run_job(checksum, tf_dunder):
         return result
 
     # One session per request is really bad... but what can we do?
-    async with aiohttp.ClientSession() as session:
-        data={"checksum":checksum, "dunder":tf_dunder}
+    async with aiohttp.ClientSession() as session:        
+        data={"checksum":checksum, "dunder":tf_dunder, "scratch": scratch, "fingertip": fingertip}
         for retry in range(5):
             try:
                 while 1:
@@ -32,17 +34,30 @@ async def run_job(checksum, tf_dunder):
                         if response.status == 202:
                             await asyncio.sleep(0.1)
                             continue
-                        try:
-                            content = content.decode()
-                        except UnicodeDecodeError:
-                            pass                
+                        if not (scratch and fingertip):
+                            try:
+                                content = content.decode()
+                            except UnicodeDecodeError:
+                                pass                
                         if response.status != 200:
-                            raise RuntimeError(f"Error {response.status} from assistant:" + content)
+                            msg1 = (f"Error {response.status} from assistant:").encode()
+                            err = msg1 + content
+                            try:
+                                err = err.decode()
+                            except UnicodeDecodeError:
+                                pass                                            
+                            raise RuntimeError(err)
                         break
                 break
             except ServerDisconnectedError:
                 continue
 
-    result_checksum = parse_checksum(content)
+    if scratch and fingertip:
+        result_buffer = content
+        result_checksum = calculate_checksum(result_buffer)
+        buffer_cache.cache_buffer(result_checksum, result_buffer)
+        result_checksum = result_checksum.hex()
+    else:
+        result_checksum = parse_checksum(content)
     return result_checksum
     

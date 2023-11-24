@@ -11,7 +11,6 @@ import json
 import time
 import traceback
 import threading
-from concurrent.futures import ThreadPoolExecutor
 
 stdout_lock = threading.Lock()
 
@@ -36,8 +35,8 @@ from seamless.cmd.bytes2human import bytes2human, human2bytes
 from seamless.cmd.confirm import confirm_yna
 from seamless.cmd.download import download
 from seamless.highlevel import Checksum
-from seamless.core.cache.database_client import database
 from seamless.core.protocol.json import json_dumps
+from seamless.core.direct.run import fingertip
 from seamless import calculate_checksum
 
 parser = argparse.ArgumentParser()
@@ -161,12 +160,20 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--scratch",
+    help="Don't store any result values, only store the overall result checksum",
+    default=False,
+    action="store_true",
+)
+
+parser.add_argument(
     "--ncores", help="Number of cores required. -1 means all available cores", type=int
 )
 
 parser.add_argument(
     "--fingertip",
     help="If the result checksum is known but the result unavailable: force evaluation",
+    default=False,
     action="store_true",
 )
 
@@ -456,7 +463,7 @@ if args.extra_results:
             results[extra_result[:pos]] = extra_result[pos + 1 :]
 
 if not results and not redirection:
-    if args.no_download:
+    if args.no_download or args.scratch:
         err("Download disabled. Refuse to print output to screen.")
     capture_stdout = True
     result_targets = None
@@ -603,7 +610,7 @@ else:
 ################################################################
 
 transformation_checksum = Checksum(transformation_checksum).hex()
-
+msg(3, f"Transformation checksum: {transformation_checksum}")
 
 def write_future(filename, result_target):
     filename = os.path.join(workdir, filename)
@@ -667,8 +674,15 @@ if result_targets:
 from seamless import SeamlessTransformationError
 
 try:
+    result_fingertip = True
+    if args.no_download:
+        result_fingertip = False
+    if result_targets:
+        result_fingertip = True
     result_checksum = run_transformation(
-        transformation_dict, undo=args.undo, fingertip=args.fingertip
+        transformation_dict, undo=args.undo, 
+        fingertip=result_fingertip,
+        scratch=args.scratch
     )
 except SeamlessTransformationError as exc:
     traceback.print_exc(limit=0)
@@ -746,7 +760,10 @@ if args.undo:
 
 else:
     try:
-        result_buffer = buffer_cache.get_buffer(result_checksum.bytes())
+        if args.fingertip or args.scratch:
+            result_buffer = fingertip(result_checksum.bytes())
+        else:
+            result_buffer = buffer_cache.get_buffer(result_checksum.bytes())
         if result_buffer is None:
             raise CacheMissError(result_checksum)
         cannot_download = False
@@ -758,7 +775,7 @@ else:
     if result_targets:
         if cannot_download:
             err(
-                "Cannot download result. Cannot write checksum for multiple result targets"
+                "Cannot download result. Cannot write checksum for one or more result targets"
             )
 
         result_checksum_dict = deserialize(
@@ -796,7 +813,7 @@ else:
                     download_checksum_dict[ff] = result[f]
                 directories_to_download.append(download_target)
 
-        if not args.no_download:
+        if not args.no_download and not args.scratch:
             download(
                 files_to_download,
                 directories_to_download,

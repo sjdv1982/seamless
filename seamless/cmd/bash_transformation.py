@@ -149,7 +149,7 @@ def prepare_bash_transformation(
     # TODO: add support for filesystem __format__ annotation
     return Checksum(transformation_checksum), transformation_dict
 
-def run_transformation(transformation_dict, *, undo, fingertip=False):
+def run_transformation(transformation_dict, *, undo, fingertip=False, scratch=False):
     if not fingertip:
         fingertip = False
     for k in transformation_dict:
@@ -173,7 +173,7 @@ def run_transformation(transformation_dict, *, undo, fingertip=False):
             msg(2, f"Undo transformation {transformation_checksum.hex()} => {result.hex()}")
             return Checksum(result)
     else:
-        result_checksum = run_transformation_dict(transformation_dict, fingertip=fingertip)
+        result_checksum = run_transformation_dict(transformation_dict, fingertip=fingertip, scratch=scratch)
         if result_checksum is not None:
             database.set_transformation_result(transformation_checksum_py, result_checksum)
         return Checksum(result_checksum)
