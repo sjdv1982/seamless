@@ -1,6 +1,7 @@
 checksum-input.sh
 testfolder.sh
 undo.sh
+scratch-fingertip.sh
 multi-core-transformations.sh
     See the tests/highlevel version
 future.sh. Expected output is: 
