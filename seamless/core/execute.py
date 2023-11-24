@@ -257,37 +257,51 @@ or
                             result = deep_structure
                             output_celltype = "mixed"
                         result_buffer = serialize(result, output_celltype)
-                        if buffer_remote.can_write() and not scratch:
+                        result_checksum = None
+
+                        if output_hash_pattern is not None:
+
+                            # For now, store deep cell members as expressions
+                            #  in all cases.
+                            # The alternative would be to do this only 
+                            #   when scratch=True
+                            # An Expression record takes ~400 bytes in the DB.
+                            # Some smart tool could purge the database from Expressions
+                            #  if both the deep buffer and the deep member buffer
+                            #  are available in a buffer folder/server
+
                             result_checksum = calculate_checksum(result_buffer)
+                            if isinstance(result, list):
+                                deep_keys = list(range(len(result)))
+                            elif isinstance(result, dict):
+                                deep_keys = list(result.keys())
+                            else:
+                                raise TypeError(result)
+                            if output_hash_pattern == {"*": "#"}:
+                                target_celltype = "mixed"
+                            elif output_hash_pattern == {"*": "##"}:
+                                target_celltype = "bytes"
+                            elif output_hash_pattern == {"!": "#"}:
+                                target_celltype = "mixed"
+                            
+                            for deep_key in deep_keys:
+                                deep_subchecksum = result[deep_key]
+                                expr = Expression(
+                                    result_checksum, [deep_key],
+                                    "mixed", target_celltype,
+                                    None, hash_pattern=output_hash_pattern,
+                                    target_hash_pattern=None                                     
+                                )
+                                database.set_expression(expr, deep_subchecksum)
+
+                        if buffer_remote.can_write() and not scratch:
+                            if result_checksum is None:
+                                result_checksum = calculate_checksum(result_buffer)
                             result_checksum2 = result_checksum.hex()
                             buffer_cache.guarantee_buffer_info(result_checksum, output_celltype, sync_to_remote=True)
                             buffer_remote.write_buffer(result_checksum, result_buffer)
                             return ((0, "checksum"), result_checksum2)
                         else:
-                            result_checksum = calculate_checksum(result_buffer)
-                            if output_hash_pattern is not None and scratch:
-                                if isinstance(result, list):
-                                    deep_keys = list(range(len(result)))
-                                elif isinstance(result, dict):
-                                    deep_keys = list(result.keys())
-                                else:
-                                    raise TypeError(result)
-                                if output_hash_pattern == {"*": "#"}:
-                                    target_celltype = "mixed"
-                                elif output_hash_pattern == {"*": "##"}:
-                                    target_celltype = "bytes"
-                                elif output_hash_pattern == {"!": "#"}:
-                                    target_celltype = "mixed"
-                                
-                                for deep_key in deep_keys:
-                                    deep_subchecksum = result[deep_key]
-                                    expr = Expression(
-                                        result_checksum, [deep_key],
-                                        "mixed", target_celltype,
-                                        None, hash_pattern=output_hash_pattern,
-                                        target_hash_pattern=None                                     
-                                    )
-                                    database.set_expression(expr, deep_subchecksum)
                             return (0, result_buffer)
                     except Exception as exc:
                         exc = traceback.format_exc()

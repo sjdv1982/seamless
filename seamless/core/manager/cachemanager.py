@@ -179,7 +179,7 @@ class CacheManager:
          the shareserver, which makes it safe to re-compute a checksum-to-buffer
          request dynamically, without allowing arbitrary computation
         """
-        return await self._fingertip(checksum, must_have_cell=must_have_cell, done=set())
+        return await self._fingertip(checksum, must_have_cell=must_have_cell, done=set(), force_recompute=False)
 
     def _mine_database(self, checksum):
         from seamless.config import database
@@ -209,7 +209,7 @@ class CacheManager:
 
         return result_expressions, result_joins, result_transformations
 
-    async def _fingertip(self, checksum, *, must_have_cell, done):
+    async def _fingertip(self, checksum, *, must_have_cell, done, force_recompute):
         from ..cache import CacheMissError
         from .tasks.deserialize_buffer import DeserializeBufferTask
         from seamless.config import database
@@ -221,7 +221,9 @@ class CacheManager:
         if isinstance(checksum, str):
             checksum = bytes.fromhex(checksum)
         assert isinstance(checksum, bytes), checksum
-        buffer = get_buffer(checksum, remote=True)
+        buffer = None
+        if not force_recompute:
+            buffer = get_buffer(checksum, remote=True)
         if buffer is not None:
             return buffer
         if checksum in done:
@@ -231,9 +233,7 @@ class CacheManager:
         manager = self.manager()
         tf_cache = self.transformation_cache
 
-
-        rmap = {True: 2, None: 1, False: 0}
-        remote, recompute= 2, 2 # True, True
+        remote, recompute= True, True
         is_deep = False
         has_cell = False
         for refholder, result in self.checksum_refs.get(checksum, set()):
@@ -249,7 +249,7 @@ class CacheManager:
         if must_have_cell and not has_cell:
             raise CacheMissError(checksum.hex())
 
-        if remote:
+        if remote and not force_recompute:
             buffer = get_buffer(checksum, remote=True, deep=is_deep)
             if buffer is not None:
                 return buffer
@@ -337,14 +337,15 @@ class CacheManager:
                         )
                         fingertipper.expressions.append(expression)
 
-        
-        exc_str = await fingertipper.run()
+        exc_str = None
+        if not fingertipper.empty:
+            exc_str = await fingertipper.run()
+            
+            buffer = get_buffer(checksum,remote=remote)
+            if buffer is not None:
+                return buffer
 
-        buffer = get_buffer(checksum,remote=remote)
-        if buffer is not None:
-            return buffer
-
-        if remote:
+        if remote and not force_recompute:
             buffer = download_buffer_from_servers(checksum)
             if buffer is not None:
                 return buffer

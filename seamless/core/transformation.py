@@ -30,7 +30,7 @@ def _kill_processes():
         kill_time = termination_time + 15  # "docker stop" has 10 secs grace, add 5 secs margin
         ctime = time.time()
         while kill_time > ctime:
-            print("Waiting for transformer process to terminate...")
+            print("Waiting for transformer process to terminate...", file=sys.stderr)
             time.sleep(2)
             if not process.is_alive():
                 break

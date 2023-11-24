@@ -40,10 +40,13 @@ async def run_job(checksum, tf_dunder, *, fingertip, scratch):
                             except UnicodeDecodeError:
                                 pass                
                         if response.status != 200:
-                            msg1 = (f"Error {response.status} from assistant:").encode()
+                            msg1 = (f"Error {response.status} from assistant:")
+                            if isinstance(content, bytes):
+                                msg1 = msg1.encode()
                             err = msg1 + content
                             try:
-                                err = err.decode()
+                                if isinstance(err, bytes):
+                                    err = err.decode()
                             except UnicodeDecodeError:
                                 pass                                            
                             raise RuntimeError(err)

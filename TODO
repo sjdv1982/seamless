@@ -15,9 +15,10 @@ Things TODO regarding integration:
   DONE
 
 - Finish the scratch Seamless issue: TODO
-- Finish the non-automatic high-level tests (tests/highlevel/q)
+- Add seamless-fingertip tool (default delegation level 1, can be increased): DONE
+- Finish the non-automatic high-level tests (tests/highlevel/q): TODO
 
-Stage 0: /bin/seamless
+Stage 0: /bin/seamless (nearly DONE)
 
 See also [seamless/bin/README], which will be documentation also.
 
@@ -35,7 +36,7 @@ See also [seamless/bin/README], which will be documentation also.
 
 Stage 1:
 
-- Make sure that save_vault respects scratch (i.e. make it behave the same as buffer_remote.write). Document the vault + database path as a valid (advanced-use) setup. Rip the warning in init_database_from_env, refactor/document API. 
+- Make sure that save_vault respects scratch (i.e. make it behave the same as buffer_remote.write). Document the vault + database path as a valid (advanced-use) setup. Rip the warning in init_database_from_env, refactor/document API. TODO.
 
 - mini-assistant: have an internal lock system just like transformation.py
 (in fact, re-use it). Acquire locks before launching run-transformation, and release them afterwards. TODO
@@ -57,7 +58,7 @@ i.e. you can't "fill up" a deep cell/deep folder from Seamless and expect the co
 to be written to a database. Might need a cell property and/or manual API for this,
 in particular for transformers that return a deep cell/folder.
 
-Stage 2: distribution
+Stage 2: distribution: all TODO
 
 - Make a separate conda package for bin/seamless. 
 Add seamless-upload, seamless-upload-zip, seamless-upload-vault and seamless-download as copies of seamless-tools/scripts/upload.py etc.,
@@ -75,7 +76,7 @@ rather than the Docker wrappers of seamless-cli/seamless-upload etc.
 
 - General documentation, describing the three styles.
 
-Stage 3:
+Stage 3: all TODO
 
 - seamless-runner and seamless-parallel-runner for workflow graphs. 
 Primary use case: non-Python non-bash transformations (esp. compiled ones).
@@ -90,7 +91,7 @@ Primary use case: non-Python non-bash transformations (esp. compiled ones).
 Make sure it is usable from both bin/seamless and workflow seamless.
 Re-run pin-filesystem.sh tests.
 
-Stage 4:
+Stage 4: TODO
 
 Start a jobless successor, i.e. "*the* assistant".
 
