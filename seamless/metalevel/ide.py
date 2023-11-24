@@ -113,7 +113,6 @@ def _vscode_attach_cleanup(debug):
     print("Debugging of '{}' terminated".format(debug["name"]))
     with open(launch_json, "w") as f:
         json.dump(launch_json_data, f, indent=4)
-
 def _vscode_compiled_attach_create(debug):
     from ..core.build_module import SEAMLESS_EXTENSION_DIR
     launch_json, launch_json_data = _vscode_init()
@@ -135,7 +134,8 @@ def _vscode_compiled_attach_create(debug):
             filename3 = "${workspaceFolder}/" + filename2
         else: # mode == "full
             filename3 = os.path.abspath(filename)
-        key = SEAMLESS_EXTENSION_DIR + "/" + debug["full_module_names"]["module"] + "/" + objname + ext    
+        key = SEAMLESS_EXTENSION_DIR + "/" + debug["full_module_names"]["module"] + "/" + objname + ext
+        raise NotImplementedError # now added random subdir to SEAMLESS_EXTENSION_DIR
         entry["sourceFileMap"][key] = filename3
     for source, target in debug.get("source_map", []):
         entry["sourceFileMap"][source] = target

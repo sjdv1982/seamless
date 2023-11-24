@@ -159,16 +159,16 @@ def build_interpreted_package(
     )
     return Package(mapping)
     
-
-def import_extension_module(full_module_name, module_code, debug, source_files):
+import random
+def import_extension_module(full_module_name, module_code, debug, source_files):    
+    curr_extension_dir = os.path.join(SEAMLESS_EXTENSION_DIR, random.randbytes(8).hex())
     with locklock:
-        if not os.path.exists(SEAMLESS_EXTENSION_DIR):
-            os.makedirs(SEAMLESS_EXTENSION_DIR)
-        module_file = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name + ".so")
+        os.makedirs(curr_extension_dir)
+        module_file = os.path.join(curr_extension_dir, full_module_name + ".so")
         with open(module_file, "wb") as f:
             f.write(module_code)
         if debug:
-            module_dir = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name)
+            module_dir = os.path.join(curr_extension_dir, full_module_name)
             os.makedirs(module_dir)
             for filename, data in source_files.items():
                 fn = os.path.join(module_dir, filename)
@@ -177,7 +177,7 @@ def import_extension_module(full_module_name, module_code, debug, source_files):
         syspath_old = []
         syspath_old = sys.path[:]
         try:
-            sys.path.append(SEAMLESS_EXTENSION_DIR)
+            sys.path.append(curr_extension_dir)
             importlib.import_module(full_module_name)
             mod = sys.modules.pop(full_module_name)
             return mod
@@ -252,7 +252,7 @@ def build_compiled_module(full_module_name, original_checksum, checksum, module_
                 remaining_objects[object_file] = object_
             object_checksums[object_file] = object_checksum
         if len(remaining_objects):
-            build_dir = os.path.join(SEAMLESS_EXTENSION_DIR, full_module_name)               
+            build_dir = os.path.join(curr_extension_dir, full_module_name)               
             success, new_binary_objects, source_files, stderr = compile(
               remaining_objects, build_dir,
               compiler_verbose=module_definition.get(
