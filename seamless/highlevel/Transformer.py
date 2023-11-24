@@ -406,6 +406,9 @@ an assistant is tried first and local execution is a fallback."""
             htf["scratch"] = True
         else:
             htf.pop("scratch", None)
+        htf["UNTRANSLATED"] = True
+        if self._parent() is not None:
+            self._parent()._translate()
 
     def clear_exception(self) -> None:
         """Clear any exception associated with this transformer.

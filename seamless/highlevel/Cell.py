@@ -877,6 +877,9 @@ For other use in HTTP requests, instead set mimetype to "text/plain".
             hcell["scratch"] = True
         else:
             hcell.pop("scratch", None)
+        hcell["UNTRANSLATED"] = True
+        if self._parent() is not None:
+            self._parent()._translate()
 
     @property
     def fingertip_no_remote(self) -> bool:
