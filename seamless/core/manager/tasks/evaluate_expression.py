@@ -161,7 +161,7 @@ async def value_conversion(
 async def _evaluate_expression(self, expression, manager, fingertip_mode):
     # Get the expression result checksum from cache.
     from ....util import parse_checksum
-    cachemanager = manager.cachemanager    
+    cachemanager = manager.cachemanager
     if not fingertip_mode:
         result_checksum = \
             cachemanager.expression_to_result_checksum.get(expression)
@@ -169,7 +169,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
             result_checksum = parse_checksum(result_checksum, as_bytes=True)
             return result_checksum
 
-    locknr = await acquire_evaluation_lock(self)    
+    locknr = await acquire_evaluation_lock(self)
     try:
         result_checksum = None
         result_buffer = None
@@ -291,7 +291,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 result_checksum = source_checksum
                 done = True
                 needs_value_conversion = False
-            else:
+            else:                
                 needs_value_conversion = True
 
             if needs_value_conversion:
@@ -312,7 +312,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                     if result_value is not None:
                         full_value = False
                 if full_value:
-                    mode, result = await get_subpath(value, source_hash_pattern, expression.path)
+                    mode, result = await get_subpath(value, source_hash_pattern, expression.path, fingertip_mode=fingertip_mode)
                     assert mode in ("checksum", "value"), mode
                     if result is None:
                         done = True
@@ -330,8 +330,8 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                             copy=False
                         )
                     elif mode == "value":
-                        use_value = True                    
-                        result_value = result                             
+                        use_value = True
+                        result_value = result
 
                 if (not done) and use_value:
                     if result_hash_pattern == {"*": "##"} and value is not None:
