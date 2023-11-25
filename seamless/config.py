@@ -130,7 +130,7 @@ def _init_buffer_remote_from_env(only_level_1=False):
         raise BufferServerConnectionError(f"Cannot connect to write buffer server {write_buffer_server}") from None
     
 
-def delegate(level=4):
+def delegate(level=4, reraise_exceptions=False):
     """Delegate computations and/or data to remote servers and folders.
 
 Full delegation (level 4): Delegate all computations, buffers and results.
@@ -184,7 +184,9 @@ Delegate some or all buffers and results.
             _init_buffer_remote_from_env(only_level_1=(level==1))
         if level == 3:
             init_database_from_env()
-    except ConfigurationError:
+    except ConfigurationError as exc:
+        if reraise_exceptions:
+            raise exc from None
         print_exc(limit=0,file=sys.stderr)
         exit(1)
     finally:
