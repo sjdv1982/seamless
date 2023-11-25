@@ -161,8 +161,7 @@ def build_interpreted_package(
     
 import random
 def import_extension_module(curr_extension_dir, full_module_name, module_code, debug, source_files):        
-    with locklock:
-        os.makedirs(curr_extension_dir)
+    with locklock:        
         module_file = os.path.join(curr_extension_dir, full_module_name + ".so")
         with open(module_file, "wb") as f:
             f.write(module_code)
@@ -224,6 +223,7 @@ def get_compiled_module_code(checksum):
 
 def build_compiled_module(full_module_name, original_checksum, checksum, module_definition, *, module_error_name):
     curr_extension_dir = os.path.join(SEAMLESS_EXTENSION_DIR, random.randbytes(8).hex())
+    os.makedirs(curr_extension_dir,exist_ok=True)
     module_code = None
     module_code_checksum, module_code = get_compiled_module_code(original_checksum)
     if module_code is None:
