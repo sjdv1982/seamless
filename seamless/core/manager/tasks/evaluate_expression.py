@@ -312,7 +312,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                     if result_value is not None:
                         full_value = False
                 if full_value:
-                    mode, result = await get_subpath(value, source_hash_pattern, expression.path, fingertip_mode=fingertip_mode)
+                    mode, result = await get_subpath(value, source_hash_pattern, expression.path, fingertip_mode=fingertip_mode, manager=manager, fingertip_mode=fingertip_mode)
                     assert mode in ("checksum", "value"), mode
                     if result is None:
                         done = True

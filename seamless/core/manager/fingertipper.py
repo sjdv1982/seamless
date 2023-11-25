@@ -28,8 +28,8 @@ class FingerTipper:
     def empty(self):
         return (not self.transformations) and (not self.expressions) and (not self.joins) and (not self.joins2) and (not self.syn2sem)
 
-    async def fingertip_upstream(self, checksum, force_recompute=False):
-        return await self.cachemanager._fingertip(checksum, must_have_cell=False, done=self.done, force_recompute=force_recompute)
+    async def fingertip_upstream(self, checksum):
+        return await self.cachemanager._fingertip(checksum, must_have_cell=False, done=self.done)
 
     async def fingertip_transformation(self, transformation, tf_checksum):
         from ..direct.run import run_transformation_dict
@@ -66,10 +66,7 @@ class FingerTipper:
 
     async def fingertip_expression(self, expression):
         from .tasks.evaluate_expression import evaluate_expression
-        force_recompute = False
-        if expression.hash_pattern is not None:
-            force_recompute = True
-        await self.fingertip_upstream(expression.checksum, force_recompute=force_recompute)
+        await self.fingertip_upstream(expression.checksum)
         await evaluate_expression(
             expression, manager=self.manager, fingertip_mode=True
         )
