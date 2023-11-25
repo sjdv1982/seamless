@@ -160,8 +160,7 @@ def build_interpreted_package(
     return Package(mapping)
     
 import random
-def import_extension_module(full_module_name, module_code, debug, source_files):    
-    curr_extension_dir = os.path.join(SEAMLESS_EXTENSION_DIR, random.randbytes(8).hex())
+def import_extension_module(curr_extension_dir, full_module_name, module_code, debug, source_files):        
     with locklock:
         os.makedirs(curr_extension_dir)
         module_file = os.path.join(curr_extension_dir, full_module_name + ".so")
@@ -224,6 +223,7 @@ def get_compiled_module_code(checksum):
     return _compilation_buffers.get(checksum, (None, None))
 
 def build_compiled_module(full_module_name, original_checksum, checksum, module_definition, *, module_error_name):
+    curr_extension_dir = os.path.join(SEAMLESS_EXTENSION_DIR, random.randbytes(8).hex())
     module_code = None
     module_code_checksum, module_code = get_compiled_module_code(original_checksum)
     if module_code is None:
@@ -291,7 +291,7 @@ def build_compiled_module(full_module_name, original_checksum, checksum, module_
         if not buffer_remote.can_write():
             _compilation_buffers[original_checksum] = module_code_checksum, module_code
         database.set_compile_result(checksum, module_code_checksum)
-    mod = import_extension_module(full_module_name, module_code, debug, source_files)
+    mod = import_extension_module(curr_extension_dir, full_module_name, module_code, debug, source_files)
     return mod
 
 def build_module(module_definition, module_workspace={}, *,

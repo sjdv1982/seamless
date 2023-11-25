@@ -119,6 +119,7 @@ _original_event_loop = asyncio.get_event_loop()
 def check_original_event_loop():
     event_loop = asyncio.get_event_loop()
     if event_loop is not _original_event_loop:
+        #import traceback; traceback.print_stack()
         raise Exception(
 "The asyncio eventloop was changed (e.g. by asyncio.run) since Seamless was started"
         )
