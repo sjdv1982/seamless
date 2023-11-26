@@ -476,18 +476,28 @@ class StructuredCellJoinTask(StructuredCellTask):
                 if sc.hash_pattern is None:
                     true_value = copy.deepcopy(data_value)
                 else:
-                    # This is very expensive!!
-                    mode, true_value = await get_subpath(data_value, sc.hash_pattern, ())
-                    assert mode == "value"                    
-                s = Silk(data=true_value, schema=schema)
-                try:
-                    s.validate()
-                except ValidationError:
-                    sc._exception = traceback.format_exc(limit=0)
-                    ok = False
-                except Exception:
-                    sc._exception = traceback.format_exc()
-                    ok = False
+                    try:
+                        # This is very expensive!!
+                        mode, true_value = await get_subpath(data_value, sc.hash_pattern, ())
+                        assert mode == "value"
+                    except Exception:
+                        try:
+                            # This is very very expensive!!
+                            mode, true_value = await get_subpath(data_value, sc.hash_pattern, (), fingertip_mode=True, manager=manager)
+                            assert mode == "value"
+                        except Exception:
+                            sc._exception = traceback.format_exc()
+                            ok = False
+                if ok:
+                    s = Silk(data=true_value, schema=schema)
+                    try:
+                        s.validate()
+                    except ValidationError:
+                        sc._exception = traceback.format_exc(limit=0)
+                        ok = False
+                    except Exception:
+                        sc._exception = traceback.format_exc()
+                        ok = False
 
             if not from_cache:
                 if sc._mode != SCModeEnum.FORCE_JOINING:
