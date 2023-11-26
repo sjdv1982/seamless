@@ -14,11 +14,11 @@ Things TODO regarding integration:
   UPDATE3: all fixed now.
   DONE
 
-- Finish the scratch Seamless issue: TODO
+- Finish the scratch Seamless issue: DONE
 - Add seamless-fingertip tool (default delegation level 1, can be increased): DONE
 - Finish the non-automatic high-level tests (tests/highlevel/q): TODO
 
-Stage 0: /bin/seamless (nearly DONE)
+Stage 0: /bin/seamless (DONE)
 
 See also [seamless/bin/README], which will be documentation also.
 
@@ -29,8 +29,6 @@ See also [seamless/bin/README], which will be documentation also.
 - Download of job/transformer results can be enforced or prevented. Otherwise, a heuristic based on result size (and possibly, connection speed). Manual command "seamless-download file.ext" that inspects file.ext.CHECKSUM and downloads it. DONE
 
 - Tool "seamless-upload" for files and directories. Optional "move" flag that replaces "file". DONE
-
-- Make sure that bash jobs with a buffer read folder have get_filename/get_directory working directory. Rip filezones. TODO.
 
 - Document (can be after)
 
@@ -78,6 +76,8 @@ rather than the Docker wrappers of seamless-cli/seamless-upload etc.
 
 Stage 3: all TODO
 
+- Make sure that bash jobs with a buffer read folder have get_filename/get_directory working directory. Rip filezones. Test with /bin/seamless as well.
+
 - seamless-runner and seamless-parallel-runner for workflow graphs. 
 Primary use case: non-Python non-bash transformations (esp. compiled ones).
 
@@ -95,7 +95,7 @@ Stage 4: TODO
 
 Start a jobless successor, i.e. "*the* assistant".
 
-- Pimp the protocol a bit so that "peer ID" (project information) is sent along in the request. TODO.
+- Pimp the protocol a bit so that "peer ID" (project information) is sent along in the request.
 
 - Support dynamic modification of the delegate config, poll the assistant regularly for this. Alternative: special redirect code upon job submission. Another alternative (in addition): assistant migrates between buffer folders / databases.
 
@@ -106,6 +106,8 @@ Start a jobless successor, i.e. "*the* assistant".
 - Long term: operation to create an index file of a buffer folder, so that the assistant can inspect the index file to see if a buffer exists (index file can be copied around; buffer folder might be on a node scratch).
 
 - Long term: Annotation mechanism for job duration and result size. Either as string ("10s", "10MB") or as number with units specified (25.0, time_unit="minutes"). Job duration is enforced with a hard maximum of 2x the specified duration. The job duration can be specified as "approximate" (approximate_duration=True, or "~0.5h"), in which case the hard maximum is an order of magnitude (10x) larger. Result size is not enforced, but is used to decide if the result is automatically downloaded or not.
+
+***********************************************************************************
 
 Old design text for the assistant:
 

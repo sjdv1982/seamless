@@ -90,7 +90,7 @@ cascade.py
 environment0.py
 mount-write.py
 foldercell-transformer.py
-transformer-compiled.py
+transformer-compiled.py: can be run with delegation using "export DELEGATE=''"
 transformer-redefine.py
 transformer-compiled-error.py
 transformer-compiled-module.py
