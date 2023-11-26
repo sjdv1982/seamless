@@ -81,6 +81,8 @@ class FingerTipper:
         from .tasks.deserialize_buffer import DeserializeBufferTask
         from .tasks.serialize_buffer import SerializeToBufferTask
         hash_pattern = join_dict.get("hash_pattern")
+        if "inchannels" not in join_dict:
+            raise Exception("Unsuitable join dict (no inchannels)")
         inchannels0 = join_dict["inchannels"]
         inchannels = {}
         for path0, cs in inchannels0.items():
