@@ -20,6 +20,56 @@ def is_empty(cell):
         return True
     return False
 
+def _build_join_dict(sc):
+    any_prelim = False
+    join_dict = {}
+    if sc.hash_pattern is not None:
+        join_dict["hash_pattern"] = sc.hash_pattern
+    if not sc.no_auth:
+        if sc.auth._checksum is not None:
+            join_dict["auth"] = sc.auth._checksum.hex()
+    schema = sc.get_schema()
+    if schema == {}:
+        schema = None
+    if schema is not None:
+        join_dict["schema"] = sc.schema._checksum.hex()
+    if len(sc.inchannels):
+        jd_inchannels = {}
+        for in_path in sc.inchannels:
+            ic = sc.inchannels[in_path]
+            if ic._prelim:
+                any_prelim = True
+            cs = ic._checksum
+            if cs is not None:
+                jd_inchannels[json.dumps(in_path)] = cs.hex()
+        join_dict["inchannels"] = jd_inchannels
+    return join_dict, schema, any_prelim
+
+def build_join_transformation(structured_cell):
+    """Creates a pseudo-transformation dict of the structured cell
+    A pseudo-transformation is a transformation with language "<structured cell join>"
+    that in fact performs a structured cell join.
+    The main use case is to send data-intensive structured cell joins to remote locations 
+    where the data is.
+    """
+    from ...protocol.serialize import serialize_sync as serialize
+    from ...protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
+    join_dict, _, _ = _build_join_dict(structured_cell)
+    join_dict_buffer = serialize(join_dict, "plain")    
+    join_dict_checksum = calculate_checksum(join_dict_buffer)    
+    if join_dict_checksum is None:
+        raise TypeError
+    buffer_cache.cache_buffer(join_dict_checksum, join_dict_buffer)
+    transformation_dict = {
+        "__language__": "<structured_cell_join>",
+        "structured_cell_join": join_dict_checksum.hex()
+    }
+    transformation_dict_buffer = serialize(transformation_dict, "plain")
+    transformation = calculate_checksum(transformation_dict_buffer)    
+    buffer_cache.cache_buffer(transformation, transformation_dict_buffer)
+
+    return transformation
+
 def _update_structured_cell(
     sc, checksum, manager, *,
     check_canceled, 
@@ -243,28 +293,7 @@ class StructuredCellJoinTask(StructuredCellTask):
         
         locknr = await acquire_evaluation_lock(self)
 
-        any_prelim = False
-        join_dict = {}
-        if sc.hash_pattern is not None:
-            join_dict["hash_pattern"] = sc.hash_pattern
-        if not sc.no_auth:
-            if sc.auth._checksum is not None:
-                join_dict["auth"] = sc.auth._checksum.hex()
-        schema = sc.get_schema()
-        if schema == {}:
-            schema = None
-        if schema is not None:
-            join_dict["schema"] = sc.schema._checksum.hex()
-        if len(sc.inchannels):
-            jd_inchannels = {}
-            for in_path in sc.inchannels:
-                ic = sc.inchannels[in_path]
-                if ic._prelim:
-                    any_prelim = True
-                cs = ic._checksum
-                if cs is not None:
-                    jd_inchannels[json.dumps(in_path)] = cs.hex()
-            join_dict["inchannels"] = jd_inchannels
+        join_dict, schema, any_prelim = _build_join_dict(sc)
 
         checksum = None
         from_cache = False

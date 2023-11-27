@@ -77,13 +77,13 @@ class FingerTipper:
             if checksum0 == self.checksum:
                 buffer_cache.cache_buffer(self.checksum, buf)
 
-    async def fingertip_join(self, join_dict):
+    async def fingertip_join(self, join_dict, *, must_have_inchannels=True):
         from .tasks.deserialize_buffer import DeserializeBufferTask
         from .tasks.serialize_buffer import SerializeToBufferTask
         hash_pattern = join_dict.get("hash_pattern")
-        if "inchannels" not in join_dict:
+        if "inchannels" not in join_dict and must_have_inchannels:
             raise Exception("Unsuitable join dict (no inchannels)")
-        inchannels0 = join_dict["inchannels"]
+        inchannels0 = join_dict.get("inchannels", {})
         inchannels = {}
         for path0, cs in inchannels0.items():
             path = json.loads(path0)
@@ -123,15 +123,16 @@ class FingerTipper:
             use_cache=True
         ).run()
         self._register(buf)
+        return buf
 
-    async def fingertip_join2(self, join_dict_checksum):
+    async def fingertip_join2(self, join_dict_checksum, must_have_inchannels=True):
         join_buf = await self.fingertip_upstream(join_dict_checksum)
         if join_buf is None:
             return
         join_dict = json.loads(join_buf.decode())
         if not isinstance(join_dict, dict):
             raise TypeError(type(join_dict))
-        return await self.fingertip_join(join_dict)
+        return await self.fingertip_join(join_dict, must_have_inchannels=must_have_inchannels)
 
     async def fingertip_syn2sem(self, syn_checksum, celltype, subcelltype):
         await syntactic_to_semantic(syn_checksum, celltype, subcelltype, "fingertip")

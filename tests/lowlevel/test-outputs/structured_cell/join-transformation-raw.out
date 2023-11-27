@@ -1,0 +1,20 @@
+80
+{'a': 10, 'b': 20, 'c': 30, 'x': 80}
+{'a': 10, 'b': 20, 'c': 30, 'x': 80}
+{'__language__': '<structured_cell_join>',
+ 'structured_cell_join': '09976603d4223458a5f6d4d706fba9b3163f1ed6c1e56540e1b61f53f10d8f7d'}
+{
+  "auth": "3f66250c55270da7eb5b165b0d619042bd37a1f077670dc4c2fba779dd2de258",
+  "hash_pattern": {
+    "*": "#"
+  },
+  "inchannels": {
+    "[\"a\"]": "6132e913fd0ae2c9aeacc8d99a02880df196fbab2ef62dbb62a6a4ae6d3f5fdd",
+    "[\"b\"]": "8e843baef228089dc379d4c3b6e28c1bb5d44eee257f1206b5dfee44ef6b05ad",
+    "[\"c\"]": "c2f4cccc4cff9eae7dd14ac75a6a01d23338c2007d38fdb4d6fd127a15c773a6"
+  },
+  "schema": "b97ced8d35a7232f150b3d9f9bb6c3bdf543b39427434f6b45e014004abe691e"
+}
+
+join-transformation c020a75125e2df6e7e53893b6bc8c95d647532c8165d342605c2f7b8948d5b5d
+structured cell     c020a75125e2df6e7e53893b6bc8c95d647532c8165d342605c2f7b8948d5b5d
