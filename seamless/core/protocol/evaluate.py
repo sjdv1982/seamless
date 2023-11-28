@@ -66,7 +66,7 @@ def validate_evaluation_subcelltype(checksum, buffer, celltype, subcelltype, cod
 
 async def conversion(
     checksum, celltype, target_celltype, 
-    *, fingertip_mode, value_conversion_callback=None,buffer=None
+    *, perform_fingertip, value_conversion_callback=None,buffer=None
 ):
     if checksum is None:
         return None
@@ -85,7 +85,7 @@ async def conversion(
         raise SeamlessConversionError("Checksum cannot be converted")
 
     buffer_info = None
-    if not fingertip_mode:
+    if not perform_fingertip:
         buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=False, force_length=False)
     conv_chain = make_conversion_chain(celltype, target_celltype)
 

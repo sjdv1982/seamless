@@ -172,14 +172,18 @@ async def syntactic_to_semantic(
 
 async def run_structured_cell_join(structured_cell_join_checksum, *, cachemanager):
     from ..manager.fingertipper import FingerTipper
+
     fingertipper = FingerTipper(checksum=None, cachemanager=cachemanager, done=set())
+    join_buf = await fingertipper.fingertip_upstream(structured_cell_join_checksum)
+    if join_buf is None:
+        return
+    join_dict = json.loads(join_buf.decode())
     result_buf = await fingertipper.fingertip_join2(structured_cell_join_checksum)
     if result_buf is None:
         return None
     result = await calculate_checksum(result_buf)
+    cachemanager.set_join_cache(join_dict, result)
     buffer_cache.cache_buffer(result, result_buf)
-    if database.active:
-        database.set_structured_cell_join2(result, structured_cell_join_checksum)
     return result
 
 async def run_evaluate_expression(expression_dict, fingertip_mode, *, manager):
@@ -192,16 +196,36 @@ async def run_evaluate_expression(expression_dict, fingertip_mode, *, manager):
     d["target_hash_pattern"] = d.get("target_hash_pattern")
     d["checksum"] = bytes.fromhex(d["checksum"])
     expression = Expression(**d)
-    if fingertip_mode:
-        fingertipper = FingerTipper(checksum=None, cachemanager=manager.cachemanager, done=set())
-        result_buf = await fingertipper.fingertip_expression(expression)
-        if result_buf is None:
-            return None
-        result = await calculate_checksum(result_buf)
-        buffer_cache.cache_buffer(result, result_buf)
-    else:
-        result = await evaluate_expression(expression, fingertip_mode=False, manager=manager)
-    if database.active:
+
+    taskmanager=manager.taskmanager
+    registered = False
+    if expression not in taskmanager.expression_to_task:
+        registered = True
+        taskmanager.register_expression(expression)
+    
+    cachemanager=manager.cachemanager
+    registered2 = False
+    if expression not in cachemanager.expression_to_result_checksum:
+        registered2 = True
+        cachemanager.register_expression(expression)
+    try:
+        if fingertip_mode:
+            fingertipper = FingerTipper(checksum=None, cachemanager=cachemanager, done=set())
+            result_buf = await fingertipper.fingertip_expression(expression)
+            if result_buf is None:
+                return None
+            result = await calculate_checksum(result_buf)
+            buffer_cache.cache_buffer(result, result_buf)
+        else:
+            result = await evaluate_expression(expression, fingertip_mode=False, manager=manager)
+    finally:
+        #if registered:
+        #    taskmanager.destroy_expression(expression)
+        #if registered2:
+        #    cachemanager.destroy_expression(expression)
+
+        pass
+    if result is not None and database.active:
         database.set_expression(expression, result)
     return result
 
@@ -336,11 +360,15 @@ class TransformationCache:
                 FORMAT[pinname]["filesystem"] = deepcopy(filesystem)
             if hash_pattern is not None:
                 FORMAT[pinname]["hash_pattern"] = deepcopy(hash_pattern)
+            """
+            # code below is only relevant for local evaluation
+            # disable it for now
             try:
                 await cachemanager.fingertip(checksum)
             except CacheMissError as exc:
                 transformation_build_exception = exc
                 break
+            """
 
             pin = transformer._pins[pinname]
             celltype, subcelltype = celltypes[pinname]
@@ -1069,8 +1097,13 @@ class TransformationCache:
         lang = transformation.get("__language__")
         if lang == "<structured_cell_join>":
             assert manager is not None
-            structured_cell_join_checksum = transformation["structured_cell_join"]
-            return await run_structured_cell_join(structured_cell_join_checksum,cachemanager=manager.cachemanager)
+            join_dict = transformation["structured_cell_join"]
+            join_dict_buffer = await serialize(join_dict, "plain")    
+            join_dict_checksum = await calculate_checksum(join_dict_buffer)    
+            if join_dict_checksum is None:
+                raise TypeError
+            buffer_cache.cache_buffer(join_dict_checksum, join_dict_buffer)
+            return await run_structured_cell_join(join_dict_checksum,cachemanager=manager.cachemanager)
         elif lang == "<expression>":
             assert manager is not None
             expression_dict = transformation["expression"]

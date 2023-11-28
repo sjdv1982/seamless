@@ -286,12 +286,14 @@ or
                             
                             for deep_key in deep_keys:
                                 deep_subchecksum = result[deep_key]
+                                if deep_subchecksum is None:
+                                    continue
                                 expr = Expression(
                                     result_checksum, [deep_key],
                                     "mixed", target_celltype,
                                     None, hash_pattern=output_hash_pattern,
                                     target_hash_pattern=None                                     
-                                )
+                                )                                
                                 database.set_expression(expr, deep_subchecksum)
 
                         if buffer_remote.can_write() and not scratch:

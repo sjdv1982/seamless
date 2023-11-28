@@ -60,6 +60,7 @@ class FingerTipper:
             cache = self.tf_cache.transformations_to_transformers
             if tf_checksum not in cache:
                 cache[tf_checksum] = []
+            from seamless.core.transformation import execution_metadata0
             job = self.tf_cache.run_job(transformation, tf_checksum, scratch=True, fingertip=True)
             if job is not None:
                 await asyncio.shield(job.future)
@@ -76,7 +77,8 @@ class FingerTipper:
             checksum0 = calculate_checksum(buf)
             if checksum0 == self.checksum:
                 buffer_cache.cache_buffer(self.checksum, buf)
-
+            return checksum0
+        
     async def fingertip_join(self, join_dict, *, must_have_inchannels=True):
         from .tasks.deserialize_buffer import DeserializeBufferTask
         from .tasks.serialize_buffer import SerializeToBufferTask
@@ -97,6 +99,15 @@ class FingerTipper:
             value = await DeserializeBufferTask(
                 self.manager, auth_buffer, auth_checksum, "mixed", copy=True
             ).run()
+        elif paths == [()]:
+            sub_checksum = bytes.fromhex(inchannels[paths[0]])
+            sub_buffer = await self.fingertip_upstream(sub_checksum)
+            value = await DeserializeBufferTask(
+                self.manager, sub_buffer, sub_checksum, "mixed", copy=True
+            ).run()
+            if hash_pattern:
+                value = await value_to_deep_structure(value, hash_patyern)
+            paths = []
         else:
             if isinstance(paths[0], int):
                 value = []
@@ -113,15 +124,15 @@ class FingerTipper:
                 if value is None:
                     value = {}
         for path in paths:
-            subchecksum = bytes.fromhex(inchannels[path])
+            sub_checksum = bytes.fromhex(inchannels[path])
             sub_buffer = None
             if hash_pattern is None or access_hash_pattern(hash_pattern, path) not in ("#", '##'):
-                sub_buffer = await self.fingertip_upstream(subchecksum)
-            await set_subpath_checksum(value, hash_pattern, path, subchecksum, sub_buffer)
+                sub_buffer = await self.fingertip_upstream(sub_checksum)
+            await set_subpath_checksum(value, hash_pattern, path, sub_checksum, sub_buffer)
         buf = await SerializeToBufferTask(
             self.manager, value, "mixed",
             use_cache=True
-        ).run()
+        ).run()        
         self._register(buf)
         return buf
 
@@ -189,7 +200,7 @@ class FingerTipper:
         return exc_str
 
 
-from ..protocol.expression import set_subpath_checksum, access_hash_pattern
+from ..protocol.expression import set_subpath_checksum, access_hash_pattern, value_to_deep_structure
 from ..protocol.get_buffer import get_buffer
 from ..cache.transformation_cache import syntactic_to_semantic
 from ... import calculate_checksum

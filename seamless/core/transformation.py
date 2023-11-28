@@ -991,10 +991,12 @@ def get_global_info(global_info=None):
     else:
         info = subprocess.getoutput("conda env export")
         info = "\n".join([l for l in info.splitlines() if not l.startswith("name:")])
+        info = info.encode()
         conda_env_checksum = calculate_checksum_func(info, hex=True)
         execution_metadata0["Conda environment checksum"] = conda_env_checksum
         buffer_remote.write_buffer(conda_env_checksum, info)
-        buffer_cache.cache_buffer(bytes.fromhex(conda_env_checksum), info.encode())
+        database.set_buffer_length(conda_env_checksum, len(info))
+        buffer_cache.cache_buffer(bytes.fromhex(conda_env_checksum), info)
         info = conda.cli.python_api.run_command(conda.cli.python_api.Commands.LIST, ["-f", "seamless-framework"])[0]
         for l in info.split("\n"):
             l = l.strip()

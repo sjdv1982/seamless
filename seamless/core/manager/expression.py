@@ -1,5 +1,6 @@
 from ...calculate_checksum import calculate_checksum
 from weakref import WeakValueDictionary
+import json
 
 _expressions = WeakValueDictionary()
 
@@ -43,6 +44,10 @@ class Expression:
         self._target_hash_pattern = target_hash_pattern
         self._checksum = checksum
         if path is None:
+            path = ()
+        if isinstance(path, str) and path.startswith("["):
+            path = json.loads(path)
+        if path == []:
             path = ()
         if len(path):
             assert celltype in ("mixed", "plain", "binary")

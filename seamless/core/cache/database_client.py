@@ -115,6 +115,11 @@ class Database:
         }
         self.send_put_request(request)
 
+    def set_buffer_length(self, checksum, buffer_length:int):
+        buffer_info = BufferInfo(checksum)
+        buffer_info.length = buffer_length
+        return self.set_buffer_info(checksum, buffer_info)
+
     def set_compile_result(self, checksum, compile_checksum):
         if not self.active:
             return
@@ -127,6 +132,7 @@ class Database:
         self.send_put_request(request)
             
     def set_expression(self, expression: "Expression", result):
+        assert result is not None
         request = {
             "type": "expression",
             "checksum": parse_checksum(expression.checksum),
@@ -154,11 +160,8 @@ class Database:
         self._log("SET", request["type"], request["type"])
         self.send_put_request(request)
 
-    def set_structured_cell_join(self, checksum, join_dict: dict):
-        join_checksum = calculate_dict_checksum(join_dict)
-        return self.set_structured_cell_join2(checksum, join_checksum)
      
-    def set_structured_cell_join2(self, checksum, join_checksum):
+    def set_structured_cell_join(self, checksum, join_checksum):
         request = {
             "type": "structured_cell_join",
             "checksum": parse_checksum(join_checksum),

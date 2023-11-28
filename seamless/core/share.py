@@ -268,7 +268,7 @@ class ShareManager:
                         try:
                             checksum = await conversion(
                                 checksum, "cson", "plain", 
-                                buffer=buffer, fingertip_mode=False
+                                buffer=buffer, perform_fingertip=False
                             )
                         except ValueError:
                             from_buffer = True

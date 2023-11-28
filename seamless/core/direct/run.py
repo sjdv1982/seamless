@@ -38,6 +38,12 @@ _parent_process_response_queue:Optional[multiprocessing.JoinableQueue] = None
 _has_lock = True
 
 _dummy_manager = None
+
+def get_dummy_manager():
+    if _dummy_manager is None:
+        set_dummy_manager()
+    return _dummy_manager
+
 def set_dummy_manager():
     global _dummy_manager
     if _dummy_manager is not None:

@@ -209,8 +209,9 @@ to disable it. Continuing without delegation.
     _checked_delegation = True
 
 class InProcessAssistant(ABC):
+    remote = False
     @abstractmethod
-    async def run_job(self, checksum, tf_dunder):
+    async def run_job(self, checksum, tf_dunder, *, fingertip, scratch):
         raise NotImplementedError
 
 def set_inprocess_assistant(assistant: InProcessAssistant):

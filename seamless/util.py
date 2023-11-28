@@ -1,3 +1,4 @@
+import json
 from multiprocessing import current_process
 try:
     from multiprocessing import parent_process
@@ -127,3 +128,53 @@ def is_forked():
         if parent_process() is not None:  # forked process
             return True
     return False
+
+def verify_transformation_success(transformation_checksum, transformation_dict=None):
+    from .highlevel import Checksum
+    from .config import database
+    from .core.cache.buffer_cache import buffer_cache
+    from .core.manager.expression import Expression
+    assert database.active
+    if transformation_checksum is None:
+        return None
+    tf_checksum = Checksum(transformation_checksum)
+    if transformation_dict is None:
+        tf_buffer = buffer_cache.get_buffer(tf_checksum.hex())
+        if tf_buffer is None:
+            return None
+
+        transformation_dict = json.loads(tf_buffer.decode( ))
+    assert isinstance(transformation_dict, dict)
+    language = transformation_dict["__language__"]
+    if language == "<expression>":
+        expression_dict = transformation_dict["expression"]
+        d = expression_dict.copy()
+        d["target_subcelltype"] = None
+        d["hash_pattern"] = d.get("hash_pattern")
+        d["target_hash_pattern"] = d.get("target_hash_pattern")
+        d["checksum"] = bytes.fromhex(d["checksum"])
+        expression = Expression(**d)
+        #print("LOOK FOR EXPRESSION", expression.checksum.hex(), expression.path)
+        result = database.get_expression(expression)
+        #print("/LOOK FOR EXPRESSION", expression.checksum.hex(), expression.path, parse_checksum(result) )
+        return result
+    elif language == "<structured_cell_join>":
+        join_dict = transformation_dict["structured_cell_join"].copy()
+        inchannels0 = join_dict.get("inchannels", {})
+        inchannels = {}
+        for path0, cs in inchannels0.items():
+            path = json.loads(path0)
+            if isinstance(path, list):
+                path = tuple(path)
+            inchannels[path] = cs
+        from seamless import calculate_dict_checksum
+        #print("LOOK FOR SCELL JOIN", calculate_dict_checksum(join_dict,hex=True))
+        result = database.get_structured_cell_join(join_dict)
+        #print("/LOOK FOR SCELL JOIN", calculate_dict_checksum(join_dict,hex=True), parse_checksum(result))
+        return result
+    else:
+        #print("LOOK FOR TRANSFORMATION", transformation_checksum)
+        result = database.get_transformation_result(transformation_checksum.bytes())
+        #print("/LOOK FOR TRANSFORMATION", transformation_checksum)
+        return result
+

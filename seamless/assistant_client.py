@@ -19,7 +19,7 @@ async def run_job(checksum, tf_dunder, *, fingertip, scratch):
     if assistant is None:
         return None
     if isinstance(assistant, InProcessAssistant):
-        result = await assistant.run_job(checksum, tf_dunder)
+        result = await assistant.run_job(checksum, tf_dunder, fingertip=fingertip, scratch=scratch)
         result = Checksum(result).hex()
         return result
 

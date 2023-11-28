@@ -46,7 +46,7 @@ def _build_join_dict(sc):
     return join_dict, schema, any_prelim
 
 def build_join_transformation(structured_cell):
-    """Creates a pseudo-transformation dict of the structured cell
+    """Creates a pseudo-transformation dict of the structured cell join
     A pseudo-transformation is a transformation with language "<structured cell join>"
     that in fact performs a structured cell join.
     The main use case is to send data-intensive structured cell joins to remote locations 
@@ -55,20 +55,74 @@ def build_join_transformation(structured_cell):
     from ...protocol.serialize import serialize_sync as serialize
     from ...protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
     join_dict, _, _ = _build_join_dict(structured_cell)
-    join_dict_buffer = serialize(join_dict, "plain")    
-    join_dict_checksum = calculate_checksum(join_dict_buffer)    
-    if join_dict_checksum is None:
-        raise TypeError
-    buffer_cache.cache_buffer(join_dict_checksum, join_dict_buffer)
     transformation_dict = {
         "__language__": "<structured_cell_join>",
-        "structured_cell_join": join_dict_checksum.hex()
+        "structured_cell_join": join_dict
     }
     transformation_dict_buffer = serialize(transformation_dict, "plain")
     transformation = calculate_checksum(transformation_dict_buffer)    
     buffer_cache.cache_buffer(transformation, transformation_dict_buffer)
 
     return transformation
+
+def _join_dict_to_checksums(join_dict):
+    hash_pattern = join_dict.get("hash_pattern")
+    checksums = []
+    for k in ("auth", "schema"):
+        cs = join_dict.get(k)
+        if cs is not None:
+            checksums.append(cs)
+    inchannels = join_dict.get("inchannels", {})
+    for path, cs in inchannels.items():
+        if hash_pattern is None or access_hash_pattern(hash_pattern, path) not in ("#", "##"):
+            checksums.append(cs)
+    return checksums
+
+    
+async def evaluate_join_transformation_remote(structured_cell):
+    from ....config import get_assistant
+    from ....assistant_client import run_job
+    from ...cache.buffer_remote import write_buffer
+    if not get_assistant():
+        return
+    jtf_checksum = build_join_transformation(structured_cell)
+    jtf_buffer = buffer_cache.get_buffer(jtf_checksum)
+    assert jtf_buffer is not None
+    write_buffer(jtf_checksum, jtf_buffer)
+    try:
+        result = await run_job(
+            jtf_checksum, tf_dunder=None,
+            scratch=True, fingertip=False
+        )
+    except (CacheMissError, RuntimeError):
+        result = None
+    return result
+
+def _consider_local_evaluation(join_dict):
+    """Checks if the structured cell join can easily (no fingertipping) be evaluated locally"""
+    checksums = _join_dict_to_checksums(join_dict)
+    for checksum in checksums:
+        if buffer_cache.get_buffer(bytes.fromhex(checksum), remote=False) is None:
+            buffer_info = buffer_cache.get_buffer_info(bytes.fromhex(checksum), sync_remote=True, buffer_from_remote=False, force_length=False)
+            length = buffer_info.get("length")
+            if length is not None and length <= buffer_cache.SMALL_BUFFER_LIMIT:
+                continue
+            return False
+    return True
+
+def _consider_remote_evaluation(join_dict):
+    """Checks if the structured cell join can easily (no fingertipping) be evaluated remotely.
+    This assumes that the assistant has access to the exact same buffer read folders/servers
+    """
+    from ...cache.buffer_remote import remote_has_checksum
+    from ....config import get_assistant
+    if not get_assistant():
+        return False
+    checksums = _join_dict_to_checksums(join_dict)
+    for checksum in checksums:
+        if not remote_has_checksum(checksum):
+            return False
+    return True
 
 def _update_structured_cell(
     sc, checksum, manager, *,
@@ -309,6 +363,19 @@ class StructuredCellJoinTask(StructuredCellTask):
             if checksum is not None:
                 from_cache = True
                 ok = True
+
+        if not from_cache:
+            local_ok = _consider_local_evaluation(join_dict)
+            if not local_ok:
+                remote_ok = _consider_remote_evaluation(join_dict)
+                if not remote_ok:
+                    # Difficult decision. Let's try a remote pseudo-transformation anyway
+                    remote_ok = True
+                if remote_ok:
+                    checksum = await evaluate_join_transformation_remote(self.structured_cell)
+                    if checksum is not None:
+                        from_cache = True
+                        ok = True
         try:
             data_value = None  # obeys hash pattern (if there is one), i.e. is a deep structure not a raw value
             if not from_cache:
@@ -512,7 +579,7 @@ class StructuredCellJoinTask(StructuredCellTask):
                     except Exception:
                         try:
                             # This is very very expensive!!
-                            mode, true_value = await get_subpath(data_value, sc.hash_pattern, (), fingertip_mode=True, manager=manager)
+                            mode, true_value = await get_subpath(data_value, sc.hash_pattern, (), perform_fingertip=True, manager=manager)
                             assert mode == "value"
                         except Exception:
                             sc._exception = traceback.format_exc()
@@ -548,7 +615,6 @@ class StructuredCellJoinTask(StructuredCellTask):
                 )
                 if not from_cache and not any_prelim:
                     manager.cachemanager.set_join_cache(join_dict, cs)
-                    database.set_structured_cell_join(cs, join_dict)
                 for inchannel in sc.inchannels.values():
                     inchannel._save_state()
         finally:

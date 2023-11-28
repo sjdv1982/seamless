@@ -69,7 +69,7 @@ async def inter_deepcell_conversion(manager, value, source_hash_pattern, target_
 
 async def value_conversion(
     checksum, source_celltype, target_celltype, *, 
-    manager, fingertip_mode
+    manager, perform_fingertip
 ):
     cachemanager = manager.cachemanager
     if target_celltype == "checksum":
@@ -78,7 +78,7 @@ async def value_conversion(
         buffer_cache.cache_buffer(target_checksum, target_buffer)
         return target_checksum
     if source_celltype == "checksum":
-        if fingertip_mode:
+        if perform_fingertip:
             buffer = await GetBufferTask(manager, checksum).run()
         else:
             buffer = await cachemanager.fingertip(checksum)
@@ -97,7 +97,7 @@ async def value_conversion(
         #return try_convert(checksum2, "bytes", target_celltype) # No, for now trust the "checksum" type
         return checksum2
 
-    if fingertip_mode:
+    if perform_fingertip:
         buffer = await GetBufferTask(manager, checksum).run()
     else:
         buffer = await cachemanager.fingertip(checksum)
@@ -166,7 +166,7 @@ def build_expression_transformation(expression: "Expression"):
     where the data is.
     """
     from ...protocol.serialize import serialize_sync as serialize
-    from ...protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
+    from ...protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum    
     expression_dict = {
         "checksum": expression.checksum.hex(),
         "celltype": expression.celltype,
@@ -184,14 +184,31 @@ def build_expression_transformation(expression: "Expression"):
     }
     transformation_dict_buffer = serialize(transformation_dict, "plain")
     transformation = calculate_checksum(transformation_dict_buffer)    
-    buffer_cache.cache_buffer(transformation, transformation_dict_buffer)
-
+    buffer_cache.cache_buffer(transformation, transformation_dict_buffer)    
     return transformation
     
-async def evaluate_expression_remote(*args):
-    return None ###
+async def evaluate_expression_remote(expression):
+    from ....config import get_assistant
+    from ....assistant_client import run_job
+    from ...cache.buffer_remote import write_buffer
+    if not get_assistant():
+        return
+    etf_checksum = build_expression_transformation(expression)
+    etf_buffer = buffer_cache.get_buffer(etf_checksum)
+    assert etf_buffer is not None
+    write_buffer(etf_checksum, etf_buffer)
+    try:
+        result = await run_job(
+            etf_checksum, tf_dunder=None,
+            scratch=True, fingertip=False
+        )
+        if result is not None:
+            result = bytes.fromhex(result)
+    except (CacheMissError, RuntimeError):
+        result = None
+    return result
 
-async def _evaluate_expression(self, expression, manager, fingertip_mode):
+async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fingertip_upstream):
     # Get the expression result checksum from cache.
     from ....util import parse_checksum
     cachemanager = manager.cachemanager
@@ -201,6 +218,8 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
         if result_checksum is not None:
             result_checksum = parse_checksum(result_checksum, as_bytes=True)
             return result_checksum
+    
+    perform_fingertip = (fingertip_mode or fingertip_upstream)
 
     locknr = await acquire_evaluation_lock(self)
     try:
@@ -250,7 +269,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
             ### /Hash pattern equivalence
                         
             if result_hash_pattern in ("#", "##"):
-                if fingertip_mode:
+                if perform_fingertip:
                     source_buffer = await GetBufferTask(manager, source_checksum).run()
                 else:
                     source_buffer = await cachemanager.fingertip(source_checksum)
@@ -272,7 +291,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 needs_value_conversion = False
             elif source_celltype == "checksum" and target_hash_pattern is not None:
                 assert trivial_path
-                if fingertip_mode:
+                if perform_fingertip:
                     buffer = await GetBufferTask(manager, source_checksum).run()
                 else:
                     buffer = await cachemanager.fingertip(source_checksum)
@@ -284,7 +303,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 nested_checksum = None
                 if isinstance(deep_structure, str):
                     nested_checksum = bytes.fromhex(deep_structure)
-                    if fingertip_mode:
+                    if perform_fingertip:
                         buffer = await GetBufferTask(manager, nested_checksum).run()
                     else:
                         buffer = await cachemanager.fingertip(nested_checksum)
@@ -309,11 +328,11 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                     value_conversion_callback = functools.partial(
                         value_conversion,
                         manager=manager,
-                        fingertip_mode=fingertip_mode
+                        perform_fingertip=perform_fingertip
                     )
                     result_checksum = await conversion(
                         source_checksum, source_celltype,
-                        target_celltype, fingertip_mode=fingertip_mode,
+                        target_celltype, perform_fingertip=perform_fingertip,
                         value_conversion_callback=value_conversion_callback
                     )
                     if result_checksum is not None:
@@ -328,10 +347,10 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                 needs_value_conversion = True
 
             if needs_value_conversion:
-                if fingertip_mode:
-                    buffer = await GetBufferTask(manager, source_checksum).run()
-                else:
+                if perform_fingertip:
                     buffer = await cachemanager.fingertip(source_checksum)
+                else:
+                    buffer = await GetBufferTask(manager, source_checksum).run()
                 value = await DeserializeBufferTask(
                     manager, buffer, source_checksum,
                     source_celltype, copy=False
@@ -345,17 +364,18 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                     if result_value is not None:
                         full_value = False
                 if full_value:
-                    mode, result = await get_subpath(value, source_hash_pattern, expression.path, manager=manager, fingertip_mode=fingertip_mode)
+
+                    mode, result = await get_subpath(value, source_hash_pattern, expression.path, manager=manager, perform_fingertip=perform_fingertip)
                     assert mode in ("checksum", "value"), mode
                     if result is None:
                         done = True
                         result_checksum = None
                     elif mode == "checksum":
                         assert source_hash_pattern is not None
-                        if fingertip_mode:
-                            buffer2 = await GetBufferTask(manager, result).run()
-                        else:
+                        if perform_fingertip:
                             buffer2 = await cachemanager.fingertip(result)
+                        else:
+                            buffer2 = await GetBufferTask(manager, result).run()
                         if buffer2 is None:
                             raise CacheMissError(result)
                         result_value = await DeserializeBufferTask(
@@ -400,9 +420,10 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
             result_checksum = None
         except Exception as exc:
             if isinstance(exc, (CacheMissError, SeamlessConversionError)):
-                expression.exception = str(exc)
                 if isinstance(exc, CacheMissError):
-                    expression.exception = "CacheMissError: " + expression.exception
+                    expression.exception = "CacheMissError: "  + str(exc)
+                else:
+                    expression.exception = "SeamlessConversionError: " + str(exc)
                 ###print(exc, file=sys.stderr))
             else:
                 fexc = traceback.format_exc()
@@ -443,7 +464,7 @@ async def _evaluate_expression(self, expression, manager, fingertip_mode):
                     result=True
                 )
 
-        cachemanager.expression_to_result_checksum[expression] = result_checksum
+            cachemanager.expression_to_result_checksum[expression] = result_checksum
         return result_checksum
     finally:
         release_evaluation_lock(locknr)
@@ -455,12 +476,14 @@ class EvaluateExpressionTask(Task):
     """
     @property
     def refkey(self):
-        return (self.expression, self.fingertip_mode)
+        return (self.expression, self.fingertip_mode, self.fingertip_upstream)
 
-    def __init__(self, manager, expression, *, fingertip_mode=False):
+    def __init__(self, manager, expression, *, fingertip_mode=False, fingertip_upstream=False):
         assert isinstance(expression, Expression)
         self.expression = expression
         self.fingertip_mode = fingertip_mode
+        self.fingertip_upstream = fingertip_upstream
+                
         super().__init__(manager)
         if not self.fingertip_mode:
             self._dependencies.append(expression)
@@ -473,9 +496,9 @@ class EvaluateExpressionTask(Task):
         manager = self.manager()
         if manager is None or manager._destroyed:
             return
-        return await _evaluate_expression(self, expression, manager, self.fingertip_mode)
+        return await _evaluate_expression(self, expression, manager=manager, fingertip_mode=self.fingertip_mode, fingertip_upstream=self.fingertip_upstream)
 
-async def evaluate_expression(expression, fingertip_mode=False, manager=None):
+async def evaluate_expression(expression, *, fingertip_mode=False, manager=None):
     if manager is None:
         manager = Manager()
     
@@ -507,15 +530,14 @@ async def evaluate_expression(expression, fingertip_mode=False, manager=None):
                 result = expression.checksum
 
         if result is None:
-            result = await EvaluateExpressionTask(manager, expression, fingertip_mode=fingertip_mode).run()
+            result = await EvaluateExpressionTask(manager, expression, fingertip_mode=fingertip_mode, fingertip_upstream=fingertip_mode).run()
             if result is not None:
                 from_task = True
             else:
-                result = await evaluate_expression_remote(expression, fingertip_mode=fingertip_mode)
+                result = await evaluate_expression_remote(expression)
                 if result is None and not fingertip_mode:
-                    result = await evaluate_expression_remote(expression, fingertip_mode=True)
-                if result is None and not fingertip_mode:
-                    result = await EvaluateExpressionTask(manager, expression, fingertip_mode=True).run()
+
+                    result = await EvaluateExpressionTask(manager, expression, fingertip_mode=fingertip_mode, fingertip_upstream=True).run()
                     if result is not None:
                         from_task = True
 
@@ -530,6 +552,7 @@ async def evaluate_expression(expression, fingertip_mode=False, manager=None):
                 database.set_expression(expression, result)
 
     if result and not from_task and not fingertip_mode:
+        assert isinstance(result, bytes), type(result)
         if result != expression.checksum:
             manager.cachemanager.incref_checksum(
                 result,

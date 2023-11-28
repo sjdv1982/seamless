@@ -501,6 +501,8 @@ is result checksum: {}
 
     def set_join_cache(self, join_dict, result_checksum):
         from ..protocol.serialize import serialize_sync as serialize
+        from ...config import database
+        from ..cache import buffer_remote
         if isinstance(result_checksum, str):
             result_checksum = bytes.fromhex(result_checksum)
         if join_dict == {'inchannels': {'[]': result_checksum.hex()}}:
@@ -510,9 +512,10 @@ is result checksum: {}
         self.join_cache[checksum] = result_checksum
         self.rev_join_cache[result_checksum] = join_dict
         buffer_cache.cache_buffer(checksum, join_dict_buf)
-        buffer_cache.guarantee_buffer_info(checksum, "plain", buffer=join_dict_buf, sync_to_remote=True)        
-        buffer_cache.incref(checksum, persistent=True)
-        buffer_cache.decref(checksum)
+        buffer_cache.guarantee_buffer_info(checksum, "plain", buffer=join_dict_buf, sync_to_remote=True)
+        if database.active:
+            buffer_remote.write_buffer(checksum, join_dict_buf)
+            database.set_structured_cell_join(result_checksum, checksum)
 
 
 from ..cell import Cell

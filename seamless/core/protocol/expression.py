@@ -96,8 +96,8 @@ def get_subpath_sync(value, hash_pattern, path):
         value = deserialize_sync(buffer, checksum, "mixed", copy=True)
         return _get_subpath(value, post_path)
 
-async def get_subpath(value, hash_pattern, path, *, manager=None, fingertip_mode=False):
-    if fingertip_mode:
+async def get_subpath(value, hash_pattern, path, *, manager=None, perform_fingertip=False):
+    if perform_fingertip:
         assert manager is not None
     if hash_pattern is None:
         return ("value", _get_subpath(value, path))
@@ -121,7 +121,7 @@ async def get_subpath(value, hash_pattern, path, *, manager=None, fingertip_mode
                 if checksum is None:
                     continue
                 cs = bytes.fromhex(checksum)
-                if fingertip_mode:
+                if perform_fingertip:
                     buffer = await manager.cachemanager.fingertip(checksum)
                 else:
                     buffer = get_buffer(cs, remote=True, deep=False)
@@ -135,7 +135,7 @@ async def get_subpath(value, hash_pattern, path, *, manager=None, fingertip_mode
             return ("value", value)
     else:
         checksum = bytes.fromhex(result)
-        if fingertip_mode:
+        if perform_fingertip:
             buffer = await manager.cachemanager.fingertip(checksum)
         else:
             buffer = get_buffer(cs, remote=True, deep=False)

@@ -62,7 +62,7 @@ tfd = json.loads(buffer_cache.get_buffer(tf_checksum).decode())
 pprint(tfd)
 
 
-print(buffer_cache.get_buffer(tfd["structured_cell_join"]).decode())
+pprint(tfd["structured_cell_join"])
 tf_result = seamless.run_transformation(tf_checksum, manager=ctx._get_manager())
 print("join-transformation", Checksum(tf_result))
 print("structured cell    ", ctx.sc.checksum)

@@ -48,7 +48,7 @@ async def do_bilink(buffer, checksum, celltype, target_celltype, manager, target
     expression_result_checksum = await conversion(
         checksum,
         celltype, target_celltype,
-        fingertip_mode=False,
+        perform_fingertip=False,
         buffer=buffer
     )
     manager.set_cell_checksum(

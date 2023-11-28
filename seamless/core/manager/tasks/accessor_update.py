@@ -63,8 +63,9 @@ class AccessorUpdateTask(Task):
         try:
             expression_result_checksum = await evaluate_expression(expression, manager=manager)
         except Exception as exc:
+            fexc = traceback.format_exc()
             expression_result_checksum = None
-            expression.exception = exc
+            expression.exception = fexc
 
         if expression_result_checksum is None:
             if expression.exception is None:
