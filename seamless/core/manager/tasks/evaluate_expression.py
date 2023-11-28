@@ -158,6 +158,39 @@ async def value_conversion(
     return target_checksum
 
 
+def build_expression_transformation(expression: "Expression"):
+    """Creates a pseudo-transformation dict of the expression
+    A pseudo-transformation is a transformation with language "<expression>"
+    that in fact performs an expression evaluation.
+    The main use case is to send data-intensive expressions to remote locations 
+    where the data is.
+    """
+    from ...protocol.serialize import serialize_sync as serialize
+    from ...protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
+    expression_dict = {
+        "checksum": expression.checksum.hex(),
+        "celltype": expression.celltype,
+        "path": expression.path,        
+        "target_celltype": expression.target_celltype,
+    }
+    if expression.hash_pattern is not None:
+        expression_dict["hash_pattern"] = expression.hash_pattern
+    if expression.target_hash_pattern is not None:
+        expression_dict["target_hash_pattern"] = expression.target_hash_pattern
+
+    transformation_dict = {
+        "__language__": "<expression>",
+        "expression": expression_dict
+    }
+    transformation_dict_buffer = serialize(transformation_dict, "plain")
+    transformation = calculate_checksum(transformation_dict_buffer)    
+    buffer_cache.cache_buffer(transformation, transformation_dict_buffer)
+
+    return transformation
+    
+async def evaluate_expression_remote(*args):
+    return None ###
+
 async def _evaluate_expression(self, expression, manager, fingertip_mode):
     # Get the expression result checksum from cache.
     from ....util import parse_checksum
@@ -475,7 +508,17 @@ async def evaluate_expression(expression, fingertip_mode=False, manager=None):
 
         if result is None:
             result = await EvaluateExpressionTask(manager, expression, fingertip_mode=fingertip_mode).run()
-            from_task = True
+            if result is not None:
+                from_task = True
+            else:
+                result = await evaluate_expression_remote(expression, fingertip_mode=fingertip_mode)
+                if result is None and not fingertip_mode:
+                    result = await evaluate_expression_remote(expression, fingertip_mode=True)
+                if result is None and not fingertip_mode:
+                    result = await EvaluateExpressionTask(manager, expression, fingertip_mode=True).run()
+                    if result is not None:
+                        from_task = True
+
 
         if result is not None:
             trivial = False

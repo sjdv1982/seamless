@@ -107,7 +107,7 @@ def is_known(checksum):
         return True
     return checksum in _known_buffers or checksum in _written_buffers
     
-def _has_checksum(checksum):
+def remote_has_checksum(checksum):
     checksum = parse_checksum(checksum, as_bytes=True)
     if _read_folders is not None:
         for folder in _read_folders:
@@ -124,7 +124,7 @@ def can_read_buffer(checksum):
     checksum = parse_checksum(checksum, as_bytes=True)
     if is_known(checksum):
         return True
-    return _has_checksum(checksum)
+    return remote_has_checksum(checksum)
 
 def can_write():
     return _write_server is not None

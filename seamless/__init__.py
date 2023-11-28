@@ -105,15 +105,12 @@ def run_transformation(checksum, *, fingertip=False, scratch=False, tf_dunder=No
             raise RuntimeError("'run_transformation' cannot be called from within a coroutine. Use 'await run_transformation_async' instead")
 
     if manager is None:
-        cachemanager = None
         tf_cache = transformation_cache
     else:
-        cachemanager = manager.cachemanager
-        assert cachemanager is not None
-        tf_cache = cachemanager.transformation_cache
+        tf_cache = manager.cachemanager.transformation_cache
     checksum = parse_checksum(checksum, as_bytes=True)
     tf_cache.transformation_exceptions.pop(checksum, None)
-    return tf_cache.run_transformation(checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, new_event_loop=new_event_loop, cachemanager=cachemanager)
+    return tf_cache.run_transformation(checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, new_event_loop=new_event_loop, manager=manager)
 
 async def run_transformation_async(checksum, *, fingertip, scratch, tf_dunder=None, manager=None):
     from seamless.config import check_delegation
@@ -121,14 +118,12 @@ async def run_transformation_async(checksum, *, fingertip, scratch, tf_dunder=No
     check_delegation()
     checksum = parse_checksum(checksum, as_bytes=True)
     if manager is None:
-        cachemanager = None
         tf_cache = transformation_cache
     else:
-        cachemanager = manager.cachemanager
-        tf_cache = cachemanager.transformation_cache
+        tf_cache = manager.cachemanager.transformation_cache
     checksum = parse_checksum(checksum, as_bytes=True)
     tf_cache.transformation_exceptions.pop(checksum, None)
-    return await tf_cache.run_transformation_async(checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, cachemanager=cachemanager)
+    return await tf_cache.run_transformation_async(checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, manager=manager)
 
 _original_event_loop = asyncio.get_event_loop()
 def check_original_event_loop():

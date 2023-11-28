@@ -156,6 +156,9 @@ class Database:
 
     def set_structured_cell_join(self, checksum, join_dict: dict):
         join_checksum = calculate_dict_checksum(join_dict)
+        return self.set_structured_cell_join2(checksum, join_checksum)
+     
+    def set_structured_cell_join2(self, checksum, join_checksum):
         request = {
             "type": "structured_cell_join",
             "checksum": parse_checksum(join_checksum),

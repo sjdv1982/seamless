@@ -32,6 +32,7 @@ structured_cell/simple-auth.py
 structured_cell/simple-macro-mode.py
 structured_cell/simple-channels.py
 structured_cell/iadd.py
+structured_cell/expression-transformation-raw.py
 structured_cell/join-transformation-raw.py
 simplest-macro.py
 simple-macro.py

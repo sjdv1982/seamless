@@ -1,0 +1,8 @@
+42
+{'__language__': '<expression>',
+ 'expression': {'celltype': 'mixed',
+                'checksum': '98c70ec63fdcdd3c5d175f99958557b438a9bbe60cf47c9e7b9ae1ae32e6c993',
+                'path': ['a'],
+                'target_celltype': 'int'}}
+expression-transformation fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3
+cell                      fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3

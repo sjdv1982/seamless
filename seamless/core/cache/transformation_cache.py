@@ -179,7 +179,30 @@ async def run_structured_cell_join(structured_cell_join_checksum, *, cachemanage
     result = await calculate_checksum(result_buf)
     buffer_cache.cache_buffer(result, result_buf)
     if database.active:
-        database.set_structured_cell_join(structured_cell_join_checksum, result)
+        database.set_structured_cell_join2(result, structured_cell_join_checksum)
+    return result
+
+async def run_evaluate_expression(expression_dict, fingertip_mode, *, manager):
+    from ..manager.fingertipper import FingerTipper
+    from ..manager.expression import Expression
+    from ..manager.tasks.evaluate_expression import evaluate_expression
+    d = expression_dict.copy()
+    d["target_subcelltype"] = None
+    d["hash_pattern"] = d.get("hash_pattern")
+    d["target_hash_pattern"] = d.get("target_hash_pattern")
+    d["checksum"] = bytes.fromhex(d["checksum"])
+    expression = Expression(**d)
+    if fingertip_mode:
+        fingertipper = FingerTipper(checksum=None, cachemanager=manager.cachemanager, done=set())
+        result_buf = await fingertipper.fingertip_expression(expression)
+        if result_buf is None:
+            return None
+        result = await calculate_checksum(result_buf)
+        buffer_cache.cache_buffer(result, result_buf)
+    else:
+        result = await evaluate_expression(expression, fingertip_mode=False, manager=manager)
+    if database.active:
+        database.set_expression(expression, result)
     return result
 
 class TransformationCache:
@@ -1027,8 +1050,8 @@ class TransformationCache:
             return
         self._hard_cancel(job)
 
-    async def run_transformation_async(self, tf_checksum, *, fingertip, scratch, tf_dunder=None, cachemanager=None):
-        from . import CacheMissError        
+    async def run_transformation_async(self, tf_checksum, *, fingertip, scratch, tf_dunder=None, manager=None):
+        from . import CacheMissError
         
         result_checksum, prelim = self._get_transformation_result(tf_checksum)
         if result_checksum is not None and not prelim:
@@ -1045,10 +1068,14 @@ class TransformationCache:
                     transformation[k] = tf_dunder[k] 
         lang = transformation.get("__language__")
         if lang == "<structured_cell_join>":
-            assert cachemanager is not None
+            assert manager is not None
             structured_cell_join_checksum = transformation["structured_cell_join"]
-            return await run_structured_cell_join(structured_cell_join_checksum,cachemanager=cachemanager)
-            return 
+            return await run_structured_cell_join(structured_cell_join_checksum,cachemanager=manager.cachemanager)
+        elif lang == "<expression>":
+            assert manager is not None
+            expression_dict = transformation["expression"]
+            return await run_evaluate_expression(expression_dict, fingertip_mode=fingertip, manager=manager)
+
         for k,v in transformation.items():
             if k in ("__language__", "__output__", "__as__", "__format__"):
                 continue
@@ -1133,7 +1160,7 @@ class TransformationCache:
         self.register_known_transformation(tf_checksum, result_checksum)
         return result_checksum
 
-    def run_transformation(self, tf_checksum, *, fingertip, scratch, tf_dunder=None, new_event_loop=False, cachemanager=None):
+    def run_transformation(self, tf_checksum, *, fingertip, scratch, tf_dunder=None, new_event_loop=False, manager=None):
         event_loop = asyncio.get_event_loop()
         if event_loop.is_running() or new_event_loop:
             # To support run_transformation inside transformer code
@@ -1143,7 +1170,7 @@ class TransformationCache:
                 # Therefore, we can't update the Seamless workflow graph, but we shouldn't have to
                 # The use case is essentially: using the functional style under Jupyter
                 def func():
-                    coro = self.run_transformation_async(tf_checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, cachemanager=cachemanager)
+                    coro = self.run_transformation_async(tf_checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, manager=manager)
                     # The following hangs, even for a "dummy" coroutine:
                     #  future = asyncio.run_coroutine_threadsafe(coro, event_loop)                        
                     #  return future.result()
@@ -1168,7 +1195,7 @@ class TransformationCache:
                         await asyncio.sleep(0.01)
                 try:
                     return loop.run_until_complete(
-                        self.run_transformation_async(tf_checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, cachemanager=cachemanager)
+                        self.run_transformation_async(tf_checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, manager=manager)
                     )
                 finally:
                     for task in asyncio.all_tasks(loop):
@@ -1177,7 +1204,7 @@ class TransformationCache:
 
         else:
             fut = asyncio.ensure_future(
-                self.run_transformation_async(tf_checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, cachemanager=cachemanager)
+                self.run_transformation_async(tf_checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, manager=manager)
             )
             asyncio.get_event_loop().run_until_complete(fut)
             return fut.result()
