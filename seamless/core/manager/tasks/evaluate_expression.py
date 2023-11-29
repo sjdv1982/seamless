@@ -530,16 +530,23 @@ async def evaluate_expression(expression, *, fingertip_mode=False, manager=None)
                 result = expression.checksum
 
         if result is None:
-            result = await EvaluateExpressionTask(manager, expression, fingertip_mode=fingertip_mode, fingertip_upstream=fingertip_mode).run()
-            if result is not None:
-                from_task = True
-            else:
+            if fingertip_mode:
                 result = await evaluate_expression_remote(expression)
-                if result is None and not fingertip_mode:
-
-                    result = await EvaluateExpressionTask(manager, expression, fingertip_mode=fingertip_mode, fingertip_upstream=True).run()
+                if result is None:
+                    result = await EvaluateExpressionTask(manager, expression, fingertip_mode=True, fingertip_upstream=True).run()
                     if result is not None:
                         from_task = True
+
+            else:
+                result = await EvaluateExpressionTask(manager, expression, fingertip_mode=False, fingertip_upstream=False).run()
+                if result is not None:
+                    from_task = True
+                else:
+                    result = await evaluate_expression_remote(expression)
+                    if result is None:
+                        result = await EvaluateExpressionTask(manager, expression, fingertip_mode=False, fingertip_upstream=True).run()
+                        if result is not None:
+                            from_task = True
 
 
         if result is not None:
