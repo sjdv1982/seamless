@@ -8,6 +8,9 @@ except ImportError:
 def parse_checksum(checksum, as_bytes=False):
     """Parses checksum and returns it as string
 If as_bytes is True, return it as bytes instead."""
+    from seamless.highlevel import Checksum
+    if isinstance(checksum, Checksum):
+        checksum = checksum.bytes()
     if isinstance(checksum, bytes):
         checksum = checksum.hex()
     if isinstance(checksum, str):

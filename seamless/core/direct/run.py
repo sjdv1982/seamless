@@ -65,17 +65,20 @@ def cache_buffer(checksum, buf):
     from ...core.cache.buffer_cache import buffer_cache
     from ...core.cache.buffer_remote import write_buffer as remote_write_buffer
     
+    checksum = parse_checksum(checksum)
     buffer_cache.cache_buffer(checksum, buf)
     remote_write_buffer(checksum, buf)
 
 
 def get_buffer(checksum):
+    checksum = parse_checksum(checksum)
     result = _get_buffer(checksum, remote=True)
     if result is not None:
         return result
     return fingertip(checksum)
     
 def fingertip(checksum):
+    checksum = parse_checksum(checksum)
     result = _get_buffer(checksum, remote=True)
     if result is not None:
         return result
