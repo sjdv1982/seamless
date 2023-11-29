@@ -71,7 +71,7 @@ def cache_buffer(checksum, buf):
 
 
 def get_buffer(checksum):
-    checksum = parse_checksum(checksum), as_bytes=True
+    checksum = parse_checksum(checksum, as_bytes=True)
     result = _get_buffer(checksum, remote=True)
     if result is not None:
         return result
