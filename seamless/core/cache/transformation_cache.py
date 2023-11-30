@@ -215,7 +215,7 @@ async def run_evaluate_expression(expression_dict, fingertip_mode, *, scratch, m
     try:
         if fingertip_mode:
             fingertipper = FingerTipper(checksum=None, cachemanager=cachemanager, done=set())
-            result_buf = await fingertipper.fingertip_expression(expression)
+            result_buf = await fingertipper.fingertip_expression2(expression)
             if result_buf is None:
                 return None
             result = await calculate_checksum(result_buf)

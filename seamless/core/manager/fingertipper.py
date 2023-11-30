@@ -66,6 +66,11 @@ class FingerTipper:
                 await asyncio.shield(job.future)
 
     async def fingertip_expression(self, expression):
+        buf = await self.fingertip_expression2(expression)        
+        return self._register(buf)
+
+
+    async def fingertip_expression2(self, expression):
         from .tasks.evaluate_expression import evaluate_expression
         await self.fingertip_upstream(expression.checksum)
         return await evaluate_expression(
@@ -148,7 +153,7 @@ class FingerTipper:
     async def fingertip_syn2sem(self, syn_checksum, celltype, subcelltype):
         await syntactic_to_semantic(syn_checksum, celltype, subcelltype, "fingertip")
         buf = get_buffer(self.checksum, remote=False)
-        self._register(buf)
+        return self._register(buf)
 
     async def run(self):
         """Runs the fingertipping tasks. Returns None if successful.
