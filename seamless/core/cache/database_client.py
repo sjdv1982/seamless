@@ -121,6 +121,7 @@ class Database:
         return self.set_buffer_info(checksum, buffer_info)
 
     def set_compile_result(self, checksum, compile_checksum):
+        return ###
         if not self.active:
             return
         request = {
@@ -238,6 +239,7 @@ class Database:
             return BufferInfo(checksum, rj)
 
     def get_compile_result(self, checksum):
+        return ###
         request = {
             "type": "compilation",
             "checksum": parse_checksum(checksum),
