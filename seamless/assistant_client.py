@@ -59,7 +59,7 @@ async def run_job(checksum, tf_dunder, *, fingertip, scratch):
         result_buffer = content
         result_checksum = calculate_checksum(result_buffer)
         buffer_cache.cache_buffer(result_checksum, result_buffer)
-        result_checksum = result_checksum.hex()
+        result_checksum = parse_checksum(result_checksum)
     else:
         result_checksum = parse_checksum(content)
     return result_checksum

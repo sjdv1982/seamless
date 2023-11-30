@@ -101,6 +101,8 @@ async def evaluate_join_transformation_remote(structured_cell):
             jtf_checksum, tf_dunder=None,
             scratch=structured_cell._data._scratch, fingertip=False
         )
+        if result is not None:
+            result = bytes.fromhex(result)
     except (CacheMissError, RuntimeError):
         result = None
     return result

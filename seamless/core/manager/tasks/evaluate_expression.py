@@ -187,7 +187,7 @@ def build_expression_transformation(expression: "Expression"):
     buffer_cache.cache_buffer(transformation, transformation_dict_buffer)    
     return transformation
     
-async def evaluate_expression_remote(expression):
+async def evaluate_expression_remote(expression, fingertip_mode):
     from ....config import get_assistant
     from ....assistant_client import run_job
     from ...cache.buffer_remote import write_buffer
@@ -200,7 +200,7 @@ async def evaluate_expression_remote(expression):
     try:
         result = await run_job(
             etf_checksum, tf_dunder=None,
-            scratch=True, fingertip=False
+            scratch=True, fingertip=fingertip_mode
         )
         if result is not None:
             result = bytes.fromhex(result)
@@ -531,7 +531,7 @@ async def evaluate_expression(expression, *, fingertip_mode=False, manager=None)
 
         if result is None:
             if fingertip_mode:
-                result = await evaluate_expression_remote(expression)
+                result = await evaluate_expression_remote(expression, fingertip_mode=True)
                 if result is None:
                     result = await EvaluateExpressionTask(manager, expression, fingertip_mode=True, fingertip_upstream=True).run()
                     if result is not None:
@@ -542,7 +542,7 @@ async def evaluate_expression(expression, *, fingertip_mode=False, manager=None)
                 if result is not None:
                     from_task = True
                 else:
-                    result = await evaluate_expression_remote(expression)
+                    result = await evaluate_expression_remote(expression, fingertip_mode=False)
                     if result is None:
                         result = await EvaluateExpressionTask(manager, expression, fingertip_mode=False, fingertip_upstream=True).run()
                         if result is not None:

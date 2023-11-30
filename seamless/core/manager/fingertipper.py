@@ -68,7 +68,7 @@ class FingerTipper:
     async def fingertip_expression(self, expression):
         from .tasks.evaluate_expression import evaluate_expression
         await self.fingertip_upstream(expression.checksum)
-        await evaluate_expression(
+        return await evaluate_expression(
             expression, manager=self.manager, fingertip_mode=True
         )
 
