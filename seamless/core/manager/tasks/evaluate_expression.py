@@ -201,10 +201,11 @@ async def evaluate_expression_remote(expression, fingertip_mode):
         result = await run_job(
             etf_checksum, tf_dunder=None,
             scratch=True, fingertip=fingertip_mode
-        )
+        )        
         if result is not None:
-            if not fingertip_mode:
-                result = bytes.fromhex(result)
+            result = bytes.fromhex(result)
+            if fingertip_mode:
+                result = buffer_cache.get_buffer(result)
     except (CacheMissError, RuntimeError):
         result = None
     return result
@@ -542,11 +543,12 @@ async def evaluate_expression(expression, *, fingertip_mode=False, manager=None)
         if result is None:
             if fingertip_mode:
                 result = await evaluate_expression_remote(expression, fingertip_mode=True)
+                assert result is None or isinstance(result, bytes), type(result)
                 if result is None:
                     result = await EvaluateExpressionTask(manager, expression, fingertip_mode=True, fingertip_upstream=True).run()
+                    assert result is None or isinstance(result, bytes), type(result)
                     if result is not None:
                         from_task = True
-
             else:
                 result = await EvaluateExpressionTask(manager, expression, fingertip_mode=False, fingertip_upstream=False).run()
                 if result is not None:
@@ -561,6 +563,7 @@ async def evaluate_expression(expression, *, fingertip_mode=False, manager=None)
 
         if result is not None:
             if fingertip_mode:
+                assert isinstance(result, bytes)
                 result_checksum = await CalculateChecksumTask(manager, result).run()
             else:
                 result_checksum = result
