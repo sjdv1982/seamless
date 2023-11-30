@@ -172,6 +172,7 @@ async def syntactic_to_semantic(
 
 async def run_structured_cell_join(structured_cell_join_checksum, *, cachemanager):
     from ..manager.fingertipper import FingerTipper
+    from ..cache.buffer_remote import write_buffer
 
     fingertipper = FingerTipper(checksum=None, cachemanager=cachemanager, done=set())
     join_buf = await fingertipper.fingertip_upstream(structured_cell_join_checksum)
@@ -184,12 +185,15 @@ async def run_structured_cell_join(structured_cell_join_checksum, *, cachemanage
     result = await calculate_checksum(result_buf)
     cachemanager.set_join_cache(join_dict, result)
     buffer_cache.cache_buffer(result, result_buf)
+    if database.active:
+        write_buffer(result, result_buf)
     return result
 
 async def run_evaluate_expression(expression_dict, fingertip_mode, *, manager):
     from ..manager.fingertipper import FingerTipper
     from ..manager.expression import Expression
     from ..manager.tasks.evaluate_expression import evaluate_expression
+    from ..cache.buffer_remote import write_buffer
     d = expression_dict.copy()
     d["target_subcelltype"] = None
     d["hash_pattern"] = d.get("hash_pattern")
@@ -227,6 +231,9 @@ async def run_evaluate_expression(expression_dict, fingertip_mode, *, manager):
         pass
     if result is not None and database.active:
         database.set_expression(expression, result)
+        result_buf = buffer_cache.get_buffer(result)
+        if result_buf is not None:
+            write_buffer(result, result_buf)
     return result
 
 class TransformationCache:
