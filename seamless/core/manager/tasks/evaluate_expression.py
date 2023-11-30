@@ -203,13 +203,13 @@ async def evaluate_expression_remote(expression, fingertip_mode):
             scratch=True, fingertip=fingertip_mode
         )
         if result is not None:
-            result = bytes.fromhex(result)
+            if not fingertip_mode:
+                result = bytes.fromhex(result)
     except (CacheMissError, RuntimeError):
         result = None
     return result
 
 async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fingertip_upstream):
-    # Get the expression result checksum from cache.
     from ....util import parse_checksum
     cachemanager = manager.cachemanager
     if not fingertip_mode:
@@ -465,7 +465,14 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                 )
 
             cachemanager.expression_to_result_checksum[expression] = result_checksum
-        return result_checksum
+        if fingertip_mode:
+            if result_buffer is None:
+                result_buffer = await cachemanager.fingertip(result_checksum)
+            if result_buffer is None:
+                return None
+            return result_buffer
+        else:
+            return result_checksum
     finally:
         release_evaluation_lock(locknr)
 
@@ -526,8 +533,11 @@ async def evaluate_expression(expression, *, fingertip_mode=False, manager=None)
                 except Exception as exc:
                     fexc = traceback.format_exc()
                     expression.exception = fexc
-                    return None  
-                result = expression.checksum
+                    return None
+                if fingertip_mode:
+                    result = result_buffer
+                else:
+                    result = expression.checksum
 
         if result is None:
             if fingertip_mode:
@@ -550,13 +560,17 @@ async def evaluate_expression(expression, *, fingertip_mode=False, manager=None)
 
 
         if result is not None:
+            if fingertip_mode:
+                result_checksum = await CalculateChecksumTask(manager, result).run()
+            else:
+                result_checksum = result
             trivial = False
             if expression.path is None or expression.path == [] or expression.path == ():
                 if expression.hash_pattern == expression.target_hash_pattern:
-                    if result == expression.checksum:
+                    if result_checksum == expression.checksum:
                         trivial = True
             if not trivial:
-                database.set_expression(expression, result)
+                database.set_expression(expression, result_checksum)
 
     if result and not from_task and not fingertip_mode:
         assert isinstance(result, bytes), type(result)
