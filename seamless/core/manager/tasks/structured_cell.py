@@ -55,6 +55,7 @@ def build_join_transformation(structured_cell):
     from ...protocol.serialize import serialize_sync as serialize
     from ...protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
     join_dict, _, _ = _build_join_dict(structured_cell)
+    assert isinstance(join_dict, dict), join_dict
     transformation_dict = {
         "__language__": "<structured_cell_join>",
         "structured_cell_join": join_dict
@@ -83,16 +84,22 @@ async def evaluate_join_transformation_remote(structured_cell):
     from ....config import get_assistant
     from ....assistant_client import run_job
     from ...cache.buffer_remote import write_buffer
+    from ...protocol.serialize import serialize
+    from ...protocol.calculate_checksum import calculate_checksum
     if not get_assistant():
         return
     jtf_checksum = build_join_transformation(structured_cell)
     jtf_buffer = buffer_cache.get_buffer(jtf_checksum)
     assert jtf_buffer is not None
     write_buffer(jtf_checksum, jtf_buffer)
+    join_dict = json.loads(jtf_buffer)["structured_cell_join"]
+    join_dict_buf = await serialize(join_dict, "plain", use_cache=True)
+    join_dict_checksum = await calculate_checksum(join_dict_buf)
+    write_buffer(join_dict_checksum, join_dict_buf)
     try:
         result = await run_job(
             jtf_checksum, tf_dunder=None,
-            scratch=True, fingertip=False
+            scratch=structured_cell._data._scratch, fingertip=False
         )
     except (CacheMissError, RuntimeError):
         result = None

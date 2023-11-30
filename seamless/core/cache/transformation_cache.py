@@ -170,7 +170,7 @@ async def syntactic_to_semantic(
         raise TypeError(celltype)
     return semantic_checksum
 
-async def run_structured_cell_join(structured_cell_join_checksum, *, cachemanager):
+async def run_structured_cell_join(structured_cell_join_checksum, *, scratch, cachemanager):
     from ..manager.fingertipper import FingerTipper
     from ..cache.buffer_remote import write_buffer
 
@@ -185,11 +185,11 @@ async def run_structured_cell_join(structured_cell_join_checksum, *, cachemanage
     result = await calculate_checksum(result_buf)
     cachemanager.set_join_cache(join_dict, result)
     buffer_cache.cache_buffer(result, result_buf)
-    if database.active:
+    if not scratch:
         write_buffer(result, result_buf)
     return result
 
-async def run_evaluate_expression(expression_dict, fingertip_mode, *, manager):
+async def run_evaluate_expression(expression_dict, fingertip_mode, *, scratch, manager):
     from ..manager.fingertipper import FingerTipper
     from ..manager.expression import Expression
     from ..manager.tasks.evaluate_expression import evaluate_expression
@@ -232,7 +232,7 @@ async def run_evaluate_expression(expression_dict, fingertip_mode, *, manager):
     if result is not None and database.active:
         database.set_expression(expression, result)
         result_buf = buffer_cache.get_buffer(result)
-        if result_buf is not None:
+        if not scratch and result_buf is not None:
             write_buffer(result, result_buf)
     return result
 
@@ -1110,11 +1110,11 @@ class TransformationCache:
             if join_dict_checksum is None:
                 raise TypeError
             buffer_cache.cache_buffer(join_dict_checksum, join_dict_buffer)
-            return await run_structured_cell_join(join_dict_checksum,cachemanager=manager.cachemanager)
+            return await run_structured_cell_join(join_dict_checksum,cachemanager=manager.cachemanager, scratch=scratch)
         elif lang == "<expression>":
             assert manager is not None
             expression_dict = transformation["expression"]
-            return await run_evaluate_expression(expression_dict, fingertip_mode=fingertip, manager=manager)
+            return await run_evaluate_expression(expression_dict, fingertip_mode=fingertip, scratch=scratch, manager=manager)
 
         for k,v in transformation.items():
             if k in ("__language__", "__output__", "__as__", "__format__"):
