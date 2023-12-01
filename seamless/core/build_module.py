@@ -269,9 +269,12 @@ def build_compiled_module(full_module_name, original_checksum, checksum, module_
                 binary_objects[object_file] = binary_code
                 object_checksum = object_checksums[object_file]
                 binary_code_checksum = calculate_checksum(binary_code)
+                # Disable writing of compiled code for now
+                """
                 buffer_remote.write_buffer(binary_code_checksum, binary_code)
                 database.set_buffer_length(binary_code_checksum, len(binary_code))
                 database.set_compile_result(object_checksum, binary_code_checksum)
+                """
         link_options = module_definition["link_options"]
         target = module_definition["target"]
         header = module_definition["public_header"]
@@ -288,11 +291,15 @@ def build_compiled_module(full_module_name, original_checksum, checksum, module_
           )
         )
         module_code_checksum = calculate_checksum(module_code)
+        _compilation_buffers[original_checksum] = module_code_checksum, module_code
+        # Disable writing of compiled code for now
+        """
         buffer_remote.write_buffer(module_code_checksum, module_code)
         database.set_buffer_length(module_code_checksum, len(module_code))
         if not buffer_remote.can_write():
             _compilation_buffers[original_checksum] = module_code_checksum, module_code
         database.set_compile_result(checksum, module_code_checksum)
+        """
     mod = import_extension_module(curr_extension_dir, full_module_name, module_code, debug, source_files)
     return mod
 
