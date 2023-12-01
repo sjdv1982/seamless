@@ -1,0 +1,60 @@
+{
+  "properties": {
+    "hierarchy": {
+      "form": {
+        "contiguous": true,
+        "ndim": 1
+      },
+      "items": {
+        "form": {
+          "bytesize": 8
+        },
+        "type": "number"
+      },
+      "storage": "binary",
+      "type": "array"
+    },
+    "random_rotations": {
+      "form": {
+        "contiguous": true,
+        "ndim": 3,
+        "shape": [
+          -1,
+          3,
+          3
+        ]
+      },
+      "items": {
+        "form": {
+          "bytesize": 8,
+          "type": "number"
+        }
+      },
+      "storage": "binary",
+      "type": "array"
+    },
+    "scalevec": {
+      "form": {
+        "contiguous": true,
+        "ndim": 1,
+        "shape": [
+          3
+        ]
+      },
+      "items": {
+        "form": {
+          "bytesize": 8
+        },
+        "type": "number"
+      },
+      "storage": "binary",
+      "type": "array"
+    }
+  },
+  "required": [
+    "random_rotations",
+    "scalevec",
+    "hierarchy"
+  ],
+  "type": "object"
+}

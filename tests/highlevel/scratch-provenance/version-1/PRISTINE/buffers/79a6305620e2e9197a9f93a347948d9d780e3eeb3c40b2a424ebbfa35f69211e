@@ -1,0 +1,22 @@
+{
+  "form": {
+    "contiguous": true,
+    "ndim": 3,
+    "shape": [
+      [
+        0,
+        1000000
+      ],
+      3,
+      3
+    ]
+  },
+  "items": {
+    "form": {
+      "bytesize": 8,
+      "type": "number"
+    }
+  },
+  "storage": "binary",
+  "type": "array"
+}

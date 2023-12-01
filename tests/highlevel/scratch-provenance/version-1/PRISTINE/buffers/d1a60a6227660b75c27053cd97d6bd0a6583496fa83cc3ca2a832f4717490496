@@ -1,0 +1,11 @@
+{
+  "hash_pattern": {
+    "*": "#"
+  },
+  "inchannels": {
+    "[\"hierarchy\"]": "3af16428fc82b55812469ddf389e3dc2be5e655f5f2362fe5697d2f14196a6b7",
+    "[\"random_rotations\"]": "9b6f098a7dbebcf77fdbd8f36e9443feac2db2a36dac363e7b4f1e4f352ce9a8",
+    "[\"scalevec\"]": "f9805fd883e7862c1edd8ed47bf847ee5bf00db5b9dd29c504ff6572984ebd04"
+  },
+  "schema": "10d5b25952d90fa33cbc2eeedcd9e06318c6c449c93147f2f7c7867815e9ff08"
+}

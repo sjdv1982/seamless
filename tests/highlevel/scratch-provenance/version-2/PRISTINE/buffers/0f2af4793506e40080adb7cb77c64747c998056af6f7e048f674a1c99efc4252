@@ -1,0 +1,48 @@
+{
+  "__language__": "python",
+  "__output__": [
+    "result",
+    "mixed",
+    null
+  ],
+  "code": [
+    "python",
+    "transformer",
+    "35c8e916ba16a0d9172c07e9cbe8fe06e6f55f521830ecaa25af7aa83cbe35e5"
+  ],
+  "input_name": [
+    "text",
+    null,
+    "a5138c9ee3902be6772226aae234bf3bba4415bda5cf7b2169c9e1248e896f50"
+  ],
+  "input_schema": [
+    "plain",
+    null,
+    "10d5b25952d90fa33cbc2eeedcd9e06318c6c449c93147f2f7c7867815e9ff08"
+  ],
+  "kwargs": [
+    "mixed",
+    null,
+    "6590a7f7f616a11b7bbf2110c88602362607ec15d02cd7a93d3a4752d20ffc73"
+  ],
+  "module": [
+    "plain",
+    "module",
+    "8d1906c37908806af00fd160988ed178034970b2122007ba35052c86bd6b0bff"
+  ],
+  "pins": [
+    "mixed",
+    null,
+    "025c1a007c14b5037c9b499d4cfef18f8d5b4e7b2cc1042b4d228b2900537348"
+  ],
+  "result_name": [
+    "text",
+    null,
+    "6eb879aa9b36242a038c2889df9433728fbb3ed05013868b18584b8d4e78ecdf"
+  ],
+  "result_schema": [
+    "plain",
+    null,
+    "79a6305620e2e9197a9f93a347948d9d780e3eeb3c40b2a424ebbfa35f69211e"
+  ]
+}

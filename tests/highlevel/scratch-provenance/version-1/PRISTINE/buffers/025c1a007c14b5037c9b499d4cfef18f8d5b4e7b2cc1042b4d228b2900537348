@@ -1,0 +1,17 @@
+{
+  "hierarchy": {
+    "celltype": "default",
+    "io": "input"
+  },
+  "random_rotations": {
+    "celltype": "default",
+    "io": "input"
+  },
+  "result": {
+    "io": "output"
+  },
+  "scalevec": {
+    "celltype": "default",
+    "io": "input"
+  }
+}

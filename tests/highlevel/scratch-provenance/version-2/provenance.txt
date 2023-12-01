@@ -1,0 +1,18 @@
+transformation (compiled executor), 0f2af4793506e40080adb7cb77c64747c998056af6f7e048f674a1c99efc4252
+result: 2c819b2df5d1bd0b2ff4ed6222ff9539c624bd96119dcd8c4925f07c94f950b7
+=> kwargs 6590a7f7f616a11b7bbf2110c88602362607ec15d02cd7a93d3a4752d20ffc73
+
+which comes from an expression, 
+(expression tf checksum 6f6728f9a69768b6ebd3eb021ba05f0f1f4c23fdcf46085f2573b02e9d678905, in cache)
+origin deep checksum fa0e7508a009b78b4737c8a40e9dffbb2db5abec2ce356b734171846f6f9ba7b
+
+which comes from structured cell join 03a9b804c6d6335eb9dcf3acfa3480f6e649701f499340b6a96adebf85a38ebe
+(join tf checksum 97b90017aed9cad0dbe42154fcbbe08863ef773dca4039bdad40a64232cc3466, in cache)
+which is in cache
+and which has as "random rotations" pin:
+0fa8e64ef53b1cf1b298ee986909c2bbf164e36458663e04b457dd6fad7ae2c4
+(other pin/schema buffers are in cache)
+
+which comes from transformation 
+396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911
+which has everything in cache

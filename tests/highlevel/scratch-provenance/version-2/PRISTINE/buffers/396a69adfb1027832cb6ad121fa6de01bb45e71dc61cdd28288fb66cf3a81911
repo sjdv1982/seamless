@@ -1,0 +1,18 @@
+{
+  "__language__": "python",
+  "__output__": [
+    "result",
+    "mixed",
+    null
+  ],
+  "code": [
+    "python",
+    "transformer",
+    "5a53ac8763b25b110bda7c5a7aeb37c587f160137b38fdc3d7b26b513a00b276"
+  ],
+  "n": [
+    "mixed",
+    null,
+    "42e85493fc8d1eac992a36a0a45aa8bcf6c9671ddaa6d54f31cb11eaaf85ff17"
+  ]
+}

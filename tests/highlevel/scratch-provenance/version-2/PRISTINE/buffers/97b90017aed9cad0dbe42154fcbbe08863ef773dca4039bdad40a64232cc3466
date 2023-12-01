@@ -1,0 +1,14 @@
+{
+  "__language__": "<structured_cell_join>",
+  "structured_cell_join": {
+    "hash_pattern": {
+      "*": "#"
+    },
+    "inchannels": {
+      "[\"hierarchy\"]": "3af16428fc82b55812469ddf389e3dc2be5e655f5f2362fe5697d2f14196a6b7",
+      "[\"random_rotations\"]": "0fa8e64ef53b1cf1b298ee986909c2bbf164e36458663e04b457dd6fad7ae2c4",
+      "[\"scalevec\"]": "f9805fd883e7862c1edd8ed47bf847ee5bf00db5b9dd29c504ff6572984ebd04"
+    },
+    "schema": "10d5b25952d90fa33cbc2eeedcd9e06318c6c449c93147f2f7c7867815e9ff08"
+  }
+}

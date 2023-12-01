@@ -190,6 +190,22 @@ high-in-low6-memory.py    # See above. Time is ~60 seconds, or ~35 seconds when 
 switch-select-stdlib.py
 map-speed-test.py: long test, calculates the speed of stdlib.map_dict
 map-speed-test2.py: long test, calculates the speed of stdlib.map_dict_chunk
+scratch-provenance: 
+   Need to choose a version (non-reproducibility issue)
+    Both versions built using seamless-tools/build-devel-env.sh, seamless-tools commit 22823492f5ab42a5cfb77fc030fcfc126b5d2907
+    version 1: 
+      Intel Xeon Skylake, Ubuntu 18.04
+      Supported SIMD extensions in this NumPy install:
+        baseline = SSE,SSE2,SSE3
+        found = SSSE3,SSE41,POPCNT,SSE42,AVX,F16C,FMA3,AVX2,AVX512F,AVX512CD,AVX512_SKX
+        not found = AVX512_CLX,AVX512_CNL,AVX512_ICL
+    version 2:
+      Intel i5-1235U, Ubuntu 22.04
+      Supported SIMD extensions in this NumPy install:
+          baseline = SSE,SSE2,SSE3
+          found = SSSE3,SSE41,POPCNT,SSE42,AVX,F16C,FMA3,AVX2
+          not found = AVX512F,AVX512CD,AVX512_SKX,AVX512_CLX,AVX512_CNL,AVX512_ICL    
+   run as "cd scratch-provenance/version; ./run.sh". Requires delegation to be startable from command line ("seamless-delegate" etc. must be available)
 
 Non-automatic tests
 =========================

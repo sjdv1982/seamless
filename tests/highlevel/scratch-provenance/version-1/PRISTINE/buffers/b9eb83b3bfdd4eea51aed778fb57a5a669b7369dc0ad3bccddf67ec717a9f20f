@@ -1,0 +1,12 @@
+{
+  "__language__": "<expression>",
+  "expression": {
+    "celltype": "mixed",
+    "checksum": "5531b46a7c72c018705a4dfcb66a1c3f9f7ef757d63f4d4545470a1d4b95437d",
+    "hash_pattern": {
+      "*": "#"
+    },
+    "path": [],
+    "target_celltype": "mixed"
+  }
+}

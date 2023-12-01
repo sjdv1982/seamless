@@ -1,0 +1,5 @@
+def gen_random_rotations(n):
+    import numpy as np
+    from scipy.spatial.transform import Rotation
+    np.random.seed(0)
+    return Rotation.random(n).as_matrix()
