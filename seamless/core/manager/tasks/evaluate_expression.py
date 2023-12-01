@@ -183,8 +183,8 @@ def build_expression_transformation(expression: "Expression"):
         "expression": expression_dict
     }
     transformation_dict_buffer = serialize(transformation_dict, "plain")
-    transformation = calculate_checksum(transformation_dict_buffer)    
-    buffer_cache.cache_buffer(transformation, transformation_dict_buffer)    
+    transformation = calculate_checksum(transformation_dict_buffer)
+    buffer_cache.cache_buffer(transformation, transformation_dict_buffer)
     return transformation
     
 async def evaluate_expression_remote(expression, fingertip_mode):
@@ -273,7 +273,9 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                 if perform_fingertip:
                     source_buffer = await GetBufferTask(manager, source_checksum).run()
                 else:
+                    release_evaluation_lock(locknr)
                     source_buffer = await cachemanager.fingertip(source_checksum)
+                    locknr = await acquire_evaluation_lock(self)
                 if source_buffer is None:
                     raise CacheMissError(source_checksum)
                 deep_source_value = await DeserializeBufferTask(manager, source_buffer, source_checksum, "plain", False).run()
@@ -295,7 +297,9 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                 if perform_fingertip:
                     buffer = await GetBufferTask(manager, source_checksum).run()
                 else:
+                    release_evaluation_lock(locknr)
                     buffer = await cachemanager.fingertip(source_checksum)
+                    locknr = await acquire_evaluation_lock(self)
                 if buffer is None:
                     raise CacheMissError(source_checksum)
                 deep_structure = await DeserializeBufferTask(
@@ -307,7 +311,9 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                     if perform_fingertip:
                         buffer = await GetBufferTask(manager, nested_checksum).run()
                     else:
+                        release_evaluation_lock(locknr)
                         buffer = await cachemanager.fingertip(nested_checksum)
+                        locknr = await acquire_evaluation_lock(self)
                     if buffer is None:
                         raise CacheMissError(nested_checksum)
                     deep_structure = await DeserializeBufferTask(
@@ -331,11 +337,13 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                         manager=manager,
                         perform_fingertip=perform_fingertip
                     )
+                    release_evaluation_lock(locknr)
                     result_checksum = await conversion(
                         source_checksum, source_celltype,
                         target_celltype, perform_fingertip=perform_fingertip,
                         value_conversion_callback=value_conversion_callback
                     )
+                    locknr = await acquire_evaluation_lock(self)
                     if result_checksum is not None:
                         result_checksum = parse_checksum(result_checksum, as_bytes=True)                        
                 done = False  # still need to account for target hash pattern
@@ -349,9 +357,13 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
 
             if needs_value_conversion:
                 if perform_fingertip:
+                    release_evaluation_lock(locknr)
                     buffer = await cachemanager.fingertip(source_checksum)
+                    locknr = await acquire_evaluation_lock(self)
                 else:
                     buffer = await GetBufferTask(manager, source_checksum).run()
+                if buffer is None:
+                    raise CacheMissError(source_checksum)
                 value = await DeserializeBufferTask(
                     manager, buffer, source_checksum,
                     source_celltype, copy=False
@@ -365,8 +377,9 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                     if result_value is not None:
                         full_value = False
                 if full_value:
-
+                    release_evaluation_lock(locknr)
                     mode, result = await get_subpath(value, source_hash_pattern, expression.path, manager=manager, perform_fingertip=perform_fingertip)
+                    locknr = await acquire_evaluation_lock(self)
                     assert mode in ("checksum", "value"), mode
                     if result is None:
                         done = True
@@ -374,7 +387,9 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                     elif mode == "checksum":
                         assert source_hash_pattern is not None
                         if perform_fingertip:
+                            release_evaluation_lock(locknr)
                             buffer2 = await cachemanager.fingertip(result)
+                            locknr = await acquire_evaluation_lock(self)
                         else:
                             buffer2 = await GetBufferTask(manager, result).run()
                         if buffer2 is None:
@@ -468,14 +483,19 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
             cachemanager.expression_to_result_checksum[expression] = result_checksum
         if fingertip_mode:
             if result_buffer is None:
+                release_evaluation_lock(locknr)
                 result_buffer = await cachemanager.fingertip(result_checksum)
+                locknr = await acquire_evaluation_lock(self)
             if result_buffer is None:
                 return None
             return result_buffer
         else:
             return result_checksum
     finally:
-        release_evaluation_lock(locknr)
+        try:
+            release_evaluation_lock(locknr)
+        except AssertionError:
+            pass
 
 class EvaluateExpressionTask(Task):
     """ Evaluates an expression
@@ -539,7 +559,6 @@ async def evaluate_expression(expression, *, fingertip_mode=False, manager=None)
                     result = result_buffer
                 else:
                     result = expression.checksum
-
         if result is None:
             if fingertip_mode:
                 result = await evaluate_expression_remote(expression, fingertip_mode=True)
