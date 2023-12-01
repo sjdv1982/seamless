@@ -9,7 +9,7 @@ seamless-delegate-stop >& /dev/null
 seamless-delegate none >& /dev/null
 sleep 2
 
-###fing0=2c819b2df5d1bd0b2ff4ed6222ff9539c624bd96119dcd8c4925f07c94f950b7
+fing0=0bb9c56327f9069aefbbf2a0a9e496f97dd669811d32248b1d0bb4cc0f4ad9ce
 tf1=fa275011ce6996dd530180aedab4a583d8eecfdce865534917c1f273ffe7b5a7
 fing1=402f64ee85aaaee31551be59230bf641b9e4ccea1453ef37ff19cd48e3f8430f
 tf2=b9eb83b3bfdd4eea51aed778fb57a5a669b7369dc0ad3bccddf67ec717a9f20f
@@ -21,12 +21,12 @@ tf4=396a69adfb1027832cb6ad121fa6de01bb45e71dc61cdd28288fb66cf3a81911
 echo Transform 1
 seamless-run-transformation $tf1  --fingertip --scratch --verbose --output x
 seamless-checksum x
-###echo $fing0
+echo $fing0
 
-###echo Fingertip 0 
-###seamless-fingertip $fing0 --verbose --output x
-###seamless-checksum x
-###echo $fing0
+echo Fingertip 0 
+seamless-fingertip $fing0 --verbose --output x
+seamless-checksum x
+echo $fing0
 
 echo Fingertip 1
 seamless-fingertip $fing1 --verbose --output x

@@ -191,7 +191,8 @@ switch-select-stdlib.py
 map-speed-test.py: long test, calculates the speed of stdlib.map_dict
 map-speed-test2.py: long test, calculates the speed of stdlib.map_dict_chunk
 scratch-provenance: 
-   Need to choose a version (non-reproducibility issue)
+  This test takes 10-20 minutes
+  Need to choose a version (non-reproducibility issue)
     Both versions built using seamless-tools/build-devel-env.sh, seamless-tools commit 22823492f5ab42a5cfb77fc030fcfc126b5d2907
     version 1: 
       Intel Xeon Skylake, Ubuntu 18.04
