@@ -15,9 +15,6 @@ import json
 import importlib
 import shutil
 
-from threading import RLock
-from .locks import locks, locklock
-
 def cffi(module_name, c_header):
   """Generates CFFI C source for given C header"""
   if FFI is None or Recompiler is None:
@@ -90,14 +87,7 @@ def _build_extension(
     currdir = os.getcwd()
     tempdir = os.path.join(tempfile.gettempdir(), "_cffi-" + full_module_name)
     tempdir = os.path.abspath(tempdir)
-    with locklock:
-        if tempdir not in locks:
-            lock = RLock()
-            locks[tempdir] = lock
-        else:
-            lock = locks[tempdir]
     try:
-        lock.acquire()
         d = os.getcwd()
         try:
             os.mkdir(tempdir)
@@ -113,10 +103,8 @@ def _build_extension(
         extension_code = _build(dist, tempdir, compiler_verbose, debug)
     finally:
         try:
-            pass # skip this for now, since cluster deployment gives troubles with it....
-            ###shutil.rmtree(tempdir) #skip, for GDB
+            shutil.rmtree(tempdir) #skip, for GDB
         except Exception:
             pass
-        lock.release()
         os.chdir(d)
     return extension_code

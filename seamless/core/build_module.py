@@ -1,6 +1,7 @@
 from copy import deepcopy
 import json
 import re
+import shutil
 import sys, os
 import importlib
 import tempfile
@@ -9,7 +10,7 @@ import traceback
 from types import ModuleType
 from weakref import WeakKeyDictionary
 from ..calculate_checksum import calculate_checksum, calculate_dict_checksum
-from ..compiler.locks import locks, locklock
+from ..compiler.locks import dirlock
 from ..compiler import compile, complete
 from ..compiler.build_extension import build_extension_cffi
 
@@ -159,30 +160,28 @@ def build_interpreted_package(
     )
     return Package(mapping)
     
-import random
 def import_extension_module(curr_extension_dir, full_module_name, module_code, debug, source_files):        
-    with locklock:        
-        module_file = os.path.join(curr_extension_dir, full_module_name + ".so")
-        with open(module_file, "wb") as f:
-            f.write(module_code)
-        if debug:
-            module_dir = os.path.join(curr_extension_dir, full_module_name)
-            os.makedirs(module_dir)
-            for filename, data in source_files.items():
-                fn = os.path.join(module_dir, filename)
-                with open(fn, "w") as f:
-                    f.write(data)
-        syspath_old = []
-        syspath_old = sys.path[:]
-        try:
-            sys.path.append(curr_extension_dir)
-            importlib.import_module(full_module_name)
-            mod = sys.modules.pop(full_module_name)
-            return mod
-        finally:
-            sys.path[:] = syspath_old
-            if not debug:
-                os.remove(module_file)
+    module_file = os.path.join(curr_extension_dir, full_module_name + ".so")
+    with open(module_file, "wb") as f:
+        f.write(module_code)
+    if debug:
+        module_dir = os.path.join(curr_extension_dir, full_module_name)
+        os.makedirs(module_dir)
+        for filename, data in source_files.items():
+            fn = os.path.join(module_dir, filename)
+            with open(fn, "w") as f:
+                f.write(data)
+    syspath_old = []
+    syspath_old = sys.path[:]
+    try:
+        sys.path.append(curr_extension_dir)
+        importlib.import_module(full_module_name)
+        mod = sys.modules.pop(full_module_name)
+        return mod
+    finally:
+        sys.path[:] = syspath_old
+        if not debug:
+            os.remove(module_file)
 
 def _merge_objects(objects):
     result = {}
@@ -222,86 +221,104 @@ def get_compiled_module_code(checksum):
     return _compilation_buffers.get(checksum, (None, None))
 
 def build_compiled_module(full_module_name, original_checksum, checksum, module_definition, *, module_error_name):
-    curr_extension_dir = os.path.join(SEAMLESS_EXTENSION_DIR, random.randbytes(8).hex())
-    os.makedirs(curr_extension_dir,exist_ok=True)
-    module_code = None
-    module_code_checksum, module_code = get_compiled_module_code(original_checksum)
-    if module_code is None:
-        module_code_checksum = database.get_compile_result(checksum)
-        if module_code_checksum is not None:
-            module_code = get_buffer(module_code_checksum, remote=True)
-    source_files = {}
-    debug = (module_definition.get("target") == "debug")
-    if module_code is None:
-        if _blocked:
-            raise Exception("Building compiled modules is blocked")
-        objects = module_definition["objects"]
-        objects = _merge_objects(objects)
-        binary_objects = {}
-        remaining_objects = {}
-        object_checksums = {}
-        for object_file, object_ in objects.items():
-            object_checksum = calculate_dict_checksum(object_)
-            binary_code = None
-            binary_code_checksum = database.get_compile_result(object_checksum)
-            if binary_code_checksum is None:
-                binary_code = get_buffer(binary_code_checksum, remote=True)
-            if binary_code is not None:
-                binary_objects[object_file] = binary_code
-            else:
-                remaining_objects[object_file] = object_
-            object_checksums[object_file] = object_checksum
-        if len(remaining_objects):
-            build_dir = os.path.join(curr_extension_dir, full_module_name)               
-            success, new_binary_objects, source_files, stderr = compile(
-              remaining_objects, build_dir,
-              compiler_verbose=module_definition.get(
-                "compiler_verbose", COMPILE_VERBOSE
-              ),
-              build_dir_may_exist=debug
-            )
-            if not success:
-                raise BuildModuleError(stderr)
-            else:
-                if len(stderr):
-                    print(stderr)  # TODO: log this, but it is not obvious where
-            for object_file, binary_code in new_binary_objects.items():
-                binary_objects[object_file] = binary_code
-                object_checksum = object_checksums[object_file]
-                binary_code_checksum = calculate_checksum(binary_code)
-                # Disable writing of compiled code for now
-                """
-                buffer_remote.write_buffer(binary_code_checksum, binary_code)
-                database.set_buffer_length(binary_code_checksum, len(binary_code))
-                database.set_compile_result(object_checksum, binary_code_checksum)
-                """
-        link_options = module_definition["link_options"]
-        target = module_definition["target"]
-        header = module_definition["public_header"]
-        assert header["language"] == "c", header["language"]
-        c_header = header["code"]
-        module_code = build_extension_cffi(
-          full_module_name,
-          binary_objects,
-          target,
-          c_header,
-          link_options,
-          compiler_verbose=module_definition.get(
-            "compiler_verbose", CFFI_VERBOSE
-          )
-        )
-        module_code_checksum = calculate_checksum(module_code)
-        _compilation_buffers[original_checksum] = module_code_checksum, module_code
-        # Disable writing of compiled code for now
-        """
-        buffer_remote.write_buffer(module_code_checksum, module_code)
-        database.set_buffer_length(module_code_checksum, len(module_code))
-        if not buffer_remote.can_write():
-            _compilation_buffers[original_checksum] = module_code_checksum, module_code
-        database.set_compile_result(checksum, module_code_checksum)
-        """
-    mod = import_extension_module(curr_extension_dir, full_module_name, module_code, debug, source_files)
-    return mod
+    """ Don't add salt to the extension dir. Instead, use a global compilation lock
+    
+    # curr_extension_dir = os.path.join(SEAMLESS_EXTENSION_DIR, random.randbytes(8).hex())
+    
+    """
+    import distutils.errors
+    for trial in range(5):
+        try:
+            curr_extension_dir = SEAMLESS_EXTENSION_DIR
+            build_dir = os.path.join(curr_extension_dir, full_module_name)
+            with dirlock(curr_extension_dir) as dl:
+                os.makedirs(curr_extension_dir,exist_ok=True)
+                shutil.rmtree(build_dir,ignore_errors=True)
+                module_code = None
+                module_code_checksum, module_code = get_compiled_module_code(original_checksum)
+                if module_code is None:
+                    module_code_checksum = database.get_compile_result(checksum)
+                    if module_code_checksum is not None:
+                        module_code = get_buffer(module_code_checksum, remote=True)
+                source_files = {}
+                debug = (module_definition.get("target") == "debug")
+                if module_code is None:
+                    if _blocked:
+                        raise Exception("Building compiled modules is blocked")
+                    objects = module_definition["objects"]
+                    objects = _merge_objects(objects)
+                    binary_objects = {}
+                    remaining_objects = {}
+                    object_checksums = {}
+                    for object_file, object_ in objects.items():
+                        object_checksum = calculate_dict_checksum(object_)
+                        binary_code = None
+                        binary_code_checksum = database.get_compile_result(object_checksum)
+                        if binary_code_checksum is None:
+                            binary_code = get_buffer(binary_code_checksum, remote=True)
+                        if binary_code is not None:
+                            binary_objects[object_file] = binary_code
+                        else:
+                            remaining_objects[object_file] = object_
+                        object_checksums[object_file] = object_checksum
+                    if len(remaining_objects):                                       
+                        success, new_binary_objects, source_files, stderr = compile(
+                        remaining_objects, build_dir,
+                        compiler_verbose=module_definition.get(
+                            "compiler_verbose", COMPILE_VERBOSE
+                        ),
+                        build_dir_may_exist=debug
+                        )
+                        if not success:
+                            raise BuildModuleError(stderr)
+                        else:
+                            if len(stderr):
+                                print(stderr)  # TODO: log this, but it is not obvious where
+                        for object_file, binary_code in new_binary_objects.items():
+                            binary_objects[object_file] = binary_code
+                            object_checksum = object_checksums[object_file]
+                            binary_code_checksum = calculate_checksum(binary_code)
+                            # Disable writing of compiled code for now
+                            """
+                            buffer_remote.write_buffer(binary_code_checksum, binary_code)
+                            database.set_buffer_length(binary_code_checksum, len(binary_code))
+                            database.set_compile_result(object_checksum, binary_code_checksum)
+                            """
+                    link_options = module_definition["link_options"]
+                    target = module_definition["target"]
+                    header = module_definition["public_header"]
+                    assert header["language"] == "c", header["language"]
+                    c_header = header["code"]
+                    module_code = build_extension_cffi(
+                    full_module_name,
+                    binary_objects,
+                    target,
+                    c_header,
+                    link_options,
+                    compiler_verbose=module_definition.get(
+                        "compiler_verbose", CFFI_VERBOSE
+                    )
+                    )
+                    module_code_checksum = calculate_checksum(module_code)
+                    _compilation_buffers[original_checksum] = module_code_checksum, module_code
+                    # Disable writing of compiled code for now
+                    """
+                    buffer_remote.write_buffer(module_code_checksum, module_code)
+                    database.set_buffer_length(module_code_checksum, len(module_code))
+                    if not buffer_remote.can_write():
+                        _compilation_buffers[original_checksum] = module_code_checksum, module_code
+                    database.set_compile_result(checksum, module_code_checksum)
+                    """
+                mod = import_extension_module(curr_extension_dir, full_module_name, module_code, debug, source_files)
+            return mod
+        except (FileNotFoundError, BuildModuleError, distutils.errors.LinkError) as exc:
+            print("COMPILATION FAILURE", trial+1, full_module_name, file=sys.stderr)
+            traceback.print_exc()
+            print("/COMPILATION FAILURE", trial+1, full_module_name, file=sys.stderr)
+            shutil.rmtree(build_dir,ignore_errors=True)
+        except Exception as exc:
+            raise exc from None
+    raise exc from None
 
 def build_module(module_definition, module_workspace={}, *,
      compilers, languages, module_debug_mounts,

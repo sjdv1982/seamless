@@ -6,8 +6,6 @@ import os
 from copy import deepcopy
 import shutil
 
-from threading import RLock
-from .locks import locks, locklock
 
 cache = {}
 
@@ -37,15 +35,6 @@ def compile(binary_objects, build_dir, *,
             assert header["language"] in ("c", "cpp") # for now, only C/C++ headers; don't know file extensions otherwise
             all_headers[headername] = header
     try:
-        if build_dir in locks:
-            lock = locks[build_dir]
-            lock.acquire()
-            lock.release()
-            return compile(binary_objects, build_dir, compiler_verbose)
-        with locklock:
-            lock = RLock()
-            locks[build_dir] = lock
-            lock.acquire()
         try:
             os.makedirs(build_dir) #must be non-existing
         except FileExistsError:
@@ -100,8 +89,6 @@ def compile(binary_objects, build_dir, *,
             shutil.rmtree(build_dir) #TODO: sometimes skip, for GDB
         except Exception:
             pass
-        locks.pop(build_dir)
-        lock.release()
     if not len(stderr.replace("\n", "").strip()):
         stderr = ""
     return success, result, source_files, stderr
