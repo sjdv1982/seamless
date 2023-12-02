@@ -113,7 +113,8 @@ def _build_extension(
         extension_code = _build(dist, tempdir, compiler_verbose, debug)
     finally:
         try:
-            shutil.rmtree(tempdir) #skip, for GDB
+            pass # skip this for now, since cluster deployment gives troubles with it....
+            ###shutil.rmtree(tempdir) #skip, for GDB
         except Exception:
             pass
         lock.release()
