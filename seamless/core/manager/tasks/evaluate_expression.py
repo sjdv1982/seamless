@@ -274,6 +274,7 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                     source_buffer = await GetBufferTask(manager, source_checksum).run()
                 else:
                     release_evaluation_lock(locknr)
+                    locknr = None
                     source_buffer = await cachemanager.fingertip(source_checksum)
                     locknr = await acquire_evaluation_lock(self)
                 if source_buffer is None:
@@ -298,6 +299,7 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                     buffer = await GetBufferTask(manager, source_checksum).run()
                 else:
                     release_evaluation_lock(locknr)
+                    locknr = None
                     buffer = await cachemanager.fingertip(source_checksum)
                     locknr = await acquire_evaluation_lock(self)
                 if buffer is None:
@@ -312,6 +314,7 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                         buffer = await GetBufferTask(manager, nested_checksum).run()
                     else:
                         release_evaluation_lock(locknr)
+                        locknr = None
                         buffer = await cachemanager.fingertip(nested_checksum)
                         locknr = await acquire_evaluation_lock(self)
                     if buffer is None:
@@ -338,6 +341,7 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                         perform_fingertip=perform_fingertip
                     )
                     release_evaluation_lock(locknr)
+                    locknr = None
                     result_checksum = await conversion(
                         source_checksum, source_celltype,
                         target_celltype, perform_fingertip=perform_fingertip,
@@ -358,6 +362,7 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
             if needs_value_conversion:
                 if perform_fingertip:
                     release_evaluation_lock(locknr)
+                    locknr = None
                     buffer = await cachemanager.fingertip(source_checksum)
                     locknr = await acquire_evaluation_lock(self)
                 else:
@@ -378,6 +383,7 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                         full_value = False
                 if full_value:
                     release_evaluation_lock(locknr)
+                    locknr = None
                     mode, result = await get_subpath(value, source_hash_pattern, expression.path, manager=manager, perform_fingertip=perform_fingertip)
                     locknr = await acquire_evaluation_lock(self)
                     assert mode in ("checksum", "value"), mode
@@ -388,6 +394,7 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                         assert source_hash_pattern is not None
                         if perform_fingertip:
                             release_evaluation_lock(locknr)
+                            locknr = None
                             buffer2 = await cachemanager.fingertip(result)
                             locknr = await acquire_evaluation_lock(self)
                         else:
@@ -434,6 +441,8 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                 fexc = traceback.format_exc()
                 expression.exception = fexc
             result_checksum = None
+            if locknr is None:
+                locknr = await acquire_evaluation_lock(self)
         except Exception as exc:
             if isinstance(exc, (CacheMissError, SeamlessConversionError)):
                 if isinstance(exc, CacheMissError):
@@ -446,6 +455,8 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                 expression.exception = fexc
                 ###print(fexc, file=sys.stderr)
             result_checksum = None
+            if locknr is None:
+                locknr = await acquire_evaluation_lock(self)            
             
         if result_checksum is not None:
             assert isinstance(result_checksum, bytes)
@@ -484,6 +495,7 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
         if fingertip_mode:
             if result_buffer is None:
                 release_evaluation_lock(locknr)
+                locknr = None
                 result_buffer = await cachemanager.fingertip(result_checksum)
                 locknr = await acquire_evaluation_lock(self)
             if result_buffer is None:
