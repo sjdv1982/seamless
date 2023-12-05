@@ -1,3 +1,7 @@
+TODO: 
+- salvage version 1 output
+- fix delegate-ssh if needed
+
 Things TODO regarding integration:
 
 - Rip the entire communion protocol, too much trouble with websockets,
