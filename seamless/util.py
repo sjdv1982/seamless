@@ -176,8 +176,8 @@ def verify_transformation_success(transformation_checksum, transformation_dict=N
         #print("/LOOK FOR SCELL JOIN", calculate_dict_checksum(join_dict,hex=True), parse_checksum(result))
         return result
     else:
-        #print("LOOK FOR TRANSFORMATION", transformation_checksum)
-        result = database.get_transformation_result(transformation_checksum.bytes())
-        #print("/LOOK FOR TRANSFORMATION", transformation_checksum)
+        #print("LOOK FOR TRANSFORMATION", tf_checksum)
+        result = database.get_transformation_result(tf_checksum.bytes())
+        #print("/LOOK FOR TRANSFORMATION", tf_checksum)
         return result
 
