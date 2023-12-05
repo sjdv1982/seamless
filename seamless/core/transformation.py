@@ -970,11 +970,11 @@ if os.environ.get("DOCKER_IMAGE"):
         execution_metadata0["Docker version"] = os.environ["DOCKER_VERSION"]
 
 _got_global_info = False
-def get_global_info(global_info=None):
+def get_global_info(global_info=None, force=False):
     global _got_global_info
     if _got_global_info:
         return execution_metadata0.copy()
-    if not database.active:
+    if not database.active and not force:
         return {}
     if global_info is not None:
         execution_metadata0.update(global_info)
