@@ -28,8 +28,9 @@ class DirLock:
                 if not ok:
                     lock_mtime = lock_stat_result.st_mtime
                     if time.time() - lock_mtime > self.LOCK_TIMEOUT:
-                        ok = True
-
+                        with open(self._lock_file_path, "w") as f:
+                            f.write(ident)
+                            ok = True
             if not ok:
                 time.sleep(1)
                 continue
@@ -48,27 +49,41 @@ class DirLock:
 
             break
         self._running = True
+        self._touch_lock = threading.Lock()
         self._touch_thread = threading.Thread(target=self._touch_loop, daemon=True)
         self._touch_thread.start()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         lock_file_path = self._lock_file_path
-        self._lock_file_path = None  # stops the touch thread
-        self._running = False
-        self._touch_thread.join(5)
-        pathlib.Path(lock_file_path).unlink()
+        self._running = False  # stops the touch thread      
+        self._touch_thread.join(timeout=60)
+        if self._touch_thread.is_alive():
+            pathlib.Path(lock_file_path).unlink(missing_ok=True)
+            raise RuntimeError(f"Failed to release global dirlock: {lock_file_path}")
 
-    def touch(self):
-        pname = self._lock_file_path
-        p = pathlib.Path(pname)
-        if pname is None or not p.exists():
+    def _touch(self):
+        lock_file_path = self._lock_file_path
+        if lock_file_path is None:
             return
+        p = pathlib.Path(lock_file_path)
         p.touch()
     
     def _touch_loop(self):
+        counter = 0
         while self._running:
-            self.touch()
-            time.sleep(10)
+            if counter == 0:
+                self._touch()            
+            time.sleep(1)
+            counter += 1
+            if counter == 10:
+                counter = 0
+
+        lock_file_path = self._lock_file_path
+        assert lock_file_path is not None
+        p = pathlib.Path(lock_file_path)
+        assert p.exists()
+        p.unlink()
+
 
 def dirlock(directory):
     return DirLock(directory)
