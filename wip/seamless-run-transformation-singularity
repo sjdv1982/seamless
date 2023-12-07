@@ -1,0 +1,18 @@
+# Runs run-transformation in a Singularity container
+
+# There are two use cases for this:
+# 1. To run transformations that cannot be run under bare-metal (i.e. conda without container)
+#   because of fork+thread+slurm issues.
+# In that case, set SEAMLESS_MINIMAL_SINGULARITY_IMAGE to a light container that corresponds 
+# to your OS, e.g. docker://ubuntu:18.04. 
+# Before running this script, activate your Seamless conda environment so that $CONDA_PREFIX
+# and $SEAMLESS_TOOLS_DIR are made available to Singularity.
+# It is assumed that these directories are already bound to the Singularity container. If not,
+# define SEAMLESS_SINGULARITY_BIND
+# 
+# 2. To run run-transformation inside a full Seamless Docker image for systems where 
+# running Docker is not permitted.
+# In that case, set SEAMLESS_MINIMAL_SINGULARITY_IMAGE to docker://rpbs/seamless-minimal 
+# (or docker-daemon:rpbs/seamless-minimal if Docker is installed)
+
+python $SEAMLESS_TOOLS_DIR/scripts/run-transformation.py $*``
