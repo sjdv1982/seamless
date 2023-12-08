@@ -498,13 +498,16 @@ class TransformationCache:
                 )        
 
         tf_exc = self.transformation_exceptions.get(tf_checksum)
-        if transformer._debug:
-            self.clear_exception(transformer)
-            tf_exc = None
-        if transformer._exception_to_clear:
-            self.clear_exception(tf_checksum=tf_checksum)
-            transformer._exception_to_clear = False
-            tf_exc = None
+        
+        clear_new_transformer_exceptions = True
+        if isinstance(transformer, Transformer):
+            clear_new_transformer_exceptions = transformer._get_manager().CLEAR_NEW_TRANSFORMER_EXCEPTIONS
+        
+        if clear_new_transformer_exceptions:
+            if transformer._exception_to_clear or transformer._debug:
+                self.clear_exception(tf_checksum=tf_checksum)
+                transformer._exception_to_clear = False
+                tf_exc = None
 
         if isinstance(transformer, (RemoteTransformer, DummyTransformer)):
             old_tf_checksum = None

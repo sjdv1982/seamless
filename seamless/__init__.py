@@ -145,6 +145,7 @@ from .highlevel.Checksum import Checksum
 from .util import parse_checksum
 from .config import delegate
 from .core.transformation import SeamlessTransformationError
+from . import multi
 __all__ = [
     "Checksum",
     "calculate_checksum", "calculate_dict_checksum", "load_vault", "config", 

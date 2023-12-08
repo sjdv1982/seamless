@@ -74,6 +74,7 @@ def _run_in_mainthread(func):
     return func2
 
 class Manager:
+    CLEAR_NEW_TRANSFORMER_EXCEPTIONS = True
     _destroyed = False
     _highlevel_refs = 0
     _last_ctx = None
