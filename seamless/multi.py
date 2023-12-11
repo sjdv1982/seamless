@@ -143,7 +143,6 @@ class ContextPool:
         ctx = Context()
         ctx.set_graph(self.graph)
         ctx.compute(report=10)
-        manager = ctx._manager
         self._contexts.append(ctx)
 
         for n in range(1, self.nparallel):
@@ -203,6 +202,7 @@ class ContextPool:
         contexts = self._contexts
 
         async def runner(ctx):
+            await ctx.computation(report=None)
             await ctx.computation(report=None)
 
         tasks = []
