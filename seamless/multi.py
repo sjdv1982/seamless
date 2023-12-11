@@ -1,6 +1,7 @@
 """Utilities for parallel execution. Syntax similar to multiprocessing.pool"""
 
 import asyncio
+import time
 
 
 class TransformationPool:
@@ -25,10 +26,51 @@ class TransformationPool:
 
         """
         import asyncio
+        from seamless.highlevel.direct.Transformation import Transformation
+        
+        if asyncio.get_event_loop().is_running():
+            todo = list(range(nindices))
+            results = [None] * nindices
+            transformations = [None] * self.nparallel
+            transformation_indices = [None] * self.nparallel
+            order = []
 
-        fut = asyncio.ensure_future(self.apply_async(func, nindices, callback=callback))
-        asyncio.get_event_loop().run_until_complete(fut)
-        return fut.result()
+            done = 0            
+            while done < nindices:
+                for n, transformation in list(enumerate(transformations)):
+                    if transformation is not None:
+                        if transformation.status == "Status: pending":
+                            continue
+                        done += 1
+                        order.remove(n)
+                        results[transformation_indices[n]] = transformation
+                        transformations[n] = None
+                        if callback is not None:
+                            callback(transformation_indices[n], transformation)
+                    
+                    if len(todo):
+                        new_index = todo.pop(0)
+                        transformation = func(new_index)
+                        if not isinstance(transformation, Transformation):
+                           raise TypeError(
+                                f"func({new_index}) returned a {type(transformation)} instead of a Seamless transformation"
+                            )
+                        transformations[n] = transformation
+                        transformation_indices[n] = new_index
+                        order.append(n)
+                        transformation.start()
+
+                if len(order):
+                    if len(order) == self.nparallel or len(todo) == 0:
+                        transformation = transformations[order[0]]
+                        if transformation.status == "Status: pending":
+                            transformation.compute()
+                
+            return results
+        else:
+            fut = asyncio.ensure_future(self.apply_async(func, nindices, callback=callback))
+            asyncio.get_event_loop().run_until_complete(fut)
+            return fut.result()
 
     async def apply_async(self, func, nindices: int, *, callback=None):
         """Apply func to each index N between 0 and nindices.
@@ -134,11 +176,15 @@ class ContextPool:
         """
         import asyncio
 
-        fut = asyncio.ensure_future(
-            self.apply_async(setup_func, nindices, result_func)
-        )
-        asyncio.get_event_loop().run_until_complete(fut)
-        return fut.result()
+        if asyncio.get_event_loop().is_running():
+            raise NotImplementedError
+
+        else:
+            fut = asyncio.ensure_future(
+                self.apply_async(setup_func, nindices, result_func)
+            )
+            asyncio.get_event_loop().run_until_complete(fut)
+            return fut.result()
 
     async def apply_async(self, setup_func, nindices: int, result_func):
         """Runs a separate Seamless context for each index N between 0 and nindices.
