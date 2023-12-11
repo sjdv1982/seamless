@@ -7,6 +7,8 @@ TODO:
 
 Things TODO regarding integration:
 
+Stage -1: implementing proper buffer handling, fingertip and scratch (NEARLY DONE)
+
 - Rip the entire communion protocol, too much trouble with websockets,
   threads and event loops and imperative mode.
   Make a seamless-micro-assistant that needs a database and a buffer read/write server.
@@ -23,6 +25,7 @@ Things TODO regarding integration:
 
 - Finish the scratch Seamless issue: DONE
 - Add seamless-fingertip tool (default delegation level 1, can be increased): DONE
+- Optimize the structured join of scratch cells: TODO
 - Finish the non-automatic high-level tests (tests/highlevel/q): TODO
 
 Stage 0: /bin/seamless (DONE)

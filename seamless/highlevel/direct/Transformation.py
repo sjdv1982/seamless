@@ -336,6 +336,7 @@ def transformation_from_dict(transformation_dict, result_celltype, upstream_depe
     for k, v in list(transformation_dict.items()):
         if isinstance(v, tuple) and len(v) == 3 and isinstance(v[2], Transformation):
             transformation_dict[k] = transformation_dict_original[k]
+    # The transformation dict will be updated by prepare_transformation_dict in the resolver
             
     if "__meta__" not in transformation_dict:
         transformation_dict["__meta__"] = {}

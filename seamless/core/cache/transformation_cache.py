@@ -108,7 +108,7 @@ class DummyTransformer:
 def incref_transformation(tf_checksum, tf_buffer, transformation):
     buffer_cache.incref_buffer(tf_checksum, tf_buffer, persistent=False)
     for pinname in transformation:
-        if pinname in ("__compilers__", "__languages__", "__as__",  "__format__", "__meta__"):
+        if pinname in ("__compilers__", "__languages__", "__as__",  "__format__", "__meta__", "__code_checksum__"):
             continue
         if pinname in ("__language__", "__output__"):
             continue
@@ -125,7 +125,7 @@ def tf_get_buffer(transformation):
     assert isinstance(transformation, dict)
     d = {}
     for k in transformation:
-        if k in ("__compilers__", "__languages__", "__meta__", "__env__"):
+        if k in ("__compilers__", "__languages__", "__meta__", "__env__", "__code_checksum__"):
             continue
         v = transformation[k]
         if k in ("__language__", "__output__", "__as__", "__format__"):
@@ -601,7 +601,7 @@ class TransformationCache:
             self.transformation_logs.pop(tf_checksum, None)
             # TODO: clear transformation_exceptions also at some moment??
         for pinname in transformation:
-            if pinname in ("__language__", "__output__", "__languages__", "__compilers__", "__as__", "__format__", "__meta__"):
+            if pinname in ("__language__", "__output__", "__languages__", "__compilers__", "__as__", "__format__", "__meta__", "__code_checksum__"):
                 continue
             if pinname == "__env__":
                 checksum = bytes.fromhex(transformation[pinname])
@@ -629,7 +629,7 @@ class TransformationCache:
     def build_semantic_cache(self, transformation):
         semantic_cache = {}
         for k,v in transformation.items():
-            if k in ("__compilers__", "__languages__", "__meta__", "__format__"):
+            if k in ("__compilers__", "__languages__", "__meta__", "__format__", "__code_checksum__"):
                 continue
             if k in ("__language__", "__output__", "__as__"):
                 continue
@@ -1142,7 +1142,7 @@ class TransformationCache:
                 continue
             if k == "__env__":
                 continue
-            if k in ("__compilers__", "__languages__", "__meta__"):
+            if k in ("__compilers__", "__languages__", "__meta__", "__code_checksum__"):
                 continue
             celltype, subcelltype, sem_checksum0 = v
             sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None

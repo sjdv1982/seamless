@@ -225,6 +225,7 @@ async def run_transformation_dict_async(transformation_dict, *, fingertip, scrat
     # TODO: add input schema and result schema validation...
     from seamless.util import is_forked
     from seamless.core.cache.buffer_cache import buffer_cache
+    from seamless.config import database
 
     assert not is_forked()
     transformation_buffer = tf_get_buffer(transformation_dict)
@@ -235,6 +236,10 @@ async def run_transformation_dict_async(transformation_dict, *, fingertip, scrat
         buffer_cache.decref(result_checksum)
         return result_checksum
     
+    if "__code_checksum__" in transformation_dict:
+        semkey = (transformation_dict["code"][2], "python", "transformer")
+        database.set_sem2syn(semkey, [transformation_dict["__code_checksum__"]])
+
     cache_buffer(transformation, transformation_buffer)
     increfed = _register_transformation_dict(
         transformation, transformation_buffer, transformation_dict
@@ -256,7 +261,6 @@ async def run_transformation_dict_async(transformation_dict, *, fingertip, scrat
     return result_checksum
 
 def prepare_code(semantic_code_checksum, codebuf, code_checksum):
-    from ...core.cache.database_client import database
     from seamless.highlevel import Checksum
     if codebuf is not None:
         assert isinstance(codebuf, bytes)
@@ -278,8 +282,6 @@ def prepare_code(semantic_code_checksum, codebuf, code_checksum):
         if semcode is None:
             raise CacheMissError(semantic_code_checksum) from None
     cache_buffer(code_checksum, codebuf)
-    semkey = (semantic_code_checksum, "python", "transformer")
-    database.set_sem2syn(semkey, [code_checksum])
     value = Checksum(semantic_code_checksum)
     return value
 
@@ -344,6 +346,7 @@ Replaced buffers or values are properly registered and cached
             if code is not None:
                 codebuf = serialize(code, "python")
             value = prepare_code(semantic_code_checksum, codebuf, code_checksum)
+            transformation_dict["__code_checksum__"] = code_checksum
 
         assert isinstance(value, Checksum), (argname, value)
         value = value.value
