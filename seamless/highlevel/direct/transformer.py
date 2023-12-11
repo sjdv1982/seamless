@@ -43,9 +43,9 @@ Parameters:
         
 - local. If True, transformations are executed in the local 
             Seamless instance.
-        If False, they are delegated to remote job servers.
-        If None (default), remote job servers are tried first 
-        and local execution is a fallback.
+        If False, they are delegated to the assistant, which must exist.
+        If None (default), the assistant tried first 
+        and local execution is a fallback for if there is no assistant.
 
 - return_transformation.
         If False, calling the function executes it immediately,
@@ -176,7 +176,7 @@ Attributes:
     def meta(self, meta:dict):
         self._meta.update(meta)
         for k in list(self._meta.keys()):
-            if self._meta[k] is None:
+            if self._meta[k] is None and k != "local":
                 self._meta.pop(k)
 
     @property
@@ -198,7 +198,7 @@ If this value is None, direct print is True if debugging is enabled."""
     def direct_print(self, value):
         if not isinstance(value, bool) and value is not None:
             raise TypeError(type(value))
-        self.meta = {"__direct_print__": True}
+        self.meta = {"__direct_print__": value}
 
 
     @property

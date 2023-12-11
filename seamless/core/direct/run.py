@@ -179,12 +179,14 @@ def run_transformation_dict(transformation_dict, *, fingertip, scratch=False):
                 if syntactic_is_semantic(celltype, subcelltype):
                     continue
                 semkey = (bytes.fromhex(sem_checksum), celltype, subcelltype)
-                syn_checksum = transformation_cache.semantic_to_syntactic_checksums[
+                syn_checksums = transformation_cache.semantic_to_syntactic_checksums[
                     semkey
-                ][0]
+                ]
+                syn_checksum = syn_checksums[0]
                 syn_buffer = get_buffer(syn_checksum)
                 assert syn_buffer is not None
-                syntactic_cache.append((celltype, subcelltype, syn_buffer))
+                syntactic_cache.append((celltype, subcelltype, syn_buffer))                
+                database.set_sem2syn(semkey, syn_checksums)
                 
                 if tf_dunder is None:
                     tf_dunder = {}
@@ -394,7 +396,7 @@ def direct_transformer_to_transformation_dict(
         transformation_dict["__env__"] = checksum.hex()
     
     if meta:
-        transformation_dict["__meta__"] = meta
+        transformation_dict["__meta__"] = meta.copy()
     
     tf_pins = {}
 
@@ -704,7 +706,7 @@ def _wait():
                     transformation_cache.transformation_logs[tf_checksum] = logs
                 else:
                     running_event_loop = asyncio.get_event_loop().is_running()
-                    result_checksum = run_transformation(transformation, fingertip=fingertip, new_event_loop=running_event_loop, scratch=scratch)
+                    result_checksum = run_transformation(transformation, fingertip=fingertip, new_event_loop=running_event_loop, scratch=scratch, tf_dunder=tf_dunder)
                     if result_checksum is not None:
                         assert isinstance(result_checksum, bytes)                        
 

@@ -1104,7 +1104,7 @@ class TransformationCache:
             return
         self._hard_cancel(job)
 
-    async def run_transformation_async(self, tf_checksum, *, fingertip, scratch, tf_dunder=None, manager=None, cache_only=False, code_checksum=None):
+    async def run_transformation_async(self, tf_checksum, *, fingertip, scratch, tf_dunder=None, manager=None, cache_only=False):
         from . import CacheMissError
         
         result_checksum, prelim = await self._get_transformation_result_async(tf_checksum)
@@ -1121,7 +1121,7 @@ class TransformationCache:
             transformation = transformation.copy()
             for k in ("__compilers__", "__languages__", "__meta__", "__env__"):
                 if k in tf_dunder:
-                    transformation[k] = tf_dunder[k] 
+                    transformation[k] = tf_dunder[k]
         lang = transformation.get("__language__")
         if lang == "<structured_cell_join>":
             assert manager is not None

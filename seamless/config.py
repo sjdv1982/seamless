@@ -49,7 +49,6 @@ def _contact_assistant():
     assert response.status_code == 200
     
     _assistant = assistant
-    block_local()
     _delegate_level = 4
     if response.content:
         raise NotImplementedError
@@ -130,7 +129,7 @@ def _init_buffer_remote_from_env(only_level_1=False):
         raise BufferServerConnectionError(f"Cannot connect to write buffer server {write_buffer_server}") from None
     
 
-def delegate(level=4, reraise_exceptions=False):
+def delegate(level=4, *, block_local=True, reraise_exceptions=False):
     """Delegate computations and/or data to remote servers and folders.
 
 Full delegation (level 4): Delegate all computations, buffers and results.
@@ -168,7 +167,13 @@ Delegate some or all buffers and results.
     structured cell joining. Conversion buffer info and generic metadata
     can also be stored.
     The environment variables are: SEAMLESS_DATABASE_IP and 
-    SEAMLESS_DATABASE_PORT."""
+    SEAMLESS_DATABASE_PORT.
+
+block_local: ... (in case of level 4, disable local execution)    
+
+reraise_exceptions: ....
+
+"""
 
     global _delegate_level, _delegating
     if _delegate_level is not None and _delegate_level != level:
@@ -179,6 +184,8 @@ Delegate some or all buffers and results.
     try:
         if level == 4:
             _contact_assistant()
+            if block_local and _assistant is not None:
+                _block_local()
             return
         if level >= 1:
             _init_buffer_remote_from_env(only_level_1=(level==1))
@@ -223,7 +230,7 @@ def set_inprocess_assistant(assistant: InProcessAssistant):
     _delegate_level = 4
     
 from .core.cache.database_client import database
-from .core.manager import block, unblock, block_local, unblock_local
+from .core.manager import block, unblock, block_local as _block_local, unblock_local
 from .core.manager.tasks import set_parallel_evaluations
 from .core.cache.buffer_remote import (
     set_read_buffer_folders, set_read_buffer_servers, set_write_buffer_server

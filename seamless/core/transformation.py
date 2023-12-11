@@ -128,7 +128,7 @@ def get_transformation_inputs_output(transformation):
     for pinname in sorted(transformation.keys()):
         if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__", "__format__"):
             continue
-        if pinname in ("__language__", "__output__"):
+        if pinname in ("__language__", "__output__", "__code_checksum__"):
             continue
         if pinname == "code":
             continue
@@ -163,7 +163,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
     for pinname in sorted(transformation.keys()):
         if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__", "__format__"):
             continue
-        if pinname in ("__language__", "__output__"):
+        if pinname in ("__language__", "__output__", "__code_checksum__"):
             continue
         celltype, subcelltype, sem_checksum0 = transformation[pinname]
         sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
@@ -236,7 +236,7 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
     for pinname in transformation:
         if pinname in (
             "__language__", "__output__", "__env__", "__compilers__",
-            "__languages__", "__as__", "__meta__", "__format__"
+            "__languages__", "__as__", "__meta__", "__format__", "__code_checksum__"
         ):
             continue
         celltype, _, _ = transformation[pinname]
@@ -433,7 +433,8 @@ class TransformationJob:
                 logs = None
             finally:
                 self.remote_futures = None
-        else:
+        
+        if not self.remote:  # _execute_remote may set self.remote to False
             result, logs = await self._execute_local(
                 prelim_callback, progress_callback
             )
@@ -458,7 +459,9 @@ class TransformationJob:
                 tf_dunder[k] = tf[k]
         if tf_dunder.get("__meta__", {}).get("local", OverflowError) != OverflowError:
             meta = tf_dunder["__meta__"].copy()
-            meta.pop("local")
+            if meta.pop("local") == True:
+                self.remote = False
+                return
             tf_dunder["__meta__"] = meta
         try:
             result = await run_job(self.checksum, tf_dunder, fingertip=self.fingertip, scratch=self.scratch)
