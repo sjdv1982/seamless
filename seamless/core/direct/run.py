@@ -224,12 +224,18 @@ async def run_transformation_dict_async(transformation_dict, *, fingertip, scrat
     such as returned by highlevel.Transformer.get_transformation_dict"""
     # TODO: add input schema and result schema validation...
     from seamless.util import is_forked
+    from seamless.core.cache.buffer_cache import buffer_cache
 
     assert not is_forked()
     transformation_buffer = tf_get_buffer(transformation_dict)
-    transformation = calculate_checksum(transformation_buffer)
-    cache_buffer(transformation, transformation_buffer)
     tf_dunder = extract_dunder(transformation_dict)
+    transformation = calculate_checksum(transformation_buffer)
+    result_checksum = await run_transformation_async(transformation, scratch=scratch, fingertip=fingertip, tf_dunder=tf_dunder, cache_only=True)
+    if result_checksum is not None:
+        buffer_cache.decref(result_checksum)
+        return result_checksum
+    
+    cache_buffer(transformation, transformation_buffer)
     increfed = _register_transformation_dict(
         transformation, transformation_buffer, transformation_dict
     )
@@ -345,7 +351,6 @@ Replaced buffers or values are properly registered and cached
         arg = arg[0], arg[1], value
         transformation_dict[argname] = arg
 
-    return transformation_dict
 
 
 def direct_transformer_to_transformation_dict(

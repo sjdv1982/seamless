@@ -1,18 +1,16 @@
+import threading
 import requests
+import aiohttp
 import json
-import os
 import sys
+import weakref
+import asyncio
 
 from ..buffer_info import BufferInfo
 
 session = requests.Session()
+sessions_async = weakref.WeakKeyDictionary()
 
-# TODO (if proven to be a bottleneck): 
-#  make all set_X requests non-blocking, 
-# by adding them into a queue and processing them 
-#  in a different thread.
-# (and have a set_X(key, value1) in the queue 
-# superseded by a subsequent set_X(key, value2) request)
 
 global Expression
 
@@ -200,6 +198,29 @@ class Database:
                 raise Exception(response.text)
             return response
 
+    async def send_get_request_async(self, request):
+        if not self.active:
+            return
+        
+        thread = threading.current_thread()
+        session_async = sessions_async.get(thread)
+        if session_async is None:
+            session_async = aiohttp.ClientSession()
+            sessions_async[thread] = session_async
+
+        url = "http://" + self.host + ":" + str(self.port)
+        if isinstance(request, bytes):
+            rqbuf = request
+        else:
+            rqbuf = json.dumps(request)
+        async with session_async.get(url, data=rqbuf) as response:
+            if response.status == 404:
+                return None
+            elif response.status >= 400:
+                text = await response.text.read()
+                raise Exception(text)
+            return await response.content.read()
+
     def get_transformation_result(self, checksum):
         request = {
             "type": "transformation",
@@ -211,6 +232,17 @@ class Database:
             self._log("GET", request["type"], request["checksum"])
             return result
 
+
+    async def get_transformation_result_async(self, checksum):
+        request = {
+            "type": "transformation",
+            "checksum": parse_checksum(checksum),
+        }
+        content = await self.send_get_request_async(request)
+        if content is not None:
+            result = parse_checksum(content.decode(), as_bytes=True)
+            self._log("GET", request["type"], request["checksum"])
+            return result
 
     def get_sem2syn(self, semkey):
         sem_checksum, celltype, subcelltype = semkey
@@ -362,3 +394,10 @@ database = Database()
 
 from ...util import parse_checksum
 from ...calculate_checksum import calculate_dict_checksum
+
+def _close_async_sessions():
+    for session_async in sessions_async.values():
+        fut = asyncio.ensure_future(session_async.close())
+        
+import atexit
+atexit.register(_close_async_sessions)

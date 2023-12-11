@@ -527,7 +527,7 @@ class TransformationCache:
             self._set_exc(transformers, tf_checksum, transformation_build_exception)
             return
             
-        result_checksum, prelim = self._get_transformation_result(tf_checksum)
+        result_checksum, prelim = await self._get_transformation_result_async(tf_checksum)
         if result_checksum is not None:
             if isinstance(transformer, Transformer):
                 #print("CACHE HIT", transformer, result_checksum.hex())
@@ -949,6 +949,22 @@ class TransformationCache:
 
         return result_checksum, prelim
 
+    async def _get_transformation_result_async(self, tf_checksum):
+        result_checksum, prelim = self.transformation_results.get(
+            tf_checksum, (None, None)
+        )
+        if result_checksum is None:
+            result_checksum = await database.get_transformation_result_async(tf_checksum)
+            prelim = False
+            if not self.stateless and result_checksum is not None:
+                self.transformation_results[tf_checksum] = result_checksum, False
+                buffer_cache.incref(result_checksum, persistent=False)
+                if result_checksum not in self.transformation_results_rev:
+                    self.transformation_results_rev[result_checksum] = []
+                self.transformation_results_rev[result_checksum].append(tf_checksum)
+
+        return result_checksum, prelim
+
     async def serve_semantic_to_syntactic(self, sem_checksum, celltype, subcelltype, peer_id):
         def ret(semsyn):
             for semsyn_checksum in semsyn:
@@ -994,7 +1010,7 @@ class TransformationCache:
 
     async def serve_transformation_status(self, tf_checksum, peer_id):
         assert isinstance(tf_checksum, bytes)
-        result_checksum, prelim = self._get_transformation_result(tf_checksum)
+        result_checksum, prelim = await self._get_transformation_result_async(tf_checksum)
         if result_checksum is not None:
             if not prelim:
                 return 3, result_checksum
@@ -1088,14 +1104,16 @@ class TransformationCache:
             return
         self._hard_cancel(job)
 
-    async def run_transformation_async(self, tf_checksum, *, fingertip, scratch, tf_dunder=None, manager=None):
+    async def run_transformation_async(self, tf_checksum, *, fingertip, scratch, tf_dunder=None, manager=None, cache_only=False, code_checksum=None):
         from . import CacheMissError
         
-        result_checksum, prelim = self._get_transformation_result(tf_checksum)
+        result_checksum, prelim = await self._get_transformation_result_async(tf_checksum)
         if result_checksum is not None and not prelim:
             self.register_known_transformation(tf_checksum, result_checksum)
             if not fingertip:
                 return result_checksum
+        if cache_only:
+            return None
         transformation = await self.serve_get_transformation(tf_checksum, None)
         if transformation is None:
             raise CacheMissError(tf_checksum.hex())
@@ -1192,7 +1210,7 @@ class TransformationCache:
                         raise Exception("Transformation finished, but didn't trigger a result or exception")
 
             await asyncio.sleep(0.05)
-        result_checksum, prelim = self._get_transformation_result(tf_checksum)
+        result_checksum, prelim = await self._get_transformation_result_async(tf_checksum)
         if tf_checksum in self.transformation_exceptions:
             raise self.transformation_exceptions[tf_checksum]
 
