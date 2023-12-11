@@ -5,14 +5,14 @@ from functools import partial
 import textwrap
 from types import LambdaType
 
-def transformer(func=None, *, scratch=None, direct_print=None, local=None, return_transformation=False):
+def transformer(func=None, *, scratch=None, direct_print=None, local=None, return_transformation=False, in_process=False):
     """Wraps a function in a direct transformer
     Direct transformers can be called as normal functions, but
     the source code of the function and the arguments are converted
     into a Seamless transformation."""
     if func is None:
-        return partial(transformer, scratch=scratch, direct_print=direct_print, local=local, return_transformation=return_transformation)
-    result = DirectTransformer(func, scratch=scratch, direct_print=direct_print, local=local, return_transformation=return_transformation)
+        return partial(transformer, scratch=scratch, direct_print=direct_print, local=local, return_transformation=return_transformation, in_process=in_process)
+    result = DirectTransformer(func, scratch=scratch, direct_print=direct_print, local=local, return_transformation=return_transformation, in_process=in_process)
     update_wrapper(result, func)
     return result
 
@@ -33,7 +33,7 @@ def getsource(func):
         return code
 
 class DirectTransformer:
-    def __init__(self, func, *, scratch, direct_print, local, return_transformation):
+    def __init__(self, func, *, scratch, direct_print, local, return_transformation, in_process):
         """Direct transformer.
 Direct transformers can be called as normal functions, but
 the source code of the function and the arguments are converted
@@ -59,6 +59,8 @@ Parameters:
 - scratch  ...
 
 - direct_print ...
+
+- in_process ...
 
 Attributes:            
 
@@ -89,6 +91,7 @@ Attributes:
         self._modules = {}
         self._environment = Environment(self)
         self._environment_state = None
+        self._in_process = in_process
 
         self._meta = {"transformer_path": ["tf", "tf"], "local": local}
         self.scratch = scratch
@@ -121,6 +124,7 @@ Attributes:
         from seamless.util import is_forked
 
         if is_forked():
+            assert not self._in_process
             if not database.active or not has_readwrite_servers():
                 raise RuntimeError("Running @transformer inside a transformation requires a Seamless database and buffer servers")
 
@@ -156,7 +160,7 @@ Attributes:
                     raise RuntimeError(msg.format(depname, dep.exception))
                 
             prepare_transformation_dict(transformation_dict)
-            result_checksum = run_transformation_dict(transformation_dict, fingertip=False, scratch=self.scratch)
+            result_checksum = run_transformation_dict(transformation_dict, fingertip=False, scratch=self.scratch, in_process=self._in_process)
             if result_checksum is None:
                 raise RuntimeError("Result is empty")
             buf = get_buffer(result_checksum, remote=True)

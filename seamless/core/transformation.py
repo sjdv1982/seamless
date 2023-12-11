@@ -146,7 +146,7 @@ def get_transformation_inputs_output(transformation):
         outputname, output_celltype, output_subcelltype, output_hash_pattern = outputpin
     return inputs, outputname, output_celltype, output_subcelltype, output_hash_pattern
 
-async def build_transformation_namespace(transformation, semantic_cache, codename):        
+async def build_transformation_namespace(transformation, semantic_cache, codename):
     namespace = {
         "__name__": "transformer",
         "__package__": "transformer",
@@ -219,6 +219,123 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
                     continue
                 else:
                     value = await deserialize(buffer, checksum, celltype, False)
+            except Exception:
+                e = traceback.format_exc()
+                raise Exception(pinname, e) from None
+            if value is None:
+                raise CacheMissError(pinname, codename, buffer)
+        if pinname == "code":
+            code = value
+        elif (celltype, subcelltype) == ("plain", "module"):
+            modules_to_build[pinname] = value
+        else:
+            pinname_as = as_.get(pinname, pinname)
+            namespace["PINS"][pinname_as] = value
+            namespace[pinname_as] = value
+            inputs.append(pinname_as)
+    for pinname in transformation:
+        if pinname in (
+            "__language__", "__output__", "__env__", "__compilers__",
+            "__languages__", "__as__", "__meta__", "__format__", "__code_checksum__"
+        ):
+            continue
+        celltype, _, _ = transformation[pinname]
+        if celltype != "silk":
+            continue
+        schema_pinname = pinname + "_SCHEMA"
+        schema_pin = transformation.get(schema_pinname)
+        schema = None
+        if schema_pin is not None:
+            schema_celltype, _, _ = schema_pin
+            assert schema_celltype == "plain", (schema_pinname, schema_celltype)
+            schema = namespace[schema_pinname]
+        pinname_as = as_.get(pinname, pinname)
+        if schema is None and isinstance(namespace[pinname_as], Scalar):
+            continue
+        if schema is None:
+            schema = {}
+        v = Silk(
+            data=namespace[pinname_as],
+            schema=schema
+        )
+        namespace["PINS"][pinname_as] = v
+        namespace[pinname_as] = v
+    namespace["FILESYSTEM"] = FILESYSTEM
+    return code, namespace, modules_to_build, deep_structures_to_unpack
+
+def build_transformation_namespace_sync(transformation, semantic_cache, codename):
+    namespace = {
+        "__name__": "transformer",
+        "__package__": "transformer",
+    }
+    code = None
+    deep_structures_to_unpack = {}
+    inputs = []
+    namespace["PINS"] = {}
+    output_hash_pattern = transformation["__output__"][3] if len(transformation["__output__"]) == 4 else None
+    namespace["OUTPUTPIN"] = transformation["__output__"][1], output_hash_pattern
+    modules_to_build = {}
+    as_ = transformation.get("__as__", {})
+    FILESYSTEM = {}
+    for pinname in sorted(transformation.keys()):
+        if pinname in ("__compilers__", "__languages__", "__env__", "__as__", "__meta__", "__format__"):
+            continue
+        if pinname in ("__language__", "__output__", "__code_checksum__"):
+            continue
+        celltype, subcelltype, sem_checksum0 = transformation[pinname]
+        sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
+        if syntactic_is_semantic(celltype, subcelltype):
+            checksum = sem_checksum
+        else:
+            # For now, assume that the first syntactic checksum gives a value
+            semkey = sem_checksum, celltype, subcelltype
+            checksum = semantic_cache[semkey][0]
+        if checksum is None:
+            continue
+        from_filesystem = False
+        hash_pattern = None
+        fmt = transformation.get("__format__", {}).get(pinname)
+        if fmt is not None:
+            fs = fmt.get("filesystem")
+            fs_result = None
+            if fs is not None:
+                optional = fs["optional"]
+                mode = fs["mode"]
+                if mode == "file":
+                    fs_result = None # TODO
+                    ### fs_result = buffer_remote.get_filename(checksum)
+                else: # mode == "directory"
+                    fs_result = None # TODO
+                    ### fs_result = buffer_remote.get_directory(checksum)
+                fs_entry = deepcopy(fs)
+                if fs_result is None:
+                    if not optional:
+                        msg = "{}: could not find file/directory for {}"
+                        raise CacheMissError(msg.format(pinname, checksum.hex()))
+                    fs_entry["filesystem"] = False
+                else:
+                    fs_entry["filesystem"] = True
+                    value = fs_result
+                    from_filesystem = True
+                FILESYSTEM[pinname] = fs_entry
+
+            if fs_result is None:
+                hash_pattern = fmt.get("hash_pattern")
+
+        if not from_filesystem:
+            # fingertipping must have happened before, but database could be there
+            buffer = get_buffer(checksum, remote=True)
+            if buffer is None:
+                raise CacheMissError(checksum.hex())
+            try:
+                if hash_pattern is not None:
+                    deep_value = deserialize_sync(buffer, checksum, "plain", False)
+                    pinname_as = as_.get(pinname, pinname)
+                    inputs.append(pinname_as)
+                    deep_structures_to_unpack[pinname_as] = deep_value, hash_pattern
+                    continue
+                else:
+                    value = deserialize_sync(buffer, checksum, celltype, False)
             except Exception:
                 e = traceback.format_exc()
                 raise Exception(pinname, e) from None
@@ -954,7 +1071,7 @@ from .injector import transformer_injector as injector
 from .build_module import build_all_modules
 from ..compiler import compilers as default_compilers, languages as default_languages
 from .protocol.get_buffer import get_buffer
-from .protocol.deserialize import deserialize
+from .protocol.deserialize import deserialize, deserialize_sync
 from .protocol.calculate_checksum import calculate_checksum, calculate_checksum_func
 from .protocol.evaluate import validate_evaluation_subcelltype
 from .cache import CacheMissError

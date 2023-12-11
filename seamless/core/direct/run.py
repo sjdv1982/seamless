@@ -4,6 +4,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 import ast
+import json
 import time
 import multiprocessing
 
@@ -152,7 +153,7 @@ def extract_dunder(transformation_dict):
 
     return tf_dunder
 
-def run_transformation_dict(transformation_dict, *, fingertip, scratch=False):
+def run_transformation_dict(transformation_dict, *, fingertip, scratch=False, in_process=False):
     """Runs a transformation that is specified as a dict of checksums,
     such as returned by highlevel.Transformer.get_transformation_dict.
     """
@@ -163,6 +164,7 @@ def run_transformation_dict(transformation_dict, *, fingertip, scratch=False):
     increfed, transformation = register_transformation_dict(transformation_dict)
     tf_dunder = extract_dunder(transformation_dict)
     if is_forked():
+        assert not in_process
         assert database.active
         result_checksum, prelim = transformation_cache._get_transformation_result(
             transformation
@@ -201,6 +203,9 @@ def run_transformation_dict(transformation_dict, *, fingertip, scratch=False):
     else:
         syntactic_cache = []
 
+
+    if in_process:
+        return run_transformation_dict_in_process(transformation_dict, transformation, tf_dunder, scratch)
     result = None
     def result_callback(result2):
         nonlocal result
@@ -260,6 +265,90 @@ async def run_transformation_dict_async(transformation_dict, *, fingertip, scrat
             transformation_cache.decref_transformation(transformation_dict, increfed)
         temprefmanager.purge_group("imperative")
     
+    return result_checksum
+
+def run_transformation_dict_in_process(transformation_dict, tf_checksum, tf_dunder, scratch):
+    from seamless.core.transformation import execution_metadata0, get_global_info, get_transformation_inputs_output, build_transformation_namespace_sync, build_all_modules
+    from seamless.compiler import compilers as default_compilers, languages as default_languages
+    from seamless.core.cache.transformation_cache import transformation_cache
+    from seamless.core.injector import transformer_injector as injector
+    from seamless.core.cached_compile import exec_code
+    from seamless.config import database
+    from seamless.core.cache.buffer_cache import buffer_cache, buffer_remote
+    from seamless.highlevel.direct import transformer
+
+    result_checksum = database.get_transformation_result(tf_checksum)
+    if result_checksum is not None:
+        return result_checksum
+    
+    get_global_info()
+    execution_metadata = deepcopy(execution_metadata0)
+    if "Executor" not in execution_metadata:
+        execution_metadata["Executor"] = "seamless-in-process"
+
+    transformation = {}
+    transformation.update(transformation_dict)
+    transformation.update(tf_dunder)
+
+    if transformation.get("__language__") == "bash":
+        raise NotImplementedError
+
+    env_checksum0 = transformation.get("__env__")
+    if env_checksum0 is not None:
+        raise NotImplementedError
+
+
+    semantic_cache = transformation_cache.build_semantic_cache(transformation)
+
+    io = get_transformation_inputs_output(transformation)
+    inputs, output_name, output_celltype, output_subcelltype, output_hash_pattern = io
+    tf_namespace = build_transformation_namespace_sync(
+        transformation, semantic_cache, "transformer-in-process"
+    )
+    code, namespace, modules_to_build, deep_structures_to_unpack = tf_namespace
+    
+    if deep_structures_to_unpack:
+        raise NotImplementedError
+
+    if output_hash_pattern is not None:
+        raise NotImplementedError
+
+    module_workspace = {}
+    compilers = transformation.get("__compilers__", default_compilers)
+    languages = transformation.get("__languages__", default_languages)
+
+    build_all_modules(
+        modules_to_build, module_workspace,
+        compilers=compilers, languages=languages,
+        module_debug_mounts=None
+    )
+    assert code is not None
+
+    namespace["transformer"] = transformer
+    namespace.pop(output_name, None)
+    with injector.active_workspace(module_workspace, namespace):
+        exec_code(
+            code, "transformer-in-process", namespace, inputs, output_name, 
+            with_ipython_kernel=False
+        )
+        try:
+            result = namespace[output_name]
+        except KeyError:
+            msg = "Output variable name '%s' undefined" % output_name
+            raise RuntimeError(msg) from None
+
+    if result is None:
+        raise RuntimeError("Result is empty")
+
+    result_buffer = serialize(result, output_celltype)
+    result_checksum = calculate_checksum(result_buffer)
+
+    print("DONE", tf_checksum.hex(), result_checksum.hex())
+    database.set_transformation_result(tf_checksum, result_checksum)
+    if not scratch:
+        buffer_cache.guarantee_buffer_info(result_checksum, output_celltype, sync_to_remote=True)
+        buffer_remote.write_buffer(result_checksum, result_buffer)
+
     return result_checksum
 
 def prepare_code(semantic_code_checksum, codebuf, code_checksum):
