@@ -143,6 +143,7 @@ class ContextPool:
         ctx = Context()
         ctx.set_graph(self.graph)
         ctx.compute(report=10)
+        ctx.compute(report=10)
         self._contexts.append(ctx)
 
         for n in range(1, self.nparallel):
@@ -152,6 +153,7 @@ class ContextPool:
             self._contexts.append(ctx)
 
         for n in range(self.nparallel):
+            self._contexts[n].compute(report=None)
             self._contexts[n].compute(report=None)
 
         return self
