@@ -42,6 +42,7 @@ pins["input_schema"]["celltype"] = "plain"
 pins["result_schema"]["celltype"] = "plain"
 pins["input_name"]["celltype"] = "text"
 pins["result_name"]["celltype"] = "text"
+pins["kwargs"]["hash_pattern"] = {"*": "#"}
 
 ctx.translate()
 gen_header_params = ctx.gen_header._get_tf().tf._transformer_params
@@ -95,6 +96,7 @@ ctx.result = ctx.executor
 ctx.result.celltype = "float"
 
 ctx.kwargs = Cell()
+ctx.kwargs.hash_pattern = {"*": "#"}
 ctf.kwargs = ctx.kwargs
 ctx.translate()
 

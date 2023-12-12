@@ -180,7 +180,7 @@
           "celltype": "plain"
         },
         "kwargs": {
-          "celltype": "default"
+          "celltype": "deepcell"
         },
         "module": {
           "celltype": "module"
@@ -354,7 +354,9 @@
     {
       "celltype": "structured",
       "datatype": "mixed",
-      "hash_pattern": null,
+      "hash_pattern": {
+        "*": "#"
+      },
       "path": [
         "kwargs"
       ],

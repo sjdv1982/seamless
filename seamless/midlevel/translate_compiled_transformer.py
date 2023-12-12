@@ -45,6 +45,7 @@ def _finalize(
     result_cell2._scratch = True
     cell_setattr(node, ctx, result_cell_name2, result_cell2)
     input_cell = cell("mixed")
+    input_cell.hash_pattern = {"*", "#"}
     input_cell._scratch = True
     cell_setattr(node, ctx, input_cell_name, input_cell)
     link_options_cell = cell("plain")
