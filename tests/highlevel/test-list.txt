@@ -206,6 +206,7 @@ scratch-provenance:
           baseline = SSE,SSE2,SSE3
           found = SSSE3,SSE41,POPCNT,SSE42,AVX,F16C,FMA3,AVX2
           not found = AVX512F,AVX512CD,AVX512_SKX,AVX512_CLX,AVX512_CNL,AVX512_ICL    
+  (Using NPY_DISABLE_CPU_FEATURES does not have an effect)  
    run as "cd scratch-provenance/version; ./run.sh". Requires delegation to be startable from command line ("seamless-delegate" etc. must be available)
 
 Non-automatic tests

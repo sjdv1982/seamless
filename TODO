@@ -1,10 +1,4 @@
 TODO: 
-- seamless issue for memoery resource + human2bytes
-- seamless issue for "nesting" in transformation metadata
-- seamless issue for "record mode" for database and buffer server. copy elision and nesting transformation entries, but cache miss them, so that inner transformations get resubmitted.
-- salvage version 1 output
-- fix delegate-ssh if needed
-
 Things TODO regarding integration:
 
 Stage -1: implementing proper buffer handling, fingertip and scratch (NEARLY DONE)
