@@ -1,133 +1,29 @@
-TODO: 
-Things TODO regarding integration:
-
-Stage -1: implementing proper buffer handling, fingertip and scratch (NEARLY DONE)
-
-- Rip the entire communion protocol, too much trouble with websockets,
-  threads and event loops and imperative mode.
-  Make a seamless-micro-assistant that needs a database and a buffer read/write server.
-  Use aiohttp requests to contact the assistant.
-  DONE
-  
-  Check a nested/fingertip issue where imperative-delegated works if you restart the micro-assistant.py
-  (after cleaning up database and buffer directory) but not otherwise. 
-  UPDATE: happens even for simple functions in imperative-database if you delete buffers but not database
-  UPDATE2: the simple problem has been fixed, but it still hangs sometimes for nested... restart micro-assistant regularly?
-  Should happen so often since new jobs are normally sent to a different micro-assistant
-  UPDATE3: all fixed now.
-  DONE
-
-- Finish the scratch Seamless issue: DONE
-- Add seamless-fingertip tool (default delegation level 1, can be increased): DONE
-- Optimize the structured join of scratch cells: TODO
-- Finish the non-automatic high-level tests (tests/highlevel/q): TODO
-
-Stage 0: /bin/seamless (DONE)
-
-See also [seamless/bin/README], which will be documentation also.
-
-- When bin/seamless operates on a file "file.ext", be able to load its checksum from "file.ext.CHECKSUM" (if both exist, use checksum). DONE
-
-- Create "file.ext.FUTURE" so that "file.ext" (or file.ext.CHECKSUM, or file.ext.FUTURE) can be referred to in a follow-up job. DONE
-
-- Download of job/transformer results can be enforced or prevented. Otherwise, a heuristic based on result size (and possibly, connection speed). Manual command "seamless-download file.ext" that inspects file.ext.CHECKSUM and downloads it. DONE
-
-- Tool "seamless-upload" for files and directories. Optional "move" flag that replaces "file". DONE
-
-- Document (can be after)
-
-Stage 1:
-
-- Make sure that save_vault respects scratch (i.e. make it behave the same as buffer_remote.write). Document the vault + database path as a valid (advanced-use) setup. Rip the warning in init_database_from_env, refactor/document API. TODO.
-
-- mini-assistant: have an internal lock system just like transformation.py
-(in fact, re-use it). Acquire locks before launching run-transformation, and release them afterwards. TODO
-   
-- ***Dogma: env (recipe) != Transformation.__env__ (schema) !!!***
-  __env__ (and __meta__, __compilers__, etc... generally known as "dunder") give hints to make
-  the transformation work. They do *not* modify the result value. TO DOCUMENT.
-  
-- In addition, implement "contest" API for mini-assistant (tests/highlevel/contest.py can't work without). DONE
-
-- Micro-assistant.py can't deal with re-entrant delegation, mini-dask assistant should. TODO: See https://github.com/sjdv1982/seamless/issues/217
-
-- Run tests/examples requiring serve-graph, add seamless.delegate if needed. TODO.
-
-- Make sure that buffer_cache eviction works correctly in the light of buffer_remote known buffers, is_readable, etc. DONE.
-
-- TO DOCUMENT: for now, deep buffers do not persistently incref their subchecksums,
-i.e. you can't "fill up" a deep cell/deep folder from Seamless and expect the content
-to be written to a database. Might need a cell property and/or manual API for this,
-in particular for transformers that return a deep cell/folder.
-
-Stage 2: distribution: all TODO
-
-- Make a separate conda package for bin/seamless. 
-Add seamless-upload, seamless-upload-zip, seamless-upload-vault and seamless-download as copies of seamless-tools/scripts/upload.py etc.,
-rather than the Docker wrappers of seamless-cli/seamless-upload etc.
-
-- Clean up and re-run all tests. (DONE for low-level)
-
-- Re-review new-project, add delegation? UPDATE: read it from a project.yaml...
-
-- For seamless-cli, when distributing, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile.
-
-- Make sure the examples can function without RPBS buffer server, or add it in the notebook
-
-- Document: buffer read servers/folders fail silently, the buffer write server must succeed
-
-- General documentation, describing the three styles.
-
-Stage 3: all TODO
+TODO before 0.12 release: 
 
 - Make sure that bash jobs with a buffer read folder have get_filename/get_directory working directory. Rip filezones. Test with /bin/seamless as well.
 
-- seamless-runner and seamless-parallel-runner for workflow graphs. 
-Primary use case: non-Python non-bash transformations (esp. compiled ones).
+- Make sure that save_vault respects scratch (i.e. make it behave the same as buffer_remote.write). Document the vault + database path as a valid (advanced-use) setup. Rip the warning in init_database_from_env, refactor/document API.
 
-- Expand the assistant protocol to include canceling. Add bin/seamless --cancel flag to cancel a running transformer (like --undo). 
-
-- Support transformation meta (see old jobless), progress/prelim, logs, hardcancel, etc.  First add this as a stdout stream to run-transformation, then store these things in mini-assistant (YAGNI?), then create an API to return these things. (TODO, see https://github.com/sjdv1982/seamless/issues/219).
-
-- Make a test that shows the memory savings of delegation, e.g. deep cell with many 50MB members, (disable lru cache? like --no-lru in serve-graph?) TODO
+- Re-review new-project, add delegation? UPDATE: read it from a project.yaml...
 
 - Clean up seamless-tools database tools and revive database-run-actions.
 Make sure it is usable from both bin/seamless and workflow seamless.
 Re-run pin-filesystem.sh tests.
 
-Stage 4: TODO
+- Clean up and re-run all tests.
 
-Start a jobless successor, i.e. "*the* assistant".
+- Run tests/examples requiring serve-graph, add seamless.delegate if needed
 
-- Pimp the protocol a bit so that "peer ID" (project information) is sent along in the request.
+- Make sure the examples can function without RPBS buffer server, or add it in the notebook
 
-- Support dynamic modification of the delegate config, poll the assistant regularly for this. Alternative: special redirect code upon job submission. Another alternative (in addition): assistant migrates between buffer folders / databases.
+- Documentation. 
 
-- NOTE: previously, Seamless could try remote execution but fall back on local if that failed (see transformation.py around line 460). Probably rip this.
+- Document: buffer read servers/folders fail silently, the buffer write server must succeed
 
-- The assistant will have many configurable scripts and parts. One important one is the Singularity rewriter, to rewrite bashdocker transformations as Singularity commands.
+- General documentation, describing the three styles. Old TODO entries have been added to the Seamless Documentation issue.
 
-- Long term: operation to create an index file of a buffer folder, so that the assistant can inspect the index file to see if a buffer exists (index file can be copied around; buffer folder might be on a node scratch).
+- For seamless-cli, when distributing, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile.
 
-- Long term: Annotation mechanism for job duration and result size. Either as string ("10s", "10MB") or as number with units specified (25.0, time_unit="minutes"). Job duration is enforced with a hard maximum of 2x the specified duration. The job duration can be specified as "approximate" (approximate_duration=True, or "~0.5h"), in which case the hard maximum is an order of magnitude (10x) larger. Result size is not enforced, but is used to decide if the result is automatically downloaded or not.
-
-***********************************************************************************
-
-Old design text for the assistant:
-
-Replaces jobless. Has its own database for:
-
-- exceptions (for transformation/compilation)
-- stdout/stderr logs (for transformation/compilation)
-- project-to-transformation/elision/compilation-checksum (recorded upon submission; also for transformations/compilations that give an exception).
-- project-to-graph (clients submit their current graph regularly)
-- graph-to-buffer/expression/join-checksum (whenever graph is registered). Store celltype and hash pattern, so that a database refcounting operation becomes possible (think of checksums of conda environments too). Store if buffers are dependent or not.
-
-New supervisor protocol replaces communion protocol. Supervisor protocol will take the contacter's ID (includes the real working directory; seamless-load-project will give the project name, too) and give it a database URL and one or more buffer read/write URLs/folders.
-On certain circumstances, the supervisor will return a job status "supervision action required". Some example scenarios:
-
-- The idea is that if a supervisor is found, there will be no more Seamless-instance execution or held buffers. The supervisor will need to map the client to a global project name (to be configured by the user). The supervisor can spin up local job executors and project-specific buffer providers (to be configured). The local Seamless database can probably re-used globally for every project.
-- Jobs can specify remote execution. The supervisor follows this by default, but more precise supervisor policies can be configured. For example, if a large buffer can be found elsewhere than where the execution is to take place, the supervisor may ask you if the data is to be downloaded or if the computation is to be relocated. If there are multiple remotes, or if "local" or "remote" is not specified, this needs to be arbitrated too.
-- In particular, on a HPC cluster, there should be a buffer folder (or more than one) on every node /scratch, with an index file in a publicly accessible location (network partition). When /scratch gets deleted, the index file *should* be deleted too. If this doesn't happen, a special error message should be generated. Using the index, the supervisor can decide to send a job to that particular node (in essence, setting up a new remote that includes only that node).
-- There are "manual" actions in the supervisor GUI to spin up buffer write servers and then send particular buffers to particular buffer write servers, or to delete them.
-
+- Make a separate conda package for bin/seamless. 
+Add seamless-upload, seamless-upload-zip, seamless-upload-vault and seamless-download as copies of seamless-tools/scripts/upload.py etc.,
+rather than the Docker wrappers of seamless-cli/seamless-upload etc.
