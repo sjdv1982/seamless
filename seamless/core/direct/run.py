@@ -240,7 +240,7 @@ async def run_transformation_dict_async(transformation_dict, *, fingertip, scrat
     transformation = calculate_checksum(transformation_buffer)
     result_checksum = await run_transformation_async(transformation, scratch=scratch, fingertip=fingertip, tf_dunder=tf_dunder, cache_only=True)
     if result_checksum is not None:
-        buffer_cache.decref(result_checksum)
+        ###buffer_cache.decref(result_checksum) #TODO: look into this
         return result_checksum
     
     if "__code_checksum__" in transformation_dict:
