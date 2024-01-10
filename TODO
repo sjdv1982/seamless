@@ -6,9 +6,11 @@ TODO before 0.12 release:
 
 - Re-review new-project, add delegation? UPDATE: read it from a project.yaml...
 
-- Clean up seamless-tools database tools and revive database-run-actions.
-Make sure it is usable from both bin/seamless and workflow seamless.
-Re-run pin-filesystem.sh tests.
+- Clean up seamless-tools/database-* tools 
+
+- revive database-run-actions. Make sure it is usable from both bin/seamless and workflow seamless. 
+
+- Re-run pin-filesystem.sh tests.
 
 - Clean up and re-run all tests.
 
