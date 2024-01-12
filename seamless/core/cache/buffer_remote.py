@@ -136,6 +136,13 @@ def set_read_buffer_folders(read_buffer_folders):
     else:
         _read_folders = None
 
+def add_read_buffer_folder(read_buffer_folder):
+    global _read_folders
+    if _read_folders:
+        _read_folders.append(read_buffer_folder)
+    else:
+        _read_folders = [read_buffer_folder]
+
 def set_read_buffer_servers(read_buffer_servers):
     global _read_servers
     if read_buffer_servers:
@@ -148,6 +155,14 @@ def set_read_buffer_servers(read_buffer_servers):
     else:
         _known_buffers.clear()
         _read_servers = None
+
+def add_read_buffer_server(read_buffer_server):
+    global _read_servers
+    if _read_servers:
+        _read_servers.append(read_buffer_server)
+    else:
+        _read_servers = [read_buffer_server]
+
 
 def set_write_buffer_server(write_buffer_server):
     global _write_server

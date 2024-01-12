@@ -253,6 +253,7 @@ class BufferCache:
             if buffer is not None:
                 assert isinstance(buffer, bytes)
             else:
+                # fair.get_buffer may download the buffer using the .access method
                 buffer = fair.get_buffer(checksum, deep=deep)
                 if buffer is not None:
                     assert isinstance(buffer, bytes)

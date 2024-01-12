@@ -128,7 +128,6 @@ def _init_buffer_remote_from_env(only_level_1=False):
     except (ConnectionError, requests.exceptions.ConnectionError):
         raise BufferServerConnectionError(f"Cannot connect to write buffer server {write_buffer_server}") from None
     
-
 def delegate(level=4, *, block_local=True, reraise_exceptions=False):
     """Delegate computations and/or data to remote servers and folders.
 
@@ -215,6 +214,28 @@ to disable it. Continuing without delegation.
         print(msg, file=sys.stderr)
     _checked_delegation = True
 
+def add_buffer_folder(folder, read_only=True):    
+    if read_only:
+        min_level = 1
+    else:
+        min_level = 2
+    if _delegate_level is None or _delegate_level < min_level:
+        raise RuntimeError(f"Delegation level {min_level} is required")
+    add_read_buffer_folder(folder)
+    if not read_only:
+        set_write_buffer_folder(folder)
+
+def add_buffer_server(url, read_only=True):    
+    if read_only:
+        min_level = 1
+    else:
+        min_level = 2
+    if _delegate_level is None or _delegate_level < min_level:
+        raise RuntimeError(f"Delegation level {min_level} is required")
+    add_read_buffer_server(url)
+    if not read_only:
+        set_write_buffer_server(url)
+
 class InProcessAssistant(ABC):
     remote = False
     @abstractmethod
@@ -228,11 +249,12 @@ def set_inprocess_assistant(assistant: InProcessAssistant):
         raise TypeError(type(assistant))
     _assistant = assistant
     _delegate_level = 4
-    
+
 from .core.cache.database_client import database
 from .core.manager import block, unblock, block_local as _block_local, unblock_local
 from .core.manager.tasks import set_parallel_evaluations
 from .core.cache.buffer_remote import (
-    set_read_buffer_folders, set_read_buffer_servers, set_write_buffer_server
+    set_read_buffer_folders, set_read_buffer_servers, set_write_buffer_server,
+    add_read_buffer_folder, add_read_buffer_server
 )
 from .core.transformation import set_ncores

@@ -3,7 +3,6 @@ import copy
 
 import logging
 
-from ...download_buffer import download_buffer_from_servers
 from ..cache.buffer_cache import buffer_cache
 from ... import calculate_checksum, calculate_dict_checksum
 
@@ -341,11 +340,6 @@ class CacheManager:
             exc_str = await fingertipper.run()
             
             buffer = get_buffer(checksum,remote=remote)
-            if buffer is not None:
-                return buffer
-
-        if remote:
-            buffer = download_buffer_from_servers(checksum)
             if buffer is not None:
                 return buffer
 

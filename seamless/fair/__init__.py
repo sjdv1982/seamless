@@ -1,4 +1,5 @@
 import json, os
+import sys
 import urllib.parse
 from seamless.download_buffer import download_buffer_sync, session
 from requests.exceptions import ConnectionError, ReadTimeout
@@ -16,13 +17,12 @@ def add_server(url):
     _servers.append(url)
 
 _classification = {
-    "deepbuffer": set(),
     "bytes_item": set(),
     "mixed_item": set(),
     "keyorder": set(),
 }  
 def _classify(checksum:str, classification: str):
-    if classification not in ("deepbuffer" , "bytes_item" , "mixed_item", "keyorder"):
+    if classification not in ("bytes_item" , "mixed_item", "keyorder"):
         raise ValueError(classification)
     if isinstance(checksum, bytes):
         checksum = checksum.hex()
@@ -35,6 +35,7 @@ def _classify(checksum:str, classification: str):
     _classification[classification].add(checksum)
 
 def _download(checksum:str, template, *, checksum_content:bool, verbose:bool=False):
+    from seamless.core.protocol.get_buffer import get_buffer as get_buffer0
     if checksum is None:
         return None
     if isinstance(checksum, bytes):
@@ -47,8 +48,15 @@ def _download(checksum:str, template, *, checksum_content:bool, verbose:bool=Fal
         raise ValueError(checksum)
     request = template + checksum
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
-    checksum2 = checksum if checksum_content else None
-    return download_buffer_sync(checksum2, urls, verbose=verbose)
+    if checksum_content:
+        result = get_buffer0(checksum, remote=False)
+        if result is None:
+            result = download_buffer_sync(checksum, urls, verbose=verbose)
+        if result is None:
+            result = get_buffer0(checksum, remote=True)    
+    else:
+        result = download_buffer_sync(None, urls, verbose=verbose)
+    return result
 
 def get_dataset(dataset:str):
     request = "/machine/dataset/{}".format(dataset)
@@ -82,18 +90,25 @@ def find(checksum:str):
             continue
     raise ConnectionError("Cannot contact any FAIR server")
 
-def deepbuffer(checksum:str, verbose:bool=False):
-    return _download(checksum, "machine/deepbuffer/", checksum_content=True, verbose=verbose)
-
 def keyorder(checksum:str, verbose:bool=False):
     return _download(checksum, "machine/keyorder/", checksum_content=False, verbose=verbose)
 
 def access(checksum:str, celltype:str, *, verbose:bool=False):
+    from seamless.core.protocol.get_buffer import get_buffer as get_buffer0
+    result = get_buffer0(checksum, remote=False)
+    if result is not None:
+        return result
     url_infos_buf = _download(checksum, "machine/access/", checksum_content=False, verbose=verbose)
     if url_infos_buf is None:
         return None
     url_infos = json.loads(url_infos_buf.decode())
-    return download_buffer_sync(checksum, url_infos, celltype, verbose=verbose)
+    result = download_buffer_sync(checksum, url_infos, celltype, verbose=verbose)
+    if result is None:
+        if verbose:
+            print("Try remote buffer cache...", file=sys.stderr)
+            sys.stderr.flush()
+        result = get_buffer0(checksum, remote=True)
+    return result
 
 def get_buffer(checksum:str, deep=False):
     if checksum is None:
@@ -108,19 +123,13 @@ def get_buffer(checksum:str, deep=False):
         raise ValueError(checksum)
     for c in _classification:
         if checksum in _classification[c]:
-            if c == "deepbuffer":
-                return deepbuffer(checksum)
-            elif c == "bytes_item":
+            if c == "bytes_item":
                 return access(checksum, "bytes")
             elif c == "mixed_item":
                 return access(checksum, "mixed")
             elif c == "keyorder":
                 return keyorder(checksum)
     if deep:
-        result = deepbuffer(checksum)
-        if result is not None:
-            _classify(checksum, "deepbuffer")
-            return result
         result = keyorder(checksum)
         if result is not None:
             _classify(checksum, "keyorder")
@@ -167,7 +176,6 @@ def find_distribution(dataset:str, *, type:str=None, version:str=None, date:str=
                 continue       
             else:
                 distribution = response.json()
-                _classify(distribution["checksum"], "deepbuffer")
                 keyorder = distribution.get("keyorder")
                 if keyorder is not None:
                     _classify(keyorder, "keyorder")
@@ -194,13 +202,12 @@ def find_checksum(dataset:str, *, type:str=None, version:str=None, date:str=None
                 if len(checksum) != 64:
                     raise ValueError(checksum)
                 bytes.fromhex(checksum)
-                _classify(checksum, "deepbuffer")
                 return checksum
         except (ConnectionError, ReadTimeout):
             continue
     raise ConnectionError("Cannot contact any FAIR server")        
 
-__all__ = ["get_dataset", "find", "get_buffer", "deepbuffer", "access", "keyorder", "find_distribution", "find_checksum"]
+__all__ = ["get_dataset", "find", "get_buffer", "access", "keyorder", "find_distribution", "find_checksum"]
 
 def __dir__():
     return sorted(__all__)

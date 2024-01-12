@@ -290,7 +290,7 @@ def download_buffer_sync(checksum, url_infos, celltype="bytes", *, verbose=False
                 else:
                     raise SeamlessConversionError
             if checksum is not None and buf_checksum != checksum:
-                print("WARNING: '{}' has the wrong checksum".format(url))
+                print("WARNING: '{}' has the wrong checksum".format(url), file=sys.stderr)
                 continue
             return buf
         except (ConnectionError, ReadTimeout):
@@ -323,39 +323,6 @@ async def download_buffer(checksum, url_infos, celltype="bytes"):
     loop = asyncio.get_event_loop()
     future2 = asyncio.wrap_future(future,loop=loop)
     return await future2
-
-def download_buffer_from_servers(checksum):
-    # TODO: obsolete this
-    checksum = parse_checksum(checksum)
-    assert checksum is not None
-    buffer_servers = os.environ.get("SEAMLESS_BUFFER_SERVERS")
-    if buffer_servers is not None:
-        buffer_servers = buffer_servers.split(",")
-    else:
-        buffer_servers = []
-    for buffer_server in buffer_servers:
-        try:
-            url = buffer_server + "/" + checksum
-            response = session.get(url, stream=True, timeout=3)
-            if int(response.status_code/100) in (4,5):
-                raise ConnectionError()
-            result = []
-            for chunk in response.iter_content(100000):
-                result.append(chunk)
-            buf = b"".join(result)
-            from seamless import calculate_checksum
-            buf_checksum = calculate_checksum(buf, hex=True)
-            if buf_checksum != checksum:
-                print("WARNING: '{}' has the wrong checksum".format(url))
-                continue
-        except (ConnectionError, ReadTimeout):
-            #import traceback; traceback.print_exc()
-            continue
-        except Exception:
-            import traceback; traceback.print_exc()
-            continue
-
-        return buf
 
 if __name__ == "__main__":
     checksum1 = "d4ee1515e0a746aa3b8531f1545753e6b2d4cf272632121f1827f21c64a29722"
