@@ -1,3 +1,5 @@
+raise Exception # add RPBS buffer server
+
 from seamless.highlevel import Context, Cell, DeepFolderCell, FolderCell
 import shutil
 shutil.rmtree("/tmp/pdb_folder", ignore_errors=True)

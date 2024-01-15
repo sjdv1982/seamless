@@ -1,3 +1,5 @@
+raise Exception # add RPBS buffer server
+
 from seamless.highlevel import Context, Cell, DeepCell
 ctx = Context()
 
