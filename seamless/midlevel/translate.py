@@ -202,6 +202,8 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
         if ct == "structured":
             if node["type"] == "foldercell":
                 cs = checksum.get("value")
+                if cs is None:
+                    cs = checksum.get("auth")
                 if cs is not None:
                     if mount is not None and mount.get("mode") == "r":
                         child_ctx.mountcell._set_checksum(cs, initial=True)
