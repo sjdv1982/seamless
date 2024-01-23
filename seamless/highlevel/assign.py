@@ -637,6 +637,11 @@ def assign(ctx, path, value, *, help_context=False):
         if help_context:
             raise TypeError(type(value))
         if value._path is None:
+            ctx.remove_connections(
+                path,
+                endpoint="target",
+                match="all"
+            )
             value._init(ctx, path, set_node=True)
         else:
             assert value._parent() is not None
