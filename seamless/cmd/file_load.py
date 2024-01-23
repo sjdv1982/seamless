@@ -1,8 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor
+import functools
 import os
 
 from .message import message as msg
-from .register import register_file, check_file, check_buffer, remote_write_buffer
+from .register import register_file, check_file, check_buffer, _register_buffer
 from .bytes2human import bytes2human
 from .confirm import confirm_yn
 from .exceptions import SeamlessSystemExit
@@ -37,7 +38,8 @@ def files_to_checksums(
     max_upload_files: int | None,
     max_upload_size: int | None,
     nparallel: int = 20,
-    auto_confirm: str | None
+    auto_confirm: str | None,
+    destination_folder: str | None = None,
 ):
     """Convert a list of filenames to a dict of filename-to-checksum items
     In addition, each file buffer is added to the database.
@@ -48,6 +50,7 @@ def files_to_checksums(
     directories: 
       keys are entries in filelist that are directories instead of files.
       values are the mapped directory paths (as they will appear on the server)
+    destination_folder: instead of uploading to a buffer server, write to this folder
     """
 
     all_filelist = [f for f in filelist if f not in directories]
@@ -158,13 +161,18 @@ def files_to_checksums(
         msg(1, "Upload no files")
 
     if upload_filelist:
+        reg_file = functools.partial(register_file, destination_folder=destination_folder)
         with ThreadPoolExecutor(max_workers=nparallel) as executor:
-            for filename, checksum in zip(upload_filelist, executor.map(register_file, upload_filelist)):
+            for filename, checksum in zip(upload_filelist, executor.map(reg_file, upload_filelist)):
                 assert all_result[filename] == checksum, (filename, checksum, all_result[filename])
 
     if upload_buffers:
+        reg_buf = functools.partial(_register_buffer, destination_folder=destination_folder)
         with ThreadPoolExecutor(max_workers=nparallel) as executor:
-            executor.map(remote_write_buffer, upload_buffers.keys(), upload_buffers.values())
+            executor.map(reg_buf, 
+                         [bytes.fromhex(k) for k in upload_buffers.keys()], 
+                         upload_buffers.values()
+                        )
 
     result = {filename: all_result[filename] for filename in filelist}
 
