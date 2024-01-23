@@ -11,6 +11,7 @@ from requests.exceptions import ConnectionError
 from urllib3.exceptions import ProtocolError
 from seamless.core.transformation import SeamlessStreamTransformationError
 from seamless.core.mount_directory import write_to_directory
+from seamless.core.cache.buffer_remote import _read_folders
 
 resultfile = "RESULT"
 
@@ -123,10 +124,9 @@ try:
     volumes = {}
     options["volumes"] = volumes
     volumes[tempdir] = {"bind": "/run", "mode": "rw"}
-    for pin in FILESYSTEM:
-        fs = FILESYSTEM[pin]
-        if fs["filesystem"] and fs["mode"] == "directory": 
-            volumes[pin] = {"bind": PINS[pin], "mode": "ro"}
+    if _read_folders:
+        for folder in _read_folders:
+            volumes[folder] = {"bind": folder, "mode": "ro"}
 
     if "working_dir" not in options:
         options["working_dir"] = "/run"

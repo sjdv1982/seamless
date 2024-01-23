@@ -146,7 +146,6 @@ def prepare_bash_transformation(
 
     _, transformation_checksum = register_transformation_dict(transformation_dict)
  
-    # TODO: add support for filesystem __format__ annotation
     return Checksum(transformation_checksum), transformation_dict
 
 def run_transformation(transformation_dict, *, undo, fingertip=False, scratch=False):

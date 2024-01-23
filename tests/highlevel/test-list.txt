@@ -13,7 +13,7 @@ set-python-invalid.py: can also be run in interactive mode (mount /tmp/code.py)
 mime.py
 test-html.py
 auth-checksum.py
-filezones.py: run with Seamless database
+get-file-and-directory.sh
 independence-error-message.py
 schema.py
 schema-invalid.py

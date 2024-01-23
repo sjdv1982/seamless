@@ -77,7 +77,11 @@ def get_filename(checksum):
         return None
     if _read_folders is None:
         return None
-    raise NotImplementedError
+    for folder in _read_folders:
+        filename = os.path.join(folder, checksum.hex())
+        if os.path.exists(filename):
+            return filename
+    return None
 
 def get_directory(checksum):
     checksum = parse_checksum(checksum, as_bytes=True)
@@ -85,7 +89,11 @@ def get_directory(checksum):
         return None
     if _read_folders is None:
         return None
-    raise NotImplementedError
+    for folder in _read_folders:
+        dirname = os.path.join(folder, "deployed", checksum.hex())
+        if os.path.exists(dirname):
+            return dirname
+    return None
 
 def write_buffer(checksum, buffer):
     checksum = parse_checksum(checksum, as_bytes=True)
@@ -132,16 +140,17 @@ def can_write():
 def set_read_buffer_folders(read_buffer_folders):
     global _read_folders
     if read_buffer_folders:
-        _read_folders = read_buffer_folders
+        _read_folders = [os.path.abspath(f) for f in read_buffer_folders]
     else:
         _read_folders = None
 
 def add_read_buffer_folder(read_buffer_folder):
     global _read_folders
+    f = os.path.abspath(read_buffer_folder)
     if _read_folders:
-        _read_folders.append(read_buffer_folder)
+        _read_folders.append(f)
     else:
-        _read_folders = [read_buffer_folder]
+        _read_folders = [f]
 
 def set_read_buffer_servers(read_buffer_servers):
     global _read_servers

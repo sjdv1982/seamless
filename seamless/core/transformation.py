@@ -185,11 +185,9 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
                 optional = fs["optional"]
                 mode = fs["mode"]
                 if mode == "file":
-                    fs_result = None # TODO
-                    ### fs_result = buffer_remote.get_filename(checksum)
+                    fs_result = buffer_remote.get_filename(checksum)
                 else: # mode == "directory"
-                    fs_result = None # TODO
-                    ### fs_result = buffer_remote.get_directory(checksum)
+                    fs_result = buffer_remote.get_directory(checksum)
                 fs_entry = deepcopy(fs)
                 if fs_result is None:
                     if not optional:
