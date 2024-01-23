@@ -42,7 +42,7 @@ def translate_bash_transformer(
                 "celltype": "plain",
                 "subcelltype": "module"
             })
-        elif pin.get("celltype") in ("folder", "deepfolder", "deepcell"):
+        elif pin.get("celltype") in ("folder", "deepfolder", "deepcell", "bytes"):
             if pin["celltype"] == "deepcell":
                 pin = {
                     "celltype": "mixed",
@@ -70,6 +70,16 @@ def translate_bash_transformer(
                         "optional": True
                     },
                 }
+            elif pin["celltype"] == "bytes":
+                pin = {
+                    "celltype": "bytes",
+                    "hash_pattern": None,
+                    "filesystem": {
+                        "mode": "file",
+                        "optional": True
+                    },
+                }
+
             pin["io"] = "input"
             deep_pins[pinname] = pin
             node_pins.pop(pinname)
@@ -171,11 +181,6 @@ def translate_bash_transformer(
         if celltype == "checksum":
             celltype = "plain"
         p["celltype"] = celltype
-        if celltype == "bytes":
-            p["filesystem"] = {
-                "mode": "file",
-                "optional": True
-            }            
         all_pins[pinname] = p
     result_pin = {
         "io": "output", 
