@@ -8,6 +8,11 @@ future.sh. Expected output is:
     Waiting for future 'job1.txt.FUTURE' (2 seconds), 
     then waiting on the other future, 
     then "3 5 8"
+get-file-and-directory.sh
+    Needs an assistant name as input, e.g. ASSISTANT=micro-assistant-devel
+    Run as: ./get-file-and-directory.sh $ASSISTANT | tee test-outputs/get-file-and-directory.out
+    Otherwise, similar to the tests/highlevel version
+
 manyjobs.sh
     /bin/seamless version of highlevel/imperative-manyjobs.py
     Needs to be run with a Dask cluster, 1000x ~20 sec jobs. 
