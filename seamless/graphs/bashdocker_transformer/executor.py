@@ -92,6 +92,9 @@ try:
         if pin in FILESYSTEM:
             if FILESYSTEM[pin]["filesystem"]:
                 env[pin] = v
+                pin_parent = os.path.dirname(pin)
+                if len(pin_parent):
+                    os.makedirs(pin_parent, exist_ok=True)
                 os.symlink(v, pin)
                 continue
             elif FILESYSTEM[pin]["mode"] == "directory":
