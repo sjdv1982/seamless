@@ -78,7 +78,7 @@ def set_structured_cell_from_checksum(cell, checksum, is_deepcell=False):
         """
 
     k = "origin" if is_deepcell else "auth"
-    if k in checksum:
+    if k in checksum and checksum[k] is not None:
         if cell.auth is None:
             if not is_deepcell:                
                 msg = "Warning: {} has no independence, but an {} checksum is present"

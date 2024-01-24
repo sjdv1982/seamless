@@ -1,29 +1,31 @@
 TODO before 0.12 release: 
 
-- Test the fair server (fairdir: /mnt/external-disk/reproducible-pdb/fairdir . Add ../buffers and ../deepbuffers as well). Rip the RPBS fairserver, create add_fairserver API. With this, adapt and test
-reproducible PDB viewer and deepcell-pdb / deepfolder-pdb (both with RPBS and local fairserver).
+- Add a singularity rewriter for bashdocker jobs. TODO
 
-- Add bufferdir_deploy_deepfolder tool (checksum => ./deployed/<folder>, either hardlinks or softlinks into bufferdir). DONE.
+- Test the fair server (fairdir: /mnt/external-disk/reproducible-pdb/fairdir . Add ../buffers and ../deepbuffers as well in the test). Rip the RPBS fairserver, create add_fairserver API. With this, adapt and test
+reproducible PDB viewer and deepcell-pdb / deepfolder-pdb (both with RPBS and local fairserver). TODO
 
-- Make sure that bash jobs with a buffer read folder have get_filename working directory. Rip filezones. Use bufferdir_deploy_deepfolder, then test get_directory feature. Test with /bin/seamless as well!
+- Add bufferdir-deploy-deepfolder tool (checksum => ./deployed/<folder>, either hardlinks or softlinks into bufferdir). DONE.
 
-- Make sure that save_vault respects scratch (i.e. make it behave the same as buffer_remote.write). Document the vault + database path as a valid (advanced-use) setup. Rip the warning in init_database_from_env, refactor/document API.
+- Make sure that bash jobs with a buffer read folder have get_filename working directory. Rip filezones. Use bufferdir_deploy_deepfolder, then test get_directory feature. Test with /bin/seamless as well! DONE.
 
-- Re-review new-project, add delegation? UPDATE: read some settings from a project.yaml...
+- Make sure that save_vault respects scratch (i.e. make it behave the same as buffer_remote.write). Document the vault + database path as a valid (advanced-use) setup. Rip the warning in init_database_from_env, refactor/document API. TODO
 
-- Clean up seamless-tools/database-* tools: Mostly DONE. 
-TODO: flatfolder-to-bucketfolder, remove-invalid-buffers. 
+- Re-review new-project, add delegation? UPDATE: read some settings from a project.yaml... TODO
+
+- Clean up seamless-tools/database-* tools: DONE
 
 - revive database-run-actions. DONE.
 
-- Re-run pin-filesystem.sh tests.
+- Re-run pin-filesystem.sh tests. DONE
 
-- Run tests/examples requiring serve-graph, add seamless.delegate if needed
+- Run tests/examples requiring serve-graph, add seamless.delegate if needed TODO
 
 - Make sure the examples can function without RPBS buffer server, or add it in the notebook. DONE
 
-- Clean up and re-run all tests.
+======================
 
+- Clean up and re-run all tests.
 
 - Documentation. 
 

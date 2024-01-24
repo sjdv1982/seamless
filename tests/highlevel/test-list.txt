@@ -100,9 +100,9 @@ twopi-graph-database.sh: run with Seamless database
                       then: seamless-database twopi-graph-database.yaml
                       run as i=twopi-graph-database; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
 twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
-pin-filesystem.sh: NOT WORKING AS OF SEAMLESS 0.12
-  run as i=pin-filesystem; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
-  If not in the Docker image, set SEAMLESS_TOOLS_DIR to <seamless-tools-git>/tools
+pin-filesystem.sh:
+  Run this in an environment where seamless-upload is available
+  run as i=pin-filesystem; ./$i.sh > test-outputs/$i.out 2>&1
 reuse-compile.sh: run with Seamless database
 test-fingertip.sh: run with Seamless database
 load-graph.py

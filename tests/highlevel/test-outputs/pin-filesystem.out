@@ -1,80 +1,29 @@
-Share folder
-Computed deepfolder for testfolder: deep buffer checksum 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-Deepfolder checksum: 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-Creating hard links in /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-
 Run 1
-#1 [internal] load .dockerignore
-#1 transferring context: 2B done
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 100B done
 #1 DONE 0.0s
 
-#2 [internal] load build definition from Dockerfile
-#2 transferring dockerfile: 100B done
+#2 [internal] load metadata for docker.io/library/ubuntu:latest
 #2 DONE 0.0s
 
-#3 [internal] load metadata for docker.io/library/ubuntu:latest
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
 #3 DONE 0.0s
 
 #4 [1/2] FROM docker.io/library/ubuntu:latest
 #4 DONE 0.0s
 
 #5 [2/2] RUN apt update && apt -y install openssl
-#5 0.327 
-#5 0.327 WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
-#5 0.327 
-#5 0.531 Get:1 http://archive.ubuntu.com/ubuntu jammy InRelease [270 kB]
-#5 0.551 Get:2 http://security.ubuntu.com/ubuntu jammy-security InRelease [110 kB]
-#5 0.984 Get:3 http://security.ubuntu.com/ubuntu jammy-security/main amd64 Packages [811 kB]
-#5 1.019 Get:4 http://archive.ubuntu.com/ubuntu jammy-updates InRelease [119 kB]
-#5 1.293 Get:5 http://archive.ubuntu.com/ubuntu jammy-backports InRelease [107 kB]
-#5 1.445 Get:6 http://archive.ubuntu.com/ubuntu jammy/multiverse amd64 Packages [266 kB]
-#5 1.525 Get:7 http://archive.ubuntu.com/ubuntu jammy/universe amd64 Packages [17.5 MB]
-#5 1.698 Get:8 http://security.ubuntu.com/ubuntu jammy-security/multiverse amd64 Packages [5557 B]
-#5 1.704 Get:9 http://security.ubuntu.com/ubuntu jammy-security/restricted amd64 Packages [752 kB]
-#5 2.414 Get:10 http://security.ubuntu.com/ubuntu jammy-security/universe amd64 Packages [880 kB]
-#5 6.577 Get:11 http://archive.ubuntu.com/ubuntu jammy/restricted amd64 Packages [164 kB]
-#5 6.617 Get:12 http://archive.ubuntu.com/ubuntu jammy/main amd64 Packages [1792 kB]
-#5 6.958 Get:13 http://archive.ubuntu.com/ubuntu jammy-updates/universe amd64 Packages [1119 kB]
-#5 7.241 Get:14 http://archive.ubuntu.com/ubuntu jammy-updates/multiverse amd64 Packages [10.9 kB]
-#5 7.241 Get:15 http://archive.ubuntu.com/ubuntu jammy-updates/restricted amd64 Packages [808 kB]
-#5 7.295 Get:16 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 Packages [1145 kB]
-#5 7.556 Get:17 http://archive.ubuntu.com/ubuntu jammy-backports/universe amd64 Packages [22.4 kB]
-#5 7.592 Get:18 http://archive.ubuntu.com/ubuntu jammy-backports/main amd64 Packages [49.0 kB]
-#5 7.625 Fetched 25.9 MB in 7s (3559 kB/s)
-#5 7.625 Reading package lists...
-#5 8.028 Building dependency tree...
-#5 8.109 Reading state information...
-#5 8.118 14 packages can be upgraded. Run 'apt list --upgradable' to see them.
-#5 8.121 
-#5 8.121 WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
-#5 8.121 
-#5 8.140 Reading package lists...
-#5 8.563 Building dependency tree...
-#5 8.644 Reading state information...
-#5 8.724 Suggested packages:
-#5 8.724   ca-certificates
-#5 8.737 The following NEW packages will be installed:
-#5 8.737   openssl
-#5 8.925 0 upgraded, 1 newly installed, 0 to remove and 14 not upgraded.
-#5 8.925 Need to get 1184 kB of archives.
-#5 8.925 After this operation, 2102 kB of additional disk space will be used.
-#5 8.925 Get:1 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 openssl amd64 3.0.2-0ubuntu1.8 [1184 kB]
-#5 9.653 debconf: delaying package configuration, since apt-utils is not installed
-#5 9.669 Fetched 1184 kB in 1s (1431 kB/s)
-#5 9.688 Selecting previously unselected package openssl.
-#5 9.688 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 4395 files and directories currently installed.)
-#5 9.706 Preparing to unpack .../openssl_3.0.2-0ubuntu1.8_amd64.deb ...
-#5 9.709 Unpacking openssl (3.0.2-0ubuntu1.8) ...
-#5 9.741 Setting up openssl (3.0.2-0ubuntu1.8) ...
-#5 DONE 9.8s
+#5 CACHED
 
 #6 exporting to image
-#6 exporting layers
-#6 exporting layers 0.2s done
-#6 writing image sha256:93daa32ce8995246a08d73b683956c3ea56e9ee128cf0c97528db3ec67f7a89f done
+#6 exporting layers done
+#6 writing image sha256:d6203e5b44a211385b73a0a3c23e26e8ef07841816c4f7d6baf3e35a28564d39 done
 #6 naming to docker.io/library/openssl done
-#6 DONE 0.2s
-Database not found
+#6 DONE 0.0s
+Buffer read folder not found
 None
 seamless.core.cache.CacheMissError: 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 
@@ -121,20 +70,21 @@ Stage 5a
 *tf*: Status: upstream => deepfolderpin undefined, folder_sub_pin undefined
 None
 None
-11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-
-Start database
-
+Upload folder 
+seamless: Verbosity set to 1
+seamless: Upload 8 files, total 2.12 kB
 Run 2
+#0 building with "default" instance using docker driver
+
 #1 [internal] load build definition from Dockerfile
 #1 transferring dockerfile: 100B done
 #1 DONE 0.0s
 
-#2 [internal] load .dockerignore
-#2 transferring context: 2B done
+#2 [internal] load metadata for docker.io/library/ubuntu:latest
 #2 DONE 0.0s
 
-#3 [internal] load metadata for docker.io/library/ubuntu:latest
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
 #3 DONE 0.0s
 
 #4 [1/2] FROM docker.io/library/ubuntu:latest
@@ -145,10 +95,86 @@ Run 2
 
 #6 exporting to image
 #6 exporting layers done
-#6 writing image sha256:d147b2f12c60cfc17c15e2b8763509f89e1ca99001ecc618fed2cea8805dfa92 done
+#6 writing image sha256:d6203e5b44a211385b73a0a3c23e26e8ef07841816c4f7d6baf3e35a28564d39 done
 #6 naming to docker.io/library/openssl done
 #6 DONE 0.0s
-Database found
+Buffer read folder found
+{'sub/test2.txt': '4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4', 'sub/test3.npy': 'ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862', 'test.dat': '7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea', 'test.json': '6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22', 'test.npy': 'cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3', 'test.txt': 'c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c', 'test2.dat': 'c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c'}
+None
+11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+
+*tf*: Status: error
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+
+Stage 2
+{'deepfolderpin': {'celltype': 'deepfolder'}, 'folder_sub_pin': {'celltype': 'deepfolder'}}
+*tf*: Status: error
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+
+11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+0bc1f7e12a942d58124b0247ab307b4514e9ab583312c29e7c47413e831ee3d8 []
+['sub/test2.txt', 'sub/test3.npy']
+
+Stage 3
+dict_keys(['sub/test2.txt', 'sub/test3.npy'])
+{'sub/test2.txt': 'And another\ntest\n', 'sub/test3.npy': array([10, 11, 12, 13, 14, 15, 16, 17, 18, 19])}
+0bc1f7e12a942d58124b0247ab307b4514e9ab583312c29e7c47413e831ee3d8
+{'deepfolderpin': {'celltype': 'deepfolder'}, 'folder_sub_pin': {'celltype': 'folder'}}
+*tf*: Status: error
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+
+Stage 4
+Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
+dict_keys(['sub/test2.txt', 'sub/test3.npy'])
+0bc1f7e12a942d58124b0247ab307b4514e9ab583312c29e7c47413e831ee3d8
+*tf*: Status: error
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+Stage 4a
+Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
+*tf*: Status: error
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+Stage 5
+Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
+*tf*: Status: error
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+Stage 5a
+Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
+*tf*: Status: error
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+deepfolderpin: could not find file/directory for 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+Deploy folder 
+Run 3
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 100B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/ubuntu:latest
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/2] FROM docker.io/library/ubuntu:latest
+#4 DONE 0.0s
+
+#5 [2/2] RUN apt update && apt -y install openssl
+#5 CACHED
+
+#6 exporting to image
+#6 exporting layers done
+#6 writing image sha256:d6203e5b44a211385b73a0a3c23e26e8ef07841816c4f7d6baf3e35a28564d39 done
+#6 naming to docker.io/library/openssl done
+#6 DONE 0.0s
+Buffer read folder found
 {'sub/test2.txt': '4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4', 'sub/test3.npy': 'ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862', 'test.dat': '7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea', 'test.json': '6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22', 'test.npy': 'cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3', 'test.txt': 'c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c', 'test2.dat': 'c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c'}
 None
 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
@@ -165,7 +191,7 @@ None
 dict_keys(['deepfolderpin'])
 deepfolderpin
 {'mode': 'directory', 'optional': False, 'filesystem': True}
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 
 
 *************************************************
@@ -199,7 +225,7 @@ None
 dict_keys(['deepfolderpin', 'folder_sub_pin'])
 deepfolderpin
 {'mode': 'directory', 'optional': False, 'filesystem': True}
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 
 folder_sub_pin
 {'mode': 'directory', 'optional': True, 'filesystem': False}
@@ -227,26 +253,26 @@ LS
 deepfolderpin
 folder_sub_pin
 
-DEEPFOLDERPIN /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+DEEPFOLDERPIN /tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 FOLDER_SUB_PIN folder_sub_pin
 deepfolderpin/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
 deepfolderpin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
-deepfolderpin/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 deepfolderpin/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
 deepfolderpin/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
 deepfolderpin/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
 deepfolderpin/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
+deepfolderpin/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 
 folder_sub_pin/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
 folder_sub_pin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
 
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 
 
 *************************************************
@@ -269,30 +295,30 @@ deepfolderpin
 folder_sub_pin
 TESTSTRING
 
-DEEPFOLDERPIN /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+DEEPFOLDERPIN /tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 FOLDER_SUB_PIN folder_sub_pin
 deepfolderpin/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
 deepfolderpin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
-deepfolderpin/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 deepfolderpin/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
 deepfolderpin/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
 deepfolderpin/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
 deepfolderpin/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
+deepfolderpin/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 
 folder_sub_pin/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
 folder_sub_pin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
 
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
-/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 
 
 *************************************************
-Execution time: 0.0 seconds
+Execution time: 0.1 seconds
 *************************************************
 Stage 5
 Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
@@ -310,16 +336,30 @@ DOCKER-COMMAND
 deepfolderpin
 folder_sub_pin
 
-DEEPFOLDERPIN /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+DEEPFOLDERPIN /tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 FOLDER_SUB_PIN folder_sub_pin
+deepfolderpin/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
+deepfolderpin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
+deepfolderpin/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
+deepfolderpin/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
+deepfolderpin/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
+deepfolderpin/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
+deepfolderpin/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 
 folder_sub_pin/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
 folder_sub_pin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
 
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 
 
 *************************************************
-Execution time: 0.6 seconds
+Execution time: 0.9 seconds
 *************************************************
 Stage 5a
 Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
@@ -339,18 +379,28 @@ deepfolderpin
 folder_sub_pin
 TESTSTRING
 
-DEEPFOLDERPIN /tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
+DEEPFOLDERPIN /tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
 FOLDER_SUB_PIN folder_sub_pin
+deepfolderpin/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
+deepfolderpin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
+deepfolderpin/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
+deepfolderpin/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
+deepfolderpin/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
+deepfolderpin/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
+deepfolderpin/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 
 folder_sub_pin/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
 folder_sub_pin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
 
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test2.txt 4a8ed052bc1d65216c5a85de0356f8eb4495d90d67bfb2b05ee088fd5006caf4
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86ba8c5121124862
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.dat 7079140a8a96995be8584b9b1bba45b0393f589d9c6ee6556613cc579e5280ea
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.json 6879d0d891fd12c6e198afef2457fef3598a64e5f2d81f537d7ae6877f3b7a22
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.npy cd07eacd36105d61bf2857d6a5721934be62911a9ef12bea12eead382e7606a3
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test.txt c80240ba2ea29ef033fc17c25a1ccd586251d7e4858a6c62086d8bb2e133fe7c
+/tmp/dummy-bufferfolder/deployed/11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047/test2.dat c8fd9c4463ccfabc3a8ba018666af4ee893127cc2e42389415a92a36fe9f639c
 
 
 *************************************************
-Execution time: 0.6 seconds
+Execution time: 0.7 seconds
 *************************************************
-11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-
-Server log
-Press Ctrl+C to end

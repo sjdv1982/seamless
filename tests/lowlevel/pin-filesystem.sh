@@ -24,5 +24,7 @@ seamless-bufferdir-deploy-deepfolder $(cat /tmp/PIN-FILESYSTEM-FOLDER1.CHECKSUM)
 echo 'Run 4'
 python3 -u pin-filesystem.py
 rm -rf /tmp/PIN-FILESYSTEM-FOLDER1
+rm -rf /tmp/PIN-FILESYSTEM-FOLDER1.*
 rm -rf /tmp/PIN-FILESYSTEM-FOLDER2
+rm -rf /tmp/PIN-FILESYSTEM-FOLDER2.*
 rm -rf /tmp/dummy-bufferfolder

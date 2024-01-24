@@ -1,6 +1,4 @@
 import glob
-from re import S
-from requests import ConnectionError
 
 import subprocess
 docker_file = """FROM ubuntu:latest
@@ -8,23 +6,24 @@ RUN apt update && apt -y install openssl
 """
 subprocess.run("docker build -t openssl -", shell=True,input=docker_file.encode())
 
-import seamless
-from seamless.highlevel.Cell import FolderCell
-raise NotImplementedError
-try:
-    seamless.database_cache.connect()
-    print("Database found")
-except ConnectionError:
-    print("Database not found")
 
+import seamless
+from seamless.config import ConfigurationError
+
+try:
+    seamless.delegate(level=1, reraise_exceptions=True)
+    print("Buffer read folder found")
+except ConfigurationError:
+    print("Buffer read folder not found")
+    seamless.delegate(False)
+
+from seamless.highlevel.Cell import FolderCell
 from seamless.highlevel import Context, DeepFolderCell, Transformer
 
-def end():
-    print(deepfolder_checksum)  
-
-deepfolder_checksum = glob.glob("/tmp/PIN-FILESYSTEM-TEST-DB/shared-directories/*")[0].split("/")[-1]
-import atexit
-atexit.register(end)
+try:
+    deepfolder_checksum = seamless.parse_checksum(open("/tmp/PIN-FILESYSTEM-FOLDER.CHECKSUM").read())
+except Exception:
+    deepfolder_checksum = None
 
 ctx = Context()
 ctx.deepfolder = DeepFolderCell()
