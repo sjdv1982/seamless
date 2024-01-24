@@ -116,6 +116,8 @@ def _init_buffer_remote_from_env(only_level_1=False):
     read_buffer_folders = _split_env(read_buffer_folders, "folder")
     read_buffer_servers = env.get("SEAMLESS_READ_BUFFER_SERVERS")
     read_buffer_servers = _split_env(read_buffer_servers, "url")
+    if not read_buffer_servers and not read_buffer_folders:
+        raise ConfigurationError("No read buffer servers or folders defined")
     write_buffer_server = None
     if not only_level_1:
         write_buffer_server = env.get("SEAMLESS_WRITE_BUFFER_SERVER")

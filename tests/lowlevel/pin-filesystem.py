@@ -1,15 +1,16 @@
 import seamless
-from seamless.core import context, cell, transformer, macro, reactor, path
+from seamless.core import context, cell, transformer
 from seamless.core import macro_mode_on
+from seamless.config import ConfigurationError
 
 import seamless
-from requests import ConnectionError
 
 try:
-    seamless.delegate(level=3)
-    print("Database found")
-except ConnectionError:
-    print("Database not found")
+    seamless.delegate(level=1, reraise_exceptions=True)
+    print("Buffer read folder found")
+except ConfigurationError:
+    print("Buffer read folder not found")
+    seamless.delegate(False)
 
 d1 = "/tmp/PIN-FILESYSTEM-FOLDER1"
 d2 = "/tmp/PIN-FILESYSTEM-FOLDER2"

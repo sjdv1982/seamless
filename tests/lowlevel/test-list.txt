@@ -74,10 +74,9 @@ macro.py
 macro2.py
 macro3.py
 pin-as.py
-pin-filesystem.sh: NOT WORKING AS OF SEAMLESS 0.12
-  run as i=pin-filesystem; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
-  Make sure that the database is not running
-  If not in the Docker image, set SEAMLESS_TOOLS_DIR to <seamless-tools-git>/tools
+pin-filesystem.sh:
+  Run this in an environment where seamless-upload is available
+  run as i=pin-filesystem; ./$i.sh > test-outputs/$i.out 2>&1
 checksum-cell.py
 structured_cell/simple-deepcell.py
 structured_cell/simple-deepcell-rawbuffer.py
