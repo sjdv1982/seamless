@@ -100,6 +100,8 @@ def _init_buffer_remote_from_env(only_level_1=False):
             result = []
             for item in var.split(";"):
                 item = item.strip()
+                if not len(item):
+                    continue
                 if mode == "folder":
                     if not os.path.isdir(item):
                         logger.warning(f"Folder '{item}' does not exist")

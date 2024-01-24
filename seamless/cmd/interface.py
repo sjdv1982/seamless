@@ -71,6 +71,8 @@ def locate_files(command):
                 continue
             args2 = [Path(arg), Path(arg).expanduser()]
             for arg2 in args2:
+                if arg2.exists():
+                    interface_argindex2 = n                    
                 if len(arg2.suffix):
                     msg(
                         3,
@@ -82,7 +84,6 @@ def locate_files(command):
                         interface_file0 = Path(arg2.as_posix() + ".SEAMLESS.yaml")
                 
                         interface_file = interface_file0 if interface_file0.exists() else None
-                        interface_argindex2 = n
                         if interface_file is None:
                             msg(2, "second argument '{}' has no .SEAMLESS.yaml file".format(arg2.as_posix()))
                         else:

@@ -421,7 +421,8 @@ for commandnr, command in enumerate(commands):
         wordnode = command.wordnodes[0]
         word = command.words[0]
         word = word_substitutions.get(wordnode, word)
-        make_executables.append(word)
+        if word not in ("cd", "echo", "eval", "exec", "export", "set", "source"):
+            make_executables.append(word)
 
 ################################################################
 
