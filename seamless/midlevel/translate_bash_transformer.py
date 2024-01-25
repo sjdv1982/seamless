@@ -12,7 +12,6 @@ def translate_bash_transformer(
     from ..core.cache.buffer_cache import empty_dict_checksum
     from ..highlevel.Environment import Environment
     from ..core.environment import (
-        validate_capabilities,
         validate_conda_environment,
         validate_docker
     )
@@ -24,10 +23,9 @@ def translate_bash_transformer(
 
     is_docker_transformer = False
     if env is not None and env.get("docker") is not None:
-        ok1 = validate_capabilities(env)[0]
-        ok2 = validate_conda_environment(env)[0]
-        ok3 = validate_docker(env)[0]
-        if not (ok1 or ok2 or ok3):
+        ok1 = validate_conda_environment(env)[0]
+        ok2 = validate_docker(env)[0]
+        if not (ok1 or ok2):
             is_docker_transformer = True
 
     scratch = node.get("scratch", False)

@@ -45,12 +45,6 @@ def validate_docker(environment):
         err = "Cannot execute code locally: current Docker image name is '{}', whereas '{}' is required"
         return None, err.format(DOCKER_IMAGE, docker["name"])
 
-def validate_capabilities(environment):
-    capabilities = environment.get("capabilities")
-    if capabilities is None:
-        return None, None
-    return None, "Not implemented"
-
 
 def validate_conda_environment(environment):
     from conda.models.match_spec import MatchSpec
@@ -109,7 +103,6 @@ def validate_environment(environment):
             raise ValueError("which: '{}' is not available in command line path'".format(binary))
 
     result_conda = validate_conda_environment(environment)
-    result_capabilities = validate_capabilities(environment)
     result_docker = validate_docker(environment)
     powers = environment.get("powers", [])
     
@@ -121,8 +114,6 @@ def validate_environment(environment):
             raise ValueError("Environment power cannot be granted: '{}'".format(power))
 
     err = ""
-    if result_capabilities[0] == False:
-        err += "Capabilities:\n  " + str(result_capabilities[1]) + "\n"    
     if result_docker[0] == False:
         err += "Docker:\n  " + str(result_docker[1]) + "\n"
     if result_conda[0] == False:
@@ -131,13 +122,6 @@ def validate_environment(environment):
         raise ValueError("Environment error:\n" + err)
 
     err = ""
-    if result_capabilities[0] in (None, True):
-        if "capabilities" in powers:
-            return
-        if result_capabilities[0] == True:
-            return
-        if result_capabilities[1] is not None:
-            err += "Capabilities:\n  " + str(result_capabilities[1]) + "\n"
     if result_docker[0] in (None, True):
         if "docker" in powers:
             return
@@ -153,7 +137,7 @@ def validate_environment(environment):
         if result_conda[1] is not None:
             err += "Conda:\n  " + str(result_conda[1]) + "\n"
     if not len(err):
-        if result_conda[0] is None and result_capabilities[0] is None and result_docker[0] is None:
+        if result_conda[0] is None and result_docker[0] is None:
             return
         err = "Unknown environment error"
     raise ValueError("Environment error:\n" + err)

@@ -94,7 +94,6 @@ def unbashify(transformation_dict:dict, semantic_cache, execution_metadata:dict)
     from seamless.core.direct.run import prepare_code, prepare_transformation_pin_value
     from seamless.core.manager import Manager
     from ..core.environment import (
-        validate_capabilities,
         validate_conda_environment,
         validate_docker
     )
@@ -110,10 +109,9 @@ def unbashify(transformation_dict:dict, semantic_cache, execution_metadata:dict)
         env = manager.resolve(bytes.fromhex(env_checksum), celltype="plain", copy=True)
 
     if env is not None and env.get("docker") is not None:
-        ok1 = validate_capabilities(env)[0]
-        ok2 = validate_conda_environment(env)[0]
-        ok3 = validate_docker(env)[0]
-        if not (ok1 or ok2 or ok3):
+        ok1 = validate_conda_environment(env)[0]
+        ok2 = validate_docker(env)[0]
+        if not (ok1 or ok2):
             return unbashify_docker(transformation_dict, semantic_cache, env, execution_metadata)
 
     tdict = deepcopy(transformation_dict)
