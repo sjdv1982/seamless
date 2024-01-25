@@ -142,7 +142,8 @@ def translate_cell(node, root, namespace, inchannels, outchannels):
           fingertip_no_recompute=node.get("fingertip_no_recompute", False),
           hash_pattern=hash_pattern,
           return_context=True,
-          scratch=scratch
+          scratch=scratch,
+          auth_subchecksums_persistent=True
         )
         for inchannel in inchannels:
             cname = child.inchannels[inchannel].subpath

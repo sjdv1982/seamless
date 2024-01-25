@@ -100,7 +100,8 @@ def build_structured_cell(
   return_context=False,
   hash_pattern=None,
   validate_inchannels=True,
-  scratch=False
+  scratch=False,
+  auth_subchecksums_persistent=False
 ):
     #print("build_structured_cell", name)
     name2 = name + STRUC_ID
@@ -112,6 +113,8 @@ def build_structured_cell(
         c.data._scratch = True
     c.auth = core_cell("mixed")
     c.auth._hash_pattern = hash_pattern
+    if auth_subchecksums_persistent:
+        c.auth._subchecksums_persistent = True
     if scratch:
         c.auth._scratch = True
     c.schema = core_cell("plain")

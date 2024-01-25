@@ -15,7 +15,7 @@ class DeepRefManager:
 
     def __init__(self):
         self.buffers_to_incref = {}
-        self.persistent_to_incref = set()
+        self.subchecksums_persistent_to_incref = set()
         self.checksum_to_cell = {}
         self.checksum_to_subchecksums = {}
         self.refcount = {}
@@ -42,7 +42,7 @@ class DeepRefManager:
                 manager.structured_cell_trigger(sc, void=True)
 
 
-    def _do_incref(self, checksum, deep_structure, hash_pattern, nrefs, *, persistent):
+    def _do_incref(self, checksum, deep_structure, hash_pattern, nrefs, *, subchecksums_persistent):
         try:
             sub_checksums = deep_structure_to_checksums(
                 deep_structure, hash_pattern
@@ -53,8 +53,7 @@ class DeepRefManager:
                 return
             sub_checksums2 = [bytes.fromhex(cs) for cs in sub_checksums]
             for n in range(nrefs):
-                # for now, set persistent=False for subchecksums
-                buffer_cache._incref(sub_checksums2, persistent=False, buffers=None)
+                buffer_cache._incref(sub_checksums2, persistent=subchecksums_persistent, buffers=None)
             refcount = self.refcount.get(checksum, 0)
             #print("INC DEEP", checksum.hex(), len(sub_checksums), refcount, nrefs)
             if refcount > 0:
@@ -80,13 +79,13 @@ class DeepRefManager:
                 continue
             checksum, _ = key
             """
-            # TODO: "get_buffer_database" where the database buffer request is done async
+            # TODO: "get_buffer_remote" where the remote buffer request is done async
             """
             deep_buffer = get_buffer(checksum, remote=True)
             if deep_buffer is None:
                 self.missing_deep_buffers.add(checksum)
                 self.buffers_to_incref.pop(key)
-                self.persistent_to_incref.discard(key)
+                self.subchecksums_persistent_to_incref.discard(key)
                 continue
             self.missing_deep_buffers.discard(checksum)
             new_coro_2(key, deep_buffer)
@@ -130,14 +129,14 @@ class DeepRefManager:
                                 if key[0] == checksum:
                                     hash_pattern = _rev_cs_hashpattern[key[1]]
                                     self.buffers_to_incref.pop(key)
-                                    persistent = (key in self.persistent_to_incref)
-                                    self.persistent_to_incref.discard(key)
+                                    subchecksums_persistent = (key in self.subchecksums_persistent_to_incref)
+                                    self.subchecksums_persistent_to_incref.discard(key)
                                     hpcs = calculate_dict_checksum(hash_pattern)
                                     _rev_cs_hashpattern[hpcs] = hash_pattern
                                     e = (checksum, hpcs)
                                     if e in self.invalid_deep_buffers:
                                         continue
-                                    self._do_incref(checksum, deep_structure,hash_pattern, nrefs, persistent=persistent)
+                                    self._do_incref(checksum, deep_structure,hash_pattern, nrefs, subchecksums_persistent=subchecksums_persistent)
 
                     break
 
@@ -164,7 +163,7 @@ class DeepRefManager:
     def destroy(self):
         self._destroyed = True
 
-    def incref_deep_buffer(self, checksum, hash_pattern, *, persistent, cell=None):
+    def incref_deep_buffer(self, checksum, hash_pattern, *, subchecksums_persistent, cell=None):
         if checksum.hex() in (empty_dict_checksum, empty_list_checksum):
             return
         if checksum in self.big_buffers:
@@ -173,8 +172,8 @@ class DeepRefManager:
         _rev_cs_hashpattern[hpcs] = hash_pattern
         key = (checksum, hpcs)
         
-        if persistent:
-            self.persistent_to_incref.add(key)
+        if subchecksums_persistent:
+            self.subchecksums_persistent_to_incref.add(key)
         if key in self.buffers_to_incref:
             self.buffers_to_incref[key] += 1
         else:

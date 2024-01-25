@@ -48,7 +48,8 @@ def translate_bashdocker_transformer(
       fingertip_no_remote=node.get("fingertip_no_remote", False),
       fingertip_no_recompute=node.get("fingertip_no_recompute", False),
       hash_pattern= node.get("hash_pattern"),
-      return_context=True
+      return_context=True,
+      auth_subchecksums_persistent=True
     )
     setattr(ctx, input_name, inp)
     namespace[node["path"] + ("SCHEMA",), "source"] = inp.schema, node

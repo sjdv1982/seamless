@@ -215,7 +215,7 @@ class BufferCache:
 
     def decref(self, checksum):
         """Decrements the refcount of a buffer checksum, cached with incref_buffer
-        If the refcount reaches zero, and there is no database,
+        If the refcount reaches zero, and there is no remote buffer storage,
          it will be added to local cache using cache_buffer.
         This means that it will remain accessible for a short while
         """

@@ -164,7 +164,8 @@ class CacheManager:
         #print("cachemanager INCREF", checksum.hex(), len(self.checksum_refs[checksum]))
         if incref_hash_pattern:
             cell = refholder
-            deeprefmanager.incref_deep_buffer(checksum, cell._hash_pattern, cell=cell, persistent=persistent)
+            subchecksums_persistent = cell._subchecksums_persistent
+            deeprefmanager.incref_deep_buffer(checksum, cell._hash_pattern, cell=cell, subchecksums_persistent=subchecksums_persistent)
     
     async def fingertip(self, checksum, *, must_have_cell=False):
         """Tries to put the checksum's corresponding buffer 'at your fingertips'

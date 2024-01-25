@@ -33,6 +33,7 @@ class Cell(SeamlessBase):
     _mount_kwargs = None
     _paths = None #WeakSet of Path object weakrefs
     _hash_pattern = None #must be None, except for MixedCell
+    _subchecksums_persistent = False  # for deep cells
     _observer = None
     _traitlets = None
     _share = None
