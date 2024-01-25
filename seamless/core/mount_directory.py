@@ -77,7 +77,7 @@ Cell can be None.
 If cell is not None or cache_buffers, all file buffers are cached by Seamless.
 Caching through a connected Seamless database will create a copy of all files 
  that are new to the database.
-If there is no connected Seamless database, Seamless will hold all file buffers in-memory."""
+If there is no connected Seamless buffer storage, Seamless will hold all file buffers in-memory."""
     from .protocol.calculate_checksum import calculate_checksum_sync
     from .protocol.serialize import serialize_sync
     from .cache.buffer_cache import buffer_cache
@@ -106,9 +106,9 @@ If there is no connected Seamless database, Seamless will hold all file buffers 
             if cell is not None or cache_buffers:
                 #buffer_cache.cache_buffer(checksum, buf)  
                 # # No. If the user really wants to read a huge directory, it should be offloaded
-                # #  to a Seamless database, if one is configured. cache_buffer doesn't do that.
+                # #  to Seamless buffer storage, ifconfigured. cache_buffer doesn't do that.
                 # # Use incref + decref instead. 
-                # # This will trigger cache_buffer anyway, if there is no DB
+                # # This will trigger cache_buffer anyway, if there is no buffer storage
                 buffer_cache.incref_buffer(checksum, buf, persistent=True)
                 buffer_cache.decref(checksum)
             result[key] = checksum.hex()
