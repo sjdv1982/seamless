@@ -16,13 +16,12 @@ class Transformer(Worker):
     _debug = None
     _scratch = False
 
-    def __init__(self, transformer_params, *,  stream_params=None):
+    def __init__(self, transformer_params):
         self.code = InputPin(self, "code", "python", "transformer")
         self.META = InputPin(self, "META", "plain")
         self._pins = {"code":self.code, "META": self.META}
         self._output_name = None
         self._transformer_params = OrderedDict()
-        self._stream_params = stream_params # TODO: validate
         forbidden = ("code","META")
         for p in sorted(transformer_params.keys()):
             if p in forbidden:
@@ -340,7 +339,7 @@ class Transformer(Worker):
         ret = "Seamless transformer: " + self._format_path()
         return ret
 
-def transformer(params, *, stream_params=None):
+def transformer(params):
     """Defines a transformer.
 
 Transformers transform their input cells into an output result.
@@ -392,6 +391,6 @@ Parameters
             - dtype: string or tuple of strings
                 Describes the type of the cell(s) connected to the pin.
     """
-    return Transformer(params, stream_params=stream_params)
+    return Transformer(params)
 
 from .unbound_context import UnboundManager
