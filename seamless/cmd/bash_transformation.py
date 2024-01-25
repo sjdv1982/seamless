@@ -153,12 +153,14 @@ def run_transformation(transformation_dict, *, undo, fingertip=False, scratch=Fa
         fingertip = False
     for k in transformation_dict:
         assert not k.startswith("SPECIAL__")
+    # for caching...
     transformation_dict_py = unbashify(transformation_dict, {}, {})
     _, transformation_checksum_py = register_transformation_dict(transformation_dict_py)
     result_py = database.get_transformation_result(transformation_checksum_py)
     if result_py is not None:
         if not fingertip or can_read_buffer(result_py):
             return Checksum(result_py)
+    # /for caching
     _, transformation_checksum = register_transformation_dict(transformation_dict)
     if undo:
         try:
