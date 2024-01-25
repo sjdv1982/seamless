@@ -4,11 +4,11 @@ import seamless
 from seamless.highlevel import Context
 
 if "DELEGATE" in os.environ:
-    seamless.delegate(level=3)
-    from seamless.core.transformation import get_global_info
-    get_global_info()  # avoid timing errors
+    seamless.delegate()
 else:
     seamless.delegate(False)
+    from seamless.core.transformation import get_global_info
+    get_global_info()  # avoid timing errors
 
 # 0
 ctx = Context()
