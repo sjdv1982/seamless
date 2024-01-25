@@ -198,7 +198,6 @@ reraise_exceptions: ....
         if reraise_exceptions:
             raise exc from None
         print_exc(limit=0,file=sys.stderr)
-        exit(1)
     finally:
         _delegating = False
 

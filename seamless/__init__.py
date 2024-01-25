@@ -125,10 +125,18 @@ async def run_transformation_async(checksum, *, fingertip, scratch, tf_dunder=No
     tf_cache.transformation_exceptions.pop(checksum, None)
     return await tf_cache.run_transformation_async(checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, manager=manager, cache_only=cache_only)
 
-_original_event_loop = asyncio.get_event_loop()
+try:
+    _original_event_loop = asyncio.get_event_loop()
+except RuntimeError:
+    _original_event_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(_original_event_loop)
+
 def check_original_event_loop():
-    event_loop = asyncio.get_event_loop()
-    if event_loop is not _original_event_loop:
+    try:
+        event_loop = asyncio.get_event_loop()
+    except RuntimeError:
+        return
+    if _original_event_loop is not None and event_loop is not _original_event_loop:
         #import traceback; traceback.print_stack()
         raise Exception(
 "The asyncio eventloop was changed (e.g. by asyncio.run) since Seamless was started"

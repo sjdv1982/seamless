@@ -1,3 +1,4 @@
+import sys
 import seamless
 import os
 if "DELEGATE" in os.environ:
@@ -83,10 +84,10 @@ while 1:
     state["status"]["tf4-result"] = ctx.tf4_result.status
     if state["status"]["tf1"] == "Status: error":
         print("TF1", ctx.tf1.exception)
-        exit(0)
+        sys.exit(0)
     if state["status"]["tf4"] == "Status: error":
         print("TF4", ctx.tf4.exception)
-        exit(0)
+        sys.exit(0)
 
     state["tf1"] = ctx.tf1.value
     state["tf1-result"] = ctx.tf1_result.value
