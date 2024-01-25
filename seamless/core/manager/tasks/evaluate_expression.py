@@ -210,7 +210,7 @@ async def evaluate_expression_remote(expression, fingertip_mode):
         result = None
     return result
 
-async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fingertip_upstream):
+async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fingertip_upstream, fingertip_done):
     from ....util import parse_checksum
     cachemanager = manager.cachemanager
     if not fingertip_mode:
@@ -268,10 +268,10 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                 hash_pattern_equivalent = (result_hash_pattern == target_hash_pattern)
 
             ### /Hash pattern equivalence
-                        
+
             if result_hash_pattern in ("#", "##"):
                 if perform_fingertip:
-                    source_buffer = await GetBufferTask(manager, source_checksum).run()
+                    source_buffer = await GetBufferTask(manager, source_checksum).run()                    
                 else:
                     release_evaluation_lock(locknr)
                     locknr = None
@@ -280,7 +280,7 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                 if source_buffer is None:
                     raise CacheMissError(source_checksum)
                 deep_source_value = await DeserializeBufferTask(manager, source_buffer, source_checksum, "plain", False).run()
-                mode, subpath_result = await get_subpath(deep_source_value, source_hash_pattern, expression.path)
+                mode, subpath_result = await get_subpath(deep_source_value, source_hash_pattern, expression.path)                
                 if subpath_result is not None:
                     assert mode == "checksum"
                 source_checksum = subpath_result
@@ -356,14 +356,14 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                 result_checksum = source_checksum
                 done = True
                 needs_value_conversion = False
-            else:                
+            else:                                
                 needs_value_conversion = True
 
             if needs_value_conversion:
-                if perform_fingertip:
+                if perform_fingertip:                    
                     release_evaluation_lock(locknr)
                     locknr = None
-                    buffer = await cachemanager.fingertip(source_checksum)
+                    buffer = await cachemanager._fingertip(source_checksum, must_have_cell=False, done=fingertip_done.copy())
                     locknr = await acquire_evaluation_lock(self)
                 else:
                     buffer = await GetBufferTask(manager, source_checksum).run()
@@ -395,7 +395,7 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                         if perform_fingertip:
                             release_evaluation_lock(locknr)
                             locknr = None
-                            buffer2 = await cachemanager.fingertip(result)
+                            buffer2 = await cachemanager._fingertip(result, must_have_cell=False, done=fingertip_done.copy())
                             locknr = await acquire_evaluation_lock(self)
                         else:
                             buffer2 = await GetBufferTask(manager, result).run()
@@ -496,7 +496,7 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
             if result_buffer is None:
                 release_evaluation_lock(locknr)
                 locknr = None
-                result_buffer = await cachemanager.fingertip(result_checksum)
+                result_buffer = await cachemanager._fingertip(result_checksum, must_have_cell=False, done=fingertip_done.copy())
                 locknr = await acquire_evaluation_lock(self)
             if result_buffer is None:
                 return None
@@ -518,11 +518,12 @@ class EvaluateExpressionTask(Task):
     def refkey(self):
         return (self.expression, self.fingertip_mode, self.fingertip_upstream)
 
-    def __init__(self, manager, expression, *, fingertip_mode=False, fingertip_upstream=False):
+    def __init__(self, manager, expression, *, fingertip_mode=False, fingertip_upstream=False, fingertip_done=set()):
         assert isinstance(expression, Expression)
         self.expression = expression
         self.fingertip_mode = fingertip_mode
         self.fingertip_upstream = fingertip_upstream
+        self.fingertip_done=fingertip_done
                 
         super().__init__(manager)
         if not self.fingertip_mode:
@@ -536,9 +537,9 @@ class EvaluateExpressionTask(Task):
         manager = self.manager()
         if manager is None or manager._destroyed:
             return
-        return await _evaluate_expression(self, expression, manager=manager, fingertip_mode=self.fingertip_mode, fingertip_upstream=self.fingertip_upstream)
+        return await _evaluate_expression(self, expression, manager=manager, fingertip_mode=self.fingertip_mode, fingertip_upstream=self.fingertip_upstream, fingertip_done=self.fingertip_done)
 
-async def evaluate_expression(expression, *, fingertip_mode=False, manager=None):
+async def evaluate_expression(expression, *, fingertip_mode=False, manager=None, fingertip_done=set()):
     if manager is None:
         manager = Manager()
     
@@ -563,7 +564,7 @@ async def evaluate_expression(expression, *, fingertip_mode=False, manager=None)
                         expression.target_subcelltype,
                         codename="expression"
                     )
-                except Exception as exc:
+                except Exception:
                     fexc = traceback.format_exc()
                     expression.exception = fexc
                     return None
@@ -576,7 +577,7 @@ async def evaluate_expression(expression, *, fingertip_mode=False, manager=None)
                 result = await evaluate_expression_remote(expression, fingertip_mode=True)
                 assert result is None or isinstance(result, bytes), type(result)
                 if result is None:
-                    result = await EvaluateExpressionTask(manager, expression, fingertip_mode=True, fingertip_upstream=True).run()
+                    result = await EvaluateExpressionTask(manager, expression, fingertip_mode=True, fingertip_upstream=True, fingertip_done=fingertip_done).run()
                     assert result is None or isinstance(result, bytes), type(result)
                     if result is not None:
                         from_task = True
@@ -587,7 +588,7 @@ async def evaluate_expression(expression, *, fingertip_mode=False, manager=None)
                 else:
                     result = await evaluate_expression_remote(expression, fingertip_mode=False)
                     if result is None:
-                        result = await EvaluateExpressionTask(manager, expression, fingertip_mode=False, fingertip_upstream=True).run()
+                        result = await EvaluateExpressionTask(manager, expression, fingertip_mode=False, fingertip_upstream=True, fingertip_done=fingertip_done).run()
                         if result is not None:
                             from_task = True
 

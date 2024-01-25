@@ -29,7 +29,8 @@ class FingerTipper:
         return (not self.transformations) and (not self.expressions) and (not self.joins) and (not self.joins2) and (not self.syn2sem)
 
     async def fingertip_upstream(self, checksum):
-        return await self.cachemanager._fingertip(checksum, must_have_cell=False, done=self.done)
+        result = await self.cachemanager._fingertip(checksum, must_have_cell=False, done=self.done.copy())
+        return result
 
     async def fingertip_transformation(self, transformation, tf_checksum):
         from ..direct.run import run_transformation_dict
@@ -66,16 +67,19 @@ class FingerTipper:
                 await asyncio.shield(job.future)
 
     async def fingertip_expression(self, expression):
-        buf = await self.fingertip_expression2(expression)        
+        buf = await self.fingertip_expression2(expression)
         return self._register(buf)
 
 
     async def fingertip_expression2(self, expression):
         from .tasks.evaluate_expression import evaluate_expression
-        await self.fingertip_upstream(expression.checksum)
-        return await evaluate_expression(
-            expression, manager=self.manager, fingertip_mode=True
+        buf = await self.fingertip_upstream(expression.checksum)
+        if buf is None:
+            return None
+        result = await evaluate_expression(
+            expression, manager=self.manager, fingertip_mode=True, fingertip_done=self.done.copy()
         )
+        return result
 
     def _register(self, buf):
         if buf is not None:
