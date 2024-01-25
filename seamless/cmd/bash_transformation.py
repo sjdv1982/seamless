@@ -176,6 +176,7 @@ def run_transformation(transformation_dict, *, undo, fingertip=False, scratch=Fa
     else:
         result_checksum = run_transformation_dict(transformation_dict, fingertip=fingertip, scratch=scratch)
         if result_checksum is not None:
+            # while https://github.com/sjdv1982/seamless/issues/247 is open:
             database.set_transformation_result(transformation_checksum_py, result_checksum)
         return Checksum(result_checksum)
 
