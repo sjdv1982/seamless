@@ -1,6 +1,6 @@
 TODO before 0.12 release: 
 
-- Add a singularity rewriter for bashdocker jobs. TODO
+- Add singularity support for bashdocker jobs. DONE
 
 - Fix https://github.com/sjdv1982/seamless/issues/246 (both issues). DONE
 
