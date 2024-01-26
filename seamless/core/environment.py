@@ -1,12 +1,13 @@
 import os, stat
 import subprocess
 
-from numpy import isin
-
 DOCKER_SOCKET = "/var/run/docker.sock"
 DOCKER_IMAGE = os.environ.get("DOCKER_IMAGE", "rpbs/seamless")
 
 def check_docker_power():
+    d = os.environ.get("SEAMLESS_DOCKER_DISABLED")
+    if d is not None and d.strip() not in ("False", "FALSE", "0"):
+        return False
     if not os.path.exists(DOCKER_SOCKET):
         return False    
     mode = os.stat(DOCKER_SOCKET).st_mode
@@ -27,6 +28,12 @@ validate_XXX return a tuple
     - False: invalid attribute
 - Element 1: error message
 """
+
+def validate_singularity():
+    result = subprocess.run("which singularity", shell=True, capture_output=True)
+    if result.returncode:
+        return False
+    return True
 
 def validate_docker(environment):
     docker = environment.get("docker")
@@ -111,6 +118,8 @@ def validate_environment(environment):
             raise ValueError("Unknown environment power {}".format(power))
         has_power = power_checkers[power]()
         if not has_power:
+            if power == "docker" and validate_singularity():
+                continue
             raise ValueError("Environment power cannot be granted: '{}'".format(power))
 
     err = ""

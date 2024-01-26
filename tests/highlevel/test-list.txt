@@ -68,6 +68,7 @@ docker_.py: can be run with delegation using "export DELEGATE=''"
 docker2.py
 docker_gpu.py: run only on a machine with nvidia-docker2 installed
 docker-debug.py
+docker-singularity.py: needs singularity set up
 expression-exceptions.py
 transformer-bytedict.py
 highlink-schema.py
