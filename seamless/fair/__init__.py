@@ -4,11 +4,7 @@ import urllib.parse
 from seamless.download_buffer import download_buffer_sync, session
 from requests.exceptions import ConnectionError, ReadTimeout
 
-_localhost = os.environ.get("SEAMLESS_DOCKER_HOST_IP", "localhost")
-_servers = [
-    "http://{}:61918".format(_localhost),
-    "https://fair.rpbs.univ-paris-diderot.fr"
-]
+_servers = []
 
 def get_servers():
     return _servers.copy()
@@ -152,7 +148,7 @@ def _validate_params(type:str, version:str, date:str, format:str, compression:st
     if type is not None:
         params["type"] = type
     if version is not None:
-        params["version"] = version
+        params["version"] = str(version)
     if date is not None:
         params["date"] = date
     if format is not None:
@@ -168,7 +164,9 @@ def find_distribution(dataset:str, *, type:str=None, version:str=None, date:str=
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
     for url in urls:
         try:
-            response = session.get(url, timeout=3, params=params)            
+            print(params)
+            response = session.get(url, timeout=3, params=params)
+
             resp = response.status_code
             if int(resp/100) == 3:
                 raise Exception(response.text) 

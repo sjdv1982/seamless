@@ -6,6 +6,7 @@ TODO before 0.12 release:
 
 - Test the fair server (fairdir: /mnt/external-disk/reproducible-pdb/fairdir . Add ../buffers and ../deepbuffers as well in the test). Rip the RPBS fairserver, create add_fairserver API. With this, adapt and test
 reproducible PDB viewer and deepcell-pdb / deepfolder-pdb (both with RPBS and local fairserver). TODO
+(partially DONE)
 
 - Add bufferdir-deploy-deepfolder tool (checksum => ./deployed/<folder>, either hardlinks or softlinks into bufferdir). DONE.
 

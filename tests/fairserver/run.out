@@ -1,0 +1,53 @@
+Loaded actionfile:
+{
+  "collection": "mydataset",
+  "cross_device": false,
+  "actions": [
+    {
+      "action": "intern_collection",
+      "hardlink": false
+    },
+    {
+      "action": "deepfolder"
+    }
+  ]
+}
+No existing buffer info file found.
+Created ./fairdir/inodes
+Write inode table to ./fairdir/inodes/mydataset.csv
+Running actions
+Action intern_collection "mydataset"
+Action deepfolder "mydataset"
+Created ./fairdir/deepfolders
+Computed deepfolder for mydataset: deep buffer checksum 8000684ee74723b6757d754beb77e22276f5775fb57578e730ba6aab16f11e41
+Write deepfolder deep buffer to ./fairdir/deepfolders/mydataset.json
+Write deep content size for 8000684ee74723b6757d754beb77e22276f5775fb57578e730ba6aab16f11e41: 23
+Determine key order...
+Key order checksum: 01678a166d7b6ad2f3040791e98aac51051ee142fee1e57c7f453349e4049c1c
+{
+  "checksum": "8000684ee74723b6757d754beb77e22276f5775fb57578e730ba6aab16f11e41",
+  "type": "deepfolder",
+  "version": "1",
+  "latest": true,
+  "nkeys": 6,
+  "index_size": 485,
+  "content_size": 23,
+  "keyorder": "01678a166d7b6ad2f3040791e98aac51051ee142fee1e57c7f453349e4049c1c"
+}
+checksum=8000684ee74723b6757d754beb77e22276f5775fb57578e730ba6aab16f11e41
+{'type': 'deepfolder', 'version': '1', 'dataset': 'mydataset'}
+{
+  "checksum": "8000684ee74723b6757d754beb77e22276f5775fb57578e730ba6aab16f11e41",
+  "type": "deepfolder",
+  "version": "1",
+  "latest": true,
+  "nkeys": 6,
+  "index_size": 485,
+  "content_size": 23,
+  "keyorder": "01678a166d7b6ad2f3040791e98aac51051ee142fee1e57c7f453349e4049c1c"
+}
+Number of index keys (files): 6
+Size of the checksum index file:  485 bytes
+Total content size: 23 bytes
+checksum of 9.txt:  0a5796d4ed93279e853e7174d19b3f46076f2d2003bbac993a6885ab4ff33228
+b'nine\n'
