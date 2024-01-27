@@ -1,8 +1,106 @@
 {
-  "cells": {},
-  "extra_components": [],
+  "cells": {
+    "representation": {
+      "celltype": "yaml",
+      "component": "input",
+      "params": {
+        "maxlength": 1000,
+        "title": "Cell Representation",
+        "type": "textarea"
+      },
+      "share": {
+        "auto_read": true,
+        "encoding": "text",
+        "read": true,
+        "write": true
+      },
+      "webdefault": ""
+    }
+  },
+  "extra_cells": {
+    "all_pdb_codes": {
+      "celltype": "plain",
+      "path": "bigselect_1/options.json",
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true
+      },
+      "webdefault": {}
+    },
+    "pdb_code": {
+      "celltype": "str",
+      "path": "bigselect_1/selected.json",
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true,
+        "write": true
+      },
+      "webdefault": ""
+    },
+    "pdb_structure": {
+      "celltype": "text",
+      "path": "nglviewer_1/structures.json",
+      "share": {
+        "auto_read": true,
+        "encoding": "text",
+        "read": true
+      },
+      "webdefault": ""
+    },
+    "representation2": {
+      "celltype": "plain",
+      "path": "nglviewer_1/representation.json",
+      "share": {
+        "auto_read": true,
+        "encoding": "json",
+        "read": true
+      },
+      "webdefault": {}
+    }
+  },
+  "extra_components": [
+    {
+      "cell": "representation",
+      "component": "",
+      "id": "EXAMPLE_ID",
+      "params": {}
+    },
+    {
+      "cells": {
+        "input": "bigselect_1_input",
+        "options": "all_pdb_codes",
+        "selected": "pdb_code"
+      },
+      "component": "bigselect",
+      "id": "bigselect_1",
+      "params": {
+        "placeholder": "Select an item",
+        "selected_title": "Selected:",
+        "title": "Selector"
+      }
+    },
+    {
+      "cells": {
+        "representation": "representation2",
+        "structures": "pdb_structure"
+      },
+      "component": "nglviewer",
+      "id": "nglviewer_1",
+      "params": {
+        "format": "cif",
+        "title": "NGL viewer",
+        "viewer_height": "500px",
+        "viewer_width": "100%"
+      }
+    }
+  ],
   "index": {
     "title": "Seamless webform"
   },
-  "transformers": {}
+  "transformers": {},
+  "webcells": {
+    "bigselect_1_input": ""
+  }
 }
