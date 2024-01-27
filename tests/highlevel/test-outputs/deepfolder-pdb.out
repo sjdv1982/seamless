@@ -1,10 +1,11 @@
+Waiting for: Seamless structured cell: .pdb.blackwhitelist Seamless Python cell: .pdb.cell1 Seamless structured cell: .pdb.origin
+Waiting for: Seamless transformer: .pdb.apply_blackwhite
 Status: OK
 None
 2399c9b9ac30b6a96684485bba15e104f9cc52cbffc5f816a7e14bddedc718b4
 d01f82ba7353c5d1debd55b8f7d216a885790a3be52854c03f471158325ead2f
 
 STAGE 2
-Waiting for background tasks
 d4ee1515e0a746aa3b8531f1545753e6b2d4cf272632121f1827f21c64a29722
 None
 data_1AVX
@@ -28,4 +29,5 @@ _audit_conform.dict_location   http://mmcif.pdb.org/dictionaries/ascii/mmcif_pdb
 STAGE 4
 
 STAGE 5
+Warning: Seamless structured cell: .pdb_folder has no independence, but an auth checksum is present
 Warning: Seamless structured cell: .pdb_folder has no independence, but an auth checksum is present

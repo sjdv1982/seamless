@@ -164,7 +164,6 @@ def find_distribution(dataset:str, *, type:str=None, version:str=None, date:str=
     urls = [urllib.parse.urljoin(server, request) for server in _servers]
     for url in urls:
         try:
-            print(params)
             response = session.get(url, timeout=3, params=params)
 
             resp = response.status_code

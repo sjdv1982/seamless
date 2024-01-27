@@ -4,9 +4,7 @@ TODO before 0.12 release:
 
 - Fix https://github.com/sjdv1982/seamless/issues/246 (both issues). DONE
 
-- Test the fair server (fairdir: /mnt/external-disk/reproducible-pdb/fairdir . Add ../buffers and ../deepbuffers as well in the test). Rip the RPBS fairserver, create add_fairserver API. With this, adapt and test
-reproducible PDB viewer and deepcell-pdb / deepfolder-pdb (both with RPBS and local fairserver). TODO
-(partially DONE)
+- Add local fairserver test. Rip the RPBS fairserver, create add_fairserver API. Adapt reproducible PDB viewer and deepcell-pdb / deepfolder-pdb. DONE
 
 - Add bufferdir-deploy-deepfolder tool (checksum => ./deployed/<folder>, either hardlinks or softlinks into bufferdir). DONE.
 
