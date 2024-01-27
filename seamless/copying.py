@@ -11,7 +11,7 @@ from .core.protocol.get_buffer import get_buffer
 from .core.protocol.calculate_checksum import calculate_checksum_sync as calculate_checksum
 from .core.protocol.deep_structure import apply_hash_pattern_sync, deep_structure_to_checksums
 
-def get_checksums(nodes, connections, *, with_annotations):
+def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
     def add_checksum(node, dependent, checksum, subpath=None):
         if checksum is None:
             return
@@ -261,20 +261,23 @@ def fill_checksum(manager, node, temp_path, composite=True):
         temp_path = temp_path.lstrip("_")
         node["checksum"][temp_path] = checksum
 
-def get_graph_checksums(graph, with_libraries, *, with_annotations):
-    nodes0 = graph["nodes"]
-    nodes = [node for node in nodes0 if "scratch" not in node]
+def get_graph_checksums(graph, with_libraries, *, with_annotations, skip_scratch):
+    nodes = graph["nodes"].copy()
+    if skip_scratch:
+        nodes = [node for node in nodes if "scratch" not in node]
     connections = graph.get("connections", [])
     checksums = get_checksums(
         nodes, connections,
-        with_annotations=with_annotations
+        with_annotations=with_annotations,
+        skip_scratch=skip_scratch
     )
     if with_libraries:
         for lib in graph.get("lib", []):
             lib_checksums = get_graph_checksums(
                 lib["graph"],
                 with_libraries=True,
-                with_annotations=with_annotations
+                with_annotations=with_annotations,
+                skip_scratch=True
             )
             checksums.update(lib_checksums)
     if with_annotations:

@@ -45,6 +45,7 @@ tf-byte-dict.py
 simpler.py
 simpler-deepcell.py
 simpler-ipython.py: Run with ipython --no-term-title (not -i) (see issue 25). Output is approximate, depends on exact timings.
+scratch-save-vault.py
 macro-simple.py
 macro.py
 macro-elision.py

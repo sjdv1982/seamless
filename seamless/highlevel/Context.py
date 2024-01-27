@@ -717,7 +717,7 @@ class Context(Base, HelpMixin):
         self._do_translate(force=force)
         graph = self.get_graph()
         checksums = copying.get_graph_checksums(
-            graph, with_libraries, with_annotations=False
+            graph, with_libraries, with_annotations=False, skip_scratch=True
         )
         manager = self._manager
         buffer_dict = copying.get_buffer_dict_sync(manager, checksums)
@@ -734,7 +734,7 @@ class Context(Base, HelpMixin):
         self._do_translate(force=force)
         graph = self.get_graph()
         checksums = copying.get_graph_checksums(
-            graph, with_libraries, with_annotations=False
+            graph, with_libraries, with_annotations=False, skip_scratch=True
         )
         manager = self._manager
         buffer_dict = await copying.get_buffer_dict(manager, checksums)
@@ -767,12 +767,12 @@ class Context(Base, HelpMixin):
         if self._gen_context is not None:
             # capture from the low level
             annotated_checksums_low = {}
-            self._gen_context._update_annotated_checksums(annotated_checksums_low)
+            self._gen_context._update_annotated_checksums(annotated_checksums_low, skip_scratch=True)
 
         # update from the high level
         graph = self.get_graph()
         annotated_checksums_high = copying.get_graph_checksums(
-            graph, with_libraries, with_annotations=True
+            graph, with_libraries, with_annotations=True, skip_scratch=True
         )
         
 
@@ -811,6 +811,7 @@ class Context(Base, HelpMixin):
                 lib["graph"]["nodes"],
                 lib["graph"]["connections"],
                 with_annotations=False,
+                skip_scratch=True
             )
             for checksum in checksums:
                 buffer_cache.incref(bytes.fromhex(checksum), persistent=True)
@@ -819,7 +820,7 @@ class Context(Base, HelpMixin):
                 self._graph.lib.pop(path)
         if old_lib is not None:
             old_checksums = copying.get_checksums(
-                old_lib["graph"]["nodes"], [], with_annotations=False
+                old_lib["graph"]["nodes"], [], with_annotations=False, skip_scratch=True
             )
             for old_checksum in old_checksums:
                 buffer_cache.decref(bytes.fromhex(old_checksum))
@@ -1586,6 +1587,7 @@ These modifications have been CANCELED.""" % (
                 lib["graph"]["nodes"],
                 lib["graph"]["connections"],
                 with_annotations=False,
+                skip_scratch=True
             )
             for checksum in checksums:
                 buffer_cache.decref(bytes.fromhex(checksum))

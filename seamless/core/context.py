@@ -300,7 +300,7 @@ languages: dict or None
     def internal_children(self):
         return _InternalChildrenWrapper(self)
 
-    def _update_annotated_checksums(self, annotated_checksums0):
+    def _update_annotated_checksums(self, annotated_checksums0, *, skip_scratch):
         from .build_module import get_compiled_module_code
         from .cache.buffer_cache import buffer_cache
         from .protocol.serialize import serialize_sync as serialize
@@ -309,7 +309,7 @@ languages: dict or None
         livegraph = manager.livegraph
         for child in self._children.values():
             if isinstance(child, Context):
-                child._update_annotated_checksums(annotated_checksums0)
+                child._update_annotated_checksums(annotated_checksums0, skip_scratch=skip_scratch)
             elif isinstance(child, Macro):
                 elision = livegraph.macro_elision.get(child)
                 if elision is not None:
@@ -323,14 +323,18 @@ languages: dict or None
 
                 cctx = child._gen_context
                 if cctx is not None:
-                    cctx._update_annotated_checksums(annotated_checksums0)
+                    cctx._update_annotated_checksums(annotated_checksums0, skip_scratch=skip_scratch)
             
             if not isinstance(child, Cell):
                 continue            
             
+            if skip_scratch and child._scratch:
+                continue
+
             checksum = child.checksum
             if checksum is None:
                 continue
+            
             if child.celltype == "plain":
                 compiled_module_code_checksum, compiled_module_code = get_compiled_module_code(bytes.fromhex(checksum))
                 if compiled_module_code is not None:
@@ -348,7 +352,7 @@ If flat=True, buffers are directly written into that directory, else they are or
         manager = self._get_manager()
         assert manager is not None
         annotated_checksums0 = {}
-        self._update_annotated_checksums(annotated_checksums0)
+        self._update_annotated_checksums(annotated_checksums0, skip_scratch=skip_scratch)
         annotated_checksums = [(checksum, not has_independence) for checksum, has_independence in annotated_checksums0.items()]
         checksums = [c[0] for c in annotated_checksums]
         buffer_dict = get_buffer_dict_sync(manager, checksums)
