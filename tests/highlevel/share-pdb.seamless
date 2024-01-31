@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.8",
+  "__seamless__": "0.11",
   "connections": [
     {
       "source": [
@@ -65,7 +65,7 @@
     {
       "celltype": "code",
       "checksum": {
-        "value": "e91beb1380ed4297fa898748425a39290312421f0666497b377413d782e9e663"
+        "value": "6f50cd3864e495284ac230b9ee999636cb8cd3c526ed3662d1137d10119d3791"
       },
       "file_extension": "sh",
       "language": "bash",
@@ -117,7 +117,6 @@
       "checksum": {
         "code": "0cd230ffdbd4b753e46cfe93ec2c6d9a063cdfec2d21377e2b107fcb3e770a3b",
         "input": "f8965fa517601f66e890dacd407cdacfd292721fd9d7fc026abc72ef47a07612",
-        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "input_buffer": "f8965fa517601f66e890dacd407cdacfd292721fd9d7fc026abc72ef47a07612",
         "result": "e8787d65a4c4e417d25e2b4361538db8d180dcbf7ab971b525bc51b2c8d0e322",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
@@ -159,11 +158,10 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "e91beb1380ed4297fa898748425a39290312421f0666497b377413d782e9e663",
+        "code": "6f50cd3864e495284ac230b9ee999636cb8cd3c526ed3662d1137d10119d3791",
         "input": "899c31da5ee1a0e7094df98b6cc47d3baa70df02b9711a3fd3ce27515e9c5ef3",
-        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "input_buffer": "899c31da5ee1a0e7094df98b6cc47d3baa70df02b9711a3fd3ce27515e9c5ef3",
-        "result": "e8787d65a4c4e417d25e2b4361538db8d180dcbf7ab971b525bc51b2c8d0e322",
+        "result": "f9bfa4063e178413cae39d9adc3e1788db9d3fa0057fe806b14121030ec5040f",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -224,7 +222,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "0abdae680fce2bd5d018783f68199e742a41e14032f75c26eb67df60048a91f1"
+        "value": "1df240195c402a07197389036df6e84805d049455514727f917d144036793908"
       },
       "datatype": "mixed",
       "path": [
