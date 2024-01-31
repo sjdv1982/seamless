@@ -195,7 +195,7 @@ calculated result.
             _contact_assistant()
             assert _assistant is not None  # will have been checked above
             block_local()
-            return
+            return False
         if level >= 1:
             _init_buffer_remote_from_env(only_level_1=(level==1))
         if level == 3 or force_database:
@@ -204,10 +204,12 @@ calculated result.
         if raise_exceptions:
             raise exc from None
         print_exc(limit=0,file=sys.stderr)
+        return True
     finally:
         _delegating = False
 
     _delegate_level = level
+    return False
 
 _checked_delegation = False
 def check_delegation():

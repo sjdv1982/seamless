@@ -1,3 +1,4 @@
+import traceback
 from . import Task
 
 class AccessorUpdateTask(Task):
@@ -56,7 +57,7 @@ class AccessorUpdateTask(Task):
                         if not sc._cyclic:
                             assert inchannel._checksum is None, (sc, cell, path)
                     except:
-                        import traceback; traceback.print_exc()
+                        traceback.print_exc()
                         return
         #
 

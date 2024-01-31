@@ -23,7 +23,7 @@ TODO before 0.12 release:
 
 - Document the vault + database path as a valid (advanced-use) setup. Rip the warning in init_database_from_env, refactor/document API. DONE
 
-- Run tests/examples requiring serve-graph, add seamless.delegate if needed TODO
+- Overhaul serve-graph by adding delegation. Test load-vault/add-zip as well (DONE). Run tests/examples requiring serve-graph. TODO
 
 - Re-review new-project, add delegation? UPDATE: read some settings from a project.yaml... TODO
 
@@ -42,3 +42,7 @@ TODO before 0.12 release:
 - Make a separate conda package for bin/seamless. 
 Add seamless-upload, seamless-upload-zip, seamless-upload-vault and seamless-download as copies of seamless-tools/scripts/upload.py etc.,
 rather than the Docker wrappers of seamless-cli/seamless-upload etc.
+
+======================
+
+- After release: fix cloudless, rip communion-related parameters, always invoke delegation.

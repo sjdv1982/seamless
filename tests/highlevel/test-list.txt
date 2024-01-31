@@ -240,11 +240,10 @@ traitlets.ipynb: same as above
 share-subcontext.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/sub/b
 share-pdb.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/index.html
 share-pdb-docker.seamless/.zip: to test using:
-      seamless-serve-graph-trusted share-pdb-docker.seamless share-pdb-docker.zip
+      seamless-serve-graph-trusted share-pdb-docker.seamless 
+      --load-zip share-pdb-docker.zip
     Open in http://localhost:5813/ctx/index.html
-    Potentially, add:
-      --status-graph /seamless-graphs/status-visualization.seamless \
-      --add-zip /seamless-graphs/status-visualization.zip
+    Potentially, add --status-graph
     In that case, open also http://localhost:5813/status/index.html
 parse-pdb.py: requires seamless database.
               will fail unless parse-pdb-environment.yml is installed
