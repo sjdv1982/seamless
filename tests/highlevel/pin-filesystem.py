@@ -11,7 +11,7 @@ import seamless
 from seamless.config import ConfigurationError
 
 try:
-    seamless.delegate(level=1, reraise_exceptions=True)
+    seamless.delegate(level=1, raise_exceptions=True)
     print("Buffer read folder found")
 except ConfigurationError:
     print("Buffer read folder not found")

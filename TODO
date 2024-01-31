@@ -21,7 +21,7 @@ TODO before 0.12 release:
 
 - Make sure the examples can function without RPBS buffer server, or add it in the notebook. DONE
 
-- Document the vault + database path as a valid (advanced-use) setup. Rip the warning in init_database_from_env, refactor/document API. TODO
+- Document the vault + database path as a valid (advanced-use) setup. Rip the warning in init_database_from_env, refactor/document API. DONE
 
 - Run tests/examples requiring serve-graph, add seamless.delegate if needed TODO
 

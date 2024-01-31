@@ -1,10 +1,6 @@
++ set -u -e -x
 + rm -rf reuse-vault
 + python3 reuse1.py
-WARNING: init_database_from_env is called directly.
-
-You are bypassing seamless.delegate(...)
-You are now responsible yourself for saving buffers, e.g. using ctx.save_vault(...)
-
 Waiting for: Seamless transformer: .tf
 Waiting for: Seamless transformer: .tf
 Status: OK
@@ -14,11 +10,6 @@ None
 2
 3.5
 + python3 reuse3.py
-WARNING: init_database_from_env is called directly.
-
-You are bypassing seamless.delegate(...)
-You are now responsible yourself for saving buffers, e.g. using ctx.save_vault(...)
-
 Status: OK
 3.5
 None

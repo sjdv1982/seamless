@@ -1,7 +1,7 @@
 import seamless
 
 seamless.load_vault("./reuse-vault")
-seamless.config.init_database_from_env()
+seamless.delegate(level=0, force_database=True)
 seamless.config.block_local()
 
 code = """

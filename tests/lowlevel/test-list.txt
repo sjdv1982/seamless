@@ -40,9 +40,9 @@ compile.py: Can be run with delegation (export DELEGATE="").
 compile-fortran.py
 compile-mixedlang.py
 schema.py
-reuse.sh: run as i=reuse; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
+reuse.sh: run as i=reuse; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
   run with Seamless database (fresh db file).
-reuse-compile.sh: run as i=reuse-compile; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
+reuse-compile.sh: run as i=reuse-compile; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
   run with Seamless database (fresh db file).
 injection.py
 dependent-modules.py
@@ -63,11 +63,11 @@ simple-duplex.py:
      Can be run with delegation (export DELEGATE="").
      As of 0.12, no assistant can give progress/preliminary results or hardcancel
 simple-remote.py: version of simple.py with full delegation
-structured_cell/scratch.sh: run as i=structured_cell/scratch; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
+structured_cell/scratch.sh: run as i=structured_cell/scratch; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
      make sure that level 3 delegation is available inside a clean buffer directory and database.
-structured_cell/scratch2.sh: run as i=structured_cell/scratch2; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
+structured_cell/scratch2.sh: run as i=structured_cell/scratch2; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
      make sure that level 3 delegation is available inside a clean buffer directory and database.
-scratch-transformer.sh: run as i=scratch-transformer; seamless-bash ./$i.sh > test-outputs/$i.out 2>&1
+scratch-transformer.sh: run as i=scratch-transformer; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
      make sure that level 3 delegation is available inside a clean buffer directory and database.
 fingertip.py
 macro.py

@@ -54,7 +54,7 @@ def _contact_assistant():
         raise NotImplementedError
     else:
         _init_buffer_remote_from_env(only_level_1=False)
-        init_database_from_env()
+        _init_database_from_env()
 
 
 _delegating = False
@@ -63,18 +63,10 @@ _delegate_level = None
 def get_delegate_level():
     return _delegate_level
 
-def init_database_from_env():
+def _init_database_from_env():
     """Configure database based on environment variables"""
     global _delegate_level
-    if not _delegating:
-        assert _delegate_level is None
-        msg = """WARNING: init_database_from_env is called directly.
-
-You are bypassing seamless.delegate(...)
-You are now responsible yourself for saving buffers, e.g. using ctx.save_vault(...)
-"""
-        print(msg, file=sys.stderr)
-        _delegate_level = 0
+    assert _delegating
 
     env = os.environ
     host = env.get("SEAMLESS_DATABASE_IP")
@@ -132,21 +124,24 @@ def _init_buffer_remote_from_env(only_level_1=False):
     except (ConnectionError, requests.exceptions.ConnectionError):
         raise BufferServerConnectionError(f"Cannot connect to write buffer server {write_buffer_server}") from None
     
-def delegate(level=4, *, block_local=True, reraise_exceptions=False):
+def delegate(level=4, *, raise_exceptions=False, force_database=False):
     """Delegate computations and/or data to remote servers and folders.
 
-Full delegation (level 4): Delegate all computations, buffers and results.
+- No delegation (level 0 / False): Don't delegate any computations, buffers or results.    
+
+- Full delegation (level 4): Delegate all computations, buffers and results.
 
     First, contact the assistant: its URL and port are read from the 
-    environment  variables: SEAMLESS_ASSISTANT_IP and SEAMLESS_ASSISTANT_PORT.
+    environment variables: SEAMLESS_ASSISTANT_IP and SEAMLESS_ASSISTANT_PORT.
     The assistant then returns the configuration for the three other levels. 
-    If the assistant returns nothing, the other three levels are configured 
-    from environment variables.
+    If the assistant returns nothing (the default for mini and micro assistants), 
+    the other three levels are configured from environment variables 
+    (see "partial delegation" below).
 
     In addition to this, disable all local transformations. 
     All transformation jobs will be submitted to the assistant.
 
-Partial delegation: Don't delegate any computations. 
+- Partial delegation: Don't delegate any computations. 
 Delegate some or all buffers and results.
 
     Level 1: Configure only buffer read servers and buffer read folders. 
@@ -158,44 +153,55 @@ Delegate some or all buffers and results.
     Level 2: In addition to level 1, also configure a buffer write server. 
     The environment variable is SEAMLESS_WRITE_BUFFER_SERVER.
     All buffers that are not available in one of the read folders/buffers are 
-    written to the buffer server. Writing a buffer is an operation that must 
+    written to the buffer write server. Writing a buffer is an operation that must 
     succeed.
     It is implicitly assumed that a buffer that has been written becomes 
     available for reading. Therefore, the buffer write server should normally
     be included in the buffer read server list as well.
 
-    Level 3: In addition to level 2, also store results to a database.
+    Level 3: In addition to level 2, also store results in a database as checksums.
     These include the result checksums of: transformations, expressions, 
     syntactic-to-semantic, compilation to machine code, macro elision and
     structured cell joining. Conversion buffer info and generic metadata
-    can also be stored.
+    may also be stored.
     The environment variables are: SEAMLESS_DATABASE_IP and 
     SEAMLESS_DATABASE_PORT.
 
-block_local: ... (in case of level 4, disable local execution)    
+Advanced options    
+================
 
-reraise_exceptions: ....
+- raise_exceptions: By default, failures in delegation lead to an error message printed out.
+If you want to catch or print the error as a full Python exception, set raise_exceptions to True.
 
+- force_database: This option is only meaningful for delegation level 0 or 1.
+With this option, store computation result checksums in a database, as if the delegation level 
+was 3 or 4, without delegating the storage of the underlying buffers.
+You are now responsible yourself for persistent buffer storage, e.g. using ctx.save_vault(...) .
+Failure to do so will lead to CacheMissErrors when you try to get the value of a previously
+calculated result.
 """
 
     global _delegate_level, _delegating
     if _delegate_level is not None and _delegate_level != level:
-        raise NotImplementedError
+        raise NotImplementedError("Changing delegation dynamically is currently not supported")
 
-    assert level in (0,1,2,3,4), level
+    if level not in (0,1,2,3,4):
+        raise ValueError("Delegation level must be 0-4")
+    if level > 1 and force_database:
+        raise ValueError("force_database is only meaningful for delegation level 0 or 1")
     _delegating = True
     try:
         if level == 4:
             _contact_assistant()
-            if block_local and _assistant is not None:
-                _block_local()
+            assert _assistant is not None  # will have been checked above
+            block_local()
             return
         if level >= 1:
             _init_buffer_remote_from_env(only_level_1=(level==1))
-        if level == 3:
-            init_database_from_env()
+        if level == 3 or force_database:
+            _init_database_from_env()
     except ConfigurationError as exc:
-        if reraise_exceptions:
+        if raise_exceptions:
             raise exc from None
         print_exc(limit=0,file=sys.stderr)
     finally:
@@ -254,7 +260,7 @@ def set_inprocess_assistant(assistant: InProcessAssistant):
     _delegate_level = 4
 
 from .core.cache.database_client import database
-from .core.manager import block, unblock, block_local as _block_local, unblock_local
+from .core.manager import block, unblock, block_local, unblock_local
 from .core.manager.tasks import set_parallel_evaluations
 from .core.cache.buffer_remote import (
     set_read_buffer_folders, set_read_buffer_servers, set_write_buffer_server,

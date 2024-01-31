@@ -1,6 +1,6 @@
 import seamless
 
-seamless.config.init_database_from_env()
+seamless.delegate(level=0, force_database=True)
 
 code = """
 #include <cmath>

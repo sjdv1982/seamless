@@ -352,7 +352,7 @@ If flat=True, buffers are directly written into that directory, else they are or
         manager = self._get_manager()
         assert manager is not None
         annotated_checksums0 = {}
-        self._update_annotated_checksums(annotated_checksums0, skip_scratch=skip_scratch)
+        self._update_annotated_checksums(annotated_checksums0, skip_scratch=True)
         annotated_checksums = [(checksum, not has_independence) for checksum, has_independence in annotated_checksums0.items()]
         checksums = [c[0] for c in annotated_checksums]
         buffer_dict = get_buffer_dict_sync(manager, checksums)
