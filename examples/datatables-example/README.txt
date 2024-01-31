@@ -62,13 +62,13 @@ collaborative.
 Visualization of the web interface alone
 ========================================
 
-- Run "seamless-serve-graph datatables.seamless datatables.zip". 
+- Run "seamless-serve-graph datatables.seamless --load-zip datatables.zip". 
 
   or: 
   
   seamless-serve-graph \\
-      /home/jovyan/seamless-examples/datatables-example/datatables.seamless \\
-      /home/jovyan/seamless-examples/datatables-example/datatables.zip
+      /home/jovyan/seamless-examples/datatables-example/datatables.seamless \
+      --load-zip /home/jovyan/seamless-examples/datatables-example/datatables.zip
 
   Ctrl+C will end the visualization.
 - Open http://localhost:5813 in the browser.

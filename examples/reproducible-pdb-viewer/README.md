@@ -27,11 +27,12 @@ webctx.save_zip("export/reproducible-pdb-viewer-webctx.zip")
 ```bash
 seamless-serve-graph \
     export/reproducible-pdb-viewer.seamless \
-    export/reproducible-pdb-viewer.zip \
-    --status-graph \
-    export/reproducible-pdb-viewer-webctx.seamless \
-    --add-zip \
-    export/reproducible-pdb-viewer-webctx.zip 
+    --load-zip export/reproducible-pdb-viewer.zip \
+    --status-graph export/reproducible-pdb-viewer-webctx.seamless \
+    --load-zip export/reproducible-pdb-viewer-webctx.zip \
+     --delegate 1 \
+     --buffer-server https://buffer.rpbs.univ-paris-diderot.fr \
+     --fair-server https://fair.rpbs.univ-paris-diderot.fr
 ```
 
 4. Open http://localhost:5813

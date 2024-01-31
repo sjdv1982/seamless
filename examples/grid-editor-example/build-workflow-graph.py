@@ -1,6 +1,7 @@
-from seamless.highlevel import Context, Cell
 import seamless
+seamless.delegate(False)
 
+from seamless.highlevel import Context, Cell
 ctx = Context()
 
 def serve(filename, sharename=None, mount=False):
@@ -127,13 +128,14 @@ You can serve the graph using the following command:
 
 seamless-serve-graph-interactive \\
     grid-editor.seamless \\
-    grid-editor.zip --mounts
+    --load-zip grid-editor.zip \\
+    --mounts
 
 or:
 
 seamless-serve-graph-interactive \\
     /home/jovyan/seamless-examples/grid-editor-example/grid-editor.seamless \\
-    /home/jovyan/seamless-examples/grid-editor-example/grid-editor.zip \\
+    --load-zip /home/jovyan/seamless-examples/grid-editor-example/grid-editor.zip \\
     --mounts
 
 Then, open http://localhost:5813/ctx/grid-editor.html

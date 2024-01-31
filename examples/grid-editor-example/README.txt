@@ -4,13 +4,13 @@ by running the build-workflow-graph script, this has already been done.
 
 To serve the workflow graph, run the following command:
 
-seamless-serve-graph-interactive grid-editor.seamless grid-editor.zip --mounts
+seamless-serve-graph-interactive grid-editor.seamless --load-zip grid-editor.zip --mounts
 
 or:
 
 seamless-serve-graph-interactive \\
     /home/jovyan/seamless-examples/grid-editor-example/grid-editor.seamless \\
-    /home/jovyan/seamless-examples/grid-editor-example/grid-editor.zip \\
+    --load-zip /home/jovyan/seamless-examples/grid-editor-example/grid-editor.zip \\
     --mounts
 
 Then, open the web interface: http://localhost:5813/ctx/grid-editor.html

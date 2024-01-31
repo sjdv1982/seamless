@@ -16,6 +16,9 @@ During visualization, the datatable Numpy array is first converted to Pandas,
 and then to HTML using itables.
 """
 
+import seamless
+seamless.delegate(False)
+
 from seamless.highlevel import Context, Cell
 ctx = Context()
 
@@ -231,13 +234,13 @@ Alternatively, you can serve it independently using:
 
 seamless-serve-graph \\
     datatables.seamless \\
-    datatables.zip
+    --load-zip datatables.zip
  
 or:
 
 seamless-serve-graph \\
     /home/jovyan/seamless-examples/datatables-example/datatables.seamless \\
-    /home/jovyan/seamless-examples/datatables-example/datatables.zip
+    --load-zip /home/jovyan/seamless-examples/datatables-example/datatables.zip
 
 and opening http://localhost:5813 in the browser.
 """)

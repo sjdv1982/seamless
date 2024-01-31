@@ -240,7 +240,7 @@ traitlets.ipynb: same as above
 share-subcontext.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/sub/b
 share-pdb.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/index.html
 share-pdb-docker.seamless/.zip: to test using:
-      seamless-serve-graph-trusted share-pdb-docker.seamless 
+      seamless-serve-graph-trusted share-pdb-docker.seamless \
       --load-zip share-pdb-docker.zip
     Open in http://localhost:5813/ctx/index.html
     Potentially, add --status-graph

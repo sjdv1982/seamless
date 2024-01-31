@@ -23,6 +23,6 @@ In the future, the BC search will be hooked up to a protein viewer,
 
 seamless-serve-graph \
     /home/jovyan/seamless-tests/highlevel/share-pdb.seamless \
-    /home/jovyan/seamless-tests/highlevel/share-pdb.zip
+    --load-zip /home/jovyan/seamless-tests/highlevel/share-pdb.zip
 
 => http://localhost:5813

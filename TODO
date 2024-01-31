@@ -23,7 +23,7 @@ TODO before 0.12 release:
 
 - Document the vault + database path as a valid (advanced-use) setup. Rip the warning in init_database_from_env, refactor/document API. DONE
 
-- Overhaul serve-graph by adding delegation. Test load-vault/add-zip as well (DONE). Run tests/examples requiring serve-graph. TODO
+- Overhaul serve-graph by adding delegation. Test load-vault/add-zip as well. Run tests/examples requiring serve-graph. DONE
 
 - Re-review new-project, add delegation? UPDATE: read some settings from a project.yaml... TODO
 

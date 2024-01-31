@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.8",
+  "__seamless__": "0.11",
   "connections": [
     {
       "source": [
@@ -292,7 +292,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "3fea06730b7d8bd1de03ea3844e04b47d27ebd5cae48bd038151ce3838b7e76b"
+        "value": "d22a2d69b80b522e6b2c5b893ecd3c979c35572caa8bfd94ca0f98f9e95ac781"
       },
       "datatype": "mixed",
       "file_extension": "html",
@@ -314,7 +314,7 @@
         "code": "b8b868c9096209863699eae4612cb9cdcea975a6940c9a0f0585c266ac26f0c2",
         "input": "5c1192cabd1730d8c1d4f0e067b08daf890c1638c38b3057e5f2723a70e4922a",
         "input_buffer": "5c1192cabd1730d8c1d4f0e067b08daf890c1638c38b3057e5f2723a70e4922a",
-        "result": "321840bb93082ef48e89a9df4484b8bc6870449d3d12f3407e0df240a5a91ef7",
+        "result": "e035b73de08229b7897a72e39872c9de72a0bde2eb1a1691a1f4d13a6e5e7436",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },

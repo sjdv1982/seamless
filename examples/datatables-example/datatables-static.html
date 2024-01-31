@@ -20,7 +20,30 @@ require.config({
 </head>
 <body>
 <div id="datatable" class="datatable">
-<table id="ad9c9d8a-61c4-415b-a1ac-ba60e64c4d81" class="display"style="max-width:100%"><thead>
+<style>.itables table td {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.itables table th {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.itables thead input {
+    width: 100%;
+    padding: 3px;
+    box-sizing: border-box;
+}
+
+.itables tfoot input {
+    width: 100%;
+    padding: 3px;
+    box-sizing: border-box;
+}
+</style>
+<div class="itables">
+<table id="48bc4750-d70d-41e9-90bd-02f6de363069" class="display nowrap"style="table-layout:auto;width:auto;margin:auto;caption-side:bottom"><caption style="white-space: nowrap; overflow: hidden">ad9c9d8a-61c4-415b-a1ac-ba60e64c4d81</caption><thead>
     <tr style="text-align: right;">
       
       <th>Factor A</th>
@@ -28,51 +51,26 @@ require.config({
       <th>Bits of A*B</th>
     </tr>
   </thead><tbody><tr><td>Loading... (need <a href=https://mwouts.github.io/itables/troubleshooting.html>help</a>?)</td></tr></tbody></table>
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
-<style> table td {
-    text-overflow: ellipsis;
-    overflow: hidden;
-} </style>
-<style> table th {
-    text-overflow: ellipsis;
-    overflow: hidden;
-} </style>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
 <script type="module">
+    // Import jquery and DataTable
+    import 'https://code.jquery.com/jquery-3.6.0.min.js';
+    import dt from 'https://cdn.datatables.net/1.12.1/js/jquery.dataTables.mjs';
+    dt($);
+
     // Define the table data
     const data = [[5, 8, 2], [5, 9, 4], [5, 10, 3], [5, 11, 5], [8, 8, 1], [8, 9, 2], [8, 10, 2], [8, 11, 3], [11, 8, 3], [11, 9, 4], [11, 10, 5], [11, 11, 5], [14, 8, 3], [14, 9, 6], [14, 10, 3], [14, 11, 4], [17, 8, 2], [17, 9, 4], [17, 10, 4], [17, 11, 6]];
 
-    if (typeof require === 'undefined') {
-        // TODO: This should become the default (use a simple import)
-        // when the ESM version works independently of whether
-        // require.js is there or not, see
-        // https://datatables.net/forums/discussion/69066/esm-es6-module-support?
-        const {default: $} = await import("https://esm.sh/jquery@3.5.0");
-        const {default: initDataTables} = await import("https://esm.sh/datatables.net@1.11.3?deps=jquery@3.5.0");
+    // Define the dt_args
+    let dt_args = {"columnDefs": [{"width": "70px", "targets": "_all"}, {"className": "dt-center", "targets": "_all"}], "order": []};
+    dt_args["data"] = data;
 
-        initDataTables();
-
-        // Define the dt_args
-        let dt_args = {"columnDefs": [{"width": "70px", "targets": "_all"}, {"className": "dt-center", "targets": "_all"}]};
-        dt_args["data"] = data;
-
-        // Display the table
-        $(document).ready(function () {
-            $('#ad9c9d8a-61c4-415b-a1ac-ba60e64c4d81').DataTable(dt_args);
-        });
-    } else {
-        require(["jquery", "datatables"], ($, datatables) => {
-                // Define the dt_args
-                let dt_args = {"columnDefs": [{"width": "70px", "targets": "_all"}, {"className": "dt-center", "targets": "_all"}]};
-                dt_args["data"] = data;
-
-                // Display the table
-                $(document).ready(function () {
-                    $('#ad9c9d8a-61c4-415b-a1ac-ba60e64c4d81').DataTable(dt_args);
-                });
-            }
-        )
-    }
+    $(document).ready(function () {
+        
+        $('#48bc4750-d70d-41e9-90bd-02f6de363069').DataTable(dt_args);
+    });
 </script>
+</div>
 
 </div>
 </body>
