@@ -11,6 +11,7 @@ else:
 
 from seamless import calculate_checksum
 from seamless.core.cache.buffer_cache import buffer_cache
+from seamless.core.cache.buffer_remote import write_buffer as remote_write_buffer
 from seamless.core.cache.transformation_cache import (
     transformation_cache, tf_get_buffer, 
     transformation_cache
@@ -34,6 +35,7 @@ async def build_transformation():
         buf = await serialize(value, celltype)
         checksum = calculate_checksum(buf)
         buffer_cache.cache_buffer(checksum, buf)
+        remote_write_buffer(checksum, buf)
         if k == "__env__":
             tf_dunder[k] = checksum.hex()
         else:
@@ -42,13 +44,14 @@ async def build_transformation():
     tf_buf = tf_get_buffer(transformation)
     tf_checksum = calculate_checksum(tf_buf)
     buffer_cache.cache_buffer(tf_checksum, tf_buf)
+    remote_write_buffer(tf_checksum, tf_buf)
     
     result = None
     result_checksum = await transformation_cache.run_transformation_async(tf_checksum, tf_dunder=tf_dunder, fingertip=False, scratch=False)
     if result_checksum is not None:
         result = buffer_cache.get_buffer(result_checksum, remote=(delegation==True))
         if delegation:
-            transformation_cache.undo(tf_checksum)            
+            transformation_cache.undo(tf_checksum)
     if result is not None:
         try:
             result = result.decode()

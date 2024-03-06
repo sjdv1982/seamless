@@ -1,6 +1,8 @@
 from seamless.core import context, cell
 import numpy as np
-import sys, os
+import sys
+import seamless
+seamless.delegate(False)
 flat = bool(int(sys.argv[1]))
 
 ctx = context(toplevel=True)

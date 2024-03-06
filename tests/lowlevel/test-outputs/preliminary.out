@@ -1,4 +1,4 @@
-Time elapsed: 0.203
+Time elapsed: 0.204
 {'status': {'tf1': 'Status: executing, 11.1 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 6.7 %',
@@ -16,7 +16,7 @@ Time elapsed: 0.203
  'tf4': 9.0,
  'tf4-result': 9.0}
 
-Time elapsed: 0.608
+Time elapsed: 0.613
 {'status': {'tf1': 'Status: executing, 11.1 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 6.7 %',
@@ -34,7 +34,7 @@ Time elapsed: 0.608
  'tf4': 9.0,
  'tf4-result': 9.0}
 
-Time elapsed: 0.811
+Time elapsed: 0.818
 {'status': {'tf1': 'Status: executing, 11.1 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 13.3 %',
@@ -52,7 +52,7 @@ Time elapsed: 0.811
  'tf4': 10.0,
  'tf4-result': 10.0}
 
-Time elapsed: 1.014
+Time elapsed: 1.023
 {'status': {'tf1': 'Status: executing, 11.1 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 13.3 %',
@@ -70,7 +70,7 @@ Time elapsed: 1.014
  'tf4': 19.0,
  'tf4-result': 19.0}
 
-Time elapsed: 1.418
+Time elapsed: 1.431
 {'status': {'tf1': 'Status: executing, 11.1 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 13.3 %',
@@ -88,7 +88,7 @@ Time elapsed: 1.418
  'tf4': 19.0,
  'tf4-result': 19.0}
 
-Time elapsed: 1.621
+Time elapsed: 1.637
 {'status': {'tf1': 'Status: executing, 22.2 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 20.0 %',
@@ -106,7 +106,7 @@ Time elapsed: 1.621
  'tf4': 1020.0,
  'tf4-result': 1020.0}
 
-Time elapsed: 1.825
+Time elapsed: 1.844
 {'status': {'tf1': 'Status: executing, 22.2 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 20.0 %',
@@ -124,7 +124,7 @@ Time elapsed: 1.825
  'tf4': 1029.0,
  'tf4-result': 1029.0}
 
-Time elapsed: 2.229
+Time elapsed: 2.252
 {'status': {'tf1': 'Status: executing, 22.2 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 26.7 %',
@@ -142,7 +142,7 @@ Time elapsed: 2.229
  'tf4': 1030.0,
  'tf4-result': 1030.0}
 
-Time elapsed: 2.432
+Time elapsed: 2.455
 {'status': {'tf1': 'Status: executing, 22.2 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 26.7 %',
@@ -160,7 +160,7 @@ Time elapsed: 2.432
  'tf4': 1039.0,
  'tf4-result': 1039.0}
 
-Time elapsed: 2.838
+Time elapsed: 2.864
 {'status': {'tf1': 'Status: executing, 22.2 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 33.3 %',
@@ -178,25 +178,25 @@ Time elapsed: 2.838
  'tf4': None,
  'tf4-result': None}
 
-Time elapsed: 3.042
+Time elapsed: 3.081
 {'status': {'tf1': 'Status: executing, 33.3 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 33.3 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: pending',
+            'tf3': 'Status: executing',
             'tf3-result': 'Status: pending',
-            'tf4': 'Status: pending',
+            'tf4': 'Status: executing',
             'tf4-result': 'Status: pending'},
  'tf1': 2000.0,
  'tf1-result': 2000.0,
  'tf2': 40.0,
  'tf2-result': 40.0,
- 'tf3': None,
- 'tf3-result': None,
+ 'tf3': 2040.0,
+ 'tf3-result': 2040.0,
  'tf4': None,
  'tf4-result': None}
 
-Time elapsed: 3.246
+Time elapsed: 3.285
 {'status': {'tf1': 'Status: executing, 33.3 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 33.3 %',
@@ -214,25 +214,7 @@ Time elapsed: 3.246
  'tf4': 2049.0,
  'tf4-result': 2049.0}
 
-Time elapsed: 3.651
-{'status': {'tf1': 'Status: executing, 33.3 %',
-            'tf1-result': 'Status: preliminary',
-            'tf2': 'Status: executing, 40.0 %',
-            'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing, 11.1 %',
-            'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: executing, 100.0 %',
-            'tf4-result': 'Status: preliminary'},
- 'tf1': 2000.0,
- 'tf1-result': 2000.0,
- 'tf2': 50.0,
- 'tf2-result': 50.0,
- 'tf3': 2050.0,
- 'tf3-result': 2050.0,
- 'tf4': 2050.0,
- 'tf4-result': 2050.0}
-
-Time elapsed: 3.855
+Time elapsed: 3.691
 {'status': {'tf1': 'Status: executing, 33.3 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 40.0 %',
@@ -250,25 +232,43 @@ Time elapsed: 3.855
  'tf4': 2059.0,
  'tf4-result': 2059.0}
 
-Time elapsed: 4.265
+Time elapsed: 4.101
+{'status': {'tf1': 'Status: executing, 33.3 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 40.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 22.2 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 2000.0,
+ 'tf1-result': 2000.0,
+ 'tf2': 50.0,
+ 'tf2-result': 50.0,
+ 'tf3': 2051.0,
+ 'tf3-result': 2051.0,
+ 'tf4': 2059.0,
+ 'tf4-result': 2059.0}
+
+Time elapsed: 4.306
 {'status': {'tf1': 'Status: executing, 33.3 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 46.7 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing',
-            'tf3-result': 'Status: pending',
-            'tf4': 'Status: executing',
-            'tf4-result': 'Status: pending'},
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
  'tf1': 2000.0,
  'tf1-result': 2000.0,
  'tf2': 60.0,
  'tf2-result': 60.0,
- 'tf3': None,
- 'tf3-result': None,
- 'tf4': None,
- 'tf4-result': None}
+ 'tf3': 2060.0,
+ 'tf3-result': 2060.0,
+ 'tf4': 2060.0,
+ 'tf4-result': 2060.0}
 
-Time elapsed: 4.469
+Time elapsed: 4.511
 {'status': {'tf1': 'Status: executing, 33.3 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 46.7 %',
@@ -286,7 +286,7 @@ Time elapsed: 4.469
  'tf4': 2069.0,
  'tf4-result': 2069.0}
 
-Time elapsed: 4.671
+Time elapsed: 4.715
 {'status': {'tf1': 'Status: executing, 44.4 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 46.7 %',
@@ -304,7 +304,7 @@ Time elapsed: 4.671
  'tf4': 3069.0,
  'tf4-result': 3069.0}
 
-Time elapsed: 5.076
+Time elapsed: 5.122
 {'status': {'tf1': 'Status: executing, 44.4 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 53.3 %',
@@ -322,7 +322,7 @@ Time elapsed: 5.076
  'tf4': 3079.0,
  'tf4-result': 3079.0}
 
-Time elapsed: 5.482
+Time elapsed: 5.531
 {'status': {'tf1': 'Status: executing, 44.4 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 53.3 %',
@@ -340,7 +340,7 @@ Time elapsed: 5.482
  'tf4': 3079.0,
  'tf4-result': 3079.0}
 
-Time elapsed: 5.685
+Time elapsed: 5.737
 {'status': {'tf1': 'Status: executing, 44.4 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 60.0 %',
@@ -358,7 +358,7 @@ Time elapsed: 5.685
  'tf4': 3080.0,
  'tf4-result': 3080.0}
 
-Time elapsed: 5.888
+Time elapsed: 5.942
 {'status': {'tf1': 'Status: executing, 44.4 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 60.0 %',
@@ -376,7 +376,7 @@ Time elapsed: 5.888
  'tf4': 3089.0,
  'tf4-result': 3089.0}
 
-Time elapsed: 6.090
+Time elapsed: 6.147
 {'status': {'tf1': 'Status: executing, 55.6 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 60.0 %',
@@ -394,25 +394,25 @@ Time elapsed: 6.090
  'tf4': 4080.0,
  'tf4-result': 4080.0}
 
-Time elapsed: 6.293
+Time elapsed: 6.391
 {'status': {'tf1': 'Status: executing, 55.6 %',
             'tf1-result': 'Status: preliminary',
-            'tf2': 'Status: executing, 60.0 %',
+            'tf2': 'Status: executing, 66.7 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing, 11.1 %',
-            'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: OK',
-            'tf4-result': 'Status: OK'},
+            'tf3': 'Status: executing',
+            'tf3-result': 'Status: pending',
+            'tf4': 'Status: executing',
+            'tf4-result': 'Status: pending'},
  'tf1': 4000.0,
  'tf1-result': 4000.0,
- 'tf2': 80.0,
- 'tf2-result': 80.0,
- 'tf3': 4080.0,
- 'tf3-result': 4080.0,
- 'tf4': 4089.0,
- 'tf4-result': 4089.0}
+ 'tf2': 90.0,
+ 'tf2-result': 90.0,
+ 'tf3': 4090.0,
+ 'tf3-result': 4090.0,
+ 'tf4': None,
+ 'tf4-result': None}
 
-Time elapsed: 6.496
+Time elapsed: 6.595
 {'status': {'tf1': 'Status: executing, 55.6 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 66.7 %',
@@ -430,7 +430,7 @@ Time elapsed: 6.496
  'tf4': 4099.0,
  'tf4-result': 4099.0}
 
-Time elapsed: 6.900
+Time elapsed: 7.002
 {'status': {'tf1': 'Status: executing, 55.6 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 66.7 %',
@@ -448,25 +448,7 @@ Time elapsed: 6.900
  'tf4': 4099.0,
  'tf4-result': 4099.0}
 
-Time elapsed: 7.104
-{'status': {'tf1': 'Status: executing, 55.6 %',
-            'tf1-result': 'Status: preliminary',
-            'tf2': 'Status: executing, 73.3 %',
-            'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing, 11.1 %',
-            'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: executing, 100.0 %',
-            'tf4-result': 'Status: preliminary'},
- 'tf1': 4000.0,
- 'tf1-result': 4000.0,
- 'tf2': 100.0,
- 'tf2-result': 100.0,
- 'tf3': 4100.0,
- 'tf3-result': 4100.0,
- 'tf4': 4100.0,
- 'tf4-result': 4100.0}
-
-Time elapsed: 7.308
+Time elapsed: 7.206
 {'status': {'tf1': 'Status: executing, 55.6 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 73.3 %',
@@ -484,25 +466,43 @@ Time elapsed: 7.308
  'tf4': 4109.0,
  'tf4-result': 4109.0}
 
-Time elapsed: 7.713
+Time elapsed: 7.614
 {'status': {'tf1': 'Status: executing, 66.7 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 73.3 %',
             'tf2-result': 'Status: preliminary',
             'tf3': 'Status: executing, 11.1 %',
             'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: OK',
-            'tf4-result': 'Status: OK'},
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
  'tf1': 5000.0,
  'tf1-result': 5000.0,
  'tf2': 100.0,
  'tf2-result': 100.0,
  'tf3': 5100.0,
  'tf3-result': 5100.0,
- 'tf4': 5109.0,
- 'tf4-result': 5109.0}
+ 'tf4': 5100.0,
+ 'tf4-result': 5100.0}
 
-Time elapsed: 7.916
+Time elapsed: 7.819
+{'status': {'tf1': 'Status: executing, 66.7 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 80.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
+ 'tf1': 5000.0,
+ 'tf1-result': 5000.0,
+ 'tf2': 110.0,
+ 'tf2-result': 110.0,
+ 'tf3': 5110.0,
+ 'tf3-result': 5110.0,
+ 'tf4': 5110.0,
+ 'tf4-result': 5110.0}
+
+Time elapsed: 8.023
 {'status': {'tf1': 'Status: executing, 66.7 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 80.0 %',
@@ -520,7 +520,7 @@ Time elapsed: 7.916
  'tf4': 5119.0,
  'tf4-result': 5119.0}
 
-Time elapsed: 8.321
+Time elapsed: 8.432
 {'status': {'tf1': 'Status: executing, 66.7 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 80.0 %',
@@ -538,25 +538,7 @@ Time elapsed: 8.321
  'tf4': 5119.0,
  'tf4-result': 5119.0}
 
-Time elapsed: 8.525
-{'status': {'tf1': 'Status: executing, 66.7 %',
-            'tf1-result': 'Status: preliminary',
-            'tf2': 'Status: executing, 86.7 %',
-            'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing, 11.1 %',
-            'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: executing, 100.0 %',
-            'tf4-result': 'Status: preliminary'},
- 'tf1': 5000.0,
- 'tf1-result': 5000.0,
- 'tf2': 120.0,
- 'tf2-result': 120.0,
- 'tf3': 5120.0,
- 'tf3-result': 5120.0,
- 'tf4': 5120.0,
- 'tf4-result': 5120.0}
-
-Time elapsed: 8.727
+Time elapsed: 8.636
 {'status': {'tf1': 'Status: executing, 66.7 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 86.7 %',
@@ -574,10 +556,28 @@ Time elapsed: 8.727
  'tf4': 5129.0,
  'tf4-result': 5129.0}
 
-Time elapsed: 9.132
+Time elapsed: 9.049
 {'status': {'tf1': 'Status: executing, 77.8 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 86.7 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 22.2 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 6000.0,
+ 'tf1-result': 5000.0,
+ 'tf2': 120.0,
+ 'tf2-result': 120.0,
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': None,
+ 'tf4-result': None}
+
+Time elapsed: 9.255
+{'status': {'tf1': 'Status: executing, 77.8 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 93.3 %',
             'tf2-result': 'Status: preliminary',
             'tf3': 'Status: executing, 11.1 %',
             'tf3-result': 'Status: preliminary',
@@ -585,14 +585,14 @@ Time elapsed: 9.132
             'tf4-result': 'Status: preliminary'},
  'tf1': 6000.0,
  'tf1-result': 6000.0,
- 'tf2': 120.0,
- 'tf2-result': 120.0,
- 'tf3': 6120.0,
- 'tf3-result': 6120.0,
- 'tf4': 6120.0,
- 'tf4-result': 6120.0}
+ 'tf2': 130.0,
+ 'tf2-result': 130.0,
+ 'tf3': 6130.0,
+ 'tf3-result': 6130.0,
+ 'tf4': 6130.0,
+ 'tf4-result': 6130.0}
 
-Time elapsed: 9.336
+Time elapsed: 9.462
 {'status': {'tf1': 'Status: executing, 77.8 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 93.3 %',
@@ -610,43 +610,25 @@ Time elapsed: 9.336
  'tf4': 6139.0,
  'tf4-result': 6139.0}
 
-Time elapsed: 9.741
-{'status': {'tf1': 'Status: executing, 77.8 %',
-            'tf1-result': 'Status: preliminary',
-            'tf2': 'Status: executing, 93.3 %',
-            'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing, 22.2 %',
-            'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: OK',
-            'tf4-result': 'Status: OK'},
- 'tf1': 6000.0,
- 'tf1-result': 6000.0,
- 'tf2': 130.0,
- 'tf2-result': 130.0,
- 'tf3': 6131.0,
- 'tf3-result': 6131.0,
- 'tf4': 6139.0,
- 'tf4-result': 6139.0}
-
-Time elapsed: 9.944
+Time elapsed: 9.873
 {'status': {'tf1': 'Status: executing, 77.8 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 100.0 %',
             'tf2-result': 'Status: preliminary',
-            'tf3': 'Status: executing, 11.1 %',
-            'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: executing, 100.0 %',
-            'tf4-result': 'Status: preliminary'},
+            'tf3': 'Status: pending',
+            'tf3-result': 'Status: pending',
+            'tf4': 'Status: pending',
+            'tf4-result': 'Status: pending'},
  'tf1': 6000.0,
  'tf1-result': 6000.0,
  'tf2': 140.0,
  'tf2-result': 140.0,
- 'tf3': 6140.0,
- 'tf3-result': 6140.0,
- 'tf4': 6140.0,
- 'tf4-result': 6140.0}
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': None,
+ 'tf4-result': None}
 
-Time elapsed: 10.147
+Time elapsed: 10.079
 {'status': {'tf1': 'Status: executing, 77.8 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: executing, 100.0 %',
@@ -664,25 +646,43 @@ Time elapsed: 10.147
  'tf4': 6149.0,
  'tf4-result': 6149.0}
 
-Time elapsed: 10.552
+Time elapsed: 10.488
+{'status': {'tf1': 'Status: executing, 77.8 %',
+            'tf1-result': 'Status: preliminary',
+            'tf2': 'Status: executing, 100.0 %',
+            'tf2-result': 'Status: preliminary',
+            'tf3': 'Status: executing, 22.2 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
+ 'tf1': 6000.0,
+ 'tf1-result': 6000.0,
+ 'tf2': 140.0,
+ 'tf2-result': 140.0,
+ 'tf3': 6141.0,
+ 'tf3-result': 6141.0,
+ 'tf4': 6149.0,
+ 'tf4-result': 6149.0}
+
+Time elapsed: 10.693
 {'status': {'tf1': 'Status: executing, 88.9 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
             'tf2-result': 'Status: OK',
-            'tf3': 'Status: pending',
-            'tf3-result': 'Status: pending',
-            'tf4': 'Status: pending',
-            'tf4-result': 'Status: pending'},
+            'tf3': 'Status: executing, 11.1 %',
+            'tf3-result': 'Status: preliminary',
+            'tf4': 'Status: executing, 100.0 %',
+            'tf4-result': 'Status: preliminary'},
  'tf1': 7000.0,
  'tf1-result': 7000.0,
  'tf2': 150.0,
  'tf2-result': 150.0,
- 'tf3': None,
- 'tf3-result': None,
- 'tf4': None,
- 'tf4-result': None}
+ 'tf3': 7150.0,
+ 'tf3-result': 7150.0,
+ 'tf4': 7150.0,
+ 'tf4-result': 7150.0}
 
-Time elapsed: 10.755
+Time elapsed: 10.898
 {'status': {'tf1': 'Status: executing, 88.9 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -700,7 +700,7 @@ Time elapsed: 10.755
  'tf4': 7159.0,
  'tf4-result': 7159.0}
 
-Time elapsed: 11.161
+Time elapsed: 11.103
 {'status': {'tf1': 'Status: executing, 88.9 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -718,7 +718,7 @@ Time elapsed: 11.161
  'tf4': 7159.0,
  'tf4-result': 7159.0}
 
-Time elapsed: 11.769
+Time elapsed: 11.715
 {'status': {'tf1': 'Status: executing, 88.9 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -736,7 +736,7 @@ Time elapsed: 11.769
  'tf4': 7159.0,
  'tf4-result': 7159.0}
 
-Time elapsed: 12.174
+Time elapsed: 12.123
 {'status': {'tf1': 'Status: executing, 100.0 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -754,7 +754,7 @@ Time elapsed: 12.174
  'tf4': 8150.0,
  'tf4-result': 8150.0}
 
-Time elapsed: 12.376
+Time elapsed: 12.328
 {'status': {'tf1': 'Status: executing, 100.0 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -772,7 +772,7 @@ Time elapsed: 12.376
  'tf4': 8159.0,
  'tf4-result': 8159.0}
 
-Time elapsed: 12.579
+Time elapsed: 12.732
 {'status': {'tf1': 'Status: executing, 100.0 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -790,7 +790,7 @@ Time elapsed: 12.579
  'tf4': 8159.0,
  'tf4-result': 8159.0}
 
-Time elapsed: 13.186
+Time elapsed: 13.139
 {'status': {'tf1': 'Status: executing, 100.0 %',
             'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
@@ -808,25 +808,25 @@ Time elapsed: 13.186
  'tf4': 8159.0,
  'tf4-result': 8159.0}
 
-Time elapsed: 13.591
+Time elapsed: 13.550
 {'status': {'tf1': 'Status: OK',
-            'tf1-result': 'Status: OK',
+            'tf1-result': 'Status: preliminary',
             'tf2': 'Status: OK',
             'tf2-result': 'Status: OK',
-            'tf3': 'Status: executing, 11.1 %',
+            'tf3': 'Status: executing, 33.3 %',
             'tf3-result': 'Status: preliminary',
-            'tf4': 'Status: executing, 100.0 %',
-            'tf4-result': 'Status: preliminary'},
+            'tf4': 'Status: OK',
+            'tf4-result': 'Status: OK'},
  'tf1': 9000.0,
- 'tf1-result': 9000.0,
+ 'tf1-result': 8000.0,
  'tf2': 150.0,
  'tf2-result': 150.0,
- 'tf3': 9150.0,
- 'tf3-result': 9150.0,
- 'tf4': 9150.0,
- 'tf4-result': 9150.0}
+ 'tf3': None,
+ 'tf3-result': None,
+ 'tf4': None,
+ 'tf4-result': None}
 
-Time elapsed: 13.794
+Time elapsed: 13.754
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -844,7 +844,7 @@ Time elapsed: 13.794
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 14.201
+Time elapsed: 14.162
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -862,7 +862,7 @@ Time elapsed: 14.201
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 14.607
+Time elapsed: 14.777
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -880,7 +880,7 @@ Time elapsed: 14.607
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 15.215
+Time elapsed: 15.187
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -898,7 +898,7 @@ Time elapsed: 15.215
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 15.622
+Time elapsed: 15.801
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -916,7 +916,7 @@ Time elapsed: 15.622
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 16.231
+Time elapsed: 16.212
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -934,7 +934,7 @@ Time elapsed: 16.231
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 16.638
+Time elapsed: 16.621
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -952,7 +952,7 @@ Time elapsed: 16.638
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 17.246
+Time elapsed: 17.237
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -970,7 +970,7 @@ Time elapsed: 17.246
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 17.652
+Time elapsed: 17.647
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',
@@ -988,7 +988,7 @@ Time elapsed: 17.652
  'tf4': 9159.0,
  'tf4-result': 9159.0}
 
-Time elapsed: 18.088
+Time elapsed: 18.107
 {'status': {'tf1': 'Status: OK',
             'tf1-result': 'Status: OK',
             'tf2': 'Status: OK',

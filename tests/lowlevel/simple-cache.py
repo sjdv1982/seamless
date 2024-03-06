@@ -1,6 +1,9 @@
 """
 Retrieval of buffers and computation results from database cache
-First run simple.py with Seamless delegation on
+With Seamless delegation level 3 available:
+    First, "export DELEGATE=1" to turn on delegation for simple.py
+    Then run simple.py (with delegation)
+    Finally, run this script 
 """
 
 import seamless

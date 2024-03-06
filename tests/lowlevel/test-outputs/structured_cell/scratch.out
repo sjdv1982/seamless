@@ -12,6 +12,7 @@ Buffer CANNOT be read from buffer server
 
 8643002a41c874e22124d5abbc2fac3d5153ec3b5012672d6e81c6e5dca475a1
 First text First tex Second text Second t Third text Third tex
+CacheManager, expression_to_result_checksum: 1 undestroyed
 
 8643002a41c874e22124d5abbc2fac3d5153ec3b5012672d6e81c6e5dca475a1
 Buffer CAN be read from buffer server

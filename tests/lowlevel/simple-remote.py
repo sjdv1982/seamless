@@ -54,7 +54,3 @@ print("...")
 ctx.compute()
 print(ctx.result.value, ctx.status)
 print(ctx.tf.exception)
-print("STOP")
-if seamless.config.database.active:
-    from pprint import pprint
-    pprint(ctx.tf.execution_metadata)

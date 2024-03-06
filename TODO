@@ -25,11 +25,16 @@ TODO before 0.12 release:
 
 - Overhaul serve-graph by adding delegation. Test load-vault/add-zip as well. Run tests/examples requiring serve-graph. DONE
 
-- Re-review new-project, add delegation? UPDATE: read some settings from a project.yaml... TODO
-
+- Re-review new-project. Read some settings from a project.yaml... TODO (delegation!). Always assume (verify?) Docker availability. Have an IPython-or-Jupyter mode config var. Perhaps have a load-project.bash as well? TODO.
+    
 ======================
 
 - Clean up and re-run all tests.
+    * low-level (partly DONE)
+    * cmd (TODO)
+    * high-level (TODO)
+
+- Make sure to add the correct scripts and wrappers from /seamless/bin and /seamless-tools/utils into the Docker images (rpbs/seamless and seamless-devel). Currently, /seamless-tools/utils is not mounted at all, therefore seamless-upload fails. /seamless-tools/seamless-cli/seamless-upload-vault also doesn't seem to work. As tests, run /lowlevel/pin-filesystem.sh, /highlevel/pin-filesystem.sh, /highlevel/get-file-and-directory.sh, /cmd/highlevel/get-file-and-directory.sh
 
 - Documentation. 
 
@@ -39,9 +44,24 @@ TODO before 0.12 release:
 
 - For seamless-cli, when distributing, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile.
 
+
 - Make a separate conda package for bin/seamless. 
 Add seamless-upload, seamless-upload-zip, seamless-upload-vault and seamless-download as copies of seamless-tools/scripts/upload.py etc.,
 rather than the Docker wrappers of seamless-cli/seamless-upload etc.
+
+- Maintain two Conda environment files: one for delegated use (seamless-delegated), one with full functionality (seamless-full?)
+Currently, there is only seamless-delegated-development.yaml, base the others
+(seamless-delegated, seamless-full) off this.
+In all of them, *also* install seamless-cli so that tools and seamless Docker container can be fired up at will. *Mark all Conda environments with
+SEAMLESS_CONDA_ENVIRONMENT=1*, this is so that seamless-bash will work from within the Conda environment.
+
+- Port run-db-hashserver-devel to non-devel environment for distribution.
+
+- Document the various packages/installation methods.
+    * The Conda environments (full and delegated) will have co-equal status
+    with the- Seamless Docker image
+    * Note that even the Conda environments still require Docker to make delegation work. Mini and micro assistants require Seamless Docker image as well.
+    If you don't have Docker, either use no delegation (bad!), or set it up via HPC/Dask-oriented tools (run-db-hashserver.sh + dask-deployment tools). The latter option is advanced use case. Document delegation and why!
 
 ======================
 

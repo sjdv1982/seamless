@@ -17,7 +17,7 @@ Traceback (most recent call last):
     sc._set_auth_path((), data)
   File "/seamless/seamless/core/structured_cell.py", line 245, in _set_auth_path
     set_subpath(self._auth_value, self.hash_pattern, path, value)
-  File "/seamless/seamless/core/protocol/expression.py", line 162, in set_subpath_sync
+  File "/seamless/seamless/core/protocol/expression.py", line 170, in set_subpath_sync
     sub_structure, _ = value_to_deep_structure_sync(
   File "/seamless/seamless/core/protocol/deep_structure.py", line 516, in value_to_deep_structure_sync
     asyncio.get_event_loop().run_until_complete(fut)

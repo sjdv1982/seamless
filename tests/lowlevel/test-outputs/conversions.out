@@ -1,46 +1,46 @@
-Time: 0.1 ms, *** Start ***
-Time: 0.1 ms, None
+Time: 0.2 ms, *** Start ***
+Time: 0.2 ms, None
 
-Time: 0.1 ms, *** Stage 0 ***
+Time: 0.2 ms, *** Stage 0 ***
 
-Time: 0.2 ms, *** Stage 1a ***
-Time: 1.9 ms, ctx.txt1 [42, "test", {"mykey": "myvalue"}, true]
-Time: 1.9 ms, *** Stage 1b ***
-Time: 2.0 ms, *** Stage 1c ***
-Time: 3.6 ms, ctx.txt2 [42, "test", {"mykey": "myvalue"}, true]
-Time: 3.6 ms, ctx.txt3 [42, "test", {"mykey": "myvalue"}, true]
+Time: 0.3 ms, *** Stage 1a ***
+Time: 2.5 ms, ctx.txt1 [42, "test", {"mykey": "myvalue"}, true]
+Time: 2.5 ms, *** Stage 1b ***
+Time: 2.6 ms, *** Stage 1c ***
+Time: 4.9 ms, ctx.txt2 [42, "test", {"mykey": "myvalue"}, true]
+Time: 5.1 ms, ctx.txt3 [42, "test", {"mykey": "myvalue"}, true]
 
-Time: 3.6 ms, *** Stage 2 ***
-Time: 5.2 ms, ctx.txt4 [42, "test", {"mykey": "myvalue"}, true]
+Time: 5.1 ms, *** Stage 2 ***
+Time: 7.2 ms, ctx.txt4 [42, "test", {"mykey": "myvalue"}, true]
 
-Time: 5.2 ms, *** Stage 3 ***
-Time: 7.0 ms, ctx.plain [42, 'test', {'mykey': 'myvalue'}, True]
-Time: 7.0 ms, *** Stage 3a ***
-Time: 8.6 ms, ctx.plain2 [42, 'test', {'mykey': 'myvalue'}, True] list
-Time: 8.6 ms, *** Stage 3b ***
-Time: 10.5 ms, ctx.mixed [42, "test", {"mykey": "myvalue"}, true] str
-Time: 10.5 ms, *** Stage 4 ***
-Time: 72.6 ms, ctx.ipy 
+Time: 7.3 ms, *** Stage 3 ***
+Time: 9.9 ms, ctx.plain [42, 'test', {'mykey': 'myvalue'}, True]
+Time: 10.0 ms, *** Stage 3a ***
+Time: 12.9 ms, ctx.plain2 [42, 'test', {'mykey': 'myvalue'}, True] list
+Time: 13.0 ms, *** Stage 3b ***
+Time: 16.4 ms, ctx.mixed [42, "test", {"mykey": "myvalue"}, true] str
+Time: 16.5 ms, *** Stage 4 ***
+Time: 149.1 ms, ctx.ipy 
 %%timeit
 x = 42
-Time: 72.8 ms, ctx.py 
+Time: 149.4 ms, ctx.py 
 
 _ = get_ipython().run_cell_magic('timeit', '', 'x = 42')
 
-Time: 72.8 ms, *** Stage 5 ***
-Time: 75.2 ms, ctx.plain3 Test string!! b'"Test string!!"\n'
-Time: 75.3 ms, ctx.text Test string!! b'Test string!!\n'
-Time: 75.4 ms, ctx.str Test string!! b'"Test string!!"\n'
+Time: 149.4 ms, *** Stage 5 ***
+Time: 153.6 ms, ctx.plain3 Test string!! b'"Test string!!"\n'
+Time: 153.9 ms, ctx.text Test string!! b'Test string!!\n'
+Time: 154.2 ms, ctx.str Test string!! b'"Test string!!"\n'
 
-Time: 75.4 ms, *** Stage 6 ***
-Time: 78.3 ms, ctx.bool True b'true\n' 035c62295bade8d2c76a985c0d1015f4622798c1ae7d4f318cc660aebc691344
-Time: 78.4 ms, ctx.plain4 True b'true\n' 035c62295bade8d2c76a985c0d1015f4622798c1ae7d4f318cc660aebc691344
-Time: 78.4 ms, ctx.int 1 bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d
-Time: 78.5 ms, ctx.plain5 1 bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d
-Time: 78.6 ms, ctx.bool2 True b'true\n' 035c62295bade8d2c76a985c0d1015f4622798c1ae7d4f318cc660aebc691344
+Time: 154.2 ms, *** Stage 6 ***
+Time: 161.0 ms, ctx.bool True b'true\n' 035c62295bade8d2c76a985c0d1015f4622798c1ae7d4f318cc660aebc691344
+Time: 161.3 ms, ctx.plain4 True b'true\n' 035c62295bade8d2c76a985c0d1015f4622798c1ae7d4f318cc660aebc691344
+Time: 161.6 ms, ctx.int 1 bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d
+Time: 161.9 ms, ctx.plain5 1 bc4bb29ce739b5d97007946aa4fdb987012c647b506732f11653c5059631cd3d
+Time: 162.2 ms, ctx.bool2 True b'true\n' 035c62295bade8d2c76a985c0d1015f4622798c1ae7d4f318cc660aebc691344
 
-Time: 81.4 ms, ctx.bool False b'false\n' 71f93bd45c5fcbe603b508ea7a41b8b4cd8c6c1182d29bd52188b6ab54208f53
-Time: 81.5 ms, ctx.plain4 False b'false\n' 71f93bd45c5fcbe603b508ea7a41b8b4cd8c6c1182d29bd52188b6ab54208f53
-Time: 81.6 ms, ctx.int 0 7fc65e8a22c2f74b9b307d68270e94e56608b54dafbc797cc6f58747253b0e84
-Time: 81.7 ms, ctx.plain5 0 7fc65e8a22c2f74b9b307d68270e94e56608b54dafbc797cc6f58747253b0e84
-Time: 81.7 ms, ctx.bool2 False b'false\n' 71f93bd45c5fcbe603b508ea7a41b8b4cd8c6c1182d29bd52188b6ab54208f53
+Time: 167.2 ms, ctx.bool False b'false\n' 71f93bd45c5fcbe603b508ea7a41b8b4cd8c6c1182d29bd52188b6ab54208f53
+Time: 167.5 ms, ctx.plain4 False b'false\n' 71f93bd45c5fcbe603b508ea7a41b8b4cd8c6c1182d29bd52188b6ab54208f53
+Time: 167.7 ms, ctx.int 0 7fc65e8a22c2f74b9b307d68270e94e56608b54dafbc797cc6f58747253b0e84
+Time: 168.0 ms, ctx.plain5 0 7fc65e8a22c2f74b9b307d68270e94e56608b54dafbc797cc6f58747253b0e84
+Time: 168.2 ms, ctx.bool2 False b'false\n' 71f93bd45c5fcbe603b508ea7a41b8b4cd8c6c1182d29bd52188b6ab54208f53

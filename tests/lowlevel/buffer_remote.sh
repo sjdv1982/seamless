@@ -9,9 +9,9 @@ echo 0
 python buffer_remote0.py 0  # not flat
 echo ''
 
-buffer_write_server=$HASHSERVER_WRITE_SERVER
+buffer_write_server=$SEAMLESS_WRITE_BUFFER_SERVER
 export HASHSERVER_WRITABLE=0
-unset HASHSERVER_WRITE_SERVER
+unset SEAMLESS_WRITE_BUFFER_SERVER
 seamless-hashserver /tmp/bufferdir/ >& /dev/null
 
 echo 1
@@ -20,7 +20,7 @@ docker stop hashserver-hashserver-1
 rm -rf /tmp/bufferdir
 echo ''
 
-export HASHSERVER_WRITE_SERVER=$buffer_write_server
+export SEAMLESS_WRITE_BUFFER_SERVER=$buffer_write_server
 export HASHSERVER_WRITABLE=1
 mkdir -p /tmp/bufferdir
 seamless-hashserver /tmp/bufferdir/ >& /dev/null
