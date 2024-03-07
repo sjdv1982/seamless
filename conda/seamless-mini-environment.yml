@@ -8,7 +8,7 @@ dependencies:
   - rpbs::seamless-framework==0.11
   - rpbs::silk>=0.1.10
   - conda
-  - ipython
+  - ipython<=8.16.*
   - ipykernel
   - bashlex
 

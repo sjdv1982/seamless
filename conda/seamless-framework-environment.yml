@@ -9,7 +9,7 @@ dependencies:
   - rpbs::silk>=0.1.10
   - rpbs::seamless-cli
   - conda
-  - ipython
+  - ipython<=8.16.*
   - ipykernel
 
   - cffi
