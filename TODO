@@ -30,7 +30,7 @@ TODO before 0.12 release:
 ======================
 
 - Clean up and re-run all tests.
-    * low-level (partly DONE)
+    * low-level (DONE)
     * cmd (TODO)
     * high-level (TODO)
 
