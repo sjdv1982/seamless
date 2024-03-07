@@ -35,7 +35,6 @@ Key order checksum: 01678a166d7b6ad2f3040791e98aac51051ee142fee1e57c7f453349e404
   "keyorder": "01678a166d7b6ad2f3040791e98aac51051ee142fee1e57c7f453349e4049c1c"
 }
 checksum=8000684ee74723b6757d754beb77e22276f5775fb57578e730ba6aab16f11e41
-{'type': 'deepfolder', 'version': '1', 'dataset': 'mydataset'}
 {
   "checksum": "8000684ee74723b6757d754beb77e22276f5775fb57578e730ba6aab16f11e41",
   "type": "deepfolder",
