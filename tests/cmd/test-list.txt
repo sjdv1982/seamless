@@ -1,6 +1,8 @@
-checksum-input.sh
 testfolder.sh
 undo.sh
+    After running, grep "UTC" in undo.out
+    It should print two lines, corresponding to dates with a few seconds offset
+    If the two lines are identical, something has gone wrong
 scratch-fingertip.sh
 multi-core-transformations.sh
     See the tests/highlevel version
