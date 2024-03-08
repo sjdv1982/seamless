@@ -43,6 +43,9 @@ future.sh. Expected output is:
     Waiting for future 'job1.txt.FUTURE' (2 seconds), 
     then waiting on the other future, 
     then "3 5 8"
+    NOTE: as of 0.12, this test is not repeatable with the micro-dask-assistant, 
+      i.e. you must restart the connected Dask workers between invocations
+    This is not so for the micro-assistant, nor for the micro-dask-assistant
 get-file-and-directory.sh
     Needs an assistant name as input, e.g. ASSISTANT=micro-assistant-devel
     Run as: ./get-file-and-directory.sh $ASSISTANT | tee test-outputs/get-file-and-directory.out
