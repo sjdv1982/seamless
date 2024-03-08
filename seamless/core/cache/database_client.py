@@ -204,6 +204,13 @@ class Database:
         
         thread = threading.current_thread()
         session_async = sessions_async.get(thread)
+        if session_async is not None:
+            try:
+                loop = asyncio.get_running_loop()
+                if loop != session_async._loop:
+                    session_async = None
+            except RuntimeError:  # no event loop running:            
+                pass
         if session_async is None:
             session_async = aiohttp.ClientSession()
             sessions_async[thread] = session_async

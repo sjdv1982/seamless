@@ -14,3 +14,6 @@ wait $t2
 echo "$(($SECONDS - $start)) seconds have passed"
 echo "Job 1" $(cat tf)  # file will only exist if the assistant has ncores=6 or higher
 echo "Job 2" $(cat tf2)
+wait $t1
+echo "Job 1" $(cat tf)
+rm -f tf tf.CHECKSUM tf2 tf2.CHECKSUM
