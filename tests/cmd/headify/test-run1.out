@@ -9,10 +9,10 @@ is
 a
 
 filelist.txt
-numbers-head.dat
 numbers.dat
-table-head.csv
+numbers-head.dat
 table.csv
+table-head.csv
 text-head.txt
 text.txt
 

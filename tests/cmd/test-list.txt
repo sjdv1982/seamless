@@ -51,8 +51,12 @@ get-file-and-directory.sh
     Run as: ./get-file-and-directory.sh $ASSISTANT | tee test-outputs/get-file-and-directory.out
     Otherwise, similar to the tests/highlevel version
 
+headify
+    See subdirectory
+    
 manyjobs.sh
     /bin/seamless version of highlevel/imperative-manyjobs.py
     Needs to be run with a Dask cluster, 1000x ~20 sec jobs. 
     Submitting 1000 jobs will take 200s. Will calculate pi to 6 digits. 
     Expected results: 3.141593805644 5.116277454745302e-05 3.141592653589793
+

@@ -20,7 +20,7 @@ args = parser.parse_args()
 import seamless
 seamless.delegate()
 
-from seamless.highlevel import Transformer, Context
+from seamless.highlevel import Transformer, Context, Cell
 
 try:
     Transformer.from_canonical_interface(
@@ -38,8 +38,10 @@ ctx.tf = tf
 ctx.compute()
 
 t = time.time()
+ctx.infile = Cell("bytes")
+tf.infile = ctx.infile
 with open(args.input, "rb") as f:
-    tf.infile = f.read()
+    ctx.infile = f.read()
 tf.lines = args.lines
 tf.sleep = args.sleep
 ctx.compute()

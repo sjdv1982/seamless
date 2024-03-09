@@ -8,13 +8,15 @@ text.txt
 This
 is
 a
+
+seamless: Upload 2 files, total 126.00 B
 filelist.txt
+numbers.dat
 numbers-head.dat
 numbers-head.dat.CHECKSUM
-numbers.dat
+table.csv
 table-head.csv
 table-head.csv.CHECKSUM
-table.csv
 text-head.txt
 text-head.txt.CHECKSUM
 text.txt

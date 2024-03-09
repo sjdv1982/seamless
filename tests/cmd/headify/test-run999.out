@@ -1,8 +1,8 @@
-TEST-head.txt
-TEST-head.txt.CHECKSUM
 filelist.txt
 numbers.dat
 table.csv
+TEST-head.txt
+TEST-head.txt.CHECKSUM
 text-head.txt
 text-head.txt.CHECKSUM
 text.txt

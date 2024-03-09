@@ -1,15 +1,28 @@
-seamless.core.transformation.SeamlessTransformationError: Error 400 from assistant:ERROR: 
+seamless: Upload 1 files, total 36.00 B
+seamless.core.transformation.SeamlessTransformationError: Error 400 from assistant:ERROR: Unknown error
+Output:
+Traceback (most recent call last):
+  File "/home/jovyan/seamless-scripts/run-transformation.py", line 138, in <module>
+    result = seamless.run_transformation(checksum.bytes(), fingertip=fingertip, tf_dunder=dunder, scratch=scratch, manager=manager)
+  File "/seamless/seamless/__init__.py", line 113, in run_transformation
+    return tf_cache.run_transformation(checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, new_event_loop=new_event_loop, manager=manager)
+  File "/seamless/seamless/core/cache/transformation_cache.py", line 1270, in run_transformation
+    asyncio.get_event_loop().run_until_complete(fut)
+  File "/opt/conda/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/seamless/seamless/core/cache/transformation_cache.py", line 1215, in run_transformation_async
+    raise self.transformation_exceptions[tf_checksum]
+seamless.core.transformation.SeamlessTransformationError: 
 Bash transformer exception
 ==========================
 
-Error: Return code 1
+Error: Return code 127
 
 *************************************************
 * Command
 *************************************************
-chmod +x 'bin/headify'
 (
-bin/headify workfiles/text.txt -n 3
+headify workfiles/text.txt -n 3
 ) > RESULT
 *************************************************
 
@@ -17,15 +30,14 @@ bin/headify workfiles/text.txt -n 3
 *************************************************
 * Standard output
 *************************************************
-Traceback (most recent call last):
-  File "/tmp/seamless-bash-transformern6bt54v0/bin/headify", line 16, in <module>
-    import headify_lib
-ModuleNotFoundError: No module named 'headify_lib'
+/bin/bash: line 4: headify: command not found
 
 *************************************************
 *************************************************
 Execution time: 0.0 seconds
 
+
+buffer cache, 5 buffers undestroyed
 filelist.txt
 numbers.dat
 table.csv
@@ -33,18 +45,31 @@ text.txt
 
 cat: workfiles/text-head.txt: No such file or directory
 
-seamless.core.transformation.SeamlessTransformationError: Error 400 from assistant:ERROR: 
+seamless: Upload 1 files, total 22.00 B
+seamless.core.transformation.SeamlessTransformationError: Error 400 from assistant:ERROR: Unknown error
+Output:
+Traceback (most recent call last):
+  File "/home/jovyan/seamless-scripts/run-transformation.py", line 138, in <module>
+    result = seamless.run_transformation(checksum.bytes(), fingertip=fingertip, tf_dunder=dunder, scratch=scratch, manager=manager)
+  File "/seamless/seamless/__init__.py", line 113, in run_transformation
+    return tf_cache.run_transformation(checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, new_event_loop=new_event_loop, manager=manager)
+  File "/seamless/seamless/core/cache/transformation_cache.py", line 1270, in run_transformation
+    asyncio.get_event_loop().run_until_complete(fut)
+  File "/opt/conda/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/seamless/seamless/core/cache/transformation_cache.py", line 1215, in run_transformation_async
+    raise self.transformation_exceptions[tf_checksum]
+seamless.core.transformation.SeamlessTransformationError: 
 Bash transformer exception
 ==========================
 
-Error: Return code 1
+Error: Return code 127
 
 *************************************************
 * Command
 *************************************************
-chmod +x 'bin/headify'
 (
-bin/headify workfiles/filelist.txt -n 3 --batch
+headify workfiles/filelist.txt -n 3 --batch
 ) > RESULT
 *************************************************
 
@@ -52,15 +77,14 @@ bin/headify workfiles/filelist.txt -n 3 --batch
 *************************************************
 * Standard output
 *************************************************
-Traceback (most recent call last):
-  File "/tmp/seamless-bash-transformer5b8nw8p4/bin/headify", line 16, in <module>
-    import headify_lib
-ModuleNotFoundError: No module named 'headify_lib'
+/bin/bash: line 4: headify: command not found
 
 *************************************************
 *************************************************
 Execution time: 0.0 seconds
 
+
+buffer cache, 5 buffers undestroyed
 filelist.txt
 numbers.dat
 table.csv
