@@ -53,7 +53,9 @@ get-file-and-directory.sh
 
 headify
     See subdirectory
-    
+
+nesting.sh
+
 manyjobs.sh
     /bin/seamless version of highlevel/imperative-manyjobs.py
     Needs to be run with a Dask cluster, 1000x ~20 sec jobs. 

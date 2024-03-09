@@ -11,7 +11,7 @@ Python style embeds Python style: yes
 Python style embeds cmd style: no
 cmd style embeds workflow style: no
 cmd style embeds Python style: no
-cmd style embeds cmd style: to be implemented?
+cmd style embeds cmd style: yes (for mini assistant)
 
 =============================
 
@@ -46,13 +46,16 @@ TODO before 0.12 release:
     
 ======================
 
+- Fix issue #249, re-run cmd/headify test. Issue seems to prevent federation (last line of headify/test.out is too slow)
+
 - Clean up and re-run all tests.
     * low-level (DONE)
     * fairserver (DONE)
-    * cmd (TODO)
+    * cmd (DONE)
     * high-level (TODO)
 
 - Make sure to add the correct scripts and wrappers from /seamless/bin and /seamless-tools/utils into the Docker images (rpbs/seamless and seamless-devel). Currently, /seamless-tools/utils is not mounted at all, therefore seamless-upload fails. /seamless-tools/seamless-cli/seamless-upload-vault also doesn't seem to work. As tests, run /lowlevel/pin-filesystem.sh, /highlevel/pin-filesystem.sh, /highlevel/get-file-and-directory.sh, /cmd/highlevel/get-file-and-directory.sh
+TODO, but nested /bin/seamless works for devel
 
 - Documentation. 
 
@@ -65,7 +68,7 @@ TODO before 0.12 release:
 
 - Make a separate conda package for bin/seamless. 
 Add seamless-upload, seamless-upload-zip, seamless-upload-vault and seamless-download as copies of seamless-tools/scripts/upload.py etc.,
-rather than the Docker wrappers of seamless-cli/seamless-upload etc.
+rather than the Docker wrappers of seamless-cli/seamless-upload etc. However, do add bin/seamless to the Docker images for nesting (DONE for devel image)
 
 - Maintain two Conda environment files: one for delegated use (seamless-delegated), one with full functionality (seamless-full?)
 Currently, there is only seamless-delegated-development.yaml, base the others

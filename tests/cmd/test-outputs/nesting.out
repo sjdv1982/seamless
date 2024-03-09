@@ -1,0 +1,24 @@
+seamless: Upload 1 files, total 37.00 B
+Variable: X1 /variable
+
+
+Variable: X2 /variable
+
+
+seamless: Upload 1 files, total 102.00 B
+37 ./nesting-1.sh
+37 nesting-1.sh
+NEST
+Variable: QQQ /variable
+
+/NEST
+
+
+37 ./nesting-1.sh
+37 nesting-1.sh
+NEST
+Variable: QQQ /variable
+
+/NEST
+
+
