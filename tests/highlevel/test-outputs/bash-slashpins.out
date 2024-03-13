@@ -9,7 +9,7 @@ c
 Execution time: 0.0 seconds
 *************************************************
 Traceback (most recent call last):
-  File "Seamless transformer: .tf.tf", line 89, in <module>
+  File "Seamless transformer: .tf.tf", line 92, in <module>
     _write_file(pin, vv, "w")
   File "Seamless transformer: .tf.tf", line 49, in _write_file
     raise ValueError("Pin {}: .. is not allowed")

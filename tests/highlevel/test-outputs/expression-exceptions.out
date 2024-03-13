@@ -17,7 +17,7 @@ b 12
 a None
 a test2
 ********************************************************************************
-b 3aace618e0d578104c110b4930ab376755695261858720cc631cbe62390cd61a cannot be converted from str to int
+b SeamlessConversionError: 3aace618e0d578104c110b4930ab376755695261858720cc631cbe62390cd61a cannot be converted from str to int
 
 Original exception:
 
@@ -37,7 +37,7 @@ None
 
 *** input pins ***
   +++ x +++
-c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783 cannot be converted from mixed to int
+SeamlessConversionError: c99446f315c991d5c5e83bd65753dc1fe97448da92b5e48fe028dcbd8cb87783 cannot be converted from mixed to int
 
 Original exception:
 

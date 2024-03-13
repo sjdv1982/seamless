@@ -19,7 +19,7 @@ ctx.result.mount("/tmp/result", "w")
 ctx.translate(force=True)
 ctx.compute()
 print(ctx.result.value)
-ctx.code = "head -3 testdata > firstdata; tar czf RESULT testdata firstdata"
+ctx.code = "head -3 testdata > firstdata; mkdir RESULT; mv testdata firstdata RESULT"
 ctx.compute()
 print(ctx.result.value)
 ctx.code = "python3 -c 'import numpy as np; np.save(\"test\",np.arange(12)*3)'; cat test.npy > RESULT"

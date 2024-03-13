@@ -9,7 +9,7 @@ This cell is not fully independent, i.e. it has incoming connections
 Traceback (most recent call last):
   File "/cwd/tests/highlevel/independence-error-message.py", line 18, in <module>
     ctx.b.share(readonly=False)
-  File "/seamless/seamless/highlevel/Cell.py", line 1015, in share
+  File "/seamless/seamless/highlevel/Cell.py", line 1018, in share
     raise Exception(msg.format(self))
 Exception: Seamless Cell: .b: Non-readonly HTTP share is not possible.
 This cell is not fully independent, i.e. it has incoming connections

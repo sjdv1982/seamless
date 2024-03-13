@@ -227,6 +227,8 @@ def build_compiled_module(full_module_name, original_checksum, checksum, module_
     
     """
     import distutils.errors
+    last_exc_str = None
+    exception = None
     for trial in range(5):
         try:
             curr_extension_dir = SEAMLESS_EXTENSION_DIR
@@ -312,13 +314,19 @@ def build_compiled_module(full_module_name, original_checksum, checksum, module_
                 mod = import_extension_module(curr_extension_dir, full_module_name, module_code, debug, source_files)
             return mod
         except (FileNotFoundError, BuildModuleError, distutils.errors.LinkError) as exc:
-            print("COMPILATION FAILURE", trial+1, full_module_name, file=sys.stderr)
-            traceback.print_exc()
-            print("/COMPILATION FAILURE", trial+1, full_module_name, file=sys.stderr)
+            '''
+            exc_str = traceback.format_exc()
+            if exc_str != last_exc_str:
+                last_exc_str = exc_str
+                print("COMPILATION FAILURE", full_module_name, file=sys.stderr)
+                print(exc_str, file=sys.stderr)
+                print("/COMPILATION FAILURE", full_module_name, file=sys.stderr)
+            '''
             shutil.rmtree(build_dir,ignore_errors=True)
+            exception = exc
         except Exception as exc:
             raise exc from None
-    raise exc from None
+    raise exception from None
 
 def build_module(module_definition, module_workspace={}, *,
      compilers, languages, module_debug_mounts,

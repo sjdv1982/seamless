@@ -18,12 +18,12 @@ Traceback (most recent call last):
   File "/cwd/tests/highlevel/special-pins-bash.py", line 58, in <module>
     ctx.tf.add_special_pin("nonsense", "bool")
 ValueError: Special pinname must start with SPECIAL__
+None
+Status: {'tf': '*tf*: Status: upstream => SPECIAL__X undefined'}
 Traceback (most recent call last):
   File "/cwd/tests/highlevel/special-pins-bash.py", line 79, in <module>
     ctx.tf.SPECIAL__X = 12
 AttributeError: Special pins must be set using bracket syntax
-None
-Status: {'tf': '*tf*: Status: upstream => SPECIAL__X undefined'}
 OK
 *************************************************
 * Result
@@ -37,9 +37,9 @@ OK
 SPECIAL__X This must be printed
 
 *************************************************
-Execution time: 0.1 seconds
+Execution time: 0.0 seconds
 *************************************************
-31d402bbd701bd25404526fa2118a1b689ec0a356c8dfc0b914cf7180aab2570
+3ff587a834a5a4988eae3706b817d7107fd0884a309d724494704ba379feed60
 *************************************************
 * Result
 *************************************************
@@ -52,9 +52,9 @@ Execution time: 0.1 seconds
 SPECIAL__X This must be printed
 
 *************************************************
-Execution time: 0.1 seconds
+Execution time: 0.0 seconds
 *************************************************
-31d402bbd701bd25404526fa2118a1b689ec0a356c8dfc0b914cf7180aab2570
+3ff587a834a5a4988eae3706b817d7107fd0884a309d724494704ba379feed60
 Nothing printed
 /Nothing printed
 3

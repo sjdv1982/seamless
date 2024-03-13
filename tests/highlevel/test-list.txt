@@ -236,6 +236,7 @@ imperative-*-async.py: Run with ipython -i -c '%load '$i'.py' and press enter
 scratch.sh: make sure that level 3 delegation is available inside a clean buffer directory and database.
 
 observe-graph.ipynb: Run "seamless-jupyter" and then open /cwd in the browser
+observe-cpp: see above
 traitlets.ipynb: same as above
 share-subcontext.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/sub/b
 share-pdb.py: open with seamless-ipython -i, Open in http://localhost:5813/ctx/index.html

@@ -11,7 +11,7 @@ The result is: 7.5
 bork!bork!bork!
 None
 Traceback (most recent call last):
-  File "/seamless/seamless/core/execute.py", line 253, in _execute
+  File "/seamless/seamless/core/execute.py", line 259, in _execute
     result_buffer = serialize(result, output_celltype)
   File "/seamless/seamless/core/protocol/serialize.py", line 31, in _serialize
     value = int(value)
@@ -29,7 +29,7 @@ bork!bork!bork!bork!bork!
 
 None
 Traceback (most recent call last):
-  File "/seamless/seamless/core/execute.py", line 253, in _execute
+  File "/seamless/seamless/core/execute.py", line 259, in _execute
     result_buffer = serialize(result, output_celltype)
   File "/seamless/seamless/core/protocol/serialize.py", line 31, in _serialize
     value = int(value)

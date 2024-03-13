@@ -1,14 +1,16 @@
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 433, in _execute
+  File "/seamless/seamless/core/transformation.py", line 553, in _execute
     result, logs = await self._execute_local(
-  File "/seamless/seamless/core/transformation.py", line 642, in _execute_local
+  File "/seamless/seamless/core/transformation.py", line 764, in _execute_local
     full_module_names = build_all_modules(
-  File "/seamless/seamless/core/build_module.py", line 383, in build_all_modules
+  File "/seamless/seamless/core/build_module.py", line 417, in build_all_modules
     mod = build_module(
-  File "/seamless/seamless/core/build_module.py", line 342, in build_module
+  File "/seamless/seamless/core/build_module.py", line 376, in build_module
     mod = build_compiled_module(
-  File "/seamless/seamless/core/build_module.py", line 264, in build_compiled_module
+  File "/seamless/seamless/core/build_module.py", line 329, in build_compiled_module
+    raise exception from None
+  File "/seamless/seamless/core/build_module.py", line 275, in build_compiled_module
     raise BuildModuleError(stderr)
 seamless.core.build_module.BuildModuleError: 
 g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_90f164879eda80c1b13228d14616a0e48735fa72938364f99171f6ddd2059743_module/main.o /tmp/seamless-extensions/seamless_module_90f164879eda80c1b13228d14616a0e48735fa72938364f99171f6ddd2059743_module/main.cpp
