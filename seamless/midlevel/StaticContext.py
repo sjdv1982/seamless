@@ -274,7 +274,7 @@ class StructuredCellWrapper(WrapperBase):
 
     @property
     def buffer(self):
-        checksum = self._node.get("checksum", {}).get("buffer")
+        checksum = self._node.get("checksum", {}).get("buffered")
         return SimpleCellWrapper(self._manager, {}, "mixed", checksum)
 
     @property
@@ -317,7 +317,7 @@ class TransformerWrapper(WrapperBase):
         mapping = {
             "input": "value",
             "input_auth": "auth",
-            "input_buffer": "buffer",
+            "input_buffered": "buffered",
             "schema": "schema"
         }
         checksums = self._node.get("checksum", {})
@@ -333,7 +333,6 @@ class TransformerWrapper(WrapperBase):
     def _result(self):
         mapping = {
             "result": "value",
-            "result_buffer": "buffer",
             "result_schema": "schema"
         }
         checksums = self._node.get("checksum", {})

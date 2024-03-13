@@ -418,7 +418,7 @@ def _assign_context2(ctx, new_nodes, new_connections, path, runtime, *, fast):
             remove_checksum.append("temp")
             if node["celltype"] == "structured":
                 remove_checksum.append("value")
-                remove_checksum.append("buffer")
+                remove_checksum.append("buffered")
             else: # simple cell, can be targeted at most once
                 if old_path in targets:
                     remove_checksum.append("value")

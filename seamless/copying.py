@@ -83,7 +83,7 @@ def get_checksums(nodes, connections, *, with_annotations, skip_scratch):
                         dependent2 = True
                 elif node["type"] == "cell":
                     if node["celltype"] == "structured":
-                        if k in ("buffer", "value"):
+                        if k in ("buffered", "value"):
                             dependent2 = True
                 if v is not None:
                     add_checksum(node, dependent2, v, k)

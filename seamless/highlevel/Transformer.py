@@ -1759,6 +1759,7 @@ This wrapper can be assigned to a new Context attribute,
             htf["checksum"] = {}
         htf["checksum"].pop("input_temp", None)
         htf["checksum"].pop("input", None)
+        htf["checksum"].pop("input_buffer", None)
         if checksum is not None:
             htf["checksum"]["input"] = checksum
 
@@ -1786,9 +1787,12 @@ This wrapper can be assigned to a new Context attribute,
         if htf.get("checksum") is None:
             htf["checksum"] = {}
         htf["checksum"].pop("input_temp", None)
-        htf["checksum"].pop("input_buffer", None)
-        if checksum is not None:
-            htf["checksum"]["input_buffer"] = checksum
+        if checksum is None:
+            htf["checksum"].pop("input", None)
+            htf["checksum"].pop("input_buffer", None)
+        else:
+            if "input" not in htf["checksum"]:
+                htf["checksum"]["input_buffer"] = checksum
 
     def _observe_code(self, checksum):
         if self._parent() is None:

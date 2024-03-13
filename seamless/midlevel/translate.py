@@ -66,11 +66,11 @@ def set_structured_cell_from_checksum(cell, checksum, is_deepcell=False):
         trigger = True
         """
 
-    if "buffer" in checksum:
+    if "buffered" in checksum:
         # not done! value calculated anew...
         """
         cell.buffer._set_checksum(
-            checksum["buffer"],
+            checksum["buffered"],
             from_structured_cell=True,
             initial=True
         )

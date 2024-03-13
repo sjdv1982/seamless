@@ -189,7 +189,7 @@ class Cell(Base, HelpMixin):
         hcell["checksum"].pop("value", None)
         if checksum is not None:
             hcell["checksum"]["value"] = checksum
-            hcell["checksum"].pop("buffer", None)
+            hcell["checksum"].pop("buffered", None)
 
     def _observe_auth(self, checksum):
         if self._parent() is None:
@@ -227,9 +227,12 @@ class Cell(Base, HelpMixin):
             return
         if hcell.get("checksum") is None:
             hcell["checksum"] = {}
-        hcell["checksum"].pop("buffer", None)
-        if checksum is not None:
-            hcell["checksum"]["buffer"] = checksum
+        if checksum is None:
+            hcell["checksum"].pop("value", None)
+            hcell["checksum"].pop("buffered", None)
+        else:
+            if "value" not in hcell["checksum"]:
+                hcell["checksum"]["buffered"] = checksum
 
     def _observe_schema(self, checksum):
         if self._parent() is None:
