@@ -1,3 +1,16 @@
+Imminent:
+/seamless/bin/seamless already works, but other tools in /seamless/bin do not,
+  since they require SEAMLESS_TOOLS_DIR to be defined (devel Conda only)
+Harmonize /seamless/bin/seamless with /seamless-tools/seamless-cli
+  (seamless-upload-XXX is already in both)
+To test: get-file-and-directory test should work, both /tests/cmd and /tests/highlevel versions
+
+- Add --file and --list arguments to /bin/seamless. Mapping will be the same as for other filest. Works for directories, too. --rawlist will do no mapping, i.e. as if -W. Make tests.
+
+- Try to revert https://github.com/sjdv1982/seamless/commit/a95b55a68bc747ca8aa1661037497ef4981d695e
+Instead, forbid inline assignment completely
+To test: re-run headify, re-run all tests/highlevel with "bytes" in the source
+
 To document: embedding matrix
 =============================
 
@@ -11,7 +24,7 @@ Python style embeds Python style: yes
 Python style embeds cmd style: no
 cmd style embeds workflow style: no
 cmd style embeds Python style: no
-cmd style embeds cmd style: yes (for mini assistant)
+cmd style embeds cmd style: yes (for local mini assistant, not remote; see also https://github.com/sjdv1982/seamless/issues/217)
 
 =============================
 
@@ -52,7 +65,7 @@ TODO before 0.12 release:
     * low-level (DONE)
     * fairserver (DONE)
     * cmd (DONE)
-    * high-level (TODO)
+    * high-level (DONE for fully automatic; TODO for others)
 
 - Make sure to add the correct scripts and wrappers from /seamless/bin and /seamless-tools/utils into the Docker images (rpbs/seamless and seamless-devel). Currently, /seamless-tools/utils is not mounted at all, therefore seamless-upload fails. /seamless-tools/seamless-cli/seamless-upload-vault also doesn't seem to work. As tests, run /lowlevel/pin-filesystem.sh, /highlevel/pin-filesystem.sh, /highlevel/get-file-and-directory.sh, /cmd/highlevel/get-file-and-directory.sh
 TODO, but nested /bin/seamless works for devel
