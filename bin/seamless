@@ -487,7 +487,8 @@ if docker_image is not None:
     msg(1, f'Set Docker image to "{docker_image}"')
     env["docker"] = {"name": docker_image}
 
-seamless.delegate()
+if seamless.delegate():
+    exit(1)
 
 # TODO: max_upload_files, max_upload_size:
 # TODO: max_download_files, max_download_size:
