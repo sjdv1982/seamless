@@ -1,3 +1,3 @@
 #!/bin/bash
 
-$SEAMLESS_TOOLS_DIR/utils/fairdir-build $*
+$SEAMLESS_SCRIPTS_DIR/utils/fairdir-build $*
