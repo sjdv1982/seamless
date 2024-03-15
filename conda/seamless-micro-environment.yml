@@ -1,11 +1,11 @@
-name: seamless-framework
+name: seamless-micro
 channels:
   - conda-forge
   - rpbs
 dependencies:
   - python
   - pip
-  - rpbs::seamless-framework==0.11
+  - rpbs::seamless-framework==0.12
   - rpbs::silk>=0.1.10
   - conda
   - pip:

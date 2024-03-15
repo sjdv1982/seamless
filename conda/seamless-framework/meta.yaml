@@ -1,5 +1,5 @@
 {% set name = "seamless-framework" %}
-{% set version = "0.12dev1" %}
+{% set version = "0.12" %}
 
 package:
   name: "{{ name|lower }}"
@@ -25,7 +25,8 @@ requirements:
     - ruamel.yaml
     - psutil
     - orjson
-    - requests
+    - bashlex
+    - requests<=2.28.*
     - aiohttp
     - rpbs::silk
 

@@ -29,7 +29,7 @@ There are three methods to run Seamless. Below, each of the three methods is bri
 
     You will have the choice between several conda environment definitions, on a spectrum between minimalist and maximum compatibility with the Seamless Docker image.
 
-3. Finally, there is also the seamless-minimal installation method. This is not a real Seamless installation. The aim of seamless-minimal is to act as a *service* to execute reproducible computations (transformations) inside arbitrary conda environments. These transformations are generated elsewhere, by a full Seamless installation, or by a different reproducible computation framework.
+3. OUTDATED. Finally, there is also the seamless-minimal installation method. This is not a real Seamless installation. The aim of seamless-minimal is to act as a *service* to execute reproducible computations (transformations) inside arbitrary conda environments. These transformations are generated elsewhere, by a full Seamless installation, or by a different reproducible computation framework.
 
 ## Installation instructions
 
@@ -125,6 +125,7 @@ conda activate seamless
 
 #### Alternative installation using Singularity
 
+OUTDATED
 You can run seamless-minimal also under Singularity instead of Docker.
 
 In that case, checkout the [seamless-tools Git repo](https://github.com/sjdv1982/seamless-tools) and follow the instructions in `/seamless-tools/seamless-cli-singularity/README.md`

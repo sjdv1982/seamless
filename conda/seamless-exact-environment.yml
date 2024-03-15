@@ -1,4 +1,4 @@
-name: seamless-framework
+name: seamless-exact
 channels:
   - conda-forge
   - rpbs
@@ -6,15 +6,18 @@ dependencies:
   # keep this in sync with seamless-tools/docker/seamless-deps-environment.yml
   - python=3.10.*
   - pip=23.0.*
-  - rpbs::seamless-framework==0.11
+  - numpy=1.24.*
+  - rpbs::seamless-framework==0.12
   - rpbs::silk==0.1.10
   - rpbs::seamless-cli
   - bashlex=0.18
   - conda=23.1.*
   - ruamel.yaml=0.17.*
+  - orjson=3.8.*
   - psutil=5.9.*
   - jinja2=3.1.*
   - traitlets=5.9.*
+  - datrie  # required to build some pip packages
   - jsonschema=4.17.*
   - ipython=8.10.*
   - ipykernel=6.21.*
@@ -23,7 +26,9 @@ dependencies:
   - ipywidgets=8.0.*  
   - debugpy=1.6.*
   - openmp=8.0.*
+  - requests=2.28.*
   - wurlitzer=3.0.*
+  - psutil=5.9.*
   - cython=0.29.*
   - commentjson
   - expandvars
@@ -35,7 +40,7 @@ dependencies:
   - r-base=4.2.*
   - scikit-learn=1.2.*
   - r-cairo=1.6_0.*
-  - rpy2=3.5.*
+  - rpy2==3.5.*
   - sympy
   - pip:
     - websockets==10.3.*

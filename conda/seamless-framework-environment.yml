@@ -5,19 +5,29 @@ channels:
 dependencies:
   - python
   - pip
-  - rpbs::seamless-framework==0.11
+  - numpy
+  - rpbs::seamless-framework==0.12
   - rpbs::silk>=0.1.10
   - rpbs::seamless-cli
+  - bashlex
   - conda
+  - ruamel.yaml
+  - orjson
+  - psutil
+  - jinja2
+  - traitlets
+  - datrie  # required to build some pip packages
+  - jsonschema=4.17.*
   - ipython<=8.16.*
   - ipykernel
 
   - cffi
-  - traitlets
   - ipywidgets
   - debugpy
   - openmp
+  - requests<2.29.*
   - wurlitzer
+  - psutil
   - cython
   - commentjson
   - expandvars
@@ -43,6 +53,5 @@ dependencies:
     - snakemake==7.18.*
     - jupyter-console
     - itables
-
 variables:
     RPY2_CFFI_MODE: ABI

@@ -1,16 +1,18 @@
-name: seamless-framework
+name: seamless-mini
 channels:
   - conda-forge
   - rpbs
 dependencies:
   - python
   - pip
-  - rpbs::seamless-framework==0.11
+  - rpbs::seamless-framework==0.12
   - rpbs::silk>=0.1.10
   - conda
+  - jinja2
+  - traitlets
+  - datrie  # required to build some pip packages
   - ipython<=8.16.*
   - ipykernel
-  - bashlex
 
   - cffi
   - jinja2

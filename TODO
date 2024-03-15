@@ -85,15 +85,20 @@ rather than the Docker wrappers of seamless-cli/seamless-upload etc. However, do
 
 - Maintain a Conda environment file for development that updates seamless-minimal-dependencies. DONE
 
+- Rip seamless-minimal. DONE
+
 - Update the seamless-framework Conda environments. Here, *also* install seamless-cli so that tools and seamless Docker container can be fired up at will. *Mark all Conda environments with
 SEAMLESS_CONDA_ENVIRONMENT=1*, this is so that seamless-bash will work from within the Conda environment.
+
+- Port dask-deployment build-environment-devel to build-environment. Take seamless-mini environment as a basis where to install Dask libraries into.
+Explain this in the delegation documentation.
 
 - Port run-db-hashserver-devel to non-devel environment for distribution.
 
 - Document the various packages/installation methods.
-    * The Conda environments (full and delegated) will have co-equal status
-    with the- Seamless Docker image
-    * Note that even the Conda environments still require Docker to make delegation work. Mini and micro assistants require Seamless Docker image as well.
+    * seamless-minimal has been ripped
+    * The Conda environment will have co-equal status with the Seamless Docker image
+    * Note that even the Conda environment still requires Docker to make delegation work. Mini and micro assistants require Seamless Docker image as well.
     If you don't have Docker, either use no delegation (bad!), or set it up via HPC/Dask-oriented tools (run-db-hashserver.sh + dask-deployment tools). The latter option is advanced use case. Document delegation and why!
 
 ======================
