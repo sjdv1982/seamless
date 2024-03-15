@@ -179,6 +179,8 @@ was 3 or 4, without delegating the storage of the underlying buffers.
 You are now responsible yourself for persistent buffer storage, e.g. using ctx.save_vault(...) .
 Failure to do so will lead to CacheMissErrors when you try to get the value of a previously
 calculated result.
+
+Return value: True if an error occurred, False if delegation was successful
 """
 
     global _delegate_level, _delegating

@@ -83,10 +83,9 @@ TODO, but nested /bin/seamless works for devel
 Add seamless-upload, seamless-upload-zip, seamless-upload-vault and seamless-download as copies of seamless-tools/scripts/upload.py etc.,
 rather than the Docker wrappers of seamless-cli/seamless-upload etc. However, do add bin/seamless to the Docker images for nesting (DONE for devel image)
 
-- Maintain two Conda environment files: one for delegated use (seamless-delegated), one with full functionality (seamless-full?)
-Currently, there is only seamless-delegated-development.yaml, base the others
-(seamless-delegated, seamless-full) off this.
-In all of them, *also* install seamless-cli so that tools and seamless Docker container can be fired up at will. *Mark all Conda environments with
+- Maintain a Conda environment file for development that updates seamless-minimal-dependencies. DONE
+
+- Update the seamless-framework Conda environments. Here, *also* install seamless-cli so that tools and seamless Docker container can be fired up at will. *Mark all Conda environments with
 SEAMLESS_CONDA_ENVIRONMENT=1*, this is so that seamless-bash will work from within the Conda environment.
 
 - Port run-db-hashserver-devel to non-devel environment for distribution.
