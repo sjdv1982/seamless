@@ -1,0 +1,3 @@
+#!/bin/bash
+
+python $SEAMLESS_SCRIPTS_DIR/new-project.py $*

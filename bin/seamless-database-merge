@@ -1,3 +1,0 @@
-#!/bin/bash
-
-$SEAMLESS_SCRIPTS_DIR/utils/database-merge $*

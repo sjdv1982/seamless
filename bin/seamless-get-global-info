@@ -1,5 +1,3 @@
-#!/usr/bin/env python
+#!/bin/bash
 
-import json
-from seamless.core.transformation import get_global_info
-print(json.dumps(get_global_info(force=True)))
+$SEAMLESS_SCRIPTS_DIR/utils/get-global-info $*

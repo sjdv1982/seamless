@@ -1,0 +1,3 @@
+#!/bin/bash
+
+python $SEAMLESS_SCRIPTS_DIR/serve-graph.py $*

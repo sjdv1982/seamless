@@ -205,6 +205,17 @@ if len(command) == 0:
 
 ################################################################
 
+workdir = os.getcwd()
+if args.workdir is not None:
+    if os.environ.get("DOCKER_IMAGE"):
+        err("""DOCKER_IMAGE environment variable has been set.
+  We are running from inside a Docker container.
+  Setting workdir is not supported.""")
+    workdir = os.path.expanduser(args.workdir)
+    msg(1, "set argtyping working directory to: {}".format(workdir))
+
+################################################################
+
 meta = None
 if args.direct_print:
     if meta is None:
@@ -283,11 +294,6 @@ if interface_py_file is None:
 
 argtypesstr = json.dumps(argtypes_initial, sort_keys=False, indent=2)
 msg(1, "initial argtypes dict:\n" + argtypesstr)
-
-workdir = os.getcwd()
-if args.workdir is not None:
-    workdir = os.path.expanduser(args.workdir)
-    msg(1, "set argtyping working directory to: {}".format(workdir))
 
 file_mapping_mode = args.file_mapping_mode
 if file_mapping_mode is None:

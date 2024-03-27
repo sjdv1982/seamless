@@ -1,9 +1,36 @@
+
+
+
 Imminent:
 /seamless/bin/seamless already works, but other tools in /seamless/bin do not,
   since they require SEAMLESS_TOOLS_DIR to be defined (devel Conda only)
 Harmonize /seamless/bin/seamless with /seamless-tools/seamless-cli
   (seamless-upload-XXX is already in both)
+
+1. /seamless-tools/scripts
+2. /seamless-tools/scripts/utils
+3. /seamless/bin
+4. /seamless-tools/seamless-cli
+
+1. 
+- Python scripts (and bash runners) that need to import Seamless
+2. Bash scripts and file-centered command line tools that need to run inside a Seamless environment
+3. 
+  - bash front to 1. and 2. (using SEAMLESS_SCRIPTS_DIR),   
+  - /bin/seamless, with _seamlessify and activate-seamless-mode.sh
+4. 
+- Unix command line tools that fire up a Seamless Docker image
+- Python scripts that do not need to import Seamless
+- Seamless assistants and their Docker files
+- bash front to 1. and 2. (using Docker).
+    TODO: 1.
+    seamless-fingertip
+    seamless-run-transformation
+- bash front to /bin/seamless (using Docker)
+
 To test: get-file-and-directory test should work, both /tests/cmd and /tests/highlevel versions
+
+
 
 - Add --file and --list arguments to /bin/seamless. Mapping will be the same as for other filest. Works for directories, too. --rawlist will do no mapping, i.e. as if -W. Make tests.
 
@@ -76,8 +103,8 @@ TODO, but nested /bin/seamless works for devel
 
 - General documentation, describing the three styles. Old TODO entries have been added to the Seamless Documentation issue.
 
-- For seamless-cli, when distributing, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile.
-
+- For seamless-cli, when distributing, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile. In addition, there is no more Silk dependency, update install instructions accordingly. However, there is now a dependency on psutil, sqlite3, peewee and playhouse.
+Also, make sure activate-seamless-mode works well in distro for seamless-cli.
 
 - Make a separate conda package for bin/seamless. 
 Add seamless-upload, seamless-upload-zip, seamless-upload-vault and seamless-download as copies of seamless-tools/scripts/upload.py etc.,
