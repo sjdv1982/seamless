@@ -1,12 +1,17 @@
 
-
+Imminent:
+FIX BUG
+Disable within-transformation file link for bashdocker if inside Docker image 
+(tests/highlevel/get-file-and-directory.sh inside Docker image)
 
 Imminent:
 /seamless/bin/seamless already works, but other tools in /seamless/bin do not,
   since they require SEAMLESS_TOOLS_DIR to be defined (devel Conda only)
 Harmonize /seamless/bin/seamless with /seamless-tools/seamless-cli
   (seamless-upload-XXX is already in both)
+DONE
 
+TO DOCUMENT:
 1. /seamless-tools/scripts
 2. /seamless-tools/scripts/utils
 3. /seamless/bin
@@ -23,12 +28,7 @@ Harmonize /seamless/bin/seamless with /seamless-tools/seamless-cli
 - Python scripts that do not need to import Seamless
 - Seamless assistants and their Docker files
 - bash front to 1. and 2. (using Docker).
-    TODO: 1.
-    seamless-fingertip
-    seamless-run-transformation
 - bash front to /bin/seamless (using Docker)
-
-To test: get-file-and-directory test should work, both /tests/cmd and /tests/highlevel versions
 
 
 

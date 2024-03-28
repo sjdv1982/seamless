@@ -13,7 +13,7 @@ set-python-invalid.py: can also be run in interactive mode (mount /tmp/code.py)
 mime.py
 test-html.py
 auth-checksum.py
-get-file-and-directory.sh
+get-file-and-directory.sh: will not work completely inside a Docker container, see get-file-and-directory-IN-DOCKER.out for the expectec output there
 independence-error-message.py
 schema.py
 schema-invalid.py

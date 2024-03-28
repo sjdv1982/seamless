@@ -231,6 +231,7 @@ Error: Result file/folder RESULT does not exist
 
     #/adapted from bash transformer
 else: # "docker" mode
+    _dind_mounts = []
     try:
         import signal
         import docker as docker_module
@@ -255,6 +256,8 @@ else: # "docker" mode
                     pin_parent = os.path.dirname(pin)
                     if len(pin_parent):
                         os.makedirs(pin_parent, exist_ok=True)
+                    if os.environ.get("DOCKER_IMAGE"):  # we are running inside a Docker container
+                        _dind_mounts.append((v, pin))
                     os.symlink(v, pin)
                     continue
                 elif FILESYSTEM[pin]["mode"] == "directory":
@@ -283,6 +286,17 @@ else: # "docker" mode
                 else:
                     with open(pin, "bw") as pinf:
                         np.save(pinf,v,allow_pickle=False)
+        if _dind_mounts:
+            warn0 = "\n    ".join([f"{pin} -> {v}" for v, pin in _dind_mounts])
+            warn = f"""WARNING: Docker transformer launched from within a Docker container.
+The Docker containers will run side by side under the host, symbolic links will not normally work.
+
+The following pins access their buffer through symbolic links:
+
+    {warn0}
+
+"""
+            print(warn, file=sys.stderr)
         docker_client = docker_module.from_env()
         volumes = {}
         options["volumes"] = volumes
