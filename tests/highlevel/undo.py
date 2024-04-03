@@ -2,9 +2,13 @@ import os
 import seamless
 
 if "DELEGATE" in os.environ:
-    seamless.delegate()
+    has_err = seamless.delegate()
+    if has_err:
+        exit(1)
 else:
-    seamless.delegate(level=3)
+    has_err = seamless.delegate(level=3)
+    if has_err:
+        exit(1)
     from seamless.core.transformation import get_global_info
     get_global_info()  # avoid timing errors
 

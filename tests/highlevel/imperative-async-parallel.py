@@ -8,7 +8,9 @@ from seamless.core.transformation import get_global_info
 get_global_info()
     
 if "DELEGATE" in os.environ:
-    seamless.delegate()
+    has_err = seamless.delegate()
+    if has_err:
+        exit(1)
 else:
     seamless.delegate(False)
     

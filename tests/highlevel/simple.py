@@ -4,7 +4,9 @@ import seamless
 from seamless.highlevel import Context
 
 if "DELEGATE" in os.environ:
-    seamless.delegate()
+    has_err = seamless.delegate()
+    if has_err:
+        exit(1)
 else:
     seamless.delegate(False)
     from seamless.core.transformation import get_global_info

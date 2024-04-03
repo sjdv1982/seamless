@@ -5,7 +5,9 @@ import seamless
 import asyncio
     
 if "DELEGATE" in os.environ:
-    seamless.delegate()
+    has_err = seamless.delegate()
+    if has_err:
+        exit(1)
 else:
     seamless.delegate(False)
     seamless.config.set_ncores(5)

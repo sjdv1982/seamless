@@ -46,7 +46,9 @@ print(testmodule.add(2,3))
 import seamless
 import os
 if "DELEGATE" in os.environ:
-    seamless.delegate()
+    has_err = seamless.delegate()
+    if has_err:
+        exit(1)
     from seamless.core.cache.buffer_cache import buffer_cache
     buffer_cache.buffer_cache.clear()
 else:
