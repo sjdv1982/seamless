@@ -571,6 +571,7 @@ def direct_transformer_to_transformation_dict(
 
 def _get_semantic(code, code_checksum):
     from ...util import ast_dump
+    from ...core.cache.database_client import database
     
     code_checksum = parse_checksum(code_checksum, as_bytes=True)
     synkey = (code_checksum, "python", "transformer")
@@ -593,6 +594,8 @@ def _get_semantic(code, code_checksum):
         cache[key] = []
     if code_checksum not in cache[key]:
         cache[key].append(code_checksum)
+        database.set_sem2syn(key, cache[key])
+
     return semantic_code_checksum
 
 def _get_node_transformation_dependencies(node):

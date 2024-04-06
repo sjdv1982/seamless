@@ -1,7 +1,6 @@
 Imminent: seamless-fingertip doesn't work if you remove the result but not the deepcell. DONE
-Imminent: imperative-delegated fails
+Imminent: imperative-delegated fails, fix. DONE
 Imminent: rename seamless-bash, seamless-XXX-trusted
-Imminent: docker compose --build only for devel
 
 Imminent:
 /seamless/bin/seamless already works, but other tools in /seamless/bin do not,
@@ -102,8 +101,10 @@ TODO, but nested /bin/seamless works for devel
 
 - General documentation, describing the three styles. Old TODO entries have been added to the Seamless Documentation issue.
 
+- For seamless-delegate, set up non-devel assistants. docker compose --build only for devel assistants.
+
 - For seamless-cli, when distributing, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile. In addition, there is no more Silk dependency, update install instructions accordingly. However, there is now a dependency on psutil, sqlite3, peewee and playhouse.
-Also, make sure activate-seamless-mode works well in distro for seamless-cli.
+Also, make sure activate-seamless-mode works well in distro for seamless-cli.z
 
 - Make a separate conda package for bin/seamless. 
 Add seamless-upload, seamless-upload-zip, seamless-upload-vault and seamless-download as copies of seamless-tools/scripts/upload.py etc.,
