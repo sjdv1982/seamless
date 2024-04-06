@@ -50,6 +50,9 @@ get-file-and-directory.sh
     Needs an assistant name as input, e.g. ASSISTANT=micro-assistant-devel
     Run as: ./get-file-and-directory.sh $ASSISTANT | tee test-outputs/get-file-and-directory.out
     Otherwise, similar to the tests/highlevel version
+fingertip-deepcell.sh
+    Needs an assistant name as input, e.g. ASSISTANT=micro-assistant-devel
+    Run as: ./fingertip-deepcell.sh $ASSISTANT | tee test-outputs/fingertip-deepcell.out
 
 headify
     See subdirectory

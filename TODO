@@ -1,8 +1,7 @@
-
-Imminent:
-FIX BUG
-Disable within-transformation file link for bashdocker if inside Docker image 
-(tests/highlevel/get-file-and-directory.sh inside Docker image)
+Imminent: seamless-fingertip doesn't work if you remove the result but not the deepcell. DONE
+Imminent: imperative-delegated fails
+Imminent: rename seamless-bash, seamless-XXX-trusted
+Imminent: docker compose --build only for devel
 
 Imminent:
 /seamless/bin/seamless already works, but other tools in /seamless/bin do not,

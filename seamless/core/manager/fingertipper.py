@@ -6,11 +6,12 @@ from ..cache.buffer_cache import buffer_cache
 
 class FingerTipper:
     """Short-lived object to perform nested fingertipping"""
-    def __init__(self, checksum, cachemanager, *, done):
+    def __init__(self, checksum, cachemanager, *, recompute, done):
         from seamless.util import is_forked
         self.checksum = checksum
         self.cachemanager = cachemanager
         self.done = done
+        self.recompute = recompute
         self.clear()
         self.manager = cachemanager.manager()
         self.tf_cache = cachemanager.transformation_cache
@@ -67,6 +68,13 @@ class FingerTipper:
                 await asyncio.shield(job.future)
 
     async def fingertip_expression(self, expression):
+        if expression.hash_pattern and not expression.target_hash_pattern:
+            # Having the expression source checksum at fingertips is not enough
+            # The underlying deep buffers must be at fingertips as well
+            #  since one (or all) of them is the expression target
+            # Therefore, we must first force full recomputation of the expression source checksum
+            fingertipper2 = await self.cachemanager._build_fingertipper(expression.checksum, recompute=self.recompute, done=self.done)
+            await fingertipper2.run()
         buf = await self.fingertip_expression2(expression)
         return self._register(buf)
 
@@ -164,7 +172,7 @@ class FingerTipper:
         Otherwise, runs the task exceptions"""
         if self.empty:
             return
-
+        
         self.transformations[:] = list({v:(k,v) for k,v in self.transformations}.values())
         coros = []
         for transformation, tf_checksum in self.transformations:

@@ -174,7 +174,7 @@ async def run_structured_cell_join(structured_cell_join_checksum, *, scratch, ca
     from ..manager.fingertipper import FingerTipper
     from ..cache.buffer_remote import write_buffer
 
-    fingertipper = FingerTipper(checksum=None, cachemanager=cachemanager, done=set())
+    fingertipper = FingerTipper(checksum=None, cachemanager=cachemanager, recompute=True, done=set())
     join_buf = await fingertipper.fingertip_upstream(structured_cell_join_checksum)
     if join_buf is None:
         return
@@ -214,7 +214,7 @@ async def run_evaluate_expression(expression_dict, fingertip_mode, *, scratch, m
         cachemanager.register_expression(expression)
     try:
         if fingertip_mode:
-            fingertipper = FingerTipper(checksum=None, cachemanager=cachemanager, done=set())
+            fingertipper = FingerTipper(checksum=None, cachemanager=cachemanager, recompute=True, done=set())
             result_buf = await fingertipper.fingertip_expression2(expression)
             if result_buf is None:
                 return None

@@ -209,51 +209,16 @@ class CacheManager:
 
         return result_expressions, result_joins, result_transformations
 
-    async def _fingertip(self, checksum, *, must_have_cell, done):
-        from ..cache import CacheMissError
+    async def _build_fingertipper(self, checksum, *, recompute, done):
         from .tasks.deserialize_buffer import DeserializeBufferTask
         from seamless.config import database
         from ..direct.run import TRANSFORMATION_STACK
         from .fingertipper import FingerTipper
 
-        if checksum is None:
-            return
-        if isinstance(checksum, str):
-            checksum = bytes.fromhex(checksum)
-        assert isinstance(checksum, bytes), checksum
+        fingertipper = FingerTipper(checksum, self, recompute=recompute, done=done)
 
-        buffer = get_buffer(checksum, remote=True)
-        if buffer is not None:
-            return buffer
-        if checksum in done:
-            return
-
-        done.add(checksum)
         manager = self.manager()
         tf_cache = self.transformation_cache
-
-        remote, recompute= True, True
-        is_deep = False
-        has_cell = False
-        for refholder, result in self.checksum_refs.get(checksum, set()):
-            if isinstance(refholder, Cell):
-                cell = refholder
-                has_cell = True
-                if cell._hash_pattern:
-                    is_deep = True
-                remote = cell._fingertip_remote
-                recompute = cell._fingertip_recompute
-                break
-
-        if must_have_cell and not has_cell:
-            raise CacheMissError(checksum.hex())
-
-        if remote:
-            buffer = get_buffer(checksum, remote=True, deep=is_deep)
-            if buffer is not None:
-                return buffer
-
-        fingertipper = FingerTipper(checksum, self, done=done)
 
         async def add_transformations(tf_checksums):
             for tf_checksum in tf_checksums:
@@ -336,6 +301,57 @@ class CacheManager:
                         )
                         fingertipper.expressions.append(expression)
 
+        if fingertipper.empty and database.active:
+            # Extremely heroic effort to mine a database for expressions and structured cell joins
+            mined_expressions, mined_joins, mined_transformations = self._mine_database(checksum)
+            fingertipper.expressions += mined_expressions
+            fingertipper.joins2 += mined_joins
+            await add_transformations(mined_transformations)
+
+        return fingertipper
+
+    async def _fingertip(self, checksum, *, must_have_cell, done):
+        from ..cache import CacheMissError
+        from seamless.config import database
+
+        if checksum is None:
+            return
+        if isinstance(checksum, str):
+            checksum = bytes.fromhex(checksum)
+        assert isinstance(checksum, bytes), checksum
+
+        buffer = get_buffer(checksum, remote=True)
+        if buffer is not None:
+            return buffer
+        if checksum in done:
+            return
+
+        done.add(checksum)
+
+        remote, recompute= True, True
+        is_deep = False
+        has_cell = False
+        for refholder, _ in self.checksum_refs.get(checksum, set()):
+            if isinstance(refholder, Cell):
+                cell = refholder
+                has_cell = True
+                if cell._hash_pattern:
+                    is_deep = True
+                remote = cell._fingertip_remote
+                recompute = cell._fingertip_recompute
+                break
+
+        if must_have_cell and not has_cell:
+            raise CacheMissError(checksum.hex())
+
+        if remote:
+            buffer = get_buffer(checksum, remote=True, deep=is_deep)
+            if buffer is not None:
+                print("REMOT")
+                return buffer
+
+        fingertipper = await self._build_fingertipper(checksum, recompute=recompute, done=done)
+
         exc_str = None
         if not fingertipper.empty:
             exc_str = await fingertipper.run()
@@ -344,19 +360,6 @@ class CacheManager:
             if buffer is not None:
                 return buffer
 
-        if database.active:
-            # Extremely heroic effort to mine a database for expressions and structured cell joins
-            fingertipper.clear()
-            mined_expressions, mined_joins, mined_transformations = self._mine_database(checksum)
-            fingertipper.expressions += mined_expressions
-            fingertipper.joins2 += mined_joins
-            await add_transformations(mined_transformations)
-
-            exc_str = await fingertipper.run()
-
-            buffer = get_buffer(checksum,remote=remote)
-            if buffer is not None:
-                return buffer
 
         if exc_str is None:
             exc_str = ""
