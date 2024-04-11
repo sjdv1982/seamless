@@ -151,7 +151,7 @@ if os.path.exists(docker_container_file):
         docker_container = f.read().strip()
         docker_warning = """
 WARNING: if you are running in a Docker container: 
-  attach will only work if you started the container with a seamless-XXX-trusted command"""      
+  attach will not work if you started the container with a seamless-XXX-safe command"""      
     
 def validate_light_mode(transformer):
     if transformer.language == "bash":

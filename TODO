@@ -1,6 +1,6 @@
 Imminent: seamless-fingertip doesn't work if you remove the result but not the deepcell. DONE
 Imminent: imperative-delegated fails, fix. DONE
-Imminent: rename seamless-bash, seamless-XXX-trusted
+Imminent: rename seamless-bash, seamless-XXX-trusted. DONE
 
 Imminent:
 /seamless/bin/seamless already works, but other tools in /seamless/bin do not,

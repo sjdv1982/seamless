@@ -410,8 +410,7 @@ class DebugMountManager:
     def add_mount(self, tf, skip_pins=[], *, special=None, prefix=None):
         #print("ADD MOUNT", tf)
         if SEAMLESS_DEBUGGING_DIRECTORY is None:
-            raise Exception("""SEAMLESS_DEBUGGING_DIRECTORY undefined. 
-Use seamless-XXX-trusted to define it automatically""")
+            raise Exception("""SEAMLESS_DEBUGGING_DIRECTORY undefined.""")
         path = None
         if prefix is None:
             prefix = ""

@@ -66,4 +66,4 @@ TODO: let snakemake2seamless report which files must be bound
 
 TODO: make a generic file binding tool. To make it work seamlessly, create a field {"meta": {"filebind": ("filesystem",)}} that shows to which cell a file must be bound. After that, a generic graph coloring script can do the job => no more run-snakegraph is needed.
 
-TODO: test that shows that the singularity field becomes a Docker transformer. Running this requires that Seamless has access to Docker. For this, the Seamless container must have been started with `seamless-bash-trusted` or `seamless-jupyter-trusted`.
+TODO: test that shows that the singularity field becomes a Docker transformer. Running this requires that Seamless has access to Docker. For this, the Seamless container must have been started with `seamless-bash` or `seamless-jupyter`.
