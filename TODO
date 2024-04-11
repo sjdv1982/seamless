@@ -31,10 +31,14 @@ TO DOCUMENT:
 
 
 - Add --file and --list arguments to /bin/seamless. Mapping will be the same as for other filest. Works for directories, too. --rawlist will do no mapping, i.e. as if -W. Make tests.
+Also add --dry and --prepare (--prepare does upload files and registers transformation buffer)
+TODO
+
 
 - Try to revert https://github.com/sjdv1982/seamless/commit/a95b55a68bc747ca8aa1661037497ef4981d695e
 Instead, forbid inline assignment completely
 To test: re-run headify, re-run all tests/highlevel with "bytes" in the source
+TODO
 
 To document: embedding matrix
 =============================

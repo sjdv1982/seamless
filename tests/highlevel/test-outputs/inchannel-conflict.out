@@ -3,7 +3,7 @@
 Traceback (most recent call last):
   File "/cwd/tests/highlevel/inchannel-conflict.py", line 19, in <module>
     ctx.s.set("NOT TO BE PRINTED")
-  File "/seamless/seamless/highlevel/Cell.py", line 705, in set
+  File "/seamless/seamless/highlevel/Cell.py", line 708, in set
     raise TypeError("Cannot set the value of a cell that is not independent")
 TypeError: Cannot set the value of a cell that is not independent
 <Silk: {'a': 10, 'c': 30} >
@@ -13,7 +13,7 @@ None
 Traceback (most recent call last):
   File "/cwd/tests/highlevel/inchannel-conflict.py", line 28, in <module>
     ctx.s.set("NOT TO BE PRINTED 2")
-  File "/seamless/seamless/highlevel/Cell.py", line 705, in set
+  File "/seamless/seamless/highlevel/Cell.py", line 708, in set
     raise TypeError("Cannot set the value of a cell that is not independent")
 TypeError: Cannot set the value of a cell that is not independent
 <Silk: {'a': 10, 'c': 30} >
@@ -23,7 +23,7 @@ None
 Traceback (most recent call last):
   File "/cwd/tests/highlevel/inchannel-conflict.py", line 39, in <module>
     ctx.s.set({})
-  File "/seamless/seamless/highlevel/Cell.py", line 705, in set
+  File "/seamless/seamless/highlevel/Cell.py", line 708, in set
     raise TypeError("Cannot set the value of a cell that is not independent")
 TypeError: Cannot set the value of a cell that is not independent
 <Silk: {'a': 10, 'c': 30} >
