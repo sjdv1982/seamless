@@ -1,3 +1,6 @@
+import seamless
+seamless.delegate(False)
+
 print("START")
 
 from seamless import transformer

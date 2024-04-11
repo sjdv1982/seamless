@@ -15,6 +15,9 @@
    ...: result = await func(21, 17).task() # immediate
    ...: print(result)                     
 In [2]: # %load imperative-async.py
+   ...: import seamless
+   ...: seamless.delegate(False)
+   ...: 
    ...: print("START")
    ...: 
    ...: from seamless import transformer
