@@ -20,13 +20,12 @@ Run 1
 
 #6 exporting to image
 #6 exporting layers done
-#6 writing image sha256:d6203e5b44a211385b73a0a3c23e26e8ef07841816c4f7d6baf3e35a28564d39 done
+#6 writing image sha256:dbbf0eafd3619e2b634f3e2d828737a2830e430d5fc05598a3a734a86be6e5a1 done
 #6 naming to docker.io/library/openssl done
 #6 DONE 0.0s
 Buffer read folder not found
 None
-seamless.core.cache.CacheMissError: 11ca1826a2a01811d5f62e4046f47d4a17a24e57a0f5915c828bd3bc6da10047
-
+None
 None
 
 *tf*: Status: upstream => deepfolderpin undefined
@@ -95,7 +94,7 @@ Run 2
 
 #6 exporting to image
 #6 exporting layers done
-#6 writing image sha256:d6203e5b44a211385b73a0a3c23e26e8ef07841816c4f7d6baf3e35a28564d39 done
+#6 writing image sha256:dbbf0eafd3619e2b634f3e2d828737a2830e430d5fc05598a3a734a86be6e5a1 done
 #6 naming to docker.io/library/openssl done
 #6 DONE 0.0s
 Buffer read folder found
@@ -171,7 +170,7 @@ Run 3
 
 #6 exporting to image
 #6 exporting layers done
-#6 writing image sha256:d6203e5b44a211385b73a0a3c23e26e8ef07841816c4f7d6baf3e35a28564d39 done
+#6 writing image sha256:dbbf0eafd3619e2b634f3e2d828737a2830e430d5fc05598a3a734a86be6e5a1 done
 #6 naming to docker.io/library/openssl done
 #6 DONE 0.0s
 Buffer read folder found
@@ -318,7 +317,7 @@ folder_sub_pin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86b
 
 
 *************************************************
-Execution time: 0.1 seconds
+Execution time: 0.2 seconds
 *************************************************
 Stage 5
 Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
@@ -359,7 +358,7 @@ folder_sub_pin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86b
 
 
 *************************************************
-Execution time: 0.9 seconds
+Execution time: 0.8 seconds
 *************************************************
 Stage 5a
 Warning: Seamless structured cell: .folder_sub has no independence, but an auth checksum is present
@@ -402,5 +401,5 @@ folder_sub_pin/sub/test3.npy ad865888dff4c3bec94697416a9554810304b471b377c2ff86b
 
 
 *************************************************
-Execution time: 0.7 seconds
+Execution time: 1.0 seconds
 *************************************************

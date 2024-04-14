@@ -1,4 +1,4 @@
-rm -rf /tmp/PIN-FILESYSTEM-FOLDER
+rm -rf /tmp/PIN-FILESYSTEM-FOLDER /tmp/PIN-FILESYSTEM-FOLDER.CHECKSUM
 rm -rf /tmp/dummy-bufferfolder
 cp -r testfolder /tmp/PIN-FILESYSTEM-FOLDER
 mkdir /tmp/dummy-bufferfolder
