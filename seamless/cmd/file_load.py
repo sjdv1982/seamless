@@ -3,7 +3,7 @@ import functools
 import os
 
 from .message import message as msg
-from .register import register_file, check_file, check_buffer, _register_buffer
+from .register import register_file, check_file, check_buffer, register_buffer
 from .bytes2human import bytes2human
 from .confirm import confirm_yn
 from .exceptions import SeamlessSystemExit
@@ -167,10 +167,9 @@ def files_to_checksums(
                 assert all_result[filename] == checksum, (filename, checksum, all_result[filename])
 
     if upload_buffers:
-        reg_buf = functools.partial(_register_buffer, destination_folder=destination_folder)
+        reg_buf = functools.partial(register_buffer, destination_folder=destination_folder)
         with ThreadPoolExecutor(max_workers=nparallel) as executor:
             executor.map(reg_buf, 
-                         [bytes.fromhex(k) for k in upload_buffers.keys()], 
                          upload_buffers.values()
                         )
 

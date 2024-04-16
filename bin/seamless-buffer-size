@@ -1,0 +1,3 @@
+#!/bin/bash
+
+python3 $SEAMLESS_SCRIPTS_DIR/buffer-size.py $*

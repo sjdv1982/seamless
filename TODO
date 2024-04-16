@@ -30,8 +30,9 @@ TO DOCUMENT:
 
 
 
-- Add --file and --list arguments to /bin/seamless. Mapping will be the same as for other filest. Works for directories, too. --rawlist will do no mapping, i.e. as if -W. Make tests.
-Also add --dry and --prepare (--prepare does upload files and registers transformation buffer)
+- Add --file argument to /bin/seamless. Mapping will be the same as for other files. Works for directories, too. DONE
+
+- Also add --dry-run and --prepare (--prepare does upload files and registers transformation buffer)
 TODO
 
 
@@ -97,7 +98,7 @@ TODO before 0.12 release:
     * high-level (DONE for fully automatic; TODO for others)
 
 - Make sure to add the correct scripts and wrappers from /seamless/bin and /seamless-tools/utils into the Docker images (rpbs/seamless and seamless-devel). Currently, /seamless-tools/utils is not mounted at all, therefore seamless-upload fails. /seamless-tools/seamless-cli/seamless-upload-vault also doesn't seem to work. As tests, run /lowlevel/pin-filesystem.sh, /highlevel/pin-filesystem.sh, /highlevel/get-file-and-directory.sh, /cmd/highlevel/get-file-and-directory.sh
-TODO, but nested /bin/seamless works for devel
+DONE
 
 - Documentation. 
 

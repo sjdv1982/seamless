@@ -31,8 +31,7 @@ from seamless.cmd.bash_transformation import (
 )
 from seamless.cmd import interface
 from seamless.cmd.exceptions import SeamlessSystemExit
-from seamless.cmd.bytes2human import bytes2human, human2bytes
-from seamless.cmd.confirm import confirm_yna
+from seamless.cmd.bytes2human import human2bytes
 from seamless.cmd.download import download
 from seamless.highlevel import Checksum
 from seamless.core.protocol.json import json_dumps
@@ -123,6 +122,18 @@ An empty server file name captures stdout, e.g. "-cp :bar"
 """,
     action="append",
     dest="extra_results",
+)
+
+parser.add_argument(
+    "-i",
+    "--input",
+    help="""Add a file or directory as an input.
+
+Normally, only the first command gets analyzed for input files and directories.
+With this option, you can add an input manually.
+""",
+    action="append",
+    dest="extra_inputs",
 )
 
 parser.add_argument(
@@ -292,6 +303,18 @@ if interface_py_file is None:
         argtypes_initial.update(argtypes_guess)
         argtypes_initial.update(argtypes_temp)
 
+argtypes_extra_inputs = None
+if args.extra_inputs:
+    argtypes_extra_inputs = guess_arguments(
+        args.extra_inputs,
+        overrule_ext=True,
+        overrule_no_ext=True,
+    )
+    for inp in args.extra_inputs:
+        assert inp in argtypes_extra_inputs
+        if argtypes_extra_inputs[inp] == "value" or argtypes_extra_inputs[inp]["type"] == "value":
+            err(f"--input argument '{inp}': file/directory does not exist")
+
 argtypesstr = json.dumps(argtypes_initial, sort_keys=False, indent=2)
 msg(1, "initial argtypes dict:\n" + argtypesstr)
 
@@ -303,6 +326,11 @@ try:
     argtypes = get_file_mapping(
         argtypes_initial, mapping_mode=file_mapping_mode, working_directory=workdir
     )
+    argtypes_extra_inputs2 = get_file_mapping(
+        argtypes_extra_inputs, mapping_mode=file_mapping_mode, working_directory=workdir
+    )
+    argtypes_extra_inputs2.pop("@order")
+    argtypes.update(argtypes_extra_inputs2)
 except ValueError as exc:
     err(*exc.args)
 
