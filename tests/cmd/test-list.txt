@@ -1,6 +1,8 @@
 # In general, run as: i=name_of_test; ./$i.sh > test-outputs/$i.out 2>&1
 # Needs delegation to have been set up, unless indicated otherwise
 testfolder.sh
+testfolder2.sh
+
 undo.sh
     After running, grep "UTC" in undo.out
     It should print two lines, corresponding to dates with a few seconds offset

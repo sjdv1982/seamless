@@ -67,7 +67,7 @@ def download(
     max_download_size,
     max_download_files,
     auto_confirm,
-    index_checksums = None,
+    index_checksums=None,
 ):
     checksums = set(checksum_dict.values())
     with ThreadPoolExecutor(max_workers=100) as executor:

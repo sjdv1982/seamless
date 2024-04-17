@@ -28,12 +28,15 @@ TO DOCUMENT:
 - bash front to 1. and 2. (using Docker).
 - bash front to /bin/seamless (using Docker)
 
+- Add seamless-buffer-length DONE
 
-
+- Add --index and --deep options to seamless-download
 - Add --file argument to /bin/seamless. Mapping will be the same as for other files. Works for directories, too. DONE
 
-- Also add --dry-run and --prepare (--prepare does upload files and registers transformation buffer)
+- Also add /bin/seamless --dry-run and --prepare (--prepare does upload files and registers transformation buffer). Make a test involving --prepare, seamless-buffer-length and seamless-download --deep --index.
 TODO
+
+- Add seamless-download --directory option. DONE
 
 
 - Try to revert https://github.com/sjdv1982/seamless/commit/a95b55a68bc747ca8aa1661037497ef4981d695e
