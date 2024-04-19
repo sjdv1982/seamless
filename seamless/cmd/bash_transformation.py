@@ -57,6 +57,7 @@ def prepare_bash_transformation(
     environment: dict,
     meta: dict,
     variables: dict,
+    dry_run: bool = False
 ) -> str:
     """Prepared a bash transformation for execution.
 
@@ -144,7 +145,7 @@ def prepare_bash_transformation(
         vv = celltype, subcelltype, checksum.hex()
         transformation_dict[k] = vv
 
-    _, transformation_checksum = register_transformation_dict(transformation_dict)
+    _, transformation_checksum = register_transformation_dict(transformation_dict, dry_run=dry_run)
  
     return Checksum(transformation_checksum), transformation_dict
 

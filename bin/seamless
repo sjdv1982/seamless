@@ -197,6 +197,14 @@ parser.add_argument(
     action="store_true",
 )
 
+parser.add_argument(
+    "--dry", "--dry-run",
+    dest="dry_run",
+    help="Only parse the arguments and prepare a transformation job, do not execute it",
+    action="store_true",
+    default=False
+)
+
 
 parser.add_argument("command", nargs=argparse.REMAINDER)
 
@@ -303,7 +311,7 @@ if interface_py_file is None:
         argtypes_initial.update(argtypes_guess)
         argtypes_initial.update(argtypes_temp)
 
-argtypes_extra_inputs = None
+argtypes_extra_inputs = {}
 if args.extra_inputs:
     argtypes_extra_inputs = guess_arguments(
         args.extra_inputs,
@@ -521,8 +529,11 @@ if docker_image is not None:
     msg(1, f'Set Docker image to "{docker_image}"')
     env["docker"] = {"name": docker_image}
 
-if seamless.delegate():
-    exit(1)
+if args.dry_run:
+    seamless.delegate(level=2)
+else:
+    if seamless.delegate():
+        exit(1)
 
 # TODO: max_upload_files, max_upload_size:
 # TODO: max_download_files, max_download_size:
@@ -571,6 +582,7 @@ try:
         max_upload_files=max_upload_files,
         directories=directories,
         auto_confirm=args.auto_confirm,
+        dry_run=args.dry_run
     )
 except SeamlessSystemExit as exc:
     err(*exc.args)
@@ -632,7 +644,9 @@ transformation_checksum, transformation_dict = prepare_bash_transformation(
     environment=env,
     variables=variables,
     meta=meta,
+    dry_run=args.dry_run
 )
+
 if make_executables:
     msg(
         2,
@@ -648,6 +662,9 @@ else:
 transformation_checksum = Checksum(transformation_checksum).hex()
 msg(3, f"Transformation checksum: {transformation_checksum}")
 
+if args.dry_run:
+    sys.exit(0)
+    
 def write_future(filename, result_target):
     filename = os.path.join(workdir, filename)
     try:
@@ -700,7 +717,6 @@ def maintain_futures():
         if download_target is None:
             download_target = result_target
         remove_future(download_target, result_target)
-
 
 if result_targets:
     maintain_futures_thread = threading.Thread(

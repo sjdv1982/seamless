@@ -134,13 +134,16 @@ def _register_transformation_dict(
     transformation_cache.transformations[transformation_checksum] = transformation_dict
     return result
 
-def register_transformation_dict(transformation_dict):
+def register_transformation_dict(transformation_dict, dry_run=False):
     transformation_buffer = tf_get_buffer(transformation_dict)
     transformation = calculate_checksum(transformation_buffer)
-    cache_buffer(transformation, transformation_buffer)
-    increfed = _register_transformation_dict(
-        transformation, transformation_buffer, transformation_dict
-    )
+    if not dry_run:
+        cache_buffer(transformation, transformation_buffer)
+        increfed = _register_transformation_dict(
+            transformation, transformation_buffer, transformation_dict
+        )
+    else:
+        increfed = False
     return increfed, transformation
 
 def extract_dunder(transformation_dict):

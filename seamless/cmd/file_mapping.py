@@ -40,7 +40,9 @@ def get_file_mapping(
     if mapping_mode not in ("literal", "strip", "extension"):
         raise ValueError(mapping_mode)
 
-    order = argtypes["@order"]
+    order = []
+    if argtypes:
+        order = argtypes["@order"]
     new_order = []
     result = {"@order": new_order}
     nfiles = 0

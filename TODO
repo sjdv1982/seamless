@@ -33,8 +33,22 @@ TO DOCUMENT:
 - Add --index and --deep options to seamless-download
 - Add --file argument to /bin/seamless. Mapping will be the same as for other files. Works for directories, too. DONE
 
-- Also add /bin/seamless --dry-run and --prepare (--prepare does upload files and registers transformation buffer). Make a test involving --prepare, seamless-buffer-length and seamless-download --deep --index.
+- /bin/seamless: --dry, DONE
+
+- /bin/seamless: --write-job, requires --dry. To write:
+  - outputfile.JOB, corresponds to transformation checksum, needs to be uploaded (and add outputfile.JOB.CHECKSUM support to run-transformation )
+  - outputfile.COMMAND, corresponds to the generated bash code (needs to be uploaded since its checksum is referenced)
+  - outputfile.DUNDER (if not empty)
+  - outputfile.ENV (needs to be uploaded since its checksum is referenced in the dunder file)
 TODO
+
+-  run-transformation: Add --from-job support: 
+    - If transformation.JOB.CHECKSUM present: load its checksum and run
+    - Else: uploads .JOB, .COMMAND and (if present) .ENV, calculate .JOB.CHECKSUM and run`
+  Uses transformation.DUNDER as dunderfile if present.
+TODO
+- /bin/seamless: add --docker, --conda-env , --conda-file support, to build env/dunder, make a test. TODO
+- /bin/seamless: --prepare, requires --dry. Uploads all input files, as well as .JOB, .COMMAND and .ENV.  If --write-job, outputfile.JOB, outputfile.COMMAND and outputfile.ENV are not written to disk; instead write outputfil!Make a test involving --prepare, seamless-buffer-length and seamless-download --deep --index. TODO
 
 - Add seamless-download --directory option. DONE
 

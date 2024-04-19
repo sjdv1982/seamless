@@ -40,6 +40,7 @@ def files_to_checksums(
     nparallel: int = 20,
     auto_confirm: str | None,
     destination_folder: str | None = None,
+    dry_run: bool = False
 ):
     """Convert a list of filenames to a dict of filename-to-checksum items
     In addition, each file buffer is added to the database.
@@ -148,6 +149,8 @@ def files_to_checksums(
         ask_confirmation = True
     if auto_confirm == "yes":
         ask_confirmation = False
+    if dry_run:
+        ask_confirmation = False
     if ask_confirmation:
         if auto_confirm == "no":
             err = "Cannot confirm upload of {} files, total {}. Exiting.".format(len(upload_buffer_lengths), size)
@@ -160,13 +163,13 @@ def files_to_checksums(
     else:
         msg(1, "Upload no files")
 
-    if upload_filelist:
+    if upload_filelist and not dry_run:
         reg_file = functools.partial(register_file, destination_folder=destination_folder)
         with ThreadPoolExecutor(max_workers=nparallel) as executor:
             for filename, checksum in zip(upload_filelist, executor.map(reg_file, upload_filelist)):
                 assert all_result[filename] == checksum, (filename, checksum, all_result[filename])
 
-    if upload_buffers:
+    if upload_buffers and not dry_run:
         reg_buf = functools.partial(register_buffer, destination_folder=destination_folder)
         with ThreadPoolExecutor(max_workers=nparallel) as executor:
             executor.map(reg_buf, 
