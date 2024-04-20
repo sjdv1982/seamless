@@ -239,7 +239,7 @@ unless their language is bash."""
         self._sync()
         return deepcopy(self._docker)
 
-    def _to_lowlevel(self):
+    def _to_lowlevel(self, *, bash=False):
         result = {}
         if self._which is not None:
             result["which"] = deepcopy(self._which)
@@ -247,7 +247,10 @@ unless their language is bash."""
             conda_env = yaml.load(self._conda)
             result["conda"] = conda_env
         if self._conda_env_name is not None:
-            result["conda_env_name"] = self._conda_env_name
+            if bash:
+                result["conda_bash_env_name"] = self._conda_env_name
+            else:
+                result["conda_env_name"] = self._conda_env_name
         if self._powers is not None:
             result["powers"] = deepcopy(self._powers)
         if self._docker is not None:

@@ -102,6 +102,13 @@ try:
     bash_header = """set -u -e
 trap 'jobs -p | xargs -r kill' EXIT
 """
+    if conda_environment_:
+        CONDA_ROOT = os.environ.get("CONDA_ROOT", None)
+        bash_header += f"""
+source {CONDA_ROOT}/etc/profile.d/conda.sh
+conda activate {conda_environment_}
+"""
+
     bashcode2 = bash_header + bashcode
     process = subprocess.Popen(            
         bashcode2, shell=True, 

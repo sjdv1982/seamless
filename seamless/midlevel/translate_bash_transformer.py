@@ -19,7 +19,7 @@ def translate_bash_transformer(
 
     env0 = Environment(None)
     env0._load(node.get("environment"))
-    env = env0._to_lowlevel()
+    env = env0._to_lowlevel(bash=True)
 
     is_docker_transformer = False
     if env is not None and env.get("docker") is not None:
@@ -110,7 +110,7 @@ def translate_bash_transformer(
     result_name = node["RESULT"]
     input_name = node["INPUT"]
     result_cell_name = result_name + "_CELL"
-    forbidden = [result_name, result_cell_name, "bashcode", "pins_"]
+    forbidden = [result_name, result_cell_name, "bashcode", "pins_", "conda_environment_"]
     pin_intermediate = {}
     for pin in node["pins"].keys():
         pin_intermediate[pin] = input_name + "_PIN_" + pin
@@ -121,8 +121,9 @@ def translate_bash_transformer(
     pins = node_pins.copy()
     pins["bashcode"] = {"celltype": "text"}
     pins["pins_"] = {"celltype": "plain"}
+    pins["conda_environment_"] = {"celltype": "str"}
     pins_ = set(list(pins.keys()) + list(deep_pins.keys()))
-    pins_ = sorted([pin for pin in pins_ if pin not in ("pins_", "bashcode")])
+    pins_ = sorted([pin for pin in pins_ if pin not in ("pins_", "conda_environment_", "bashcode")])
     ctx.pins = cell("plain").set(pins_)
 
     interchannels = [as_tuple(pin) for pin in pins]
@@ -209,6 +210,9 @@ def translate_bash_transformer(
         ctx.code.mount(**mount["code"])
 
     ctx.pins.connect(ctx.tf.pins_)
+    conda_environment_ = env.get("conda_bash_env_name") if env is not None else ""
+    ctx.conda_environment_ = cell("str").set(conda_environment_)
+    ctx.conda_environment_.connect(ctx.tf.conda_environment_)
     ctx.code.connect(ctx.tf.bashcode)
     checksum = node.get("checksum", {})
     if "code" in checksum:

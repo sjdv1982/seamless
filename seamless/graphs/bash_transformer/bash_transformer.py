@@ -22,11 +22,13 @@ zip = ctx.get_zip()
 
 ctx.testdata = "a\nb\nc\nd\ne\nf\n"
 ctx.bashcode = "head -$lines testdata > firstdata; mkdir -p RESULT/input; cp firstdata RESULT; cp testdata RESULT/input"
-ctx.executor = lambda bashcode, testdata, pins_, lines: None
+ctx.executor = lambda bashcode, testdata, pins_, conda_environment_, lines: None
 pins = ctx.executor.pins
 pins.bashcode.celltype = "text"
 pins.pins_.celltype = "plain"
+pins.conda_environment_.celltype = "str"
 ctx.executor.pins_ = ["lines", "testdata"]
+ctx.executor.conda_environment_ = ""
 pins["lines"]["celltype"] = "int"
 pins["testdata"]["celltype"] = "text"
 ctx.executor.code = ctx.executor_code
