@@ -1,5 +1,4 @@
 import os
-os.environ["SEAMLESS_ASSISTANT_ID"] = "test-imperative-communion"
 
 import seamless
 seamless.delegate()
