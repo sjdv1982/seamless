@@ -1,4 +1,7 @@
+import seamless
 from seamless.highlevel import Context, Transformer
+
+seamless.delegate(False)
 
 ctx = Context()
 
