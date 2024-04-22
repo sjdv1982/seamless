@@ -2,16 +2,9 @@ import os
 from ..calculate_checksum import calculate_checksum
 from seamless.core.protocol.json import json_dumps
 from ..core.cache.buffer_remote import write_buffer as remote_write_buffer, can_read_buffer as remote_can_read
+from ..core.cache.buffer_cache import buffer_cache
 from ..core.cache.database_client import database
 from ..core.buffer_info import BufferInfo
-
-def calculate_file_checksum(filename: str) -> str:
-    """Calculate a file checksum"""
-    # TODO: streaming?
-    with open(filename, "rb") as f:
-        buffer = f.read()
-    checksum = calculate_checksum(buffer, hex=True)
-    return checksum
 
 def register_buffer_length(buffer: bytes, checksum: bytes) -> str:
     buffer_info = database.get_buffer_info(checksum)
@@ -25,23 +18,25 @@ def register_buffer_length(buffer: bytes, checksum: bytes) -> str:
     if write_buffer_info:
         database.set_buffer_info(checksum, buffer_info)
 
-def _register_buffer(checksum: bytes, buffer: bytes, destination_folder):
-    if destination_folder is not None:
+def _register_buffer(checksum: bytes, buffer: bytes, destination_folder, dry_run: bool = False):
+    if dry_run:
+        buffer_cache.cache_buffer(checksum, buffer)
+    elif destination_folder is not None:
         filename = os.path.join(destination_folder, checksum.hex())
         with open(filename, "wb") as f:
             f.write(buffer)
     else:
         remote_write_buffer(checksum, buffer)
 
-def register_buffer(buffer: bytes, destination_folder: str | None = None) -> str:
+def register_buffer(buffer: bytes, destination_folder: str | None = None, dry_run: bool = False) -> str:
     checksum = calculate_checksum(buffer)
     register_buffer_length(buffer, checksum)
-    _register_buffer(checksum, buffer, destination_folder)
+    _register_buffer(checksum, buffer, destination_folder, dry_run=dry_run)
     return checksum.hex()
 
-def register_dict(data: dict, destination_folder: str | None = None) -> str:
+def register_dict(data: dict, destination_folder: str | None = None, dry_run: bool = False ) -> str:
     buffer = json_dumps(data, as_bytes=True) + b"\n"
-    return register_buffer(buffer, destination_folder=destination_folder)
+    return register_buffer(buffer, destination_folder=destination_folder, dry_run=dry_run)
 
 def check_file(filename: str) -> tuple[bool, str, int]:
     """Check if a file needs to be written remotely

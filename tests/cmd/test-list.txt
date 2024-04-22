@@ -67,3 +67,14 @@ manyjobs.sh
     Submitting 1000 jobs will take 200s. Will calculate pi to 6 digits. 
     Expected results: 3.141593805644 5.116277454745302e-05 3.141592653589793
 
+cowsay-docker.sh
+    Requires Docker image 'cowsay' to be available. Can be built in this directory using:
+        docker build -t cowsay . -f cowsay.Dockerfile 
+    
+cowsay-conda.sh
+    Requires conda environment "cowsay-environment" to be present *where the job is executed*.
+    Where this is depends on the assistant: it is recommended to use a dask-assistant, 
+    the test output has been generated using this.
+    Reason: then you control explicitly where the Dask scheduler/worker is being run.
+    The conda environment can be built from "cowsay-environment.yml":
+        conda env create -n cowsay-environment -f cowsay-environment.yml

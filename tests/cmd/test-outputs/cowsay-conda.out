@@ -1,0 +1,196 @@
+# Simple, no conda env, failure
+seamless.core.transformation.SeamlessTransformationError: Error 400 from assistant:ERROR: Unknown error
+Output:
+Traceback (most recent call last):
+  File "/home/sjoerd/seamless-tools/scripts/run-transformation.py", line 152, in <module>
+    result = seamless.run_transformation(checksum.bytes(), fingertip=fingertip, tf_dunder=dunder, scratch=scratch, manager=manager)
+  File "/home/sjoerd/seamless/seamless/__init__.py", line 113, in run_transformation
+    return tf_cache.run_transformation(checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, new_event_loop=new_event_loop, manager=manager)
+  File "/home/sjoerd/seamless/seamless/core/cache/transformation_cache.py", line 1270, in run_transformation
+    asyncio.get_event_loop().run_until_complete(fut)
+  File "/home/sjoerd/miniconda3/envs/seamless-dask-development/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/home/sjoerd/seamless/seamless/core/cache/transformation_cache.py", line 1215, in run_transformation_async
+    raise self.transformation_exceptions[tf_checksum]
+seamless.core.transformation.SeamlessTransformationError: 
+Bash transformer exception
+==========================
+
+Error: Return code 127
+
+*************************************************
+* Command
+*************************************************
+(
+cowsay -t "Hello0"
+) > RESULT
+*************************************************
+
+
+*************************************************
+* Standard output
+*************************************************
+/bin/bash: line 4: cowsay: command not found
+
+*************************************************
+*************************************************
+Execution time: 0.0 seconds
+
+
+buffer cache, 4 buffers undestroyed
+
+# Simple, with conda env
+  _____
+| Hello |
+  =====
+     \
+      \
+        ^__^
+        (oo)\_______
+        (__)\       )\/\
+            ||----w |
+            ||     ||
+
+
+# Multi-step
+62cd9527de5e095c298eead46eca5003a4746ad30bb21eaba5472d044d8c4fbe
+Result: 2ec29ff4c52f1062e04657c092bac9d0ee69b34f95946fcda579e0c1bf530285
+  ______
+| Hello2 |
+  ======
+      \
+       \
+         ^__^
+         (oo)\_______
+         (__)\       )\/\
+             ||----w |
+             ||     ||
+
+# Multi-step, local execution
+b156b0175b5f8fa996edecfeef678ca349013e85c318c8b8170b9b866e586a25
+Result: a6276c17bf5264ea072e69039b3910a7d793d88e8edac4634c07f2eccc7ef35b
+  ______
+| Hello3 |
+  ======
+      \
+       \
+         ^__^
+         (oo)\_______
+         (__)\       )\/\
+             ||----w |
+             ||     ||
+
+# Multi-step with scratch
+dab4a9e2b6e6ffd3a737061c764c856c5c5c0be3354efd4b8ec4b37b821663b3
+Result: 3911994963636e87ecac99733f60189e3d06ddc580d4b360906d5b2dc0f7b5a3
+  ______
+| Hello4 |
+  ======
+      \
+       \
+         ^__^
+         (oo)\_______
+         (__)\       )\/\
+             ||----w |
+             ||     ||
+
+# Multi-step with scratch, local execution
+e70f599171d3ce0cb6fac3012a21184caa2cd513e813d8a72c8d8fd23d680dc0
+Result: 5b1265e35be6ca7449dd87a5bd2428cd36c318d4392208a757447c0353cd6b94
+  ______
+| Hello5 |
+  ======
+      \
+       \
+         ^__^
+         (oo)\_______
+         (__)\       )\/\
+             ||----w |
+             ||     ||
+
+# Text argument, simple
+seamless: Upload 1 files, total 5.00 B
+  ____
+| Moo! |
+  ====
+    \
+     \
+       ^__^
+       (oo)\_______
+       (__)\       )\/\
+           ||----w |
+           ||     ||
+
+# Text argument, multi-step, local execution
+seamless: Upload 1 files, total 6.00 B
+208ca0bb3b6d3fdcf97820b19ebc3a6a567134ebb3062eb671c97292b4d6450f
+seamless: Upload 1 files, total 6.00 B
+seamless: Upload 1 files, total 437.00 B
+Result: 11c4a558d7649c01953232695e9df5d1583bfb0e3169046ed4c66133aecbe063
+  _____
+| Moo!! |
+  =====
+     \
+      \
+        ^__^
+        (oo)\_______
+        (__)\       )\/\
+            ||----w |
+            ||     ||
+# Composite example
+a7fe1c063c01cb85049f61b34ab9a55c9bf7dfe04f73888a10116c23ce93984e
+Result: 23467dc99e147f2d721518eb1f1cce0949bd275fcf22ade76c48c51dc2143aba
+  _____
+| Hello |
+  =====
+     \
+      \
+        ^__^
+        (oo)\_______
+        (__)\       )\/\
+            ||----w |
+            ||     ||
+
+# Composite example with scratch
+a2ae3d771fff1f4812ff6bb1159c526171bc0059213441e52987e7e7a281e376
+Result: b57ca0da79410827cec249925aab9f898b2fe4231b670fc61ed463d21698f2aa
+  ______
+| Hello2 |
+  ======
+      \
+       \
+         ^__^
+         (oo)\_______
+         (__)\       )\/\
+             ||----w |
+             ||     ||
+
+# Composite example, local execution
+d6d07a8f6392ee87a3027fac893568147d7acdb4b0226b87ca06e86683b4ad67
+Result: 4e2e939acd10ea4ff706601c67ab8e7dcce1e647048d84391ed9d11b0ba80eec
+  ______
+| Hello3 |
+  ======
+      \
+       \
+         ^__^
+         (oo)\_______
+         (__)\       )\/\
+             ||----w |
+             ||     ||
+
+# Composite example, local execution, with scratch
+25e0bcb2ab4a0ef27fc42fa132d5a5d64849517a39966caa5c74a2ebf4de4eb9
+Result: b01d2fa8aab76fd4d0bfafa81212d98e7540afdf0a5b2be865d21050aa2ce402
+Waiting for transformer process to terminate...
+  ______
+| Hello4 |
+  ======
+      \
+       \
+         ^__^
+         (oo)\_______
+         (__)\       )\/\
+             ||----w |
+             ||     ||
+

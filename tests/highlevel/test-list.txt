@@ -148,8 +148,14 @@ environment3.py
 environment7.py: requires full delegation. micro-assistant will not work out-of-the-box. Can also be run non-automatically, see below.
 imperative-environment.py: Will take ~15 minutes to run (faster if GPU available). Requires full delegation. micro-assistant will not work out-of-the-box
 meta.py
-environment7a.py: version of environment7 where the conda environment name is specified. Will work with the mini-assistant if the environment "pytorch-seamless" is present 
-environment7b.py: version of environment7 where the Docker image name is specified. Will work with the mini-assistant if the Docker image "seamless-devel-pytorch" is present, which can be built using environment7b.Dockerfile
+cowsay-conda.py: has a conda environment name "cowsay-environment". 
+    Requires conda environment "cowsay-environment" to be present *where the job is executed*.
+    In case of delegation, where this is depends on the assistant: it is recommended to use a dask-assistant, because
+    then you control explicitly where the Dask scheduler/worker is being run.
+    The conda environment can be built from "cowsay-environment.yml":
+        conda env create -n cowsay-environment -f cowsay-environment.yml
+environment7a.py: version of environment7 where the conda environment name is specified. Will work with the mini-dask-assistant if the conda environment "pytorch-seamless" is present where the Dask worker runs
+environment7b.py: version of environment7 where the Docker image name is specified. Will work with any assistant if the Docker image "seamless-devel-pytorch" is present, which can be built using environment7b.Dockerfile
 
 fallback.py
 eager.py: FAILS as of 0.7 (https://github.com/sjdv1982/seamless/issues/90)

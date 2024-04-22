@@ -7,6 +7,7 @@ from collections import namedtuple
 
 from .message import message as msg, message_and_exit as err
 from .file_load import read_checksum_file
+from ..calculate_checksum import calculate_file_checksum
 
 def guess_arguments_with_custom_error_messages(
     args: list[str],
@@ -81,6 +82,7 @@ def guess_arguments_with_custom_error_messages(
 
         checksum_path = Path(arg + ".CHECKSUM")
         index_path = Path(arg + ".INDEX")
+        checksum = None
         if checksum_path.exists():
             item = {}
             if index_path.exists():
@@ -94,7 +96,6 @@ def guess_arguments_with_custom_error_messages(
                 err("Argument #{} '{}', .CHECKSUM file exists, but does not contain a valid checksum".format(argindex, arg))
             item["checksum"] = checksum
             result[arg] = item
-            continue
 
         extension = path.suffix
         msg(3, "Argument #{} '{}', extension: '{}'".format(argindex, arg, extension))
@@ -109,6 +110,14 @@ def guess_arguments_with_custom_error_messages(
                 is_float = True
             except ValueError:
                 pass
+
+        if checksum is not None:
+            if exists and not is_dir:
+                arg2 = os.path.expanduser(arg)
+                file_checksum = calculate_file_checksum(arg2)
+                if file_checksum != checksum:
+                    raise ValueError("Argument exists as file and .CHECKSUM file, but the checksums are not the same")
+            continue
 
         # Rule 1.: Any argument with extension must exist as a file, but not as a directory.
         # However, numeric arguments such as "0.1" are always interpreted as numeric.

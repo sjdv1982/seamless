@@ -78,20 +78,20 @@ def get_buffer(checksum):
         return result
     return fingertip(checksum)
     
-def fingertip(checksum):
+def fingertip(checksum, dunder=None):
     checksum = parse_checksum(checksum, as_bytes=True)
     result = _get_buffer(checksum, remote=True)
     if result is not None:
         return result
     set_dummy_manager()
     async def fingertip_coro():
-        return await _dummy_manager.cachemanager.fingertip(checksum)
+        return await _dummy_manager.cachemanager.fingertip(checksum, dunder=dunder)
     event_loop = asyncio.get_event_loop()
     if event_loop.is_running():
         with ThreadPoolExecutor() as tp:
             result = tp.submit(lambda: asyncio.run(fingertip_coro())).result()
     else:
-        future = asyncio.ensure_future(_dummy_manager.cachemanager.fingertip(checksum))
+        future = asyncio.ensure_future(_dummy_manager.cachemanager.fingertip(checksum, dunder=dunder))
         event_loop.run_until_complete(future)
         result = future.result()
     if result is None:

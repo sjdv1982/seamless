@@ -78,6 +78,7 @@ def prepare_bash_transformation(
 
     Returns: transformation checksum, transformation dict
     """
+    from ..core.cache.buffer_cache import buffer_cache
 
     bashcode = prepare_bash_code(
         code,
@@ -104,7 +105,7 @@ def prepare_bash_transformation(
     if meta:
         transformation_dict["__meta__"] = meta
     if environment:
-        env_checksum = register_dict(environment)
+        env_checksum = register_dict(environment, dry_run=dry_run)
         transformation_dict["__env__"] = env_checksum
     format = {}
     for k,v in checksum_dict.items():
@@ -141,7 +142,10 @@ def prepare_bash_transformation(
         celltype, subcelltype, value = v
         buffer = serialize(value, celltype)
         checksum = calculate_checksum(buffer)
-        remote_write_buffer(checksum, buffer)
+        if dry_run:
+            buffer_cache.cache_buffer(checksum, buffer)
+        else:
+            remote_write_buffer(checksum, buffer)
         vv = celltype, subcelltype, checksum.hex()
         transformation_dict[k] = vv
 

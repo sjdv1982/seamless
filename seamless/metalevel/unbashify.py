@@ -122,6 +122,9 @@ def unbashify(transformation_dict:dict, semantic_cache, execution_metadata:dict)
     pins = [p for p in sorted(tdict.keys()) if p != "code" and not p.startswith("__")]
     pins_checksum = prepare_transformation_pin_value(pins, "plain").hex()
     tdict["pins_"] = ("plain", None, pins_checksum)
+    conda_environment_ = env.get("conda_bash_env_name") if env is not None else ""
+    conda_environment_checksum = prepare_transformation_pin_value(conda_environment_, "str").hex()
+    tdict["conda_environment_"] = ("str", None, conda_environment_checksum)
     code_pin = tdict["code"]
     tdict["bashcode"] = code_pin
     semantic_code_checksum = prepare_code(

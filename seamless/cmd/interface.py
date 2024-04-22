@@ -61,6 +61,7 @@ def locate_files(command):
             break
     else:
         msg(1, "first argument '{}' is not a file".format(arg1.as_posix()))
+        mapped_execarg = None
 
     arg2 = None
     if interface_file is None and len(command) > 1 and not arg1.suffix:

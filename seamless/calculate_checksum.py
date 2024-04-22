@@ -12,6 +12,19 @@ def calculate_checksum(content, hex=False):
         result = result.hex()
     return result
 
+def calculate_file_checksum(filename: str) -> str:
+    """Calculate a file checksum"""
+    blocksize = 2**16
+    with open(filename, "rb") as f:
+        hash = sha3_256()
+        while 1:
+            block = f.read(blocksize)
+            if not block:
+                break
+            hash.update(block)
+    checksum = hash.digest().hex()
+    return checksum
+
 def calculate_dict_checksum(d, hex=False):
     """This function is compatible with the checksum of a "plain" cell"""
     from seamless.core.protocol.json import json_dumps

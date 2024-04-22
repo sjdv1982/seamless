@@ -6,12 +6,13 @@ from ..cache.buffer_cache import buffer_cache
 
 class FingerTipper:
     """Short-lived object to perform nested fingertipping"""
-    def __init__(self, checksum, cachemanager, *, recompute, done):
+    def __init__(self, checksum, cachemanager, *, recompute, done, dunder=None):
         from seamless.util import is_forked
         self.checksum = checksum
         self.cachemanager = cachemanager
         self.done = done
         self.recompute = recompute
+        self.dunder = dunder
         self.clear()
         self.manager = cachemanager.manager()
         self.tf_cache = cachemanager.transformation_cache
@@ -30,7 +31,7 @@ class FingerTipper:
         return (not self.transformations) and (not self.expressions) and (not self.joins) and (not self.joins2) and (not self.syn2sem)
 
     async def fingertip_upstream(self, checksum):
-        result = await self.cachemanager._fingertip(checksum, must_have_cell=False, done=self.done.copy())
+        result = await self.cachemanager._fingertip(checksum, must_have_cell=False, done=self.done.copy(), dunder=self.dunder)
         return result
 
     async def fingertip_transformation(self, transformation, tf_checksum):
@@ -176,7 +177,11 @@ class FingerTipper:
         self.transformations[:] = list({v:(k,v) for k,v in self.transformations}.values())
         coros = []
         for transformation, tf_checksum in self.transformations:
-            coro = self.fingertip_transformation(transformation, tf_checksum)
+            transformation2 = transformation
+            if self.dunder is not None:
+                transformation2 = transformation.copy()
+                transformation2.update(self.dunder)
+            coro = self.fingertip_transformation(transformation2, tf_checksum)
             coros.append(coro)
         for expression in self.expressions:
             coro = self.fingertip_expression(expression)

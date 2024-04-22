@@ -167,7 +167,7 @@ class CacheManager:
             subchecksums_persistent = cell._subchecksums_persistent
             deeprefmanager.incref_deep_buffer(checksum, cell._hash_pattern, cell=cell, subchecksums_persistent=subchecksums_persistent)
     
-    async def fingertip(self, checksum, *, must_have_cell=False):
+    async def fingertip(self, checksum, *, dunder=None, must_have_cell=False):
         """Tries to put the checksum's corresponding buffer 'at your fingertips'
         Normally, first reverse provenance (recompute) is tried,
          then remote download.
@@ -179,7 +179,7 @@ class CacheManager:
          the shareserver, which makes it safe to re-compute a checksum-to-buffer
          request dynamically, without allowing arbitrary computation
         """
-        return await self._fingertip(checksum, must_have_cell=must_have_cell, done=set())
+        return await self._fingertip(checksum, dunder=dunder, must_have_cell=must_have_cell, done=set())
 
     def _mine_database(self, checksum):
         from seamless.config import database
@@ -209,13 +209,13 @@ class CacheManager:
 
         return result_expressions, result_joins, result_transformations
 
-    async def _build_fingertipper(self, checksum, *, recompute, done):
+    async def _build_fingertipper(self, checksum, *, dunder=None, recompute, done):
         from .tasks.deserialize_buffer import DeserializeBufferTask
         from seamless.config import database
         from ..direct.run import TRANSFORMATION_STACK
         from .fingertipper import FingerTipper
 
-        fingertipper = FingerTipper(checksum, self, recompute=recompute, done=done)
+        fingertipper = FingerTipper(checksum, self, dunder=dunder, recompute=recompute, done=done)
 
         manager = self.manager()
         tf_cache = self.transformation_cache
@@ -310,7 +310,7 @@ class CacheManager:
 
         return fingertipper
 
-    async def _fingertip(self, checksum, *, must_have_cell, done):
+    async def _fingertip(self, checksum, *, must_have_cell, done, dunder = None):
         from ..cache import CacheMissError
         from seamless.config import database
 
@@ -350,7 +350,7 @@ class CacheManager:
                 print("REMOT")
                 return buffer
 
-        fingertipper = await self._build_fingertipper(checksum, recompute=recompute, done=done)
+        fingertipper = await self._build_fingertipper(checksum, dunder=dunder, recompute=recompute, done=done)
 
         exc_str = None
         if not fingertipper.empty:
