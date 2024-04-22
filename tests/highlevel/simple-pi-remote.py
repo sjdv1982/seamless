@@ -1,8 +1,5 @@
 #use with jobslave.py
 
-import os
-os.environ["SEAMLESS_ASSISTANT_ID"] = "simple-pi-remote"
-
 import seamless
 seamless.delegate()
 import math
