@@ -1,5 +1,5 @@
 Run 1
-Database not found
+seamless.config.BufferServerConnectionError: Cannot connect to write buffer server http://127.0.0.1:5577
 RUN MACRO 20
 RUN TRANSFORMER 10 20
 <Silk: 1200 >
@@ -9,6 +9,7 @@ Start database
 Run 2
 Database found
 RUN MACRO 20
+Waiting for: Seamless transformer: .m.macro.ctx.tf
 RUN TRANSFORMER 10 20
 <Silk: 1200 >
 Status: OK None
@@ -19,5 +20,4 @@ Database found
 Status: OK None
 
 Server log
-Press Ctrl+C to end
 

@@ -1,14 +1,10 @@
-import sys
+import time
 import seamless
-from_vault = bool(int(sys.argv[1]))
-if from_vault:
-    seamless.load_vault(sys.argv[2])
-from requests import ConnectionError
-try:
-    seamless.config.database.connect()
+err = seamless.delegate(level=3)
+if err:
+    seamless.delegate(level=0)
+else:
     print("Database found")
-except ConnectionError:
-    print("Database not found")
 
 from seamless.highlevel import Context, Macro
 ctx = Context()
@@ -39,9 +35,7 @@ c = a * b  + 1000""")
 m.code = run_macro
 ctx.result = ctx.m.c
 m.elision = True
+t = time.time()
 ctx.compute()
 print(ctx.result.value)
 print(m.status, m.exception)
-
-if not from_vault:
-    ctx.save_vault(sys.argv[2])

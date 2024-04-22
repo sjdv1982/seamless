@@ -50,6 +50,8 @@ class Elision:
     def update(self):
         """Triggered if one of the output cells changes value"""
         from .database_client import database
+        from . import buffer_remote
+        from ..protocol.serialize import serialize_sync as serialize
         if self.macro._in_elision:
             return
         elision_checksum = self.get_elision_checksum()
@@ -59,7 +61,9 @@ class Elision:
         if elision_result is None:
             return
         #print("ELISION UPDATE", self.macro, elision_checksum.hex(), elision_result)
-        elision_result_checksum = calculate_dict_checksum(elision_result)
+        elision_result_buffer = serialize(elision_result, "plain")
+        elision_result_checksum = calculate_checksum(elision_result_buffer)
+        buffer_remote.write_buffer(elision_result_checksum, elision_result_buffer)
         database.set_elision_result(elision_checksum, elision_result_checksum)
         elision_cache[elision_checksum] = elision_result
 
@@ -209,4 +213,4 @@ def elide(macro: "Macro"):
 from ..macro import Macro, Path, path as make_path
 from ..cell import Cell, cell
 from ..context import context
-from ...calculate_checksum import calculate_dict_checksum
+from ...calculate_checksum import calculate_checksum, calculate_dict_checksum
