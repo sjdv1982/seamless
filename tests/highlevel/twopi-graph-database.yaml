@@ -1,5 +1,0 @@
-stores: 
-    -
-      path: "/tmp/seamless-db"      
-      readonly: false
-      serve_filenames: true

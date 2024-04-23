@@ -1,0 +1,9 @@
+docker_
+simple-pi-remote
+simple
+transformer-compiled
+undo: requires delegation level 3. Can be run with full delegation using "export DELEGATE=''", but this requires the mini-assistant or better.
+imperative-async-parallel
+imperative-async-parallel-jupyter.sh
+imperative-nested: FULL DELEGATION NOT WORKING. requires delegation level 3. Can be run with full delegation using "export DELEGATE=''". 
+imperative-module: requires delegation level 3, definitely in a clean setup. Can be run with full delegation using "export DELEGATE=''"

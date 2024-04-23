@@ -7,6 +7,7 @@
 #   Docker tests require continuumio/anaconda3 to be pulled
 # Tests ending with .sh, run with:
 #   ./TEST.sh > test-outputs/TEST.out 2>&1
+# Tests requiring a database normally require an empty one
 
 bytes-conversion.py
 set-python-invalid.py: can also be run in interactive mode (mount /tmp/code.py)
@@ -96,11 +97,6 @@ transformer-redefine.py
 transformer-compiled-error.py
 transformer-compiled-module.py
 transformer-compiled-header.py
-twopi-graph-database.sh: run with Seamless database
-                      first delete job results: rm -rf /tmp/seamless-db
-                      then: seamless-database twopi-graph-database.yaml
-                      run as i=twopi-graph-database; seamless-run ./$i.sh > test-outputs/$i.out 2>&1
-twopi-graph-jobmaster.sh: same as above; run as i=twopi-graph-jobmaster
 pin-filesystem.sh:
   Run this in an environment where seamless-upload is available
   run as i=pin-filesystem; ./$i.sh > test-outputs/$i.out 2>&1
@@ -110,7 +106,7 @@ load-graph.py
 load-graph2.py
 load-graph-static.py
 build-structured-list.py
-vault.bash: run as i=vault; seamless-run ./$i.bash > test-outputs/$i.out 2>&1
+vault.sh
 bind-status.py: can also be run in interactive mode, run with "ipython3 -i", make modifications and type "report" and monitor /tmp/graph.json and /tmp/status.json
 library.py
 library-context-argument.py
@@ -129,13 +125,13 @@ imperative-async-parallel-jupyter.sh: can be run with delegation using "export D
 imperative-celltypes.py
 imperative-workflow.py
 imperative-nested.py: requires delegation level 3. Can be run with full delegation using "export DELEGATE=''"
-imperative-nested-jupyter.sh: requires delegation level 3.
+imperative-nested-jupyter.sh: requires delegation level 3. As of 0.12, TEST WORKS IN CONDA ENV BUT NOT IN DOCKER IMAGE. To be investigated
 imperative-nested-async.sh: requires delegation level 3.
 imperative-database.py: run with Seamless database and buffer dir, preferably in a clean setup
 imperative-database-async.sh: run with Seamless database and buffer dir, preferably in a clean setup
 
 imperative-delegated.py: requires full delegation
-imperative-delegated-slow.py: requires full delegation. Set SEAMLESS_ASSISTANT_JOB_TIMEOUT to 15 in order to test client 202 capacity.
+imperative-delegated-slow.py: requires full delegation. Set SEAMLESS_ASSISTANT_JOB_TIMEOUT to 15 in order to test client 202 capacity. In all cases, no Timeout should be printed
 imperative-delegated-async.sh: requires full delegation
 imperative-delegated-nonlocal.py: requires nested delegation. Does not currently work, see (https://github.com/sjdv1982/seamless/issues/217)
 

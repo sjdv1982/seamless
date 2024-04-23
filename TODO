@@ -1,3 +1,5 @@
+Imminent: seamless-jupyter not working because of jsonschema mismatch (conda AND Docker image). TODO
+   Re-run imperative-nested-jupyter.sh, as well as other jupyter tests (check for "jupyter" in test files)
 Imminent: seamless-fingertip doesn't work if you remove the result but not the deepcell. DONE
 Imminent: imperative-delegated fails, fix. DONE
 Imminent: rename seamless-bash, seamless-XXX-trusted. DONE

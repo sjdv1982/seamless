@@ -14,7 +14,7 @@ Waiting for: Seamless transformer: .tf.tf
 *************************************************
 <checksum 0c6a7b06f7f95aef0d134c75080744103f650c4b3f8c0c2c15bba458ae41dfde>
 *************************************************
-Execution time: 4.4 seconds
+Execution time: 4.3 seconds
 *************************************************
 Status: OK
 None
@@ -24,7 +24,7 @@ None
 *************************************************
 <checksum 0c6a7b06f7f95aef0d134c75080744103f650c4b3f8c0c2c15bba458ae41dfde>
 *************************************************
-Execution time: 0.4 seconds
+Execution time: 0.3 seconds
 *************************************************
 Status: OK
 <Silk: 3838 >
@@ -34,7 +34,7 @@ Waiting for: Seamless transformer: .tf.tf
 *************************************************
 <checksum 88da1e33db07af78fb1fc6674663fccb0e18a2abdde4cb30acac8d315b445937>
 *************************************************
-Execution time: 2.4 seconds
+Execution time: 2.3 seconds
 *************************************************
 Status: OK
 <Silk: 6666 >

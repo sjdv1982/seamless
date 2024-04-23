@@ -1,5 +1,6 @@
 import seamless
-seamless.config.database.connect()
+
+seamless.delegate(level=0, force_database=True)
 
 from seamless.highlevel import Context, Cell
 

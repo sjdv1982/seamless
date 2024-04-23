@@ -32,6 +32,7 @@ mv test.txt RESULT
 chmod -R a+w RESULT
 """
 ctx.tf.docker_image = "continuumio/anaconda3"
+ctx.compute()
 ctx.result.celltype = "structured"
 ctx.result_npy = ctx.result["test.npy"]
 ctx.result_txt = ctx.result["test.txt"]

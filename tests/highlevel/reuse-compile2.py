@@ -1,6 +1,7 @@
 import seamless
 seamless.load_vault("./reuse-vault")
-seamless.config.database.connect()
+
+seamless.delegate(level=0, force_database=True)
 seamless.config.block_local()
 
 from seamless.highlevel import Context, Cell

@@ -1,7 +1,8 @@
 import os
 
 import seamless
-seamless.delegate()
+if seamless.delegate():
+    exit(1)
 
 from seamless import transformer
 
