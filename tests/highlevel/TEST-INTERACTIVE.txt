@@ -1,5 +1,3 @@
-set-python-invalid.py: can also be run in interactive mode (mount /tmp/code.py)
-deepcell-filter: can also be run in interactive mode (mount /tmp/blacklist.json, /tmp/filt_cell.json)
 multi-module: can also be run in interactive mode (see instructions in file)
 module-pyaccess: can also be run in interactive mode (mount /tmp/module.py)
 bind-status: can also be run in interactive mode, run with "ipython3 -i", make modifications and type "report" and monitor /tmp/graph.json and /tmp/status.json

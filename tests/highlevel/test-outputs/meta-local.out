@@ -1,8 +1,0 @@
-INCOMING test-meta-local jobslave
-ADD SERVANT buffer
-ADD SERVANT buffer_info
-ADD SERVANT semantic_to_syntactic
-ADD SERVANT transformation
-#1 <Silk: 42 > exception: None
-#2 <Silk: 88 > exception: None
-#3 <Silk: 777 > exception: None

@@ -1,24 +1,19 @@
 import sys, os
-os.environ["SEAMLESS_COMMUNION_ID"] = "test-meta-local"
 
 from seamless.highlevel import Context
 import seamless
 
 currdir=os.path.dirname(os.path.abspath(__file__))
 
-raise NotImplementedError
-if "--database" in sys.argv[1:]:
-    seamless.database_sink.connect()
-    seamless.database_cache.connect()
-    seamless.database_sink.connect()
-    seamless.database_cache.connect()
-    db_logfile = currdir + "/test-outputs/meta-local.log"
-    db_loghandle = open(db_logfile, "w")
-    seamless.database_sink.set_log(db_loghandle)
-    seamless.database_cache.set_log(db_loghandle)
-
-if "--communion" in sys.argv[1:]:
-    seamless.communion_server.start()
+if "--delegate" in sys.argv[1:]:
+    if seamless.delegate():
+        exit(1)
+else:
+    if "--database" in sys.argv[1:]:
+        if seamless.delegate(level=3):
+            exit(1)
+    else:
+        seamless.delegate(False)
 
 ctx = Context()
 def func1():

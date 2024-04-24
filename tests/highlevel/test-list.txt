@@ -158,17 +158,8 @@ help.py: Can also be run interactively with IPython. See the source code for mou
 help-copy.py
 webinterface.sh: open with bash inside the Seamless Docker container.
                  Can also be run interactively, see line 6 of the code
-meta-local: 1. run without jobless/jobslave:                        #1 succeed, #2 fail, #3 fail
-            2. run with --communion and a jobslave:                 #1 succeed, #2 succeed, #3 succeed
-                (seamless-jobslave)
-                See test-outputs/meta-local.log
-            3. run with --communion --database and jobless:         #1 succeed, #2 succeed, #3 fail
-            Database can be cleaned with: 
-              seamless-delete-database-from-log test-outputs/meta-local.log
-              (outside the Docker container)
-              or:
-              python3 ~/seamless-scripts/delete-database-from-log.py test-outputs/meta-local.log
-              (inside the Docker container)
+meta-local: 1. run without delegation:      #1 succeed, #2 fail, #3 fail
+            2. run with --delegate:         #1 succeed, #2 succeed, #3 fail
 deepcell-pdb.py: requires a FAIR server that knows the PDB dataset
                  Can also be run interactively, change ctx.pdb_code 
                   and observe /tmp/pdb_structure.mmcif
@@ -295,9 +286,9 @@ r.py
 environment7.py: This will fail if executed without delegation or with the micro/mini-assistant,
 because pytorch is required. Regardless, the transformation checksum is printed out, and
 the dunder is written to file. In a standard Seamless environment, 
-"run-transformation.py <checksum>" will return an error: 
+"seamless-run-transformation <checksum>" will return an error: 
 "ModuleNotFoundError: No module named 'torch'"
-In contrast, "run-transformation.py <checksum> environment7-dunder.json" 
+In contrast, "seamless-run-transformation.py <checksum> --dunder environment7-dunder.json" 
 will validate the environment and give the same error message as the main script
 ("Conda package 'pytorch' not installed"). 
 Either syntax will succeed inside a proper environment 
