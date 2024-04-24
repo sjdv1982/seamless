@@ -1,4 +1,4 @@
-Waiting for: Seamless structured cell: .pdb.blackwhitelist Seamless Python cell: .pdb.cell1 Seamless structured cell: .pdb.origin
+Waiting for: Seamless structured cell: .pdb.blackwhitelist Seamless Python cell: .pdb.cell1 Seamless plain cell: .pdb.keyorder_integrated Seamless structured cell: .pdb.origin
 Waiting for: Seamless transformer: .pdb.apply_blackwhite
 Status: OK
 None
@@ -25,6 +25,4 @@ _audit_conform.dict_name       mmcif_pdbx.dic
 _audit_conform.dict_version    5.351 
 _audit_conform.dict_location   http://mmcif.pdb.org/dictionaries/ascii/mmcif_pdbx
 STAGE 4
-Waiting for background tasks
 Waiting for: Seamless str cell: .select_pdb.ctx.select_macro2.celltype_PARAM Seamless plain cell: .select_pdb.ctx.select_macro2.input_hash_pattern_PARAM Seamless plain cell: .select_pdb.ctx.select_macro2.input_value_PARAM Seamless str cell: .select_pdb.ctx.select_macro2.selected_PARAM
-Waiting for background tasks

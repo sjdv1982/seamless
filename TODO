@@ -106,7 +106,9 @@ TODO before 0.12 release:
 
 - Overhaul serve-graph by adding delegation. Test load-vault/add-zip as well. Run tests/examples requiring serve-graph. DONE
 
-- Re-review new-project. Read some settings from a project.yaml... TODO (delegation!). Always assume (verify?) Docker availability. Have an IPython-or-Jupyter mode config var. Perhaps have a load-project.bash as well? TODO.
+- Re-review new-project. Read some settings from a project.yaml... TODO (delegation!). Always assume (verify?) Docker availability. Have an IPython-or-Jupyter mode config var. Perhaps have a load-project.bash as well? 
+Run highlevel webinterface test (also interactively).
+TODO
     
 ======================
 

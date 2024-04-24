@@ -7,9 +7,8 @@ import seamless
 import seamless.core.execute
 seamless.core.execute.DIRECT_PRINT = True
 
-raise NotImplementedError
-seamless.database_sink.connect()
-seamless.database_cache.connect()
+if seamless.delegate(level=3):
+    exit(1)
 seamless.set_ncores(8)
 seamless.config.set_parallel_evaluations(1000)
 

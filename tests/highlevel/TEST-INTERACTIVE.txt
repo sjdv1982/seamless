@@ -3,6 +3,12 @@ deepcell-filter: can also be run in interactive mode (mount /tmp/blacklist.json,
 multi-module: can also be run in interactive mode (see instructions in file)
 module-pyaccess: can also be run in interactive mode (mount /tmp/module.py)
 bind-status: can also be run in interactive mode, run with "ipython3 -i", make modifications and type "report" and monitor /tmp/graph.json and /tmp/status.json
+help: Can also be run interactively with IPython. See the source code for mounts and shares
+deepcell-pdb: requires a FAIR server that knows the PDB dataset
+                 Can also be run interactively, change ctx.pdb_code 
+                  and observe /tmp/pdb_structure.mmcif
+deepfolder-pdb: See above . change ctx.pdb_code to "1wej.cif", "1brs.cif" or "7cei.cif" 
+                Also, /tmp/pdb_folder will contain 1brs.cif, 1wej.cif and 7cei.cif.
 
 Non-automatic tests
 =========================

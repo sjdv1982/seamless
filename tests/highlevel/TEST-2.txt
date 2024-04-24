@@ -1,11 +1,4 @@
-environment7: requires full delegation. micro-assistant will not work out-of-the-box. Can also be run non-automatically, see below.
-imperative-environment: Will take ~15 minutes to run (faster if GPU available). Requires full delegation. micro-assistant will not work out-of-the-box
-environment7a: version of environment7 where the conda environment name is specified. Will work with the mini-assistant if the environment "pytorch-seamless" is present 
-environment7b: version of environment7 where the Docker image name is specified. Will work with the mini-assistant if the Docker image "seamless-devel-pytorch" is present, which can be built using environment7b.Dockerfile
-eager: FAILS as of 0.7 (https://github.com/sjdv1982/seamless/issues/90)
-help: Can also be run interactively with IPython. See the source code for mounts and shares
-webinterface.sh: open with bash inside the Seamless Docker container.
-                 Can also be run interactively, see line 6 of the code
+
 meta-local: 1. run without jobless/jobslave:                        #1 succeed, #2 fail, #3 fail
             2. run with --communion and a jobslave:                 #1 succeed, #2 succeed, #3 succeed
                 See test-outputs/meta-local.log
@@ -15,19 +8,6 @@ meta-local: 1. run without jobless/jobslave:                        #1 succeed, 
               (outside the Docker container)
              python3 ~/seamless-scripts/delete-database-from-log.py test-outputs/meta-local.log
               (inside the Docker container)
-deepcell-pdb: requires a FAIR server that knows the PDB dataset
-                 Can also be run interactively, change ctx.pdb_code 
-                  and observe /tmp/pdb_structure.mmcif
-deepfolder-pdb: See above . change ctx.pdb_code to "1wej.cif", "1brs.cif" or "7cei.cif" 
-                Also, /tmp/pdb_folder will contain 1brs.cif, 1wej.cif and 7cei.cif.
-high-in-low4-memory    # Quite long test.
-                          # Creates 5.6 GB of buffer cache in /tmp/dummy-db
-                          # Run with rm -rf /tmp/dummy-db  && mkdir -p /tmp/dummy-db && seamless-database dummydb-config.yaml
-                          # Time is ~100 seconds, or ~60 seconds when re-executed
-                          # Re-executing the test is faster, because the transformation results and input buffers are cached
-                          # Exact output will depend on timings
-                          # After the test, "rm -rf /tmp/dummy-db && docker stop seamless-database-container"
-high-in-low6-memory    # See above. Time is ~60 seconds, or ~35 seconds when re-executed
 map-speed-test: long test, calculates the speed of stdlib.map_dict
 map-speed-test2: long test, calculates the speed of stdlib.map_dict_chunk
   This test takes 10-20 minutes
