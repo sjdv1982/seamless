@@ -99,7 +99,9 @@ Keep only file extensions. Rename the file name body to file1, file2, ...
 Example: 
   python script.py data.txt 
   => 
-  python file1.py file2.txt""",
+  python file1.py file2.txt
+
+Directories remain unchanged.""",
     dest="file_mapping_mode",
     action="store_const",
     const="extension",
@@ -207,6 +209,13 @@ parser.add_argument(
     "--direct-print",
     dest="direct_print",
     help="Attempt to print out stderr messages directly in the executor log",
+    action="store_true",
+)
+
+parser.add_argument(
+    "--local",
+    help="""Don't delegate the transformation to the assistant, but execute directly.
+This is most useful for scripts that contain themselves /bin/seamless commands""",
     action="store_true",
 )
 
@@ -575,8 +584,12 @@ if args.dry_run:
     else:
         seamless.delegate(level=1)
 else:
-    if seamless.delegate():
-        sys.exit(1)
+    if args.local:
+        if seamless.delegate(level=3):
+            sys.exit(1)
+    else:
+        if seamless.delegate():
+            sys.exit(1)
 
 # TODO: max_upload_files, max_upload_size:
 # TODO: max_download_files, max_download_size:

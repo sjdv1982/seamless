@@ -72,7 +72,7 @@ def get_file_mapping(
         checksum = None
         if isinstance(argtype, dict):
             if argtype.get("type") not in ("file", "directory"):
-                raise TypeError((argname, argtype))            
+                raise TypeError((argname, argtype))
             if argtype.get("mapping"):
                 path = argtype["mapping"]
                 fixed_mapping = argtype.get("fixed_mapping")
@@ -137,7 +137,16 @@ or:
                     if len(extension):
                         path2 += extension
                 else:
-                    path2 = f"file{ndirectories}"
+                    path2 = path
+                    cwd0 = "" if cwd == os.sep else cwd
+                    if not fullpath.startswith(cwd0 + os.sep):
+                        errmsg = """Argument {} is not under the current working directory.
+This is required under 'extension' file mapping for directories. 
+To solve this problem:
+- Specify a different working directory (-w or -W)
+"""
+                        raise ValueError(errmsg.format(argdescr))
+
                 msg(3, "Resolve {} to '{}'".format(argdescr, fullpath))
                 msg(2, "Map {} to '{}'".format(argdescr, path2))
                 new_path = path2

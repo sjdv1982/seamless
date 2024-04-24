@@ -78,3 +78,9 @@ cowsay-conda.sh
     Reason: then you control explicitly where the Dask scheduler/worker is being run.
     The conda environment can be built from "cowsay-environment.yml":
         conda env create -n cowsay-environment -f cowsay-environment.yml
+
+pilot.sh
+    The relative order of the timings of each run must remain the same.
+    Current timings were obtained using the mini-assistant.
+    After the run, inspect the assistant log to verify that only four jobs were submitted.
+    You can remove the "--local" from the script, in which case six jobs must have been submitted
