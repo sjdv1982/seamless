@@ -37,6 +37,7 @@ def func(x,y):
     return x * y + a
 """
 ctx.mod.code = module_code
+ctx.mod.mount("/tmp/module.py")
 ctx.compute()
 
 print(a)

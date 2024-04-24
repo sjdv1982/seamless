@@ -59,7 +59,7 @@ module-simplified.py
 module.py
 special-pins.py
 special-pins-bash.py
-multi-module.py: can also be run in interactive mode (see instructions in file)
+multi-module.py: can also be run in interactive mode (see instructions in file). FAILS FOR FUNCTION BREAKPOINTS IN CURRENT VSCODE VERSION
 module-pyaccess.py: can also be run in interactive mode (mount /tmp/module.py)
 bash.py
 bash-unbound.py
@@ -115,7 +115,7 @@ library-reassign.py
 library-context-argument.py
 library-in-library.py
 library-schema.py
-undo.py: requires delegation level 3. Can be run with full delegation using "export DELEGATE=''", but this requires the mini-assistant or better.
+undo.py: requires delegation level 3. Can be run with full delegation using "export DELEGATE=''".
 imperative.py
 imperative-undo.py: requires delegation level 3
 imperative-jupyter.sh

@@ -1,7 +1,8 @@
 import os
 import seamless
 if "DELEGATE" in os.environ:
-    seamless.delegate()
+    if seamless.delegate():
+        exit(1)
 else:
     seamless.delegate(False)
 

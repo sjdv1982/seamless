@@ -1,5 +1,3 @@
-multi-module: can also be run in interactive mode (see instructions in file)
-module-pyaccess: can also be run in interactive mode (mount /tmp/module.py)
 bind-status: can also be run in interactive mode, run with "ipython3 -i", make modifications and type "report" and monitor /tmp/graph.json and /tmp/status.json
 help: Can also be run interactively with IPython. See the source code for mounts and shares
 deepcell-pdb: requires a FAIR server that knows the PDB dataset

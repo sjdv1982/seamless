@@ -1,8 +1,3 @@
-INCOMING simple-pi-remote jobslave
-ADD SERVANT buffer
-ADD SERVANT buffer_info
-ADD SERVANT semantic_to_syntactic
-ADD SERVANT transformation
 <Silk: 3.141592653589793 >
 <Silk: 6.283185307179586 >
 <Silk: 3.141592653589793 >
