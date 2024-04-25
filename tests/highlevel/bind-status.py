@@ -89,3 +89,13 @@ sleep(8)
 report()
 sleep(2)
 report()
+
+def delay_func():
+    import time
+    return 48
+ctx.tf.code = delay_func
+ctx.compute()
+sleep(1)
+report()
+print(ctx.get_graph()["nodes"][-1]["checksum"]["code"])
+print(ctx.get_graph(runtime=True)["nodes"][-1]["checksum"]["code"])

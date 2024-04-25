@@ -27,7 +27,9 @@ http://localhost:5813/ctx/graph
     {
       "celltype": "structured",
       "checksum": {
-        "auth": "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3"
+        "auth": "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "value": "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3"
       },
       "datatype": "mixed",
       "hash_pattern": null,
@@ -176,7 +178,11 @@ http://localhost:5813/ctx/graph
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "a7f8ab05baf64b01477f229660a7551629ed6d9598d2224f52bb7610f6d94e60"
+        "code": "a7f8ab05baf64b01477f229660a7551629ed6d9598d2224f52bb7610f6d94e60",
+        "input": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "hash_pattern": {
@@ -240,7 +246,11 @@ http://localhost:5813/ctx/graph
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "a7f8ab05baf64b01477f229660a7551629ed6d9598d2224f52bb7610f6d94e60"
+        "code": "a7f8ab05baf64b01477f229660a7551629ed6d9598d2224f52bb7610f6d94e60",
+        "input": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "hash_pattern": {
@@ -304,7 +314,12 @@ http://localhost:5813/ctx/graph
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "a7f8ab05baf64b01477f229660a7551629ed6d9598d2224f52bb7610f6d94e60"
+        "code": "a7f8ab05baf64b01477f229660a7551629ed6d9598d2224f52bb7610f6d94e60",
+        "input": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "result": "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
       "compiled": false,
       "hash_pattern": {
@@ -333,3 +348,74 @@ http://localhost:5813/ctx/status
 }
 
 
+http://localhost:5813/ctx/graph
+{
+  "connections": [],
+  "lib": [],
+  "nodes": [
+    {
+      "celltype": "structured",
+      "checksum": {
+        "auth": "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "value": "fa2fe6c9c0556871073be9a00d6d29bd3b9b6dd560587ee6e8c163755bf669d3"
+      },
+      "datatype": "mixed",
+      "hash_pattern": null,
+      "path": [
+        "a"
+      ],
+      "type": "cell"
+    },
+    {
+      "celltype": "int",
+      "checksum": {
+        "value": "6e8148532220af5c29d67a16e54e10e81ee0ac25738864d65346728002bed174"
+      },
+      "datatype": "mixed",
+      "path": [
+        "b"
+      ],
+      "type": "cell"
+    },
+    {
+      "INPUT": "inp",
+      "RESULT": "result",
+      "SCHEMA": null,
+      "checksum": {
+        "code": "1f4a3c054322eddd6cb5b35f241b9461dcb288cad1d360c7226d1c31f3a97efe",
+        "input": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "result": "8664f24be9eda38a22214a13d36313d7c75c3a6905de246d9895e3039e5dd977",
+        "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
+      },
+      "compiled": false,
+      "hash_pattern": {
+        "*": "#"
+      },
+      "language": "python",
+      "path": [
+        "tf"
+      ],
+      "pins": {},
+      "type": "transformer"
+    }
+  ],
+  "params": {
+    "share_namespace": "ctx"
+  }
+}
+
+
+http://localhost:5813/ctx/status
+{
+  "a.status": "Status: OK",
+  "b.status": "Status: OK",
+  "tf.inp.status": "Status: OK",
+  "tf.status": "Status: OK"
+}
+
+
+1f4a3c054322eddd6cb5b35f241b9461dcb288cad1d360c7226d1c31f3a97efe
+1f4a3c054322eddd6cb5b35f241b9461dcb288cad1d360c7226d1c31f3a97efe
