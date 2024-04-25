@@ -1044,12 +1044,12 @@ These modifications have been CANCELED.""" % (
                 libinstance_nodes, graph["connections"], graph["params"], graph["lib"]
             )
         else:
-            graph0 = deepcopy(graph0)
+            graph0c = deepcopy(graph0)
             self._runtime_graph = Graph(
                 {node["path"]: node for node in graph0["nodes"]},
-                graph0["connections"],
-                graph0["params"],
-                graph0["lib"],
+                graph0c["connections"],
+                graph0c["params"],
+                graph0c["lib"],
             )
 
         self._translate_count += 1
