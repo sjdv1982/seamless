@@ -210,7 +210,7 @@ def translate_bash_transformer(
         ctx.code.mount(**mount["code"])
 
     ctx.pins.connect(ctx.tf.pins_)
-    conda_environment_ = env.get("conda_bash_env_name") if env is not None else ""
+    conda_environment_ = env.get("conda_bash_env_name", "") if env is not None else ""
     ctx.conda_environment_ = cell("str").set(conda_environment_)
     ctx.conda_environment_.connect(ctx.tf.conda_environment_)
     ctx.code.connect(ctx.tf.bashcode)
