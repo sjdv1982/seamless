@@ -25,9 +25,9 @@ Exception: None
 DATA [{'a': 12, 'b': -123}, {'a': 182, 'b': -83}]
 
 Exception: None
--111
-[-111, 99]
-<Silk: [-111, 99] >
+135
+[135, 265]
+<Silk: [135, 265] >
 
 [('data',),
  ('graph',),
