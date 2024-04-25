@@ -17,7 +17,7 @@ dependencies:
   - jinja2
   - traitlets
   - datrie  # required to build some pip packages
-  - jsonschema=4.17.*
+  - jsonschema=4.18.*
   - ipython<=8.16.*
   - ipykernel
 
@@ -25,7 +25,7 @@ dependencies:
   - ipywidgets
   - debugpy
   - openmp
-  - requests<2.29.*
+  - requests=2.31.*
   - wurlitzer
   - psutil
   - cython
