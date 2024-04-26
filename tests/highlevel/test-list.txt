@@ -65,6 +65,7 @@ bash.py
 bash-unbound.py
 bash-slashpins.py
 bash-debug.py
+bytes-transformer.py
 docker_.py: can be run with delegation using "export DELEGATE=''"
 docker2.py
 docker_gpu.py: run only on a machine with nvidia-docker2 installed

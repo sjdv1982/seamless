@@ -1,7 +1,7 @@
 seamless.core.transformation.SeamlessTransformationError: Error 400 from assistant:ERROR: Unknown error
 Output:
 Traceback (most recent call last):
-  File "/home/jovyan/seamless-scripts/run-transformation.py", line 138, in <module>
+  File "/home/jovyan/seamless-scripts/run-transformation.py", line 152, in <module>
     result = seamless.run_transformation(checksum.bytes(), fingertip=fingertip, tf_dunder=dunder, scratch=scratch, manager=manager)
   File "/seamless/seamless/__init__.py", line 113, in run_transformation
     return tf_cache.run_transformation(checksum, fingertip=fingertip, scratch=scratch, tf_dunder=tf_dunder, new_event_loop=new_event_loop, manager=manager)
@@ -42,7 +42,7 @@ mv: cannot stat 'infile-head': No such file or directory
 Execution time: 0.1 seconds
 
 
-buffer cache, 7 buffers undestroyed
+buffer cache, 8 buffers undestroyed
 mv: cannot stat 'TEST*': No such file or directory
 filelist.txt
 numbers.dat

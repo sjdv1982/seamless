@@ -10,12 +10,12 @@ is
 a
 
 filelist.txt
-numbers.dat
 numbers-head.dat
 numbers-head.dat.CHECKSUM
-table.csv
+numbers.dat
 table-head.csv
 table-head.csv.CHECKSUM
+table.csv
 text-head.txt
 text-head.txt.CHECKSUM
 text.txt

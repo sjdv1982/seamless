@@ -59,9 +59,9 @@ Make a test involving --upload, seamless-buffer-length and seamless-download --d
 
 
 - Try to revert https://github.com/sjdv1982/seamless/commit/a95b55a68bc747ca8aa1661037497ef4981d695e
-Instead, forbid inline assignment completely
+Instead, bytes pins in bash transformers are now .inp-bypassed ("deep" pins) or from .inp (auth) depending on inchannel presence.
 To test: re-run headify, re-run all tests/highlevel with "bytes" in the source
-TODO
+DONE
 
 To document: embedding matrix
 =============================

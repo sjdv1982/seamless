@@ -199,8 +199,8 @@ class Transformer(Base, HelpMixin):
         self.result.celltype = result_celltype
         for pin, buffer in buffers.items():
             setattr(self, pin, None)
-            getattr(self.pins, pin).celltype = "text"
-            setattr(self, pin, buffer.decode())
+            getattr(self.pins, pin).celltype = "bytes"
+            setattr(self, pin, buffer)
         self.code = bashcode
         return self
 

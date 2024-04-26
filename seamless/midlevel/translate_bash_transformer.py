@@ -79,8 +79,13 @@ def translate_bash_transformer(
                 }
 
             pin["io"] = "input"
-            deep_pins[pinname] = pin
-            node_pins.pop(pinname)
+            is_deep = True
+            if pin["celltype"] == "bytes":
+                if (pinname,) not in inchannels:
+                    is_deep = False
+            if is_deep:
+                deep_pins[pinname] = pin
+                node_pins.pop(pinname)
     deep_inchannels = [ic for ic in inchannels if ic[0] in deep_pins]
     inchannels = [ic for ic in inchannels if ic[0] != "code" and ic[0] not in deep_pins]
 
