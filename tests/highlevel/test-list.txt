@@ -219,11 +219,12 @@ add.py:           Run with ipython -i, then change mounts /tmp/a /tmp/b /tmp/c /
 simpler-share.py: Run with ipython -i, then do "curl localhost:5813/ctx/myresult".
                   IPython values printed should be 36 then 39 (Silk); curl should return 39
                   change ctx.a to get 3*a as the result
-highlink-cpp.py:  Run with ipython -i, then continue in interactive mode,
-                  changing the source code (/tmp/code.cpp)
 mount.py:         Run with ipython -i, then continue in interactive mode.
                   Initial output is in test-outputs/mount.out
 cython_.py        Run with ipython -i                 
+highlink-cpp.py:  Run with ipython -i, then continue in interactive mode,
+                  changing the source code (/tmp/code.cpp)
+                  Initial output is in test-outputs/highlink-cpp.out
 
 imperative-*-async.py: Run with ipython -i -c '%load '$i'.py' and press enter
 scratch.sh: make sure that level 3 delegation is available inside a clean buffer directory and database.

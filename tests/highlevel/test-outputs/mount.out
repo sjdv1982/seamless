@@ -1,3 +1,7 @@
-ca3506695d6e7ff89c089ae62e460ec2d3adba011f581cec60310fe10761e1d0
+WARNING: Seamless delegation level was not set.
+
+Use seamless.delegate() to enable delegation, or seamless.delegate(False)
+to disable it. Continuing without delegation.
+
 Warning: File path 'mount.txt' has a different value, overwriting cell
 OK
