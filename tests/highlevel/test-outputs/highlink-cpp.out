@@ -31,9 +31,9 @@ Traceback (most recent call last):
   File "/seamless/seamless/core/build_module.py", line 275, in build_compiled_module
     raise BuildModuleError(stderr)
 seamless.core.build_module.BuildModuleError: 
-g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_44a3fa90e2efe6d18b1d2ec81590dcc60d59ce96ac6ccbfbfa062a735f558b0e_module/main.o /tmp/seamless-extensions/seamless_module_44a3fa90e2efe6d18b1d2ec81590dcc60d59ce96ac6ccbfbfa062a735f558b0e_module/main.cpp
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_390cb3125422568f1c444a14b26567be7eb565f4d3cb0b5659e7cb58972df3a2_module/main.o /tmp/seamless-extensions/seamless_module_390cb3125422568f1c444a14b26567be7eb565f4d3cb0b5659e7cb58972df3a2_module/main.cpp
 ******************** ERROR ********************
-/tmp/seamless-extensions/seamless_module_44a3fa90e2efe6d18b1d2ec81590dcc60d59ce96ac6ccbfbfa062a735f558b0e_module/main.cpp:1:1: error: ‘lambda’ does not name a type
+/tmp/seamless-extensions/seamless_module_390cb3125422568f1c444a14b26567be7eb565f4d3cb0b5659e7cb58972df3a2_module/main.cpp:1:1: error: ‘lambda’ does not name a type
     1 | lambda arr, fac, offset: 42
       | ^~~~~~
 
@@ -56,4 +56,9 @@ typedef struct ArrStruct {
   unsigned int shape[1];
 } ArrStruct;
 
-int transform(const ArrStruct* arr, int fac, int offset, int *result);
+typedef struct ResultStruct {
+  double *data;
+  unsigned int shape[1];
+} ResultStruct;
+
+int transform(const ArrStruct* arr, int fac, int offset, ResultStruct *result);

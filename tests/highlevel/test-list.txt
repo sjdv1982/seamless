@@ -220,7 +220,7 @@ simpler-share.py: Run with ipython -i, then do "curl localhost:5813/ctx/myresult
                   IPython values printed should be 36 then 39 (Silk); curl should return 39
                   change ctx.a to get 3*a as the result
 highlink-cpp.py:  Run with ipython -i, then continue in interactive mode,
-                  changing the source code and the schema until it works.
+                  changing the source code (/tmp/code.cpp)
 mount.py:         Run with ipython -i, then continue in interactive mode.
                   Initial output is in test-outputs/mount.out
 cython_.py        Run with ipython -i                 
