@@ -138,6 +138,9 @@ imperative-delegated-nonlocal.py: requires nested delegation. Does not currently
 
 imperative-module.py: requires delegation level 3, definitely in a clean setup. Can be run with full delegation using "export DELEGATE=''"
 imperative-scratch.py: requires delegation level 3, definitely in a clean setup
+
+scratch.sh: make sure that level 3 delegation is available inside a clean buffer directory and database.
+
 map-list.py
 channel.py
 environment3.py
@@ -227,7 +230,6 @@ highlink-cpp.py:  Run with ipython -i, then continue in interactive mode,
                   Initial output is in test-outputs/highlink-cpp.out
 
 imperative-*-async.py: Run with ipython -i -c '%load '$i'.py' and press enter
-scratch.sh: make sure that level 3 delegation is available inside a clean buffer directory and database.
 
 observe-graph.ipynb: Run "seamless-jupyter" and then open /cwd in the browser
 observe-cpp: see above
