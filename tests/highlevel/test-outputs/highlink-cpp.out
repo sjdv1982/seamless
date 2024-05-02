@@ -18,20 +18,22 @@ STEP 3
 *executor*: Status: error
 *** executor ***
 Traceback (most recent call last):
-  File "/seamless/seamless/core/transformation.py", line 403, in _execute
+  File "/seamless/seamless/core/transformation.py", line 553, in _execute
     result, logs = await self._execute_local(
-  File "/seamless/seamless/core/transformation.py", line 569, in _execute_local
+  File "/seamless/seamless/core/transformation.py", line 764, in _execute_local
     full_module_names = build_all_modules(
-  File "/seamless/seamless/core/build_module.py", line 366, in build_all_modules
+  File "/seamless/seamless/core/build_module.py", line 417, in build_all_modules
     mod = build_module(
-  File "/seamless/seamless/core/build_module.py", line 326, in build_module
+  File "/seamless/seamless/core/build_module.py", line 376, in build_module
     mod = build_compiled_module(
-  File "/seamless/seamless/core/build_module.py", line 254, in build_compiled_module
+  File "/seamless/seamless/core/build_module.py", line 329, in build_compiled_module
+    raise exception from None
+  File "/seamless/seamless/core/build_module.py", line 275, in build_compiled_module
     raise BuildModuleError(stderr)
 seamless.core.build_module.BuildModuleError: 
-g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_b433eda63d0f8fb218a058a2c31ecb39082b4b528ddffd5da901c3a8ee2a5c95_module/main.o /tmp/seamless-extensions/seamless_module_b433eda63d0f8fb218a058a2c31ecb39082b4b528ddffd5da901c3a8ee2a5c95_module/main.cpp
+g++ -c -O3 -ffast-math -march=native -fPIC -fopenmp -p -g -o /tmp/seamless-extensions/seamless_module_44a3fa90e2efe6d18b1d2ec81590dcc60d59ce96ac6ccbfbfa062a735f558b0e_module/main.o /tmp/seamless-extensions/seamless_module_44a3fa90e2efe6d18b1d2ec81590dcc60d59ce96ac6ccbfbfa062a735f558b0e_module/main.cpp
 ******************** ERROR ********************
-/tmp/seamless-extensions/seamless_module_b433eda63d0f8fb218a058a2c31ecb39082b4b528ddffd5da901c3a8ee2a5c95_module/main.cpp:1:1: error: ‘lambda’ does not name a type
+/tmp/seamless-extensions/seamless_module_44a3fa90e2efe6d18b1d2ec81590dcc60d59ce96ac6ccbfbfa062a735f558b0e_module/main.cpp:1:1: error: ‘lambda’ does not name a type
     1 | lambda arr, fac, offset: 42
       | ^~~~~~
 
