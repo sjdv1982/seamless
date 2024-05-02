@@ -1,4 +1,5 @@
 {
+  "__seamless__": "0.11",
   "connections": [
     {
       "first": [
@@ -30,12 +31,12 @@
       "type": "connection"
     }
   ],
-  "lib": {},
+  "lib": [],
   "nodes": [
     {
       "celltype": "text",
       "checksum": {
-        "value": "5278a70c4bd3e2087778e37d4c8795800f0c6df323884edd10da37d2ac6fceac"
+        "value": "651550f95e7010631a764840056d35a49e6812d9eeaaac45a041653223fe6f9d"
       },
       "datatype": "mixed",
       "path": [
@@ -47,7 +48,8 @@
       "celltype": "structured",
       "checksum": {
         "buffer": "844fd0a83d0aa1f4331b13a447ee72acdaf4b47bb77cc79bab92df860c32c7af",
-        "value": "844fd0a83d0aa1f4331b13a447ee72acdaf4b47bb77cc79bab92df860c32c7af"
+        "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
+        "value": "0f18b262f542ea915d37fc7e4c235d9400bef6231f73995d0c90a60746146c87"
       },
       "datatype": "mixed",
       "hash_pattern": null,
@@ -78,12 +80,11 @@
       "RESULT": "result",
       "SCHEMA": null,
       "checksum": {
-        "code": "57988cf49cdf9cd7e98205fcd0c9c3e1e1e6bee2fdbf8fd3fce203c6754ec435",
+        "code": "2cfef1223a12a0a6a376c6ddb06a99139f398bf41496ca6c9f7a6e069f9aa19b",
         "input": "dd4ea249d13cf438a89883c26749de04b395d2742f6436be2b7d433bd1c1956e",
         "input_auth": "dd4ea249d13cf438a89883c26749de04b395d2742f6436be2b7d433bd1c1956e",
-        "input_buffer": "dd4ea249d13cf438a89883c26749de04b395d2742f6436be2b7d433bd1c1956e",
         "main_module": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "result": "844fd0a83d0aa1f4331b13a447ee72acdaf4b47bb77cc79bab92df860c32c7af",
+        "result": "0f18b262f542ea915d37fc7e4c235d9400bef6231f73995d0c90a60746146c87",
         "result_schema": "2780b3e6b770d9a9cb11f2fcc41b8af368e3dd34db5ef50233d0b0c5acd40bc3",
         "schema": "3b6fda01ca7b860fe513b3da65827c90abcf27ae8b6b32908335a6b704efcf42"
       },
@@ -104,13 +105,13 @@
       ],
       "pins": {
         "a": {
-          "celltype": "mixed"
+          "celltype": "default"
         },
         "b": {
-          "celltype": "mixed"
+          "celltype": "default"
         },
         "c": {
-          "celltype": "mixed"
+          "celltype": "default"
         }
       },
       "type": "transformer"
