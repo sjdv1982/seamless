@@ -30,6 +30,3 @@ dependencies:
     - speg
     - aiohttp_cors
     - makefun
-
-variables:
-    RPY2_CFFI_MODE: ABI

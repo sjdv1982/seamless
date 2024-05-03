@@ -54,6 +54,3 @@ dependencies:
     - snakemake==7.18.*
     - jupyter-console==6.6.*
     - itables==1.4.*
-
-variables:
-    RPY2_CFFI_MODE: ABI
