@@ -6,6 +6,9 @@ Simple examples on how to modify the Seamless environment
 
 import traceback
 
+import seamless
+seamless.delegate(False)
+
 from seamless.highlevel import Context, Cell, Transformer
 ctx = Context()
 env = ctx.environment

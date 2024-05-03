@@ -267,12 +267,12 @@ environment2.py
   (not implemented for Go yet)
 environment4.py
   This will fail. 
-  Install net-tools with apt and 'sympy==1.7.*' with conda/mamba to make it succeed.
+  Install net-tools with apt and 'sympy==1.9.*' with conda/mamba to make it succeed.
 environment5.py
   Loads and runs the graph for environment3 and then environment4.
   Should succeed for the former (result: 11.40)
    and fail for the latter.
-  Install net-tools with apt and 'sympy==1.7.*' with conda to make it succeed.
+  Install net-tools with apt and 'sympy==1.9.*' with conda to make it succeed.
 environment6.py
   Adding dynamic support for PHP. This will fail. 
   Install php7.4-cli with apt and python-bond with pip to make it succeed.
