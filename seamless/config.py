@@ -45,7 +45,7 @@ def _contact_assistant():
     try:
         response = requests.get(assistant + "/config", timeout=3)
     except requests.exceptions.ConnectionError:
-        raise AssistantConnectionError(f"Cannot contact assistant: host {host}, port {port}") from None
+        raise AssistantConnectionError(f"Cannot contact delegation assistant: host {host}, port {port}") from None
     assert response.status_code == 200
     
     _assistant = assistant
