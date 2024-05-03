@@ -1,6 +1,10 @@
 import seamless
-raise NotImplementedError
-# seamless.database_sink.connect()
+err = seamless.delegate()
+if err:
+    print("Attempting without full delegation...")
+    if seamless.delegate(level=3):
+        exit(1)
+
 from seamless.highlevel import Context
 
 def count_atoms(pdbdata):
@@ -21,7 +25,9 @@ ctx.count_atoms.environment.set_conda(
     "yaml"
 )
 ctx.compute()
-print(ctx.count_atoms.get_transformation_checksum())
 print(ctx.count_atoms.status)
 print(ctx.count_atoms.exception)
 print(ctx.count_atoms.logs)
+print()
+print("Transformation checksum:")
+print(ctx.count_atoms.get_transformation_checksum())
