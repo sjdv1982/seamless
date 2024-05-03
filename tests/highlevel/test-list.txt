@@ -275,7 +275,7 @@ environment5.py
   Install net-tools with apt and 'sympy==1.9.*' with conda to make it succeed.
 environment6.py
   Adding dynamic support for PHP. This will fail. 
-  Install php7.4-cli with apt and python-bond with pip to make it succeed.
+  Install php-cli with apt and python-bond with pip to make it succeed.
 r.py
   run with ipython
   Third line should be <Silk: 314.3% >
