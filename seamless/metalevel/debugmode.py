@@ -121,9 +121,7 @@ def find_transformer_modules(tf):
     connections = parent._graph[1]
     
     for pinname, pin in node["pins"].items():
-        if pin.get("celltype") != "plain":
-            continue
-        if pin.get("subcelltype") != "module":
+        if pin.get("celltype") != "module":
             continue
         modules[pinname] = None
 
