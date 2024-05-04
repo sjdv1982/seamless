@@ -157,6 +157,12 @@ Explain this in the delegation documentation.
 
 - Port run-db-hashserver-devel to non-devel environment for distribution.
 
+- Before distribution, create a seamless-port-unify tool, a SEAMLESS_WEBSERVER_PORT with a canonical value. 
+Include this value in the seamless.js client. Adapt the seamless-binder-demo.
+Write a small tutorial with two methods for port forwarding: ngrok and vscode, and show that it works for seamless-serve-graph.
+
+- Before distribution, test that cloudless still works.
+
 - Document the various packages/installation methods.
     * seamless-minimal has been ripped
     * The Conda environment will have co-equal status with the Seamless Docker image
@@ -165,4 +171,4 @@ Explain this in the delegation documentation.
 
 ======================
 
-- After release: fix cloudless, rip communion-related parameters, always invoke delegation.
+- After release: fix cloudless, rip communion-related parameters, always invoke delegation, rip proxy.
