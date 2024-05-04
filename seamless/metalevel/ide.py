@@ -135,7 +135,6 @@ def _vscode_compiled_attach_create(debug):
         else: # mode == "full
             filename3 = os.path.abspath(filename)
         key = SEAMLESS_EXTENSION_DIR + "/" + debug["full_module_names"]["module"] + "/" + objname + ext
-        raise NotImplementedError # now added random subdir to SEAMLESS_EXTENSION_DIR
         entry["sourceFileMap"][key] = filename3
     for source, target in debug.get("source_map", []):
         entry["sourceFileMap"][source] = target
