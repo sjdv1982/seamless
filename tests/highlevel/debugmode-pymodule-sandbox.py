@@ -22,6 +22,7 @@ ctx.tf.b = 20
 ctx.tf.pymodule = ctx.pymodule
 
 ctx.code = ctx.tf.code.pull()
+ctx.result = ctx.tf
 
 ctx.compute()
 print(ctx.tf.result.value)
