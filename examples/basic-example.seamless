@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.8",
+  "__seamless__": "0.11",
   "connections": [
     {
       "source": [
@@ -57,7 +57,6 @@
       "checksum": {
         "code": "c7345fa9caff8986101b28509b2e32097c5c0f4a154f3f108dc853fc3fe9e7e8",
         "input": "a5ec05ec2c27aee6af32664953c6747327f0c13e9fe6dba872cb59d7ef65e404",
-        "input_buffer": "a5ec05ec2c27aee6af32664953c6747327f0c13e9fe6dba872cb59d7ef65e404",
         "result": "f71463311ac046bb9c5ccc76dde8c833b598f379f71d4411ecfc811a9ee051f4",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "13eaec72ac751c6131e4bd1d7a608875c8ccb7053df645f9ec9b7fd5c305753c"

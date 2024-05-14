@@ -1,4 +1,4 @@
-Imminent: run high-level non-automatic tests. TODO
+Imminent: run high-level non-automatic tests. DONE
 Imminent: /bin/seamless --local feature, pilot test. DONE
 Imminent: seamless-jupyter not working because of jsonschema mismatch (conda AND Docker image).
    Re-run imperative-nested-jupyter.sh, as well as other jupyter tests (check for "jupyter" in test files). DONE
@@ -107,9 +107,7 @@ TODO before 0.12 release:
 
 - Overhaul serve-graph by adding delegation. Test load-vault/add-zip as well. Run tests/examples requiring serve-graph. DONE
 
-- Re-review new-project. Read some settings from a project.yaml... TODO (delegation!). Always assume (verify?) Docker availability. Have an IPython-or-Jupyter mode config var. Perhaps have a load-project.bash as well? 
-Run highlevel webinterface test (also interactively).
-TODO
+- Re-review new-project. DONE 
     
 ======================
 
@@ -124,7 +122,7 @@ TODO
 - Make sure to add the correct scripts and wrappers from /seamless/bin and /seamless-tools/utils into the Docker images (rpbs/seamless and seamless-devel). Currently, /seamless-tools/utils is not mounted at all, therefore seamless-upload fails. /seamless-tools/seamless-cli/seamless-upload-vault also doesn't seem to work. As tests, run /lowlevel/pin-filesystem.sh, /highlevel/pin-filesystem.sh, /highlevel/get-file-and-directory.sh, /cmd/highlevel/get-file-and-directory.sh
 DONE
 
-- Run the examples once more. TODO
+- Run the examples once more. TODO project-related examples: reproducible-pdb-viewer, webserver-demo, webserver-example
 
 =====================
 Release

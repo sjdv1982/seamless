@@ -22,7 +22,6 @@ You will need to run it from a command line inside a Seamless Docker container. 
 
 2. The script `run-snakegraph.py` binds the contents of `/data` to the graph, and runs the computation.
 NOTE: this script must be run inside a Docker container with samtools, bcftools and bwa installed! This can be done with the command `mamba install -c bioconda -c conda-forge samtools bcftools bwa`.
-NOTE: as of March 2023, the command above does not work correctly with Python 3.10, including the Seamless Docker image, since bcftools (or its dependency htslib) expects OpenSSL 1.1, whereas Python 3.10 requires OpenSSL 3.
 
 3. The Seamless graph can be run interactively using `ipython3 -i run-snakegraph-interactive.py`. This will create a live web page at http://localhost:5813/status/index.html that constantly shows the progress.
 

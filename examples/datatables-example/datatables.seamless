@@ -266,7 +266,6 @@
       "checksum": {
         "code": "26827fa584f06c7a686372b5633ed5774cb4ecd9c8601395dd69a1644281960e",
         "input": "93319dd008ba28e82d5ae7ade497854ed9c696f9be20851fcfd885024f7e4592",
-        "input_buffer": "93319dd008ba28e82d5ae7ade497854ed9c696f9be20851fcfd885024f7e4592",
         "result": "9293d5f7a1fe5a021ea089caca8ed52e5edb1c74f573f692d7eb730886d6fdd1",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
@@ -292,7 +291,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "d22a2d69b80b522e6b2c5b893ecd3c979c35572caa8bfd94ca0f98f9e95ac781"
+        "value": "4ae2a6e6ed456b45af640e3f1a05a5dc39db787ba82d6ad785d56cdb9e54139c"
       },
       "datatype": "mixed",
       "file_extension": "html",
@@ -313,8 +312,7 @@
       "checksum": {
         "code": "b8b868c9096209863699eae4612cb9cdcea975a6940c9a0f0585c266ac26f0c2",
         "input": "5c1192cabd1730d8c1d4f0e067b08daf890c1638c38b3057e5f2723a70e4922a",
-        "input_buffer": "5c1192cabd1730d8c1d4f0e067b08daf890c1638c38b3057e5f2723a70e4922a",
-        "result": "e035b73de08229b7897a72e39872c9de72a0bde2eb1a1691a1f4d13a6e5e7436",
+        "result": "f7656187585de6ce13626714b8e43b40064d5533335b9a7b00ccca3bb3e850d5",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },

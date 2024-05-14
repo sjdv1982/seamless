@@ -40,7 +40,6 @@
       "checksum": {
         "code": "a0ca06bc5a063a64ac957bd367530d61c36634829ece4eacad21b333d9236fa3",
         "input": "24f962a5b78bb3dec9b9e214130e69f2da809d1fe813f3bd696b1e9dbe74f198",
-        "input_buffer": "24f962a5b78bb3dec9b9e214130e69f2da809d1fe813f3bd696b1e9dbe74f198",
         "result": "2dfceaeeffb6cce6fd7a77bb81345e97c9fb6fea1fde7bedeb91c7b3ae78d037",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
