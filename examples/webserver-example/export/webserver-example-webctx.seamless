@@ -1,5 +1,5 @@
 {
-  "__seamless__": "0.8",
+  "__seamless__": "0.11",
   "connections": [
     {
       "source": [
@@ -131,10 +131,31 @@
       "api": "pyseamless",
       "constructor": "def constructor(\n    ctx, libctx,\n    fallback_mode,\n    upstream,\n    modified, conflict,\n    merged, state, base\n):\n    assert fallback_mode in (\"upstream\", \"modified\", \"no\"), fallback_mode\n    m = ctx.m = Macro()\n    m.code = libctx.macro_code.value\n    m.fallback_mode = fallback_mode\n    m.code_start = libctx.code_start.value\n    m.code_update = libctx.code_update.value\n\n    ctx.upstream = Cell(\"text\")\n    upstream.connect(ctx.upstream)\n    m.pins.upstream = {\"io\": \"input\", \"celltype\": \"text\"}\n    m.upstream = ctx.upstream\n\n    ctx.modified = Cell(\"text\")\n    modified.link(ctx.modified)\n    m.pins.modified = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.modified = ctx.modified\n\n    if base is not None:\n        ctx.base = Cell(\"text\")\n        base.link(ctx.base)\n        m.pins.base = {\"io\": \"edit\", \"celltype\": \"text\"}\n        m.base = ctx.base\n\n    ctx.conflict = Cell(\"text\")\n    conflict.link(ctx.conflict)\n    m.pins.conflict = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.conflict = ctx.conflict\n\n    ctx.merged = Cell(\"text\")\n    merged.connect_from(ctx.merged)\n    m.pins.merged = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.merged = m.merged\n\n    ctx.state = Cell(\"text\")\n    state.connect_from(ctx.state)\n    m.pins.state = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.state = m.state",
       "graph": {
-        "__seamless__": "0.8",
+        "__seamless__": "0.11",
         "connections": [],
         "lib": [],
         "nodes": [
+          {
+            "path": [
+              "HELP"
+            ],
+            "type": "context"
+          },
+          {
+            "celltype": "text",
+            "checksum": {
+              "value": "72372a23d44fce3b69343a2bfde92c3ef469031d1fba99ea9516432c1e4a6ac7"
+            },
+            "datatype": "mixed",
+            "file_extension": "md",
+            "hash_pattern": null,
+            "mimetype": "text/markdown",
+            "path": [
+              "HELP",
+              "INDEX"
+            ],
+            "type": "cell"
+          },
           {
             "celltype": "code",
             "checksum": {
@@ -187,7 +208,6 @@
             "celltype": "structured",
             "checksum": {
               "auth": "dd30e83df6e0adec80f1c6817f34e1438d3f806de7f70533a080bdb4a8df0fe3",
-              "buffer": "dd30e83df6e0adec80f1c6817f34e1438d3f806de7f70533a080bdb4a8df0fe3",
               "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
               "value": "dd30e83df6e0adec80f1c6817f34e1438d3f806de7f70533a080bdb4a8df0fe3"
             },
@@ -403,9 +423,7 @@
       "SCHEMA": null,
       "checksum": {
         "code": "e60a9d6cf9515591c4841019c1ce354b1e11eaf78a771609bd4387d86e0f3dbc",
-        "input": "4d5ad930e8741f55618f8d0937dc40a96900f63331e799ce97bd47972a1efabe",
-        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "input_buffer": "4d5ad930e8741f55618f8d0937dc40a96900f63331e799ce97bd47972a1efabe",
+        "input": "c8b6a058c7c1ee3e236b80b8a0933a36412e7ce404da4c3c7d1ad1d0934f2362",
         "result": "d07a204aad6e5f2eccc65895c6537d4921ee493d550dd5cf43521f756a8a5c7e",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
@@ -441,7 +459,6 @@
         "code": "32a693865cc72f9d1027849ad3d379fce7819b29f8b04ba5ef93572370d52818",
         "input": "be7a5fa69eb6bc82636d50e25aeaf09a22896505f48fd0b39735db7584d2ed5c",
         "input_auth": "81ca3960f4a23c56f7b259a4287b97a8490b035d7ced72175210faac51f51618",
-        "input_buffer": "be7a5fa69eb6bc82636d50e25aeaf09a22896505f48fd0b39735db7584d2ed5c",
         "result": "a2f63d82e6db1168956710d3286fdce2d6bfc2b0fabd3f60d30c8964b1cf72c5",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
@@ -481,8 +498,7 @@
       "SCHEMA": null,
       "checksum": {
         "code": "35896ff633b95c7ad33d3c7c124393a7f4b57d1b013286a4d07ccca29f0ff8a3",
-        "input": "2f179ee9bf0a7eed65f44cb4ba64e8849f5fd9abc5cc686f1af147ed40d87def",
-        "input_buffer": "2f179ee9bf0a7eed65f44cb4ba64e8849f5fd9abc5cc686f1af147ed40d87def",
+        "input": "f2c8ff46fc70fd266804b25eaf2eb6f1f0f3e849d5c9ac4a9cc71cb4960850e4",
         "result": "1ea5fb6dae7badc764b643d2fe0aa7d9be4077e680ab8a4bced1bbf52e7b4b2b",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
@@ -516,7 +532,7 @@
     {
       "celltype": "plain",
       "checksum": {
-        "value": "3dfa66b9e7320c27a7fc1cb58d1affe228133cd00d449d1c6cac2c56176637f1"
+        "value": "e896b4036d5838e34d40dd1ef368b456a5473c323f0fd166ed9659e0ac0ad135"
       },
       "datatype": "mixed",
       "path": [
@@ -531,7 +547,7 @@
     {
       "celltype": "plain",
       "checksum": {
-        "value": "170e75bbbc270ccba5124112b0b4dbdad6edef65f4a83ac9386171c205199d5b"
+        "value": "6abbc10cace01fca593b7d5b7d5043d13244004534e855a496d856af5c1c4138"
       },
       "datatype": "mixed",
       "path": [
