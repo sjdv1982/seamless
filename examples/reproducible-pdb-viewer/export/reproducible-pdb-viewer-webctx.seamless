@@ -131,10 +131,31 @@
       "api": "pyseamless",
       "constructor": "def constructor(\n    ctx, libctx,\n    fallback_mode,\n    upstream,\n    modified, conflict,\n    merged, state, base\n):\n    assert fallback_mode in (\"upstream\", \"modified\", \"no\"), fallback_mode\n    m = ctx.m = Macro()\n    m.code = libctx.macro_code.value\n    m.fallback_mode = fallback_mode\n    m.code_start = libctx.code_start.value\n    m.code_update = libctx.code_update.value\n\n    ctx.upstream = Cell(\"text\")\n    upstream.connect(ctx.upstream)\n    m.pins.upstream = {\"io\": \"input\", \"celltype\": \"text\"}\n    m.upstream = ctx.upstream\n\n    ctx.modified = Cell(\"text\")\n    modified.link(ctx.modified)\n    m.pins.modified = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.modified = ctx.modified\n\n    if base is not None:\n        ctx.base = Cell(\"text\")\n        base.link(ctx.base)\n        m.pins.base = {\"io\": \"edit\", \"celltype\": \"text\"}\n        m.base = ctx.base\n\n    ctx.conflict = Cell(\"text\")\n    conflict.link(ctx.conflict)\n    m.pins.conflict = {\"io\": \"edit\", \"celltype\": \"text\"}\n    m.conflict = ctx.conflict\n\n    ctx.merged = Cell(\"text\")\n    merged.connect_from(ctx.merged)\n    m.pins.merged = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.merged = m.merged\n\n    ctx.state = Cell(\"text\")\n    state.connect_from(ctx.state)\n    m.pins.state = {\"io\": \"output\", \"celltype\": \"text\"}\n    ctx.state = m.state",
       "graph": {
-        "__seamless__": "0.8",
+        "__seamless__": "0.11",
         "connections": [],
         "lib": [],
         "nodes": [
+          {
+            "path": [
+              "HELP"
+            ],
+            "type": "context"
+          },
+          {
+            "celltype": "text",
+            "checksum": {
+              "value": "72372a23d44fce3b69343a2bfde92c3ef469031d1fba99ea9516432c1e4a6ac7"
+            },
+            "datatype": "mixed",
+            "file_extension": "md",
+            "hash_pattern": null,
+            "mimetype": "text/markdown",
+            "path": [
+              "HELP",
+              "INDEX"
+            ],
+            "type": "cell"
+          },
           {
             "celltype": "code",
             "checksum": {
@@ -187,7 +208,6 @@
             "celltype": "structured",
             "checksum": {
               "auth": "dd30e83df6e0adec80f1c6817f34e1438d3f806de7f70533a080bdb4a8df0fe3",
-              "buffer": "dd30e83df6e0adec80f1c6817f34e1438d3f806de7f70533a080bdb4a8df0fe3",
               "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
               "value": "dd30e83df6e0adec80f1c6817f34e1438d3f806de7f70533a080bdb4a8df0fe3"
             },
@@ -404,8 +424,6 @@
       "checksum": {
         "code": "e60a9d6cf9515591c4841019c1ce354b1e11eaf78a771609bd4387d86e0f3dbc",
         "input": "51ff5845e9de506361bcce56857abb8e992efc0929892d4c04fb33e8ab414f4e",
-        "input_auth": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
-        "input_buffer": "51ff5845e9de506361bcce56857abb8e992efc0929892d4c04fb33e8ab414f4e",
         "result": "446d482726ab87192efa0b17b63947f224936aa82d0bb25fd70660f54c3e3c09",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
@@ -441,8 +459,7 @@
         "code": "32a693865cc72f9d1027849ad3d379fce7819b29f8b04ba5ef93572370d52818",
         "input": "ed946bdce2de0dc12246e5d9329778a1c0acba2ac2ab86ae9628d9031c771b36",
         "input_auth": "81ca3960f4a23c56f7b259a4287b97a8490b035d7ced72175210faac51f51618",
-        "input_buffer": "ed946bdce2de0dc12246e5d9329778a1c0acba2ac2ab86ae9628d9031c771b36",
-        "result": "2b051bef481febe7a6dc9aeb91cadba724050a357dc99d4f92be679906147d29",
+        "result": "b6a2ae9147c397c9fb9b23a3c0d1b628cb8abbbb57cdbacdb001ed893d1ca150",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
       },
@@ -482,7 +499,6 @@
       "checksum": {
         "code": "35896ff633b95c7ad33d3c7c124393a7f4b57d1b013286a4d07ccca29f0ff8a3",
         "input": "6034b1945d28f6db11daff7b1a4b4a89dbaf6d5aff867f7a69ab41affae4b661",
-        "input_buffer": "6034b1945d28f6db11daff7b1a4b4a89dbaf6d5aff867f7a69ab41affae4b661",
         "result": "1e653c7258b01d85e7433a6f7ba7442f0ba14eebc74400db7f8297c5bdce907b",
         "result_schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c",
         "schema": "d0a1b2af1705c1b8495b00145082ef7470384e62ac1c4d9b9cdbbe0476c28f8c"
@@ -627,7 +643,7 @@
     {
       "celltype": "str",
       "checksum": {
-        "value": "8b27ec8712ccce6ad8c8d09cfe6485568f3bf82b2d752c6b6a74a6deaa019682"
+        "value": "0ce9449d6a376407d21e2dcdb8c89522609bf155baefa60ca262c8f7531c07c0"
       },
       "datatype": "mixed",
       "path": [
@@ -638,7 +654,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "b20bf108814cf32f7a8b1481a4c5a60b716a4c29b01e55fce98bab02336e6a48"
+        "value": "2ae7200774af1f1debfb964061af5f2a7db691382ed9483263121831806f5675"
       },
       "datatype": "mixed",
       "mimetype": "text/javascript",
@@ -661,7 +677,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "b20bf108814cf32f7a8b1481a4c5a60b716a4c29b01e55fce98bab02336e6a48"
+        "value": "2ae7200774af1f1debfb964061af5f2a7db691382ed9483263121831806f5675"
       },
       "datatype": "mixed",
       "mount": {
@@ -678,7 +694,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "b20bf108814cf32f7a8b1481a4c5a60b716a4c29b01e55fce98bab02336e6a48"
+        "value": "2ae7200774af1f1debfb964061af5f2a7db691382ed9483263121831806f5675"
       },
       "datatype": "mixed",
       "mount": {
@@ -712,7 +728,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "b20bf108814cf32f7a8b1481a4c5a60b716a4c29b01e55fce98bab02336e6a48"
+        "value": "2ae7200774af1f1debfb964061af5f2a7db691382ed9483263121831806f5675"
       },
       "datatype": "mixed",
       "path": [
@@ -973,7 +989,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "446d482726ab87192efa0b17b63947f224936aa82d0bb25fd70660f54c3e3c09"
+        "value": "f1cc450696089d41cca4cc14389f44b70739fc8b0e2838c8f67171a34a94be82"
       },
       "datatype": "mixed",
       "mount": {
@@ -990,7 +1006,7 @@
     {
       "celltype": "text",
       "checksum": {
-        "value": "6f7eaa8edfefb3894e556d54099310c676e4b6ef2a0f4478df6ef20f45cf9f8d"
+        "value": "f2f5c336d142025cd95a2001e2f3181a2aa04c307b37ffb901e5963b1fa1c641"
       },
       "datatype": "mixed",
       "mount": {
@@ -1018,7 +1034,7 @@
     {
       "celltype": "str",
       "checksum": {
-        "value": "93d45ac53516c81718a4c6391bfea877b537c5045678b048580a884e706b1e93"
+        "value": "0ce9449d6a376407d21e2dcdb8c89522609bf155baefa60ca262c8f7531c07c0"
       },
       "datatype": "mixed",
       "path": [
@@ -1029,7 +1045,7 @@
     {
       "celltype": "structured",
       "checksum": {
-        "value": "2b051bef481febe7a6dc9aeb91cadba724050a357dc99d4f92be679906147d29"
+        "value": "b6a2ae9147c397c9fb9b23a3c0d1b628cb8abbbb57cdbacdb001ed893d1ca150"
       },
       "datatype": "mixed",
       "hash_pattern": null,

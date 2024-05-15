@@ -37,19 +37,25 @@ using "seamless-upload"
 """
 
 import os, sys, shutil
+import seamless, seamless.config
+from seamless.highlevel import (Context, Cell, Transformer, Module, Macro, 
+                                SimpleDeepCell, FolderCell, DeepCell, DeepFolderCell)
 
-import seamless
-seamless.delegate(DELEGATION_LEVEL)
+def pr(*args):
+    print(*args, file=sys.stderr)
 
-from seamless.highlevel import Context, Cell, Transformer, Module, Macro
+_curr_delegation_level = seamless.config.get_delegation_level()
+if _curr_delegation_level is None:
+    seamless.delegate(DELEGATION_LEVEL)
+elif int(_curr_delegation_level) != DELEGATION_LEVEL:
+    pr("DELEGATION_LEVEL overridden to {} by previous seamless.delegate() call".format(_curr_delegation_level))
+    DELEGATION_LEVEL = int(_curr_delegation_level)
+
 
 ctx = None
 webctx = None
 save = None
 export = None
-
-def pr(*args):
-    print(*args, file=sys.stderr)
 
 async def define_graph(ctx):
     """Code to define the graph
