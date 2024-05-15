@@ -26,7 +26,7 @@ class DatabaseConnectionError(ConnectionError, ConfigurationError):
     pass
 
 def _contact_assistant():
-    global _assistant, _delegate_level
+    global _assistant, _delegation_level
     env = os.environ
     host = env.get("SEAMLESS_ASSISTANT_IP")
     if host is None:
@@ -49,7 +49,7 @@ def _contact_assistant():
     assert response.status_code == 200
     
     _assistant = assistant
-    _delegate_level = 4
+    _delegation_level = 4
     if response.content:
         raise NotImplementedError
     else:
@@ -58,14 +58,14 @@ def _contact_assistant():
 
 
 _delegating = False
-_delegate_level = None
+_delegation_level = None
 
-def get_delegate_level():
-    return _delegate_level
+def get_delegation_level():
+    return _delegation_level
 
 def _init_database_from_env():
     """Configure database based on environment variables"""
-    global _delegate_level
+    global _delegation_level
     assert _delegating
 
     env = os.environ
@@ -183,8 +183,8 @@ calculated result.
 Return value: True if an error occurred, False if delegation was successful
 """
 
-    global _delegate_level, _delegating
-    if _delegate_level is not None and _delegate_level != level:
+    global _delegation_level, _delegating
+    if _delegation_level is not None and _delegation_level != level:
         raise NotImplementedError("Changing delegation dynamically is currently not supported")
 
     if level not in (0,1,2,3,4):
@@ -210,7 +210,7 @@ Return value: True if an error occurred, False if delegation was successful
     finally:
         _delegating = False
 
-    _delegate_level = level
+    _delegation_level = level
     return False
 
 _checked_delegation = False
@@ -218,7 +218,7 @@ def check_delegation():
     global _checked_delegation
     if _checked_delegation:
         return
-    if _delegate_level is None:
+    if _delegation_level is None:
         msg = """WARNING: Seamless delegation level was not set.
 
 Use seamless.delegate() to enable delegation, or seamless.delegate(False)
@@ -232,7 +232,7 @@ def add_buffer_folder(folder, read_only=True):
         min_level = 1
     else:
         min_level = 2
-    if _delegate_level is None or _delegate_level < min_level:
+    if _delegation_level is None or _delegation_level < min_level:
         raise RuntimeError(f"Delegation level {min_level} is required")
     add_read_buffer_folder(folder)
     if not read_only:
@@ -243,7 +243,7 @@ def add_buffer_server(url, read_only=True):
         min_level = 1
     else:
         min_level = 2
-    if _delegate_level is None or _delegate_level < min_level:
+    if _delegation_level is None or _delegation_level < min_level:
         raise RuntimeError(f"Delegation level {min_level} is required")
     add_read_buffer_server(url)
     if not read_only:
@@ -256,12 +256,12 @@ class InProcessAssistant(ABC):
         raise NotImplementedError
 
 def set_inprocess_assistant(assistant: InProcessAssistant):
-    global _assistant, _delegate_level
-    assert _delegate_level in (3,4)
+    global _assistant, _delegation_level
+    assert _delegation_level in (3,4)
     if not isinstance(assistant, InProcessAssistant):
         raise TypeError(type(assistant))
     _assistant = assistant
-    _delegate_level = 4
+    _delegation_level = 4
 
 from .core.cache.database_client import database
 from .core.manager import block, unblock, block_local, unblock_local

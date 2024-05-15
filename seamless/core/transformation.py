@@ -537,8 +537,8 @@ class TransformationJob:
             await asyncio.sleep(0.05)
         meta = self.transformation.get("__meta__")
         meta = deepcopy(meta)
-        from seamless.config import get_delegate_level
-        if get_delegate_level() == 4:
+        from seamless.config import get_delegation_level
+        if get_delegation_level() == 4:
             self.remote = True # previous: call self._probe_remote ...
         if self.remote:
             try:

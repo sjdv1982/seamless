@@ -53,6 +53,7 @@ In production, you will probably want to put Seamless behind a proxy server (e.g
 that enforces more sensible values
 """
 import os
+import sys
 import asyncio
 import weakref
 import traceback
@@ -605,7 +606,8 @@ class ShareServer(object):
                 if not is_bound_port_error(exc):
                     raise
                 self.update_port += 1
-        print("Opened the seamless share update server at port {0}".format(self.update_port))
+        if "SEAMLESS_SILENT" not in os.environ:
+            print("Opened the seamless share update server at port {0}".format(self.update_port), file=sys.stderr)
         self._update_server_started = True
 
     def _find_toplevel(self, key):
@@ -903,7 +905,8 @@ Share {c} with readonly=False to allow HTTP PUT requests"""
                 if not is_bound_port_error(exc):
                     raise
                 self.rest_port += 1
-        print("Opened the seamless REST server at port {0}".format(self.rest_port))
+        if "SEAMLESS_SILENT" not in os.environ:
+            print("Opened the seamless REST server at port {0}".format(self.rest_port), file=sys.stderr)
 
     async def _start(self):
         s1 = self.serve_update()

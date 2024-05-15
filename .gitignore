@@ -7,6 +7,7 @@ seamless.code-workspace
 */.snakemake/
 */__pycache__/
 */.ipynb_checkpoints/
+*/*-BAK*/
 tests/highlevel/*.json
 tests/highlevel/data/*
 tests/highlevel/context2-graph-raw.txt
