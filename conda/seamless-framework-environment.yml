@@ -7,7 +7,7 @@ dependencies:
   - pip
   - numpy
   - rpbs::seamless-framework==0.12
-  - rpbs::silk>=0.1.10
+  - rpbs::silk>=0.1.11
   - rpbs::seamless-cli
   - bashlex
   - conda
