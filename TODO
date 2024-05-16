@@ -128,38 +128,40 @@ DONE
 Release
 =====================
 
-- Documentation. 
-
-- Document: buffer read servers/folders fail silently, the buffer write server must succeed
-
-- General documentation, describing the three styles. Old TODO entries have been added to the Seamless Documentation issue.
-
-- For seamless-delegate, set up non-devel assistants. docker compose --build only for devel assistants.
-
-- For seamless-cli, when distributing, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile. In addition, there is no more Silk dependency, update install instructions accordingly. However, there is now a dependency on psutil, sqlite3, peewee and playhouse.
-Also, make sure activate-seamless-mode works well in distro for seamless-cli.z
-
-- Make a separate conda package for bin/seamless. 
-Add seamless-upload, seamless-upload-zip, seamless-upload-vault and seamless-download as copies of seamless-tools/scripts/upload.py etc.,
-rather than the Docker wrappers of seamless-cli/seamless-upload etc. However, do add bin/seamless to the Docker images for nesting (DONE for devel image)
-
 - Maintain a Conda environment file for development that updates seamless-minimal-dependencies. DONE
 
 - Rip seamless-minimal. DONE
 
-- Update the seamless-framework Conda environments. Here, *also* install seamless-cli so that tools and seamless Docker container can be fired up at will. *Mark all Conda environments with
-SEAMLESS_CONDA_ENVIRONMENT=1*, this is so that seamless-bash will work from within the Conda environment.
+- Before distribution, create a seamless-port-unify tool, a SEAMLESS_WEBSERVER_PORT with a canonical value. Include this value in the seamless.js client. 
+
+- Build and upload the Seamless Docker image (works)
+
+- Adapt the seamless-binder-demo.
+
+- seamless-cli:for seamless-delegate, set up non-devel assistants. docker compose --build only for devel assistants.
+
+- For seamless-cli, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile. In addition, there is no more Silk dependency, update install instructions accordingly. However, there is now a dependency on psutil, sqlite3, peewee and playhouse.
+
+- Distribute seamless-cli. Make sure activate-seamless-mode works well in distro for seamless-cli.
+
 
 - Port dask-deployment build-environment-devel to build-environment. Take seamless-mini environment as a basis where to install Dask libraries into.
 Explain this in the delegation documentation.
 
 - Port run-db-hashserver-devel to non-devel environment for distribution.
 
-- Before distribution, create a seamless-port-unify tool, a SEAMLESS_WEBSERVER_PORT with a canonical value. 
-Include this value in the seamless.js client. Adapt the seamless-binder-demo.
-Write a small tutorial with two methods for port forwarding: ngrok and vscode, and show that it works for seamless-serve-graph.
+- Update the seamless-framework Conda environments. Here, *also* install seamless-cli so that tools and seamless Docker container can be fired up at will. *Mark all Conda environments with
+SEAMLESS_CONDA_ENVIRONMENT=1*, this is so that seamless-bash will work from within the Conda environment. Also make sure that bin/seamless is included.
 
-- Before distribution, test that cloudless still works.
+- Distribute the seamless-framework Conda package. Test stuffs!
+
+=====================
+Documentation
+=====================
+
+- Document: buffer read servers/folders fail silently, the buffer write server must succeed
+
+- General documentation, describing the three styles. Old TODO entries have been added to the Seamless Documentation issue.
 
 - Document the various packages/installation methods.
     * seamless-minimal has been ripped
@@ -167,6 +169,11 @@ Write a small tutorial with two methods for port forwarding: ngrok and vscode, a
     * Note that even the Conda environment still requires Docker to make delegation work. Mini and micro assistants require Seamless Docker image as well.
     If you don't have Docker, either use no delegation (bad!), or set it up via HPC/Dask-oriented tools (run-db-hashserver.sh + dask-deployment tools). The latter option is advanced use case. Document delegation and why!
 
-======================
+- Write a small tutorial with two methods for port forwarding: ngrok and vscode, and show that it works for seamless-serve-graph.
+
+=====================
+Post-release
+=====================
 
 - After release: fix cloudless, rip communion-related parameters, always invoke delegation, rip proxy.
+- Assistant robustness (create issue)
