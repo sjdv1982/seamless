@@ -3,6 +3,9 @@
 Author: Sjoerd de Vries
 Copyright 2016-2023, INSERM, CNRS and project contributors
 """
+
+__version__ = "0.12"
+
 import sys
 import traceback
 import asyncio

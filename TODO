@@ -132,11 +132,9 @@ Release
 
 - Rip seamless-minimal. DONE
 
-- Before distribution, create a seamless-port-unify tool, a SEAMLESS_WEBSERVER_PORT with a canonical value. Include this value in the seamless.js client. 
+- Before distribution, create a seamless-port-unify tool, a SEAMLESS_WEBSERVER_PORT with a canonical value. Include this value in the seamless.js client.
 
 - Build and upload the Seamless Docker image (works)
-
-- Adapt the seamless-binder-demo.
 
 - seamless-cli:for seamless-delegate, set up non-devel assistants. docker compose --build only for devel assistants.
 
@@ -155,9 +153,13 @@ SEAMLESS_CONDA_ENVIRONMENT=1*, this is so that seamless-bash will work from with
 
 - Distribute the seamless-framework Conda package. Test stuffs!
 
+- Adapt the seamless-binder-demo. Note that it is based on the Conda package.
+
 =====================
 Documentation
 =====================
+
+- Development guidelines: set __version__ to "development" during development, then give a version number just before release.
 
 - Document: buffer read servers/folders fail silently, the buffer write server must succeed
 

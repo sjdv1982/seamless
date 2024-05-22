@@ -1079,6 +1079,7 @@ from .status import SeamlessInvalidValueError
 from .environment import validate_environment
 from ..subprocess_ import kill_children
 from .. import run_transformation_async
+from seamless import __version__
 
 execution_metadata0 = {}
 
@@ -1099,7 +1100,7 @@ def get_global_info(global_info=None, force=False):
         _got_global_info = True
         return execution_metadata0.copy()
 
-    seamless_version = "development"
+    seamless_version = __version__
     try:
         import conda.cli.python_api
         conda.cli.python_api.run_command
