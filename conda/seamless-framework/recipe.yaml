@@ -1,20 +1,18 @@
-{% set name = "seamless-framework" %}
-{% set version = "0.12" %}
-
 package:
-  name: "{{ name|lower }}"
-  version: "{{ version }}"
+  name: seamless-framework
+  version: "0.12"
 
 build:
   noarch: python
-  number: 2
+  number: 1
 
 source:
   path: ../..
 
 requirements:
   build:
-    - python {{ python }}
+    - python=3.10
+    - numpy
     - setuptools
   run:
     - python>=3.9
@@ -27,10 +25,8 @@ requirements:
     - bashlex
     - requests=2.31.*
     - aiohttp
-    - silk
+    - rpbs::silk
 
 about:
-  home: https://github.com/sjdv1982/seamless.git
   license: MIT
-  license_family: MIT
   summary: Seamless is a framework to set up protocols (workflows) and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations, and all cells can be edited interactively.

@@ -136,22 +136,21 @@ Release
 
 - Build and upload the Seamless Docker image (works)
 
-- seamless-cli:for seamless-delegate, set up non-devel assistants. docker compose --build only for devel assistants.
+- seamless-cli:for seamless-delegate, set up non-devel assistants. docker compose --build only for devel assistants. DONE
 
-- For seamless-cli, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile. In addition, there is no more Silk dependency, update install instructions accordingly. However, there is now a dependency on psutil, sqlite3, peewee and playhouse.
+- For seamless-cli, be sure to add hashserver to the cli directory. No deps since they are inside the Dockerfile. In addition, there is no more Silk dependency, update install instructions accordingly. However, there is now a dependency on psutil, sqlite and peewee. DONE
 
-- Distribute seamless-cli. Make sure activate-seamless-mode works well in distro for seamless-cli.
+- Distribute seamless-cli. Make sure activate-seamless-mode works well in distro for seamless-cli. DONE
 
+- Update the seamless-framework Conda environments. Here, *also* install seamless-cli so that tools and seamless Docker container can be fired up at will (DONE). *Mark all Conda environments with
+SEAMLESS_CONDA_ENVIRONMENT=1*, this is so that seamless-bash will work from within the Conda environment (DONE). Also make sure that bin/seamless is included, and that seamless-mode is activated.
+
+- Distribute the seamless-framework Conda package. Test stuffs!
 
 - Port dask-deployment build-environment-devel to build-environment. Take seamless-mini environment as a basis where to install Dask libraries into.
 Explain this in the delegation documentation.
 
 - Port run-db-hashserver-devel to non-devel environment for distribution.
-
-- Update the seamless-framework Conda environments. Here, *also* install seamless-cli so that tools and seamless Docker container can be fired up at will. *Mark all Conda environments with
-SEAMLESS_CONDA_ENVIRONMENT=1*, this is so that seamless-bash will work from within the Conda environment. Also make sure that bin/seamless is included.
-
-- Distribute the seamless-framework Conda package. Test stuffs!
 
 - Adapt the seamless-binder-demo. Note that it is based on the Conda package.
 
@@ -162,6 +161,9 @@ Documentation
 - Development guidelines: set __version__ to "development" during development, then give a version number just before release.
 
 - Document: buffer read servers/folders fail silently, the buffer write server must succeed
+
+
+- Document: seamless-mode (works inside Docker image).
 
 - General documentation, describing the three styles. Old TODO entries have been added to the Seamless Documentation issue.
 

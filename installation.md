@@ -5,13 +5,12 @@
 First, [install Docker](https://docs.docker.com/get-docker/)
 and [miniconda](https://docs.conda.io/en/latest/miniconda.html).
 
+Then:
+
 ```bash
 docker pull rpbs/seamless
-conda create -n seamless -c rpbs -c conda-forge seamless-cli -y
-conda activate seamless
+conda install -c rpbs seamless-cli
 ```
-
-***These three lines are sufficient to get Seamless working***
 
 ## Comparison between installation methods
 
@@ -42,9 +41,9 @@ and [(mini)conda](https://docs.conda.io/en/latest/miniconda.html).
 
 - Install the Seamless command line tools.
 
-    It is best to create a new environment "seamless", and do `conda activate seamless` whenever you are using Seamless. This is done as follows: `conda create -n seamless -c rpbs -c conda-forge seamless-cli`.
+    You can install the Seamless command line tools into your current conda environment: `conda install -c rpbs seamless-cli`.
 
-    Or you can install the Seamless command line tools into your current conda environment: `conda install -c rpbs -c conda-forge seamless-cli`
+    Or you can create a new environment "seamless", and do `conda activate seamless` whenever you are using Seamless. This is done as follows: `conda create -n seamless -c rpbs -c conda-forge seamless-cli`.
 
 - The command ```seamless-ipython``` launches an IPython terminal inside a Seamless Docker container.
 
@@ -63,15 +62,15 @@ conda update -c rpbs -c conda-forge seamless-cli
 #### Installing a specific Seamless version
 
 By default, the Seamless CLI creates `rpbs/seamless` Docker containers.
-To specifically install e.g. Seamless 0.11, you can do:
+To specifically install e.g. Seamless 0.12, you can do:
 
 ```bash
-docker pull rpbs/seamless:0.11
-docker tag rpbs/seamless:0.11 rpbs/seamless
+docker pull rpbs/seamless:0.12
+docker tag rpbs/seamless:0.12 rpbs/seamless
 ```
 
 Alternatively, you can set the `SEAMLESS_DOCKER_IMAGE` variable:
-`export SEAMLESS_DOCKER_IMAGE=rpbs/seamless:0.11`
+`export SEAMLESS_DOCKER_IMAGE=rpbs/seamless:0.12`
 
 ### 2. Installation of Seamless running directly in a conda environment
 
@@ -85,19 +84,19 @@ Then, create a `seamless-framework` conda environment with the following command
 
 where `<file>.yml` has one of the values below.
 
-In all cases, a conda environment `seamless-framework` is created. If you want to rename it (e.g. to compare different installations), you can do so with `conda rename -n seamless-framework ...`
+In all cases, a conda environment `seamless-framework` is created (OUTDATED). If you want to rename it (e.g. to compare different installations), you can do so with `conda rename -n seamless-framework ...`
 
 #### Possible conda installations
 
 `<file>.yml` can have the following values:
 
-- `seamless-exact-environment.yml`. This is the most compatible installation. This specifies the versions of Python and all packages to be exactly the same as in the Docker image. (For Seamless 0.11, this is Python 3.10.9). Note that Seamless is tested only with these package versions. The environment is 1.9 GB in size.
+- `seamless-exact-environment.yml`. This is the most compatible installation. This specifies the versions of Python and all packages to be exactly the same as in the Docker image. (For Seamless 0.12, this is Python 3.10). Note that Seamless is tested only with these package versions. The environment is 1.9 GB?? in size.
 
-- `seamless-framework-environment.yml`. This installs Python and all packages in the Docker image, but does not specify their versions. As of early 2023, this will install Python 3.11. Note that Seamless is *not* extensively tested with these Python/package versions: if you encounter a bug, switching to `seamless-exact-environment.yml` may solve it (a bug report is still welcome). The environment is ~2.1 GB in size.
+- `seamless-framework-environment.yml`. This installs Python and all packages in the Docker image, but does not specify their versions. As of mid 2024, this will install Python 3.12. Note that Seamless is *not* extensively tested with these Python/package versions: if you encounter a bug, switching to `seamless-exact-environment.yml` may solve it (a bug report is still welcome). The environment is ~2.1 GB?? in size.
 
-- `seamless-mini-environment.yml`. Same as above, but will omit some packages. Not all Seamless tests and examples will work. Jupyter is no longer installed, and neither are packages such as scikit-learn, scipy, matplotlib or pandas. If you need those packages, you must install them yourself. The environment is ~410 MB in size.
+- `seamless-mini-environment.yml`. Same as above, but will omit some packages. Not all Seamless tests and examples will work. Jupyter is no longer installed, and neither are packages such as scikit-learn, scipy, matplotlib or pandas. If you need those packages, you must install them yourself. The environment is ~410 MB?? in size.
 
-- `seamless-micro-environment.yml`. Same as above, but this will install only the absolute minimum to run (most of) Seamless. As of early 2023, the environment contains 82 packages and is ~330 MB in size.
+- `seamless-micro-environment.yml`. Same as above, but this will install only the absolute minimum to run (most of) Seamless. As of mid 2024, the environment contains 82 packages?? and is ~330 MB?? in size.
 
 #### Post-installation
 
