@@ -111,7 +111,7 @@ TODO before 0.12 release:
     
 ======================
 
-- Fix issue #249, re-run cmd/headify test. Issue seems to prevent federation (last line of headify/test.out is too slow)
+- Fix issue #249, re-run cmd/headify test. Issue seems to prevent federation (last line of headify/test.out is too slow) (DONE for now)
 
 - Clean up and re-run all tests.
     * low-level (DONE)
@@ -132,7 +132,7 @@ Release
 
 - Rip seamless-minimal. DONE
 
-- Before distribution, create a seamless-port-unify tool, a SEAMLESS_WEBSERVER_PORT with a canonical value. Include this value in the seamless.js client.
+- Before distribution, create a seamless-unify-webserver-ports tool, unifying using canonical port values. Include this value in the seamless.js client. DONE
 
 - Build and upload the Seamless Docker image (works)
 

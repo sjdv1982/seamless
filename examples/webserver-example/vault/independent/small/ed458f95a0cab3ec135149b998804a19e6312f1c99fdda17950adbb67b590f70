@@ -251,7 +251,7 @@ restart();
 // START of config block
 // The code below may be replaced if the ports and graph namespaces are different
 
-SEAMLESS_UPDATE_PORT=null  //5138, but will be 80 or 8080 if the page is served under that port
+SEAMLESS_UPDATE_PORT=null  //5138, but will be 80 or 8080 or 5888 if the page is served under that port
 SEAMLESS_REST_PORT=null    //the same as where the page will be served under 
 SEAMLESS_SHARE_NAMESPACE="status"
 // END of config block
