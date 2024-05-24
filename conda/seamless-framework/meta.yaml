@@ -27,6 +27,7 @@ requirements:
     - bashlex
     - requests=2.31.*
     - aiohttp
+    - aiohttp-cors
     - silk
 
 about:

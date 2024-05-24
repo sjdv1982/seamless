@@ -12,6 +12,7 @@ dependencies:
   - rpbs::seamless-cli
   - bashlex=0.18
   - conda=23.1.*
+  - aiohttp-cors==0.7.*
   - ruamel.yaml=0.17.*
   - orjson=3.8.*
   - psutil=5.9.*
@@ -45,8 +46,7 @@ dependencies:
   - pip:
     - websockets==10.3.*
     - cson==0.8.*
-    - speg
-    - aiohttp_cors==0.7.*
+    - speg    
     - docker==7.0.*
     - makefun
     - nglview

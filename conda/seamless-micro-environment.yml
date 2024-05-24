@@ -12,6 +12,5 @@ dependencies:
     - websockets
     - cson
     - speg
-    - aiohttp_cors
 variables:
   SEAMLESS_CONDA_ENVIRONMENT: 1

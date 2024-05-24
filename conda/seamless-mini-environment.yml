@@ -9,6 +9,7 @@ dependencies:
   - rpbs::silk>=0.1.11
   - rpbs::seamless-cli
   - conda
+  - aiohttp-cors
   - jinja2
   - traitlets
   - datrie  # required to build some pip packages
@@ -28,8 +29,7 @@ dependencies:
   - pip:
     - websockets
     - cson
-    - speg
-    - aiohttp_cors
+    - speg    
     - makefun
 variables:
   SEAMLESS_CONDA_ENVIRONMENT: 1
