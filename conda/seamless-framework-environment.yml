@@ -52,7 +52,7 @@ dependencies:
     - matplotlib 
     - snakemake==7.18.*
     - jupyter-console
-    - itables
+    - itables==1.4.*
 variables:
   SEAMLESS_CONDA_ENVIRONMENT: 1
   SEAMLESS_DEFAULT_ASSISTANT_IP: 127.0.0.1
