@@ -13,3 +13,8 @@ If you forget it, run `conda build seamless-framework --output`
 anaconda login
 anaconda upload $filename.tar.bz2
 ```
+
+How to build the seamless-cli-bin Conda package
+=================================================
+
+See the instructions in /seamless-tools/conda

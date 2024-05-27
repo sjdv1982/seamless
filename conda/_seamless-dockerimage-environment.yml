@@ -1,17 +1,14 @@
-name: seamless-exact
+# The environment for updating the conda base environment in the rpbs/seamless Docker image
+# keep this in sync with seamless-exact-environment
+name: seamless-dockerimage
 channels:
   - conda-forge
   - rpbs
-dependencies:
-  # keep this in sync with seamless-tools/docker/seamless-deps-environment.yml
+dependencies:  
   - python=3.10.*
   - pip=23.0.*
   - numpy=1.24.*
-  - rpbs::seamless-framework==0.12
   - rpbs::silk==0.1.11
-  - rpbs::seamless-cli-complement
-  - rpbs::seamless-cli-bin
-  - rpbs::seamless-scripts
   - bashlex=0.18
   - conda=23.1.*
   - aiohttp-cors==0.7.*
@@ -57,11 +54,6 @@ dependencies:
     - jupyter-console==6.6.*
     - itables==1.4.*
 variables:
-  SEAMLESS_CONDA_ENVIRONMENT: 1
   SEAMLESS_DEFAULT_ASSISTANT_IP: 127.0.0.1
   SEAMLESS_DEFAULT_ASSISTANT_PORT: 5533
-  SEAMLESS_DATABASE_IP: 127.0.0.1
-  SEAMLESS_DATABASE_PORT: 5522
-  SEAMLESS_READ_BUFFER_SERVERS: http://127.0.0.1:5577
-  SEAMLESS_WRITE_BUFFER_SERVER: http://127.0.0.1:5577
   SEAMLESS_DEBUGGING_DIRECTORY: /tmp/seamless-debug
