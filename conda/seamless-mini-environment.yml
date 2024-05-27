@@ -14,7 +14,7 @@ dependencies:
   - jinja2
   - traitlets
   - datrie  # required to build some pip packages
-  - ipython<=8.16.*
+  - ipython<=8.16
   - ipykernel
 
   - cffi
