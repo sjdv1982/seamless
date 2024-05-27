@@ -1,19 +1,22 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>seamless.highlevel.Context &mdash; Seamless 0.10 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/doctools.js"></script>
-        <script src="../../../_static/sphinx_highlight.js"></script>
+        <script src="../../../_static/jquery.js?v=5be48651"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=c71f9630"></script>
+        <script src="../../../_static/doctools.js?v=695de88e"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -189,8 +192,9 @@
 <span class="kn">from</span> <span class="nn">..core.context</span> <span class="kn">import</span> <span class="n">StatusReport</span><span class="p">,</span> <span class="n">context</span> <span class="k">as</span> <span class="n">core_context</span>
 <span class="kn">from</span> <span class="nn">.assign</span> <span class="kn">import</span> <span class="n">assign</span>
 <span class="kn">from</span> <span class="nn">.proxy</span> <span class="kn">import</span> <span class="n">Pull</span>
-<span class="kn">from</span> <span class="nn">..midlevel</span> <span class="kn">import</span> <span class="n">copying</span>
-<span class="kn">from</span> <span class="nn">..midlevel.vault</span> <span class="kn">import</span> <span class="n">save_vault</span><span class="p">,</span> <span class="n">load_vault</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">copying</span>
+<span class="kn">from</span> <span class="nn">..vault</span> <span class="kn">import</span> <span class="n">save_vault</span><span class="p">,</span> <span class="n">load_vault</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">Checksum</span>
 
 <span class="n">Graph</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;Graph&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;connections&quot;</span><span class="p">,</span> <span class="s2">&quot;params&quot;</span><span class="p">,</span> <span class="s2">&quot;lib&quot;</span><span class="p">))</span>
 
@@ -265,7 +269,7 @@
 
 
 <span class="k">def</span> <span class="nf">_destroy_contexts</span><span class="p">():</span>
-    <span class="n">_cleanup</span><span class="p">()</span>
+    <span class="n">_direct_cleanup</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">context</span> <span class="ow">in</span> <span class="n">_contexts</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">context</span><span class="o">.</span><span class="n">_destroy</span><span class="p">()</span>
@@ -291,7 +295,9 @@
     <span class="k">return</span> <span class="n">result</span>
 
 
-<div class="viewcode-block" id="Context"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context">[docs]</a><span class="k">class</span> <span class="nc">Context</span><span class="p">(</span><span class="n">Base</span><span class="p">,</span> <span class="n">HelpMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="Context">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context">[docs]</a>
+<span class="k">class</span> <span class="nc">Context</span><span class="p">(</span><span class="n">Base</span><span class="p">,</span> <span class="n">HelpMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Context class. Organizes cells and workers hierarchically.</span>
 
 <span class="sd">    Wrapper around a workflow graph, which can be serialized as JSON to a</span>
@@ -350,12 +356,14 @@
     <span class="n">_children</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">Base</span><span class="p">]</span>
     <span class="n">_needs_translation</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">_parent</span><span class="p">:</span> <span class="n">Any</span>  <span class="c1"># weakref.ref or lambda returning None</span>
-    <span class="n">_traitlets</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">SeamlessTraitlet</span><span class="p">]</span>
+    <span class="n">_traitlets</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;SeamlessTraitlet&quot;</span><span class="p">]</span>
     <span class="n">_observers</span><span class="p">:</span> <span class="nb">set</span>
     <span class="n">_unbound_context</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Optional[core.Context]</span>
     <span class="n">_runtime_indices</span> <span class="o">=</span> <span class="p">{}</span>
 
-<div class="viewcode-block" id="Context.from_graph"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.from_graph">[docs]</a>    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Context.from_graph">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.from_graph">[docs]</a>
+    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_graph</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">graph</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">,</span>
@@ -392,7 +400,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">set_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">mounts</span><span class="o">=</span><span class="n">mounts</span><span class="p">,</span> <span class="n">shares</span><span class="o">=</span><span class="n">shares</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
-<div class="viewcode-block" id="Context.set_graph"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.set_graph">[docs]</a>    <span class="k">def</span> <span class="nf">set_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mounts</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">shares</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Context.set_graph">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.set_graph">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mounts</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">shares</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the graph of the Context</span>
 
 <span class="sd">        &quot;graph&quot; can be a file name or a JSON dict</span>
@@ -429,8 +440,12 @@
             <span class="n">nodetype</span> <span class="o">=</span> <span class="n">node</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">nodetype</span> <span class="o">==</span> <span class="s2">&quot;libinstance&quot;</span><span class="p">:</span>
                 <span class="k">continue</span>
-            <span class="n">nodecls</span> <span class="o">=</span> <span class="n">nodeclasses</span><span class="p">[</span><span class="n">nodetype</span><span class="p">]</span>
-            <span class="n">child</span> <span class="o">=</span> <span class="n">nodecls</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">nodetype</span> <span class="o">==</span> <span class="s2">&quot;transformer&quot;</span><span class="p">:</span>
+                <span class="n">child</span> <span class="o">=</span> <span class="n">Transformer</span><span class="p">()</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">p</span><span class="p">,</span> <span class="n">set_node</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">nodecls</span> <span class="o">=</span> <span class="n">nodeclasses</span><span class="p">[</span><span class="n">nodetype</span><span class="p">]</span>
+                <span class="n">child</span> <span class="o">=</span> <span class="n">nodecls</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">nodetype</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="s2">&quot;transformer&quot;</span><span class="p">,</span> <span class="s2">&quot;macro&quot;</span><span class="p">):</span>
                 <span class="n">node</span><span class="p">[</span><span class="s2">&quot;UNTRANSLATED&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">connections</span> <span class="o">=</span> <span class="n">graph</span><span class="p">[</span><span class="s2">&quot;connections&quot;</span><span class="p">]</span>
@@ -454,12 +469,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">manager</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Manager</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new Seamless context</span>
 
 <span class="sd">        &quot;manager&quot;: re-use the manager of a previous context.</span>
 <span class="sd">        The manager controls caching and execution.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">seamless.config</span> <span class="kn">import</span> <span class="n">check_delegation</span>
+        <span class="n">check_delegation</span><span class="p">()</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">())</span>
 
         <span class="k">if</span> <span class="n">manager</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -485,7 +503,7 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runtime_graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">path</span><span class="p">]</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="kn">from</span> <span class="bp">None</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">_get_from_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the child under &quot;path&quot;.</span>
@@ -535,7 +553,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_from_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="kn">from</span> <span class="bp">None</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">):</span>
@@ -548,7 +566,10 @@
             <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">_parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">attr2</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_set_child</span><span class="p">(</span><span class="n">attr2</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-                <span class="n">value</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr2</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Transformer</span><span class="p">):</span>
+                    <span class="n">value</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr2</span><span class="p">,</span> <span class="n">set_node</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">value</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr2</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">assign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr2</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
@@ -563,6 +584,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_destroy_path</span><span class="p">((</span><span class="n">attr</span><span class="p">,))</span>
 
     <span class="k">def</span> <span class="nf">_add_traitlet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">trigger</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">.SeamlessTraitlet</span> <span class="kn">import</span> <span class="n">SeamlessTraitlet</span>
         <span class="n">traitlet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_traitlets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">traitlet</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">traitlet</span>
@@ -575,7 +597,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">traitlet</span>
 
-<div class="viewcode-block" id="Context.compute"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.compute">[docs]</a>    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">report</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
+<div class="viewcode-block" id="Context.compute">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.compute">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">report</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Block until no more computation is required.</span>
 
 <span class="sd">        This means that all cells and transformers have either been computed,</span>
@@ -592,7 +616,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">timeout</span><span class="p">,</span> <span class="n">report</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Context.computation"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.computation">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">computation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">report</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Context.computation">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.computation">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">computation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">report</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Block until no more computation is required.</span>
 
 <span class="sd">        This means that all cells and transformers have either been computed,</span>
@@ -602,6 +629,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">computation</span><span class="p">(</span><span class="n">timeout</span><span class="p">,</span> <span class="n">report</span><span class="p">)</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">self</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -627,7 +655,9 @@
             <span class="k">return</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_needs_translation</span> <span class="o">=</span> <span class="kc">True</span>
 
-<div class="viewcode-block" id="Context.translate"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.translate">[docs]</a>    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Context.translate">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.translate">[docs]</a>
+    <span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;(Re-)translate the graph.</span>
 <span class="sd">        The graph is translated to a low-level, computable form</span>
 <span class="sd">        (seamless.core). After translation, return immediately,</span>
@@ -649,7 +679,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_auth_tasks</span><span class="p">(</span><span class="s2">&quot;the graph is re-translated&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Context.translation"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.translation">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">translation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Context.translation">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.translation">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">translation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;(Re-)translate the graph.</span>
 <span class="sd">        The graph is translated to a low-level, computable form</span>
 <span class="sd">        (seamless.core). After translation, return immediately,</span>
@@ -662,6 +695,7 @@
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Context is untranslatable&quot;</span><span class="p">)</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_auth_tasks_async</span><span class="p">(</span><span class="s2">&quot;the graph is re-translated&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate_async</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">share_namespace</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -768,7 +802,9 @@
             <span class="n">graph</span><span class="p">[</span><span class="s2">&quot;environment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">env</span>
         <span class="k">return</span> <span class="n">graph</span>
 
-<div class="viewcode-block" id="Context.get_graph"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_graph">[docs]</a>    <span class="k">def</span> <span class="nf">get_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">runtime</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<div class="viewcode-block" id="Context.get_graph">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_graph">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">runtime</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the graph in JSON format.</span>
 
 <span class="sd">        &quot;runtime&quot;: The graph is returned after Library/LibInstance/Macro</span>
@@ -797,17 +833,23 @@
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">graph</span></div>
 
+
     <span class="k">async</span> <span class="k">def</span> <span class="nf">_get_graph_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="c1"># Legacy method</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_graph</span><span class="p">()</span>
         
-<div class="viewcode-block" id="Context.save_graph"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_graph">[docs]</a>    <span class="k">def</span> <span class="nf">save_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<div class="viewcode-block" id="Context.save_graph">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_graph">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the graph in JSON format.&quot;&quot;&quot;</span>
         <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_graph</span><span class="p">()</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Context.get_zip"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_zip">[docs]</a>    <span class="k">def</span> <span class="nf">get_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Context.get_zip">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_zip">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtain the checksum-to-buffer cache for the current graph.</span>
 
 <span class="sd">        The cache is returned as zipped bytes.</span>
@@ -818,13 +860,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span>
         <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_graph</span><span class="p">()</span>
         <span class="n">checksums</span> <span class="o">=</span> <span class="n">copying</span><span class="o">.</span><span class="n">get_graph_checksums</span><span class="p">(</span>
-            <span class="n">graph</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">,</span> <span class="n">with_annotations</span><span class="o">=</span><span class="kc">False</span>
+            <span class="n">graph</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">,</span> <span class="n">with_annotations</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skip_scratch</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
         <span class="n">manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_manager</span>
         <span class="n">buffer_dict</span> <span class="o">=</span> <span class="n">copying</span><span class="o">.</span><span class="n">get_buffer_dict_sync</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="n">checksums</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_get_zip</span><span class="p">(</span><span class="n">buffer_dict</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Context.get_zip_async"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_zip_async">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_zip_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Context.get_zip_async">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_zip_async">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_zip_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtain the checksum-to-buffer cache for the current graph</span>
 
 <span class="sd">        The cache is returned as zipped bytes.</span>
@@ -835,13 +880,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span>
         <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_graph</span><span class="p">()</span>
         <span class="n">checksums</span> <span class="o">=</span> <span class="n">copying</span><span class="o">.</span><span class="n">get_graph_checksums</span><span class="p">(</span>
-            <span class="n">graph</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">,</span> <span class="n">with_annotations</span><span class="o">=</span><span class="kc">False</span>
+            <span class="n">graph</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">,</span> <span class="n">with_annotations</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skip_scratch</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
         <span class="n">manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_manager</span>
         <span class="n">buffer_dict</span> <span class="o">=</span> <span class="k">await</span> <span class="n">copying</span><span class="o">.</span><span class="n">get_buffer_dict</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="n">checksums</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_get_zip</span><span class="p">(</span><span class="n">buffer_dict</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Context.save_zip"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_zip">[docs]</a>    <span class="k">def</span> <span class="nf">save_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Context.save_zip">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_zip">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the checksum-to-buffer cache for the current graph.</span>
 
 <span class="sd">        The cache is saved to &quot;filename&quot;, which should be a .zip file.</span>
@@ -850,7 +898,10 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">zipd</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Context.save_zip_async"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_zip_async">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">save_zip_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Context.save_zip_async">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_zip_async">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">save_zip_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the checksum-to-buffer cache for the current graph.</span>
 
 <span class="sd">        The cache is saved to &quot;filename&quot;, which should be a .zip file.</span>
@@ -859,20 +910,37 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">zipd</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Context.save_vault"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_vault">[docs]</a>    <span class="k">def</span> <span class="nf">save_vault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dirname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Context.save_vault">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.save_vault">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_vault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dirname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the checksum-to-buffer cache for the current graph in a vault directory&quot;&quot;&quot;</span>
         <span class="c1"># TODO: option to not follow deep cell checksums (currently, they are always followed)</span>
         <span class="n">force</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_auth_tasks</span><span class="p">(</span><span class="s2">&quot;the graph buffers are obtained for zip&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># capture from the low level</span>
+            <span class="n">annotated_checksums_low</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span><span class="o">.</span><span class="n">_update_annotated_checksums</span><span class="p">(</span><span class="n">annotated_checksums_low</span><span class="p">,</span> <span class="n">skip_scratch</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># update from the high level</span>
         <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_graph</span><span class="p">()</span>
-        <span class="n">annotated_checksums</span> <span class="o">=</span> <span class="n">copying</span><span class="o">.</span><span class="n">get_graph_checksums</span><span class="p">(</span>
-            <span class="n">graph</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">,</span> <span class="n">with_annotations</span><span class="o">=</span><span class="kc">True</span>
+        <span class="n">annotated_checksums_high</span> <span class="o">=</span> <span class="n">copying</span><span class="o">.</span><span class="n">get_graph_checksums</span><span class="p">(</span>
+            <span class="n">graph</span><span class="p">,</span> <span class="n">with_libraries</span><span class="p">,</span> <span class="n">with_annotations</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skip_scratch</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
+        
+
+        <span class="n">annotated_checksums</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">annotated_checksums</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">annotated_checksums_low</span><span class="p">)</span>
+        <span class="n">annotated_checksums</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="ow">not</span> <span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">annotated_checksums_high</span><span class="p">})</span>
+        <span class="n">annotated_checksums</span> <span class="o">=</span> <span class="p">[(</span><span class="n">checksum</span><span class="p">,</span> <span class="ow">not</span> <span class="n">has_independence</span><span class="p">)</span> <span class="k">for</span> <span class="n">checksum</span><span class="p">,</span> <span class="n">has_independence</span> <span class="ow">in</span> <span class="n">annotated_checksums</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+
         <span class="n">manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_manager</span>
         <span class="n">checksums</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">annotated_checksums</span><span class="p">]</span>
         <span class="n">buffer_dict</span> <span class="o">=</span> <span class="n">copying</span><span class="o">.</span><span class="n">get_buffer_dict_sync</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="n">checksums</span><span class="p">)</span>
         <span class="n">save_vault</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">annotated_checksums</span><span class="p">,</span> <span class="n">buffer_dict</span><span class="p">)</span></div>
+
 
     <span class="k">def</span> <span class="nf">_set_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translating</span><span class="p">:</span>
@@ -899,20 +967,23 @@
                 <span class="n">lib</span><span class="p">[</span><span class="s2">&quot;graph&quot;</span><span class="p">][</span><span class="s2">&quot;nodes&quot;</span><span class="p">],</span>
                 <span class="n">lib</span><span class="p">[</span><span class="s2">&quot;graph&quot;</span><span class="p">][</span><span class="s2">&quot;connections&quot;</span><span class="p">],</span>
                 <span class="n">with_annotations</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">skip_scratch</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span>
             <span class="k">for</span> <span class="n">checksum</span> <span class="ow">in</span> <span class="n">checksums</span><span class="p">:</span>
-                <span class="n">buffer_cache</span><span class="o">.</span><span class="n">incref</span><span class="p">(</span><span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">checksum</span><span class="p">),</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="n">buffer_cache</span><span class="o">.</span><span class="n">incref</span><span class="p">(</span><span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">checksum</span><span class="p">),</span> <span class="n">persistent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">old_lib</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">old_lib</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">old_checksums</span> <span class="o">=</span> <span class="n">copying</span><span class="o">.</span><span class="n">get_checksums</span><span class="p">(</span>
-                <span class="n">old_lib</span><span class="p">[</span><span class="s2">&quot;graph&quot;</span><span class="p">][</span><span class="s2">&quot;nodes&quot;</span><span class="p">],</span> <span class="p">[],</span> <span class="n">with_annotations</span><span class="o">=</span><span class="kc">False</span>
+                <span class="n">old_lib</span><span class="p">[</span><span class="s2">&quot;graph&quot;</span><span class="p">][</span><span class="s2">&quot;nodes&quot;</span><span class="p">],</span> <span class="p">[],</span> <span class="n">with_annotations</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skip_scratch</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span>
             <span class="k">for</span> <span class="n">old_checksum</span> <span class="ow">in</span> <span class="n">old_checksums</span><span class="p">:</span>
                 <span class="n">buffer_cache</span><span class="o">.</span><span class="n">decref</span><span class="p">(</span><span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">old_checksum</span><span class="p">))</span>
 
-<div class="viewcode-block" id="Context.add_zip"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.add_zip">[docs]</a>    <span class="k">def</span> <span class="nf">add_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">zip</span><span class="p">,</span> <span class="n">incref</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>  <span class="c1"># pylint: disable=redefined-builtin</span>
+<div class="viewcode-block" id="Context.add_zip">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.add_zip">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">zip</span><span class="p">,</span> <span class="n">incref</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>  <span class="c1"># pylint: disable=redefined-builtin</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add entries from &quot;zip&quot; to the checksum-to-buffer cache.</span>
 
 <span class="sd">        &quot;zip&quot; can be a file name, zip-compressed bytes or a Python ZipFile object.</span>
@@ -924,7 +995,9 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">macro_mode_on</span><span class="p">():</span>
+                <span class="n">ub_ctx</span> <span class="o">=</span> <span class="n">core_context</span><span class="p">(</span><span class="n">toplevel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">manager</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_manager</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="o">=</span> <span class="n">ub_ctx</span><span class="o">.</span><span class="n">_bound</span>
         <span class="n">manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_manager</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">zip</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
             <span class="n">archive</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">(</span><span class="nb">zip</span><span class="p">)</span>
@@ -933,13 +1006,19 @@
             <span class="n">zipfile</span> <span class="o">=</span> <span class="n">ZipFile</span><span class="p">(</span><span class="nb">zip</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">zip</span><span class="p">,</span> <span class="n">ZipFile</span><span class="p">):</span>
             <span class="n">zipfile</span> <span class="o">=</span> <span class="nb">zip</span>
-        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="nb">zip</span><span class="p">,</span> <span class="s2">&quot;read&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">callable</span><span class="p">(</span><span class="nb">zip</span><span class="o">.</span><span class="n">read</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="nb">zip</span><span class="p">,</span> <span class="s2">&quot;read&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">callable</span><span class="p">(</span><span class="nb">zip</span><span class="o">.</span><span class="n">read</span><span class="p">):</span>
             <span class="n">zipfile</span> <span class="o">=</span> <span class="n">ZipFile</span><span class="p">(</span><span class="nb">zip</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="nb">zip</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">copying</span><span class="o">.</span><span class="n">add_zip</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="n">zipfile</span><span class="p">,</span> <span class="n">incref</span><span class="o">=</span><span class="n">incref</span><span class="p">)</span></div>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">copying</span><span class="o">.</span><span class="n">add_zip</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="n">zipfile</span><span class="p">,</span> <span class="n">incref</span><span class="o">=</span><span class="n">incref</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
 
-<div class="viewcode-block" id="Context.load_vault"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.load_vault">[docs]</a>    <span class="k">def</span> <span class="nf">load_vault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vault_directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">incref</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+    
+
+<div class="viewcode-block" id="Context.load_vault">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.load_vault">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_vault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vault_directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">incref</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the contents of a vault directory in the checksum-to-buffer cache.</span>
 
 <span class="sd">        Normally, the vault has been generated with Context.save_vault.</span>
@@ -950,10 +1029,17 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">load_vault</span><span class="p">(</span><span class="n">vault_directory</span><span class="p">,</span> <span class="n">incref</span><span class="o">=</span><span class="n">incref</span><span class="p">)</span></div>
+            <span class="k">with</span> <span class="n">macro_mode_on</span><span class="p">():</span>
+                <span class="n">ub_ctx</span> <span class="o">=</span> <span class="n">core_context</span><span class="p">(</span><span class="n">toplevel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">manager</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_manager</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gen_context</span> <span class="o">=</span> <span class="n">ub_ctx</span><span class="o">.</span><span class="n">_bound</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">load_vault</span><span class="p">(</span><span class="n">vault_directory</span><span class="p">,</span> <span class="n">incref</span><span class="o">=</span><span class="n">incref</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_do_translate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
 
-<div class="viewcode-block" id="Context.include"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.include">[docs]</a>    <span class="k">def</span> <span class="nf">include</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lib</span><span class="p">:</span> <span class="n">Library</span><span class="p">,</span> <span class="n">only_zip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_path</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Context.include">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.include">[docs]</a>
+    <span class="k">def</span> <span class="nf">include</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lib</span><span class="p">:</span> <span class="n">Library</span><span class="p">,</span> <span class="n">only_zip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_path</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Include a library in the graph.</span>
 
 <span class="sd">        A library (seamless.highlevel.Library) must be included before</span>
@@ -968,6 +1054,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">lib</span><span class="o">.</span><span class="n">include</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_path</span><span class="o">=</span><span class="n">full_path</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span></div>
+
 
     <span class="k">def</span> <span class="nf">_wait_for_auth_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">what_happens_text</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Wait up to 10 seconds for auth tasks to complete.</span>
@@ -1122,12 +1209,12 @@
                 <span class="n">libinstance_nodes</span><span class="p">,</span> <span class="n">graph</span><span class="p">[</span><span class="s2">&quot;connections&quot;</span><span class="p">],</span> <span class="n">graph</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">],</span> <span class="n">graph</span><span class="p">[</span><span class="s2">&quot;lib&quot;</span><span class="p">]</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">graph0</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">graph0</span><span class="p">)</span>
+            <span class="n">graph0c</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">graph0</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_runtime_graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span>
                 <span class="p">{</span><span class="n">node</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">]:</span> <span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph0</span><span class="p">[</span><span class="s2">&quot;nodes&quot;</span><span class="p">]},</span>
-                <span class="n">graph0</span><span class="p">[</span><span class="s2">&quot;connections&quot;</span><span class="p">],</span>
-                <span class="n">graph0</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">],</span>
-                <span class="n">graph0</span><span class="p">[</span><span class="s2">&quot;lib&quot;</span><span class="p">],</span>
+                <span class="n">graph0c</span><span class="p">[</span><span class="s2">&quot;connections&quot;</span><span class="p">],</span>
+                <span class="n">graph0c</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">],</span>
+                <span class="n">graph0c</span><span class="p">[</span><span class="s2">&quot;lib&quot;</span><span class="p">],</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_translate_count</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -1258,7 +1345,7 @@
         <span class="kn">from</span> <span class="nn">..core</span> <span class="kn">import</span> <span class="n">StructuredCell</span><span class="p">,</span> <span class="n">Cell</span> <span class="k">as</span> <span class="n">core_cell</span>
 
         <span class="k">global</span> <span class="n">shareserver</span>
-        <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">shareserver</span> <span class="k">as</span> <span class="n">shareserver_</span>
+        <span class="kn">from</span> <span class="nn">..shareserver</span> <span class="kn">import</span> <span class="n">shareserver</span> <span class="k">as</span> <span class="n">shareserver_</span>
 
         <span class="n">shareserver</span> <span class="o">=</span> <span class="n">shareserver_</span>
         <span class="kn">from</span> <span class="nn">..core.share</span> <span class="kn">import</span> <span class="n">sharemanager</span>
@@ -1431,14 +1518,22 @@
             <span class="n">libroot</span> <span class="o">=</span> <span class="bp">self</span>
         <span class="k">return</span> <span class="n">IncludedLibraryContainer</span><span class="p">(</span><span class="n">libroot</span><span class="p">,</span> <span class="p">())</span>
 
-<div class="viewcode-block" id="Context.resolve"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.resolve">[docs]</a>    <span class="k">def</span> <span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checksum</span><span class="p">,</span> <span class="n">celltype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Context.resolve">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.resolve">[docs]</a>
+    <span class="k">def</span> <span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checksum</span><span class="p">:</span> <span class="n">Checksum</span><span class="p">,</span> <span class="n">celltype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the data buffer that corresponds to the checksum.</span>
 <span class="sd">        If celltype is provided, a value is returned instead</span>
 
 <span class="sd">        The checksum must be a SHA3-256 hash, as hex string or as bytes&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_manager</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">checksum</span><span class="p">,</span> <span class="n">celltype</span><span class="o">=</span><span class="n">celltype</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+        <span class="n">checksum</span> <span class="o">=</span> <span class="n">Checksum</span><span class="p">(</span><span class="n">checksum</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">celltype</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">celltype</span> <span class="o">=</span> <span class="n">celltype</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_manager</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">checksum</span><span class="o">.</span><span class="n">hex</span><span class="p">(),</span> <span class="n">celltype</span><span class="o">=</span><span class="n">celltype</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Context.observe"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.observe">[docs]</a>    <span class="k">def</span> <span class="nf">observe</span><span class="p">(</span>
+
+<div class="viewcode-block" id="Context.observe">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.observe">[docs]</a>
+    <span class="k">def</span> <span class="nf">observe</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">polling_interval</span><span class="p">,</span> <span class="n">observe_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Observe attributes of the context, analogous to Cell.observe.&quot;&quot;&quot;</span>
@@ -1454,12 +1549,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">observer</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">observer</span></div>
 
-<div class="viewcode-block" id="Context.unobserve"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.unobserve">[docs]</a>    <span class="k">def</span> <span class="nf">unobserve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="p">()):</span>
+
+<div class="viewcode-block" id="Context.unobserve">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.unobserve">[docs]</a>
+    <span class="k">def</span> <span class="nf">unobserve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="p">()):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Analogous to Cell.unobserve&quot;&quot;&quot;</span>
         <span class="n">lp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">obs</span><span class="o">.</span><span class="n">path</span><span class="p">[:</span><span class="n">lp</span><span class="p">]</span> <span class="o">==</span> <span class="n">path</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_observers</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span></div>
+
 
     <span class="k">def</span> <span class="nf">_get_libs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="n">libroot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_libroot</span>
@@ -1476,7 +1575,9 @@
             <span class="n">libroot</span> <span class="o">=</span> <span class="bp">self</span>
         <span class="k">return</span> <span class="n">libroot</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">lib</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">path</span><span class="p">)]</span>
 
-<div class="viewcode-block" id="Context.remove_connections"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.remove_connections">[docs]</a>    <span class="k">def</span> <span class="nf">remove_connections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">runtime</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">&quot;sub&quot;</span><span class="p">):</span>
+<div class="viewcode-block" id="Context.remove_connections">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.remove_connections">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove_connections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">runtime</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">&quot;sub&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove all connections/links with source or target matching path.</span>
 
 <span class="sd">        &quot;endpoint&quot; can be &quot;source&quot;, &quot;target&quot;, &quot;connection&quot;, &quot;link&quot; or &quot;all&quot;.</span>
@@ -1549,12 +1650,15 @@
         <span class="n">connections</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">new_connections</span>
         <span class="k">return</span> <span class="n">any_removed</span></div>
 
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">webunits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="kn">from</span> <span class="nn">.WebunitWrapper</span> <span class="kn">import</span> <span class="n">WebunitWrapper</span>
         <span class="k">return</span> <span class="n">WebunitWrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Context.link"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.link">[docs]</a>    <span class="k">def</span> <span class="nf">link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">):</span>
+<div class="viewcode-block" id="Context.link">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.link">[docs]</a>
+    <span class="k">def</span> <span class="nf">link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a bidirectional link between the first and second cell.</span>
 
 <span class="sd">        Both cells must be authoritative (independent).</span>
@@ -1564,7 +1668,10 @@
         <span class="n">connections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">link</span><span class="o">.</span><span class="n">_node</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Context.unlink"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.unlink">[docs]</a>    <span class="k">def</span> <span class="nf">unlink</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Context.unlink">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.unlink">[docs]</a>
+    <span class="k">def</span> <span class="nf">unlink</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a bidirectional link between the first and second cell.</span>
 <span class="sd">        (If it exists).</span>
 <span class="sd">        Returns True if a link was removed</span>
@@ -1577,7 +1684,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_translate</span><span class="p">()</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="Context.get_links"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_links">[docs]</a>    <span class="k">def</span> <span class="nf">get_links</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Context.get_links">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_links">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_links</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all Link (bidirectional cell-cell) connections.&quot;&quot;&quot;</span>
         <span class="n">connections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_graph</span><span class="o">.</span><span class="n">connections</span>
         <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1586,7 +1696,10 @@
                 <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">result</span></div>
 
-<div class="viewcode-block" id="Context.get_children"><a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_children">[docs]</a>    <span class="k">def</span> <span class="nf">get_children</span><span class="p">(</span>
+
+<div class="viewcode-block" id="Context.get_children">
+<a class="viewcode-back" href="../../../reference.html#seamless.highlevel.Context.get_children">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_children</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># pylint: disable=redefined-builtin</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Select all children that are directly ours.</span>
@@ -1620,6 +1733,7 @@
         <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">&quot;context&quot;</span><span class="p">:</span>
             <span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">children</span> <span class="k">if</span> <span class="p">(</span><span class="n">p</span><span class="p">,)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">children00</span><span class="p">]</span>
         <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">children</span><span class="p">)))</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1662,6 +1776,7 @@
                 <span class="n">lib</span><span class="p">[</span><span class="s2">&quot;graph&quot;</span><span class="p">][</span><span class="s2">&quot;nodes&quot;</span><span class="p">],</span>
                 <span class="n">lib</span><span class="p">[</span><span class="s2">&quot;graph&quot;</span><span class="p">][</span><span class="s2">&quot;connections&quot;</span><span class="p">],</span>
                 <span class="n">with_annotations</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">skip_scratch</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span>
             <span class="k">for</span> <span class="n">checksum</span> <span class="ow">in</span> <span class="n">checksums</span><span class="p">:</span>
                 <span class="n">buffer_cache</span><span class="o">.</span><span class="n">decref</span><span class="p">(</span><span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">checksum</span><span class="p">))</span>
@@ -1684,6 +1799,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_destroy</span><span class="p">()</span></div>
 
 
+
 <span class="kn">from</span> <span class="nn">..core.manager.tasks.structured_cell</span> <span class="kn">import</span> <span class="n">StructuredCellAuthTask</span>
 <span class="kn">from</span> <span class="nn">..core.manager.tasks</span> <span class="kn">import</span> <span class="n">SetCellValueTask</span><span class="p">,</span> <span class="n">SetCellBufferTask</span>
 
@@ -1704,9 +1820,8 @@
 <span class="kn">from</span> <span class="nn">..core.cache.buffer_cache</span> <span class="kn">import</span> <span class="n">buffer_cache</span>
 <span class="kn">from</span> <span class="nn">.SubContext</span> <span class="kn">import</span> <span class="n">SubContext</span>
 <span class="kn">from</span> <span class="nn">..core.manager</span> <span class="kn">import</span> <span class="n">Manager</span>
-<span class="kn">from</span> <span class="nn">.SeamlessTraitlet</span> <span class="kn">import</span> <span class="n">SeamlessTraitlet</span>
 <span class="kn">from</span> <span class="nn">.library</span> <span class="kn">import</span> <span class="n">Library</span>
-<span class="kn">from</span> <span class="nn">..imperative</span> <span class="kn">import</span> <span class="n">_cleanup</span>
+<span class="kn">from</span> <span class="nn">..core.direct</span> <span class="kn">import</span> <span class="n">cleanup</span> <span class="k">as</span> <span class="n">_direct_cleanup</span>
 </pre></div>
 
            </div>

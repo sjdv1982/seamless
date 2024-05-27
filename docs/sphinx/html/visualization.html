@@ -1,20 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Visualization &mdash; Seamless 0.10 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5be48651"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=c71f9630"></script>
+        <script src="_static/doctools.js?v=695de88e"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -118,15 +121,15 @@
            <div itemprop="articleBody">
              
   <section id="visualization">
-<h1>Visualization<a class="headerlink" href="#visualization" title="Permalink to this heading"></a></h1>
+<h1>Visualization<a class="headerlink" href="#visualization" title="Link to this heading"></a></h1>
 <p>The goal of visualization is the interactive visualization and editing of Seamless cells in the browser. This can be done either via Jupyter, or directly using the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/shareserver.html">Seamless shareserver</a></p>
 <p><em><strong>IMPORTANT: This documentation section is a draft. The preliminary text is shown below</strong></em></p>
 <section id="using-jupyter-notebooks">
-<h2>Using Jupyter notebooks<a class="headerlink" href="#using-jupyter-notebooks" title="Permalink to this heading"></a></h2>
+<h2>Using Jupyter notebooks<a class="headerlink" href="#using-jupyter-notebooks" title="Link to this heading"></a></h2>
 <p><em>User experience</em> (UX) can be done initially using Jupyter notebooks (very quick to set up). See <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/traitlets.ipynb">this simple test</a>, to be opened with <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>.</p>
 </section>
 <section id="using-web-visualization">
-<h2>Using web visualization<a class="headerlink" href="#using-web-visualization" title="Permalink to this heading"></a></h2>
+<h2>Using web visualization<a class="headerlink" href="#using-web-visualization" title="Link to this heading"></a></h2>
 <p><strong>Relevant examples:</strong></p>
 <ul class="simple">
 <li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/datatables-example">datatables</a></p></li>
@@ -136,7 +139,7 @@
 <p>More powerful is to use UX cells (HTML, JS, CSS). These cells are shared over HTTP (read-only), so that they can be accessed via the browser. Input cells (read-write) and output cells (read-only) are also shared over HTTP, so that the UX cells (loaded in the browser) can access and manipulate them. See <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/share-pdb.py">this test</a>, to be opened with <code class="docutils literal notranslate"><span class="pre">seamless-ipython</span> <span class="pre">-i</span></code>.</p>
 </section>
 <section id="web-interface-generator">
-<h2>Web interface generator<a class="headerlink" href="#web-interface-generator" title="Permalink to this heading"></a></h2>
+<h2>Web interface generator<a class="headerlink" href="#web-interface-generator" title="Link to this heading"></a></h2>
 <p><strong>Relevant examples:</strong></p>
 <ul class="simple">
 <li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/examples/webserver-demo">webserver demo</a></p></li>
@@ -154,7 +157,7 @@ When you share a cell (and retranslate the graph), an entry is automatically add
 </ul>
 </section>
 <section id="modifying-the-web-status-generator">
-<h2>Modifying the web status generator<a class="headerlink" href="#modifying-the-web-status-generator" title="Permalink to this heading"></a></h2>
+<h2>Modifying the web status generator<a class="headerlink" href="#modifying-the-web-status-generator" title="Link to this heading"></a></h2>
 <p>TODO. Integrate/merge with “visualization and monitoring” in “Seamless explained”.</p>
 <!--
 TODO: from old "explained.md":

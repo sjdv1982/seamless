@@ -46,7 +46,7 @@ Two examples (the Snakemake example and the grid editor example) do not contain 
 
 Seamless comes with many tests, that also serve as a demonstration of a particular feature. You can see them in <https://github.com/sjdv1982/seamless/tree/master/tests/highlevel> . The "test-outputs" folder contains the expected output of the test.
 
-To run tests yourself, run `seamless-jupyter-trusted` or `seamless-bash-trusted`. Inside the notebook file tree, browse `seamless-tests/highlevel`, or inside a command-line shell, go to `~/seamless-tests/highlevel`. Tests are typically executed with Python, but some are interactive. "test-list.txt" contains a list of tests, and extra instructions for the interactive tests.
+To run tests yourself, run `seamless-jupyter` or `seamless-bash`. Inside the notebook file tree, browse `seamless-tests/highlevel`, or inside a command-line shell, go to `~/seamless-tests/highlevel`. Tests are typically executed with Python, but some are interactive. "test-list.txt" contains a list of tests, and extra instructions for the interactive tests.
 
 Finally, there are also low-level tests (`seamless-tests/lowlevel`), but these are not recommended for study.
 

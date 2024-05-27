@@ -1,20 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Debugging &mdash; Seamless 0.10 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5be48651"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=c71f9630"></script>
+        <script src="_static/doctools.js?v=695de88e"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -127,11 +130,11 @@
            <div itemprop="articleBody">
              
   <section id="debugging">
-<h1>Debugging<a class="headerlink" href="#debugging" title="Permalink to this heading"></a></h1>
+<h1>Debugging<a class="headerlink" href="#debugging" title="Link to this heading"></a></h1>
 <p>The goal of debugging is to get rid of errors in the code inside your workflow, i.e. transformer code.</p>
 <p>To debug your transformer code, you can use either print statements, or a debugging session with breakpoints.</p>
 <section id="debugging-with-print-statements">
-<h2>Debugging with print statements<a class="headerlink" href="#debugging-with-print-statements" title="Permalink to this heading"></a></h2>
+<h2>Debugging with print statements<a class="headerlink" href="#debugging-with-print-statements" title="Link to this heading"></a></h2>
 <p>This the easiest form of debugging: add print statements (or <code class="docutils literal notranslate"><span class="pre">echo</span></code>/<code class="docutils literal notranslate"><span class="pre">cat</span></code>/<code class="docutils literal notranslate"><span class="pre">cout</span></code>/<code class="docutils literal notranslate"><span class="pre">printf</span></code>/…) to your transformer code.</p>
 <p>For Python transformers, the transformation is aborted if an exception is raised. <code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code> will then contain the exception traceback, stdout and stderr. If no exception is raised, stdout and stderr can be retrieved using <code class="docutils literal notranslate"><span class="pre">Transformer.logs</span></code></p>
 <p>For bash/Docker transformers, if any launched process returns with a non-zero error code, the transformation is aborted. <code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code> will then contain the bash error message, stdout and stderr. If there is no non-zero error code, stdout and stderr can be retrieved using <code class="docutils literal notranslate"><span class="pre">Transformer.logs</span></code>.</p>
@@ -146,17 +149,17 @@
 <p>See <a class="reference external" href="https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-tests-locally">Running tests</a> on how to execute tests.</p>
 </section>
 <section id="debugging-sessions">
-<h2>Debugging sessions<a class="headerlink" href="#debugging-sessions" title="Permalink to this heading"></a></h2>
+<h2>Debugging sessions<a class="headerlink" href="#debugging-sessions" title="Link to this heading"></a></h2>
 <p>Debugging sessions with breakpoints are directly supported, but only in Visual Studio Code. Other IDEs are currently not supported, but they should be in the future. If you are willing to help, see <a class="reference external" href="https://github.com/sjdv1982/seamless/issues/132">this GitHub issue</a>.</p>
-<p>Debugging sessions with Seamless is best learned by running some of the Seamless tests below. Open a terminal within Visual Studio Code. Start a Seamless container with <code class="docutils literal notranslate"><span class="pre">seamless-bash-trusted</span></code>, the  do <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">~/seamless-tests/highlevel</span></code>, and run any test with <code class="docutils literal notranslate"><span class="pre">ipython</span> <span class="pre">-i</span></code> (any test) or <code class="docutils literal notranslate"><span class="pre">python</span></code> (any test that doesn’t end with “-shell.py”). Follow the instructions printed on screen.</p>
-<p>NOTE: <code class="docutils literal notranslate"><span class="pre">seamless-bash-trusted</span></code> is needed because its exposes ports 5679-5785 for use by <code class="docutils literal notranslate"><span class="pre">debugpy</span></code>. If you get a “connection refused” error in Visual Studio Code, you probably used <code class="docutils literal notranslate"><span class="pre">seamless-bash</span></code> instead.</p>
+<p>Debugging sessions with Seamless is best learned by running some of the Seamless tests below. Open a terminal within Visual Studio Code. Start a Seamless container with <code class="docutils literal notranslate"><span class="pre">seamless-bash</span></code>, the  do <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">~/seamless-tests/highlevel</span></code>, and run any test with <code class="docutils literal notranslate"><span class="pre">ipython</span> <span class="pre">-i</span></code> (any test) or <code class="docutils literal notranslate"><span class="pre">python</span></code> (any test that doesn’t end with “-shell.py”). Follow the instructions printed on screen.</p>
+<p>NOTE: <code class="docutils literal notranslate"><span class="pre">seamless-bash</span></code> is needed because its exposes ports 5679-5785 for use by <code class="docutils literal notranslate"><span class="pre">debugpy</span></code>. If you get a “connection refused” error in Visual Studio Code, you probably used <code class="docutils literal notranslate"><span class="pre">seamless-bash-safe</span></code> instead.</p>
 <section id="debug-mode-light-or-sandbox">
-<h3>Debug mode: light or sandbox<a class="headerlink" href="#debug-mode-light-or-sandbox" title="Permalink to this heading"></a></h3>
+<h3>Debug mode: light or sandbox<a class="headerlink" href="#debug-mode-light-or-sandbox" title="Link to this heading"></a></h3>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em>
 (shells can be opened only in sandbox mode. Not for compiled transformers)</p>
 </section>
 <section id="debugging-python-transformers">
-<h3>Debugging Python transformers<a class="headerlink" href="#debugging-python-transformers" title="Permalink to this heading"></a></h3>
+<h3>Debugging Python transformers<a class="headerlink" href="#debugging-python-transformers" title="Link to this heading"></a></h3>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <p><strong>Relevant test examples:</strong></p>
 <ul class="simple">
@@ -166,7 +169,7 @@
 </ul>
 </section>
 <section id="debugging-bash-transformers">
-<h3>Debugging bash transformers<a class="headerlink" href="#debugging-bash-transformers" title="Permalink to this heading"></a></h3>
+<h3>Debugging bash transformers<a class="headerlink" href="#debugging-bash-transformers" title="Link to this heading"></a></h3>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <p><strong>Relevant test examples:</strong></p>
 <ul class="simple">
@@ -175,7 +178,7 @@
 </ul>
 </section>
 <section id="debugging-compiled-transformers">
-<h3>Debugging compiled transformers<a class="headerlink" href="#debugging-compiled-transformers" title="Permalink to this heading"></a></h3>
+<h3>Debugging compiled transformers<a class="headerlink" href="#debugging-compiled-transformers" title="Link to this heading"></a></h3>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <p><strong>Relevant test examples:</strong></p>
 <ul class="simple">
@@ -214,11 +217,11 @@ NOTE: integration with Visual Studio code is currently in progress.
 /OUTDATED
 --></section>
 <section id="debugging-modules">
-<h3>Debugging modules<a class="headerlink" href="#debugging-modules" title="Permalink to this heading"></a></h3>
+<h3>Debugging modules<a class="headerlink" href="#debugging-modules" title="Link to this heading"></a></h3>
 <p>See the <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/modules.html">modules documentation</a> for more information about modules.</p>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <section id="debugging-python-modules">
-<h4>Debugging Python modules<a class="headerlink" href="#debugging-python-modules" title="Permalink to this heading"></a></h4>
+<h4>Debugging Python modules<a class="headerlink" href="#debugging-python-modules" title="Link to this heading"></a></h4>
 <p><strong>Relevant test examples:</strong></p>
 <ul class="simple">
 <li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-pymodule-light.py">debugmode-pymodule-light.py</a></p></li>
@@ -227,7 +230,7 @@ NOTE: integration with Visual Studio code is currently in progress.
 </ul>
 </section>
 <section id="debugging-compiled-modules">
-<h4>Debugging compiled modules<a class="headerlink" href="#debugging-compiled-modules" title="Permalink to this heading"></a></h4>
+<h4>Debugging compiled modules<a class="headerlink" href="#debugging-compiled-modules" title="Link to this heading"></a></h4>
 <p><strong>Relevant test examples:</strong></p>
 <ul class="simple">
 <li><p><a class="reference external" href="https://github.com/sjdv1982/seamless/tree/stable/tests/highlevel/debugmode-compiledmodule-light.py">debugmode-compiledmodule-light.py</a></p></li>

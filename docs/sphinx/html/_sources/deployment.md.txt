@@ -58,7 +58,7 @@ This role is normally taken by ***Cloudless***. Note that Seamless embeds its ow
 - It has a directory "graphs" with Seamless graph files.
 - It listens on port 3124. It has an admin interface on /admin.
 - It can take requests to launch an instance of a particular Seamless graph.
-  This launches a new Docker container with Seamless serving the graph (the `seamless-serve-graph --database` command). With this, the instance connects itself to Seamless DB. In addition, the instance connects itself to jobless if configured (see below).
+  This launches a new Docker container with Seamless serving the graph (the `seamless-serve-graph` command). With `--delegate`, the instance connects itself to a Seamless buffer server, a database, and an assistant to serve jobs.
 - HTTP traffic `from /instances/<instanceID>/` is redirected to/from the HTTP server ports of the Seamless instance.
 - The graph of the Seamless instance is initially identical to that of the original graph. This changes whenever an input cell is changed over HTTP or a computation finishes. Every few seconds, the graph is stored in the "instances" directory. Note that the graph files are small as they contain only checksums. The underlying buffers are stored in the Seamless database.
 - After 10 minutes of no HTTP traffic, the Seamless instance is killed. Whenever new traffic arrives, the Seamless instance is re-instantiated, not from the "graphs" directory, but from its graph file in the "instances" directory.

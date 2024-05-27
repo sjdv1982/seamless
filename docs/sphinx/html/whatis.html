@@ -1,20 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Seamless: a cell-based interactive workflow framework &mdash; Seamless 0.10 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5be48651"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=c71f9630"></script>
+        <script src="_static/doctools.js?v=695de88e"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -137,30 +140,30 @@
            <div itemprop="articleBody">
              
   <section id="seamless-a-cell-based-interactive-workflow-framework">
-<h1>Seamless: a cell-based interactive workflow framework<a class="headerlink" href="#seamless-a-cell-based-interactive-workflow-framework" title="Permalink to this heading"></a></h1>
+<h1>Seamless: a cell-based interactive workflow framework<a class="headerlink" href="#seamless-a-cell-based-interactive-workflow-framework" title="Link to this heading"></a></h1>
 <p><a class="reference external" href="https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb"><img alt="Binder" src="https://mybinder.org/badge_logo.svg" /></a></p>
 <p>Seamless is a framework to set up reproducible workflows and computations that respond to changes in cells. Cells define the input data as well as the source code of the computations. All cells and computations can be created, edited and connected interactively.</p>
 <p>The main application domains are data science, scientific computing, software prototyping, and interactive web services.</p>
 <p>Workflows, computations and results are all internally represented as trees of checksums. This makes them strongly interoperable and reproducible.</p>
 <section id="features">
-<h2>Features<a class="headerlink" href="#features" title="Permalink to this heading"></a></h2>
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h2>
 <p>Seamless workflows define both data and code in a single file. Any user can re-execute a Seamless workflow (reproducing its results) and then modify it easily: by editing workflow parameters in a web interface, or by changing the source code cells, or by extending the workflow with additional steps. Modification of the workflow takes place while it is running.</p>
 <p>Seamless-generated web interfaces are interactive and collaborative for the user. Also, the process of workflow creation is interactive for the programmer. At all times, the status of all of the workflow is being reported.
 In fact, there is no sharp distinction between user and programmer. Each step of the workflow (which can be in Python, bash, C/C++, or several other languages) can be mounted to a file, so that you can use Git, diff, and text editors. If you use an IDE, live debugging with code breakpoints is supported. As a programmer, you can work collaboratively, creating a live shared session where a team of developers can work on different parts of the workflow in parallel.</p>
 <section id="source-code-https-github-com-sjdv1982-seamless">
-<h3>Source code: <a class="reference external" href="https://github.com/sjdv1982/seamless">https://github.com/sjdv1982/seamless</a><a class="headerlink" href="#source-code-https-github-com-sjdv1982-seamless" title="Permalink to this heading"></a></h3>
+<h3>Source code: <a class="reference external" href="https://github.com/sjdv1982/seamless">https://github.com/sjdv1982/seamless</a><a class="headerlink" href="#source-code-https-github-com-sjdv1982-seamless" title="Link to this heading"></a></h3>
 </section>
 <section id="documentation-http-sjdv1982-github-io-seamless">
-<h3>Documentation: <a class="reference external" href="http://sjdv1982.github.io/seamless">http://sjdv1982.github.io/seamless</a><a class="headerlink" href="#documentation-http-sjdv1982-github-io-seamless" title="Permalink to this heading"></a></h3>
+<h3>Documentation: <a class="reference external" href="http://sjdv1982.github.io/seamless">http://sjdv1982.github.io/seamless</a><a class="headerlink" href="#documentation-http-sjdv1982-github-io-seamless" title="Link to this heading"></a></h3>
 </section>
 </section>
 <section id="try-out-seamless">
-<h2>Try out Seamless<a class="headerlink" href="#try-out-seamless" title="Permalink to this heading"></a></h2>
+<h2>Try out Seamless<a class="headerlink" href="#try-out-seamless" title="Link to this heading"></a></h2>
 <p>You can try out Seamless in your browser, without any installation, thanks to the Binder project. Click on the badge below:</p>
 <p><a class="reference external" href="https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb"><img alt="Binder" src="https://mybinder.org/badge_logo.svg" /></a></p>
 </section>
 <section id="quick-installation">
-<h2>Quick installation<a class="headerlink" href="#quick-installation" title="Permalink to this heading"></a></h2>
+<h2>Quick installation<a class="headerlink" href="#quick-installation" title="Link to this heading"></a></h2>
 <p>First, <a class="reference external" href="https://docs.docker.com/get-docker/">install Docker</a>
 and <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">miniconda</a>.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>pull<span class="w"> </span>rpbs/seamless
@@ -171,17 +174,17 @@ conda<span class="w"> </span>activate<span class="w"> </span>seamless
 <p>For more details, see <a class="reference external" href="https://github.com/sjdv1982/seamless/blob/master/installation.md">Installation</a></p>
 </section>
 <section id="basic-example">
-<h2>Basic example<a class="headerlink" href="#basic-example" title="Permalink to this heading"></a></h2>
+<h2>Basic example<a class="headerlink" href="#basic-example" title="Link to this heading"></a></h2>
 <p>First, start <strong>IPython</strong> (<code class="docutils literal notranslate"><span class="pre">seamless-ipython</span></code>) or <strong>Jupyter</strong> (<code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code> =&gt; create a new Python Notebook).</p>
 <section id="import-seamless-in-ipython-or-jupyter">
-<h3>1. Import Seamless in IPython or Jupyter<a class="headerlink" href="#import-seamless-in-ipython-or-jupyter" title="Permalink to this heading"></a></h3>
+<h3>1. Import Seamless in IPython or Jupyter<a class="headerlink" href="#import-seamless-in-ipython-or-jupyter" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">seamless.highlevel</span> <span class="kn">import</span> <span class="n">Context</span>
 <span class="n">ctx</span> <span class="o">=</span> <span class="n">Context</span><span class="p">()</span>
 </pre></div>
 </div>
 </section>
 <section id="set-up-a-simple-seamless-context">
-<h3>2. Set up a simple Seamless context<a class="headerlink" href="#set-up-a-simple-seamless-context" title="Permalink to this heading"></a></h3>
+<h3>2. Set up a simple Seamless context<a class="headerlink" href="#set-up-a-simple-seamless-context" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
 
@@ -204,7 +207,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>seamless
 <p><code class="docutils literal notranslate"><span class="pre">Out[2]:</span> <span class="pre">&lt;Silk:</span> <span class="pre">35</span> <span class="pre">&gt;</span></code></p>
 </section>
 <section id="define-schemas-and-validation-rules">
-<h3>3. Define schemas and validation rules<a class="headerlink" href="#define-schemas-and-validation-rules" title="Permalink to this heading"></a></h3>
+<h3>3. Define schemas and validation rules<a class="headerlink" href="#define-schemas-and-validation-rules" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># declares that add.a must be a number</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mf">0.0</span>
 
@@ -220,7 +223,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>seamless
 </div>
 </section>
 <section id="create-an-api-for-a-seamless-cell">
-<h3>4. Create an API for a Seamless cell<a class="headerlink" href="#create-an-api-for-a-seamless-cell" title="Permalink to this heading"></a></h3>
+<h3>4. Create an API for a Seamless cell<a class="headerlink" href="#create-an-api-for-a-seamless-cell" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unsilk</span>
     <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -236,7 +239,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>seamless
 <p><code class="docutils literal notranslate"><span class="pre">Out[3]:</span> <span class="pre">The</span> <span class="pre">result</span> <span class="pre">is</span> <span class="pre">35</span></code></p>
 </section>
 <section id="mount-cells-to-the-file-system">
-<h3>5. Mount cells to the file system<a class="headerlink" href="#mount-cells-to-the-file-system" title="Permalink to this heading"></a></h3>
+<h3>5. Mount cells to the file system<a class="headerlink" href="#mount-cells-to-the-file-system" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">celltype</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;a.json&quot;</span><span class="p">)</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">celltype</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span>
@@ -249,7 +252,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>seamless
 </div>
 </section>
 <section id="share-a-cell-over-http">
-<h3>6. Share a cell over HTTP<a class="headerlink" href="#share-a-cell-over-http" title="Permalink to this heading"></a></h3>
+<h3>6. Share a cell over HTTP<a class="headerlink" href="#share-a-cell-over-http" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">mimetype</span> <span class="o">=</span> <span class="s2">&quot;text&quot;</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">share</span><span class="p">()</span>
 <span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">translation</span><span class="p">()</span>
@@ -261,7 +264,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>seamless
 </div>
 </section>
 <section id="control-cells-from-jupyter">
-<h3>7. Control cells from Jupyter<a class="headerlink" href="#control-cells-from-jupyter" title="Permalink to this heading"></a></h3>
+<h3>7. Control cells from Jupyter<a class="headerlink" href="#control-cells-from-jupyter" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ipywidgets</span> <span class="kn">import</span> <span class="n">IntSlider</span><span class="p">,</span> <span class="n">IntText</span>
 
 <span class="n">a</span> <span class="o">=</span> <span class="n">IntSlider</span><span class="p">(</span><span class="nb">min</span><span class="o">=-</span><span class="mi">10</span><span class="p">,</span><span class="nb">max</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
@@ -456,7 +459,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>seamless
 }
 </script></details></section>
 <section id="save-the-entire-state-of-the-context">
-<h3>8. Save the entire state of the context<a class="headerlink" href="#save-the-entire-state-of-the-context" title="Permalink to this heading"></a></h3>
+<h3>8. Save the entire state of the context<a class="headerlink" href="#save-the-entire-state-of-the-context" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Graph and checksums, as JSON</span>
 <span class="n">ctx</span><span class="o">.</span><span class="n">save_graph</span><span class="p">(</span><span class="s2">&quot;basic-example.seamless&quot;</span><span class="p">)</span>
 <span class="c1"># Checksum-to-buffer cache, as ZIP file</span>
@@ -465,7 +468,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>seamless
 </div>
 </section>
 <section id="in-a-new-notebook-ipython-console">
-<h3>9. In a new notebook / IPython console:<a class="headerlink" href="#in-a-new-notebook-ipython-console" title="Permalink to this heading"></a></h3>
+<h3>9. In a new notebook / IPython console:<a class="headerlink" href="#in-a-new-notebook-ipython-console" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">seamless.highlevel</span> <span class="kn">import</span> <span class="n">load_graph</span>
 <span class="n">ctx</span> <span class="o">=</span> <span class="n">load_graph</span><span class="p">(</span>
     <span class="s2">&quot;basic-example.seamless&quot;</span><span class="p">,</span>
@@ -485,11 +488,11 @@ conda<span class="w"> </span>activate<span class="w"> </span>seamless
 </pre></div>
 </div>
 <section id="source-code">
-<h4>Source code<a class="headerlink" href="#source-code" title="Permalink to this heading"></a></h4>
+<h4>Source code<a class="headerlink" href="#source-code" title="Link to this heading"></a></h4>
 <p><a class="reference external" href="https://github.com/sjdv1982/seamless">https://github.com/sjdv1982/seamless</a></p>
 </section>
 <section id="documentation">
-<h4>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading"></a></h4>
+<h4>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h4>
 <p><a class="reference external" href="http://sjdv1982.github.io/seamless">http://sjdv1982.github.io/seamless</a></p>
 </section>
 </section>

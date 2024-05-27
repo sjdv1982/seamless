@@ -1,20 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contexts &mdash; Seamless 0.10 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5be48651"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=c71f9630"></script>
+        <script src="_static/doctools.js?v=695de88e"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -117,10 +120,10 @@
            <div itemprop="articleBody">
              
   <section id="contexts">
-<h1>Contexts<a class="headerlink" href="#contexts" title="Permalink to this heading"></a></h1>
+<h1>Contexts<a class="headerlink" href="#contexts" title="Link to this heading"></a></h1>
 <p>The seamless.highlevel.Context class is a wrapper around a <em>workflow graph</em>, that contains of <em>workflow children</em> (cells, transformers, modules, macros, library instances, and subcontexts). By convention, a Context is called <code class="docutils literal notranslate"><span class="pre">ctx</span></code>.</p>
 <section id="creating-a-new-workflow-child">
-<h2>Creating a new workflow child<a class="headerlink" href="#creating-a-new-workflow-child" title="Permalink to this heading"></a></h2>
+<h2>Creating a new workflow child<a class="headerlink" href="#creating-a-new-workflow-child" title="Link to this heading"></a></h2>
 <p>If <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> does not exist yet, then <code class="docutils literal notranslate"><span class="pre">ctx.a</span> <span class="pre">=</span> <span class="pre">X</span></code>:</p>
 <ul class="simple">
 <li><p>will bind X to <code class="docutils literal notranslate"><span class="pre">ctx.a</span></code> if X is a cell, transformer, module, macro or context that is not currently bound to a parent context. Example: <code class="docutils literal notranslate"><span class="pre">ctx.a</span> <span class="pre">=</span> <span class="pre">Transformer()</span></code>.</p></li>
@@ -136,11 +139,11 @@
 <p>The Context class can launch a <em>translation</em> of the workflow graph to a low-level representation that can be evaluated.</p>
 </section>
 <section id="transformation">
-<h2>Transformation<a class="headerlink" href="#transformation" title="Permalink to this heading"></a></h2>
+<h2>Transformation<a class="headerlink" href="#transformation" title="Link to this heading"></a></h2>
 <p>In the graph, each transformer performs a transformation from input + code to result. Seamless keeps a result cache of all transformations. Just like the checksum-to-buffer cache, databases or remote Seamless instances can also be queried. Because of this, the only transformations that are performed are those that have never been performed anywhere before, or where the result value is no longer accessible.</p>
 </section>
 <section id="translation">
-<h2>Translation<a class="headerlink" href="#translation" title="Permalink to this heading"></a></h2>
+<h2>Translation<a class="headerlink" href="#translation" title="Link to this heading"></a></h2>
 <p>Before any computation starts, a context has to be translated (using <code class="docutils literal notranslate"><span class="pre">ctx.translate()</span></code> or <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation</span></code>). Implicit translation is done if <code class="docutils literal notranslate"><span class="pre">ctx.compute()</span></code> is invoked. Changing the topology of the graph (e.g. adding a cell) or changing the cell types only takes effect upon re-translation. The modification of <em>inputs</em> (primarily, cell contents) does not require re-translation. This is because translation creates a low-level context that does the work and holds the data. Most of the methods and properties of the Seamless high-level classes (Cell, Transformer, etc.) are wrappers that interact with their low-level counterparts. Seamless low-level contexts accept input changes but not modifications in topology.</p>
 <p>See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/explained.html">Seamless explained</a> for a more detailed explanation.
 See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class">http://sjdv1982.github.io/seamless/sphinx/html/reference.html#context-class</a> for more documentation on the syntax.</p>

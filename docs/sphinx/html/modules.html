@@ -1,20 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Modules &mdash; Seamless 0.10 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5be48651"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=c71f9630"></script>
+        <script src="_static/doctools.js?v=695de88e"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -117,7 +120,7 @@
            <div itemprop="articleBody">
              
   <section id="modules">
-<h1>Modules<a class="headerlink" href="#modules" title="Permalink to this heading"></a></h1>
+<h1>Modules<a class="headerlink" href="#modules" title="Link to this heading"></a></h1>
 <p>The purpose of modules is to represent extra code objects that are added to a transformation.</p>
 <p>If added to a Python transformation, a Seamless module of Python (or IPython) code becomes a Python module or package, whereas a Seamless module of compiled code becomes a shared library.</p>
 <p>Modules added to non-Python transformations are currently not supported.</p>
@@ -128,7 +131,7 @@
 </ul>
 <p>See <a class="reference external" href="https://sjdv1982.github.io/seamless/sphinx/html/getting-started.html#running-tests-locally">Running tests</a> on how to execute tests.</p>
 <!-- (Builds upon transformers) ... pin celltype "module"! --><section id="python-modules">
-<h2>Python modules<a class="headerlink" href="#python-modules" title="Permalink to this heading"></a></h2>
+<h2>Python modules<a class="headerlink" href="#python-modules" title="Link to this heading"></a></h2>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <p><strong>Relevant test examples:</strong></p>
 <ul class="simple">
@@ -137,7 +140,7 @@
 </ul>
 </section>
 <section id="ipython-modules">
-<h2>IPython modules<a class="headerlink" href="#ipython-modules" title="Permalink to this heading"></a></h2>
+<h2>IPython modules<a class="headerlink" href="#ipython-modules" title="Link to this heading"></a></h2>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <p><strong>Relevant test examples:</strong></p>
 <ul class="simple">
@@ -145,7 +148,7 @@
 </ul>
 </section>
 <section id="compiled-modules">
-<h2>Compiled modules<a class="headerlink" href="#compiled-modules" title="Permalink to this heading"></a></h2>
+<h2>Compiled modules<a class="headerlink" href="#compiled-modules" title="Link to this heading"></a></h2>
 <p><em><strong>IMPORTANT: This documentation section is an early draft. The raw text material is shown below</strong></em></p>
 <p>Modules written in a compiled language are currently only only implemented at the low level. High-level access via the Module class is to be implemented. However, every compiled transformer contains a main_module object, that can be modified via the Transformer class… also, you could construct a compiled module yourself as a structured cell and insert it using pin celltype “module” (see module-simplified.py) …</p>
 <!-- (Builds upon compiled transformers) --></section>

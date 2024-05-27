@@ -1,19 +1,22 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>seamless.highlevel &mdash; Seamless 0.10 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="../../_static/jquery.js?v=5be48651"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=c71f9630"></script>
+        <script src="../../_static/doctools.js?v=695de88e"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -131,11 +134,13 @@
 <span class="kn">from</span> <span class="nn">silk.validation</span> <span class="kn">import</span> <span class="n">_allowed_types</span>
 <span class="kn">from</span> <span class="nn">..core.lambdacode</span> <span class="kn">import</span> <span class="n">lambdacode</span>
 <span class="kn">from</span> <span class="nn">..core.cached_compile</span> <span class="kn">import</span> <span class="n">cached_compile</span>
+<span class="kn">from</span> <span class="nn">.Checksum</span> <span class="kn">import</span> <span class="n">Checksum</span>
 
 <span class="n">ConstantTypes</span> <span class="o">=</span> <span class="n">_allowed_types</span> <span class="o">+</span> <span class="p">(</span><span class="n">Silk</span><span class="p">,</span> <span class="n">MixedBase</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">import</span> <span class="nn">os</span>
+
 
 <span class="k">def</span> <span class="nf">set_resource</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
     <span class="n">caller_frame</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_back</span>
@@ -153,7 +158,7 @@
 
 <span class="k">def</span> <span class="nf">parse_function_code</span><span class="p">(</span><span class="n">code_or_func</span><span class="p">,</span> <span class="n">identifier</span><span class="o">=</span><span class="s2">&quot;&lt;None&gt;&quot;</span><span class="p">):</span>
     <span class="kn">from</span> <span class="nn">..util</span> <span class="kn">import</span> <span class="n">strip_decorators</span>
-    <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">code_or_func</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">code_or_func</span><span class="p">):</span>
         <span class="n">func</span> <span class="o">=</span> <span class="n">code_or_func</span>
         <span class="n">code</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsource</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">code</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -192,7 +197,9 @@
 <span class="kn">from</span> <span class="nn">..midlevel.StaticContext</span> <span class="kn">import</span> <span class="n">StaticContext</span>
 <span class="kn">from</span> <span class="nn">.copy</span> <span class="kn">import</span> <span class="n">copy</span>
 
-<div class="viewcode-block" id="load_graph"><a class="viewcode-back" href="../../reference.html#seamless.highlevel.load_graph">[docs]</a><span class="k">def</span> <span class="nf">load_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="nb">zip</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cache_ctx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">static</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mounts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shares</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="load_graph">
+<a class="viewcode-back" href="../../reference.html#seamless.highlevel.load_graph">[docs]</a>
+<span class="k">def</span> <span class="nf">load_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="nb">zip</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cache_ctx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">static</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mounts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shares</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a Context from graph.</span>
 
 <span class="sd">    &quot;graph&quot; can be a file name or a JSON dict</span>
@@ -237,7 +244,10 @@
             <span class="nb">zip</span><span class="o">=</span><span class="nb">zip</span>
         <span class="p">)</span></div>
 
+
 <span class="kn">from</span> <span class="nn">.SubContext</span> <span class="kn">import</span> <span class="n">SubContext</span>
+<span class="kn">from</span> <span class="nn">.Base</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">from</span> <span class="nn">.direct.Transformation</span> <span class="kn">import</span> <span class="n">Transformation</span>
 <span class="n">nodeclasses</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;cell&quot;</span><span class="p">:</span> <span class="n">Cell</span><span class="p">,</span>
     <span class="s2">&quot;transformer&quot;</span><span class="p">:</span> <span class="n">Transformer</span><span class="p">,</span>
@@ -252,7 +262,7 @@
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;Context&quot;</span><span class="p">,</span> <span class="s2">&quot;Transformer&quot;</span><span class="p">,</span> <span class="s2">&quot;Macro&quot;</span><span class="p">,</span>
     <span class="s2">&quot;Cell&quot;</span><span class="p">,</span> <span class="s2">&quot;SimpleDeepCell&quot;</span><span class="p">,</span> <span class="s2">&quot;FolderCell&quot;</span><span class="p">,</span> <span class="s2">&quot;DeepCell&quot;</span><span class="p">,</span> <span class="s2">&quot;DeepFolderCell&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;StaticContext&quot;</span><span class="p">,</span> <span class="s2">&quot;Module&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;StaticContext&quot;</span><span class="p">,</span> <span class="s2">&quot;Module&quot;</span><span class="p">,</span> <span class="s2">&quot;Checksum&quot;</span><span class="p">,</span>
     <span class="s2">&quot;Resource&quot;</span><span class="p">,</span> <span class="s2">&quot;load_graph&quot;</span><span class="p">,</span> <span class="s2">&quot;copy&quot;</span>
 <span class="p">]</span>
 

@@ -1,20 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Seamless projects &mdash; Seamless 0.10 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5be48651"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=c71f9630"></script>
+        <script src="_static/doctools.js?v=695de88e"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -123,12 +126,12 @@
            <div itemprop="articleBody">
              
   <section id="seamless-projects">
-<h1>Seamless projects<a class="headerlink" href="#seamless-projects" title="Permalink to this heading"></a></h1>
+<h1>Seamless projects<a class="headerlink" href="#seamless-projects" title="Link to this heading"></a></h1>
 <p>It is possible to work with Seamless in the form of a <em>project</em>, where basic data storage, monitoring over the web, and collaborative web forms have been set up by default.</p>
 <p>Seamless is well-suited for collaborative coding projects, where one person is the <em><strong>host</strong></em> and the others are <em><strong>guests</strong></em>. The host must have Seamless installed, but the guests can be under Windows or any OS, as long as they can install Visual Studio Code.</p>
 <p>If you are working solo and don’t want remote collaboration, proceed with section B.</p>
 <section id="a-setting-up-a-collaborative-project">
-<h2>A. Setting up a collaborative project<a class="headerlink" href="#a-setting-up-a-collaborative-project" title="Permalink to this heading"></a></h2>
+<h2>A. Setting up a collaborative project<a class="headerlink" href="#a-setting-up-a-collaborative-project" title="Link to this heading"></a></h2>
 <p><strong>Only the host needs to do this. If you are a guest, go to section C.</strong></p>
 <ol>
 <li><p>Install <a class="reference external" href="https://code.visualstudio.com/">Visual Studio Code</a>.</p></li>
@@ -158,7 +161,7 @@ After adding the new directory, save the workspace as PROJDIR/PROJNAME, where PR
 </ol>
 </section>
 <section id="b-setting-up-a-solo-project">
-<h2>B. Setting up a solo project<a class="headerlink" href="#b-setting-up-a-solo-project" title="Permalink to this heading"></a></h2>
+<h2>B. Setting up a solo project<a class="headerlink" href="#b-setting-up-a-solo-project" title="Link to this heading"></a></h2>
 <ol class="simple">
 <li><p>Install Seamless.</p></li>
 <li><p>Create a new directory PROJDIR. Open a shell in the new directory. Type <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code>. Type <code class="docutils literal notranslate"><span class="pre">seamless-new-project</span> <span class="pre">PROJNAME</span></code> where <code class="docutils literal notranslate"><span class="pre">PROJNAME</span></code> is the name you choose for your project.</p></li>
@@ -166,14 +169,14 @@ After adding the new directory, save the workspace as PROJDIR/PROJNAME, where PR
 </ol>
 </section>
 <section id="c-project-implementation">
-<h2>C. Project implementation<a class="headerlink" href="#c-project-implementation" title="Permalink to this heading"></a></h2>
+<h2>C. Project implementation<a class="headerlink" href="#c-project-implementation" title="Link to this heading"></a></h2>
 <section id="solo-projects">
-<h3>Solo projects<a class="headerlink" href="#solo-projects" title="Permalink to this heading"></a></h3>
+<h3>Solo projects<a class="headerlink" href="#solo-projects" title="Link to this heading"></a></h3>
 <ol>
 <li><p>Open a new terminal and go to PROJDIR. Do <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code>.
 The following steps explain how to open your project in Jupyter.
 If you prefer to use IPython instead, go to step 4.</p>
-<p>Type <code class="docutils literal notranslate"><span class="pre">seamless-jupyter-trusted</span></code>. Normally, this will print
+<p>Type <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>. Normally, this will print
 <code class="docutils literal notranslate"><span class="pre">The</span> <span class="pre">Jupyter</span> <span class="pre">Notebook</span> <span class="pre">is</span> <span class="pre">running</span> <span class="pre">at:</span> <span class="pre">http://localhost:8888/</span></code>
 But if port 8888 is already in use, it may be 8889 or a higher number instead.</p>
 </li>
@@ -181,13 +184,13 @@ But if port 8888 is already in use, it may be 8889 or a higher number instead.</
 <li><p>Open a second terminal, do <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code>, and type <code class="docutils literal notranslate"><span class="pre">seamless-jupyter-connect</span></code> (pressing Tab for completion is recommended).
 This opens a console that connects to the same kernel as the Notebook. From here (or, if you really want, from the Notebook) you can modify <code class="docutils literal notranslate"><span class="pre">ctx</span></code> to implement the topology.</p></li>
 <li><p>Instead of using Jupyter, you can open your project in IPython instead by typing
-<code class="docutils literal notranslate"><span class="pre">seamless-load-project-trusted</span></code>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">seamless-load-project</span></code>.</p></li>
 <li><p>Start the implementation stage. Modify the topology in the console terminal (do <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation()</span></code> after modification, and type <code class="docutils literal notranslate"><span class="pre">save()</span></code> often!). Mount cells to the file system, and edit them. Monitor error messages in the browser.
 You can start visualization in the Jupyter Notebook, then move on to HTML/JS. See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/visualization.html">visualization</a> for more details.</p></li>
 </ol>
 </section>
 <section id="for-collaborative-project-hosts">
-<h3>For collaborative project hosts<a class="headerlink" href="#for-collaborative-project-hosts" title="Permalink to this heading"></a></h3>
+<h3>For collaborative project hosts<a class="headerlink" href="#for-collaborative-project-hosts" title="Link to this heading"></a></h3>
 <p><strong>For a collaborative project, only the host needs to do this. If you are a guest, go to the next section</strong></p>
 <ol>
 <li><p>Connect to the host machine. If the project runs on a remote machine, connect to the remote workspace that you set up before, using the Remote Explorer (icon on the left, or Ctrl-Shift-P =&gt; type “Remote Explorer”) in Visual Studio Code.</p></li>
@@ -199,7 +202,7 @@ Click on it, then on “invite others”, and paste the link in a message to the
 <li><p>Open a new terminal (<code class="docutils literal notranslate"><span class="pre">Ctrl-Shift-(backtick)</span></code> in Visual Studio Code). Do <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code>.
 The following steps explain how to open your project in Jupyter.
 If you prefer to use IPython instead, go to step 9.</p>
-<p>Type <code class="docutils literal notranslate"><span class="pre">seamless-jupyter-trusted</span></code>. Normally, this will print
+<p>Type <code class="docutils literal notranslate"><span class="pre">seamless-jupyter</span></code>. Normally, this will print
 <code class="docutils literal notranslate"><span class="pre">The</span> <span class="pre">Jupyter</span> <span class="pre">Notebook</span> <span class="pre">is</span> <span class="pre">running</span> <span class="pre">at:</span> <span class="pre">http://localhost:8888/</span></code>
 But if port 8888 is already in use, it may be 8889 or a higher number instead.</p>
 <p>If you are hosting on a remote machine, you must share this port, as well as the Seamless HTTP ports (see step 9).</p>
@@ -208,7 +211,7 @@ But if port 8888 is already in use, it may be 8889 or a higher number instead.</
 <li><p>Open a second terminal, do <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">seamless</span></code>, and type <code class="docutils literal notranslate"><span class="pre">seamless-jupyter-connect</span></code> (pressing Tab for completion is recommended).
 This opens a console that connects to the same kernel as the Notebook. From here (or, if you really want, from the Notebook) you can modify <code class="docutils literal notranslate"><span class="pre">ctx</span></code> to implement the topology.</p></li>
 <li><p>Instead of using Jupyter, you can open your project in IPython instead by typing
-<code class="docutils literal notranslate"><span class="pre">seamless-load-project-trusted</span></code>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">seamless-load-project</span></code>.</p></li>
 <li><p>Now you must decide now much you trust the guests. Note that there is a difference between the <em>parameters</em> of the workflow and its <em>topology</em>. The <em>parameters</em> are the input data and code, whereas the <em>topology</em> involves the creation and connection of cells, transformers, cell types, transformer/pin types, and defining mounts and shares. Modification of the topology normally requires re-translation of the workflow (<code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">ctx.translation</span></code>).</p>
 <ul class="simple">
 <li><p>If you do nothing, guests can only edit files. In the case of file-mounted code cells, this still means arbitrary execution of code.</p></li>
@@ -223,7 +226,7 @@ You could start visualization in the Jupyter Notebook, but this will surely give
 </ol>
 </section>
 <section id="for-collaborative-project-guests">
-<h3>For collaborative project guests<a class="headerlink" href="#for-collaborative-project-guests" title="Permalink to this heading"></a></h3>
+<h3>For collaborative project guests<a class="headerlink" href="#for-collaborative-project-guests" title="Link to this heading"></a></h3>
 <ol class="simple">
 <li><p>Install <a class="reference external" href="https://code.visualstudio.com/">Visual Studio Code</a>. This can be the Linux, OSX or Windows version. In theory, you could join from the web version as well, but then you will not be able to see any web forms.</p></li>
 <li><p>In Visual Studio Code, install the Live Share extension (Ctrl+Shift+X, type “Live Share”).</p></li>
@@ -236,7 +239,7 @@ Click on it, then choose “Join Collaboration Session”. Enter the link that t
 </section>
 </section>
 <section id="d-advanced-configuration">
-<h2>D. Advanced configuration<a class="headerlink" href="#d-advanced-configuration" title="Permalink to this heading"></a></h2>
+<h2>D. Advanced configuration<a class="headerlink" href="#d-advanced-configuration" title="Link to this heading"></a></h2>
 <p><em><strong>IMPORTANT: This documentation section is an outline. The outline is shown below</strong></em></p>
 <p>(Discuss <code class="docutils literal notranslate"><span class="pre">/vault</span></code> and .gitignore. The vault contains the value for each checksum in
 the graph )
