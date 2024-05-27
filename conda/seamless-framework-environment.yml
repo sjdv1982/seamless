@@ -20,7 +20,7 @@ dependencies:
   - traitlets
   - datrie  # required to build some pip packages
   - jsonschema=4.18.*
-  - ipython<=8.16.*
+  - ipython<=8.16
   - ipykernel
 
   - cffi

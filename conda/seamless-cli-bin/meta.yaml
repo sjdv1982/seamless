@@ -4,8 +4,7 @@ package:
     version: {{ version }}
 
 build:
-  number: 1
-  noarch: python
+  number: 2
 
 requirements:
   build:
