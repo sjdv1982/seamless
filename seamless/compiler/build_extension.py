@@ -1,7 +1,5 @@
 from distutils.core import Extension
 from distutils.core import Distribution
-from numpy.distutils.core import Extension as NumpyExtension
-from numpy.distutils.core import NumpyDistribution, numpy_cmdclass
 
 def build_extension_cffi(
     full_module_name,
