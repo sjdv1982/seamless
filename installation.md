@@ -9,7 +9,7 @@ Then:
 
 ```bash
 docker pull rpbs/seamless
-conda install -c rpbs seamless-cli
+conda install -c rpbs -c conda-forge seamless-cli
 ```
 
 ## Docker-based installation
