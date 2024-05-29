@@ -227,16 +227,11 @@ to disable it. Continuing without delegation.
         print(msg, file=sys.stderr)
     _checked_delegation = True
 
-def add_buffer_folder(folder, read_only=True):    
-    if read_only:
-        min_level = 1
-    else:
-        min_level = 2
+def add_buffer_folder(folder):
+    min_level = 1
     if _delegation_level is None or _delegation_level < min_level:
         raise RuntimeError(f"Delegation level {min_level} is required")
     add_read_buffer_folder(folder)
-    if not read_only:
-        set_write_buffer_folder(folder)
 
 def add_buffer_server(url, read_only=True):    
     if read_only:
