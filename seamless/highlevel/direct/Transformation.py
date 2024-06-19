@@ -302,6 +302,14 @@ class Transformation:
 
         transformation_cache.hard_cancel(tf_checksum=tf_checksum)
 
+    @property
+    def execution_metadata(self) -> dict:
+        from ...core.cache.database_client import database
+        cs = self.as_checksum().value
+        if cs is None:
+            return None
+        return database.get_metadata(cs)
+
     def undo(self) -> str | None:
         """Attempt to undo a finished transformation.        
         
