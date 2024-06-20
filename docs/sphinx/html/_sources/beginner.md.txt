@@ -180,7 +180,7 @@ conda activate seamless
 
 ***IMPORTANT: This documentation section is a stub.***
 <!--
-... (seamless-jupyter-trusted) ...
+... (seamless-jupyter) ...
 -->
 
 #### Examples of porting existing workflows

@@ -159,7 +159,7 @@ test
 ```
 
 Bash transformers with a `docker_image` attribute have their bash script executed inside a Docker container.
-Note that to execute a such transformer under standard Seamless (i.e. without configuring job servants to delegate the work), you will need to expose the Docker socket to Seamless, e.g using `seamless-bash-trusted` or `seamless-jupyter-trusted`. Also, unlike `docker run`, Seamless does not pull any Docker images for you.
+Note that to execute a such transformer under standard Seamless (i.e. without configuring job servants to delegate the work), you will need to expose the Docker socket to Seamless, e.g using `seamless-bash` or `seamless-jupyter`. Also, unlike `docker run`, Seamless does not pull any Docker images for you.
 
 An example of a bash transformer is [here](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/bash.py). An example of a bash transformer with Docker image is [here](https://github.com/sjdv1982/seamless/blob/stable/tests/highlevel/docker_.py).
 

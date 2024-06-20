@@ -60,7 +60,7 @@ After adding the new directory, save the workspace as PROJDIR/PROJNAME, where PR
    The following steps explain how to open your project in Jupyter.
    If you prefer to use IPython instead, go to step 4.
 
-   Type `seamless-jupyter-trusted`. Normally, this will print
+   Type `seamless-jupyter`. Normally, this will print
    `The Jupyter Notebook is running at: http://localhost:8888/`
    But if port 8888 is already in use, it may be 8889 or a higher number instead.
 
@@ -70,7 +70,7 @@ After adding the new directory, save the workspace as PROJDIR/PROJNAME, where PR
     This opens a console that connects to the same kernel as the Notebook. From here (or, if you really want, from the Notebook) you can modify `ctx` to implement the topology.
 
 4. Instead of using Jupyter, you can open your project in IPython instead by typing
-`seamless-load-project-trusted`.
+`seamless-load-project`.
 
 5. Start the implementation stage. Modify the topology in the console terminal (do `await ctx.translation()` after modification, and type `save()` often!). Mount cells to the file system, and edit them. Monitor error messages in the browser.
 You can start visualization in the Jupyter Notebook, then move on to HTML/JS. See [visualization](http://sjdv1982.github.io/seamless/sphinx/html/visualization.html) for more details.
@@ -94,7 +94,7 @@ Click on it, then on "invite others", and paste the link in a message to the gue
    The following steps explain how to open your project in Jupyter.
    If you prefer to use IPython instead, go to step 9.
 
-   Type `seamless-jupyter-trusted`. Normally, this will print
+   Type `seamless-jupyter`. Normally, this will print
    `The Jupyter Notebook is running at: http://localhost:8888/`
    But if port 8888 is already in use, it may be 8889 or a higher number instead.
 
@@ -106,7 +106,7 @@ Click on it, then on "invite others", and paste the link in a message to the gue
     This opens a console that connects to the same kernel as the Notebook. From here (or, if you really want, from the Notebook) you can modify `ctx` to implement the topology.
 
 9. Instead of using Jupyter, you can open your project in IPython instead by typing
-`seamless-load-project-trusted`.
+`seamless-load-project`.
 
 10. Now you must decide now much you trust the guests. Note that there is a difference between the *parameters* of the workflow and its *topology*. The *parameters* are the input data and code, whereas the *topology* involves the creation and connection of cells, transformers, cell types, transformer/pin types, and defining mounts and shares. Modification of the topology normally requires re-translation of the workflow (`await ctx.translation`).
 

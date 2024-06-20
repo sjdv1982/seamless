@@ -415,7 +415,7 @@ Replaced buffers or values are properly registered and cached
 
     from seamless.highlevel import Checksum
     
-    non_checksum_items = ("__output__", "__language__", "__meta__", "__env__")
+    non_checksum_items = ("__output__", "__language__", "__meta__", "__env__", "__format__")
 
     argnames = list(transformation_dict.keys())
     for argname in argnames:
@@ -551,6 +551,8 @@ def direct_transformer_to_transformation_dict(
     tf_pins["code"] = {"celltype": "python", "subcelltype": "transformer"}
     arguments2["code"] = codebuf
 
+    FORMAT = {}
+
     for pinname, pin in tf_pins.items():
         if pinname == "result":
             continue
@@ -568,8 +570,19 @@ def direct_transformer_to_transformation_dict(
             v = value
 
         transformation_dict[pinname] = (pin["celltype"], pin.get("subcelltype"), v)
+        hash_pattern = pin.get("hash_pattern")
+        filesystem = pin.get("filesystem")
+        if filesystem is not None or hash_pattern is not None:
+            FORMAT[pinname] = {}          
+        if filesystem is not None:
+            FORMAT[pinname]["filesystem"] = deepcopy(filesystem)
+        if hash_pattern is not None:
+            FORMAT[pinname]["hash_pattern"] = deepcopy(hash_pattern)
+
     assert "code" in transformation_dict
     assert transformation_dict["code"][2] is not None, transformation_dict["code"]
+    if len(FORMAT):
+        transformation_dict["__format__"] = FORMAT
     return transformation_dict
 
 def _get_semantic(code, code_checksum):

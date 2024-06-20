@@ -134,7 +134,7 @@ Release
 
 - Before distribution, create a seamless-unify-webserver-ports tool, unifying using canonical port values. Include this value in the seamless.js client. DONE
 
-- Build and upload the Seamless Docker image (works)
+- Build and upload the Seamless Docker image. DONE
 
 - seamless-cli:for seamless-delegate, set up non-devel assistants. docker compose --build only for devel assistants. DONE
 
@@ -143,16 +143,18 @@ Release
 - Distribute seamless-cli. Make sure activate-seamless-mode works well in distro for seamless-cli. DONE
 
 - Update the seamless-framework Conda environments. Here, *also* install seamless-cli so that tools and seamless Docker container can be fired up at will (DONE). *Mark all Conda environments with
-SEAMLESS_CONDA_ENVIRONMENT=1*, this is so that seamless-bash will work from within the Conda environment (DONE). Also make sure that bin/seamless is included, and that seamless-mode is activated.
+SEAMLESS_CONDA_ENVIRONMENT=1*, this is so that seamless-bash will work from within the Conda environment DONE. 
 
-- Distribute the seamless-framework Conda package. Test stuffs!
+- Finalize the seamless-framework Conda environments. Make sure that bin/seamless is included, and that seamless-mode is activated. This is done using two packages `seamless-cli-bin` and `seamless-cli-complement`, which are aimed at Conda-only installations. DONE
 
-- Port dask-deployment build-environment-devel to build-environment. Take seamless-mini environment as a basis where to install Dask libraries into.
-Explain this in the delegation documentation.
+- Commit seamless-delegate-remote fix, rebuild seamless-cli and seamless-cli-complement. DONE
 
-- Port run-db-hashserver-devel to non-devel environment for distribution.
+- Port dask-deployment build-environment-devel to build-environment. Take seamless-exact environment as a basis where to install Dask libraries into. DONE
 
-- Adapt the seamless-binder-demo. Note that it is based on the Conda package.
+
+- Port run-db-hashserver-devel to non-devel environment for distribution. DONE
+
+- Adapt the seamless-binder-demo. Note that it is based on the Conda package. DONE
 
 =====================
 Documentation

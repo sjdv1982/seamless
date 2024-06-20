@@ -3,7 +3,6 @@
 import asyncio
 import time
 
-
 class TransformationPool:
     """Execute a fixed number of transformations in parallel"""
 
@@ -243,3 +242,84 @@ class ContextPool:
                 else:
                     nrunning -= 1
                     tasks[done_task] = None
+
+async def _resolve_single(cachemanager, checksum:"Checksum", celltype):
+    from .core.protocol.deserialize import deserialize
+    from . import Checksum
+    buffer = await cachemanager.fingertip(checksum.bytes())
+    if celltype is None:
+        return buffer
+    if celltype == "silk":
+        celltype = "mixed"
+    elif celltype == "module":
+        celltype = "plain"
+    
+    outer_celltype = celltype
+    inner_celltype = None
+    if celltype in ("deepcell", "deepfolder", "folder"):
+        outer_celltype = "plain"
+        if celltype == "deepcell":
+            inner_celltype = "mixed"
+        else:
+            inner_celltype = "bytes"
+
+    outer_value = await deserialize(buffer, checksum.bytes(), celltype=outer_celltype, copy=False)
+    if inner_celltype is None:
+        return outer_value
+    deep_keys = list(outer_value.keys())
+    inner_checksums = [Checksum(outer_value[k]) for k in deep_keys]
+    inner_values = await resolve(inner_checksums, nparallel=5, celltype=inner_celltype)
+    return {k:v for k,v in zip(deep_keys, inner_values)}
+
+async def _resolve(cachemanager, checksums, celltype, nparallel, callback):
+
+    semaphore = asyncio.Semaphore(nparallel)
+
+    async def runner(n, checksum):
+        async with semaphore:
+            result = await _resolve_single(cachemanager, checksum, celltype)
+            if callback:
+                callback(n, result)
+            return result
+
+    runners = [
+        runner(n, checksum)
+        for n, checksum in enumerate(checksums)
+    ]
+
+    return await asyncio.gather(
+        *runners
+    )
+    
+def resolve(checksums:list["Checksum"], nparallel:int, *, celltype:str | None = None, callback = None) -> list:
+    """Resolve a fixed number of checksums in parallel.
+    Parameters:
+    - checksums: list of checksums
+    - nparallel: number of checksums to be resolved in parallel
+    - celltype (optional): the celltype to resolve to.
+
+    It is possible to give a callback, which will be called
+    as callback(N, value) whenever a resolve finishes
+    finishes.
+
+    """
+    from . import Checksum
+    from .core.manager import Manager
+    from .core.cell import celltypes
+    allowed_celltypes = list(celltypes.keys()) + ["silk", "deepcell", "deepfolder", "folder", "module"]
+    if celltype not in allowed_celltypes:
+        raise TypeError(celltype, allowed_celltypes)
+    
+    if asyncio.get_event_loop().is_running():
+        raise RuntimeError("seamless.multi.resolve does not work with a running event loop, e.g inside Jupyter")
+    
+    manager = Manager()
+    cachemanager = manager.cachemanager
+    checksums = [Checksum(v) for v in checksums]
+    nparallel = int(nparallel)
+    if celltype in ["deepcell", "deepfolder", "folder"]:
+        nparallel = int(nparallel/5+0.9999)
+    coro = _resolve(cachemanager, checksums, celltype, nparallel, callback)
+    fut = asyncio.ensure_future(coro)
+    asyncio.get_event_loop().run_until_complete(fut)
+    return fut.result()

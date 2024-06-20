@@ -1,20 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Data storage &mdash; Seamless 0.10 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5be48651"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=c71f9630"></script>
+        <script src="_static/doctools.js?v=695de88e"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -125,10 +128,10 @@
            <div itemprop="articleBody">
              
   <section id="data-storage">
-<h1>Data storage<a class="headerlink" href="#data-storage" title="Permalink to this heading"></a></h1>
+<h1>Data storage<a class="headerlink" href="#data-storage" title="Link to this heading"></a></h1>
 <p>In Seamless, everything revolves around checksums. The primary purpose of data storage is to retrieve the underlying buffer of each checksum. In addition, there is “buffer info”, the keeping of statistics that help in converting buffers from one celltype to another. Third, there is the storage of transformation results, in the form of a mapping of transformation checksum to result checksum. Finally, there is also compilation, the checksum-to-checksum mapping of source code in e.g. C/C++ to its compiled binary.</p>
 <section id="data-storage-explained">
-<h2>Data storage explained<a class="headerlink" href="#data-storage-explained" title="Permalink to this heading"></a></h2>
+<h2>Data storage explained<a class="headerlink" href="#data-storage-explained" title="Link to this heading"></a></h2>
 <p><em><strong>IMPORTANT: This documentation section is an outline. The outline is shown below</strong></em></p>
 <ul class="simple">
 <li><p>Purpose: checksum to buffer caching</p></li>
@@ -146,18 +149,18 @@
 
 These roles are normally taken by the ***Seamless database***.
 --><section id="exporting-to-zips-or-vaults">
-<h3>Exporting to zips or vaults<a class="headerlink" href="#exporting-to-zips-or-vaults" title="Permalink to this heading"></a></h3>
+<h3>Exporting to zips or vaults<a class="headerlink" href="#exporting-to-zips-or-vaults" title="Link to this heading"></a></h3>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em>
 (Only checksum-to-buffer cache! Transformations will be recomputed!)</p>
 </section>
 </section>
 <section id="the-seamless-database">
-<h2>The Seamless database<a class="headerlink" href="#the-seamless-database" title="Permalink to this heading"></a></h2>
+<h2>The Seamless database<a class="headerlink" href="#the-seamless-database" title="Link to this heading"></a></h2>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em>
 (checksum-to-buffer cache, buffer info, etc. over the network, “serving a vault”)</p>
 <p>A Seamless instance connected to the database does not maintain its own checksum-to-buffer cache, and therefore uses a lot less memory.</p>
 <section id="using-the-database">
-<h3>Using the database<a class="headerlink" href="#using-the-database" title="Permalink to this heading"></a></h3>
+<h3>Using the database<a class="headerlink" href="#using-the-database" title="Link to this heading"></a></h3>
 <p><em><strong>IMPORTANT: This documentation section is a draft. The preliminary text is shown below</strong></em></p>
 <p>The Seamless database is started with the command <code class="docutils literal notranslate"><span class="pre">seamless-database</span></code>. The simplest way to use it is without arguments. In that case, it will maintain the database dir in $HOME/.seamless/database.</p>
 <p>The second way is to invoke <code class="docutils literal notranslate"><span class="pre">seamless-database</span> <span class="pre">$d</span></code> with an empty directory <code class="docutils literal notranslate"><span class="pre">$d</span></code> as argument. In that case, it will create a default database configuration file in <code class="docutils literal notranslate"><span class="pre">$d/database-config.yaml</span></code>, and then launch the database, maintaining <code class="docutils literal notranslate"><span class="pre">$d</span></code> as the database dir.</p>
@@ -167,17 +170,17 @@ These roles are normally taken by the ***Seamless database***.
 <p>Normally, Seamless contacts the database, specifying the desired store and the checksum. For buffers, the content is returned. As an optimization, it is also possible to ask for the file name (see below).</p>
 </section>
 <section id="database-cleanup">
-<h3>Database cleanup<a class="headerlink" href="#database-cleanup" title="Permalink to this heading"></a></h3>
+<h3>Database cleanup<a class="headerlink" href="#database-cleanup" title="Link to this heading"></a></h3>
 <p>The buckets do not take up much space, there is little reason to delete them.  In contrast, buffers/ can get very large. You can freely delete the contents of /buffers while the database is running, this will not cause any crash. The database has a memory cache that may continue to hold the buffer for a while. To cleanly remove any kind of database entry, create a file with a format like
 <code class="docutils literal notranslate"><span class="pre">/seamless-tools/tools/jobless/tests/jobless-test-dblog-ORIGINAL.txt</span></code> and then run <code class="docutils literal notranslate"><span class="pre">seamless-delete-database-from-log</span> <span class="pre">&lt;filename&gt;</span></code>.</p>
 <p>Note that any workflow or transformation job slave that needs the buffer but can’t find it will report a CacheMissError. This will happen for sure if the buffer is <em>independent</em>, i.e. is not the result of some kind of computation (transformation, conversion, cell expression etc.). If it <em>is</em> the result of a computation, and the computation is part of the workflow that is loaded by the Seamless instance, Seamless may try to repeat the computation in order to regenerate the buffer (this is called “fingertipping”). So you can be a bit more aggressive in deleting buffers of intermediate results (or even final results), especially if they are large and/or quick to compute.</p>
 </section>
 <section id="multiple-database-directories">
-<h3>Multiple database directories<a class="headerlink" href="#multiple-database-directories" title="Permalink to this heading"></a></h3>
+<h3>Multiple database directories<a class="headerlink" href="#multiple-database-directories" title="Link to this heading"></a></h3>
 <p>It is possible to set up multiple database directories with Seamless database. Only one will be written to, the other ones are read-only. The purpose can be: setting up specialized databases (e.g. the Protein Data Bank), backup, or having them in different file zones.</p>
 </section>
 <section id="file-zones">
-<h3>File zones<a class="headerlink" href="#file-zones" title="Permalink to this heading"></a></h3>
+<h3>File zones<a class="headerlink" href="#file-zones" title="Link to this heading"></a></h3>
 <p>The Seamless database has a special request where you can ask directly for the filename that corresponds to the buffer. With the request, you can specify a file zone (or multiple file zones). If the Seamless database directory is in the same file zone (or in one of the file zones), the file name (i.e. <code class="docutils literal notranslate"><span class="pre">/buffers/&lt;checksum&gt;</span></code>) is assumed to be accessible by the requesting instance, and is returned. In other words, “same file zone” means “same file system”. This is very efficient in case of bash transformers,leading to a hard link instead of load-buffer-from-database + write-buffer-to-file-in-temp-directory. In case of a deep folder, the special request is for a folder. Seamless has a tool called <code class="docutils literal notranslate"><span class="pre">database-share-deepfolder-directory</span></code>. It takes a deep folder checksum (or its collection name, see below), reads the deep folder dict, creates a folder <code class="docutils literal notranslate"><span class="pre">/shared-directories/&lt;deep</span> <span class="pre">checksum&gt;/</span></code>, and creates a hard link <code class="docutils literal notranslate"><span class="pre">/shared-directories/&lt;deep</span> <span class="pre">checksum&gt;/key</span></code> to <code class="docutils literal notranslate"><span class="pre">/buffers/&lt;checksum&gt;</span></code> for every key:checksum pair in the dict. Therefore, <code class="docutils literal notranslate"><span class="pre">/shared-directories/&lt;deep</span> <span class="pre">checksum&gt;</span></code> is an exact mirror of the deep folder mounted to disk, without taking any disk space whatsoever. Therefore, bash transformers that take a deep folder as input (e.g. a database search tool) get a soft link to <code class="docutils literal notranslate"><span class="pre">/shared-directories/&lt;deep</span> <span class="pre">checksum&gt;</span></code> instead of copying the entire database every time. Of course, this does require that the file zone is the same.</p>
 </section>
 </section>

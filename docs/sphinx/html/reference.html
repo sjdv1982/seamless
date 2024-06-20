@@ -1,20 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Reference &mdash; Seamless 0.10 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5be48651"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=c71f9630"></script>
+        <script src="_static/doctools.js?v=695de88e"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -173,11 +176,13 @@
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.exception"><code class="docutils literal notranslate"><span class="pre">Transformer.exception</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.fingertip_no_recompute"><code class="docutils literal notranslate"><span class="pre">Transformer.fingertip_no_recompute</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.fingertip_no_remote"><code class="docutils literal notranslate"><span class="pre">Transformer.fingertip_no_remote</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.get_transformation"><code class="docutils literal notranslate"><span class="pre">Transformer.get_transformation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.from_canonical_interface"><code class="docutils literal notranslate"><span class="pre">Transformer.from_canonical_interface()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.get_transformation_checksum"><code class="docutils literal notranslate"><span class="pre">Transformer.get_transformation_checksum()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.get_transformation_dict"><code class="docutils literal notranslate"><span class="pre">Transformer.get_transformation_dict()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.header"><code class="docutils literal notranslate"><span class="pre">Transformer.header</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.language"><code class="docutils literal notranslate"><span class="pre">Transformer.language</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.link_options"><code class="docutils literal notranslate"><span class="pre">Transformer.link_options</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.local"><code class="docutils literal notranslate"><span class="pre">Transformer.local</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.logs"><code class="docutils literal notranslate"><span class="pre">Transformer.logs</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.meta"><code class="docutils literal notranslate"><span class="pre">Transformer.meta</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.observe"><code class="docutils literal notranslate"><span class="pre">Transformer.observe()</span></code></a></li>
@@ -185,6 +190,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.scratch"><code class="docutils literal notranslate"><span class="pre">Transformer.scratch</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.self"><code class="docutils literal notranslate"><span class="pre">Transformer.self</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.status"><code class="docutils literal notranslate"><span class="pre">Transformer.status</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.undo"><code class="docutils literal notranslate"><span class="pre">Transformer.undo()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#seamless.highlevel.Transformer.unobserve"><code class="docutils literal notranslate"><span class="pre">Transformer.unobserve()</span></code></a></li>
 </ul>
 </li>
@@ -219,11 +225,11 @@
            <div itemprop="articleBody">
              
   <section id="module-seamless">
-<span id="reference"></span><h1>Reference<a class="headerlink" href="#module-seamless" title="Permalink to this heading"></a></h1>
-<p>Seamless: a cell-based interactive workflow framework</p>
+<span id="reference"></span><h1>Reference<a class="headerlink" href="#module-seamless" title="Link to this heading"></a></h1>
+<p>Seamless: a framework for reproducible computing and interactive workflows</p>
 <p>Author: Sjoerd de Vries
-Copyright 2016-2022, INSERM and project contributors</p>
-<span class="target" id="module-seamless.highlevel"></span><p>Seamless high-level API.</p>
+Copyright 2016-2023, INSERM, CNRS and project contributors</p>
+<p id="module-seamless.highlevel">Seamless high-level API.</p>
 <p>Has a two-fold function:</p>
 <p>1. Maintain a workflow graph containing nodes (cells, transformers etc.),
 checksums, and connections. This workflow graph is pure data that can be
@@ -233,7 +239,7 @@ that is constantly being evaluated. Interrogate the low-level representation
 (asking for its status, checksums, etc.).</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="seamless.highlevel.load_graph">
-<span class="sig-prename descclassname"><span class="pre">seamless.highlevel.</span></span><span class="sig-name descname"><span class="pre">load_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ctx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">static</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mounts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shares</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel.html#load_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.load_graph" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">seamless.highlevel.</span></span><span class="sig-name descname"><span class="pre">load_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_ctx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">static</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mounts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shares</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel.html#load_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.load_graph" title="Link to this definition"></a></dt>
 <dd><p>Load a Context from graph.</p>
 <p>“graph” can be a file name or a JSON dict
 Normally, it has been generated with Context.save_graph / Context.get_graph</p>
@@ -246,10 +252,10 @@ Normally, it has been generated with Context.save_zip / Context.get_zip</p>
 </dd></dl>
 
 <section id="context-class">
-<h2>Context class<a class="headerlink" href="#context-class" title="Permalink to this heading"></a></h2>
+<h2>Context class<a class="headerlink" href="#context-class" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="seamless.highlevel.Context">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">seamless.highlevel.</span></span><span class="sig-name descname"><span class="pre">Context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Manager</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">seamless.highlevel.</span></span><span class="sig-name descname"><span class="pre">Context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Manager</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context" title="Link to this definition"></a></dt>
 <dd><p>Context class. Organizes cells and workers hierarchically.</p>
 <p>Wrapper around a workflow graph, which can be serialized as JSON to a
 .seamless file.
@@ -283,7 +289,7 @@ assert ctx.result.value == 48
 <p>See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/context.html">http://sjdv1982.github.io/seamless/sphinx/html/context.html</a> for documentation</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.add_zip">
-<span class="sig-name descname"><span class="pre">add_zip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">zip</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.add_zip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.add_zip" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">add_zip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">zip</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.add_zip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.add_zip" title="Link to this definition"></a></dt>
 <dd><p>Add entries from “zip” to the checksum-to-buffer cache.</p>
 <p>“zip” can be a file name, zip-compressed bytes or a Python ZipFile object.
 Normally, it has been generated with Context.save_zip / Context.get_zip</p>
@@ -294,14 +300,14 @@ This can be overridden with “incref=True” (not recommended for long-living c
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.children">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">children</span></span><a class="headerlink" href="#seamless.highlevel.Context.children" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">children</span></span><a class="headerlink" href="#seamless.highlevel.Context.children" title="Link to this definition"></a></dt>
 <dd><p>Return a wrapper for the direct children of the context.
 This includes subcontexts and libinstances</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.computation">
-<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.computation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.computation" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">computation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.computation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.computation" title="Link to this definition"></a></dt>
 <dd><p>Block until no more computation is required.</p>
 <p>This means that all cells and transformers have either been computed,
 or they have an error, or they have unsatisfied upstream dependencies.</p>
@@ -310,7 +316,7 @@ or they have an error, or they have unsatisfied upstream dependencies.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.compute">
-<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.compute" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.compute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.compute" title="Link to this definition"></a></dt>
 <dd><p>Block until no more computation is required.</p>
 <p>This means that all cells and transformers have either been computed,
 or they have an error, or they have unsatisfied upstream dependencies.</p>
@@ -321,13 +327,13 @@ i.e. under python or ipython, but not in a Jupyter kernel.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.environment">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">environment</span></span><a class="headerlink" href="#seamless.highlevel.Context.environment" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">environment</span></span><a class="headerlink" href="#seamless.highlevel.Context.environment" title="Link to this definition"></a></dt>
 <dd><p>Return the global execution environment of the context</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.from_graph">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Manager</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mounts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shares</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ZipFile</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.from_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.from_graph" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Manager</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mounts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shares</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ZipFile</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.from_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.from_graph" title="Link to this definition"></a></dt>
 <dd><p>Construct a Context from a graph</p>
 <p>“graph” can be a file name or a JSON dict
 Normally, it has been generated with Context.save_graph / Context.get_graph</p>
@@ -342,7 +348,7 @@ The manager controls caching and execution.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.get_children">
-<span class="sig-name descname"><span class="pre">get_children</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.get_children"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.get_children" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_children</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.get_children"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.get_children" title="Link to this definition"></a></dt>
 <dd><p>Select all children that are directly ours.
 A sorted list of strings (attribute names) is returned.</p>
 <dl class="simple">
@@ -357,7 +363,7 @@ or deepfoldercell</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.get_graph">
-<span class="sig-name descname"><span class="pre">get_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">runtime</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.get_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.get_graph" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">runtime</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.get_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.get_graph" title="Link to this definition"></a></dt>
 <dd><p>Return the graph in JSON format.</p>
 <p>“runtime”: The graph is returned after Library/LibInstance/Macro
 transformations of the graph.</p>
@@ -365,27 +371,27 @@ transformations of the graph.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.get_links">
-<span class="sig-name descname"><span class="pre">get_links</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.get_links"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.get_links" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_links</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.get_links"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.get_links" title="Link to this definition"></a></dt>
 <dd><p>Get all Link (bidirectional cell-cell) connections.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.get_zip">
-<span class="sig-name descname"><span class="pre">get_zip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">with_libraries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.get_zip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.get_zip" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_zip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">with_libraries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.get_zip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.get_zip" title="Link to this definition"></a></dt>
 <dd><p>Obtain the checksum-to-buffer cache for the current graph.</p>
 <p>The cache is returned as zipped bytes.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.get_zip_async">
-<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_zip_async</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">with_libraries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.get_zip_async"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.get_zip_async" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_zip_async</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">with_libraries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.get_zip_async"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.get_zip_async" title="Link to this definition"></a></dt>
 <dd><p>Obtain the checksum-to-buffer cache for the current graph</p>
 <p>The cache is returned as zipped bytes.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.include">
-<span class="sig-name descname"><span class="pre">include</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lib</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Library</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_zip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.include"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.include" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">include</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lib</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Library</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_zip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.include"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.include" title="Link to this definition"></a></dt>
 <dd><p>Include a library in the graph.</p>
 <p>A library (seamless.highlevel.Library) must be included before
 library instances (seamless.highlevel.LibInstance) can be constructed
@@ -394,20 +400,20 @@ using ctx.lib</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.lib">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">lib</span></span><a class="headerlink" href="#seamless.highlevel.Context.lib" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">lib</span></span><a class="headerlink" href="#seamless.highlevel.Context.lib" title="Link to this definition"></a></dt>
 <dd><p>Returns the libraries that were included in the graph</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.link">
-<span class="sig-name descname"><span class="pre">link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">first</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">second</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.link" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">first</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">second</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.link" title="Link to this definition"></a></dt>
 <dd><p>Create a bidirectional link between the first and second cell.</p>
 <p>Both cells must be authoritative (independent).</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.live_share_namespace">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">live_share_namespace</span></span><a class="headerlink" href="#seamless.highlevel.Context.live_share_namespace" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">live_share_namespace</span></span><a class="headerlink" href="#seamless.highlevel.Context.live_share_namespace" title="Link to this definition"></a></dt>
 <dd><p>The actual namespace for sharing cells by the HTTP server</p>
 <dl class="simple">
 <dt>Cells are shared under:</dt><dd><p><a class="reference external" href="http:/">http:/</a>/&lt;shareserver URL&gt;/&lt;live_share_namespace&gt;/&lt;cell path&gt;</p>
@@ -420,7 +426,7 @@ but if it is already taken, a number will be added to it (ctx1, ctx2, etc.)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.load_vault">
-<span class="sig-name descname"><span class="pre">load_vault</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vault_directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.load_vault"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.load_vault" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">load_vault</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vault_directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.load_vault"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.load_vault" title="Link to this definition"></a></dt>
 <dd><p>Load the contents of a vault directory in the checksum-to-buffer cache.</p>
 <p>Normally, the vault has been generated with Context.save_vault.</p>
 <p>Note that caching is temporary and entries will be removed after some time
@@ -430,13 +436,13 @@ This can be overridden with “incref=True” (not recommended for long-living c
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.observe">
-<span class="sig-name descname"><span class="pre">observe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polling_interval</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observe_none</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.observe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.observe" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">observe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polling_interval</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observe_none</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.observe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.observe" title="Link to this definition"></a></dt>
 <dd><p>Observe attributes of the context, analogous to Cell.observe.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.remove_connections">
-<span class="sig-name descname"><span class="pre">remove_connections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'both'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sub'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.remove_connections"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.remove_connections" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">remove_connections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'both'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sub'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.remove_connections"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.remove_connections" title="Link to this definition"></a></dt>
 <dd><p>Remove all connections/links with source or target matching path.</p>
 <p>“endpoint” can be “source”, “target”, “connection”, “link” or “all”.</p>
 <p>With endpoint “source”, only remove connections where the source matches path.
@@ -458,7 +464,7 @@ The start of “path” must be identical to P.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.resolve">
-<span class="sig-name descname"><span class="pre">resolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">checksum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">celltype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.resolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.resolve" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">resolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">checksum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Checksum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">celltype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.resolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.resolve" title="Link to this definition"></a></dt>
 <dd><p>Returns the data buffer that corresponds to the checksum.
 If celltype is provided, a value is returned instead</p>
 <p>The checksum must be a SHA3-256 hash, as hex string or as bytes</p>
@@ -466,33 +472,33 @@ If celltype is provided, a value is returned instead</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.save_graph">
-<span class="sig-name descname"><span class="pre">save_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.save_graph" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.save_graph" title="Link to this definition"></a></dt>
 <dd><p>Save the graph in JSON format.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.save_vault">
-<span class="sig-name descname"><span class="pre">save_vault</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dirname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_libraries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_vault"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.save_vault" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save_vault</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dirname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_libraries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_vault"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.save_vault" title="Link to this definition"></a></dt>
 <dd><p>Save the checksum-to-buffer cache for the current graph in a vault directory</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.save_zip">
-<span class="sig-name descname"><span class="pre">save_zip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_zip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.save_zip" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save_zip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_zip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.save_zip" title="Link to this definition"></a></dt>
 <dd><p>Save the checksum-to-buffer cache for the current graph.</p>
 <p>The cache is saved to “filename”, which should be a .zip file.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.save_zip_async">
-<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save_zip_async</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_zip_async"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.save_zip_async" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save_zip_async</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.save_zip_async"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.save_zip_async" title="Link to this definition"></a></dt>
 <dd><p>Save the checksum-to-buffer cache for the current graph.</p>
 <p>The cache is saved to “filename”, which should be a .zip file.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.self">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">self</span></span><a class="headerlink" href="#seamless.highlevel.Context.self" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">self</span></span><a class="headerlink" href="#seamless.highlevel.Context.self" title="Link to this definition"></a></dt>
 <dd><p>Return a wrapper where the children are not directly accessible.</p>
 <p>By default, a Cell called “compute” will cause “ctx.compute” to return
 the Cell. This is problematic if you want to access the method compute().
@@ -502,7 +508,7 @@ This can be done using ctx.self.compute()</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.set_graph">
-<span class="sig-name descname"><span class="pre">set_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mounts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shares</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.set_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.set_graph" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">set_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mounts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shares</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.set_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.set_graph" title="Link to this definition"></a></dt>
 <dd><p>Set the graph of the Context</p>
 <p>“graph” can be a file name or a JSON dict
 Normally, it has been generated with Context.save_graph / Context.get_graph</p>
@@ -512,7 +518,7 @@ Normally, it has been generated with Context.save_graph / Context.get_graph</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.share_namespace">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">share_namespace</span></span><a class="headerlink" href="#seamless.highlevel.Context.share_namespace" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">share_namespace</span></span><a class="headerlink" href="#seamless.highlevel.Context.share_namespace" title="Link to this definition"></a></dt>
 <dd><p>The preferred namespace for sharing cells by the HTTP server</p>
 <dl class="simple">
 <dt>Cells are shared under:</dt><dd><p><a class="reference external" href="http:/">http:/</a>/&lt;shareserver URL&gt;/&lt;live_share_namespace&gt;/&lt;cell path&gt;</p>
@@ -525,7 +531,7 @@ but if it is already taken, a number will be added to it (ctx1, ctx2, etc.)</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.status">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">status</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#seamless.highlevel.Context.status" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">status</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#seamless.highlevel.Context.status" title="Link to this definition"></a></dt>
 <dd><p>The computation status of the context
 Returns a dictionary containing the status of all direct children that are not OK.
 If all children are OK, returns “Status: OK”</p>
@@ -533,7 +539,7 @@ If all children are OK, returns “Status: OK”</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.translate">
-<span class="sig-name descname"><span class="pre">translate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.translate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.translate" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">translate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.translate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.translate" title="Link to this definition"></a></dt>
 <dd><p>(Re-)translate the graph.
 The graph is translated to a low-level, computable form
 (seamless.core). After translation, return immediately,
@@ -546,7 +552,7 @@ i.e. under python or ipython, but not in a Jupyter kernel.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.translation">
-<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">translation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.translation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.translation" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">translation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.translation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.translation" title="Link to this definition"></a></dt>
 <dd><p>(Re-)translate the graph.
 The graph is translated to a low-level, computable form
 (seamless.core). After translation, return immediately,
@@ -557,7 +563,7 @@ change in topology or celltype was detected.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.unlink">
-<span class="sig-name descname"><span class="pre">unlink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">first</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">second</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.unlink"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.unlink" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">unlink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">first</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">second</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.unlink"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.unlink" title="Link to this definition"></a></dt>
 <dd><p>Remove a bidirectional link between the first and second cell.
 (If it exists).
 Returns True if a link was removed</p>
@@ -565,7 +571,7 @@ Returns True if a link was removed</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Context.unobserve">
-<span class="sig-name descname"><span class="pre">unobserve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.unobserve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.unobserve" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">unobserve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Context.html#Context.unobserve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Context.unobserve" title="Link to this definition"></a></dt>
 <dd><p>Analogous to Cell.unobserve</p>
 </dd></dl>
 
@@ -573,10 +579,10 @@ Returns True if a link was removed</p>
 
 </section>
 <section id="cell-class">
-<h2>Cell class<a class="headerlink" href="#cell-class" title="Permalink to this heading"></a></h2>
+<h2>Cell class<a class="headerlink" href="#cell-class" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">seamless.highlevel.</span></span><span class="sig-name descname"><span class="pre">Cell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">celltype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">seamless.highlevel.</span></span><span class="sig-name descname"><span class="pre">Cell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">celltype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell" title="Link to this definition"></a></dt>
 <dd><p>Cell class. Contains the checksum of a value.</p>
 <p>See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/cell.html">http://sjdv1982.github.io/seamless/sphinx/html/cell.html</a> for documentation</p>
 <p>Typical usage:
@@ -589,7 +595,7 @@ ctx.a.celltype = “int”
 <a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.add_validator">
-<span class="sig-name descname"><span class="pre">add_validator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.add_validator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.add_validator" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">add_validator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.add_validator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.add_validator" title="Link to this definition"></a></dt>
 <dd><p>Adds a validator function (in Python)def add to the schema.</p>
 <p>The validator must take a single argument, the (buffered) value of the cell
 It is expected to raise an exception (e.g. an AssertionError)
@@ -600,14 +606,14 @@ that validator is overwritten.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.buffered">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">buffered</span></span><a class="headerlink" href="#seamless.highlevel.Cell.buffered" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">buffered</span></span><a class="headerlink" href="#seamless.highlevel.Cell.buffered" title="Link to this definition"></a></dt>
 <dd><p>For a structured cell, return the buffered value.</p>
 <p>The buffered value is the value before schema validation</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.celltype">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">celltype</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#seamless.highlevel.Cell.celltype" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">celltype</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#seamless.highlevel.Cell.celltype" title="Link to this definition"></a></dt>
 <dd><p>The type of the cell.</p>
 <p>The type of the cell is by default “structured”,
 unless it is a help cell, which are “text” by default.</p>
@@ -624,7 +630,7 @@ unless it is a help cell, which are “text” by default.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.checksum">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">checksum</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#seamless.highlevel.Cell.checksum" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">checksum</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Checksum</span></em><a class="headerlink" href="#seamless.highlevel.Cell.checksum" title="Link to this definition"></a></dt>
 <dd><p>Contains the checksum of the cell, as SHA3-256 hash.</p>
 <p>The checksum defines the value of the cell.
 If the cell is defined, the checksum is available, even if
@@ -633,13 +639,13 @@ the value may not be.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.connect_from">
-<span class="sig-name descname"><span class="pre">connect_from</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#seamless.highlevel.Cell" title="seamless.highlevel.Cell.Cell"><span class="pre">Cell</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#seamless.highlevel.Transformer" title="seamless.highlevel.Transformer.Transformer"><span class="pre">Transformer</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.connect_from"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.connect_from" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">connect_from</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#seamless.highlevel.Cell" title="seamless.highlevel.Cell.Cell"><span class="pre">Cell</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#seamless.highlevel.Transformer" title="seamless.highlevel.Transformer.Transformer"><span class="pre">Transformer</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.connect_from"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.connect_from" title="Link to this definition"></a></dt>
 <dd><p>Connect from another cell or transformer to this cell.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.datatype">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">datatype</span></span><a class="headerlink" href="#seamless.highlevel.Cell.datatype" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">datatype</span></span><a class="headerlink" href="#seamless.highlevel.Cell.datatype" title="Link to this definition"></a></dt>
 <dd><p>The datatype of a structured cell.
 This makes it possible to indicate that a structural cell conforms
 to another Seamless celltype and can be trivially converted to it.
@@ -651,7 +657,7 @@ Use cases:
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.example">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">example</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Silk</span></em><a class="headerlink" href="#seamless.highlevel.Cell.example" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">example</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Silk</span></em><a class="headerlink" href="#seamless.highlevel.Cell.example" title="Link to this definition"></a></dt>
 <dd><p>For a structured cell, return a dummy Silk handle.</p>
 <dl class="simple">
 <dt>The handle does not store any values, but has type inference,</dt><dd><p>i.e. schema properties are inferred from what is assigned to it.</p>
@@ -669,7 +675,7 @@ Use cases:
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.exception">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">exception</span></span><a class="headerlink" href="#seamless.highlevel.Cell.exception" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">exception</span></span><a class="headerlink" href="#seamless.highlevel.Cell.exception" title="Link to this definition"></a></dt>
 <dd><p>Returns the exception associated with the cell.</p>
 <p>For non-structured cells, this exception was raised during parsing.
 For structured cells, it may also have been raised during validation</p>
@@ -677,7 +683,7 @@ For structured cells, it may also have been raised during validation</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.fallback">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fallback</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Fallback</span></em><a class="headerlink" href="#seamless.highlevel.Cell.fallback" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fallback</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Fallback</span></em><a class="headerlink" href="#seamless.highlevel.Cell.fallback" title="Link to this definition"></a></dt>
 <dd><p>Get a Fallback object
 With this, you can set and activate a fallback Cell, which will
 provide an alternative value once the fallback is activated.</p>
@@ -685,7 +691,7 @@ provide an alternative value once the fallback is activated.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.fingertip">
-<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fingertip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.fingertip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.fingertip" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fingertip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.fingertip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.fingertip" title="Link to this definition"></a></dt>
 <dd><p>Puts the buffer of this cell’s checksum ‘at your fingertips’:</p>
 <ul class="simple">
 <li><dl class="simple">
@@ -708,7 +714,7 @@ provide an alternative value once the fallback is activated.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.fingertip_no_recompute">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fingertip_no_recompute</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Cell.fingertip_no_recompute" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fingertip_no_recompute</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Cell.fingertip_no_recompute" title="Link to this definition"></a></dt>
 <dd><p>If True, recomputation is disabled for fingertipping.</p>
 <p>This means recomputation via a transformer, which can be intensive.
 Recomputation via conversion or subcell expression (which are quick)
@@ -717,20 +723,20 @@ is always enabled.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.fingertip_no_remote">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fingertip_no_remote</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Cell.fingertip_no_remote" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fingertip_no_remote</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Cell.fingertip_no_remote" title="Link to this definition"></a></dt>
 <dd><p>If True, remote calls are disabled for fingertipping.</p>
 <p>Remote calls can be for a database or a buffer server.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.get_links">
-<span class="sig-name descname"><span class="pre">get_links</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.get_links"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.get_links" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_links</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.get_links"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.get_links" title="Link to this definition"></a></dt>
 <dd><p>Get all Link (bidirectional cell-cell) connections involving this cell.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.handle">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">handle</span></span><a class="headerlink" href="#seamless.highlevel.Cell.handle" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">handle</span></span><a class="headerlink" href="#seamless.highlevel.Cell.handle" title="Link to this definition"></a></dt>
 <dd><p>Return a Silk handle to a structured cell.</p>
 <p>This is a Silk wrapper around the authoritative
 (independent) part of a structured cell.</p>
@@ -738,7 +744,7 @@ is always enabled.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.hash_pattern">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">hash_pattern</span></span><a class="headerlink" href="#seamless.highlevel.Cell.hash_pattern" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">hash_pattern</span></span><a class="headerlink" href="#seamless.highlevel.Cell.hash_pattern" title="Link to this definition"></a></dt>
 <dd><p>The hash pattern of the cell.</p>
 <p>This is an advanced feature, not used in day-to-day programming.
 Possible values:
@@ -755,20 +761,20 @@ or do similar things that may consume all of your memory.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.independent">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">independent</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Cell.independent" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">independent</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Cell.independent" title="Link to this definition"></a></dt>
 <dd><p>True if the cell has no dependencies</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.language">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">language</span></span><a class="headerlink" href="#seamless.highlevel.Cell.language" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">language</span></span><a class="headerlink" href="#seamless.highlevel.Cell.language" title="Link to this definition"></a></dt>
 <dd><p>The programming language for code cells.</p>
 <p>Default: Python</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.mimetype">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mimetype</span></span><a class="headerlink" href="#seamless.highlevel.Cell.mimetype" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mimetype</span></span><a class="headerlink" href="#seamless.highlevel.Cell.mimetype" title="Link to this definition"></a></dt>
 <dd><p>The mimetype of the cell.</p>
 <dl class="simple">
 <dt>Can be set directly according to the MIME specification,</dt><dd><p>or as a file extension.</p>
@@ -787,7 +793,7 @@ or do similar things that may consume all of your memory.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.mount">
-<span class="sig-name descname"><span class="pre">mount</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'rw'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'file'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persistent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.mount"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.mount" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">mount</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'rw'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'file'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persistent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.mount"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.mount" title="Link to this definition"></a></dt>
 <dd><p>Mounts the cell to the file system.
 Mounting is only supported for non-structured cells.</p>
 <p>To delete an existing mount, do <cite>del cell.mount</cite></p>
@@ -811,7 +817,7 @@ Default: True.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.observe">
-<span class="sig-name descname"><span class="pre">observe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polling_interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observe_none</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.observe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.observe" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">observe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polling_interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observe_none</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.observe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.observe" title="Link to this definition"></a></dt>
 <dd><p>Adds an observer that monitors <code class="docutils literal notranslate"><span class="pre">getattr(Cell,</span> <span class="pre">attr)</span></code>.</p>
 <p>This value is polled every <cite>polling_interval</cite> seconds,
 and if changed, <code class="docutils literal notranslate"><span class="pre">callback(value)</span></code> is invoked.</p>
@@ -825,7 +831,7 @@ in status and exception.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.output">
-<span class="sig-name descname"><span class="pre">output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OutputWidget</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.output"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.output" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OutputWidget</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.output"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.output" title="Link to this definition"></a></dt>
 <dd><p>Returns an output widget that tracks the cell value.</p>
 <p>The widget is a wrapper around an <code class="docutils literal notranslate"><span class="pre">ipywidgets.Output</span></code>
 and is to be used in Jupyter.</p>
@@ -847,7 +853,7 @@ and is to be used in Jupyter.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.scratch">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scratch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Cell.scratch" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scratch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Cell.scratch" title="Link to this definition"></a></dt>
 <dd><p>Is the cell a scratch cell.</p>
 <p>Scratch cells are fully dependent cells that are big and/or easy to
 recompute.
@@ -860,7 +866,7 @@ TODO: enforce that scratch cells must be fully dependent.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.self">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">self</span></span><a class="headerlink" href="#seamless.highlevel.Cell.self" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">self</span></span><a class="headerlink" href="#seamless.highlevel.Cell.self" title="Link to this definition"></a></dt>
 <dd><p>Returns a wrapper where the subcells are not directly accessible.
 Only relevant for structured cells.</p>
 <p>By default, a structured cell with value {“status”: 123} will cause
@@ -871,19 +877,19 @@ Only relevant for structured cells.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.set">
-<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.set" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.set" title="Link to this definition"></a></dt>
 <dd><p>Set the value of the cell</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.set_checksum">
-<span class="sig-name descname"><span class="pre">set_checksum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">checksum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.set_checksum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.set_checksum" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">set_checksum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">checksum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Checksum</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.set_checksum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.set_checksum" title="Link to this definition"></a></dt>
 <dd><p>Set the cell’s checksum from a SHA256 checksum</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.share">
-<span class="sig-name descname"><span class="pre">share</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readonly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toplevel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.share"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.share" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">share</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readonly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toplevel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.share"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.share" title="Link to this definition"></a></dt>
 <dd><p>Share a cell over HTTP.</p>
 <p>Typically, the cell is available under
 <a class="reference external" href="http://localhost:5813/ctx">http://localhost:5813/ctx</a>/&lt;path&gt;.</p>
@@ -904,7 +910,7 @@ with value <code class="docutils literal notranslate"><span class="pre">{'x':</s
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.status">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">status</span></span><a class="headerlink" href="#seamless.highlevel.Cell.status" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">status</span></span><a class="headerlink" href="#seamless.highlevel.Cell.status" title="Link to this definition"></a></dt>
 <dd><p>Return the status of the cell.</p>
 <p>The status may be undefined, error, upstream or OK
 If it is error, Cell.exception will be non-empty.</p>
@@ -912,7 +918,7 @@ If it is error, Cell.exception will be non-empty.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.traitlet">
-<span class="sig-name descname"><span class="pre">traitlet</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">SeamlessTraitlet</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.traitlet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.traitlet" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">traitlet</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">SeamlessTraitlet</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.traitlet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.traitlet" title="Link to this definition"></a></dt>
 <dd><p>Creates an traitlet object with its value linked to the cell.</p>
 <dl class="simple">
 <dt>A traitlet is derived from <code class="docutils literal notranslate"><span class="pre">traitlets.HasTraits</span></code>,</dt><dd><p>and can be linked to other traitlet objects, such as ipywidgets.</p>
@@ -935,13 +941,13 @@ If it is error, Cell.exception will be non-empty.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.unobserve">
-<span class="sig-name descname"><span class="pre">unobserve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.unobserve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.unobserve" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">unobserve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Cell.html#Cell.unobserve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Cell.unobserve" title="Link to this definition"></a></dt>
 <dd><p>Stop observing <code class="docutils literal notranslate"><span class="pre">getattr(Cell,</span> <span class="pre">attr)</span></code></p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Cell.value">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#seamless.highlevel.Cell.value" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#seamless.highlevel.Cell.value" title="Link to this definition"></a></dt>
 <dd><p>Returns the value of the cell, if translated</p>
 <dl class="simple">
 <dt>If the cell is not independent,</dt><dd><p>the value is None if an upstream dependency
@@ -956,15 +962,15 @@ schema is violated.</p>
 
 </section>
 <section id="transformer-class">
-<h2>Transformer class<a class="headerlink" href="#transformer-class" title="Permalink to this heading"></a></h2>
+<h2>Transformer class<a class="headerlink" href="#transformer-class" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">seamless.highlevel.</span></span><span class="sig-name descname"><span class="pre">Transformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">code</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hash_pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'*':</span> <span class="pre">'#'}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">seamless.highlevel.</span></span><span class="sig-name descname"><span class="pre">Transformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hash_pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'*':</span> <span class="pre">'#'}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer" title="Link to this definition"></a></dt>
 <dd><p>Transforms input values to a result value</p>
 <p>See <a class="reference external" href="http://sjdv1982.github.io/seamless/sphinx/html/transformer.html">http://sjdv1982.github.io/seamless/sphinx/html/transformer.html</a> for documentation</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.INPUT">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">INPUT</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.INPUT" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">INPUT</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.INPUT" title="Link to this definition"></a></dt>
 <dd><p>The name of the input attribute. Default is “inp”.</p>
 <p>This is the attribute under which the input object is available
 (i.e. Transformer.inp by default). The input object is similar
@@ -974,7 +980,7 @@ to a (structured) Cell.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.RESULT">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RESULT</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.RESULT" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RESULT</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.RESULT" title="Link to this definition"></a></dt>
 <dd><p>The name of the result variable. Default is “result”.</p>
 <p>This is also the attribute under which the result object is available
 (i.e. Transformer.result by default). The result object is similar
@@ -984,13 +990,13 @@ to a (structured) Cell.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.add_validator">
-<span class="sig-name descname"><span class="pre">add_validator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.add_validator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.add_validator" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">add_validator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.add_validator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.add_validator" title="Link to this definition"></a></dt>
 <dd><p>Adds a validator to the input, analogous to Cell.add_validator</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.cancel">
-<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.cancel" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.cancel" title="Link to this definition"></a></dt>
 <dd><p>Hard-cancels the transformer.</p>
 <p>This will send a cancel signal that will kill the transformation if
 it is running.</p>
@@ -1002,10 +1008,10 @@ will restart the transformation.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.clear_exception">
-<span class="sig-name descname"><span class="pre">clear_exception</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.clear_exception"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.clear_exception" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">clear_exception</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.clear_exception"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.clear_exception" title="Link to this definition"></a></dt>
 <dd><p>Clear any exception associated with this transformer.</p>
 <p>Re-execute of the associated transformation.
-Both local and remote (via communion) execution are affected.</p>
+Both local and remote (via assistant) execution are affected.</p>
 <p>If this transformer has no transformation (missing or pending inputs),
 this will set a flag, causing clear_exception to take effect
 as soon as a transformation is present.
@@ -1014,22 +1020,25 @@ Re-translation will clear this flag.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.copy">
-<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.copy" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a copy wrapper.
-This wrapper can be assigned to a new Context attribute,
-creating a copy of the current Transformer.
-Input parameters and connections to input pins are all copied.</p>
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.copy" title="Link to this definition"></a></dt>
+<dd><p>If not bound to a context, return a copy of the Transformer.</p>
+<p>If bound to a workflow, return a copy wrapper.
+This wrapper can be assigned to a new Context attribute,</p>
+<blockquote>
+<div><p>creating a copy of the current Transformer,
+where input parameters and connections to input pins are all copied.</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.debug">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">debug</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.debug" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">debug</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.debug" title="Link to this definition"></a></dt>
 <dd><p>If debug mode is enabled.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.docker_image">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">docker_image</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.docker_image" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">docker_image</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.docker_image" title="Link to this definition"></a></dt>
 <dd><p>Defines the Docker image in which a transformer should run
 Getting this property is syntactic sugar for:</p>
 <p><cite>Transformer.environment.get_docker()[“name”]</cite></p>
@@ -1039,20 +1048,20 @@ Getting this property is syntactic sugar for:</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.environment">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">environment</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Environment</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.environment" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">environment</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Environment</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.environment" title="Link to this definition"></a></dt>
 <dd><p>Computing environment to execute transformations in</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.example">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">example</span></span><a class="headerlink" href="#seamless.highlevel.Transformer.example" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">example</span></span><a class="headerlink" href="#seamless.highlevel.Transformer.example" title="Link to this definition"></a></dt>
 <dd><p>The example handle of the transformer input object.</p>
 <p>See Cell.example for more details</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.exception">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">exception</span></span><a class="headerlink" href="#seamless.highlevel.Transformer.exception" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">exception</span></span><a class="headerlink" href="#seamless.highlevel.Transformer.exception" title="Link to this definition"></a></dt>
 <dd><p>Returns the exception associated with the transformer.</p>
 <p>The exception may be raised during one of three stages:</p>
 <ol class="arabic simple">
@@ -1073,7 +1082,7 @@ The result object is cell-like, see Cell.exception for more details.</p></li>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.fingertip_no_recompute">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fingertip_no_recompute</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.fingertip_no_recompute" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fingertip_no_recompute</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.fingertip_no_recompute" title="Link to this definition"></a></dt>
 <dd><p>If True, recomputation is disabled for fingertipping.</p>
 <p>This means recomputation via transformation, which can be intensive.
 Recomputation via conversion or subcell expression (which are quick)
@@ -1082,46 +1091,52 @@ is always enabled.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.fingertip_no_remote">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fingertip_no_remote</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.fingertip_no_remote" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fingertip_no_remote</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.fingertip_no_remote" title="Link to this definition"></a></dt>
 <dd><p>If True, remote calls are disabled for fingertipping.</p>
 <p>Remote calls can be for a database or a buffer server.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="seamless.highlevel.Transformer.get_transformation">
-<span class="sig-name descname"><span class="pre">get_transformation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.get_transformation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.get_transformation" title="Permalink to this definition"></a></dt>
-<dd><p>Return the checksum of the transformation dict.
-The transformation dict contains the checksums of all input pins,
-including the code.</p>
-<p>In addition, it may contain the following special keys:
+<dt class="sig sig-object py" id="seamless.highlevel.Transformer.from_canonical_interface">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_canonical_interface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">command</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.from_canonical_interface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.from_canonical_interface" title="Link to this definition"></a></dt>
+<dd><p>TODO: document</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="seamless.highlevel.Transformer.get_transformation_checksum">
+<span class="sig-name descname"><span class="pre">get_transformation_checksum</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.get_transformation_checksum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.get_transformation_checksum" title="Link to this definition"></a></dt>
+<dd><p>Return the checksum of the transformation dict.</p>
+<p>The transformation dict contains the checksums of all input pins,
+including the code, as well as the following special keys:
 - __output__: the name (usually “result”) and (sub)celltype of the output pin</p>
 <blockquote>
 <div><p>If it has a hash pattern, this is appended as the fourth element.</p>
 </div></blockquote>
 <ul class="simple">
-<li><p>__env__: the checksum of the environment description</p></li>
-<li><p>__as__: a dictionary of pin-to-variable renames (<a href="#id17"><span class="problematic" id="id18">pins.pinname.as_</span></a> attribute)</p></li>
-<li><p>__format__: a dictionary that contains deepcell and filesystem attributes</p></li>
+<li><p>__as__ (optional): a dictionary of pin-to-variable renames (<a href="#id17"><span class="problematic" id="id18">pins.pinname.as_</span></a> attribute)</p></li>
+<li><p>__format__ (optional): a dictionary that contains deepcell and filesystem attributes</p></li>
 </ul>
-<p>Finally, it may contain additional information that is not reflected
-in this checksum:</p>
+<p>The transformation checksum is the checksum of this dict.</p>
+<p>Note that in addition, a transformation dict may contain extra information
+that is not reflected in this checksum:</p>
 <ul class="simple">
+<li><p>__env__: the checksum of the environment description</p></li>
 <li><p>__meta__: meta information (Transformer.meta).</p></li>
 <li><p>__compilers__: context-wide compiler definitions.</p></li>
 <li><p>__languages__: context-wide language definition.</p></li>
 </ul>
-<p>You can run a transformation with:
-<cite>seamless.run_transformation(checksum)</cite>.</p>
+<p>Because of the double underscores, this extra information is called
+“dunder.</p>
 <p><cite>ctx.resolve(checksum, “plain”)</cite> will return the transformation dict,
-minus __meta__, __compilers__ and __languages__. The checksum is
-treated like any other buffer, i.e. including database, communion etc.</p>
-<p>With Transformation.get_transformation_dict(), you can obtain the full transformation dict,
-including __meta__, __compilers__ and __languages__.</p>
+minus the dunder information. The checksum is
+treated like any other buffer, i.e. including database, assistant etc.</p>
+<p>With Transformer.get_transformation_dict(), you will obtain the full
+transformation dict, including the dunder.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.get_transformation_dict">
-<span class="sig-name descname"><span class="pre">get_transformation_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.get_transformation_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.get_transformation_dict" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_transformation_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.get_transformation_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.get_transformation_dict" title="Link to this definition"></a></dt>
 <dd><p>Return the full transformation dict.
 The transformation dict contains the checksums of all input pins,
 including the code.</p>
@@ -1146,13 +1161,13 @@ in its checksum:</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.header">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">header</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.header" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">header</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.header" title="Link to this definition"></a></dt>
 <dd><p>For a compiled transformer, the generated C header</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.language">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">language</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.language" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">language</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.language" title="Link to this definition"></a></dt>
 <dd><p>Defines the programming language of the transformer’s source code.</p>
 <p>Allowed values are: python, ipython, bash,
 or any compiled language.</p>
@@ -1161,21 +1176,31 @@ or any compiled language.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.link_options">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">link_options</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#seamless.highlevel.Transformer.link_options" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">link_options</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#seamless.highlevel.Transformer.link_options" title="Link to this definition"></a></dt>
 <dd><p>Linker options for compiled modules
 They are a list of strings, for example:
 [“-lm”, “-lgfortran”, “-lcudart”]</p>
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="seamless.highlevel.Transformer.local">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">local</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.local" title="Link to this definition"></a></dt>
+<dd><p>Local execution.
+If True, transformations are executed in the local Seamless instance.
+If False, they are delegated to an assistant.
+If None (default),
+an assistant is tried first and local execution is a fallback.</p>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.logs">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">logs</span></span><a class="headerlink" href="#seamless.highlevel.Transformer.logs" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">logs</span></span><a class="headerlink" href="#seamless.highlevel.Transformer.logs" title="Link to this definition"></a></dt>
 <dd><p>Returns the stdout/stderr logs of the transformer, if any</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.meta">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">meta</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.meta" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">meta</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.meta" title="Link to this definition"></a></dt>
 <dd><p>Dictionary of meta-parameters.
 These don’t affect the computation result, but may affect job managers
 Example of meta-parameters: expected computation time, service name</p>
@@ -1184,20 +1209,20 @@ Example of meta-parameters: expected computation time, service name</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.observe">
-<span class="sig-name descname"><span class="pre">observe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polling_interval</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observe_none</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.observe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.observe" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">observe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polling_interval</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observe_none</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.observe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.observe" title="Link to this definition"></a></dt>
 <dd><p>Observes attributes of the result, analogous to Cell.observe</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.schema">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">schema</span></span><a class="headerlink" href="#seamless.highlevel.Transformer.schema" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">schema</span></span><a class="headerlink" href="#seamless.highlevel.Transformer.schema" title="Link to this definition"></a></dt>
 <dd><p>The schema of the transformer input object</p>
 <p>See Cell.schema for more details</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.scratch">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scratch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.scratch" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scratch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#seamless.highlevel.Transformer.scratch" title="Link to this definition"></a></dt>
 <dd><p>Is this transformer’s result attribute a scratch cell.</p>
 <p>Scratch cells are fully dependent cells that are big and/or easy to
 recompute.</p>
@@ -1209,7 +1234,7 @@ recompute.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.self">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">self</span></span><a class="headerlink" href="#seamless.highlevel.Transformer.self" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">self</span></span><a class="headerlink" href="#seamless.highlevel.Transformer.self" title="Link to this definition"></a></dt>
 <dd><p>Returns a wrapper where the pins are not directly accessible.</p>
 <p>By default, a pin called “compute” will cause “transformer.status”
 to return the pin, and not the actual transformer status.</p>
@@ -1219,15 +1244,29 @@ to return the pin, and not the actual transformer status.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.status">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">status</span></span><a class="headerlink" href="#seamless.highlevel.Transformer.status" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">status</span></span><a class="headerlink" href="#seamless.highlevel.Transformer.status" title="Link to this definition"></a></dt>
 <dd><p>The status of the transformer, analogous to Cell.status.</p>
 <p>See Transformer.exception about the different stages.
 The first stage with a non-OK status is reported.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="seamless.highlevel.Transformer.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.undo" title="Link to this definition"></a></dt>
+<dd><p>Attempt to undo a finished transformer.</p>
+<p>This may be useful in the case of non-reproducible transformers.</p>
+<p>While the correct solution is to make them deterministic, this method
+will allow repeated execution under various conditions, in order to
+investigate the issue.</p>
+<p>If the transformer has no associated transformation (e.g. undefined inputs)
+or the transformation result is not known, an exception is raised.</p>
+<p>Otherwise, the database is contacted in order to contest the result.
+If the database returns an error message, that is returned as string.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="seamless.highlevel.Transformer.unobserve">
-<span class="sig-name descname"><span class="pre">unobserve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.unobserve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.unobserve" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">unobserve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/seamless/highlevel/Transformer.html#Transformer.unobserve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#seamless.highlevel.Transformer.unobserve" title="Link to this definition"></a></dt>
 <dd><p>Analogous to Cell.unobserve</p>
 </dd></dl>
 

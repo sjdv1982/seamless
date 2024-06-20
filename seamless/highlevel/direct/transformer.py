@@ -243,7 +243,7 @@ class CelltypesWrapper:
         from ...core.cell import celltypes
         if key not in self._celltypes:
             raise AttributeError(key)
-        pin_celltypes = list(celltypes.keys()) + ["silk"]
+        pin_celltypes = list(celltypes.keys()) + ["silk", "deepcell", "deepfolder", "folder", "module"]
         if value not in pin_celltypes:
             raise TypeError(value, pin_celltypes)
         self._celltypes[key] = value

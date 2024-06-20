@@ -1,20 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cells &mdash; Seamless 0.10 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5be48651"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=c71f9630"></script>
+        <script src="_static/doctools.js?v=695de88e"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -116,7 +119,7 @@
            <div itemprop="articleBody">
              
   <section id="cells">
-<h1>Cells<a class="headerlink" href="#cells" title="Permalink to this heading"></a></h1>
+<h1>Cells<a class="headerlink" href="#cells" title="Link to this heading"></a></h1>
 <p>A cell (seamless.highlevel.Cell) contains a piece of data in the dependency graph that is contained by a Seamless Context.
 Thus, cells are always part of a Context (called <code class="docutils literal notranslate"><span class="pre">ctx</span></code> by convention).</p>
 <p>Within this context graph, cell values are constant.</p>
@@ -167,7 +170,7 @@ Cells are <em>independent</em> if they have their own value, with no dependencie
 <p>Cells can be <em>shared</em> over HTTP (via the Seamless REST API), using <code class="docutils literal notranslate"><span class="pre">Cell.share</span></code>. By default, shares are read-only (only HTTP GET requests are supported). Independent cells can also be shared as read/write (their value can be changed using HTTP PUT requests). If a cell is to be accessed as a URL from the browser, you are recommended to set <code class="docutils literal notranslate"><span class="pre">Cell.mimetype</span></code>.</p>
 <p>Newly created/connected/mounted/shared cells require a re-translation of the context to take effect. This is also the case for a change in celltype.</p>
 <section id="alternative-subcell-syntax">
-<h2>Alternative subcell syntax<a class="headerlink" href="#alternative-subcell-syntax" title="Permalink to this heading"></a></h2>
+<h2>Alternative subcell syntax<a class="headerlink" href="#alternative-subcell-syntax" title="Link to this heading"></a></h2>
 <p>You can use <code class="docutils literal notranslate"><span class="pre">ctx.c[&quot;sub&quot;]</span></code> to assign or refer to subcell <code class="docutils literal notranslate"><span class="pre">ctx.c.sub</span></code>. This way, you can also access subcells that are not valid Python variables, such as <code class="docutils literal notranslate"><span class="pre">ctx.c[&quot;file.txt&quot;]</span></code>.
 You can also access individual elements from a list:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ctx</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">]</span>
@@ -185,7 +188,7 @@ You can also access individual elements from a list:</p>
 </div>
 </section>
 <section id="cell-types-and-conversion">
-<h2>Cell types and conversion<a class="headerlink" href="#cell-types-and-conversion" title="Permalink to this heading"></a></h2>
+<h2>Cell types and conversion<a class="headerlink" href="#cell-types-and-conversion" title="Link to this heading"></a></h2>
 <p><em><strong>IMPORTANT: This documentation section is a stub.</strong></em></p>
 <!--
 Cell types:

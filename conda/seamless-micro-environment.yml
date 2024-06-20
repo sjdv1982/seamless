@@ -7,6 +7,8 @@ dependencies:
   - pip
   - rpbs::seamless-framework==0.12
   - rpbs::silk>=0.1.11
+  - rpbs::seamless-cli-complement
+  - rpbs::seamless-cli-bin
   - conda
   - pip:
     - websockets
@@ -14,3 +16,9 @@ dependencies:
     - speg
 variables:
   SEAMLESS_CONDA_ENVIRONMENT: 1
+  SEAMLESS_DEFAULT_ASSISTANT_IP: 127.0.0.1
+  SEAMLESS_DEFAULT_ASSISTANT_PORT: 5533
+  SEAMLESS_DATABASE_IP: 127.0.0.1
+  SEAMLESS_DATABASE_PORT: 5522
+  SEAMLESS_READ_BUFFER_SERVERS: http://127.0.0.1:5577
+  SEAMLESS_WRITE_BUFFER_SERVER: http://127.0.0.1:5577

@@ -1,20 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Deployment &mdash; Seamless 0.10 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=acd5942f" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
+        <script src="_static/jquery.js?v=5be48651"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=c71f9630"></script>
+        <script src="_static/doctools.js?v=695de88e"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -126,7 +129,7 @@
            <div itemprop="articleBody">
              
   <section id="deployment">
-<h1>Deployment<a class="headerlink" href="#deployment" title="Permalink to this heading"></a></h1>
+<h1>Deployment<a class="headerlink" href="#deployment" title="Link to this heading"></a></h1>
 <p>Deployment involves the sharing of a finished workflow with the outside world. Note that a workflow may consist in three forms:</p>
 <ul class="simple">
 <li><p>Code, input parameters and results. Here, deployment means visualization and modification by others. Preferably, modification should be interactive.</p></li>
@@ -164,7 +167,7 @@ In-depth:
 - Federation. Link: provenance
 
 --><section id="deploying-a-workflow-as-an-interactive-web-service">
-<h2>Deploying a workflow as an interactive web service<a class="headerlink" href="#deploying-a-workflow-as-an-interactive-web-service" title="Permalink to this heading"></a></h2>
+<h2>Deploying a workflow as an interactive web service<a class="headerlink" href="#deploying-a-workflow-as-an-interactive-web-service" title="Link to this heading"></a></h2>
 <p>…
 You will need the .seamless file, and a zip file generated with <code class="docutils literal notranslate"><span class="pre">ctx.save_zip(...)</span></code>.
 …
@@ -173,21 +176,21 @@ Seamless deployment is done using Cloudless (see section below).
 Think of data storage…</p>
 </section>
 <section id="cloudless">
-<h2>Cloudless<a class="headerlink" href="#cloudless" title="Permalink to this heading"></a></h2>
+<h2>Cloudless<a class="headerlink" href="#cloudless" title="Link to this heading"></a></h2>
 <p><strong>Deployment role: live web servers</strong></p>
 <p>This role is normally taken by <em><strong>Cloudless</strong></em>. Note that Seamless embeds its own HTTP server. Thus, Cloudless is a rather simple program that does the following:</p>
 <ul class="simple">
 <li><p>It has a directory “graphs” with Seamless graph files.</p></li>
 <li><p>It listens on port 3124. It has an admin interface on /admin.</p></li>
 <li><p>It can take requests to launch an instance of a particular Seamless graph.
-This launches a new Docker container with Seamless serving the graph (the <code class="docutils literal notranslate"><span class="pre">seamless-serve-graph</span> <span class="pre">--database</span></code> command). With this, the instance connects itself to Seamless DB. In addition, the instance connects itself to jobless if configured (see below).</p></li>
+This launches a new Docker container with Seamless serving the graph (the <code class="docutils literal notranslate"><span class="pre">seamless-serve-graph</span></code> command). With <code class="docutils literal notranslate"><span class="pre">--delegate</span></code>, the instance connects itself to a Seamless buffer server, a database, and an assistant to serve jobs.</p></li>
 <li><p>HTTP traffic <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">/instances/&lt;instanceID&gt;/</span></code> is redirected to/from the HTTP server ports of the Seamless instance.</p></li>
 <li><p>The graph of the Seamless instance is initially identical to that of the original graph. This changes whenever an input cell is changed over HTTP or a computation finishes. Every few seconds, the graph is stored in the “instances” directory. Note that the graph files are small as they contain only checksums. The underlying buffers are stored in the Seamless database.</p></li>
 <li><p>After 10 minutes of no HTTP traffic, the Seamless instance is killed. Whenever new traffic arrives, the Seamless instance is re-instantiated, not from the “graphs” directory, but from its graph file in the “instances” directory.</p></li>
 </ul>
 </section>
 <section id="jobless">
-<h2>Jobless<a class="headerlink" href="#jobless" title="Permalink to this heading"></a></h2>
+<h2>Jobless<a class="headerlink" href="#jobless" title="Link to this heading"></a></h2>
 <p><strong>Deployment role: transformation job service</strong></p>
 <p><strong>Deployment role: compilation service</strong></p>
 <p>These roles are normally taken by <em><strong>jobless</strong></em>.</p>
@@ -207,28 +210,28 @@ This launches a new Docker container with Seamless serving the graph (the <code 
 <code class="docutils literal notranslate"><span class="pre">seamless-conda-env-run-transformation</span></code> tool is run.</p>
 <p>Jobless is part of the seamless-tools repo. See that repo for more details.</p>
 <section id="using-jobless">
-<h3>Using jobless<a class="headerlink" href="#using-jobless" title="Permalink to this heading"></a></h3>
+<h3>Using jobless<a class="headerlink" href="#using-jobless" title="Link to this heading"></a></h3>
 <p>Seamless reads the jobless IP from the SEAMLESS_COMMUNION_IP environment  variable, which defaults your Docker host IP. The default jobless port (SEAMLESS_COMMUNION_PORT) is 5533.</p>
 </section>
 </section>
 <section id="section-on-deployment-of-environments-jobless">
-<h2>Section on deployment of environments (jobless)<a class="headerlink" href="#section-on-deployment-of-environments-jobless" title="Permalink to this heading"></a></h2>
+<h2>Section on deployment of environments (jobless)<a class="headerlink" href="#section-on-deployment-of-environments-jobless" title="Link to this heading"></a></h2>
 <p>…</p>
 </section>
 <section id="buffer-server">
-<h2>Buffer server<a class="headerlink" href="#buffer-server" title="Permalink to this heading"></a></h2>
+<h2>Buffer server<a class="headerlink" href="#buffer-server" title="Link to this heading"></a></h2>
 <p><strong>Deployment role: buffer server</strong></p>
 <p>The easiest way to set up a buffer server is to simply share the /buffers directory of a Seamless database directory over HTTP, e.g. using NGINX. The RPBS buffer server works like this.</p>
 </section>
 <section id="big-data-and-deployment">
-<h2>Big data and deployment<a class="headerlink" href="#big-data-and-deployment" title="Permalink to this heading"></a></h2>
+<h2>Big data and deployment<a class="headerlink" href="#big-data-and-deployment" title="Link to this heading"></a></h2>
 <p>(bring the data where the computation is, general remarks… and/or link to:</p>
 <ul class="simple">
 <li><p>Seamless explained</p></li>
 <li><p>deepcell).</p></li>
 </ul>
 <section id="collections-and-fair-databases">
-<h3>collections and FAIR databases<a class="headerlink" href="#collections-and-fair-databases" title="Permalink to this heading"></a></h3>
+<h3>collections and FAIR databases<a class="headerlink" href="#collections-and-fair-databases" title="Link to this heading"></a></h3>
 <p>Seamless has some facilities for maintaining and sharing deep cells and deep folders.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">database-run-actions</span></code> tool revolves around the concept of “collection”, which is essentially a deep structure with a name.
 The tool does things like:</p>
