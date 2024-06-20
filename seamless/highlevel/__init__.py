@@ -21,6 +21,7 @@ from silk.validation import _allowed_types
 from ..core.lambdacode import lambdacode
 from ..core.cached_compile import cached_compile
 from .Checksum import Checksum
+from .Buffer import Buffer
 
 ConstantTypes = _allowed_types + (Silk, MixedBase, tuple)
 
