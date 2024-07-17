@@ -11,9 +11,30 @@ from seamless.core.cache.buffer_cache import buffer_cache
 from seamless.cmd.message import message as msg, message_and_exit as err
 from seamless.cmd.bytes2human import bytes2human
 from seamless import CacheMissError
+from seamless.calculate_checksum import calculate_file_checksum
 
 stdout_lock = threading.Lock()
 
+
+def exists_file(filename, download_checksum):
+    download_checksum = Checksum(download_checksum)
+    if download_checksum.value is None:
+        return False
+    try:
+        file_buffer = buffer_cache.get_buffer(download_checksum.bytes(), remote=False)
+        if file_buffer is not None:
+            return True
+    except CacheMissError:
+        pass
+
+    try:
+        current_checksum = calculate_file_checksum(filename)
+        current_checksum = Checksum(download_checksum)
+    except Exception:
+        return False
+    
+    return current_checksum == download_checksum
+    
 
 def get_buffer_length(checksum):
     buffer_info = database.get_buffer_info(checksum)
@@ -69,6 +90,19 @@ def download(
     auto_confirm,
     index_checksums=None,
 ):
+    with ThreadPoolExecutor(max_workers=100) as executor:
+        file_existing = list(executor.map(exists_file, checksum_dict.keys(), checksum_dict.values()))
+        file_existing = [k for k,v in zip(checksum_dict.keys(), file_existing) if v]
+        if len(file_existing):
+            msg(2, f"Skip {len(file_existing)} files that already exist")
+
+    checksum_dict_original = checksum_dict
+    checksum_dict = checksum_dict.copy()
+    for k in file_existing:
+        checksum_dict.pop(k)
+
+    if len(checksum_dict):
+        msg(2, f"Download {len(checksum_dict)} files")
     checksums = set(checksum_dict.values())
     with ThreadPoolExecutor(max_workers=100) as executor:
         buffer_lengths = {
@@ -98,7 +132,9 @@ def download(
     for download_target in directories:
         curr_files = [f for f in checksum_dict if f.startswith(download_target + "/")]
         if not curr_files:
-            continue
+            curr_files_original = [f for f in checksum_dict_original if f.startswith(download_target + "/")]
+            if not curr_files_original:
+                continue
         buffer_length = 0
         unknown_buffer_lengths = 0
         for f in curr_files:

@@ -1,9 +1,13 @@
 import sys
 import io
 
-HEADER = "seamless:"
+_HEADER = "seamless:"
 _VERBOSITY: int = 0
 
+
+def set_header(header):
+    global _HEADER
+    _HEADER = str(header) + ":"
 
 def set_verbosity(verbosity: int) -> None:
     """Set verbosity to -1 (quiet), 0 (default), 1, 2 or 3"""
@@ -22,12 +26,12 @@ def message(verbosity: int, *args) -> None:
             f = io.StringIO()
             print(*args, file=f)
             msg = f.getvalue()
-            print(HEADER, "*" * 60, file=sys.stderr)
+            print(_HEADER, "*" * 60, file=sys.stderr)
             for l in msg.splitlines():
-                print(HEADER, "*", l, file=sys.stderr)
-            print(HEADER, "*" * 60, file=sys.stderr)
+                print(_HEADER, "*", l, file=sys.stderr)
+            print(_HEADER, "*" * 60, file=sys.stderr)
         else:
-            print(HEADER, *args, file=sys.stderr)
+            print(_HEADER, *args, file=sys.stderr)
 
 def message_and_exit(*args):
     print("\nERROR:", *args, file=sys.stderr)
