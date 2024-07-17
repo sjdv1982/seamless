@@ -10,10 +10,10 @@ dependencies:
   - rpbs::seamless-cli-complement
   - rpbs::seamless-cli-bin
   - conda
+  - speg
   - pip:
     - websockets
     - cson
-    - speg
 variables:
   SEAMLESS_CONDA_ENVIRONMENT: 1
   SEAMLESS_DEFAULT_ASSISTANT_IP: 127.0.0.1
