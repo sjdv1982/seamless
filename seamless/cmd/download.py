@@ -100,6 +100,8 @@ def download(
     checksum_dict = checksum_dict.copy()
     for k in file_existing:
         checksum_dict.pop(k)
+        if k in files:
+            files.remove(k)
 
     if len(checksum_dict):
         msg(2, f"Download {len(checksum_dict)} files")
