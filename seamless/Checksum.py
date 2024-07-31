@@ -39,6 +39,10 @@ If the filename doesn't have a .CHECKSUM extension, it is added"""
         return self._value.hex()
 
     def __eq__(self, other):
+        if isinstance(other, bool):
+            return bool(self) == other
+        elif isinstance(other, int):
+            return False
         if not isinstance(other, Checksum):
             other = Checksum(other)
         return self.bytes() == other.bytes()

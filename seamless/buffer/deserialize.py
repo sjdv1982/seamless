@@ -6,8 +6,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from silk.mixed.io import deserialize as mixed_deserialize
 import builtins
 from silk.mixed import MAGIC_NUMPY
-
-from typing import Optional
+from seamless import Checksum
 
 from seamless.util import lrucache2
 
@@ -33,18 +32,14 @@ def _deserialize_plain(buffer):
         raise ValueError(msg) from None
     return value
 
-def _deserialize(buffer:bytes, checksum:Optional[bytes], celltype:str):    
+def _deserialize(buffer:bytes, checksum:Checksum, celltype:str):    
     from .evaluate import validate_text_celltype
     from .convert import validate_checksum
 
     if celltype == "silk":
         celltype = "mixed"
-    if checksum is not None:
-        assert isinstance(checksum, bytes), type(checksum)
-        cs = checksum.hex()
-    else:
-        cs = None
-    logger.debug("DESERIALIZE: buffer of length {}, checksum {}".format(len(buffer), cs))
+    checksum = Checksum(checksum)
+    logger.debug("DESERIALIZE: buffer of length {}, checksum {}".format(len(buffer), checksum))
     if celltype in text_types2:
         s = buffer.decode()
         value = s.rstrip("\n")

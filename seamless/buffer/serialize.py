@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def _serialize(value, celltype):
-    from seamless.workflow.core.protocol.json import json_dumps
+    from seamless.buffer.json import json_dumps
     if celltype == "str":
         if not isinstance(value, bool):
             value = str(value)

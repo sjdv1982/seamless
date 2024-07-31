@@ -3,9 +3,7 @@ import copy
 
 import logging
 
-from ..cache.buffer_cache import buffer_cache
-from ... import calculate_checksum, calculate_dict_checksum
-
+from seamless.buffer.buffer_cache import buffer_cache
 
 logger = logging.getLogger(__name__)
 
@@ -425,7 +423,7 @@ is result checksum: {}
         
     def destroy_cell(self, cell):
         checksum = self.cell_to_ref[cell]
-        if checksum is not None:
+        if checksum:
             self.decref_checksum(checksum, cell, False, destroying=True)
         self.cell_to_ref.pop(cell)
 
@@ -520,5 +518,5 @@ from ..cell import Cell
 from ..transformer import Transformer
 from ..structured_cell import Inchannel
 from .expression import Expression
-from ..protocol.get_buffer import get_buffer
+from seamless.buffer.get_buffer import get_buffer
 from ..cache.deeprefmanager import deeprefmanager

@@ -4,7 +4,6 @@ import functools
 from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
 
 from seamless.buffer.cached_calculate_checksum import checksum_cache
-from seamless.util.tempref import temprefmanager
 from seamless import CacheMissError
 from seamless import Buffer, Checksum
 from seamless.buffer.buffer_info import BufferInfo
@@ -67,6 +66,7 @@ class BufferCache:
         self.incref_buffer(Checksum(empty_list_checksum), b'[]\n', persistent=True)
 
     def _check_delete_buffer(self, checksum:Checksum):
+        from seamless.workflow.tempref import temprefmanager
         if checksum not in self.last_time:
             return
         t = time.time()
@@ -93,6 +93,7 @@ class BufferCache:
 
 
     def _update_time(self, checksum:Checksum, buffer_length:int|None=None):
+        from seamless.workflow.tempref import temprefmanager
         t = time.time()
         if buffer_length is None:
             buffer_length = 9999999
@@ -184,15 +185,15 @@ class BufferCache:
                     elif checksum not in self.missing:
                         self.missing[checksum] = False
             # print("/INCREF")
-    def incref(self, checksum, *, persistent):
+    def incref(self, checksum:Checksum, *, persistent):
         """Increments the refcount of a buffer checksum.
 
         If the buffer cannot be retrieved, it is registered as missing.
         Otherwise, it is moved from local cache into the database. 
         If there is no database, it will remain in local cache for a short while.
         """
-        assert isinstance(checksum, bytes)
-        assert len(checksum) == 32
+        checksum = Checksum(checksum)
+        assert checksum        
         buffer = None
         if checksum not in self.buffer_refcount:
             buffer = self.buffer_cache.get(checksum)
@@ -215,25 +216,22 @@ class BufferCache:
                     if buffer is not None:  # should be ok normally
                         self.cache_buffer(checksum, buffer)
 
-    def decref(self, checksum):
+    def decref(self, checksum:Checksum):
         """Decrements the refcount of a buffer checksum, cached with incref_buffer
         If the refcount reaches zero, and there is no remote buffer storage,
          it will be added to local cache using cache_buffer.
         This means that it will remain accessible for a short while
         """
-        #print("DECREF     ", checksum.hex())
-        assert isinstance(checksum, bytes)
-        assert len(checksum) == 32
+        checksum = Checksum(checksum)
+        assert checksum
+        #print("DECREF     ", checksum)
         return self._decref([checksum])
 
-    def get_buffer(self, checksum, *, remote=True, deep=False):
-        from ... import fair     
-        if checksum is None:
+    def get_buffer(self, checksum:Checksum, *, remote=True, deep=False):
+        from seamless import fair
+        checksum = Checksum(checksum)
+        if not checksum:
             return None
-        if isinstance(checksum, str):
-            checksum = bytes.fromhex(checksum)
-        assert isinstance(checksum, bytes)
-        assert len(checksum) == 32
         if checksum.hex() == empty_dict_checksum:
             return b'{}\n'
         elif checksum.hex() == empty_list_checksum:
@@ -386,12 +384,13 @@ class BufferCache:
         if sync_remote:
             self._sync_buffer_info_to_remote(checksum)
 
-    def guarantee_buffer_info(self, checksum:bytes, celltype:str, *, buffer:bytes=None, sync_to_remote:bool):
+    def guarantee_buffer_info(self, checksum:Checksum, celltype:str, *, buffer:bytes=None, sync_to_remote:bool):
         """Modify buffer_info to reflect that checksum is surely deserializable into celltype
         """
         # for mixed: if possible, retrieve the buffer locally to check for things like is_numpy etc.
-        if not isinstance(checksum, bytes):
-            raise TypeError(type(checksum))
+        checksum = Checksum(checksum)
+        if not checksum:
+            raise ValueError(None)
         if celltype == "bytes":
             return
         if celltype == "checksum":

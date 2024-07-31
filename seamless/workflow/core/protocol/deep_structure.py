@@ -3,6 +3,7 @@ from copy import deepcopy
 import numpy as np
 from io import BytesIO
 from silk.mixed import MAGIC_NUMPY, MAGIC_SEAMLESS_MIXED
+from seamless import Checksum
 
 class DeepStructureError(ValueError):
     def __str__(self):
@@ -693,8 +694,9 @@ def write_deep_structure(checksum, deep_structure, hash_pattern, path):
     else:
         return result
 
-async def apply_hash_pattern(checksum, hash_pattern):
+async def apply_hash_pattern(checksum:Checksum, hash_pattern):
     """Converts a checksum to a checksum that represents a deep structure"""
+    checksum = Checksum(checksum)
     if hash_pattern == "#":
         return checksum
     else:
@@ -721,7 +723,7 @@ async def apply_hash_pattern(checksum, hash_pattern):
     deep_checksum = await cached_calculate_checksum(deep_buffer)
     buffer_cache.cache_buffer(deep_checksum, deep_buffer)
     buffer_cache.guarantee_buffer_info(deep_checksum, "plain", sync_to_remote=False)
-    return deep_checksum
+    return Checksum(deep_checksum)
 
 def apply_hash_pattern_sync(checksum, hash_pattern):
     """Converts a checksum to a checksum that represents a deep structure
@@ -742,7 +744,7 @@ def apply_hash_pattern_sync(checksum, hash_pattern):
     deep_buffer = serialize_sync(deep_structure, "plain")
     deep_checksum = cached_calculate_checksum_sync(deep_buffer)
     buffer_cache.cache_buffer(deep_checksum, deep_buffer)
-    return deep_checksum
+    return Checksum(deep_checksum)
 
 
 from seamless.buffer.cached_calculate_checksum import cached_calculate_checksum, cached_calculate_checksum_sync

@@ -213,4 +213,3 @@ def elide(macro: "Macro"):
 from ..macro import Macro, Path, path as make_path
 from ..cell import Cell, cell
 from ..context import context
-from ...calculate_checksum import calculate_checksum, calculate_dict_checksum

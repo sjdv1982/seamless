@@ -3,6 +3,7 @@ from collections import namedtuple
 
 from . import BackgroundTask
 from seamless.buffer.deserialize import deserialize
+from seamless import Checksum
 
 Deserialization = namedtuple("Deserialization",["checksum", "celltype", "copy"])
 
@@ -17,11 +18,11 @@ class DeserializeBufferTask(BackgroundTask):
                     # This causes the highlevel/context2.py test to fail, for example
 
 
-    def __init__(self, manager, buffer, checksum, celltype, copy):
+    def __init__(self, manager, buffer, checksum:Checksum, celltype, copy):
         assert buffer is None or isinstance(buffer, bytes)
+        checksum = Checksum(checksum)
         self.buffer = buffer
         self.checksum = checksum
-        assert checksum.hex().isalnum() and len(checksum) == 32, checksum
         self.celltype = celltype
         self.copy = copy
         super().__init__(manager)

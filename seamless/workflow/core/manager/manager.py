@@ -6,7 +6,7 @@ import traceback
 import sys
 from copy import deepcopy
 
-from seamless import CacheMissError
+from seamless import CacheMissError, Checksum
 
 from ..status import StatusReasonEnum
 
@@ -81,7 +81,7 @@ class Manager:
     _blocked = False
     def __init__(self):
         self._destroyed = True
-        from seamless import check_original_event_loop
+        from seamless.workflow import check_original_event_loop
         check_original_event_loop()
         global is_dummy_mount
         from .livegraph import LiveGraph
@@ -100,7 +100,7 @@ class Manager:
         asyncio.ensure_future(loop_run_synctasks)
 
         # for now, just a single global temprefmanager
-        from ..cache.tempref import temprefmanager
+        from seamless.workflow.tempref import temprefmanager
         self.temprefmanager = temprefmanager
 
         # for now, just a single global mountmanager
@@ -181,9 +181,10 @@ class Manager:
     # API section II: Actions
     ##########################################################################
 
-    def _upon_set_cell_checksum(self, cell, checksum, void, trigger_bilinks):
+    def _upon_set_cell_checksum(self, cell, checksum:Checksum, void, trigger_bilinks):
         livegraph = self.livegraph
-        if checksum is not None:
+        checksum = Checksum(checksum)
+        if checksum:
             for traitlet in cell._traitlets:
                 # TODO: block the async mainloop during the receive_update call
                 try:
@@ -201,22 +202,22 @@ class Manager:
                 self.sharemanager.add_cell_update(cell, checksum)
             except Exception:
                 traceback.print_exc()
-        if checksum is not None and trigger_bilinks:
+        if checksum and trigger_bilinks:
             try:
                 self.livegraph.activate_bilink(cell, checksum)
             except Exception:
                 traceback.print_exc()
-        if (void or checksum is not None) and not len(livegraph._destroying):
+        if (void or checksum) and not len(livegraph._destroying):
             if cell in livegraph.cell_from_macro_elision:
                 elision = livegraph.cell_from_macro_elision[cell]
                 if elision.macro.ctx is not None and not elision.macro.ctx._destroyed:
-                    #print("UP!", cell, void, checksum.hex() if checksum is not None else None)
+                    #print("UP!", cell, void, checksum.hex() if checksum else None)
                     elision.update()
 
 
     @_run_in_mainthread
     def set_cell_checksum(self,
-        cell, checksum, *,
+        cell, checksum:Checksum, *,
         initial, from_structured_cell, trigger_bilinks
     ):
         """Setting a cell checksum.
@@ -241,6 +242,7 @@ class Manager:
     If old checksum is not None, do a cell cancellation.
     Set the cell as being non-void, set the checksum (direct attribute access), and launch a cell update task.
         """
+        checksum = Checksum(checksum)
         if self._destroyed or cell._destroyed:
             return
         sc_data = self.livegraph.datacells.get(cell)
@@ -261,7 +263,7 @@ class Manager:
             assert not trigger_bilinks
             if not from_structured_cell and cell._structured_cell is not None:
                 assert cell._structured_cell.auth is cell, cell
-        if checksum is None:
+        if not checksum:
             assert not initial
             reason = StatusReasonEnum.UNDEFINED
             if not from_structured_cell:
@@ -272,13 +274,13 @@ class Manager:
             old_checksum = cell._checksum # avoid infinite task loop...
         #and cell._context()._macro is None: # TODO: forbid
         if not initial and not from_structured_cell:
-            self.cancel_cell(cell, (checksum is None))
+            self.cancel_cell(cell, (not checksum))
         else:
             if cell._structured_cell is None:
                 unvoid_cell(cell, self.livegraph)
         self._set_cell_checksum(
             cell, checksum,
-            (checksum is None), status_reason=reason,
+            (not checksum), status_reason=reason,
             trigger_bilinks=trigger_bilinks
         )
         updated = False
@@ -290,7 +292,7 @@ class Manager:
                     self._set_cell_checksum(scell._data, None, void=True, status_reason=reason)
                 self.structured_cell_trigger(scell)
             else:
-                if checksum is not None:
+                if checksum:
                     unvoid_cell(cell, self.livegraph)
                     if cell._structured_cell is None or sc_schema:
                         CellUpdateTask(self, cell).launch()
@@ -308,7 +310,7 @@ class Manager:
             self.trigger_all_fallbacks(cell)
 
     def _set_cell_checksum(self,
-        cell, checksum, void, status_reason=None, prelim=False, trigger_bilinks=True
+        cell, checksum:Checksum, void:bool, status_reason=None, prelim=False, trigger_bilinks=True
     ):
         """
         NOTE: Any cell task depending on the old checksum must have been canceled already
@@ -327,12 +329,12 @@ class Manager:
         """
         if cell._destroyed:
             return
-        assert checksum is None or isinstance(checksum, bytes), checksum
+        checksum = Checksum(checksum)
         assert isinstance(void, bool), void
 
         if void:
             assert status_reason is not None
-            assert checksum is None
+            assert not checksum
         else:
             status_reason = None
 
@@ -340,7 +342,7 @@ class Manager:
         if len(livegraph.schemacells[cell]):
             independent = True
             value = None
-            if checksum is not None:
+            if checksum:
                 buf = self._get_buffer(checksum,deep=False)
                 value = deserialize_sync(buf, checksum, "plain", copy=False)
             for sc in livegraph.schemacells[cell]:
@@ -351,11 +353,11 @@ class Manager:
             independent = cell.has_independence()
         cachemanager = self.cachemanager
         old_checksum = cell._checksum
-        if old_checksum is not None and old_checksum != checksum:
+        if old_checksum and old_checksum != checksum:
             cachemanager.decref_checksum(old_checksum, cell, False)
         
-        print_debug("SET CHECKSUM", cell, "None:", checksum is None, checksum == old_checksum)
-        if checksum is not None:
+        print_debug("SET CHECKSUM", cell, "None:", not checksum, checksum == old_checksum)
+        if checksum:
             buffer_cache.guarantee_buffer_info(checksum, cell.celltype, sync_to_remote=False)
         cell._checksum = checksum
         cell._void = void
@@ -364,8 +366,8 @@ class Manager:
         if checksum != old_checksum:
             cachemanager.incref_checksum(checksum, cell, result=False)
             observer = cell._observer
-            if (observer is not None or livegraph._hold_observations) and ((checksum is not None) or void):
-                cs = checksum.hex() if checksum is not None else None
+            if (observer is not None or livegraph._hold_observations) and (bool(checksum) or void):
+                cs = checksum.hex() if checksum else None
                 if not livegraph._hold_observations and not len(livegraph._destroying):
                     try:
                         cell._observer(cs)
@@ -375,15 +377,15 @@ class Manager:
                     livegraph._observing.append((cell, cs))
             self._upon_set_cell_checksum(cell, checksum, void, trigger_bilinks)
 
-    def _set_inchannel_checksum(self, inchannel, checksum, void, status_reason=None, *,
+    def _set_inchannel_checksum(self, inchannel, checksum:Checksum, void:bool, status_reason=None, *,
       prelim=False, from_cancel_system=False
     ):
         ###import traceback; traceback.print_stack(limit=5)
-        assert checksum is None or isinstance(checksum, bytes), checksum
+        checksum = Checksum(checksum)
         assert isinstance(void, bool), void
         if void:
             assert status_reason is not None
-            assert checksum is None
+            assert not checksum
             assert not prelim
         sc = inchannel.structured_cell()
         if sc._destroyed:
@@ -391,9 +393,9 @@ class Manager:
 
         cachemanager = self.cachemanager
         if not sc._cyclic:
-            assert not (inchannel._void and (inchannel._checksum is not None))
+            assert not (inchannel._void and bool(inchannel._checksum))
         old_checksum = inchannel._checksum
-        if old_checksum is not None and old_checksum != checksum:
+        if old_checksum and old_checksum != checksum:
             cachemanager.decref_checksum(old_checksum, inchannel, False)
         inchannel._checksum = checksum
         inchannel._void = void
@@ -405,19 +407,19 @@ class Manager:
                 self.structured_cell_trigger(sc)
 
     def _set_transformer_checksum(self,
-        transformer, checksum, void, *,
+        transformer, checksum:Checksum, void:bool, *,
         prelim, status_reason=None
     ):
         # NOTE: Any cell task depending on the old checksum must have been canceled already
-        assert checksum is None or isinstance(checksum, bytes), checksum
+        checksum = Checksum(checksum)
         if void:
             assert status_reason is not None
-            assert checksum is None
+            assert not checksum
             assert prelim == False
         assert isinstance(void, bool), void
         cachemanager = self.cachemanager
         old_checksum = transformer._checksum
-        if old_checksum is not None and old_checksum != checksum:
+        if old_checksum and old_checksum != checksum:
             cachemanager.decref_checksum(old_checksum, transformer, True)
         transformer._prelim_result = prelim
         transformer._checksum = checksum
@@ -501,20 +503,21 @@ class Manager:
             return cell._checksum, cell._void
 
     @mainthread
-    def get_cell_checksum(self, cell):
+    def get_cell_checksum(self, cell) -> Checksum:
         checksum, _ = self._get_cell_checksum_and_void(cell)
-        return checksum
+        return Checksum(checksum)
 
     @mainthread
     def get_cell_void(self, cell):
         _, void = self._get_cell_checksum_and_void(cell)
         return void
 
-    def _get_buffer(self, checksum, deep):
+    def _get_buffer(self, checksum:Checksum, deep):
+        checksum = Checksum(checksum)
         if asyncio.get_event_loop().is_running():
             buffer = get_buffer(checksum, remote=True, deep=deep)
             return buffer
-        if checksum is None:
+        if not checksum:
             return None
         if checksum.hex() == empty_dict_checksum:
             return b"{}\n"
@@ -541,7 +544,7 @@ class Manager:
         if cell._destroyed:
             return None
         checksum = self.get_cell_checksum(cell)
-        if checksum is None:
+        if not checksum:
             return None
         celltype = cell._celltype
         if not copy:
@@ -550,15 +553,12 @@ class Manager:
                 return deepcopy(cached_value)
         return self.resolve(checksum, celltype, copy=copy)
 
-    def resolve(self, checksum, celltype=None, copy=True):
+    def resolve(self, checksum:Checksum, celltype=None, copy=True):
         """Returns the data buffer that corresponds to the checksum.
-        If celltype is provided, a value is returned instead
-
-        The checksum must be a SHA3-256 hash, as hex string or as bytes"""
-        if checksum is None:
+        If celltype is provided, a value is returned instead"""
+        checksum = Checksum(checksum)
+        if not checksum:
             return None
-        if isinstance(checksum, str):
-            checksum = bytes.fromhex(checksum)
         # set deep to True, since we do want to check the fairserver
         buffer = self._get_buffer(checksum,deep=True)
         if celltype is None:

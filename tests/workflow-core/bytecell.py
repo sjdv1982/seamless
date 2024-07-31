@@ -10,10 +10,21 @@ print(ctx.bytes1.buffer)
 print(ctx.bytes1.value, type(ctx.bytes1.value))
 print()
 
+from seamless.buffer.convert import try_convert
+binary_cs = try_convert(
+    ctx.bytes1.checksum,
+    "bytes",
+    "binary",
+    buffer=ctx.bytes1.buffer
+)
+print(binary_cs)
+print()
+
 ctx.bin = cell("binary")
 ctx.bytes1.connect(ctx.bin)
 ctx.compute()
 print("Exception:", ctx.bin.exception)
+print(ctx.bin.checksum)
 print(ctx.bin.buffer)
 print(ctx.bin.value, type(ctx.bin.value))
 print()

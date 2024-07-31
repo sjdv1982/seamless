@@ -1321,7 +1321,7 @@ class TransformationCache:
 transformation_cache = TransformationCache()
 
 from seamless import CacheMissError
-from seamless.util.tempref import temprefmanager
+from seamless.workflow.tempref import temprefmanager
 from seamless.buffer.buffer_cache import buffer_cache
 from seamless.buffer.get_buffer import get_buffer
 from seamless.buffer.deserialize import deserialize

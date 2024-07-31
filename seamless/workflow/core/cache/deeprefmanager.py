@@ -2,10 +2,9 @@ import asyncio
 import traceback
 from weakref import WeakSet
 
-from ... import calculate_dict_checksum
 from ..status import StatusReasonEnum
-from ..cache.buffer_cache import buffer_cache, empty_dict_checksum, empty_list_checksum
-from ..cache import CacheMissError
+from seamless.buffer.buffer_cache import buffer_cache, empty_dict_checksum, empty_list_checksum
+from seamless import CacheMissError
 
 _rev_cs_hashpattern = {}
 
@@ -142,7 +141,7 @@ class DeepRefManager:
 
 
     async def run(self):
-        from seamless import SEAMLESS_FRUGAL
+        from seamless.workflow import SEAMLESS_FRUGAL
         exc_count = 0
         while not self._destroyed:
             try:
@@ -241,5 +240,4 @@ class DeepRefManager:
 deeprefmanager = DeepRefManager()
 
 from ..protocol.deep_structure import deep_structure_to_checksums
-from ..protocol.deserialize import deserialize
-from ..protocol.get_buffer import get_buffer
+from seamless.buffer.get_buffer import get_buffer

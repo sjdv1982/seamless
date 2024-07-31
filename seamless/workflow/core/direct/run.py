@@ -18,7 +18,7 @@ from ...core.cache.transformation_cache import (
     syntactic_is_semantic,
     DummyTransformer,
 )
-from seamless.util.tempref import temprefmanager
+from seamless.workflow.tempref import temprefmanager
 from seamless.direct import run_transformation, run_transformation_async
 from seamless.buffer.buffer_remote import write_buffer
 

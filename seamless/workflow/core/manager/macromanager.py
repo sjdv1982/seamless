@@ -224,7 +224,7 @@ class MacroManager:
             self.update_macro(m)
 
     async def run(self):
-        from seamless import SEAMLESS_FRUGAL
+        from seamless.workflow import SEAMLESS_FRUGAL
         while not self._destroyed:
             try:
                 self._update_next_macro()
@@ -262,9 +262,8 @@ class MacroManager:
         self._destroyed = True
 
 from .tasks.evaluate_expression import evaluate_expression
-from ..protocol.deserialize import deserialize
 from .tasks import is_equal
 from ..status import StatusReasonEnum
 from ..cache.elision import elide
-from ..cache import CacheMissError
-from ...compiler import compilers as default_compilers, languages as default_languages
+from seamless import CacheMissError
+from seamless.compiler import compilers as default_compilers, languages as default_languages

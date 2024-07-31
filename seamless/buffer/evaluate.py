@@ -1,3 +1,4 @@
+from seamless import Checksum
 import numpy as np
 import warnings
 
@@ -65,22 +66,22 @@ def validate_evaluation_subcelltype(checksum, buffer, celltype, subcelltype, cod
     text_subcelltype_validation_cache.add(key)
 
 async def conversion(
-    checksum, celltype, target_celltype, 
+    checksum:Checksum, celltype, target_celltype, 
     *, perform_fingertip, value_conversion_callback=None,buffer=None
-):
-    if checksum is None:
-        return None
+) -> Checksum:
+    if not checksum:
+        return Checksum(None)
     if value_conversion_callback is None:
         value_conversion_callback = value_conversion
     if buffer is not None:
         buffer_cache.cache_buffer(checksum, buffer)
     result = try_convert(checksum, celltype, target_celltype)
     
-    if result == True:
-        return checksum
-    elif isinstance(result, bytes):
+    if isinstance(result, Checksum):
         buffer_cache.update_buffer_info_conversion(checksum, celltype, result, target_celltype, sync_remote=True)
         return result
+    elif result == True:
+        return checksum    
     elif result == False:
         raise SeamlessConversionError("Checksum cannot be converted")
 
@@ -97,9 +98,9 @@ async def conversion(
             curr_checksum, curr_celltype, next_celltype,
             buffer_info=buffer_info, get_buffer_local=True,
         )
-        if result == True:
+        if isinstance(result, Checksum):
             pass
-        elif isinstance(result, bytes):
+        elif result == True:
             pass
         elif (result is None or result == -1):
             if conv in conversion_values:
@@ -109,16 +110,16 @@ async def conversion(
         else:
             raise SeamlessConversionError("Unexpected conversion error")
 
-        if isinstance(result, bytes):
+        if isinstance(result, Checksum):
             buffer_cache.update_buffer_info_conversion(curr_checksum, curr_celltype, result, next_celltype, sync_remote=True)
             curr_checksum = result
 
         curr_celltype = next_celltype
 
-    if result == True:
-        return checksum
-    elif isinstance(result, bytes):
+    if isinstance(result, Checksum):
         return result
+    elif result == True:
+        return checksum
     else:
         raise SeamlessConversionError("Checksum cannot be converted")
 
@@ -200,7 +201,7 @@ async def value_conversion(checksum, source_celltype, target_celltype):
     
 
 from .convert import make_conversion_chain, try_convert, try_convert_single, SeamlessConversionError
-from seamless import CacheMissError
+from seamless import CacheMissError, Checksum
 from .buffer_cache import buffer_cache
 from .cell import text_types2
 from .convert import validate_checksum, validate_text

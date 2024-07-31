@@ -3,7 +3,7 @@ import asyncio
 from weakref import WeakSet
 from contextlib import contextmanager
 
-from seamless.util.tempref import temprefmanager
+from seamless.workflow.tempref import temprefmanager
 
 _toplevel_registered = WeakSet()
 _toplevel_managers = WeakSet()

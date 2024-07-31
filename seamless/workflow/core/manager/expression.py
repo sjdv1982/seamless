@@ -2,6 +2,8 @@ from seamless.buffer.calculate_checksum import calculate_checksum
 from weakref import WeakValueDictionary
 import json
 
+from seamless import Checksum
+
 _expressions = WeakValueDictionary()
 
 _hash_slots = [
@@ -27,11 +29,11 @@ class Expression:
             return expression
 
     def __init__(
-        self, checksum, path, celltype,
+        self, checksum:Checksum, path, celltype,
         target_celltype, target_subcelltype,
         *, hash_pattern, target_hash_pattern
     ):
-        assert checksum is None or isinstance(checksum, bytes)
+        checksum = Checksum(checksum)
         if hash_pattern in ("", "#"):
             hash_pattern = None
         if hash_pattern is not None:
@@ -103,7 +105,7 @@ class Expression:
         return d
 
     def __str__(self):
-        from seamless.workflow.core.protocol.json import json_dumps
+        from seamless.buffer.json import json_dumps
         d = self._hash_dict()
         return json_dumps(d)
 

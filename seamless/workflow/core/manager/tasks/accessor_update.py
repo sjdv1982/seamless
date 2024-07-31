@@ -47,7 +47,7 @@ class AccessorUpdateTask(Task):
                 if path is None:
                     assert not cell._void, cell
                     if not cell._prelim:
-                        assert cell._checksum is None, cell
+                        assert not cell._checksum, cell
                 else:
                     sc = target._structured_cell
                     try:
@@ -55,7 +55,7 @@ class AccessorUpdateTask(Task):
                         inchannel = sc.inchannels[path]
                         assert not inchannel._void, (sc, cell, path)
                         if not sc._cyclic:
-                            assert inchannel._checksum is None, (sc, cell, path)
+                            assert not inchannel._checksum, (sc, cell, path)
                     except:
                         traceback.print_exc()
                         return
@@ -68,7 +68,7 @@ class AccessorUpdateTask(Task):
             expression_result_checksum = None
             expression.exception = fexc
 
-        if expression_result_checksum is None:
+        if not expression_result_checksum:
             if expression.exception is None:
                 reason = StatusReasonEnum.UPSTREAM
                 accessor.exception = None
@@ -135,7 +135,7 @@ class AccessorUpdateTask(Task):
                         target, result_checksum,
                         False, None, prelim=accessor._prelim
                     )
-                    if result_checksum is not None:
+                    if result_checksum:
                         CellUpdateTask(manager, target).launch()
                 else:
                     if not target._destroyed:

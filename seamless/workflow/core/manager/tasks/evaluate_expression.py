@@ -9,6 +9,8 @@ import numpy as np
 from . import Task
 from silk.json_util import json_encode
 
+from seamless import Checksum
+
 celltype_mapping = {
     "silk": "mixed",
     "transformer": "python",
@@ -23,9 +25,7 @@ async def inter_deepcell_conversion(manager, value, source_hash_pattern, target_
     elif source_hash_pattern == {"*": "#"} and target_hash_pattern == {"*": "##"}:
         result = {}
         for k in value:
-            source_checksum = value[k]
-            if source_checksum is not None:
-                assert isinstance(source_checksum, bytes)
+            source_checksum = Checksum(value[k])
             target_checksum = try_convert(source_checksum, "mixed", "bytes")
             if target_checksum is None:
                 raise CacheMissError(target_checksum)
@@ -68,12 +68,13 @@ async def inter_deepcell_conversion(manager, value, source_hash_pattern, target_
 
 
 async def value_conversion(
-    checksum, source_celltype, target_celltype, *, 
+    checksum:Checksum, source_celltype, target_celltype, *, 
     manager, perform_fingertip
 ):
+    checksum = Checksum(checksum)
     cachemanager = manager.cachemanager
     if target_celltype == "checksum":
-        target_buffer = checksum.hex().encode()
+        target_buffer = checksum
         target_checksum = await CalculateChecksumTask(manager, target_buffer).run()
         buffer_cache.cache_buffer(target_checksum, target_buffer)
         return target_checksum
@@ -188,9 +189,9 @@ def build_expression_transformation(expression: "Expression"):
     return transformation
     
 async def evaluate_expression_remote(expression, fingertip_mode):
-    from ....config import get_assistant
-    from ....assistant_client import run_job
-    from ...cache.buffer_remote import write_buffer
+    from seamless.config import get_assistant
+    from seamless.assistant_client import run_job
+    from seamless.buffer.buffer_remote import write_buffer
     if not get_assistant():
         return
     etf_checksum = build_expression_transformation(expression)
@@ -211,13 +212,12 @@ async def evaluate_expression_remote(expression, fingertip_mode):
     return result
 
 async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fingertip_upstream, fingertip_done):
-    from ....util import parse_checksum
     cachemanager = manager.cachemanager
     if not fingertip_mode:
         result_checksum = \
             cachemanager.expression_to_result_checksum.get(expression)
         if result_checksum is not None:
-            result_checksum = parse_checksum(result_checksum, as_bytes=True)
+            result_checksum = Checksum(result_checksum)
             return result_checksum
     
     perform_fingertip = (fingertip_mode or fingertip_upstream)
@@ -227,9 +227,8 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
         result_checksum = None
         result_buffer = None
         result_value = None
-        source_checksum = expression.checksum
+        source_checksum = Checksum(expression.checksum)
         
-        assert isinstance(source_checksum, bytes)
         source_hash_pattern = expression.hash_pattern
         source_celltype = expression.celltype
         source_celltype = celltype_mapping.get(source_celltype, source_celltype)
@@ -281,11 +280,9 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                     raise CacheMissError(source_checksum)
                 deep_source_value = await DeserializeBufferTask(manager, source_buffer, source_checksum, "plain", False).run()
                 mode, subpath_result = await get_subpath(deep_source_value, source_hash_pattern, expression.path)                
-                if subpath_result is not None:
+                if subpath_result:
                     assert mode == "checksum"
                 source_checksum = subpath_result
-                if source_checksum is not None:
-                    assert isinstance(source_checksum, bytes)
                 result_hash_pattern = None
                 trivial_path = True
 
@@ -325,7 +322,7 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                 validate_checksum(deep_structure)
                 validate_deep_structure(deep_structure, target_hash_pattern)
 
-                if nested_checksum is not None:
+                if nested_checksum:
                     result_checksum = nested_checksum
                 else:
                     result_checksum = source_checksum
@@ -348,8 +345,7 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                         value_conversion_callback=value_conversion_callback
                     )
                     locknr = await acquire_evaluation_lock(self)
-                    if result_checksum is not None:
-                        result_checksum = parse_checksum(result_checksum, as_bytes=True)                        
+                    result_checksum = Checksum(result_checksum)
                 done = False  # still need to account for target hash pattern
                 needs_value_conversion = False
             elif trivial_path and hash_pattern_equivalent: #deepcell-to-deepcell
@@ -424,15 +420,13 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
                         result_checksum = await CalculateChecksumTask(
                             manager, result_buffer
                         ).run()
-                        if result_checksum is None:
+                        if not result_checksum:
                             raise Exception
                         assert isinstance(result_checksum, bytes)
                     done = True
 
             if not done and target_hash_pattern not in (None, "#", "##"):
                 result_checksum = await apply_hash_pattern(result_checksum, target_hash_pattern)
-                if result_checksum is not None:
-                    assert isinstance(result_checksum, bytes)
 
         except asyncio.CancelledError as exc:
             if self._canceled:
@@ -458,8 +452,8 @@ async def _evaluate_expression(self, expression, *, manager, fingertip_mode, fin
             if locknr is None:
                 locknr = await acquire_evaluation_lock(self)            
             
-        if result_checksum is not None:
-            assert isinstance(result_checksum, bytes)
+        result_checksum = Checksum(result_checksum)
+        if result_checksum:
             if expression.target_subcelltype is not None:
                 # validate subcelltype only if we can get a result buffer without heroics
                 if result_buffer is None:

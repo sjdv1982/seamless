@@ -10,7 +10,7 @@ import orjson
 import numpy as np
 import builtins
 
-from seamless import Buffer
+from seamless import Buffer, Checksum
 
 def validate_text(text, celltype, code_filename):
     try:
@@ -71,13 +71,14 @@ def try_convert(
     """
     try_convert may return:
     True (trivial success)
-    A checksum (success) (as bytes)
+    A checksum (success) (as Checksum object)
     -1 (future success)
     None (future success or failure)
     False (unconditional failure)
     An SeamlessConversionError is raised if a "reinterpret" or "possible" conversion fails
     """
 
+    checksum = Checksum(checksum)
     if source_celltype == target_celltype:
         return checksum
 
@@ -112,7 +113,7 @@ def try_convert(
 
     for params in try_convert_params:
         curr_celltype = source_celltype  
-        curr_checksum = checksum 
+        curr_checksum = checksum
         curr_buffer = buffer
         for next_celltype in conv_chain:
             curr_params = params.copy()
@@ -123,11 +124,11 @@ def try_convert(
                 curr_checksum, curr_celltype, next_celltype,
                 **curr_params
             )
-            if result == True:
-                pass
-            elif isinstance(result, bytes):
+            if isinstance(result, Checksum):
                 curr_checksum = result
                 curr_buffer = None
+            elif result == True:
+                pass
             elif result is None or result == -1:
                 if break_on_value:
                     conv = (curr_celltype, next_celltype)
@@ -163,7 +164,7 @@ def try_convert_single(
     if buffer_info:
         result = convert_from_buffer_info(buffer_info, source_celltype, target_celltype)
         if result is not None and result != -1:
-            return result
+            return Checksum(result)
     else:
         if conv in conversion_trivial:
             return True
@@ -188,9 +189,12 @@ def try_convert_single(
         buffer = get_buffer(checksum, remote=get_buffer_remote)
     if buffer is not None:
         result = _convert_from_buffer(checksum, buffer, source_celltype, target_celltype)
+
+    if isinstance(result, bytes):
+        result = Checksum(result)
     
     assert not isinstance(result, str)
-    if isinstance(result, bytes):
+    if isinstance(result, Checksum):
         buffer_cache.guarantee_buffer_info(result, target_celltype, sync_to_remote=True)
     return result
 

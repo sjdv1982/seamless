@@ -4,6 +4,8 @@ class Buffer:
         from seamless.buffer.serialize import serialize_sync as serialize
         celltype = self._map_celltype(celltype)
         if celltype is None:
+            if isinstance(value_or_buffer, Buffer):
+                value_or_buffer = value_or_buffer.value
             if not isinstance(value_or_buffer, bytes):
                 raise TypeError("Constructing Buffer from raw buffer, but raw buffer is not a bytes object")
             buf = value_or_buffer

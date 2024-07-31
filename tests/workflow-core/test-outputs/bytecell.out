@@ -1,7 +1,10 @@
 b'this is a bytes value'
 b'this is a bytes value' <class 'bytes'>
 
+1c202a536d3fbb015b3185d91c3ef684a61be178bb80ef6fb7490edd8da9b1e0
+
 Exception: None
+1c202a536d3fbb015b3185d91c3ef684a61be178bb80ef6fb7490edd8da9b1e0
 b"\x93NUMPY\x01\x00v\x00{'descr': '|S21', 'fortran_order': False, 'shape': (), }                                                             \nthis is a bytes value"
 b'this is a bytes value' <class 'numpy.ndarray'>
 
