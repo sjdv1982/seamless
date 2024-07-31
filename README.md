@@ -1,4 +1,4 @@
-# Seamless: a cell-based interactive workflow framework
+# Seamless: a framework for reusable computations
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/sjdv1982/seamless-binder-demo/main?labpath=basic-example.ipynb)
 

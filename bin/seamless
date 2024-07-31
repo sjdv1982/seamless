@@ -750,6 +750,8 @@ if args.dry_run:
 
         logger = logging.getLogger("seamless")
         logger.setLevel(logging.ERROR)
+        logger = logging.getLogger("seamless-core")
+        logger.setLevel(logging.ERROR)
 
     sys.exit(0)
     

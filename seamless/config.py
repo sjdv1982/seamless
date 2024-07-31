@@ -6,7 +6,7 @@ import requests
 from traceback import print_exc
 
 import logging
-logger = logging.getLogger("seamless")
+logger = logging.getLogger(__name__)
 
 
 _assistant = None
@@ -265,4 +265,8 @@ from .core.cache.buffer_remote import (
     set_read_buffer_folders, set_read_buffer_servers, set_write_buffer_server,
     add_read_buffer_folder, add_read_buffer_server
 )
-from .core.transformation import set_ncores
+def set_ncores(ncores):
+    from seamless.workflow.core.transformation import _set_ncores
+    if ncores == 0:
+        print(DeprecationWarning("set_ncores(0) is deprecated. Use seamless.config.block_local() instead"))
+    return _set_ncores(ncores)
