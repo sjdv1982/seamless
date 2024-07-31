@@ -15,16 +15,18 @@ from seamless.buffer.get_buffer import get_buffer
 try:
     from seamless.buffer.buffer_cache import buffer_cache
     from seamless.buffer.convert import try_convert, SeamlessConversionError
-except ImportError:   
+except ImportError:
     buffer_cache = None
     try_convert = None
 session = requests.Session()
-    
+
 MAX_DOWNLOADS = 10
 mirrors = {}
 
+
 class DownloadError(Exception):
     pass
+
 
 class Mirror:
     def __init__(self, host):
@@ -33,8 +35,8 @@ class Mirror:
         self.benchmarked = False
         self._connection_latencies = []
         self._downloaded = 0
-        self._download_time = 0        
-    
+        self._download_time = 0
+
     @property
     def dead(self):
         return self._failure_count >= 5
@@ -47,8 +49,8 @@ class Mirror:
         lat = self._connection_latencies
         if not len(lat):
             return None
-        return sum(lat)/len(lat)
-    
+        return sum(lat) / len(lat)
+
     def add_connection_latency(self, latency):
         lat = self._connection_latencies
         if len(lat) == 10:
@@ -61,16 +63,18 @@ class Mirror:
             return 0
         if self._download_time == 0:
             return None
-        return self._downloaded/self._download_time
+        return self._downloaded / self._download_time
 
     def record_download(self, downloaded, download_time):
         self._downloaded += downloaded
         self._download_time += download_time
         self._failure_count = 0
 
+
 def get_host(url):
     _, host, _, _, _ = urllib.parse.urlsplit(url)
     return host
+
 
 def test_bandwidth(mirror, url, max_time=5):
     t = time.time()
@@ -85,11 +89,12 @@ def test_bandwidth(mirror, url, max_time=5):
                 break
         download_time = time.time() - t - latency
         if download_time >= 0:
-            #print("REC", mirror.host, downloaded, download_time)
+            # print("REC", mirror.host, downloaded, download_time)
             mirror.record_download(downloaded, download_time)
     except (ConnectionError, ReadTimeout):
-        #import traceback; traceback.print_exc()
-        mirror.add_failure()    
+        # import traceback; traceback.print_exc()
+        mirror.add_failure()
+
 
 def sort_mirrors_by_latency(mirrorlist):
     result = []
@@ -101,8 +106,9 @@ def sort_mirrors_by_latency(mirrorlist):
         if latency is None:
             latency = 0
         result.append((mirror, url, latency))
-    result.sort(key=lambda r:r[2])
+    result.sort(key=lambda r: r[2])
     return [(r[0], r[1]) for r in result]
+
 
 def sort_mirrors_by_download_time(mirrorlist, buffer_length):
     result = []
@@ -124,24 +130,25 @@ def sort_mirrors_by_download_time(mirrorlist, buffer_length):
                 download_time = mirror.connection_latency
             else:
                 download_time = mirror.connection_latency + buffer_length / bandwidth
-            #print("DOWNLOAD TIME", url, download_time)
+            # print("DOWNLOAD TIME", url, download_time)
         except Exception:
             continue
         if download_time is None:
             download_time = 99999999
         result.append((mirror, url, download_time))
-    result.sort(key=lambda r:r[2])
+    result.sort(key=lambda r: r[2])
     return [(r[0], r[1]) for r in result]
 
-def get_buffer_length(checksum:Checksum, mirrorlist):
+
+def get_buffer_length(checksum: Checksum, mirrorlist):
     checksum = Checksum(checksum)
     if checksum and buffer_cache is not None:
         try:
             buffer_info = buffer_cache.get_buffer_info(
-                bytes.fromhex(checksum), 
+                bytes.fromhex(checksum),
                 force_length=True,
                 buffer_from_remote=False,
-                sync_remote=False
+                sync_remote=False,
             )
             if buffer_info is not None and buffer_info.length is not None:
                 return buffer_info.length
@@ -153,7 +160,7 @@ def get_buffer_length(checksum:Checksum, mirrorlist):
             response = session.get(url, stream=True, timeout=3)
             latency = time.time() - t
             mirror.add_connection_latency(latency)
-            #print("LAT", url, latency)
+            # print("LAT", url, latency)
             try:
                 return int(response.headers["content-length"])
             except (KeyError, ValueError):
@@ -161,10 +168,11 @@ def get_buffer_length(checksum:Checksum, mirrorlist):
             except Exception:
                 raise DownloadError from None
         except (ConnectionError, ReadTimeout):
-            #import traceback; traceback.print_exc()
+            # import traceback; traceback.print_exc()
             mirror.add_failure()
 
     return None
+
 
 def _get_url(url_info):
     if isinstance(url_info, str):
@@ -173,7 +181,10 @@ def _get_url(url_info):
         url = url_info["url"]
     return url
 
-def download_buffer_sync(checksum:Checksum, url_infos, celltype="bytes", *, verbose=False):
+
+def download_buffer_sync(
+    checksum: Checksum, url_infos, celltype="bytes", *, verbose=False
+):
     checksum = Checksum(checksum)
     mirrorlist = []
     for url_info in url_infos:
@@ -200,8 +211,8 @@ def download_buffer_sync(checksum:Checksum, url_infos, celltype="bytes", *, verb
 
     while len(mirrorlist) > 1:
         buffer_length = get_buffer_length(checksum, mirrorlist)
-        #print("BUFFER LENGTH", buffer_length)
-        
+        # print("BUFFER LENGTH", buffer_length)
+
         for mirror, url_info in mirrorlist:
             url = _get_url(url_info)
             if mirror.connection_latency is not None:
@@ -210,23 +221,23 @@ def download_buffer_sync(checksum:Checksum, url_infos, celltype="bytes", *, verb
             try:
                 session.get(url, stream=True, timeout=3)
                 latency = time.time() - t
-                #print("LAT2", url, latency)
+                # print("LAT2", url, latency)
                 mirror.add_connection_latency(latency)
             except (ConnectionError, ReadTimeout):
-                #import traceback; traceback.print_exc()
+                # import traceback; traceback.print_exc()
                 mirror.add_failure()
 
         mirrorlist = [(mirror, url_info) for mirror, url_info in mirrorlist]
         if len(mirrorlist) <= 1:
             break
-        
+
         for mirror, url_info in mirrorlist:
             url = _get_url(url_info)
             if mirror.bandwidth is None:
                 test_bandwidth(mirror, url)
-        
+
         mirrorlist = sort_mirrors_by_download_time(mirrorlist, buffer_length)
-        
+
         break  # even if more than one mirror left
 
     for mirror, url_info in mirrorlist:
@@ -234,8 +245,8 @@ def download_buffer_sync(checksum:Checksum, url_infos, celltype="bytes", *, verb
         if mirror.dead:
             continue
 
-        t = time.time()    
-        try:            
+        t = time.time()
+        try:
             source_celltype = "bytes"
             decompress = lambda buf: buf
             if isinstance(url_info, dict):
@@ -262,7 +273,7 @@ def download_buffer_sync(checksum:Checksum, url_infos, celltype="bytes", *, verb
             """
             if buf is None:
                 response = session.get(url, stream=True, timeout=3)
-                if int(response.status_code/100) in (4,5):
+                if int(response.status_code / 100) in (4, 5):
                     raise ConnectionError()
                 latency = time.time() - t
                 mirror.add_connection_latency(latency)
@@ -270,18 +281,17 @@ def download_buffer_sync(checksum:Checksum, url_infos, celltype="bytes", *, verb
                 for chunk in response.iter_content(100000):
                     result.append(chunk)
                 buf = b"".join(result)
-                download_time = time.time() - t - latency            
+                download_time = time.time() - t - latency
                 if download_time >= 0:
                     mirror.record_download(len(buf), download_time)
-                    #print("BANDWIDTH2", mirror.bandwidth, len(buf), buffer_length)
+                    # print("BANDWIDTH2", mirror.bandwidth, len(buf), buffer_length)
             buf = decompress(buf)
             if checksum or source_celltype != celltype:
                 buf_checksum = Buffer(buf).get_checksum().value
             if source_celltype != celltype:
                 assert try_convert is not None
                 conv = try_convert(
-                    bytes.fromhex(buf_checksum), source_celltype, celltype, 
-                    buffer=buf
+                    bytes.fromhex(buf_checksum), source_celltype, celltype, buffer=buf
                 )
                 if conv == True:
                     pass
@@ -292,18 +302,24 @@ def download_buffer_sync(checksum:Checksum, url_infos, celltype="bytes", *, verb
                 else:
                     raise SeamlessConversionError
             if checksum and buf_checksum != checksum:
-                print("WARNING: '{}' has the wrong checksum".format(url), file=sys.stderr)
+                print(
+                    "WARNING: '{}' has the wrong checksum".format(url), file=sys.stderr
+                )
                 continue
             return buf
         except (ConnectionError, ReadTimeout):
-            #import traceback; traceback.print_exc()
-            mirror.add_failure()    
+            # import traceback; traceback.print_exc()
+            mirror.add_failure()
         except Exception:
-            import traceback; traceback.print_exc()
+            import traceback
+
+            traceback.print_exc()
             continue
+
 
 threadpool = None
 _curr_max_downloads = None
+
 
 async def download_buffer(checksum, url_infos, celltype="bytes"):
     global threadpool, _curr_max_downloads
@@ -320,65 +336,69 @@ async def download_buffer(checksum, url_infos, celltype="bytes"):
     if new_threadpool:
         threadpool = ThreadPoolExecutor(max_workers=MAX_DOWNLOADS)
         _curr_max_downloads = MAX_DOWNLOADS
-    
+
     future = threadpool.submit(download_buffer_sync, checksum, url_infos, celltype)
     loop = asyncio.get_event_loop()
-    future2 = asyncio.wrap_future(future,loop=loop)
+    future2 = asyncio.wrap_future(future, loop=loop)
     return await future2
+
 
 if __name__ == "__main__":
     checksum1 = "d4ee1515e0a746aa3b8531f1545753e6b2d4cf272632121f1827f21c64a29722"
     urls1 = [
         "https://files.rcsb.org/download/1avx.cif",
         "https://www.ebi.ac.uk/pdbe/entry-files/download/1avx.cif",
-        "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/av/1avx.cif"
-    ]    
-    checksum2 = "cd79a5d5be4bf8db824e9a634c1755158e60138df0a866c1bfab35ca33f4583b"    
+        "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/av/1avx.cif",
+    ]
+    checksum2 = "cd79a5d5be4bf8db824e9a634c1755158e60138df0a866c1bfab35ca33f4583b"
     urls2 = [
         "https://files.rcsb.org/download/4v6x.cif",
         "https://www.ebi.ac.uk/pdbe/entry-files/download/4v6x.cif",
-        "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/v6/4v6x.cif"
+        "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/v6/4v6x.cif",
     ]
-    checksum3 = "7fda12e3cb2d04ddc78db02ec323334befee464db0b03e152d5f440a20b75129"   
+    checksum3 = "7fda12e3cb2d04ddc78db02ec323334befee464db0b03e152d5f440a20b75129"
     urls3 = [
         "https://files.rcsb.org/download/2sni.cif",
         "https://www.ebi.ac.uk/pdbe/entry-files/download/2sni.cif",
-        "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/sn/2sni.cif"
+        "https://data.pdbjbk1.pdbj.org/pub/pdb/data/structures/divided/mmCIF/sn/2sni.cif",
     ]
 
     t = time.time()
     print("Start")
     download_buffer_sync(checksum=checksum1, url_infos=urls1[:1])
-    print(time.time()-t)
+    print(time.time() - t)
     print()
-    
+
     print("Multiple mirrors")
     download_buffer_sync(checksum=checksum1, url_infos=urls1)
-    print(time.time()-t)
+    print(time.time() - t)
     print()
 
     print("Repeat (all performance tests have been done now)")
     download_buffer_sync(checksum=checksum1, url_infos=urls1)
-    print(time.time()-t)
+    print(time.time() - t)
     print()
-    
+
     print("Download test with wrong checksum....")
-    download_buffer_sync(checksum="aaaa1515e0a746aa3b8531f1545753e6b2d4cf272632121f1827f21c64a29722", url_infos=urls1)
-    print(time.time()-t)
+    download_buffer_sync(
+        checksum="aaaa1515e0a746aa3b8531f1545753e6b2d4cf272632121f1827f21c64a29722",
+        url_infos=urls1,
+    )
+    print(time.time() - t)
     print()
 
     print("Download a bigger file")
     download_buffer_sync(checksum=checksum2, url_infos=urls2)
-    print(time.time()-t)
+    print(time.time() - t)
     print()
 
     import asyncio
-    
+
     print("Async download")
     coro = download_buffer(checksum3, urls3)
     fut = asyncio.ensure_future(coro)
     asyncio.get_event_loop().run_until_complete(fut)
-    print(time.time()-t)
+    print(time.time() - t)
     print(len(fut.result()))
     print()
 
@@ -394,6 +414,6 @@ if __name__ == "__main__":
     coro = multiple_download_buffer()
     fut = asyncio.ensure_future(coro)
     asyncio.get_event_loop().run_until_complete(fut)
-    print(time.time()-t)
+    print(time.time() - t)
     print(fut.result())
     print()

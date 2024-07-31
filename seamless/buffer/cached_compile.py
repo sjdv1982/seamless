@@ -2,19 +2,22 @@ import linecache
 import functools
 from ast import PyCF_ONLY_AST, FunctionDef, Expr, Lambda, stmt as Statement
 
-#@functools.lru_cache(maxsize=1000) disable LRU cache, because linecache identifiers are degenerate
-def cached_compile(code, identifier, mode="exec", flags=None, \
-  dont_inherit=0):
+
+# @functools.lru_cache(maxsize=1000) disable LRU cache, because linecache identifiers are degenerate
+def cached_compile(code, identifier, mode="exec", flags=None, dont_inherit=0):
     if flags is not None:
         astree = compile(code, identifier, mode, flags, dont_inherit)
     else:
         astree = compile(code, identifier, mode, dont_inherit=dont_inherit)
     cache_entry = (
-        len(code), None,
-        [line+'\n' for line in code.splitlines()], identifier
+        len(code),
+        None,
+        [line + "\n" for line in code.splitlines()],
+        identifier,
     )
     linecache.cache[identifier] = cache_entry
     return astree
+
 
 @functools.lru_cache(maxsize=1000)
 def analyze_code(code, identifier):
@@ -36,7 +39,10 @@ def analyze_code(code, identifier):
                 raise SyntaxError((identifier, err))
     return mode, func_name
 
-def exec_code(code, identifier, namespace, inputs, output, *, with_ipython_kernel=False):
+
+def exec_code(
+    code, identifier, namespace, inputs, output, *, with_ipython_kernel=False
+):
     mode, func_name = analyze_code(code, identifier)
     inputs2 = [inp for inp in sorted(list(inputs)) if not inp.endswith("_SCHEMA")]
     input_params = ",".join(["{0}={0}".format(inp) for inp in inputs2])
@@ -62,6 +68,7 @@ def exec_code(code, identifier, namespace, inputs, output, *, with_ipython_kerne
         code_obj = cached_compile(code2, identifier)
         exec(code_obj, namespace)
 
+
 def check_function_like(code, identifier):
     """Check if code exists of one function and some statements
     If so, a different error message is appropriate in a transformer
@@ -86,5 +93,6 @@ def check_function_like(code, identifier):
     if function_name is None:
         return False
     return function_name, nstatements
+
 
 from seamless.util.ipython import execute as ipython_execute

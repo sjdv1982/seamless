@@ -4,7 +4,8 @@ import warnings
 
 text_validation_celltype_cache = set()
 
-def validate_text_celltype(text, checksum:Checksum, celltype):
+
+def validate_text_celltype(text, checksum: Checksum, celltype):
     assert celltype in text_types2
     checksum = Checksum(checksum)
     if checksum:
@@ -14,7 +15,8 @@ def validate_text_celltype(text, checksum:Checksum, celltype):
     if checksum:
         text_validation_celltype_cache.add((checksum, celltype))
 
-def has_validated_evaluation(checksum:Checksum, celltype):
+
+def has_validated_evaluation(checksum: Checksum, celltype):
     checksum = Checksum(checksum)
     if not checksum:
         return True
@@ -27,12 +29,16 @@ def has_validated_evaluation(checksum:Checksum, celltype):
         celltype = "text"
     if (checksum, celltype) in text_validation_celltype_cache:
         return True
-    buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=False, buffer_from_remote=False, force_length=False)
+    buffer_info = buffer_cache.get_buffer_info(
+        checksum, sync_remote=False, buffer_from_remote=False, force_length=False
+    )
     return verify_buffer_info(buffer_info, celltype)
-        
+
+
 text_subcelltype_validation_cache = set()
 
-def has_validated_evaluation_subcelltype(checksum:Checksum, celltype, subcelltype):
+
+def has_validated_evaluation_subcelltype(checksum: Checksum, celltype, subcelltype):
     checksum = Checksum(checksum)
     if not has_validated_evaluation(checksum, celltype):
         # Should never happen
@@ -47,10 +53,13 @@ def has_validated_evaluation_subcelltype(checksum:Checksum, celltype, subcelltyp
     if key in text_subcelltype_validation_cache:
         return True
     return False
-        
+
+
 def validate_evaluation_subcelltype(checksum, buffer, celltype, subcelltype, codename):
     assert buffer is not None
-    assert has_validated_evaluation(checksum, celltype), celltype  # buffer_cache.guarantee_buffer_info(checksum, celltype) must have been called!
+    assert has_validated_evaluation(
+        checksum, celltype
+    ), celltype  # buffer_cache.guarantee_buffer_info(checksum, celltype) must have been called!
     if has_validated_evaluation_subcelltype(checksum, celltype, subcelltype):
         return
     if codename is None:
@@ -63,14 +72,23 @@ def validate_evaluation_subcelltype(checksum, buffer, celltype, subcelltype, cod
         pass
     elif subcelltype in ("reactor", "macro"):
         if mode == "lambda":
-            err = "subcelltype '%s' does not support code mode '%s'" % (subcelltype, mode)
+            err = "subcelltype '%s' does not support code mode '%s'" % (
+                subcelltype,
+                mode,
+            )
             raise SyntaxError((codename, err))
 
     text_subcelltype_validation_cache.add(key)
 
+
 async def conversion(
-    checksum:Checksum, celltype, target_celltype, 
-    *, perform_fingertip, value_conversion_callback=None,buffer=None
+    checksum: Checksum,
+    celltype,
+    target_celltype,
+    *,
+    perform_fingertip,
+    value_conversion_callback=None,
+    buffer=None
 ) -> Checksum:
     if not checksum:
         return Checksum(None)
@@ -79,42 +97,53 @@ async def conversion(
     if buffer is not None:
         buffer_cache.cache_buffer(checksum, buffer)
     result = try_convert(checksum, celltype, target_celltype)
-    
+
     if isinstance(result, Checksum):
-        buffer_cache.update_buffer_info_conversion(checksum, celltype, result, target_celltype, sync_remote=True)
+        buffer_cache.update_buffer_info_conversion(
+            checksum, celltype, result, target_celltype, sync_remote=True
+        )
         return result
     elif result == True:
-        return checksum    
+        return checksum
     elif result == False:
         raise SeamlessConversionError("Checksum cannot be converted")
 
     buffer_info = None
     if not perform_fingertip:
-        buffer_info = buffer_cache.get_buffer_info(checksum, sync_remote=True, buffer_from_remote=False, force_length=False)
+        buffer_info = buffer_cache.get_buffer_info(
+            checksum, sync_remote=True, buffer_from_remote=False, force_length=False
+        )
     conv_chain = make_conversion_chain(celltype, target_celltype)
 
-    curr_celltype = celltype  
-    curr_checksum = checksum 
+    curr_celltype = celltype
+    curr_checksum = checksum
     for next_celltype in conv_chain:
         conv = (curr_celltype, next_celltype)
         result = try_convert_single(
-            curr_checksum, curr_celltype, next_celltype,
-            buffer_info=buffer_info, get_buffer_local=True,
+            curr_checksum,
+            curr_celltype,
+            next_celltype,
+            buffer_info=buffer_info,
+            get_buffer_local=True,
         )
         if isinstance(result, Checksum):
             pass
         elif result == True:
             pass
-        elif (result is None or result == -1):
+        elif result is None or result == -1:
             if conv in conversion_values:
-                result = await value_conversion_callback(curr_checksum, curr_celltype, next_celltype)                
+                result = await value_conversion_callback(
+                    curr_checksum, curr_celltype, next_celltype
+                )
             else:
                 raise CacheMissError(curr_checksum.hex())
         else:
             raise SeamlessConversionError("Unexpected conversion error")
 
         if isinstance(result, Checksum):
-            buffer_cache.update_buffer_info_conversion(curr_checksum, curr_celltype, result, next_celltype, sync_remote=True)
+            buffer_cache.update_buffer_info_conversion(
+                curr_checksum, curr_celltype, result, next_celltype, sync_remote=True
+            )
             curr_checksum = result
 
         curr_celltype = next_celltype
@@ -147,9 +176,11 @@ async def value_conversion(checksum, source_celltype, target_celltype):
             if target_celltype == "plain":
                 return checksum
             else:
-                raise SeamlessConversionError("Cannot convert deep cell in value conversion")
-        checksum2 = bytes.fromhex(checksum_text)        
-        #return try_convert(checksum2, "bytes", target_celltype) # No, for now trust the "checksum" type
+                raise SeamlessConversionError(
+                    "Cannot convert deep cell in value conversion"
+                )
+        checksum2 = bytes.fromhex(checksum_text)
+        # return try_convert(checksum2, "bytes", target_celltype) # No, for now trust the "checksum" type
         return checksum2
 
     buffer = get_buffer(checksum, remote=True, deep=False)
@@ -167,19 +198,27 @@ async def value_conversion(checksum, source_celltype, target_celltype):
             try:
                 if isinstance(source_value, (int, float, bool)):
                     target_value = np.array(source_value)
-                    buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", True, sync_remote=True)
-                else:         
+                    buffer_cache.update_buffer_info(
+                        checksum, "is_json_numeric_scalar", True, sync_remote=True
+                    )
+                else:
                     if not isinstance(source_value, list):
                         raise ValueError(msg)
                     with warnings.catch_warnings():
-                        warnings.simplefilter("ignore")  
+                        warnings.simplefilter("ignore")
                         target_value = np.array(source_value)
                         if target_value.dtype == object:
                             raise ValueError(msg)
-                    buffer_cache.update_buffer_info(checksum, "is_json_numeric_array", True, sync_remote=True)
+                    buffer_cache.update_buffer_info(
+                        checksum, "is_json_numeric_array", True, sync_remote=True
+                    )
             except ValueError as exc:
-                buffer_cache.update_buffer_info(checksum, "is_json_numeric_scalar", False, sync_remote=False)
-                buffer_cache.update_buffer_info(checksum,"is_json_numeric_array", False, sync_remote=True)
+                buffer_cache.update_buffer_info(
+                    checksum, "is_json_numeric_scalar", False, sync_remote=False
+                )
+                buffer_cache.update_buffer_info(
+                    checksum, "is_json_numeric_array", False, sync_remote=True
+                )
                 raise exc from None
     except Exception as exc:
         msg0 = "%s cannot be converted from %s to %s"
@@ -189,21 +228,40 @@ async def value_conversion(checksum, source_celltype, target_celltype):
     target_buffer = await serialize(target_value, target_celltype)
     target_checksum = await calculate_checksum(target_buffer)
     buffer_cache.cache_buffer(target_checksum, target_buffer)
-    
+
     if conv == ("plain", "binary"):
-        buffer_cache.update_buffer_info(target_checksum, "shape", target_value.shape, sync_remote=False)
-        buffer_cache.update_buffer_info(target_checksum, "dtype", str(target_value.dtype), sync_remote=False)
-        buffer_cache.update_buffer_info(target_checksum, "binary2json", checksum, sync_remote=False)
-        buffer_cache.update_buffer_info(checksum, "json2binary", target_checksum, sync_remote=True)
-    elif conv == ("binary", "plain"): 
-        buffer_cache.update_buffer_info(checksum, "binary2json", target_checksum, sync_remote=True)
-        buffer_cache.update_buffer_info(target_checksum, "json2binary", checksum, sync_remote=False)
+        buffer_cache.update_buffer_info(
+            target_checksum, "shape", target_value.shape, sync_remote=False
+        )
+        buffer_cache.update_buffer_info(
+            target_checksum, "dtype", str(target_value.dtype), sync_remote=False
+        )
+        buffer_cache.update_buffer_info(
+            target_checksum, "binary2json", checksum, sync_remote=False
+        )
+        buffer_cache.update_buffer_info(
+            checksum, "json2binary", target_checksum, sync_remote=True
+        )
+    elif conv == ("binary", "plain"):
+        buffer_cache.update_buffer_info(
+            checksum, "binary2json", target_checksum, sync_remote=True
+        )
+        buffer_cache.update_buffer_info(
+            target_checksum, "json2binary", checksum, sync_remote=False
+        )
 
-    buffer_cache.guarantee_buffer_info(target_checksum, target_celltype, sync_to_remote=True)
+    buffer_cache.guarantee_buffer_info(
+        target_checksum, target_celltype, sync_to_remote=True
+    )
     return target_checksum
-    
 
-from .convert import make_conversion_chain, try_convert, try_convert_single, SeamlessConversionError
+
+from .convert import (
+    make_conversion_chain,
+    try_convert,
+    try_convert_single,
+    SeamlessConversionError,
+)
 from seamless import CacheMissError, Checksum
 from .buffer_cache import buffer_cache
 from .cell import text_types2

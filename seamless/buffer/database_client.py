@@ -13,6 +13,7 @@ from seamless import Checksum, Buffer
 
 global Expression
 
+
 class Database:
     active = False
     PROTOCOLS = [("seamless", "database", "0.3")]
@@ -35,14 +36,15 @@ class Database:
     def connect(self, host, port):
         global Expression
         from ..manager.expression import Expression
+
         self.host = host
         self.port = port
         url = "http://" + self.host + ":" + str(self.port)
         request = {
             "type": "protocol",
-        }   
-        ntrials=5
-        for trial in range(ntrials):     
+        }
+        ntrials = 5
+        for trial in range(ntrials):
             try:
                 with session.get(url, data=json.dumps(request)) as response:
                     if response.status_code != 200:
@@ -50,15 +52,20 @@ class Database:
 
                     try:
                         protocol = response.json()
-                        assert protocol in [list(p) for p in self.PROTOCOLS]                
+                        assert protocol in [list(p) for p in self.PROTOCOLS]
                     except (AssertionError, ValueError, json.JSONDecodeError):
-                        raise Exception("Incorrect Seamless database protocol") from None
-                    
+                        raise Exception(
+                            "Incorrect Seamless database protocol"
+                        ) from None
+
             except requests.ConnectionError:
                 if trial < ntrials - 1:
                     continue
-                raise requests.ConnectionError("Cannot connect to Seamless database: host {}, port {}".format(self.host, self.port))
-
+                raise requests.ConnectionError(
+                    "Cannot connect to Seamless database: host {}, port {}".format(
+                        self.host, self.port
+                    )
+                )
 
         self.active = True
 
@@ -75,7 +82,7 @@ class Database:
                 raise Exception((response.status_code, response.text))
             return response.status_code, response.text
 
-    def set_transformation_result(self, tf_checksum, checksum):   
+    def set_transformation_result(self, tf_checksum, checksum):
         request = {
             "type": "transformation",
             "checksum": Checksum(tf_checksum).value,
@@ -104,21 +111,21 @@ class Database:
         }
         self.send_put_request(request)
 
-    def set_buffer_info(self, checksum, buffer_info:"BufferInfo"):
+    def set_buffer_info(self, checksum, buffer_info: "BufferInfo"):
         request = {
-            "type": "buffer_info",  
+            "type": "buffer_info",
             "checksum": Checksum(checksum).value,
             "value": buffer_info.as_dict(),
         }
         self.send_put_request(request)
 
-    def set_buffer_length(self, checksum, buffer_length:int):
+    def set_buffer_length(self, checksum, buffer_length: int):
         buffer_info = BufferInfo(checksum)
         buffer_info.length = buffer_length
         return self.set_buffer_info(checksum, buffer_info)
 
     def set_compile_result(self, checksum, compile_checksum):
-        return ###
+        return  ###
         if not self.active:
             return
         request = {
@@ -128,14 +135,14 @@ class Database:
         }
         self._log("SET", request["type"], request["checksum"])
         self.send_put_request(request)
-            
+
     def set_expression(self, expression: "Expression", result):
         assert result is not None
         request = {
             "type": "expression",
             "checksum": Checksum(expression.checksum).value,
             "celltype": expression.celltype,
-            "path": expression.path,        
+            "path": expression.path,
             "value": Checksum(result).value,
             "target_celltype": expression.target_celltype,
         }
@@ -146,7 +153,7 @@ class Database:
         self._log("SET", request["type"], str(expression))
         self.send_put_request(request)
 
-    def set_metadata(self, tf_checksum,  metadata:dict):
+    def set_metadata(self, tf_checksum, metadata: dict):
         tf_checksum = Checksum(tf_checksum).value
         if not self.active:
             return
@@ -158,17 +165,16 @@ class Database:
         self._log("SET", request["type"], request["type"])
         self.send_put_request(request)
 
-     
     def set_structured_cell_join(self, checksum, join_checksum):
         request = {
             "type": "structured_cell_join",
             "checksum": Checksum(join_checksum).value,
-            "value": Checksum(checksum).value
+            "value": Checksum(checksum).value,
         }
         self._log("SET", request["type"], request["type"])
         self.send_put_request(request)
 
-    def contest(self, transformation_checksum:Checksum, result_checksum:Checksum):
+    def contest(self, transformation_checksum: Checksum, result_checksum: Checksum):
         """Contests a previously calculated transformation result"""
         transformation_checksum = Checksum(transformation_checksum)
         assert transformation_checksum
@@ -179,7 +185,9 @@ class Database:
             "checksum": transformation_checksum,
             "result": result_checksum,
         }
-        status_code, response_text = self.send_put_request(request, raise_exception=False)
+        status_code, response_text = self.send_put_request(
+            request, raise_exception=False
+        )
         return status_code, response_text
 
     def send_get_request(self, request):
@@ -200,7 +208,7 @@ class Database:
     async def send_get_request_async(self, request):
         if not self.active:
             return
-        
+
         thread = threading.current_thread()
         session_async = sessions_async.get(thread)
         if session_async is not None:
@@ -208,7 +216,7 @@ class Database:
                 loop = asyncio.get_running_loop()
                 if loop != session_async._loop:
                     session_async = None
-            except RuntimeError:  # no event loop running:            
+            except RuntimeError:  # no event loop running:
                 pass
         if session_async is None:
             session_async = aiohttp.ClientSession()
@@ -237,7 +245,6 @@ class Database:
             result = Checksum(response.content.decode())
             self._log("GET", request["type"], request["checksum"])
             return result
-
 
     async def get_transformation_result_async(self, checksum):
         request = {
@@ -277,7 +284,7 @@ class Database:
             return BufferInfo(checksum, rj)
 
     def get_compile_result(self, checksum):
-        return ###
+        return  ###
         request = {
             "type": "compilation",
             "checksum": Checksum(checksum).value,
@@ -355,7 +362,7 @@ class Database:
             "type": "expression",
             "checksum": Checksum(expression.checksum).value,
             "celltype": expression.celltype,
-            "path": expression.path,        
+            "path": expression.path,
             "target_celltype": expression.target_celltype,
         }
         if expression.hash_pattern is not None:
@@ -369,10 +376,7 @@ class Database:
             return result
 
     def get_metadata(self, tf_checksum) -> dict:
-        request = {
-            "type": "metadata",
-            "checksum": Checksum(tf_checksum).value
-        }
+        request = {"type": "metadata", "checksum": Checksum(tf_checksum).value}
         self._log("GET", request["type"], request["type"])
         response = self.send_get_request(request)
         if response is not None:
@@ -385,10 +389,7 @@ class Database:
 
     def get_structured_cell_join(self, join_dict: dict) -> Checksum | None:
         checksum = Buffer(join_dict, "plain").checksum.value
-        request = {
-            "type": "structured_cell_join",
-            "checksum": checksum
-        }
+        request = {"type": "structured_cell_join", "checksum": checksum}
         response = self.send_get_request(request)
         if response is not None:
             result = Checksum(response.content.decode())
@@ -398,11 +399,14 @@ class Database:
 
 database = Database()
 
+
 def _close_async_sessions():
     for session_async in sessions_async.values():
         fut = asyncio.ensure_future(session_async.close())
-        
+
+
 import atexit
+
 atexit.register(_close_async_sessions)
 
 from seamless.buffer.buffer_info import BufferInfo

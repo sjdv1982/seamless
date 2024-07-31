@@ -15,10 +15,13 @@ from silk.Silk import Silk
 serialize_cache = lrucache2(10)
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def _serialize(value, celltype):
     from seamless.buffer.json import json_dumps
+
     if celltype == "str":
         if not isinstance(value, bool):
             value = str(value)
@@ -35,7 +38,7 @@ def _serialize(value, celltype):
                 value = bool(value)
             buffer = json_dumps(value, as_bytes=True) + b"\n"
         else:
-            buffer = (str(value).rstrip("\n")+"\n").encode()
+            buffer = (str(value).rstrip("\n") + "\n").encode()
     elif celltype == "plain":
         buffer = json_dumps(value, as_bytes=True) + b"\n"
     elif celltype == "mixed":
@@ -66,6 +69,7 @@ def _serialize(value, celltype):
     logger.debug("SERIALIZE: buffer of length {}".format(len(buffer)))
     return buffer
 
+
 async def serialize(value, celltype, use_cache=True):
     assert value is not None
     if use_cache:
@@ -94,6 +98,7 @@ async def serialize(value, celltype, use_cache=True):
         serialize_cache[id_value, celltype] = buffer, value
     return buffer
 
+
 def serialize_sync(value, celltype, use_cache=True):
     """This function can be executed if the asyncio event loop is already running"""
     if use_cache:
@@ -106,5 +111,6 @@ def serialize_sync(value, celltype, use_cache=True):
     if use_cache:
         serialize_cache[id_value, celltype] = buffer, value
     return buffer
+
 
 from .cell import text_types

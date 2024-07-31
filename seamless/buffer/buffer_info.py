@@ -41,23 +41,39 @@ This is stored in evaluate.py:text_validation_celltype_cache
 Likewise, nothing is stored about subcelltypes, this is also stored in evaluate.py
 Finally, celltype "checksum" is out-of-scope for buffer info; validate this elsewhere.
 """
+
+
 class BufferInfo:
     __slots__ = (
-        "checksum", "length", "is_utf8", "is_json", "json_type", 
-        "is_json_numeric_array", "is_json_numeric_scalar",
-        "is_numpy", "dtype", "shape", "is_seamless_mixed", 
-        "str2text", "text2str", "binary2bytes", "bytes2binary",
-        "binary2json", "json2binary", "members"
+        "checksum",
+        "length",
+        "is_utf8",
+        "is_json",
+        "json_type",
+        "is_json_numeric_array",
+        "is_json_numeric_scalar",
+        "is_numpy",
+        "dtype",
+        "shape",
+        "is_seamless_mixed",
+        "str2text",
+        "text2str",
+        "binary2bytes",
+        "bytes2binary",
+        "binary2json",
+        "json2binary",
+        "members",
     )
-    def __init__(self, checksum, params:dict={}):
-        for slot in self.__slots__:            
+
+    def __init__(self, checksum, params: dict = {}):
+        for slot in self.__slots__:
             setattr(self, slot, params.get(slot))
         if isinstance(checksum, str):
             checksum = bytes.fromhex(checksum)
         self.checksum = checksum
-    
+
     def __setattr__(self, attr, value):
-        if value is not None:                
+        if value is not None:
             if attr == "length":
                 if not isinstance(value, int):
                     raise TypeError(type(value))
@@ -84,14 +100,14 @@ class BufferInfo:
             v = getattr(other, attr)
             if v is not None:
                 setattr(self, attr, v)
-    
+
     def get(self, attr, default=None):
         value = getattr(self, attr)
         if value is None:
             return default
         else:
             return value
-    
+
     def as_dict(self):
         result = {}
         for attr in self.__slots__:
@@ -102,16 +118,21 @@ class BufferInfo:
                 result[attr] = v
         return result
 
-def validate_buffer_info(buffer_info:BufferInfo, celltype):
+
+def validate_buffer_info(buffer_info: BufferInfo, celltype):
     """Raises an ValueError exception if buffer_info is certainly incompatible with celltype"""
-    self = buffer_info   
+    self = buffer_info
     if celltype == "bytes":
         pass
     elif celltype == "checksum":
         # Not validated by buffer_info
         pass
     elif celltype == "mixed":
-        if self.is_json == False and self.is_numpy == False and self.is_seamless_mixed == False:
+        if (
+            self.is_json == False
+            and self.is_numpy == False
+            and self.is_seamless_mixed == False
+        ):
             raise ValueError
     elif celltype == "binary":
         if self.is_json or self.is_seamless_mixed:
@@ -131,10 +152,11 @@ def validate_buffer_info(buffer_info:BufferInfo, celltype):
         if self.is_utf8 == False:
             raise ValueError
         if celltype == "checksum":
-          if self.json_type in ("dict", "list", "int", "float", "bool"):
-              raise ValueError
+            if self.json_type in ("dict", "list", "int", "float", "bool"):
+                raise ValueError
 
-def verify_buffer_info(buffer_info:BufferInfo, celltype:str):
+
+def verify_buffer_info(buffer_info: BufferInfo, celltype: str):
     """Returns True if buffer_info is certainly compatible with celltype"""
     try:
         validate_buffer_info(buffer_info, celltype)
@@ -170,7 +192,10 @@ def verify_buffer_info(buffer_info:BufferInfo, celltype:str):
             return True
     return False
 
-def convert_from_buffer_info(buffer_info:BufferInfo, celltype:str, target_celltype:str):
+
+def convert_from_buffer_info(
+    buffer_info: BufferInfo, celltype: str, target_celltype: str
+):
     """Try to convert using buffer info alone.
     Return True if the conversion is possible and does not change checksum
     Return the checksum (bytes format, not hex) if the checksum is different but
@@ -179,11 +204,13 @@ def convert_from_buffer_info(buffer_info:BufferInfo, celltype:str, target_cellty
     Return None if the conversion may or may not be possible
     Return False if the conversion is surely not possible
     Raise an SeamlessConversionError if buffer_info may not have source celltype at all
-    """ 
+    """
     try:
         validate_buffer_info(buffer_info, celltype)
     except ValueError:
-        raise SeamlessConversionError("source celltype is incompatible with buffer info") from None
+        raise SeamlessConversionError(
+            "source celltype is incompatible with buffer info"
+        ) from None
 
     conv = (celltype, target_celltype)
 
@@ -221,7 +248,7 @@ def convert_from_buffer_info(buffer_info:BufferInfo, celltype:str, target_cellty
                     return False
                 elif self.json_type in ("int", "float", "bool"):
                     return -1
-        return None    
+        return None
     elif conv in conversion_reinterpret:
         try:
             validate_buffer_info(self, target_celltype)
@@ -236,7 +263,7 @@ def convert_from_buffer_info(buffer_info:BufferInfo, celltype:str, target_cellty
                 return False
             if self.is_json_numeric_scalar:
                 return True
-        return None 
+        return None
     elif conv in conversion_reformat:
         result = None  # -1
         if conv == ("bytes", "binary") or conv == ("bytes", "mixed"):
@@ -249,7 +276,7 @@ def convert_from_buffer_info(buffer_info:BufferInfo, celltype:str, target_cellty
             if conv == ("mixed", "bytes") and self.is_numpy == False:
                 return True
             if self.shape is not None:
-                if self.shape not in ((),[]):
+                if self.shape not in ((), []):
                     return True
             if self.dtype is not None:
                 if self.dtype[0] != "S":
@@ -277,7 +304,7 @@ def convert_from_buffer_info(buffer_info:BufferInfo, celltype:str, target_cellty
     else:
         raise AssertionError
 
-        
+
 from .conversion import (
     conversion_trivial,
     conversion_reformat,
@@ -287,5 +314,5 @@ from .conversion import (
     conversion_chain,
     conversion_values,
     conversion_forbidden,
-    SeamlessConversionError
+    SeamlessConversionError,
 )

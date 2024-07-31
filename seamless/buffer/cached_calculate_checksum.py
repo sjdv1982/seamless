@@ -3,7 +3,9 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 from seamless import Checksum
 from seamless.util.pylru import lrucache
-from seamless.buffer.calculate_checksum import calculate_checksum as calculate_checksum_func
+from seamless.buffer.calculate_checksum import (
+    calculate_checksum as calculate_checksum_func,
+)
 
 # calculate_checksum_cache: maps id(buffer) to (checksum, buffer).
 # Need to store (a ref to) buffer,
@@ -14,6 +16,7 @@ from seamless.util import lrucache2
 calculate_checksum_cache = lrucache2(10)
 
 checksum_cache = lrucache2(10)
+
 
 async def cached_calculate_checksum(buffer):
     if buffer is None:
@@ -30,15 +33,14 @@ async def cached_calculate_checksum(buffer):
         loop = asyncio.get_event_loop()
         with ProcessPoolExecutor() as executor:
             checksum = await loop.run_in_executor(
-                executor,
-                calculate_checksum_func,
-                buffer
+                executor, calculate_checksum_func, buffer
             )
     else:
         checksum = Checksum(calculate_checksum_func(buffer))
     calculate_checksum_cache[buf_id] = checksum, buffer
     checksum_cache[checksum] = buffer
     return checksum
+
 
 def cached_calculate_checksum_sync(buffer):
     """This function can be executed if the asyncio event loop is already running"""

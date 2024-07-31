@@ -5,14 +5,15 @@ import traceback
 from seamless import Buffer, Checksum
 from requests.exceptions import ConnectionError, ReadTimeout
 
-_read_servers:list[str]|None = None
-_read_folders:list[str]|None = None
-_write_server:str|None = None
+_read_servers: list[str] | None = None
+_read_folders: list[str] | None = None
+_write_server: str | None = None
 
 _known_buffers = set()
 _written_buffers = set()
 
 session = requests.Session()
+
 
 def get_file_buffer(directory, checksum, timeout=10):
     checksum = parse_checksum(checksum, as_bytes=True)
@@ -43,11 +44,12 @@ def get_file_buffer(directory, checksum, timeout=10):
         buf = f.read()
     buf_checksum = calculate_checksum(buf)
     if buf_checksum != checksum:
-        #print("WARNING: '{}' has the wrong checksum".format(filename))
+        # print("WARNING: '{}' has the wrong checksum".format(filename))
         return
     return buf
 
-def get_buffer(checksum:Checksum) -> bytes | None:
+
+def get_buffer(checksum: Checksum) -> bytes | None:
     checksum = Checksum(checksum)
     if not checksum:
         return None
@@ -62,14 +64,15 @@ def get_buffer(checksum:Checksum) -> bytes | None:
             except Exception:
                 traceback.print_exc()
                 return
-                
+
     for server in _read_servers:
         result = buffer_read_client.get(session, server, checksum.hex())
         if result is not None:
             _known_buffers.add(checksum)
             return result
 
-def get_filename(checksum:Checksum) -> str | None:
+
+def get_filename(checksum: Checksum) -> str | None:
     if not checksum:
         return None
     if _read_folders is None:
@@ -80,7 +83,8 @@ def get_filename(checksum:Checksum) -> str | None:
             return filename
     return None
 
-def get_directory(checksum:Checksum):
+
+def get_directory(checksum: Checksum):
     checksum = Checksum(checksum)
     if not checksum:
         return None
@@ -91,6 +95,7 @@ def get_directory(checksum:Checksum):
         if os.path.exists(dirname):
             return dirname
     return None
+
 
 def write_buffer(checksum: Checksum, buffer):
     checksum = Checksum(checksum)
@@ -106,12 +111,14 @@ def write_buffer(checksum: Checksum, buffer):
         return
     buffer_write_client.write(session, _write_server, checksum, buffer)
 
-def is_known(checksum:Checksum):
+
+def is_known(checksum: Checksum):
     checksum = Checksum(checksum)
     if not checksum:
         return True
     return checksum in _known_buffers or checksum in _written_buffers
-    
+
+
 def remote_has_checksum(checksum):
     checksum = parse_checksum(checksum, as_bytes=True)
     if _read_folders is not None:
@@ -125,14 +132,17 @@ def remote_has_checksum(checksum):
                 return True
     return False
 
+
 def can_read_buffer(checksum):
     checksum = parse_checksum(checksum, as_bytes=True)
     if is_known(checksum):
         return True
     return remote_has_checksum(checksum)
 
+
 def can_write():
     return _write_server is not None
+
 
 def set_read_buffer_folders(read_buffer_folders):
     global _read_folders
@@ -141,6 +151,7 @@ def set_read_buffer_folders(read_buffer_folders):
     else:
         _read_folders = None
 
+
 def add_read_buffer_folder(read_buffer_folder):
     global _read_folders
     f = os.path.abspath(read_buffer_folder)
@@ -148,6 +159,7 @@ def add_read_buffer_folder(read_buffer_folder):
         _read_folders.append(f)
     else:
         _read_folders = [f]
+
 
 def set_read_buffer_servers(read_buffer_servers):
     global _read_servers
@@ -161,6 +173,7 @@ def set_read_buffer_servers(read_buffer_servers):
     else:
         _known_buffers.clear()
         _read_servers = None
+
 
 def add_read_buffer_server(read_buffer_server):
     global _read_servers
@@ -176,7 +189,9 @@ def set_write_buffer_server(write_buffer_server):
         ntrials = 5
         for trials in range(ntrials):
             try:
-                buffer_write_client.has(session, write_buffer_server, b'0' * 32, timeout=3)
+                buffer_write_client.has(
+                    session, write_buffer_server, b"0" * 32, timeout=3
+                )
             except ValueError:
                 pass
             except (ConnectionError, ReadTimeout):
@@ -189,7 +204,9 @@ def set_write_buffer_server(write_buffer_server):
     else:
         write_buffer_server = None
 
+
 def has_readwrite_servers():
     return _write_server is not None and len(_read_servers)
+
 
 from . import buffer_read_client, buffer_write_client

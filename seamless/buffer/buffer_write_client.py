@@ -2,8 +2,10 @@ import requests
 from requests.exceptions import ConnectionError, ChunkedEncodingError, JSONDecodeError
 from seamless import Checksum
 
-def has(session, url, checksum:Checksum, *, timeout=None):
+
+def has(session, url, checksum: Checksum, *, timeout=None):
     from seamless.workflow.util import is_forked
+
     sess = session
     if is_forked():
         sess = requests
@@ -13,20 +15,20 @@ def has(session, url, checksum:Checksum, *, timeout=None):
     result = None
     for trial in range(10):
         try:
-            with sess.get(path, json=[checksum],timeout=timeout) as response:
-                if int(response.status_code/100) in (4,5):
+            with sess.get(path, json=[checksum], timeout=timeout) as response:
+                if int(response.status_code / 100) in (4, 5):
                     raise ConnectionError()
                 result = response.json()
         except ChunkedEncodingError:
-             continue
+            continue
         except JSONDecodeError:
-             continue
+            continue
         except ConnectionError as exc:
-             if not exc.args or not isinstance(exc.args[0], Exception):
+            if not exc.args or not isinstance(exc.args[0], Exception):
                 raise exc from None
-             if not exc.args[0].args or exc.args[0].args[0] != 'Connection aborted.':
+            if not exc.args[0].args or exc.args[0].args[0] != "Connection aborted.":
                 raise exc from None
-             continue
+            continue
         break
 
     if not isinstance(result, list) or len(result) != 1:
@@ -35,8 +37,10 @@ def has(session, url, checksum:Checksum, *, timeout=None):
         raise ValueError(result)
     return result[0]
 
-def write(session, url, checksum:Checksum, buffer:bytes):
+
+def write(session, url, checksum: Checksum, buffer: bytes):
     from seamless.workflow.util import is_forked
+
     sess = session
     if is_forked():
         sess = requests
@@ -46,14 +50,16 @@ def write(session, url, checksum:Checksum, buffer:bytes):
     for trial in range(10):
         try:
             with sess.put(path, data=buffer) as response:
-                if int(response.status_code/100) in (4,5):
-                    raise ConnectionError(f'Error {response.status_code}: {response.text}')
+                if int(response.status_code / 100) in (4, 5):
+                    raise ConnectionError(
+                        f"Error {response.status_code}: {response.text}"
+                    )
             break
         except ChunkedEncodingError:
-             continue
+            continue
         except ConnectionError as exc:
-             if not exc.args or not isinstance(exc.args[0], Exception):
+            if not exc.args or not isinstance(exc.args[0], Exception):
                 raise exc from None
-             if not exc.args[0].args or exc.args[0].args[0] != 'Connection aborted.':
+            if not exc.args[0].args or exc.args[0].args[0] != "Connection aborted.":
                 raise exc from None
-             continue
+            continue

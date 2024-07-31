@@ -11,9 +11,11 @@ from seamless import Checksum
 from seamless.util import lrucache2
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 deserialize_cache = lrucache2(10)
+
 
 def _deserialize_plain(buffer):
     """
@@ -28,18 +30,21 @@ def _deserialize_plain(buffer):
     except json.JSONDecodeError:
         msg = s
         if len(msg) > 1000:
-            msg = s[:920] + "..." + s[-50:] 
+            msg = s[:920] + "..." + s[-50:]
         raise ValueError(msg) from None
     return value
 
-def _deserialize(buffer:bytes, checksum:Checksum, celltype:str):
+
+def _deserialize(buffer: bytes, checksum: Checksum, celltype: str):
     from .evaluate import validate_text_celltype
     from .convert import validate_checksum
 
     if celltype == "silk":
         celltype = "mixed"
     checksum = Checksum(checksum)
-    logger.debug("DESERIALIZE: buffer of length {}, checksum {}".format(len(buffer), checksum))
+    logger.debug(
+        "DESERIALIZE: buffer of length {}, checksum {}".format(len(buffer), checksum)
+    )
     if celltype in text_types2:
         s = buffer.decode()
         value = s.rstrip("\n")
@@ -83,7 +88,7 @@ async def deserialize(buffer, checksum, celltype, copy):
     if buffer is None:
         return None
     if celltype == "mixed":
-        buffer_info:BufferInfo = buffer_cache.buffer_info.get(checksum)
+        buffer_info: BufferInfo = buffer_cache.buffer_info.get(checksum)
         if buffer_info is not None:
             if buffer_info.is_json:
                 celltype = "plain"
@@ -91,20 +96,17 @@ async def deserialize(buffer, checksum, celltype, copy):
                 celltype = "binary"
     value = deserialize_cache.get((checksum, celltype))
     ###
-    copy = True # Apparently, sometimes the promise of not modifying the value is violated... for now, enforce a copy
+    copy = True  # Apparently, sometimes the promise of not modifying the value is violated... for now, enforce a copy
     ###
     if value is not None and not copy:
         return value
-
 
     # ProcessPool is too slow, but ThreadPool works... do experiment with later
     if 0:
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor() as executor:
             value = await loop.run_in_executor(
-                executor,
-                _deserialize,
-                buffer, checksum, celltype
+                executor, _deserialize, buffer, checksum, celltype
             )
     else:
         value = _deserialize(buffer, checksum, celltype)
@@ -116,7 +118,8 @@ async def deserialize(buffer, checksum, celltype, copy):
         serialize_cache[id_value, celltype] = buffer, value
     return value
 
-def deserialize_sync(buffer, checksum:Checksum, celltype, copy):
+
+def deserialize_sync(buffer, checksum: Checksum, celltype, copy):
     """Deserializes a buffer into a value
     First, it is attempted to retrieve the value from cache.
     In case of a cache hit, a copy is returned only if copy=True
@@ -129,14 +132,14 @@ def deserialize_sync(buffer, checksum:Checksum, celltype, copy):
         return None
     checksum = Checksum(checksum)
     if celltype == "mixed":
-        buffer_info:BufferInfo = buffer_cache.buffer_info.get(checksum)
+        buffer_info: BufferInfo = buffer_cache.buffer_info.get(checksum)
         if buffer_info is not None:
             if buffer_info.is_json:
                 celltype = "plain"
             elif buffer_info.is_numpy:
                 celltype = "binary"
     ###
-    copy = True # Apparently, sometimes the promise of not modifying the value is violated... for now, enforce a copy
+    copy = True  # Apparently, sometimes the promise of not modifying the value is violated... for now, enforce a copy
     ###
     value = None
     if checksum:

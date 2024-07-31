@@ -1,4 +1,5 @@
 import os, warnings
+
 mimetypes_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mime.types")
 mimetypes = {}
 mimetypes_rev = {}
@@ -21,6 +22,7 @@ for l in open(mimetypes_file, "r"):
             mimetypes_rev[extension] = mimetype
         mimetypes[mimetype].append(extension)
 
+
 def language_to_extension(language, fallback=None):
     try:
         return language_to_ext[language]
@@ -28,6 +30,7 @@ def language_to_extension(language, fallback=None):
         if fallback is None:
             raise KeyError(language) from None
         return fallback
+
 
 language_to_ext = {
     "python": "py",
@@ -37,7 +40,7 @@ language_to_ext = {
     "fortran": "f",
     "javascript": "js",
     "bash": "bash",
-    "opencl": None #TODO
+    "opencl": None,  # TODO
 }
 celltype_to_ext = {
     "text": "txt",
@@ -58,6 +61,7 @@ celltype_to_ext = {
     None: None,
 }
 
+
 def get_mime(celltype):
     ext = celltype_to_ext[celltype]
     if ext is None:
@@ -65,10 +69,12 @@ def get_mime(celltype):
     mime = mimetypes_rev[ext]
     return mime
 
+
 def language_to_mime(language):
     ext = language_to_ext[language]
     mime = mimetypes_rev[ext]
     return mime
+
 
 def ext_to_mime(ext):
     return mimetypes_rev[ext]
