@@ -20,6 +20,9 @@ try:
 except ImportError:
     StdoutProxy = None
 
+
+from seamless import Buffer
+
 logger = logging.getLogger(__name__)
 
 forked_processes = weakref.WeakKeyDictionary()
@@ -163,8 +166,8 @@ async def build_transformation_namespace(transformation, semantic_cache, codenam
             continue
         if pinname in ("__language__", "__output__", "__code_checksum__"):
             continue
-        celltype, subcelltype, sem_checksum0 = transformation[pinname]
-        sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
+        celltype, subcelltype, sem_checksum = transformation[pinname]
+        sem_checksum = Checksum(sem_checksum)
         if syntactic_is_semantic(celltype, subcelltype):
             checksum = sem_checksum
         else:
@@ -772,7 +775,7 @@ class TransformationJob:
             if result_buffer is None:
                 return None
             try:
-                result_checksum = await calculate_checksum(result_buffer)
+                result_checksum = await Buffer(result_buffer).get_checksum_async()
                 # execute.py will have done a successful serialization for output_celltype
                 buffer_cache.guarantee_buffer_info(
                     result_checksum, output_celltype,
@@ -911,7 +914,7 @@ class TransformationJob:
                             assert not is_forked()
                             for celltype, subcelltype, buf in syntactic_cache:
                                 # TODO: create a transformation_cache method and invoke it, common with other code
-                                syn_checksum = await calculate_checksum(buf)
+                                syn_checksum = await Buffer(buf).get_checksum_async()
                                 buffer_cache.incref_buffer(syn_checksum, buf, persistent=False)
                                 sem_checksum = await syntactic_to_semantic(
                                     syn_checksum, celltype, subcelltype, 
@@ -1072,7 +1075,6 @@ from .build_module import build_all_modules
 from seamless.compiler import compilers as default_compilers, languages as default_languages
 from seamless.buffer.get_buffer import get_buffer
 from seamless.buffer.deserialize import deserialize, deserialize_sync
-from seamless.buffer.calculate_checksum import calculate_checksum
 from seamless.buffer.evaluate import validate_evaluation_subcelltype
 from seamless import CacheMissError, Checksum
 from seamless.buffer.buffer_cache import buffer_cache

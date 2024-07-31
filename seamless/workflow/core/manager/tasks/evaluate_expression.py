@@ -602,8 +602,9 @@ async def evaluate_expression(expression, *, fingertip_mode=False, manager=None,
                 database.set_expression(expression, result_checksum)
 
     if result and not from_task and not fingertip_mode:
-        assert isinstance(result, bytes), type(result)
-        if result != expression.checksum:
+        result = Checksum(result)
+        assert result
+        if result != Checksum(expression.checksum):
             manager.cachemanager.incref_checksum(
                 result,
                 expression,

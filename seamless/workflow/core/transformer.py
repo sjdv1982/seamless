@@ -284,7 +284,6 @@ class Transformer(Worker):
         buffer = await self._get_buffer()
         if buffer is None:
             return None
-        print("BUF!", buffer, type(buffer))
         value = await deserialize(buffer, checksum, output_celltype, True)
         return value
 

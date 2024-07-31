@@ -136,6 +136,8 @@ def tf_get_buffer(transformation):
         if k.startswith("SPECIAL__"):
             continue
         celltype, subcelltype, checksum = v
+        if isinstance(checksum, Checksum):
+            checksum = checksum.value
         d[k] = celltype, subcelltype, checksum
     buffer = json_dumps(d, as_bytes=True) + b"\n"
     return buffer
@@ -645,8 +647,8 @@ class TransformationCache:
                 continue
             if k == "__env__":
                 continue
-            celltype, subcelltype, sem_checksum0 = v
-            sem_checksum = bytes.fromhex(sem_checksum0) if sem_checksum0 is not None else None
+            celltype, subcelltype, sem_checksum = v
+            sem_checksum = Checksum(sem_checksum)
             if syntactic_is_semantic(celltype, subcelltype):
                 continue
             semkey = (sem_checksum, celltype, subcelltype)

@@ -238,10 +238,14 @@ class BufferCache:
             return b'[]\n'
         buffer = checksum_cache.get(checksum)
         if buffer is not None:
-            assert isinstance(buffer, bytes)
+            if isinstance(buffer, Buffer):
+                buffer = buffer.value
+            assert isinstance(buffer, bytes), type(buffer)
             return buffer
         buffer = self.buffer_cache.get(checksum)
         if buffer is not None:
+            if isinstance(buffer, Buffer):
+                buffer = buffer.value
             assert isinstance(buffer, bytes), type(buffer)
             return buffer
         if remote:
@@ -251,12 +255,16 @@ class BufferCache:
                 import traceback
                 traceback.print_exc()
             if buffer is not None:
-                assert isinstance(buffer, bytes)
+                if isinstance(buffer, Buffer):
+                    buffer = buffer.value
+                assert isinstance(buffer, bytes), type(buffer)
             else:
                 # fair.get_buffer may download the buffer using the .access method
                 buffer = fair.get_buffer(checksum, deep=deep)
                 if buffer is not None:
-                    assert isinstance(buffer, bytes)
+                    if isinstance(buffer, Buffer):
+                        buffer = buffer.value
+                    assert isinstance(buffer, bytes), type(buffer)
                     buffer_cache.cache_buffer(checksum, buffer)
                     return buffer
 
